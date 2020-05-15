@@ -3,6 +3,19 @@
 This repo accompanies our paper:
 [Chen and Zimmermann (2020), "Open source cross-sectional asset pricing"](SSRN link)
 
+If you use data or code based on our work, please cite the paper: BIBTEX
+
+
+## Data
+
+If you are mostly interested in working with the data, we provide benchmark signal and portfolio returns in separate files for direct download.
+
+- Portfolio Returns Benchmark Signals:
+- Portfolio Returns Additional Signals:
+- Firm-level benchmark signals:
+- Firm-level additional signals:
+
+
 ## Code 
 
 The code is separated into different files that download and prepare the data, and construct signals and portfolios. Please see the file **runEverything.txt** to get an overview of how the entire code can be run. The current code does some parts in R and some in Stata, so you will need both to run everything.
@@ -10,13 +23,13 @@ The code is separated into different files that download and prepare the data, a
 
 ## Data access
 
-To download data, you will need access to WRDS. At a minimum, you will need access to the following databases:
+To download raw data from the original sources, you will need access to WRDS. At a minimum, you will need access to the following databases:
 
 - CRSP
 - Compustat
 - IBES
 
-Here are instructions for setting up WRDS to work via RStudio on your computer: https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-your-computer/
+WRDS provides [instructions for setting up WRDS to work via RStudio on your computer](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-your-computer/)
 
 ## Contribute
 
