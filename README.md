@@ -8,12 +8,18 @@ If you use data or code based on our work, please cite the paper: BIBTEX
 
 ## Data
 
-If you are mostly interested in working with the data, we provide benchmark signal and portfolio returns in separate files for direct download.
+If you are mostly interested in working with the data, we provide benchmark signal and portfolio returns in separate files for direct download. 
 
-- Portfolio Returns Benchmark Signals:
-- Portfolio Returns Additional Signals:
-- Firm-level benchmark signals:
-- Firm-level additional signals:
+You can access the benchmark data [here](https://drive.google.com/open?id=1oeX3PVd5KxKqnQuVuPdRwORrqyt1WnJo).
+
+The folder contains 4 files
+
+- Portfolio Returns Benchmark Signals: portbase.zip
+- Portfolio Returns Additional Signals: portadditional.zip
+- Firm-level benchmark signals: signalbase.zip
+- Firm-level additional signals: signaladditional.zip
+
+For reference to individual signals, their acronyms and construction please see the [online appendix to our paper](https://drive.google.com/open?id=1vXRzjxYucXZV-tgLxM26fvRZ5zKvlBXH) and the file **SignalDocumentation.xls** that is part of this repo.
 
 
 ## Code 
