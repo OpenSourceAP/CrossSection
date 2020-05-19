@@ -1,10 +1,9 @@
 # Open source cross sectional asset pricing
 
 This repo accompanies our paper:
-[Chen and Zimmermann (2020), "Open source cross-sectional asset pricing"](SSRN link)
+[Chen and Zimmermann (2020), "Open source cross-sectional asset pricing"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3604626)
 
-If you use data or code based on our work, please cite the paper: BIBTEX
-
+If you use data or code based on our work, please cite the paper: [Bibtex entry](https://drive.google.com/open?id=1eP-Tuvmcbs5A7073d_9g2wQbvitqfdPz)
 
 ## Data
 
