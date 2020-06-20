@@ -11,8 +11,8 @@ wrds <- dbConnect(Postgres(),
                   host='wrds-pgdata.wharton.upenn.edu',
                   port=9737,
                   sslmode='require',
-                  user='chen1678',
-                  password='Allcaps4eva',
+                  user='',
+                  password='',
                   dbname='wrds')
 
 setwd("/cm/chen/anomalies.com/code.fed") # at fed default wd is ~/
