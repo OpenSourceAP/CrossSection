@@ -25,6 +25,7 @@ For reference to individual signals, their acronyms and construction please see 
 
 The code is separated into different files that download and prepare the data, and construct signals and portfolios. Please see the file **runEverything.txt** to get an overview of how the entire code can be run. The current code does some parts in R and some in Stata, so you will need both to run everything.
 
+Code to construct trading costs from TAQ data is provided separately and can be downloaded [here](https://drive.google.com/open?id=1W256-g-RxqOZBjNtkSJuuWXUqHZEYHsM).
 
 ## Data access
 
