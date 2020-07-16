@@ -46,3 +46,10 @@ Please let us know if you find typos in the code or think that we should add add
 If you use RStudio, take a look at [Hendrik Bruns' guide](https://www.hendrikbruns.tk/post/using-rstudio-and-git-version-control/) to set up version control.
 
 As a stand-alone client for Windows, we recommend [Sourcetree](https://www.sourcetreeapp.com/).
+
+## Important updates
+
+- Version 0.1.1: Fixed timing for the availability of quarterly Compustat data (HT: Yang Liu from Tsinghua)
+- Version 0.1.0: Initial code and data
+
+
