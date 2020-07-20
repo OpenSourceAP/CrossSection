@@ -1413,12 +1413,15 @@ label var PriceDelayAdj "Price delay (SE adjusted)"
 
 // 356 Consistent earnings increase (quarterly version)
 gen temp = ibq - l12.ibq
+
 gen EarnIncrease = 1 if temp > 0 & l3.temp > 0 & l6.temp > 0 & l9.temp > 0 & l12.temp > 0 ///
                & !mi(temp) & !mi(l3.temp) & !mi(l6.temp) & !mi(l9.temp) & !mi(l12.temp)
-replace EarnIncrease = 0 if mi(EarnIncrease) & !mi(temp) & !mi(l3.temp) ///
-               & !mi(l6.temp) & !mi(l9.temp) & !mi(l12.temp)
+replace EarnIncrease = 0 if temp < 0 & l3.temp < 0 & l6.temp < 0 & l9.temp < 0 & l12.temp < 0 ///
+               & !mi(temp) & !mi(l3.temp) & !mi(l6.temp) & !mi(l9.temp) & !mi(l12.temp)                     
+
 drop temp
 label var EarnIncrease "Consistent Earnings Increase (quarterly)"
+
 
 // 357-358 Consistent positive/negative returns
 gen ConsPosRet = 1 if (ret > 0 & l.ret > 0 & l2.ret > 0 & l3.ret > 0 & l4.ret > 0 ///
