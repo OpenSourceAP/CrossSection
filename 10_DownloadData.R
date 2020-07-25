@@ -27,7 +27,7 @@ numRowsToPull = -1  # Set to -1 to get all data, set to positive value for testi
 varsCompustatA = c("aco", "act", "ajex", "am", "ao", "ap", "at", "capx", "ceq", "che", "cogs", "csho", "cshrc", "dcpstk", "dcvt", "dlc", "dlcch", "dltis", 
                     "dltr", "dltt", "dm", "dp", "drc", "drlt", "dv", "dvc", "dvp", "dvpa", "dvpd", "dvpsx_c", "dvt", "ebit", "ebitda", "emp", "epspi", "epspx", 
                     "fatb", "fatl", "ffo", "fincf", "fopt", "gdwl", "gdwlia", "gdwlip", "gwo", "ib", "ibc", "intan", "invt",
-                    "ivao", "ivncf", "ivst", "lco", "lct", "lo", "lt", "mib", "msa", "ni", "nopi", "oancf", "ob", "oancf", "oiadp", "oibdp", "pi", "ppegt",
+                    "ivao", "ivncf", "ivst", "lco", "lct", "lo", "lt", "mib", "msa", "ni", "nopi", "oancf", "ob", "oiadp", "oibdp", "pi", "ppegt",
                     "ppent", "prcc_c", "prcc_f", "prstkc", "prstkcc", "pstk", "pstkl", "pstkrv",  "re", "rect", "recta", "revt", "sale", "scstkc", "seq", "spi", 
                     "sstk", "tstkp", "txdi", "txditc", "txfo", "txfed", "txp", "txt", "xacc", "xad", "xint", "xrd", "xpp", "xsga"
 )
@@ -57,7 +57,7 @@ data.table::fwrite(a_Compustat, file = '../DataRaw/CompustatAnnual.csv')
 # Compustat Quarterly -----------------------------------------------------
 
 # Variables to download
-varsCompustatQ = c("acoq", "actq", "ajexq", "apq", "atq", "ceqq", "cheq", "cogsq", "cshoq", "cshprq", "dpq", "dlcq", "dlttq", "dpq", 
+varsCompustatQ = c("acoq", "actq", "ajexq", "apq", "atq", "ceqq", "cheq", "cogsq", "cshoq", "cshprq", "dpq", "dlcq", "dlttq", 
                    "drcq", "drltq", "dvpsxq", "epspiq", "epspxq", "fopty", "gdwlq", "ibq", "invtq", "intanq", "ivaoq", "lcoq", "lctq", 
                    "loq", "ltq", "mibq", "niq", "oancfy", "oiadpq", "oibdpq", "piq", "ppentq", "ppegtq", "prstkcy", "prccq", "pstkq", "rdq", "req",
                    "rectq", "revtq", "saleq", "seqq", "sstky", "txdiq", 
