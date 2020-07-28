@@ -324,9 +324,9 @@ download.file('https://site.warrington.ufl.edu/ritter/files/2019/05/age19752019.
               method = 'curl')
  
 ipos = read_excel(path = tmp) %>% 
-  transmute(Founding = Found,
+  transmute(Founding = Founding,
             Offerdate = `Offer date`,
-            CRSPperm = PERM)
+            CRSPperm = `CRSP perm`)
   
 data.table::fwrite(ipos, file = '../DataRaw/IPODates.csv')
 
