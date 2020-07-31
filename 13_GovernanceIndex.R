@@ -4,11 +4,19 @@
 
 options(stringsAsFactors=F)
 library(tidyverse)
-library(xlsx)
+library(readxl)
 library(stringr)
 library(lubridate)
 
-gov0 = read.xlsx('../DataRaw/GovernanceIndex.xls',sheetIndex=1,startRow=24)
+tmp <- tempfile()
+download.file('https://spinup-000d1a-wp-offload-media.s3.amazonaws.com/faculty/wp-content/uploads/sites/7/2019/06/Governance.xlsx', 
+              destfile = tmp, 
+              method = 'curl')
+ 
+gov0 = read_excel(path = tmp)
+cnames = gov0[23,]
+gov0 <- tail(gov0, -23) %>%
+    setNames(cnames)
 
 ## import data and add months based on xls header.  The 2000 thing is super not clear but shouldn't make much difference
 
