@@ -17,6 +17,8 @@ gov0 = read_excel(path = tmp)
 cnames = gov0[23,]
 gov0 <- tail(gov0, -23) %>%
     setNames(cnames)
+gov0$year <- as.numeric(gov0$year)
+gov0$G <- as.numeric(gov0$G)
 
 ## import data and add months based on xls header.  The 2000 thing is super not clear but shouldn't make much difference
 
