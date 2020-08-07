@@ -14,7 +14,7 @@ Sas/Corwin_SchultzEdit.sas: SAS program to compute bid-ask spread
 
 12_CompCustomers.R
 
-13_GovernanceIndex.R: Requires GovernanceIndex.xls which is currently not being downloaded automatically
+13_GovernanceIndex.R
 
 14_IOmomentum.R
 
@@ -24,8 +24,6 @@ Sas/Corwin_SchultzEdit.sas: SAS program to compute bid-ask spread
 master.do
 |---- Calls 11_PrepareLinkingTables.do
 |---- Calls 12_PrepareOtherData.do
-      |---- Uses pin1983-2001.dat which is currently not being downloaded automatically
-      |---- Uses SinStocksHong.xlsx which is currently not being downloaded automatically
 |---- Calls 13_PrepareRatings.do
 |---- Calls 14_PrepareAnnualCS.do
 |---- Calls 15_PrepareDailyCRSP.do
