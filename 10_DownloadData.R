@@ -565,3 +565,18 @@ unzip(tmp,
       files = c('Supply_1997-2018_SUM.xlsx', 'Use_SUT_Framework_1997-2018_SUM.xlsx'),
       exdir = '../DataRaw')
 
+
+
+# Sin stock classification ------------------------------------------------
+
+# These data are originally from the pdf available here:
+# http://www.columbia.edu/~hh2679/sinstocks.pdf
+download.file('https://drive.google.com/uc?export=download&id=1U0xQw9CwKJAVZYHbur8p_jj24vLtVwBu',
+              destfile = '../DataRaw/SinStocksHong.xlsx',
+              mode = 'wb')
+
+# PIN data ----------------------------------------------------------------
+
+# These data are originally from here: https://sites.google.com/site/hvidkjaer/data
+download.file('https://drive.google.com/uc?export=download&id=15RU_gxWS0rZ8Jyq7MFAno3cLKbB1_P0T',
+              destfile = '../DataRaw/pin1983-2001.dat')

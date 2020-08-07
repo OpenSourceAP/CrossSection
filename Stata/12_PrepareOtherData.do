@@ -28,17 +28,6 @@ cd $pathdata
 * ---------------------------------------------------------------------------
 
 * 1. Governance Index
-/*
-this is now done in Code/1f_GovernanceIndex.R
-import excel "$pathProject/DataRaw/GovernanceIndex.xls", sheet("governance index") cellrange(A24:F14024) firstrow clear
-keep ticker year G
-replace ticker = trim(ticker)
-bysort tic year: keep if _n == 1  // One duplicate observation
-
-replace year = year + 1  // Want to use previous year's data in this year's predictions
-
-save "$pathProject/DataClean/GovIndex", replace
-*/
 import delimited "$pathProject/DataRaw/GovIndex.csv", clear varnames(1) delim(",")
 gen temp = date(time_avail_m, "YMD")
 drop time_avail_m

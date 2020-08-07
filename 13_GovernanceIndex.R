@@ -4,14 +4,19 @@
 
 options(stringsAsFactors=F)
 library(tidyverse)
-library(xlsx)
+library(readxl)
 library(stringr)
 library(lubridate)
 
-gov0 = read.xlsx('../DataRaw/GovernanceIndex.xls',sheetIndex=1,startRow=24)
+tmp = tempfile()
+# Original data from here: https://faculty.som.yale.edu/andrewmetrick/data/
+download.file('https://drive.google.com/uc?export=download&id=1Uude8wuadeIyKIYjkPcWlvrSl2m0TPfB', 
+              destfile = tmp, 
+              mode = 'wb')
+
+gov0 = read_xls(tmp, skip = 23)
 
 ## import data and add months based on xls header.  The 2000 thing is super not clear but shouldn't make much difference
-
 gov1 = gov0 %>%
   group_by(ticker, year) %>% 
   filter(row_number() == 1) %>% 
