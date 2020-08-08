@@ -17,7 +17,7 @@ cd $pathdata
 * 14. 13F data (most pre-processing is done in 1c_Download13FAndProcess.R)
 * 15. OptionMetrics data (most pre-processing is done in 1b_DownloadOptionsAndProcess.R)
 * 16. Liquidity factor
-* 17. Probability of Informed Trading (download file here first: https://sites.google.com/site/hvidkjaer/data)
+* 17. Probability of Informed Trading
 * 18. Customer momentum (generated in R, here read in to Stata only)
 * 19. Daily market returns
 * 20. Trading cost from TAQ data (file by Andrew, runs in SAS on WRDS server)
