@@ -3,6 +3,7 @@ cd $pathdata
 
 * 1. Governance Index
 * 3. CPI 
+* 3a. GNP price deflator
 * 4. Compustat Pensions
 * 5. CRSP Acquisition file
 * 6. Corwin's bid-ask spreads
