@@ -1896,7 +1896,7 @@ label var betaRC "Liquidity beta (return-ill)"
 label var betaCR "Liquidity beta (ill-return)"
 
 // 215 Liquidity beta (Net)
-label var betaRR "Liquidity beta (Net)"
+label var betaNet "Liquidity beta (Net)"
 
 //216 Downside beta
 label var DownsideBeta "Downside beta"
@@ -2274,7 +2274,7 @@ replace HerfBE = . if tempSIC == "4512" & year <=1978
 replace HerfBE = . if (tempSIC == "4812" | tempSIC == " 4813") &  year <= 1982
 replace HerfBE = . if substr(tempSIC, 1,2) == "49"
 drop temp* indequity
-label var HerfAsset "Industry concentration (book equity based)"
+label var HerfBE "Industry concentration (book equity based)"
 
 // 899 PPE and inventory changes to assets
 gen tempPPE = ppegt - l12.ppegt
