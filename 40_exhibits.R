@@ -13,7 +13,7 @@ library(data.table)
 library(tidyverse)
 library(readxl)  # readxl is much faster and cleaner than read.xlsx
 library(lubridate)
-library(feather)
+library(fst)
 library(xtable)
 options(xtable.floating = FALSE)
 
@@ -41,8 +41,6 @@ if (Sys.getenv("USERNAME") != 'Tom') {
 }
 
 
-
-
 # Figure 1 (stock): Correlations (stock level) ----------------------------
 
 # Signal names
@@ -55,7 +53,7 @@ prds = temp1 %>%
   filter( (Cat.Predictor == '1_clear' | Cat.Predictor == '2_likely'), Cat.Variant == '1_original') %>% 
   pull(Acronym)
 
-signals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+signals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                        columns = c("permno","date", prds))
 
 # Fig 1a: Pairwise rank correlation of signals
@@ -76,9 +74,9 @@ registerDoParallel(cl)
 
 temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
-                .packages = c('dplyr', 'ccaPP', 'feather')) %dopar% {
+                .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+                  tempSignals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                                              columns = loopList[i, ] %>% as.character()) %>%
                     filter(complete.cases(.) == TRUE) %>%
                     as.matrix()
@@ -124,9 +122,9 @@ registerDoParallel(cl)
 
 rhos = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
-                .packages = c('dplyr', 'ccaPP', 'feather')) %dopar% {
+                .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+                  tempSignals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                                              columns = loopList[i, ] %>% as.character()) %>%
                     filter(complete.cases(.) == TRUE) %>%
                     as.matrix()
@@ -163,9 +161,9 @@ registerDoParallel(cl)
 
 temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
-                .packages = c('dplyr', 'ccaPP', 'feather')) %dopar% {
+                .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+                  tempSignals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                                              columns = loopList[i, ] %>% as.character()) %>%
                     filter(complete.cases(.) == TRUE) %>%
                     as.matrix()
@@ -202,9 +200,9 @@ registerDoParallel(cl)
 
 temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
-                .packages = c('dplyr', 'ccaPP', 'feather')) %dopar% {
+                .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+                  tempSignals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                                              columns = loopList[i, ] %>% as.character()) %>%
                     filter(complete.cases(.) == TRUE) %>%
                     as.matrix()
@@ -242,9 +240,9 @@ registerDoParallel(cl)
 
 temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
-                .packages = c('dplyr', 'ccaPP', 'feather')) %dopar% {
+                .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+                  tempSignals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                                              columns = loopList[i, ] %>% as.character()) %>%
                     filter(complete.cases(.) == TRUE) %>%
                     as.matrix()
@@ -281,9 +279,9 @@ registerDoParallel(cl)
 
 temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
-                .packages = c('dplyr', 'ccaPP', 'feather')) %dopar% {
+                .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_feather(paste0(pathSignalFile, 'temp.feather'),
+                  tempSignals = read_fst(paste0(pathSignalFile, 'temp.fst'),
                                              columns = loopList[i, ] %>% as.character()) %>%
                     filter(complete.cases(.) == TRUE) %>%
                     as.matrix()
@@ -330,7 +328,7 @@ saveRDS(allRhos, file = paste0(pathResults, 'rhoStockLevel.RDS'))
 # Figure 1 (Port): Correlations (Portfolio level) -------------------------
 
 ## import baseline returns
-portbase = fread(paste0(pathStratMonth, 'retWide_SignalMonth_base.csv')) %>% 
+portbase = read_fst(paste0(pathStratMonth, 'retWide_SignalMonth_base.fst')) %>% 
   as_tibble() %>% 
   mutate(date = ymd(date) %>% 
            floor_date(unit = 'month'))

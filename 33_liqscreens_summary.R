@@ -37,7 +37,7 @@ if (Sys.getenv("USERNAME") != 'Tom') {
 # LOAD DATA ---------------------------------------------------------------
 
 ## import returns
-longshort = fread(paste0(pathStratMonth, 'ret_StratMonth_LiqScreens.csv')) %>% 
+longshort = read_fst(paste0(pathStratMonth, 'ret_StratMonth_LiqScreens.fst')) %>% 
   as_tibble() %>% 
   mutate(date = ymd(date))
 

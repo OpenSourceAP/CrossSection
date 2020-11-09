@@ -25,7 +25,7 @@ if (Sys.getenv("USERNAME") != 'Tom') {
   pathResults    = '../Results/'
   pathStratMonth = '../DataStratMonth/'
 } else {
-  pathSignalFile = '../DataOutput/'
+  pathSignalFile = '../DataCleanStata/'
   pathCostFile   = '../DataClean/'
   pathSummary    = 'C:/Users/Tom/Google Drive/anomalies.com/DataSummary/'
   pathResults    = 'C:/Users/Tom/Google Drive/anomalies.com/Results/'
@@ -37,7 +37,7 @@ if (Sys.getenv("USERNAME") != 'Tom') {
 # LOAD DATA ---------------------------------------------------------------
 
 ## import baseline returns
-portbase = fread(paste0(pathStratMonth, 'ret_StratMonth_base.csv')) %>% 
+portbase = read_fst(paste0(pathStratMonth, 'ret_StratMonth_base.fst')) %>% 
   as_tibble() %>% 
   mutate(date = ymd(date))
 
@@ -118,5 +118,5 @@ sumbase = sumbase %>%
 ### WRITE TO DISK
 write_xlsx(
     list(sumstats=sumbase)
-    , paste0(pathSummary, 'SignalSummaryBase.xlsx')
+    , paste0(pathSummary, 'SignalSummaryBase20201104.xlsx')
 )

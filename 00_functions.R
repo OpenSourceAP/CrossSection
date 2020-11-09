@@ -357,7 +357,7 @@ many_ports_longlist = function(
     
     ## focus on one signal from big dataset
     print("reading big signal-firm-month data")
-    onesignal = read_feather(paste0(signalPath, 'temp.feather'),
+    onesignal = read_fst(paste0(signalPath, 'temp.fst'),
                              columns = c("permno","date",longlist$signalname[porti],"prc","exchcd")) %>% 
       rename(signalcurr = longlist$signalname[porti]) %>%
       filter(!(is.na(signalcurr)))
@@ -463,7 +463,7 @@ many_ports_longlist = function(
 
 ## prep_matricies computes a bunch of stuff related to portfolio calculation that can be done outside of the big loop.  It mostly puts long data into wide format
 prep_matricies = function(
-  signal
+  signalsInFile
   , signalMetadata
   , cost0
   , anomalyNames
@@ -492,7 +492,7 @@ prep_matricies = function(
   keys$Npermno = length(keys$allpermno)
   keys$Ndate   = length(keys$alldate)
   
-  keys$allsignal = colnames(signal)[colnames(signal) %in% anomalyNames] %>% 
+  keys$allsignal = signalsInFile[signalsInFile %in% anomalyNames] %>% 
     sort()
   keys$Nsignal = length(keys$allsignal)
   # store

@@ -19,7 +19,7 @@ library(xts)
 library(readxl)
 library(statar)
 library(pryr)
-library(feather)
+library(fst)
 
 pathSignalFile = '../DataClean/'
 pathSummary    = '../DataSummary/'
@@ -72,7 +72,8 @@ for (holdpercurr in holdperlist){
   ## calculate portfolio returns
   ## most of the time is spent here!
   long_short_curr = many_ports_longlist(
-    longlist = portsetcurr
+    longlist = portsetcurr %>% 
+      filter(signalname %in% keys$allsignal)
     , keys = keys
     , wide = wide  
     , signalPath = pathSignalFile
@@ -87,11 +88,9 @@ for (holdpercurr in holdperlist){
 }
 
 
-
-
 ## EXPORT
 fwrite(long_short,paste0(pathStratMonth, 'ret_StratMonth_HoldPer.csv'))
-
+write_fst(long_short, paste0(pathStratMonth, 'ret_StratMonth_HoldPer.fst'))
 
 ### CHECK OUTPUT ###
 

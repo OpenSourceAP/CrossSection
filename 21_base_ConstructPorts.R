@@ -13,7 +13,7 @@ library(xts)
 library(readxl)
 library(statar)
 library(pryr)
-library(feather)
+library(fst)
 
 # pathSummary    = '../DataSummary/'
 # pathSignalFile = '../DataClean/'
@@ -27,7 +27,7 @@ if (Sys.getenv("USERNAME") != 'Tom') {
   pathResults    = '../Results/'
   pathStratMonth = '../DataStratMonth/'
 } else {
-  pathSignalFile = '../DataClean/'
+  pathSignalFile = '../DataCleanStata/'
   pathCostFile   = '../DataClean/'
   pathSummary    = 'C:/Users/Tom/Google Drive/anomalies.com/DataSummary/'
   pathResults    = 'C:/Users/Tom/Google Drive/anomalies.com/Results/'
@@ -67,7 +67,8 @@ signallist = temp1 %>% left_join(temp2, by="signalname")
 ## calculate portfolio returns
 ## most of the time is spent here!
 long_short = many_ports_longlist(
-  longlist = signallist
+  longlist = signallist %>% 
+    filter(signalname %in% keys$allsignal)
   , keys = keys
   , wide = wide  
   , signalPath = pathSignalFile
@@ -76,7 +77,7 @@ long_short = many_ports_longlist(
 
 ## EXPORT
 fwrite(long_short,paste0(pathStratMonth, 'ret_StratMonth_base.csv'))
-
+write_fst(long_short, paste0(pathStratMonth, 'ret_StratMonth_base.fst'))
 
 ### OUTPUT WIDE ###
 long_short_wide = long_short %>% 
@@ -84,3 +85,4 @@ long_short_wide = long_short %>%
   spread(signalname, return)
 
 fwrite(long_short_wide,paste0(pathStratMonth, 'retWide_SignalMonth_base.csv'))
+write_fst(long_short_wide,paste0(pathStratMonth, 'retWide_SignalMonth_base.fst'))

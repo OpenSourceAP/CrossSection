@@ -2989,21 +2989,7 @@ AccrualQualityJune
 #delimit cr
 
 compress  
-save "$pathProject/DataClean/AnomaliesAll", replace
-
-* Save as CSV 
-
-// Metadata
-preserve
-	keep gvkey permno time_avail_m ret mve_c prc NYSE exchcd
-	order gvkey permno time_avail_m ret mve_c prc NYSE exchcd
-	export delimited using "$pathProject/DataClean/SignalFirmMonthMetaData.csv", replace 
-restore
-
-// Signals
-drop gvkey ret mve_c prc NYSE exchcd bh1m
-order permno time_avail_m 
-export delimited using "$pathProject/DataClean/SignalFirmMonth.csv", replace 
+save "$pathProject/DataClean/FinalSignalFile", replace
 
 *******************************************************************************
 

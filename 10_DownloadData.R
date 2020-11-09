@@ -643,7 +643,7 @@ download.file("https://apps.bea.gov//industry/iTables%20Static%20Files/AllTables
               method = 'auto')
 
 unzip(tmp, 
-      files = c('Supply_1997-2018_SUM.xlsx', 'Use_SUT_Framework_1997-2018_SUM.xlsx'),
+      files = c('Supply_1997-2019_SUM.xlsx', 'Use_SUT_Framework_1997-2019_SUM.xlsx'),
       exdir = '../DataRaw')
 
 

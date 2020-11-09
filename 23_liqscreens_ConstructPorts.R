@@ -11,7 +11,7 @@ library(xts)
 library(readxl)
 library(statar)
 library(pryr)
-library(feather)
+library(fst)
 
 pathSignalFile = '../DataClean/'
 pathSummary    = '../DataSummary/'
@@ -52,20 +52,17 @@ signallist = temp1 %>% left_join(temp2, by="signalname") %>%
         
 
 # create ME screen
-mescreen0 = fread(paste0(pathSignalFile, 'SignalFirmMonthMetaData.csv')) %>% 
-  mutate(date = paste(substr(time_avail_m, 1,4), 
-                      substr(time_avail_m, 6,7), 
-                      "28", 
-                      sep = "-") %>% 
-           as.Date()
-  )
+mescreen = haven::read_dta(paste0(pathSignalFile, 'FinalSignalFile.dta'), 
+                            col_select = c('permno', 'time_avail_mString', 'mve_c', 'exchcd')) %>% 
+  mutate(date = ymd(paste0(time_avail_mString, '-28'))) %>% 
+  select(-time_avail_mString)
 
-tempcut = mescreen0 %>%
+tempcut = mescreen %>%
     filter(exchcd == 1) %>%
     group_by(date) %>%
     summarize(cutoff = quantile(mve_c, probs=0.2, na.rm = T))
 
-mescreen1 = mescreen0 %>%
+mescreen = mescreen %>%
     left_join(tempcut, by='date') %>%
     mutate(keep = mve_c > cutoff) %>%
     select(permno, date, keep, mve_c)
@@ -75,8 +72,11 @@ mescreen1 = mescreen0 %>%
 
 ## 1. baseline
 long_short_base = many_ports_longlist(
-    longlist = signallist
-  , keys = keys, wide = wide, signalPath = pathSignalFile
+    longlist = signallist %>% 
+      filter(signalname %in% keys$allsignal)
+  , keys = keys 
+  , wide = wide 
+  , signalPath = pathSignalFile
   , customscreen = NULL
 ) %>%  filter(rettype == 'gross') 
     
@@ -84,25 +84,34 @@ long_short_base = many_ports_longlist(
 
 ## 2. Price > 5
 long_short_price = many_ports_longlist(
-    longlist = signallist %>% mutate(FilterPrice = 5)
-  , keys = keys, wide = wide, signalPath = pathSignalFile
+    longlist = signallist %>% mutate(FilterPrice = 5) %>% 
+      filter(signalname %in% keys$allsignal)
+  , keys = keys
+  , wide = wide
+  , signalPath = pathSignalFile
   , customscreen = NULL
 )  %>% filter(rettype == 'gross')
 
 
 ## 3. NYSE only 
 long_short_nyse = many_ports_longlist(
-    longlist = signallist %>% mutate(FilterExchange = '1')
-  , keys = keys, wide = wide, signalPath = pathSignalFile
+    longlist = signallist %>% mutate(FilterExchange = '1') %>% 
+      filter(signalname %in% keys$allsignal)
+  , keys = keys
+  , wide = wide
+  , signalPath = pathSignalFile
   , customscreen = NULL
 )  %>% filter(rettype == 'gross')
 
 
 ## 4. ME > NYSE 20th pct
 long_short_me = many_ports_longlist(
-    longlist = signallist 
-  , keys = keys, wide = wide, signalPath = pathSignalFile
-  , customscreen = mescreen1
+    longlist = signallist %>% 
+      filter(signalname %in% keys$allsignal)
+  , keys = keys 
+  , wide = wide 
+  , signalPath = pathSignalFile
+  , customscreen = mescreen
 )  %>% filter(rettype == 'gross')
 
 long_short = rbind(
@@ -115,7 +124,7 @@ long_short = rbind(
 
 ## EXPORT
 fwrite(long_short,paste0(pathStratMonth, 'ret_StratMonth_LiqScreens.csv'))
-
+write_fst(long_short, paste0(pathStratMonth, 'ret_StratMonth_LiqScreens.fst'))
 
 ### CHECK OUTPUT ###
 
