@@ -65,36 +65,3 @@ data.table::fwrite(GovIndex, file = '../DataRaw/GovIndex.csv')
 
 
 
-  
-
-
-
-# ## create grid for interpolation
-# alldates = seq(
-#   min(gov1$time_avail_m, na.rm=T)
-#   ,max(gov1$time_avail_m, na.rm=T)+365 # extend to 1 year past end of data
-#   ,by="months"
-# )
-# 
-# allticker = unique(gov1$ticker)
-# 
-# grid = expand.grid(ticker = allticker,
-#                    time_avail_m = alldates, 
-#                    stringsAsFactors = FALSE) %>%
-#   mutate(time_avail_m = ceiling_date(time_avail_m, unit = "month")-1)
-# 
-# 
-# ## merge onto grid and fill
-# gov2 = left_join(
-#   grid
-#   , gov1
-#   , by=c("ticker","time_avail_m")) %>%
-#   arrange(ticker,time_avail_m) %>%
-#   group_by(ticker) %>%
-#   fill(G) %>%
-#   ungroup() %>% 
-#   filter(!is.na(G)) 
-# 
-
-
-

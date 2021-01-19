@@ -93,7 +93,7 @@ signalMeta = signal %>%
 
 ## Write signals only to disk
 signal = signal %>% 
-  select(-gvkey, -ret, -mve_c, -NYSE, -bh1m, -tickerIBES, -sicCS, -sicCRSP, -shrcd
+  select(-gvkey, -ticker, -ret, -mve_c, -NYSE, -bh1m, -tickerIBES, -sicCS, -sicCRSP, -shrcd
          #-prc, -exchcd
          )
 

@@ -14,6 +14,7 @@ library(readxl)  # readxl is much faster and cleaner than read.xlsx
 library(writexl)
 library(lubridate)
 library(xtable)
+library(fst)
 options(xtable.floating = FALSE)
 
 
@@ -92,15 +93,15 @@ portbase1 = portbase %>%
   ) %>%
   select(-c(SampleStartYear, SampleEndYear, PubYear))
 
-## find stats for all groups, with Nstocks filter
+## find stats for all groups, with Nstocks filter (only few stocks for IO_ShortInterest, so no filter there)
 sumbase = portbase1 %>%
-    filter(Nstocks >= 20, ls_sign==0, rettype=="gross", samptype=="insamp") %>%
+    filter( (Nstocks >= 20 | signalname == 'IO_ShortInterest'), ls_sign==0, rettype=="gross", samptype=="insamp") %>%
     group_by(signalname, ls_sign, q_cut, q_spread, nyse_q, weight_me, holdper,
              rettype,samptype) %>%
     summarize(
         ret = mean(return), vol = sd(return), T = n(), tstat = ret/vol*sqrt(T)
     ) %>%
-    ungroup
+    ungroup()
 
 ## add some header info and rearrange
 sumbase = sumbase %>%
@@ -118,5 +119,5 @@ sumbase = sumbase %>%
 ### WRITE TO DISK
 write_xlsx(
     list(sumstats=sumbase)
-    , paste0(pathSummary, 'SignalSummaryBase20201104.xlsx')
+    , paste0(pathSummary, 'SignalSummaryBase20201113.xlsx')
 )
