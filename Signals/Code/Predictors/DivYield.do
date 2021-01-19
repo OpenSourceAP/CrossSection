@@ -13,12 +13,15 @@ replace tempdypos = . if (temp <=0 & l1.temp<=0 & l2.temp<=0) | ///
     (l6.temp<=0 & l7.temp<=0 & l8.temp<=0) | ///
     (l9.temp<=0 & l10.temp<=0 & l11.temp <=0)
 
-egen tempdyposq = fastxtile(tempdypos), by(time_avail_m) n(4)
-gen DivYield = 1 if tempdyposq >= 3 
-replace DivYield = 0 if tempdy == 0 // see table 1B
+gen DivYield = tempdypos
 egen tempsize = fastxtile(mve_c), by(time_avail_m) n(4)
 replace DivYield = . if tempsize >= 3
+
+
 // see table 1B
 label var DivYield "Dividend Yield (Current)"
+
 // SAVE
 do "$pathCode/savepredictor" DivYield
+
+

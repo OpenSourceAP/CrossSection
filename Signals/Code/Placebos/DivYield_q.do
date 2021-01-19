@@ -11,6 +11,7 @@ gen DivYield_q = (temp + l1.temp + l2.temp)/abs(prc)
 egen tempsize = fastxtile(mve_c), by(time_avail_m) n(4)
 replace DivYield_q = . if tempsize >= 3
 // see table 1B
+
 cap drop temp*
 label var DivYield_q "Dividend Yield (quarterly)"
 // SAVE

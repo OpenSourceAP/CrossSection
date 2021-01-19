@@ -12,7 +12,7 @@ This code is set up to run with the following path structure (Data and Log folde
 */
 
 // Set project path and R path
-global pathProject "C:/Users/Tom/Dropbox/Research/anomalies.com/TestingAndrewSetup"
+global pathProject "PATH TO PROJECT HERE"
 global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe"
 
 // Set storage option of signal files

@@ -5,10 +5,13 @@
 use permno gvkey time_avail_m using "$pathDataIntermediate/SignalMasterTable", clear
 drop if gvkey ==.
 merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/InputOutputMomentumProcessed", keep(master match) nogenerate
+
 // SIGNAL CONSTRUCTION
-gen temp = 1 if iomom_cust >= 10 & !mi(iomom_cust)
+replace iomom_cust = floor(iomom_cust)
+gen temp = 1 if iomom_cust >= 8 & !mi(iomom_cust)
 replace temp = 0 if iomom_cust <= 1
 replace iomom_cust = temp
 label var iomom_cust "IO customer momentum"
+
 // SAVE
 do "$pathCode/savepredictor" iomom_cust

@@ -45,6 +45,10 @@ gen qtr = quarter(dofm(time_avail_m))
 gen year = year(dofm(time_avail_m))
 merge m:1 permno year qtr using "$pathtemp/temp", keep(master match) nogenerate
 
+* remove firms with less than 20 quarters of return dataset
+sort permno time_avail_m
+bys permno: gen age = _n
+replace BetaBDLeverage = . if age <= 20/4*12
 
 // SAVE
 do "$pathCode/savepredictor" BetaBDLeverage
