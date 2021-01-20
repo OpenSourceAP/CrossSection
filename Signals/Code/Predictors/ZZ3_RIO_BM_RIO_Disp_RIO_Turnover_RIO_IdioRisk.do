@@ -16,10 +16,23 @@ save "$pathtemp/tempBM", replace
 
 * --------------
 * prep: Disp
-use permno time_avail_m tickerIBES using "$pathDataIntermediate/SignalMasterTable", clear
-merge m:1 tickerIBES time_avail_m using "$pathDataIntermediate/IBES_EPS", keep(master match) nogenerate keepusing(stdev_est meanest)
 
-gen ForecastDispersion = stdev_est/abs(meanest)
+// Prep IBES data
+use "$pathDataIntermediate/IBES_EPS_Unadj", replace
+keep if fpi == "1" 
+keep if fpedats != . & fpedats > statpers + 30 
+save "$pathtemp/temp", replace
+
+use permno time_avail_m tickerIBES using "$pathDataIntermediate/SignalMasterTable", clear
+merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate keepusing(stdev meanest)
+
+gen ForecastDispersion = stdev/abs(meanest)
+
+* fill
+xtset permno time_avail_m
+replace ForecastDispersion = l1.ForecastDispersion if ForecastDispersion == . 
+keep permno time_avail_m ForecastDispersion
+
 save "$pathtemp/tempDisp", replace
 
 * --------------
@@ -36,8 +49,6 @@ format time_avail_m %tm
 drop y m yyyymm
 rename idiorisk IdioRisk
 save "$pathtemp/tempIdioRisk", replace
-
-
 
 * --------------
 * finally make RIO * signals
@@ -59,10 +70,11 @@ gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
 * these are independent double sorts
 egen tempRIO = fastxtile(RIO), n(5) by(time_avail_m)
 gen Turnover = vol/shrout
-foreach v of varlist BM ForecastDispersion IdioRisk Turnover {
 
-egen temp`v'  = fastxtile(`v'), n(2) by(time_avail_m)
+foreach v of varlist BM ForecastDispersion IdioRisk Turnover {
+	egen temp`v'  = fastxtile(`v'), n(2) by(time_avail_m)
 }
+
 gen RIO_BM = 1 if tempRIO == 5 & tempBM == 1
 replace RIO_BM = 0 if tempRIO == 1 & tempBM == 1
 gen RIO_Disp = 1 if tempRIO == 5 & tempForecastDispersion == 2

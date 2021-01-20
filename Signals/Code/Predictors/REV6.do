@@ -1,7 +1,13 @@
 * --------------
+// Prep IBES data
+use "$pathDataIntermediate/IBES_EPS_Unadj", replace
+keep if fpi == "1" 
+keep if fpedats != . & fpedats > statpers + 30 
+save "$pathtemp/temp", replace
+
 // DATA LOAD
 use permno tickerIBES time_avail_m prc using "$pathDataIntermediate/SignalMasterTable", clear
-merge m:1 tickerIBES time_avail_m using "$pathDataIntermediate/IBES_EPS", keep(master match) nogenerate keepusing(meanest)
+merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate keepusing(meanest)
 
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
@@ -11,3 +17,4 @@ label var REV6 "Earnings forecast revision"
 
 // SAVE
 do "$pathCode/savepredictor" REV6
+

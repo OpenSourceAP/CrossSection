@@ -1,15 +1,15 @@
 * --------------
-// DATA LOAD
-use permno time_avail_m tickerIBES mve_c using "$pathDataIntermediate/SignalMasterTable", clear
-merge m:1 tickerIBES time_avail_m using "$pathDataIntermediate/IBES_EPSLongRun", keep(master match) nogenerate keepusing(stdev5yr numest5yr)
+// Prep IBES data
+use "$pathDataIntermediate/IBES_EPS_Unadj", replace
+keep if fpi == "0" 
+save "$pathtemp/temp", replace
 
-* approximate S&P 500 only
-gsort time_avail_m -mve_c
-bys time_avail_m: gen sizerank = _n
-drop if sizerank > 500
+// DATA LOAD
+use permno time_avail_m tickerIBES using "$pathDataIntermediate/SignalMasterTable", clear
+merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate keepusing(stdev numest)
 
 // SIGNAL CONSTRUCTION
-gen ForecastDispersionLT = stdev5yr if numest5yr > 1 & !mi(numest5yr)
+gen ForecastDispersionLT = stdev if numest > 1 & !mi(numest)
 label var ForecastDispersionLT "LT EPS Forecast Dispersion"
 
 // SAVE

@@ -1,13 +1,18 @@
 * ChForecastAccrual
 * --------------
 
+// Prep IBES data
+use "$pathDataIntermediate/IBES_EPS_Unadj", replace
+keep if fpi == "1" 
+save "$pathtemp/temp", replace
+
 // DATA LOAD
 use permno time_avail_m act che lct dlc txp at using "$pathDataIntermediate/m_aCompustat", clear
 bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
 
 merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(master match) nogenerate keepusing(tickerIBES)
 
-merge m:1 tickerIBES time_avail_m using "$pathDataIntermediate/IBES_EPS", keep(master match) nogenerate keepusing(meanest)
+merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate keepusing(meanest)
 
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
@@ -24,3 +29,5 @@ label var ChForecastAccrual "Change in Forecast and Accrual"
 
 // SAVE
 do "$pathCode/savepredictor" ChForecastAccrual
+
+

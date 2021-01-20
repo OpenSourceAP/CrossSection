@@ -3,7 +3,8 @@
 // Prepare query
 #delimit ;
 local sql_statement
-    SELECT a.ticker, a.statpers, a.int0a, a.shout, a.fy0a 
+    SELECT a.ticker, a.statpers, a.int0a, a.shout, a.fy0a, a.fy0edats, 
+	a.price, a.curr_price
     FROM ibes.actpsumu_epsus as a
 	WHERE a.measure = 'EPS';
 #delimit cr
