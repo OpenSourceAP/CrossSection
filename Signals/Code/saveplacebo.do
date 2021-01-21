@@ -27,7 +27,7 @@ preserve
 restore
 
 // clean up temp dta
-local list : dir . files "temp*.dta"
+local list : dir "$pathtemp" files "temp*.dta"
 foreach f of local list {
-	erase "`f'"
+	erase "$pathtemp/`f'"
 }
