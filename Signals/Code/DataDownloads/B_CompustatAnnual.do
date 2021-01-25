@@ -10,7 +10,8 @@ local sql_statement
 		   a.dvpsx_c,a.dvt,a.ebit,a.ebitda,a.emp,a.epspi,a.epspx,a.fatb,a.fatl,
 		   a.ffo,a.fincf,a.fopt,a.gdwl,a.gdwlia,a.gdwlip,a.gwo,a.ib,a.ibc,
 		   a.intan,a.invt,a.ivao,a.ivncf,a.ivst,a.lco,a.lct,a.lo,a.lt,a.mib,
-		   a.msa,a.ni,a.nopi,a.oancf,a.ob,a.oiadp,a.oibdp,a.pi,a.ppegt,
+		   a.msa,a.ni,a.nopi,a.oancf,a.ob,a.oiadp,a.oibdp,a.pi,a.ppenb,a.ppegt,
+		   a.ppenls,
 		   a.ppent,a.prcc_c,a.prcc_f,a.prstkc,a.prstkcc,a.pstk,a.pstkl,a.pstkrv,
 		   a.re,a.rect,a.recta,a.revt,a.sale,a.scstkc,a.seq,a.spi,a.sstk,
 		   a.tstkp,a.txdi,a.txditc,a.txfo,a.txfed,a.txp,a.txt,a.xacc,a.xad,
@@ -20,7 +21,8 @@ local sql_statement
 	AND a.popsrc = 'D'
 	AND a.datafmt = 'STD'
 	AND a.curcd = 'USD'
-	AND a.indfmt = 'INDL';
+	AND a.indfmt = 'INDL'
+	;
 #delimit cr
 
 odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
@@ -59,7 +61,7 @@ replace xad0 = 0 if mi(xad)
 
 // For these variables, missing is assumed to be 0
 foreach v of varlist nopi dvt ob dm dc aco ap intan ao lco lo rect ///
-				invt drc spi gdwl fatl fatb che dp act lct tstk dvpa scstkc sstk mib ///
+				invt drc spi gdwl che dp act lct tstk dvpa scstkc sstk mib ///
 				ivao prstkc prstkcc txditc ivst {
 				
 	replace `v' = 0 if `v' ==.
@@ -88,7 +90,6 @@ format time_avail_m %tm
 save "$pathDataIntermediate/a_aCompustat", replace
 
 * Monthly version
-
 gen temp = 12
 expand temp
 drop temp

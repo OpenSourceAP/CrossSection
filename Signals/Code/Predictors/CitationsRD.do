@@ -25,7 +25,8 @@ xtset permno time_avail_m
 gen tempXRD = xrd
 replace tempXRD = 0 if mi(xrd)
 
-gen tempncit = l12.ncitscale  // account for patent data being end of year
+gen tempncit = l6.ncitscale  // citations in year t is matched with ret in July t+1
+
 replace tempncit = 0 if tempncit == .
 gen CitationsRD  = (tempncit + l12.tempncit + l24.tempncit + l36.tempncit + ///
                   l48.tempncit) / (l36.tempXRD + l48.tempXRD + l60.tempXRD + l72.tempXRD + l84.tempXRD)

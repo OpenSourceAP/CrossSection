@@ -12,10 +12,14 @@ gen OScore_q = -1.32 - .407*log(atq/gnpdefl) + 6.03*(ltq/atq) - 1.43*( (actq - l
     .521*( (ibq - l12.ibq)/(abs(ibq) + abs(l12.ibq)) )
     
 destring sic, replace
-replace OScore_q = . if (sicCRSP > 3999 & sicCRSP < 5000) | sicCRSP > 5999 | abs(prc) < 5
-* exclude the lowest quintile of OScores
-egen tempsort = fastxtile(OScore_q), by(time_avail_m) n(5)
-replace OScore_q = . if tempsort == 1
+replace OScore_q = . if (sicCRSP > 3999 & sicCRSP < 5000) | sicCRSP > 5999 
+
+* form LS following Tab 5
+egen tempsort = fastxtile(OScore), by(time_avail_m) n(10)
+replace OScore = .
+replace OScore = 1 if tempsort == 10
+replace OScore = 0 if tempsort <= 7  & tempsort >= 1
+
 label var OScore_q "O-Score (quarterly)"
 // SAVE
 do "$pathCode/saveplacebo" OScore_q

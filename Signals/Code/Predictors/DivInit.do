@@ -1,27 +1,23 @@
 * --------------
+* Our signal balances users desire to have flexible data and 
+* fidelity to OP's original test.
 // DATA LOAD
-use permno time_avail_m shrcd using "$pathDataIntermediate/SignalMasterTable", clear
+use permno time_avail_m exchcd shrcd using "$pathDataIntermediate/SignalMasterTable", clear
 merge 1:1 permno time_avail_m using "$pathDataIntermediate/mCRSPdistributions", keep(master match) nogenerate keepusing(divamt) 
+
 // SIGNAL CONSTRUCTION
-gen temp = divamt
-replace temp = 0 if divamt ==.
-gen PayedDividend = temp > 0
-* Make columns with dividends over last 24 months
-foreach n of numlist 1(1)25 {
+replace divamt = 0 if divamt == .
+bys permno: asrol divamt, window(time_avail_m 24) stat(sum) gen(divsum)
 
-gen Divtemp`n' = l`n'.temp
+xtset permno time_avail_m
+//gen temp = divamt > 0 & l1.divsum == 0 & (exchcd == 1 | exchcd == 2) // OP does nyse/amex only, but we are more flexible
+gen temp = divamt > 0 & l1.divsum == 0 
 
-replace Divtemp`n' = 0 if mi(Divtemp`n')
-}
-egen tempNo = rowtotal(Divtemp*)
-gen NoDiv24 = (tempNo == 0)
-gen tempDivInit = (NoDiv24 == 1 & PayedDividend == 1)
-gen DivInit = (tempDivInit == 1 | l.tempDivInit == 1 | l2.tempDivInit == 1 ///
-    | l3.tempDivInit == 1 | l4.tempDivInit == 1 | l5.tempDivInit == 1 ///
-    | l6.tempDivInit == 1 | l7.tempDivInit == 1 | l8.tempDivInit == 1 ///
-    | l9.tempDivInit == 1 | l10.tempDivInit == 1 | l11.tempDivInit == 1)
-    
-replace DivInit = . if shrcd > 11 
-label var DivInit "Dividend Initiation"
+* keep for 6 months
+bys permno: asrol temp, window(time_avail_m 6) stat(sum) gen(initsum)
+gen DivInit = initsum == 1
+
 // SAVE
+label var DivInit "Dividend Initiation"
 do "$pathCode/savepredictor" DivInit
+
