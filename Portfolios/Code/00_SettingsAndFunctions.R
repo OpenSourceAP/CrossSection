@@ -1,7 +1,7 @@
 #### GLOBAL SETTINGS
 
-quickrun =  T# use T if you want to run quickly for testing
-quickrunlist = c('BM','Mom12m')
+quickrun =  F # use T if you want to run quickly for testing
+quickrunlist = c('DivOmit','realestate','nanalyst')
 feed.verbose = T # use T if you want lots of feedback
 
 options(dplyr.summarise.inform = FALSE)
@@ -77,12 +77,12 @@ readdocumentation = function(){
           , sweight = 'Stock Weight'
           , q_cut = 'LS Quantile'
           , q_filt = 'Quantile Filter'  
-          , portper = 'Portfolio Period'
+          , portperiod = 'Portfolio Period'
           , startmonth = 'Start Month'
           , filterstr = 'Filter'
         ) %>%
         mutate_at(
-            c('q_cut','portper','startmonth')
+            c('q_cut','portperiod','startmonth')
             , .funs = as.num
             , 
         ) %>%
@@ -104,14 +104,14 @@ alldocumentation = readdocumentation()
 
 #### FUNCTION FOR TURNING SIGNAL CSV TO K PORTFOLIOS
 
-signal_to_ports = function(
+signalname_to_longports = function(
                             signalname
                            , assignport = T
                            , q_cut = NA
                            , sweight = NA
                            , Sign = NA
                            , startmonth = NA
-                           , portper = NA
+                           , portperiod = NA
                            , q_filt = NA
                            , filterstr = NA
                             ) {
@@ -120,7 +120,7 @@ signal_to_ports = function(
     if (is.na(sweight)) {sweight = 'EW'}
     if (is.na(Sign)) {Sign = 1}
     if (is.na(startmonth)) {startmonth = 6}
-    if (is.na(portper)) {portper = 1}
+    if (is.na(portperiod)) {portperiod = 1}
     if (is.na(q_cut)) {q_cut=0.2}
     
 
@@ -185,7 +185,8 @@ signal_to_ports = function(
     
     if (assignport){
         
-        ## create breakpoints        # subset to firms used for breakpoints, right now only exclude based on q_filt
+        ## create breakpoints
+        # subset to firms used for breakpoints, right now only exclude based on q_filt
         tempbreak = temp0
         if (!is.na(q_filt)) {
             if (q_filt=='NYSE'){
@@ -201,6 +202,7 @@ signal_to_ports = function(
             plist = unique(c(q_cut,1-q_cut))
         }
         
+        # find breakpoints 
         temp = list()
         for (pi in seq(1,length(plist))){
             temp[[pi]] = tempbreak %>% group_by(yyyymm) %>%
@@ -215,6 +217,12 @@ signal_to_ports = function(
                 values_from=breakpoint,
                 names_prefix = 'break')
 
+        # remove degenerate breakpoints (at extremes only)
+        if (length(plist) > 1){
+            idgood = breaklist[,length(plist)+1] - breaklist[,2] > 0
+            breaklist = breaklist[idgood,]
+        }
+
         ## assign to portfolios
         # the extreme portfolios get the 'benefit of the doubt' in the inequalities
         
@@ -223,10 +231,11 @@ signal_to_ports = function(
             left_join(breaklist, by = 'yyyymm') %>%        
             mutate(port = NA_integer_) 
 
-        # assign sequentially
+        # assign lowest signal
         temp1 = temp1 %>%
             mutate(port = if_else(signal <= break1, as.integer(1), port) )
 
+        # assign middle
         if (length(plist) >= 2) {
             for (porti in seq(2,length(plist))){        
                 breakstr = paste0('break',porti)
@@ -235,9 +244,11 @@ signal_to_ports = function(
             } # for porti
         }
         
+        # assign highest signal
         breakstr = paste0('break',length(plist))
         id = is.na(temp1$port) & (temp1$signal >= temp1[breakstr])
-        temp1$port[id] = length(plist) + 1       
+        temp1$port[id] = length(plist) + 1
+        
         
 
     } else {
@@ -249,7 +260,7 @@ signal_to_ports = function(
         temp1 = temp0 %>% mutate( port = signal + 1)
         
     } # if !is.na(q_cut)
-
+    
     ## sign the portfolios
     if (Sign == -1) {
         temp1$port = max(temp1$port) + 1 - temp1$port
@@ -266,7 +277,7 @@ signal_to_ports = function(
     # find months that portfolio assignements are updated
     rebmonths =  (
         startmonth
-        + seq(0,12)*portper
+        + seq(0,12)*portperiod
     ) %% 12
     rebmonths[rebmonths == 0] = 12
     rebmonths = sort(unique(rebmonths))
@@ -333,46 +344,16 @@ signal_to_ports = function(
         summarize(
             ret = weighted.mean(ret, weight)
           , signallag = weighted.mean(signallag, weight)
-          , Nstocks = n()
-        )
-
-    tempmax = max(port$port)
-    templs = port %>%
-        mutate(
-            portls = if_else(port == tempmax, 'L', '?')
-           ,portls = if_else(port == 1, 'S', portls)
-        )   %>%
-        filter(portls %in% c('L','S')) %>%
-        pivot_wider(
-            id_cols = c(date, portls, ret, Nstocks)
-          , names_from = portls
-          , values_from = c(ret,Nstocks)
-        ) %>%
-        filter(!is.na(ret_L),!is.na(ret_S)) %>%
-        mutate(
-            ret = ret_L - ret_S
-          , Nstocks = Nstocks_L + Nstocks_S
-          , port = 'LS'
-          , signallag = NA
-        ) %>%
-        select(port,date,ret,signallag,Nstocks)        
-
-    # convert port to string and pad left if deciles for ease
-    if (is.na(q_cut) | (1/q_cut < 10)) {        
-        port = port %>% mutate(port = sprintf('%01d',port))
-    } else {
-        port = port %>% mutate(port = sprintf('%02d',port))
-    }
+          , Nlong = n()
+        )    
 
     port = port %>%
-        rbind(
-            templs
-        ) %>%
-        select(port,date,ret,signallag,Nstocks)        
+        mutate(Nshort = 0) 
+        select(port,date,ret,signallag,Nlong,Nshort)
     
     
     if (feed.verbose){
-        print(paste0('end of signal_to_ports memory used = '))
+        print(paste0('end of signalname_to_longports memory used = '))
         print(mem_used())
     }    
     gc()
@@ -380,6 +361,45 @@ signal_to_ports = function(
 
     return(port)
     
+} ### end function
+
+#############################################################################
+longports_to_longshort = function(
+    port
+    , longnames  = 'max'
+    , shortnames = 'min'
+){
+    
+    if (longnames=='max'){
+        longnames = max(port$port)
+    }
+    if (shortnames == 'min'){
+        shortnames = min(port$port)
+    }
+    
+    # equal-weight long portfolios
+    long = port %>%
+        filter(port %in% longnames) %>%
+        group_by(date) %>%
+        summarize(
+            retL = mean(ret), Nlong = sum(Nlong)
+    )
+
+    short = port %>% 
+        filter(port %in% shortnames) %>%
+        group_by(date) %>%
+        summarize(
+            retS = - mean(ret), Nshort = sum(Nlong)
+    )
+
+    longshort = inner_join(long, short, by='date') %>%
+        mutate(
+            ret = retL + retS
+            , port = 'LS'
+          , signallag = NA_real_
+        ) %>%
+        select(port,date,ret,signallag,Nlong,Nshort)        
+
 } ### end function
 
 
@@ -397,7 +417,7 @@ loop_over_strategies = function(
             ,'sweight'
             ,'Sign'
             ,'startmonth'
-            ,'portper'
+            ,'portperiod'
             ,'q_filt'
             ,'filterstr'
         )
@@ -421,7 +441,7 @@ loop_over_strategies = function(
              , 'assignport'
              , 'q_cut'
              , 'sweight'
-             , 'portper'
+             , 'portperiod'
              , 'q_filt'
              , 'filterstr'
                )
@@ -430,38 +450,59 @@ loop_over_strategies = function(
         start_time <- Sys.time()        
         
         tempport = tibble()
-
-        ##   # using tryCatch maybe causing errors?
-        
+       
         tempport = tryCatch(
         {
-            expr = signal_to_ports(
+            expr = signalname_to_longports(
                 strategylist$signalname[i]
               , strategylist$assignport[i]
               , strategylist$q_cut[i]
               , strategylist$sweight[i]
               , strategylist$Sign[i]
               , strategylist$startmonth[i]
-              , strategylist$portper[i]
+              , strategylist$portperiod[i]
               , strategylist$q_filt[i]
               , strategylist$filterstr[i]
             )
+            
         }
       , error = function(e){
-          print('error in signal_to_ports, returning df with NA')
+          print('error in signalname_to_longports, returning df with NA')
           data.frame(
               port = NA
             , date = NA
             , ret = NA
             , signallag = NA
-            , Nstocks = NA
+            , Nlong = NA
+            , Nshort = NA
           )
       }
       )
+        
 
+        ## add long-short 
+        if (!is.na(tempport$port[1])){
+            
+            # we could add more parameters here later
+            templs = longports_to_longshort(tempport)
+            
+            # convert port to string and pad left if deciles for ease
+            if (!strategylist$assignport[i] | is.na(strategylist$q_cut[i])){
+                tempport = tempport %>% mutate(port = sprintf('%01d',port))
+            } else if (1/strategylist$q_cut[i] < 10) {        
+                tempport = tempport %>% mutate(port = sprintf('%01d',port))
+            } else {
+                tempport = tempport %>% mutate(port = sprintf('%02d',port))
+            }
+
+            # bind long with longshort
+            tempport = rbind(tempport,templs)
+        }
+        
+        # clean up    
         tempport = tempport  %>%
             mutate(signalname = strategylist$signalname[i]) %>%
-            select(signalname,port,date,ret,signallag,Nstocks)
+            select(signalname,port,date,ret,signallag,Nlong,Nshort)
 
         # save individual port if requested
         if (saveportcsv){
@@ -469,7 +510,7 @@ loop_over_strategies = function(
             print(paste0('saving wide port to ', saveportpath))
 
             tempwide = tempport %>%
-                filter(Nstocks >= saveportNmin) %>%
+                filter(Nlong >= saveportNmin) %>%
                 select(port,date,ret) %>%
                 pivot_wider(names_from=port,values_from=ret,names_prefix='port')
 
@@ -511,36 +552,46 @@ loop_over_strategies = function(
 ### FUNCTION FOR SUMMARIZING PORTMONTH DATASET
 sumportmonth = function(
                         portret,
-                        groupme = c('signalname','samptype'),
+                        groupme = c('signalname','samptype','port'),
                         Nstocksmin = 20){
     
     temp =  portret %>%
         left_join(
             alldocumentation %>%
-            transmute(signalname, SampleStartYear, SampleEndYear, PubYear = Year, Cat.Signal)
+            select(signalname, SampleStartYear, SampleEndYear, Year)
           , by=c("signalname")
         ) %>%
         mutate(
             samptype = case_when(
                 year(date) >= SampleStartYear & year(date) <= SampleEndYear ~ "insamp"
-               ,year(date) > SampleEndYear & year(date) <= PubYear ~ "between"            
-               ,year(date) > PubYear ~ "postpub",
+               ,year(date) > SampleEndYear & year(date) <= Year ~ "between"            
+               ,year(date) > Year ~ "postpub",
                 TRUE ~ NA_character_
             )
         ) %>%
-        select(-c(SampleStartYear, SampleEndYear, PubYear))
-    
+        select(-c(SampleStartYear, SampleEndYear, Year))
+
+    # summarize
     tempsum = temp %>%
+        mutate(
+            Ncheck = if_else(port != 'LS', Nlong, as.integer(pmin(Nlong,Nshort)) )
+        ) %>%
         filter(
-            (Nstocks >= Nstocksmin) | is.na(date)
+            (Ncheck >= Nstocksmin) 
         ) %>%
         group_by_at(vars(all_of(groupme))) %>%
         summarize(
-          rbar = mean(ret), vol = sd(ret), T = n()
-          ,  tstat = rbar/vol*sqrt(T)
-          , .groups='keep'
+           tstat = round(mean(ret)/sd(ret)*sqrt(n()),2)
+           ,rbar = round(mean(ret),2)
+           ,vol = round(sd(ret),2)
+           ,T=n()
+           ,Nlong = round(mean(Nlong),1)
+           ,Nshort = round(mean(Nshort),1)
+           ,signallag = round(mean(signallag),3)            
         ) %>%
-        ungroup
+        ungroup %>%
+        arrange(samptype, signalname, port)
+            
     
 } # end function
 
@@ -617,20 +668,21 @@ checkport = function(
     port %>%
         group_by_at(vars(all_of(groupme))) %>%
         summarize(
-           rbar = round(mean(ret),2)
-           ,tstat = round(mean(ret)/sd(ret)*sqrt(n()),2)
+           tstat = round(mean(ret)/sd(ret)*sqrt(n()),2)
+           ,rbar = round(mean(ret),2)
            ,vol = round(sd(ret),2)
            ,T=n()
-           ,mean(Nstocks)
-           ,mean(signallag)
+           ,Nlong = round(mean(Nlong),1)
+           ,Nshort = round(mean(Nshort),1)
+           ,signallag = round(mean(signallag),3)
            ,samptype = 'insamp'
         ) %>%
         as.data.frame %>%
         print()
     
     port %>%
-        mutate(Nok = if_else(Nstocks >= 20,'N>=20','N<20')) %>%
-        group_by(signalname,Nok) %>%
+        mutate(Nok = if_else(Nlong >= 20,'Nlong>=20','Nlong<20')) %>%
+        group_by(signalname,port,Nok) %>%
         summarize(nportmonths = n()) %>%
         select(signalname, Nok, nportmonths) %>%
         pivot_wider(names_from = Nok

@@ -26,7 +26,7 @@ crspret = crsp %>% select(permno, date, yyyymm, ret) %>%
     left_join(templag, by=c('permno','yyyymm')) %>%
     arrange(permno, yyyymm)
 gc()
-crspinfo = crsp %>% select(permno, yyyymm, prc, exchcd, me)  %>%
+crspinfo = crsp %>% select(permno, yyyymm, prc, exchcd, me, shrcd)  %>%
     arrange(permno, yyyymm)
 
 # add info for easy me quantile screens

@@ -27,10 +27,10 @@ source('00_SettingsAndFunctions.R', echo=T)
 ## })
 
 
-print('master: 11_CreateCRSPPredictors.R')
-tryCatch({
-    source('11_CreateCRSPPredictors.R', echo=T) 
-})
+## print('master: 11_CreateCRSPPredictors.R')
+## tryCatch({
+##     source('11_CreateCRSPPredictors.R', echo=T) 
+## })
 
 
 ## # this is incomplete 2021 01 17 AC
@@ -40,46 +40,46 @@ tryCatch({
 ## })
 
 
-## print('master: 20_PredictorPorts')
-## tryCatch({
-##     source('20_PredictorPorts.R', echo=T) # 30 min
-## })
+print('master: 20_PredictorPorts')
+tryCatch({
+    source('20_PredictorPorts.R', echo=T) # 30 min
+})
 
 
-## # update me
-## print('master: 21_PredictorExhibits.R')
-## if (quickrun==F){
-##     tryCatch({
-##         source('21_PredictorExhibits.R', echo=T)
-##     })
-## }
+# update me
+print('master: 21_PredictorExhibits.R')
+if (quickrun==F){
+    tryCatch({
+        source('21_PredictorExhibits.R', echo=T)
+    })
+}
 
-## print('master: 30a_CheckPredictorsHoldper.R')
-## tryCatch({
-##     source('30a_CheckPredictorsHoldper.R', echo=T) # 2 hours
-## })
+print('master: 30a_CheckPredictorsHoldper.R')
+tryCatch({
+    source('30a_CheckPredictorsHoldper.R', echo=T) # 2 hours
+})
 
-## print('master: 30b_CheckPredictorsLiqScreens.R')
-## tryCatch({
-##     source('30b_CheckPredictorsLiqScreens.R', echo=T) # 2 hours
-## })
+print('master: 30b_CheckPredictorsLiqScreens.R')
+tryCatch({
+    source('30b_CheckPredictorsLiqScreens.R', echo=T) # 2 hours
+})
 
-## print('master: 30c_CheckPredictorsDeciles.R')
-## tryCatch({
-##     source('30c_CheckPredictorsDeciles.R', echo=T) # 30 min
-## })
+print('master: 30c_CheckPredictorsDeciles.R')
+tryCatch({
+    source('30c_CheckPredictorsDeciles.R', echo=T) # 30 min
+})
 
-## if (quickrun==F){
-##     print('31_CheckPredictorsExhibits.R')
-##     tryCatch({
-##         source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
-##     })
-## }
+if (quickrun==F){
+    print('31_CheckPredictorsExhibits.R')
+    tryCatch({
+        source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
+    })
+}
 
-## print('master: 40 40_PlaceboPorts.R')
-## tryCatch({
-##     source('40_PlaceboPorts.R', echo=T) # 30 min
-## })
+print('master: 40 40_PlaceboPorts.R')
+tryCatch({
+    source('40_PlaceboPorts.R', echo=T) # 30 min
+})
 
 ## # incomplete
 ## if (quickrun==F){

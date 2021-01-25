@@ -39,11 +39,12 @@ sumholdper = tibble()
 for (i in seq(1,length(holdperlist))){
 
     tempport = read.csv(paste0(pathDataPortfolios,csvlist[i])) %>%
-        select(signalname,date,ret,Nstocks)
+        mutate(port = 'LS', signallag = NA_real_)
 
-    tempsum = sumportmonth(tempport, c('signalname','samptype'), Nstocksmin = 20)  %>%
+    tempsum =   sumportmonth(tempport, c('signalname','samptype','port')
+                           , Nstocksmin = 20)   %>%
         as_tibble() %>%
-        mutate(holdper = holdperlist[i]) %>%
+        mutate(portperiod = holdperlist[i]) %>%
         filter(samptype == 'insamp')
     
     sumholdper = rbind(sumholdper,tempsum)
@@ -61,10 +62,11 @@ screenlist = c('me','nyse','price')
 sumliqscreen = tibble()
 for (i in seq(1,length(csvlist))){
 
-    tempport = read.csv(paste0(pathDataPortfolios,csvlist[i])) %>%
-        select(signalname,date,ret,Nstocks)
+    tempport = read.csv(paste0(pathDataPortfolios,csvlist[i])) %>%  
+        mutate(port = 'LS', signallag = NA_real_)
 
-    tempsum = sumportmonth(tempport, c('signalname','samptype'), Nstocksmin = 20)  %>%
+    tempsum =   sumportmonth(tempport, c('signalname','samptype','port')
+                           , Nstocksmin = 20)   %>%
         as_tibble() %>%
         mutate(screen = screenlist[i]) %>%
         filter(samptype == 'insamp')
@@ -74,12 +76,13 @@ for (i in seq(1,length(csvlist))){
 
 # add baseline
 tempport = read.csv(paste0(pathDataPortfolios,'PredictorPortsFull.csv')) %>%
-    filter(port == 'LS') %>%
-    select(signalname,date,ret,Nstocks)
-tempsum = sumportmonth(tempport, c('signalname','samptype'), Nstocksmin = 20)  %>%
+    filter(port == 'LS') 
+
+tempsum = sumportmonth(tempport, c('signalname','samptype','port'), Nstocksmin = 20)  %>%
     as_tibble() %>%
     mutate(screen = 'none') %>%
     filter(samptype == 'insamp')
+
 sumliqscreen = rbind(sumliqscreen,tempsum)
 
 ### MAKE FIGURES FOR HOLDING PERIODS
@@ -89,10 +92,10 @@ sumliqscreen = rbind(sumliqscreen,tempsum)
 df = sumholdper
 
 ## plot densities
-p1 = df %>% mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12), 
+p1 = df %>% mutate(portperiod = factor(portperiod, levels = c(1, 3, 6, 12), 
                                     labels = c('1 month', '3 months', '6 months', '12 months'))) %>% 
   ggplot(aes(x = rbar, 
-             color = holdper, group = holdper, fill = holdper)) + 
+             color = portperiod, group = portperiod, fill = portperiod)) + 
   geom_density(alpha = .3, adjust = 1.1) +
   scale_color_discrete(guide = FALSE) + 
   labs(x = 'Mean Return In-Sample (% per month)',
@@ -101,10 +104,10 @@ p1 = df %>% mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12),
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
 
-p2 = df %>% mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12), 
+p2 = df %>% mutate(portperiod = factor(portperiod, levels = c(1, 3, 6, 12), 
                                     labels = c('1 month', '3 months', '6 months', '12 months'))) %>% 
   ggplot(aes(x = tstat, 
-             color = holdper, group = holdper, fill = holdper)) + 
+             color = portperiod, group = portperiod, fill = portperiod)) + 
   geom_density(alpha = .3, adjust = 1.1) +
   scale_color_discrete(guide = FALSE) + 
   labs(x = 't-stat In-Sample',
@@ -121,13 +124,13 @@ ggsave(filename = paste0(pathResults, 'fig4_holding_period_dist.png'), width = 1
 
 # Plot means as bars
 df %>% 
-  mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12), 
+  mutate(portperiod = factor(portperiod, levels = c(1, 3, 6, 12), 
                           labels = c('1 month', '3 months', '6 months', '12 months'))) %>%
-  group_by(holdper) %>% 
+  group_by(portperiod) %>% 
   summarise(`Mean Return` = mean(rbar),
             `t-statistic` = mean(tstat)) %>% 
-  gather(key = 'key', value = 'value', -holdper) %>% 
-  ggplot(aes(x = holdper, y = value)) +
+  gather(key = 'key', value = 'value', -portperiod) %>% 
+  ggplot(aes(x = portperiod, y = value)) +
   geom_col() +
   facet_wrap(~key, scales = 'free_y') +
   labs(x = 'Rebalancing frequency', y = '') +
@@ -139,13 +142,13 @@ ggsave(filename = paste0(pathResults, 'fig4_holding_period_means.png'), width = 
 
 # Boxplots
 df %>% 
-  mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12), 
+  mutate(portperiod = factor(portperiod, levels = c(1, 3, 6, 12), 
                           labels = c('1 month', '3 months', '6 months', '12 months'))) %>%
-  transmute(holdper,
+  transmute(portperiod,
             Return = rbar,
             `t-statistic` = tstat) %>% 
-  gather(key = 'key', value = 'value', -holdper) %>% 
-  ggplot(aes(x = holdper, y = value)) +
+  gather(key = 'key', value = 'value', -portperiod) %>% 
+  ggplot(aes(x = portperiod, y = value)) +
   geom_boxplot(outlier.shape = NA) +
   labs(x = 'Rebalancing frequency', y = '') +
   facet_wrap(~key, scales = 'free_y') +
@@ -156,12 +159,12 @@ ggsave(filename = paste0(pathResults, 'fig4_holding_period_boxplot.png'), width 
 
 # Boxplots (mean ret only)
 df %>% 
-  mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12), 
+  mutate(portperiod = factor(portperiod, levels = c(1, 3, 6, 12), 
                           labels = c('1 month', '3 months', '6 months', '12 months'))) %>%
-  transmute(holdper,
+  transmute(portperiod,
             Return = rbar) %>% 
-  gather(key = 'key', value = 'value', -holdper) %>% 
-  ggplot(aes(x = holdper, y = value)) +
+  gather(key = 'key', value = 'value', -portperiod) %>% 
+  ggplot(aes(x = portperiod, y = value)) +
   geom_boxplot(outlier.shape = NA) +
   labs(x = 'Rebalancing frequency', y = 'Mean Return (ppt per month)') +
   coord_cartesian(ylim = c(0, 1.7)) +
@@ -172,12 +175,12 @@ ggsave(filename = paste0(pathResults, 'fig4_holding_period_boxplot_mean.png'), w
 
 # Jitter and boxplots
 df %>% 
-  mutate(holdper = factor(holdper, levels = c(1, 3, 6, 12), 
+  mutate(portperiod = factor(portperiod, levels = c(1, 3, 6, 12), 
                           labels = c('1 month', '3 months', '6 months', '12 months'))) %>%
-  transmute(holdper,
+  transmute(portperiod,
             Return = rbar) %>% 
-  gather(key = 'key', value = 'value', -holdper) %>% 
-  ggplot(aes(x = holdper, y = value)) +
+  gather(key = 'key', value = 'value', -portperiod) %>% 
+  ggplot(aes(x = portperiod, y = value)) +
   geom_jitter(width = .2, height = 0) +
   geom_boxplot(alpha = 0, outlier.shape = NA) +
   labs(x = 'Rebalancing frequency', y = 'Mean Return (ppt per month)') +

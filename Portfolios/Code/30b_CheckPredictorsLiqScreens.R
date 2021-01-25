@@ -18,7 +18,7 @@ source('setup_crspm.r', echo = T)
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-# 2021 01 I took out the holdper == 1 requirement and added likely predictors
+# 2021 01 I took out the portperiod == 1 requirement and added likely predictors
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')
 strategylist0 = ifquickrun()
 
@@ -32,24 +32,31 @@ print('CheckLiq: ME > NYSE 20 pct =========================================')
 # create ME screen
 # customscreen is used on the signal df, which is then lagged, so no look ahead here
 ls = loop_over_strategies(
-    strategylist0 %>% mutate(filtcust = 'me > me_nyse20')
+    strategylist0 %>% mutate(filterstr = 'me > me_nyse20')
 )  %>%
-    filter(port == 'LS') %>%
-    select(signalname, date, ret, Nstocks)
+    filter(port == 'LS') 
 
 checkport(ls,c('signalname'))
 
-writestandard(ls, pathDataPortfolios, 'CheckPredictorLS_LiqScreen_ME_gt_NYSE20pct.csv')
+writestandard(
+    ls %>%
+    select(signalname, date, ret, Nlong, Nshort)
+  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_ME_gt_NYSE20pct.csv'
+)
 
 
 ## Price > 5
 print('CheckLiq: Price > 5  =========================================')
 ls = loop_over_strategies(
-    strategylist0 %>% mutate(FilterPrice = 5)
+    strategylist0 %>% mutate(filterstr = 'abs(prc) > 5')
 )  %>%
-    filter(port == 'LS') %>%
-    select(signalname, date, ret, Nstocks)
-writestandard(ls, pathDataPortfolios, 'CheckPredictorLS_LiqScreen_Price_gt_5.csv')
+    filter(port == 'LS')
+
+writestandard(
+    ls %>%
+    select(signalname, date, ret, Nlong, Nshort)
+  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_Price_gt_5.csv'
+)
 
 
 
@@ -57,27 +64,33 @@ writestandard(ls, pathDataPortfolios, 'CheckPredictorLS_LiqScreen_Price_gt_5.csv
 
 print('CheckLiq: NYSE only =========================================')
 ls = loop_over_strategies(
-    strategylist0 %>% mutate(FilterExchange = '1')
+    strategylist0 %>% mutate(filterstr = 'exchcd==1')
 )  %>%
-    filter(port == 'LS') %>%
-    select(signalname, date, ret, Nstocks)
+    filter(port == 'LS')
 
 checkport(ls,c('signalname'))
 
-writestandard(ls, pathDataPortfolios, 'CheckPredictorLS_LiqScreen_NYSEonly.csv')
+writestandard(
+    ls %>%
+    select(signalname, date, ret, Nlong, Nshort)
+  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_NYSEonly.csv'
+)
 
 
 
 ## VW
 print('CheckLiq: VW force =========================================')
 ls = loop_over_strategies(
-    strategylist0 %>% mutate(weight_me = 1)
+    strategylist0 %>% mutate(sweight = 'VW')
 )  %>%
-    filter(port == 'LS') %>%
-    select(signalname, date, ret, Nstocks)
+    filter(port == 'LS')
 
 checkport(ls,c('signalname'))
 
-writestandard(ls, pathDataPortfolios, 'CheckPredictorLS_LiqScreen_VWforce.csv')
+writestandard(
+    ls  %>%
+    select(signalname, date, ret, Nlong, Nshort)
+  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_VWforce.csv'
+)
 
 

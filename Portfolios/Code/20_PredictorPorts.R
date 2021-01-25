@@ -18,7 +18,7 @@ source('setup_crspm.r', echo = T)
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-# 2021 01 I took out the holdper == 1 requirement and added likely predictors
+# 2021 01 I took out the portperiod == 1 requirement and added likely predictors
 source('00_SettingsAndFunctions.R', echo = T)
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor') 
 strategylist0 = ifquickrun()
@@ -26,6 +26,7 @@ strategylist0 = ifquickrun()
 #####################################################################
 ### BASE PORTS
 #####################################################################
+source('00_SettingsAndFunctions.R')
 port = loop_over_strategies(
     strategylist0 
 )
@@ -54,36 +55,29 @@ writestandard(
 
 # 
 
-## define samples
+
+source('00_SettingsAndFunctions.R')
 sumbase = sumportmonth(
     port, groupme = c('signalname','port','samptype'), Nstocksmin = 20
-)
-
-sumbase2 = sumbase %>%
+) %>%
     left_join(
-        alldocumentation %>%
-        select(signalname, Authors, Cat.Predictor, Cat.Variant
-             , SampleStartYear, SampleEndYear
-               , weight_me, q_cut, holdper)
-        , by = 'signalname'
+        strategylist0 %>%
+        select(sweight, q_cut, q_filt, portperiod, startmonth, filterstr
+               , everything())
+      , by='signalname'
     )
 
 
 ## export
 write_xlsx(
     list(
-        ls_insamp_only = sumbase2 %>%
+        ls_insamp_only = sumbase %>%
               filter(
                   samptype == 'insamp'
                   , port == 'LS'
               ) %>%
-              mutate(
-                  tstat = round(tstat,2)                  
-                  , rbar = round(rbar,3)
-                  , vol = round(vol,3)
-              ) %>%
               arrange(tstat)
-        , full = sumbase2        
+        , full = sumbase        
     )
   , paste0(pathDataPortfolios, 'PredictorSummary.xlsx')
 )

@@ -19,7 +19,7 @@ source('setup_crspm.r')
 strategylist0 = alldocumentation %>%
     filter(
         Cat.Signal == 'Predictor'
-        , !is.na(q_cut)
+        , Cat.Form == 'continuous'
     )
 strategylist0 = ifquickrun()
 

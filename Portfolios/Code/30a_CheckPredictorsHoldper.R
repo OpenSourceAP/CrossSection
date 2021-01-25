@@ -18,7 +18,7 @@ source('setup_crspm.r')
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-# 2021 01 I took out the holdper == 1 requirement and added likely predictors
+# 2021 01 I took out the portperiod == 1 requirement and added likely predictors
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')
 strategylist0 = ifquickrun()
 
@@ -27,28 +27,25 @@ strategylist0 = ifquickrun()
 ######################################################################
 
 
-## # debug
-source('00_SettingsAndFunctions.R')
-
 holdperlist = c(1,3,6,12)
 ## holdperlist = c(3)
 
 for (i in seq(1,length(holdperlist))){
     print(paste0(
-        'Running holdper = '
+        'Running portperiod = '
       , holdperlist[i]
       , ' ======================================='))
 
     ls_curr = loop_over_strategies(
-        strategylist0 %>% mutate(holdper = holdperlist[i])
+        strategylist0 %>% mutate(portperiod = holdperlist[i])
     ) %>%
-        filter(port == 'LS') %>%
-        select(signalname, date, ret, Nstocks)
+        filter(port == 'LS') 
 
     checkport(ls_curr,c('signalname'))
 
     writestandard(
-        ls_curr
+        ls_curr %>%
+        select(signalname, date, ret, Nlong, Nshort)
       , pathDataPortfolios
       , paste0('CheckPredictorLS_HoldPer_', holdperlist[i], '.csv')
     )

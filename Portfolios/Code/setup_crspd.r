@@ -39,7 +39,7 @@ crspret = crspd %>% select(permno, date, yyyymm, ret) %>%
     arrange(permno, yyyymm)
 
 gc()
-crspinfo = crspm %>%  select(permno, yyyymm, prc, exchcd,me) %>%
+crspinfo = crspm %>%  select(permno, yyyymm, prc, exchcd, me, shrcd) %>%
     arrange(permno, yyyymm)
 
 rm(crspd,crspm)

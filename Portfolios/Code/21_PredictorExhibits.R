@@ -259,7 +259,7 @@ df = df %>%
 
 # Replication success by data category (for baseline ones)
 labelData = df %>% 
-  filter(Cat.Predictor == '1_clear', Cat.Variant == '1_original') %>% 
+  filter(Cat.Signal == 'Predictor') %>% 
   group_by(Cat.Data) %>%
   summarise(rate = mean(success),
             n = n()) %>% 
@@ -267,7 +267,7 @@ labelData = df %>%
   ungroup()
 
 df %>%
-  filter(Cat.Predictor == '1_clear', Cat.Variant == '1_original') %>% 
+  filter(Cat.Signal == 'Predictor') %>% 
   group_by(Cat.Data, success) %>%
   count() %>% 
   ggplot(aes(x = Cat.Data %>% fct_rev() %>% relevel('Other'), y = n, 
@@ -288,7 +288,7 @@ ggsave(filename = paste0(pathResults, 'fig2b_reprate_data.png'), width = 10, hei
 
 # Alternatively: Jitter plot
 df %>%
-  filter(Cat.Predictor == '1_clear', Cat.Variant == '1_original') %>% 
+  filter(Cat.Signal == 'Predictor') %>% 
   transmute(Cat.Data, success, tstat = abs(tstat)) %>% 
   ggplot(aes(x = Cat.Data %>% fct_rev() %>% relevel('Other'), 
              y = tstat)) +
@@ -311,7 +311,7 @@ basicInfo = read_xlsx(
   path = paste0(pathProject, 'SignalDocumentation.xlsx')
   , sheet ='BasicInfo'
 ) %>% 
-  filter(Cat.Predictor != '9_drop')
+  filter(Cat.Signal != 'Drop')
 
 stats =  read_xlsx(
     path = paste0(pathDataPortfolios, 'PredictorSummary.xlsx')
@@ -319,10 +319,11 @@ stats =  read_xlsx(
 
 
 # Merge data
-df_merge = basicInfo %>% 
+# alldocumentation is created in 00_SettingsAndFunctions.R
+df_merge = alldocumentation %>% 
   left_join(stats %>% 
               select(signalname, tstat, rbar),
-            by = c('Acronym' = 'signalname')) %>% 
+            by = c('signalname')) %>% 
   transmute(Authors, 
             Year = as.integer(Year), 
             Predictor = LongDescription, 
@@ -330,19 +331,22 @@ df_merge = basicInfo %>%
             `Sample End` = as.integer(SampleEndYear),
             `Mean Return` = round(rbar, digits = 2),
             `t-stat` = round(tstat, digits = 2),
-            Category = Cat.Predictor %>% 
-              factor(levels = c('4_not', '3_maybe', '2_likely', '1_clear'),
-                     labels = c('not', 'maybe', 'likely', 'clear')),
-            Variant = Cat.Variant %>% 
-              factor(levels = c('1_original', '2_lag', '2_quarterly', '2_risk_model'),
-                     labels = c('Original', 'Lag structure', 'Quarterly', 'Risk Model'))) %>% 
+            Cat.Signal,
+            Category = `Predictability in OP` %>% 
+              factor(
+                  levels = c('no_evidence','4_not', '3_maybe', '2_likely', '1_clear'),
+
+                  labels = c('no evidence','not', 'maybe', 'likely', 'clear'))            
+            ) %>% 
   arrange(Authors, Year)
+
+        
 
 
 # Create Latex output table 1: Clear predictors
 outputtable1 = xtable(df_merge %>% 
-                        filter(Category == 'clear', Variant == 'Original') %>% 
-                        select(-Category, -Variant)
+                        filter(Category == 'clear', Cat.Signal == 'Predictor') %>% 
+                        select(-Category, -Cat.Signal)
 )
 
 
@@ -356,8 +360,8 @@ print(outputtable1,
 
 # Create Latex output table 1: Likely predictors
 outputtable1 = xtable(df_merge %>% 
-                        filter(Category == 'likely', Variant == 'Original') %>% 
-                        select(-Category, -Variant)
+                        filter(Category == 'likely', Cat.Signal == 'Predictor') %>% 
+                        select(-Category, -Cat.Signal)
 )
 
 

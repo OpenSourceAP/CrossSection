@@ -18,14 +18,14 @@ source('setup_crspm.r')
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-# 2021 01 I took out the holdper == 1 requirement and added likely predictors
+# 2021 01 I took out the portperiod == 1 requirement and added likely predictors
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Placebo')
 strategylist0 = ifquickrun()
 
 #####################################################################
 ### COMPUTE PORTFOLIOS
 #####################################################################
-source('00_SettingsAndFunctions.R')
+
 portmonth = loop_over_strategies(strategylist0)
 
 ## EXPORT

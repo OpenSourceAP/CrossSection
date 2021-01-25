@@ -81,7 +81,7 @@ checkport(port)
 ## FORCE DECILES AND VW
 print ('50_DailyPredictorPorts.R: predictor force decile and VW strats')
 port = loop_over_strategies(
-    strategylist1 %>% mutate(q_cut = 0.1, weight_me = 1)
+    strategylist1 %>% mutate(q_cut = 0.1, sweight = 'VW')
   , saveportcsv = T
   , saveportpath = pathDataDailyDecileVW
   , saveportNmin = 20        
