@@ -33,6 +33,7 @@ wrds <- dbConnect(Postgres(),
 
 
 # CRSP monthly ------------------------------------------------------------
+numRowsToPull = -1  # Set to -1 for all rows and to some positive value for testing
 
 # Follows in part: https://wrds-www.wharton.upenn.edu/pages/support/research-wrds/macros/wrds-macro-crspmerge/
 

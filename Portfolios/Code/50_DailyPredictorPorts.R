@@ -11,7 +11,7 @@ tryCatch(
   }
 )
 
-source('setup_crspd.r', echo = T) # this is different for daily!
+source(paste0(pathProject, "Portfolios/Code/setup_crspd.r"), echo = T) # this is different for daily!
 
 
 ######################################################################
@@ -33,7 +33,6 @@ dir.create(pathDataDailyDecileVW)
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-source('00_SettingsAndFunctions.R')
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')
 strategylist0 = ifquickrun()
 

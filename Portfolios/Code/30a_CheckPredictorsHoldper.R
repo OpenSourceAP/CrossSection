@@ -2,53 +2,52 @@
 # takes about 2 hours, but outputs data every 30 min
 # Andrew Chen 2020 01
 
-rm(list=ls())
+rm(list = ls())
 
 ### ENVIRONMENT AND DATA ###
 
-tryCatch(        
-    source('00_SettingsAndFunctions.R')
-  , error = function(cond){
-      message('Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/')          
+tryCatch(
+  source("00_SettingsAndFunctions.R"),
+  error = function(cond) {
+    message("Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
 
-source('setup_crspm.r')
+source(paste0(pathProject, "Portfolios/Code/setup_crspm.r"), echo = T)
 
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-# 2021 01 I took out the portperiod == 1 requirement and added likely predictors
-strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')
-strategylist0 = ifquickrun()
+strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Predictor")
+strategylist0 <- ifquickrun()
+
 
 ######################################################################
 ### BASE LS PERFORMANCE BY HOLDING PERIOD
 ######################################################################
 
 
-holdperlist = c(1,3,6,12)
+holdperlist <- c(1, 3, 6, 12)
 ## holdperlist = c(3)
 
-for (i in seq(1,length(holdperlist))){
-    print(paste0(
-        'Running portperiod = '
-      , holdperlist[i]
-      , ' ======================================='))
+for (i in seq(1, length(holdperlist))) {
+  print(paste0(
+    "Running portperiod = ",
+    holdperlist[i],
+    " ======================================="
+  ))
 
-    ls_curr = loop_over_strategies(
-        strategylist0 %>% mutate(portperiod = holdperlist[i])
-    ) %>%
-        filter(port == 'LS') 
+  ls_curr <- loop_over_strategies(
+    strategylist0 %>% mutate(portperiod = holdperlist[i])
+  ) %>%
+    filter(port == "LS")
 
-    checkport(ls_curr,c('signalname'))
+  checkport(ls_curr, c("signalname"))
 
-    writestandard(
-        ls_curr %>%
-        select(signalname, date, ret, Nlong, Nshort)
-      , pathDataPortfolios
-      , paste0('CheckPredictorLS_HoldPer_', holdperlist[i], '.csv')
-    )
-    
+  writestandard(
+    ls_curr %>%
+      select(signalname, date, ret, Nlong, Nshort),
+    pathDataPortfolios,
+    paste0("CheckPredictorLS_HoldPer_", holdperlist[i], ".csv")
+  )
 } # for i
-

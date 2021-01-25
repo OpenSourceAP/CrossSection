@@ -1,6 +1,6 @@
 #### GLOBAL SETTINGS
 
-quickrun =  F # use T if you want to run quickly for testing
+quickrun =  T # use T if you want to run quickly for testing
 quickrunlist = c('DivOmit','realestate','nanalyst')
 feed.verbose = T # use T if you want lots of feedback
 
@@ -8,7 +8,9 @@ options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
 
-pathProject = '/cm/chen/anomalies.com/cfr1/'
+#pathProject = '/cm/chen/anomalies.com/cfr1/'
+pathProject = paste0(getwd(), '/')
+
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
 pathCRSPPredictors = paste0(pathProject, 'Signals/Data/CRSPPredictors/')
@@ -21,6 +23,9 @@ pathDataSummary = paste0(pathProject, 'Portfolios/Data/Summary/')
 
 pathResults = paste0(pathProject, 'Results/')
 
+# Create folders if they don't exist
+dir.create(pathResults)
+dir.create(paste0(pathProject, 'Portfolios/Data'))
 dir.create(paste0(pathDataPortfolios))
 dir.create(paste0(pathDataIntermediate))
 dir.create(paste0(pathCRSPPredictors))
@@ -434,6 +439,7 @@ loop_over_strategies = function(
     # http://adv-r.had.co.nz/memory.html
     allport = list()
     for (i in seq(1,Nstrat)){
+      
         print(paste0(i,'/',Nstrat,': ',strategylist$signalname[i]))
         strategylist[
             i

@@ -18,8 +18,7 @@ temp = crsp %>%
     filter(!is.na(Mom1m)) %>%
     select(permno, yyyymm, Mom1m)
     
-write.csv(temp, paste0(pathCRSPPredictors, 'Mom1m.csv'),row.names=F,quote=F)
-
+write_csv(temp, paste0(pathCRSPPredictors, 'Mom1m.csv'))
 
 ### MAKE Price
 temp = crsp %>%
@@ -31,8 +30,7 @@ temp = crsp %>%
     filter(!is.na(Price)) %>%
     select(permno, yyyymm, Price)
     
-write.csv(temp, paste0(pathCRSPPredictors, 'Price.csv'),row.names=F,quote=F)
-
+write_csv(temp, paste0(pathCRSPPredictors, 'Price.csv'))
 
 ### MAKE Size
 # in daily data, I think you want cfacprc to be safe
@@ -46,7 +44,6 @@ temp = crsp %>%
     filter(!is.na(Size)) %>%
     select(permno, yyyymm, Size)
     
-write.csv(temp, paste0(pathCRSPPredictors, 'Size.csv'),row.names=F,quote=F)
-
+write_csv(temp, paste0(pathCRSPPredictors, 'Size.csv'))
 
 

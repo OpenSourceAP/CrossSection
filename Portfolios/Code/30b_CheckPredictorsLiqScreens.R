@@ -2,95 +2,92 @@
 # takes about 2 hours, but outputs data every 30 min
 # Andrew Chen 2020 01
 
-rm(list=ls())
+rm(list = ls())
 
 ### ENVIRONMENT AND DATA ###
 
-tryCatch(        
-    source('00_SettingsAndFunctions.R')
-  , error = function(cond){
-      message('Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/')          
+tryCatch(
+  source("00_SettingsAndFunctions.R"),
+  error = function(cond) {
+    message("Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
 
-source('setup_crspm.r', echo = T)
+source(paste0(pathProject, "Portfolios/Code/setup_crspm.r"), echo = T)
 
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
 # 2021 01 I took out the portperiod == 1 requirement and added likely predictors
-strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')
-strategylist0 = ifquickrun()
+strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Predictor")
+strategylist0 <- ifquickrun()
 
 #####################################################################
 ### BASE LS PERFORMANCE BY LIQUIDITY SCREEN
 #####################################################################
 
-print('CheckLiq: ME > NYSE 20 pct =========================================')
+print("CheckLiq: ME > NYSE 20 pct =========================================")
 
 ## ME > NYSE 20th pct
 # create ME screen
 # customscreen is used on the signal df, which is then lagged, so no look ahead here
-ls = loop_over_strategies(
-    strategylist0 %>% mutate(filterstr = 'me > me_nyse20')
-)  %>%
-    filter(port == 'LS') 
+ls <- loop_over_strategies(
+  strategylist0 %>% mutate(filterstr = "me > me_nyse20")
+) %>%
+  filter(port == "LS")
 
-checkport(ls,c('signalname'))
+checkport(ls, c("signalname"))
 
 writestandard(
-    ls %>%
-    select(signalname, date, ret, Nlong, Nshort)
-  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_ME_gt_NYSE20pct.csv'
+  ls %>%
+    select(signalname, date, ret, Nlong, Nshort),
+  pathDataPortfolios, "CheckPredictorLS_LiqScreen_ME_gt_NYSE20pct.csv"
 )
 
 
 ## Price > 5
-print('CheckLiq: Price > 5  =========================================')
-ls = loop_over_strategies(
-    strategylist0 %>% mutate(filterstr = 'abs(prc) > 5')
-)  %>%
-    filter(port == 'LS')
+print("CheckLiq: Price > 5  =========================================")
+ls <- loop_over_strategies(
+  strategylist0 %>% mutate(filterstr = "abs(prc) > 5")
+) %>%
+  filter(port == "LS")
 
 writestandard(
-    ls %>%
-    select(signalname, date, ret, Nlong, Nshort)
-  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_Price_gt_5.csv'
+  ls %>%
+    select(signalname, date, ret, Nlong, Nshort),
+  pathDataPortfolios, "CheckPredictorLS_LiqScreen_Price_gt_5.csv"
 )
-
 
 
 ## NYSE only
 
-print('CheckLiq: NYSE only =========================================')
-ls = loop_over_strategies(
-    strategylist0 %>% mutate(filterstr = 'exchcd==1')
-)  %>%
-    filter(port == 'LS')
+print("CheckLiq: NYSE only =========================================")
+ls <- loop_over_strategies(
+  strategylist0 %>% mutate(filterstr = "exchcd==1")
+) %>%
+  filter(port == "LS")
 
-checkport(ls,c('signalname'))
+checkport(ls, c("signalname"))
 
 writestandard(
-    ls %>%
-    select(signalname, date, ret, Nlong, Nshort)
-  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_NYSEonly.csv'
+  ls %>%
+    select(signalname, date, ret, Nlong, Nshort),
+  pathDataPortfolios, "CheckPredictorLS_LiqScreen_NYSEonly.csv"
 )
 
 
 
 ## VW
-print('CheckLiq: VW force =========================================')
-ls = loop_over_strategies(
-    strategylist0 %>% mutate(sweight = 'VW')
-)  %>%
-    filter(port == 'LS')
+print("CheckLiq: VW force =========================================")
+ls <- loop_over_strategies(
+  strategylist0 %>% mutate(sweight = "VW")
+) %>%
+  filter(port == "LS")
 
-checkport(ls,c('signalname'))
+checkport(ls, c("signalname"))
 
 writestandard(
-    ls  %>%
-    select(signalname, date, ret, Nlong, Nshort)
-  , pathDataPortfolios, 'CheckPredictorLS_LiqScreen_VWforce.csv'
+  ls %>%
+    select(signalname, date, ret, Nlong, Nshort),
+  pathDataPortfolios, "CheckPredictorLS_LiqScreen_VWforce.csv"
 )
-
-

@@ -2,54 +2,52 @@
 # Andrew Chen 2020 01
 
 
-rm(list=ls())
+rm(list = ls())
 
 ### ENVIRONMENT AND DATA ###
 
-tryCatch(        
-    source('00_SettingsAndFunctions.R')
-  , error = function(cond){
-      message('Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/')          
+tryCatch(
+  source("00_SettingsAndFunctions.R"),
+  error = function(cond) {
+    message("Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
 
-source('setup_crspm.r')
+source(paste0(pathProject, "Portfolios/Code/setup_crspm.r"), echo = T)
 
 ######################################################################
 ### SELECT SIGNALS
 ######################################################################
-# 2021 01 I took out the portperiod == 1 requirement and added likely predictors
-strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Placebo')
-strategylist0 = ifquickrun()
+strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Placebo")
+strategylist0 <- ifquickrun()
 
 #####################################################################
 ### COMPUTE PORTFOLIOS
 #####################################################################
 
-portmonth = loop_over_strategies(strategylist0)
+portmonth <- loop_over_strategies(strategylist0[79:111, ])
 
 ## EXPORT
 writestandard(
-    portmonth
-   , pathDataPortfolios
-  , 'PlaceboPortsFull.csv'
+  portmonth,
+  pathDataPortfolios,
+  "PlaceboPortsFull.csv"
 )
 
 
 # FEEDBACK ON ERRORS -------------------------------------------------
 
-tempsum = sumportmonth(
-    portmonth, groupme = c('signalname','port','samptype'), Nstocksmin = 20
+tempsum <- sumportmonth(
+  portmonth,
+  groupme = c("signalname", "port", "samptype"), Nstocksmin = 20
 )
 
-print('The following ports are computed succesfully')
+print("The following ports are computed succesfully")
 print(
-    tempsum %>% filter(port=='LS',samptype=='insamp') %>% arrange(tstat) %>% as.data.frame
+  tempsum %>% filter(port == "LS", samptype == "insamp") %>% arrange(tstat) %>% as.data.frame()
 )
 
-print('The following ports failed to compute')
+print("The following ports failed to compute")
 print(
-    tempsum %>% filter(is.na(port)) %>% arrange(tstat) %>% as.data.frame
+  tempsum %>% filter(is.na(port)) %>% arrange(tstat) %>% as.data.frame()
 )
-
-
