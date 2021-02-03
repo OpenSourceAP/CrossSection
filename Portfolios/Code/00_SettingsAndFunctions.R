@@ -283,7 +283,7 @@ signalname_to_longports <- function(
 
   ## sign the portfolios
   if (Sign == -1) {
-    temp1$port <- max(temp1$port) + 1 - temp1$port
+    temp1$port <- max(temp1$port, na.rm = TRUE) + 1 - temp1$port
   }
 
   signal <- temp1 %>% select(-starts_with("break"))
@@ -737,4 +737,55 @@ ifquickrun <- function() {
       )
   }
   return(strategylist0)
+}
+
+
+### FUNCTION checking which signals have been created
+
+checkSignals = function(docs = alldocumentation, pathProj = pathProject) {
+
+  # Classification in SignalDocumentation  
+  prdsPredictor = alldocumentation %>% 
+    filter(Cat.Signal == 'Predictor') %>% 
+    pull(signalname)
+  
+  prdsPlacebo = alldocumentation %>% 
+    filter(Cat.Signal == 'Placebo') %>% 
+    pull(signalname)
+
+  # Created signals
+  flsPredictors = list.files(paste0(pathProj, 'Signals/Data/Predictors/'))
+  flsPlacebos = list.files(paste0(pathProj, 'Signals/Data/Placebos/'))
+
+  # Predictor in Data/Predictor?
+  predNotInData = c()
+  for (p in prdsPredictor) {
+    if (sum(grepl(p, flsPredictors, ignore.case = TRUE)) ==0) {
+      predNotInData = c(predNotInData, p)
+    }
+  }
+  
+  # Placebo in Data/Placebo?
+  placeboNotInData = c()
+  for (p in prdsPlacebo) {
+    if (sum(grepl(p, flsPlacebos, ignore.case = TRUE)) ==0) {
+      placeboNotInData = c(placeboNotInData, p)
+    }
+  }
+  
+  # Output warnings
+  if (!is.null(predNotInData)) {
+    message('The following Predictors in SignalDocumentation have not been created in Data/Predictors:')
+    print(predNotInData)
+  }
+  
+  if (!is.null(placeboNotInData)) {
+    message('The following Placebos in SignalDocumentation have not been created in Data/Placebos:')
+    print(placeboNotInData)
+  }
+  
+  if (is.null(predNotInData) & is.null(placeboNotInData)) {
+    message('All predictors and placebos were created.')
+  }
+  
 }
