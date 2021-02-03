@@ -5,14 +5,13 @@ rm(list = ls())
 options(stringsAsFactors = FALSE)
 options(scipen = 999)
 optFontsize <- 20 # Fix fontsize for graphs here
-# optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
-optFontFamily <- "" # works with linux command line
+optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
+#optFontFamily <- "" # works with linux command line
 library(extrafont)
 loadfonts()
 
-library(data.table)
 library(tidyverse)
-library(readxl) # readxl is much faster and cleaner than read.xlsx
+library(readxl)
 library(lubridate)
 library(xtable)
 options(xtable.floating = FALSE)
@@ -32,24 +31,13 @@ if (sysinfo[1] == "Linux") {
 }
 
 
-# Figure 1 (Port): Correlations (Portfolio level) -------------------------
 
-## import baseline returns
-# 2021 01 ac: now portbase is only clear / likely original
-retwide <- fread(paste0(pathDataPortfolios, "PredictorLSretWide.csv")) %>%
-  as_tibble() %>%
-  mutate(
-    date = as.Date(
-      paste0(substr(date, 1, 8), "28")
-    )
-  )
-
-## Import factor returns
+# Import factor returns from Kenneth French's website ---------------------
 
 # FF 5 factors
 download.file("http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip",
-  destfile = paste0(pathDataIntermediate, "temp.zip"),
-  method = dlmethod
+              destfile = paste0(pathDataIntermediate, "temp.zip"),
+              method = dlmethod
 )
 
 # incovenenient setwd because of a peculiarity of unzip(), see
@@ -60,43 +48,53 @@ setwd(pathCode)
 
 # Momentum (FF style)
 download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip",
-  destfile = paste0(pathDataIntermediate, "temp.zip"),
-  method = dlmethod
+              destfile = paste0(pathDataIntermediate, "temp.zip"),
+              method = dlmethod
 )
+
 setwd(pathDataIntermediate)
 unzip("temp.zip")
 setwd(pathCode)
 
 # join
-tempa <- read_csv(
+ff <- read_csv(
   paste0(pathDataIntermediate, "F-F_Research_Data_5_Factors_2x3.CSV"),
-  skip = 3
-) %>%
+  skip = 3) %>%
   mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>%
-    ymd()) %>%
+           ymd()) %>%
   filter(!is.na(date)) %>%
   mutate_at(
     .vars = vars(SMB, HML, RMW, CMA),
     .funs = list(as.numeric)
   ) %>%
-  select(-X1)
-
-tempb <- read_csv(
-  paste0(pathDataIntermediate, "F-F_Momentum_Factor.CSV"),
-  skip = 13
-) %>%
-  mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>%
-    ymd()) %>%
-  filter(!is.na(date)) %>%
-  mutate_at(
-    .vars = vars(Mom),
-    .funs = list(as.numeric)
-  ) %>%
-  select(-X1)
-
-ff <- full_join(tempa, tempb, by = "date") %>%
+  select(-X1) %>% 
+  full_join(
+    read_csv(
+      paste0(pathDataIntermediate, "F-F_Momentum_Factor.CSV"),
+      skip = 13
+    ) %>%
+      mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>%
+               ymd()) %>%
+      filter(!is.na(date)) %>%
+      mutate_at(
+        .vars = vars(Mom),
+        .funs = list(as.numeric)
+      ) %>%
+      select(-X1)
+  ) %>% 
   select(date, SMB, HML, RMW, CMA, Mom) %>% 
   arrange(date)
+
+
+# Figure 1 (Port): Correlations (Portfolio level) -------------------------
+
+## import baseline returns (clear/likely)
+retwide <- read_csv(paste0(pathDataPortfolios, "PredictorLSretWide.csv")) %>%
+  mutate(
+    date = as.Date(
+      paste0(substr(date, 1, 8), "28")
+    )
+  )
 
 # Fig 1a: Pairwise correlation of strategy returns
 temp <- cor(retwide %>% select(-date),
@@ -128,7 +126,8 @@ tempRets <- retwide %>%
   inner_join(ff %>%
     select(date, SMB))
 
-temp <- cor(tempRets %>% select(-date, -SMB),
+temp <- cor(
+  tempRets %>% select(-date, -SMB),
   tempRets %>% select(SMB),
   use = "pairwise.complete.obs"
 )
@@ -156,7 +155,8 @@ tempRets <- retwide %>%
   inner_join(ff %>%
     select(date, HML))
 
-temp <- cor(tempRets %>% select(-date, -HML),
+temp <- cor(
+  tempRets %>% select(-date, -HML),
   tempRets %>% select(HML),
   use = "pairwise.complete.obs"
 )
@@ -184,7 +184,8 @@ tempRets <- retwide %>%
   inner_join(ff %>%
     select(date, Mom))
 
-temp <- cor(tempRets %>% select(-date, -Mom),
+temp <- cor(
+  tempRets %>% select(-date, -Mom),
   tempRets %>% select(Mom),
   use = "pairwise.complete.obs"
 )
@@ -211,7 +212,8 @@ tempRets <- retwide %>%
   inner_join(ff %>%
     select(date, RMW))
 
-temp <- cor(tempRets %>% select(-date, -RMW),
+temp <- cor(
+  tempRets %>% select(-date, -RMW),
   tempRets %>% select(RMW),
   use = "pairwise.complete.obs"
 )
@@ -238,7 +240,8 @@ tempRets <- retwide %>%
   inner_join(ff %>%
     select(date, CMA))
 
-temp <- cor(tempRets %>% select(-date, -CMA),
+temp <- cor(
+  tempRets %>% select(-date, -CMA),
   tempRets %>% select(CMA),
   use = "pairwise.complete.obs"
 )
@@ -280,6 +283,11 @@ ggsave(filename = paste0(pathResults, "fig1Port_jointly.png"), width = 10, heigh
 
 df <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx")) %>%
   mutate(success = 1 * (round(tstat, digits = 2) >= 1.96))
+
+# Check if predictor summary has in-sample returns only
+if (sum(df$samptype == 'insamp') != nrow(df)) {
+  message('Mixing different sample types below!!')
+}
 
 df_meta <- read_xlsx(
   path = paste0(pathProject, "SignalDocumentation.xlsx"),
@@ -356,9 +364,6 @@ df %>%
 ggsave(filename = paste0(pathResults, "fig2b_reprate_data_Jitter.png"), width = 10, height = 8)
 
 
-
-
-
 # Big summary table for paper ---------------------------------------------
 
 basicInfo <- read_xlsx(
@@ -375,7 +380,7 @@ stats <- read_xlsx(
 # Merge data
 # alldocumentation is created in 00_SettingsAndFunctions.R
 df_merge <- alldocumentation %>%
-  left_join(stats %>%
+  inner_join(stats %>%
     select(signalname, tstat, rbar),
   by = c("signalname")
   ) %>%
@@ -386,7 +391,7 @@ df_merge <- alldocumentation %>%
     `Sample End` = as.integer(SampleEndYear),
     `Mean Return` = round(rbar, digits = 2),
     `t-stat` = round(tstat, digits = 2),
-    Cat.Signal,
+#    Cat.Signal,
     Category = `Predictability in OP` %>%
       factor(
         levels = c("no_evidence", "4_not", "3_maybe", "2_likely", "1_clear"),
@@ -398,10 +403,10 @@ df_merge <- alldocumentation %>%
 
 
 
-# Create Latex output table 1: Clear predictors
+# Create Latex output table 1: Clear Predictors
 outputtable1 <- xtable(df_merge %>%
-  filter(Category == "clear", Cat.Signal == "Predictor") %>%
-  select(-Category, -Cat.Signal))
+  filter(Category == "clear") %>%
+  select(-Category))
 
 
 print(outputtable1,
@@ -414,8 +419,8 @@ print(outputtable1,
 
 # Create Latex output table 1: Likely predictors
 outputtable1 <- xtable(df_merge %>%
-  filter(Category == "likely", Cat.Signal == "Predictor") %>%
-  select(-Category, -Cat.Signal))
+  filter(Category == "likely") %>%
+  select(-Category))
 
 
 print(outputtable1,
