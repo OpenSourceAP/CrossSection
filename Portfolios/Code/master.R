@@ -19,18 +19,20 @@
 # I think it takes about 12 hours to run everything, and about 45 min to run up
 # to 20_PredictorPorts.R
 
-source('00_SettingsAndFunctions.R', echo=T)
-
-## print('master: 10_DownloadCRSP.R')
-## tryCatch({
-##     source('10_DownloadCRSP.R', echo=T) 
-## })
+source('00_SettingsAndTools.R', echo=T)
+source('01_PortfolioFunction.R', echo=T)
 
 
-## print('master: 11_CreateCRSPPredictors.R')
-## tryCatch({
-##     source('11_CreateCRSPPredictors.R', echo=T) 
-## })
+print('master: 10_DownloadCRSP.R')
+tryCatch({
+    source('10_DownloadCRSP.R', echo=T) 
+})
+
+
+print('master: 11_CreateCRSPPredictors.R')
+tryCatch({
+    source('11_CreateCRSPPredictors.R', echo=T) 
+})
 
 
 ## # this is incomplete 2021 01 17 AC
@@ -46,13 +48,13 @@ tryCatch({
 })
 
 
-# update me
-print('master: 21_PredictorExhibits.R')
-if (quickrun==F){
-    tryCatch({
-        source('21_PredictorExhibits.R', echo=T)
-    })
-}
+## # update me
+## print('master: 21_PredictorExhibits.R')
+## if (quickrun==F){
+##     tryCatch({
+##         source('21_PredictorExhibits.R', echo=T)
+##     })
+## }
 
 print('master: 30a_CheckPredictorsHoldper.R')
 tryCatch({
@@ -69,12 +71,12 @@ tryCatch({
     source('30c_CheckPredictorsDeciles.R', echo=T) # 30 min
 })
 
-if (quickrun==F){
-    print('31_CheckPredictorsExhibits.R')
-    tryCatch({
-        source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
-    })
-}
+## if (quickrun==F){
+##     print('31_CheckPredictorsExhibits.R')
+##     tryCatch({
+##         source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
+##     })
+## }
 
 print('master: 40 40_PlaceboPorts.R')
 tryCatch({

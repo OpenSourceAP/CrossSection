@@ -11,7 +11,7 @@
 ##                     password=rstudioapi::askForPassword("Database password"),
 ##                     sslmode='require')
 
-source('00_SettingsAndFunctions.R')
+
 
 ## EMACS ESS WORKAROUND
 # hopefully this works in Rstudio...

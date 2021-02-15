@@ -1,6 +1,6 @@
 # creates predictors that are simple transformation of CRSP data
 
-source('00_SettingsAndFunctions.R')
+
 
 
 ### READ DATA

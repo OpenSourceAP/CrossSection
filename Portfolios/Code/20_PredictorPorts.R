@@ -5,7 +5,13 @@ rm(list = ls())
 
 ### ENVIRONMENT AND DATA ###
 
-source("00_SettingsAndFunctions.R", echo = T)
+tryCatch(
+  source("00_SettingsAndTools.R"),
+  error = function(cond) {
+    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
+  }
+)
+source('01_PortfolioFunction.R')
 
 source(paste0(pathProject, "Portfolios/Code/setup_crspm.r"), echo = T)
 
@@ -83,5 +89,6 @@ print(
 
 print("The following ports failed to compute")
 print(
-  sumbase %>% filter(is.na(port)) %>% arrange(tstat) %>% as.data.frame()
+  sumbase %>% filter(is.na(port)) %>% arrange(tstat) %>% as.data.frame() %>%
+  select(signalname,port)
 )

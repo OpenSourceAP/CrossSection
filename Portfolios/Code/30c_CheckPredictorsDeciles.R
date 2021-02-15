@@ -5,13 +5,15 @@ rm(list = ls())
 ### ENVIRONMENT AND DATA ###
 
 tryCatch(
-  source("00_SettingsAndFunctions.R"),
+  source("00_SettingsAndTools.R"),
   error = function(cond) {
-    message("Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/")
+    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
+source('01_PortfolioFunction.R')
 
 source(paste0(pathProject, "Portfolios/Code/setup_crspm.r"), echo = T)
+
 
 ######################################################################
 ### SELECT SIGNALS
