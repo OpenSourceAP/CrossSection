@@ -588,7 +588,7 @@ sumportmonth <- function(
   # summarize
   tempsum <- temp %>%
     mutate(
-      Ncheck = if_else(port != "LS", Nlong, as.integer(pmin(Nlong, Nshort)))
+      Ncheck = if_else(port != "LS", as.integer(Nlong), as.integer(pmin(Nlong, Nshort)))
     ) %>%
     filter(
       (Ncheck >= Nstocksmin)

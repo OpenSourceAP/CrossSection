@@ -364,6 +364,60 @@ df %>%
 ggsave(filename = paste0(pathResults, "fig2b_reprate_data_Jitter.png"), width = 10, height = 8)
 
 
+# Scatter of replication t-stat vs OP t-stat ------------------------------
+
+df <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx")) %>%
+  transmute(signalname, 
+            tstatRep = abs(tstat), 
+            tstatOP = abs(as.numeric(`T-Stat`)),
+            PredictabilityOP = `Predictability in OP`,
+            ReplicationType = `Replication Type`,
+            OPTest = `Test in OP`)
+
+
+df_plot = df %>% 
+  filter(PredictabilityOP == '1_clear', ReplicationType == '1_good') %>%
+  filter(!is.na(OPTest)) %>% 
+  mutate(grouper = case_when(
+    grepl('port sort', OPTest, ignore.case = TRUE) ~ 'Portfolio sort',
+    grepl('event', OPTest, ignore.case = TRUE)     ~ 'Event Study',
+    grepl('LS', OPTest, ignore.case = FALSE)        ~ 'Portfolio sort',
+    grepl('reg', OPTest, ignore.case = TRUE)       ~ 'Regression',
+    TRUE ~ 'Other'
+  )) %>% 
+  filter(grouper == 'Portfolio sort') 
+
+reg = lm(tstatRep ~ tstatOP, data = df_plot) %>% summary()
+
+df_plot %>% 
+  ggplot(aes(y = tstatRep, x = tstatOP, label=signalname)) +
+  # ggplot(aes(x = tstatRep, y = tstatOP, label=signalname, group = grouper, color = grouper)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(y = 't-stat reproduction', x = 't-stat original study', 
+       title = paste0('y = ', round(reg$coefficients[1], 2), ' + ', round(reg$coefficients[2], 2), ' * x, R2 = ', round(100*reg$r.squared, 2), '%')) +
+  geom_abline(intercept = 0, slope = 1) +
+  ggrepel::geom_text_repel() +
+  coord_cartesian(xlim = c(0, 14), ylim = c(0, 14)) +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
+
+ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP_Labels.png"), width = 10, height = 8)
+
+
+df_plot %>% 
+  ggplot(aes(y = tstatRep, x = tstatOP, label=signalname)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(y = 't-stat reproduction', x = 't-stat original study', 
+       title = paste0('y = ', round(reg$coefficients[1], 2), ' + ', round(reg$coefficients[2], 2), ' * x, R2 = ', round(100*reg$r.squared, 2), '%')) +
+  geom_abline(intercept = 0, slope = 1) +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
+
+ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP.png"), width = 10, height = 8)
+
+
+
+
 # Big summary table for paper ---------------------------------------------
 
 basicInfo <- read_xlsx(

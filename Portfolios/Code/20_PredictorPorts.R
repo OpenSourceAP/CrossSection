@@ -47,7 +47,7 @@ writestandard(
 
 sumbase <- sumportmonth(
   port,
-  groupme = c("signalname", "port", "samptype"), Nstocksmin = 20
+  groupme = c("signalname", "port", "samptype"), Nstocksmin = 1
 ) %>%
   left_join(
     strategylist0 %>%
