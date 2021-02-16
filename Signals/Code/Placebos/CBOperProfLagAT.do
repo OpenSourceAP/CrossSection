@@ -1,4 +1,4 @@
-* CBOperProf
+* CBOperProfLagAT
 * --------------
 
 // DATA LOAD
@@ -11,15 +11,15 @@ foreach v of varlist revt cogs xsga xrd rect invt xpp drc drlt ap xacc {
 	replace `v' = 0 if mi(`v')
 }
 
-gen CBOperProf = (revt - cogs - (xsga - xrd)) - ///
+gen CBOperProfLagAT = (revt - cogs - (xsga - xrd)) - ///
 	(rect - l12.rect) - (invt - l12.invt) - (xpp - l12.xpp) + ///
 	(drc + drlt - l12.drc - l12.drlt) + (ap - l12.ap) + (xacc - l12.xacc)
-replace CBOperProf = CBOperProf/l12.at
+replace CBOperProfLagAT = CBOperProfLagAT/l12.at
 
 gen BM 		=	log(ceq/mve_c)
-replace CBOperProf = . if shrcd > 11 | mi(mve_c) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
+replace CBOperProfLagAT = . if shrcd > 11 | mi(mve_c) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
 
-label var CBOperProf "Cash-based Operating Profitability"
+label var CBOperProfLagAT "Cash-based Operating Profitability"
 
 // SAVE
-do "$pathCode/saveplacebo" CBOperProf
+do "$pathCode/saveplacebo" CBOperProfLagAT

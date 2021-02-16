@@ -11,10 +11,12 @@ restore
 drop if mi(ticker)
 merge m:1 ticker time_avail_m using "$pathDataIntermediate/GovIndex", keep(master match) nogenerate
 append using "$pathtemp/temp"
+
 // SIGNAL CONSTRUCTION
-gen G_Binary = .
-replace G_Binary = 1 if G <=5
-replace G_Binary = 0 if G >=14 & !mi(G)
-label var G_Binary "Governance Index"
+gen Governance = G
+replace Governance = 5 if G <=5
+replace Governance = 14 if G >=14 & !mi(G)
+label var Governance "Governance Index"
+
 // SAVE
-do "$pathCode/savepredictor" G_Binary
+do "$pathCode/savepredictor" Governance

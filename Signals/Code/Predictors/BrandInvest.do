@@ -3,7 +3,7 @@
 * --------------
 
 // DATA LOAD
-use gvkey permno time_avail_m fyear datadate xad xad0 at using "$pathDataIntermediate/a_aCompustat", clear
+use gvkey permno time_avail_m fyear datadate xad xad0 at sic using "$pathDataIntermediate/a_aCompustat", clear
 
 // SIGNAL CONSTRUCTION
 xtset gvkey fyear
@@ -26,10 +26,15 @@ replace BrandCapital = BrandCapital/at
 
 drop OK temp* FirstNM
 
-
 * Brand investment
 gen BrandInvest = xad0/l.BrandCapital
 label var BrandInvest "Brand investment rate"
+
+* filter (OP page 4)
+destring sic, replace
+drop if sic >= 4900 & sic <= 4999
+drop if sic >= 6000 & sic <= 6999
+keep if month(datadate) == 12
 
 * Expand to monthly
 gen temp = 12

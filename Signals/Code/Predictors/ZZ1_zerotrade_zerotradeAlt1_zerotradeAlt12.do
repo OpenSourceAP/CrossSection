@@ -1,6 +1,7 @@
 * --------
 // DATA LOAD
 use "$pathDataIntermediate/dailyCRSP.dta", clear
+
 // SIGNAL CONSTRUCTION
 gen time_avail_m = mofd(time_d)
 format time_avail_m %tm

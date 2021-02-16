@@ -11,9 +11,11 @@ restore
 drop if mi(ticker)
 merge m:1 ticker time_avail_m using "$pathDataIntermediate/OptionMetrics", keep(master match) nogenerate
 append using "$pathtemp/temp"
+
 // SIGNAL CONSTRUCTION
-* Construction is done in R1_OptionMetrics.R
+* Construction is done in PrepScripts/R1_OptionMetrics.R
 rename slope SmileSlope 
 label var SmileSlope "Average Jump Size"
+
 // SAVE
 do "$pathCode/savepredictor" SmileSlope

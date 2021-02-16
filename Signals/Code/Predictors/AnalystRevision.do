@@ -10,11 +10,13 @@ save "$pathtemp/temp", replace
 use permno tickerIBES time_avail_m using "$pathDataIntermediate/SignalMasterTable", clear
 merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate 
 
+
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
-gen DownForecast = (meanest < l.meanest)
-replace DownForecast = . if mi(meanest) | mi(l.meanest)
-label var DownForecast "Down Forecast EPS"
+gen AnalystRevision = meanest/l.meanest
+label var AnalystRevision "Analyst Revision"
 
 // SAVE
-do "$pathCode/savepredictor" DownForecast
+do "$pathCode/savepredictor" AnalystRevision
+
+

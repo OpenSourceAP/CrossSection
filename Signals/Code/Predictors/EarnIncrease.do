@@ -14,4 +14,4 @@ replace EarnIncrease = 0 if temp < 0 & l3.temp < 0 & l6.temp < 0 & l9.temp < 0 &
 label var EarnIncrease "Consistent Earnings Increase (quarterly)"
 
 // SAVE
-do "$pathCode/savepredictor" EarnIncrease
+*do "$pathCode/savepredictor" EarnIncrease
