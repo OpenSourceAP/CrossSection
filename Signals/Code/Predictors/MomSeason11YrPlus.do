@@ -9,9 +9,7 @@ gen temp`n' = l`n'.ret
 }
 egen retTemp1 = rowtotal(temp*), missing  
 egen retTemp2 = rownonmiss(temp*)
-gen retLagTemp = l120.ret
-asrol retLagTemp, by(permno) window(time_avail_m 59) stat(sum count) minimum(36)  
-gen MomSeasAlt11to15n = (sum59_retLagTemp - retTemp1)/(count59_retLagTemp - retTemp2)
-label var MomSeasAlt11to15n "Non-seasonal return (years 11-15)"
+gen MomSeason11YrPlus = retTemp1/retTemp2
+label var MomSeason11YrPlus "Return Seasonality (11-15)"
 // SAVE
-do "$pathCode/saveplacebo" MomSeasAlt11to15n
+do "$pathCode/savepredictor" MomSeason11YrPlus

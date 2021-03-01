@@ -7,4 +7,4 @@ gen securedind = 0
 replace securedind = 1 if dm !=. & dm !=0
 label var securedind "Secured debt indicator"
 // SAVE
-do "$pathCode/savepredictor" securedind
+do "$pathCode/saveplacebo" securedind

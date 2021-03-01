@@ -5,5 +5,6 @@ use permno time_avail_m dm dltt dlc using "$pathDataIntermediate/m_aCompustat", 
 gen secured = dm/(dltt+dlc)
 replace secured = 0 if dltt ==. | dltt ==0 | dlc == .
 label var secured "Secured debt over liabilities"
+
 // SAVE
-do "$pathCode/savepredictor" secured
+do "$pathCode/saveplacebo" secured

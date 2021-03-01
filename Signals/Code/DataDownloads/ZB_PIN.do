@@ -9,11 +9,10 @@ capture {
 }
 
 if _rc!= 0 {
-	shell wget `webloc' -O $pathDataIntermediate/deleteme.dat
+	shell wget "`webloc'" -O $pathDataIntermediate/deleteme.dat
 	import delimited "$pathDataIntermediate/deleteme.dat", delimiter(whitespace, collapse) clear
 	shell rm $pathDataIntermediate/deleteme.csv -f
 }
-
 
 rename permn permno
 replace year = year +1  // To trade on information from previous year

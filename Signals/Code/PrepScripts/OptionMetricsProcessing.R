@@ -54,18 +54,18 @@ yearlist = str_sub(setlist,-4,-1)
 slopemany = list()
 
 # Setup query
-# adding the filter for deltas and duration speeds query up 10X
-queryprestring = paste0("select a.secid, a.optionid, a.date, a.cp_flag"
-                        ,",a.impl_volatility "
-                        ,"from optionm.opprcd")
-querypoststring = paste0(
-  " as a "
-  ,"where ((cp_flag = \'P\' and abs(a.delta+0.5) < 0.1)"
-  ," or (cp_flag = \'C\' and abs(a.delta-0.5) < 0.1))"
-  ," and (a.exdate - a.date <= 30) and (a.exdate - a.date > 15)"
-  ," and (a.strike_price != 'NaN') and (a.impl_volatility != 'NaN')"
-)   
-
+# adding the filter for deltas and duration speeds query up a lot I think
+  queryprestring = paste0("select a.secid, a.date, a.days, a.cp_flag, a.delta "
+                          ,",a.impl_volatility "
+                         ,"from optionm.vsurfd")
+  querypoststring = paste0(
+      " as a "
+     ,"where (a.impl_volatility != 'NaN')"
+     ," and ((a.cp_flag = \'C\' and a.delta = 50)  "
+     ,"  or (a.cp_flag = \'P\' and a.delta = -50)) "
+     ," and a.days = 30 "
+     ," and extract(day from a.date) >= 23 "
+  )   
 
 print("Calculating Smile Slope a.k.a. Slope (Yan) year by year")
 i = 1
@@ -83,12 +83,16 @@ for (year in yearlist) {
   tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
   dbClearResult(res)
   
-  # average implied vols within each month  
-  tempm = tempd %>% group_by(secid, cp_flag, time_avail_m) %>%
-    summarize(impl_vol = mean(impl_volatility))
+  # take last obs each month
+  tempm = tempd %>%
+      group_by(secid, cp_flag, time_avail_m) %>%      
+      arrange(secid, cp_flag, date) %>%
+      filter(row_number()==n()) %>%
+      rename(impl_vol = impl_volatility)
   
   # compute spread
-  tempmwide = spread(tempm, cp_flag, impl_vol)
+  tempmwide = tempm %>% select(secid,time_avail_m,cp_flag,impl_vol) %>%
+      spread(cp_flag, impl_vol)
   tempmwide = tempmwide %>% mutate(slope = P-C) %>%
     select(secid, time_avail_m, slope)
   
@@ -97,8 +101,7 @@ for (year in yearlist) {
   i = i + 1
   
   end_time <- Sys.time()
-  print(end_time - start_time)  
-  
+  print(end_time - start_time)    
   
 }  # end Slope loop over years
 

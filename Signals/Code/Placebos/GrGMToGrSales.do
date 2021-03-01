@@ -11,4 +11,4 @@ replace GrGMToGrSales =  ((tempGM-l12.tempGM)/l12.tempGM)- ((sale-l12.sale)/l12.
 drop tempGM
 label var GrGMToGrSales "Gross Margin growth over sales growth"
 // SAVE
-do "$pathCode/savepredictor" GrGMToGrSales
+do "$pathCode/saveplacebo" GrGMToGrSales

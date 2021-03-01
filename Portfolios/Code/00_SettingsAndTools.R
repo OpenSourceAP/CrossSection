@@ -8,8 +8,8 @@ options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
 
-pathProject = '/cm/chen/anomalies.com/cfr1/'
-#pathProject = paste0(getwd(), '/')
+#pathProject = '/cm/chen/anomalies.com/cfr1/'
+pathProject = paste0(getwd(), '/')
 
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')

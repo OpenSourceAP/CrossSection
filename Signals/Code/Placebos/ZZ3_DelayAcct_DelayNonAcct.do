@@ -5,7 +5,7 @@
 * prep: PriceDelay
 * Need to run PriceDelay_PriceDelayRsq_PriceDelayAdj.do first!
 
-import delimited "$pathDataPredictors/PriceDelay.csv", clear varnames(1)
+import delimited "$pathDataPredictors/PriceDelayRsq.csv", clear varnames(1)
 tostring yyyymm, replace
 gen y = substr(yyyymm, 1,4)
 gen m = substr(yyyymm, 5,2)

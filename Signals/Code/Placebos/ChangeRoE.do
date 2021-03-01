@@ -15,4 +15,4 @@ gen ChangeRoE = tempRoe - l12.tempRoe
 label var ChangeRoE "Change in return on equity"
 
 // SAVE
-do "$pathCode/savepredictor" ChangeRoE
+do "$pathCode/saveplacebo" ChangeRoE

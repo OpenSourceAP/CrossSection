@@ -53,4 +53,5 @@ bysort permno time_avail_m (datadate): keep if _n == _N
 
 // SAVE 
 do "$pathCode/savepredictor" AbnormalAccruals
-do "$pathCode/savepredictor" AbnormalAccrualsPercent
+do "$pathCode/saveplacebo" AbnormalAccrualsPercent
+

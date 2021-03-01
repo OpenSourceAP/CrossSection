@@ -9,7 +9,7 @@ gen temp`n' = l`n'.ret
 }
 egen retTemp1 = rowtotal(temp*), missing  
 egen retTemp2 = rownonmiss(temp*)
-gen MomSeasAlt16to20a = retTemp1/retTemp2
-label var MomSeasAlt16to20a "Return Seasonality (16-20)"
+gen MomSeason16YrPlus = retTemp1/retTemp2
+label var MomSeason16YrPlus "Return Seasonality (16-20)"
 // SAVE
-do "$pathCode/savepredictor" MomSeasAlt16to20a
+do "$pathCode/savepredictor" MomSeason16YrPlus

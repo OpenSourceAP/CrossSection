@@ -18,24 +18,15 @@ merge 1:1 permno time_avail_m using "$pathtemp/tempdivamt", keep(master match) n
 
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
-gen temp = divamt
-replace temp = 0 if divamt ==.
-gen tempdy = 4*max(temp, l1.temp, l2.temp)/abs(prc)
-gen tempdypos = tempdy 
-replace tempdypos = . if (temp <=0 & l1.temp<=0 & l2.temp<=0) | ///
-    (l3.temp <=0 & l4.temp <= 0 & l5.temp <=0) | ///
-    (l6.temp<=0 & l7.temp<=0 & l8.temp<=0) | ///
-    (l9.temp<=0 & l10.temp<=0 & l11.temp <=0)
-gen DivYield = tempdypos
-
-egen tempsize = fastxtile(mve_c), by(time_avail_m) n(4)
-replace DivYield = . if tempsize >= 3
+replace divamt = 0 if divamt ==.
+asrol divamt, gen(divann) by(permno) stat(sum) window(time_avail_m 12) min(6) 
+gen DivYieldAnn = divamt/abs(prc)
 
 
 // see table 1B
-label var DivYield "Dividend Yield (Current)"
+label var DivYieldAnn "Dividend Yield (Past Year)"
 
 // SAVE
-do "$pathCode/saveplacebo" DivYield
+do "$pathCode/saveplacebo" DivYieldAnn
 
 

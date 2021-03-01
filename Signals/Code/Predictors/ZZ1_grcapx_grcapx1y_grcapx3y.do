@@ -22,5 +22,5 @@ label var grcapx3y "Change in capex (three years)"
 
 // SAVE 
 do "$pathCode/savepredictor" grcapx
-do "$pathCode/savepredictor" grcapx1y
+do "$pathCode/saveplacebo" grcapx1y
 do "$pathCode/savepredictor" grcapx3y

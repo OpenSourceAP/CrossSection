@@ -15,4 +15,4 @@ gen ChangeRoA = tempRoa - l12.tempRoa
 label var ChangeRoA "Change in return on assets"
 
 // SAVE
-do "$pathCode/savepredictor" ChangeRoA
+do "$pathCode/saveplacebo" ChangeRoA

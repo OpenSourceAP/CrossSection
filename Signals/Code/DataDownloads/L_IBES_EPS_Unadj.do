@@ -5,6 +5,9 @@
 // the FPI=1, FPI=2 and FPI=3 estimates are for the periods ending December 2008, 2009 and 2010, respectively. 
 // Please note FPI=0 is for long term growth.
 
+// https://wrds-web.wharton.upenn.edu/wrds//ds/ibes/statsumu/index.cfm
+// FPI=6 is current quarter
+
 // statsum_epsus is adjusted for splits, statsumu_epsus is not.  
 // We typically scale forecasts by crsp prc, which is also not split adjusted
 
@@ -22,15 +25,15 @@ odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
 
 * Set up linking variables
 gen time_avail_m = mofd(statpers)
-format time_avail %tm
+format time_avail_m %tm
 rename ticker tickerIBES
 
 drop measure
-order tickerIBES fpi statpers time_avail_m fpedats 
 
 * Keep last obs each month
-sort tickerIBES fpi statpers
-collapse (lastnm) *est stdev statpers fpedats, by(tickerIBES fpi time_avail_m)	
+drop if meanest == . // just for sanity
+sort tickerIBES fpi time_avail_m statpers
+by tickerIBES fpi time_avail_m: keep if _n == _N
 
 
 compress

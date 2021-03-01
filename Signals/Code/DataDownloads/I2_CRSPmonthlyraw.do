@@ -1,5 +1,5 @@
 * 9. CRSP monthly --------------------------------------------------------------
-
+* raw version omits delisting return adjustments for testing
 // Prepare query
 #delimit ;
 local sql_statement
@@ -13,10 +13,7 @@ local sql_statement
 	ON a.permno=c.permno AND date_trunc('month', a.date) = date_trunc('month', c.dlstdt)
 	;
 #delimit cr
-
 odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
-export delimited "$pathDataIntermediate/mCRSP.csv", replace  // For processing of IO-Momentum in R
-
 
 * Make 2 digit SIC
 rename siccd sicCRSP
@@ -29,21 +26,6 @@ gen time_avail_m = mofd(date)
 format time_avail_m %tm
 drop date
 
-* Incorporate delisting return
-replace dlret = -.35 if dlret==. & (dlstcd == 500 | (dlstcd >=520 & dlstcd <=584)) ///
-	& (exchcd == 1 | exchcd == 2)
-
-replace dlret = -.55 if dlret==. & (dlstcd == 500 | (dlstcd >=520 & dlstcd <=584)) ///
-	& exchcd == 3  // GHZ cite Johnson and Zhao (2007), Shumway and Warther (1999)
-
-replace dlret = -1 if dlret < -1 & dlret !=.
-
-replace dlret = 0 if dlret ==.
-
-replace ret = ret + dlret
-
-replace ret = dlret if ret ==. & dlret !=0
-
 * Compute market value of equity (used all the time)
 
 * Converting units
@@ -55,4 +37,4 @@ gen mve_c = (shrout * abs(prc)) // Common shares outstanding * Price
 ** Housekeeping
 drop dlret dlstcd permco
 compress
-save "$pathDataIntermediate/monthlyCRSP", replace
+save "$pathDataIntermediate/monthlyCRSPraw", replace

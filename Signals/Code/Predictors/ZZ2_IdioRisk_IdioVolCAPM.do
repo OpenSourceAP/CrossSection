@@ -22,4 +22,4 @@ label var IdioVolCAPM "Idiosyncratic Risk (CAPM)"
 
 // SAVE 
 do "$pathCode/savepredictor" IdioRisk
-do "$pathCode/savepredictor" IdioVolCAPM
+do "$pathCode/saveplacebo" IdioVolCAPM

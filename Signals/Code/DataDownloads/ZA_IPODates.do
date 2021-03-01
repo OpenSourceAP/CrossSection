@@ -1,21 +1,25 @@
 * 26. Ritter's IPO dates ---------------------------------------
-local webloc "https://site.warrington.ufl.edu/ritter/files/2019/05/age19752019.xlsx"
+
+*local webloc "https://site.warrington.ufl.edu/ritter/files/2019/05/age19752019.xlsx" * pre 2021 01 location
+*local webloc "https://site.warrington.ufl.edu/ritter/files/age7520.xlsx" // 2021 01-2021 02 location
+local webloc "https://site.warrington.ufl.edu/ritter/files/IPO-age.xlsx" 
+
+
 capture {
 	import excel `webloc', clear firstrow
 }
 if _rc!= 0 {
-	shell wget `webloc' -O $pathDataIntermediate/deleteme.xlsx
+	shell wget "`webloc'" -O $pathDataIntermediate/deleteme.xlsx
 	import excel "$pathDataIntermediate/deleteme.xlsx", clear firstrow
 }
 
-
 rename Founding FoundingYear
-rename CRSPperm permno
+rename PERM permno
 destring permno, replace
 
-tostring Offerdate, replace
-gen temp = date(Offerdate, "YMD")
-gen IPOdate = mofd(temp)
+tostring OfferDate, gen(temp)
+gen temp2 = date(temp, "YMD")
+gen IPOdate = mofd(temp2)
 format IPOdate %tm
 
 keep permno FoundingYear IPOdate

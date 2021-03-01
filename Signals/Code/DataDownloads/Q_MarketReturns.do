@@ -15,3 +15,4 @@ drop date
 
 compress
 save "$pathDataIntermediate/monthlyMarket", replace
+

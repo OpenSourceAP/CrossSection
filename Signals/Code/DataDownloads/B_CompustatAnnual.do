@@ -14,8 +14,8 @@ local sql_statement
 		   a.ppenls,
 		   a.ppent,a.prcc_c,a.prcc_f,a.prstkc,a.prstkcc,a.pstk,a.pstkl,a.pstkrv,
 		   a.re,a.rect,a.recta,a.revt,a.sale,a.scstkc,a.seq,a.spi,a.sstk,
-		   a.tstkp,a.txdi,a.txditc,a.txfo,a.txfed,a.txp,a.txt,a.xacc,a.xad,
-		   a.xint,a.xrd,a.xpp,a.xsga
+		   a.tstkp,a.txdb,a.txdi,a.txditc,a.txfo,a.txfed,a.txp,a.txt,
+		   a.wcap,a.wcapch,a.xacc,a.xad,a.xint,a.xrd,a.xpp,a.xsga
     FROM COMP.FUNDA as a
 	WHERE a.consol = 'C'
 	AND a.popsrc = 'D'

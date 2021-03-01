@@ -51,4 +51,4 @@ bys permno: gen age = _n
 replace BetaBDLeverage = . if age <= 20/4*12
 
 // SAVE
-do "$pathCode/savepredictor" BetaBDLeverage
+do "$pathCode/saveplacebo" BetaBDLeverage

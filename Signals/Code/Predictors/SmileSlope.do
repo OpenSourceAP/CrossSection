@@ -1,3 +1,4 @@
+* Signal is actually contructed in PrepScripts/OptionMetricsProcessing.R
 * --------------
 // DATA LOAD
 use permno time_avail_m ticker using "$pathDataIntermediate/SignalMasterTable", clear

@@ -24,28 +24,28 @@ local sql_statement
 odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
 
 destring ireccd, replace
+drop if ireccd == .
+
+// * Prepare Change in Recommendation variable (Jegadeesh)
+// bys ticker amaskcd (anndats): gen ChangeInRecommendation = 1 if ireccd == 1 & ireccd[_n-1] !=1 
+// bys ticker amaskcd (anndats): replace ChangeInRecommendation = -1 if ireccd != ireccd[_n-1] & ireccd !=1
+// replace ChangeInRecommendation = 0 if mi(ChangeInRecommendation)
+//
+// * sort my ticker analyst day, keep last within in month
+// *	and then average within ticker
+// * 	not clear how long to keep recommendations around for
+// *	OP says it keeps analysts
+// * 	"who have oustanding recommendations for the firm on that day"
+// keep ticker amaskcd anndats time_avail_m ireccd Change
+//
+
+* clean up
+rename ticker tickerIBES
 gen time_avail_m = mofd(anndats)
 format time_avail %tm
 
-* Prepare Change in Recommendation variable
-bys ticker amaskcd (anndats): gen ChangeInRecommendation = 1 if ireccd == 1 & ireccd[_n-1] !=1 
-bys ticker amaskcd (anndats): replace ChangeInRecommendation = -1 if ireccd != ireccd[_n-1] & ireccd !=1
-replace Change = 0 if mi(Change)
+* put important stuff first
+order tickerIBES amaskcd anndats time_avail_m ireccd
 
-* sort my ticker analyst day, keep last within in month
-*	and then average within ticker
-* 	not clear how long to keep recommendations around for
-*	OP says it keeps analysts
-* 	"who have oustanding recommendations for the firm on that day"
-keep ticker amaskcd anndats time_avail_m ireccd Change
-
-sort ticker amaskcd anndats
-gcollapse (lastnm) Change ireccd, by(ticker amaskcd time_avail_m) // drops only 3/80
-gcollapse (mean) Change ireccd, by(ticker time_avail_m)  // drops about 1/2
-
-* Prepare for match with other files
-rename ticker tickerIBES
-rename irec MeanRecomm
 compress
-
 save "$pathDataIntermediate/IBES_Recommendations", replace

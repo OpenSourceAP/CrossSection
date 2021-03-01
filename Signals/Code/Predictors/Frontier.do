@@ -26,8 +26,13 @@ cap predict tempY
 cap replace logmefit_NS = tempY if time_avail_m == `t'
 }
 cap drop temp*
+
 gen Frontier = YtempBM - logmefit_NS
 replace Frontier = -1*Frontier
+
+// filters
+drop if ceq == . | ceq < 0
+
 label var Frontier "Efficient Frontier index"
 // SAVE
 do "$pathCode/savepredictor" Frontier

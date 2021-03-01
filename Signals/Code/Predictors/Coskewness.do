@@ -1,40 +1,147 @@
 * Coskewness
 * --------------
 
+* smaller minimum obs helps, 12 minimum works pretty well
+* choice of msia, msic, or msix actually doesn't matter much
+* using NYSE only in ports helps a bit
+* using simple demeaning (following ACX) works somewhat better
+
+timer clear
+timer on 1
+
 // DATA LOAD
-use permno time_avail_m ret using "$pathDataIntermediate/monthlyCRSP", clear
-merge m:1 time_avail_m using "$pathDataIntermediate/monthlyFF", nogenerate keep(match) keepusing(rf mktrf hml smb)
-merge m:1 time_avail_m using "$pathDataIntermediate/monthlyMarket",  nogenerate keep(match) keepusing(vwretd)
+* doc: see DataSet List here:
+*	https://wrds-web.wharton.upenn.edu/wrds//ds/crsp/stock_a/stkmktix.cfm
+* msia = NYSE 
+* msic = NYSE/AMEX
+* msix = NYSE/AMEX/NASDAQ
+* doc for tfz*: http://www.crsp.org/products/documentation/crsp-risk-free-rates-file
 
-// SIGNAL CONSTRUCTION
-gen retrf = ret - rf
-gen vwmktrf = vwretd - rf
+#delimit ;
+local sql_statement
+    SELECT a.caldt, a.vwretd, b.tmytm, b.tmduratn
+    FROM crsp.msic as a
+	LEFT JOIN crsp.tfz_mth_rf as b
+	on a.caldt = b.mcaldt
+	;
+	
+#delimit cr
+odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
 
-bys permno (time_avail_m): gen time_temp = _n
-xtset permno time_temp
+// keep shortest duration 
+sort caldt tmduratn
+by caldt: keep if _n == 1
 
-asreg retrf vwmktrf, window(time_temp 60) min(20) by(permno)
-gen tempResid = retrf - _b_cons - _b_vwmktrf*vwmktrf
+* convert annualized yield to monthly return with filling
+gen ytm = tmytm/12/100 // mean is 3.2, must be annualized pct
+replace ytm = ytm[_n-1] if ytm == .
+drop if ytm == .
+gen rf = ytm[_n-1] // this is now a return
 
-* Compute various moving averages
-drop _N*
-asrol vwmktrf, gen(meanX) stat(mean) window(time_temp 60) min(20) by(permno)
-gen tempResidMkt = vwmktrf - meanX
-drop meanX
+* clean up
+gen time_avail_m = mofd(caldt)
+format time_avail_m %tm
+rename vwretd mkt
+rename caldt time_d
+keep time_avail_m mkt rf
 
-gen tempNum1 = tempResid*(tempResidMkt^2)
-asrol tempNum1, gen(tempNumerator) stat(mean) window(time_temp 60) min(20) by(permno)
+save "$pathtemp/tempmkt", replace
 
-gen tempResid2 = tempResid^2
-asrol tempResid2, gen(tempDenom1) stat(mean) window(time_temp 60) min(20) by(permno)
+use permno time_avail_m ret using "$pathDataIntermediate/monthlyCRSP.dta", clear
+merge m:1 time_avail_m using "$pathtemp/tempmkt", nogenerate keep(match) 
 
-gen tempResidMkt2 = tempResidMkt^2
-asrol tempResidMkt2, gen(tempDenom2) stat(mean) window(time_temp 60) min(20) by(permno)
+* convert to exret "in place"
+replace mkt = mkt - rf
+replace ret = ret - rf
+drop rf
 
-* Finally, calculate coskewness
-gen Coskewness = tempNumerator/(sqrt(tempResid2)*tempResidMkt2)
+// set up for looping over 60-month window sets
+gen temptime = -time_avail_m
+sort permno temptime
+drop temptime
 
-label var Coskewness "Coskewness"
+
+gen time_m = time_avail_m
+format time_m %tm	
+gen m60 = mod(time_avail_m,60) // month in a 60 month per year calender
+
+
+save "$pathtemp/tempmerge", replace
+
+local cdir "`c(pwd)'"
+cd $pathtemp
+local list : dir . files "tempcoskew*.dta"
+foreach f of local list {
+	display "erasing `f'"
+	erase "`f'"
+}
+cd `cdir'
+
+forvalues m=0/59 {
+		
+	display `m'	
+	
+	use "$pathtemp/tempmerge", clear	
+		
+	replace time_avail_m = . if m60 != `m'
+	by permno: replace time_avail_m = time_avail_m[_n-1] if time_avail_m == .
+	drop if time_avail_m == .
+	drop time_m
+	
+	* convert to ret residuals using capm
+// 	bys permno time_avail_m: asreg ret mkt, fitted
+// 	replace ret = _residuals
+// 	drop _*	
+	
+	* simple de-meaning following ACX works somewhat better
+	gcollapse (mean) E_ret = ret, by(permno time_avail_m) merge
+	replace ret = ret - E_ret 
+	drop E_ret	
+
+	* convert mkt to residuals by demeaning	
+	gcollapse (mean) E_mkt = mkt, by(permno time_avail_m) merge
+	replace mkt = mkt - E_mkt 
+	drop E_mkt
+
+	* calculate coskewness with sample moments
+	gen ret2 = ret^2
+	gen mkt2 = mkt^2
+	gen ret_mkt2 = ret*mkt2
+	gcollapse (mean) E_ret_mkt2=ret_mkt2 E_ret2=ret2 E_mkt2=mkt2 ///
+		(count) nobs=ret ///
+		, by(permno time_avail_m)
+	gen Coskewness = E_ret_mkt2 / (sqrt(E_ret2) * E_mkt2)	// eq B-9
+		
+	* OP does not state the required number of obs
+	keep if nobs >= 12
+	
+	* save
+	save "$pathtemp/tempcoskew`m'", replace
+
+} // forvalues m
+
+
+// append all m60 
+local cdir "`c(pwd)'"
+cd $pathtemp
+local files : dir "" files "tempcoskew*.dta"
+display `files'
+clear
+foreach file in `files' {
+	display "appending `file'"
+	append using `file'
+}
+cd `cdir'
+
+sort permno time_avail_m
+
+timer off 1
+timer list 1
+
+
+label var Coskewness "Coskewness of stock return wrt market return"
 
 // SAVE
 do "$pathCode/savepredictor" Coskewness
+
+

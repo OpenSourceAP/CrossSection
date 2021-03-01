@@ -8,4 +8,4 @@ bys permno: asrol temp, gen(tempMean) stat(mean) window(time_avail_m 12) min(10)
 gen VolMkt = tempMean/mve_c
 label var VolMkt "Volume to market equity"
 // SAVE
-do "$pathCode/saveplacebo" VolMkt
+do "$pathCode/savepredictor" VolMkt

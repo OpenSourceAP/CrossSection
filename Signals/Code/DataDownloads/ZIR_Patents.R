@@ -46,7 +46,6 @@ pat76_06_assg = haven::read_dta(unz(tmp,"pat76_06_assg.dta"))
 
 # Number of patents
 #~~~~~~~~~~~~~~~~~~
-
 df_npat = pat76_06_assg %>%
   # count number of patents by company and year
   group_by(pdpass, gyear) %>%

@@ -11,4 +11,4 @@ winsor2 VolumeTrend, cut(1 99) replace trim  // ADD ON SINCE SOME VALUES LOOKED 
 label var VolumeTrend "Volume Trend"
 
 // SAVE
-do "$pathCode/saveplacebo" VolumeTrend
+do "$pathCode/savepredictor" VolumeTrend

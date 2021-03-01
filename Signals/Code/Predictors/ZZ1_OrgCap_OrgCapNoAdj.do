@@ -1,6 +1,6 @@
 // 2021 AC
 // OP actually is value weighted, we previously had EW
-// also updated: dec and sic restriction, missing xsga => 0,  drop OrgCapNoadj == 0
+// also updated: dec and sic restriction, missing xsga => 0,  drop OrgCapNoAdj == 0
 // also updated: price index deflation (using GNP defl), this helps too
 // Keeping only december fyr ends is absolutely critical for some reason
 // Is the unadjusted version even predictive? 
@@ -10,7 +10,7 @@
 //	and it works a lot better in the full sample (post 2008)
 // OP gets tstat of 2.85 for OrgCap, we get 2.3 ish, 
 // 	perhaps because we skip the cpi
-// OrgCapNoadj is not predictive for us, t-stat = 1.20 insamp, but works better postpub
+// OrgCapNoAdj is not predictive for us, t-stat = 1.20 insamp, but works better postpub
 //	and also in deciles
 
 
@@ -29,20 +29,20 @@ xtset permno time_avail_m
 bys permno (time_avail_m): gen tempAge = _n 
 replace xsga = 0 if xsga == . // OP (p 17) 
 replace xsga = xsga/gnpdefl // supposed to use cpi, but gnpdefl is used in Oscore
-gen OrgCapNoadj     = 4*xsga if tempAge <= 12 
-replace OrgCapNoadj = .85*l12.OrgCapNoadj + xsga if tempAge > 12
-replace OrgCapNoadj = OrgCapNoadj/at
-replace OrgCapNoadj = . if OrgCapNoadj == 0 // OP p 18: works better without this
-label var OrgCapNoadj "Organizational capital without industry adjustment"
+gen OrgCapNoAdj     = 4*xsga if tempAge <= 12 
+replace OrgCapNoAdj = .85*l12.OrgCapNoAdj + xsga if tempAge > 12
+replace OrgCapNoAdj = OrgCapNoAdj/at
+replace OrgCapNoAdj = . if OrgCapNoAdj == 0 // OP p 18: works better without this
+label var OrgCapNoAdj "Organizational capital without industry adjustment"
 
 *Adjusted version
-winsor2 OrgCapNoadj, suffix("temp") cuts(1 99) by(time_avail_m)
+winsor2 OrgCapNoAdj, suffix("temp") cuts(1 99) by(time_avail_m)
 ffind sicCRSP, newvar(tempFF17) type(17)
-egen tempMean = mean(OrgCaptemp), by(tempFF17 time_avail_m)
-egen tempSD   = sd(OrgCaptemp), by(tempFF17 time_avail_m)
-gen OrgCap = (OrgCaptemp - tempMean)/tempSD
+egen tempMean = mean(OrgCapNoAdjtemp), by(tempFF17 time_avail_m)
+egen tempSD   = sd(OrgCapNoAdjtemp), by(tempFF17 time_avail_m)
+gen OrgCap = (OrgCapNoAdjtemp - tempMean)/tempSD
 label var OrgCap "Organizational capital"
 
 // SAVE
-do "$pathCode/saveplacebo" OrgCapNoadj
+do "$pathCode/saveplacebo" OrgCapNoAdj
 do "$pathCode/savepredictor" OrgCap
