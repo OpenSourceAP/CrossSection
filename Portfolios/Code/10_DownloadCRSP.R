@@ -103,6 +103,13 @@ m_crsp2 = m_crsp2 %>%
 write_fst(m_crsp2, paste0(pathProject,'Portfolios/Data/Intermediate/m_crsp.fst'))
 
 
+# write to disk (no dlret adjustment)
+write_fst(
+    m_crsp %>% mutate(ret = ret*100, dlret = dlret*100) 
+  , paste0(pathProject,'Portfolios/Data/Intermediate/m_crsp_nodelistadj.fst')
+)
+
+
 # CRSP daily --------------------------------------------------------------
 
 d_crsp = dbSendQuery(conn = wrds, statement = 

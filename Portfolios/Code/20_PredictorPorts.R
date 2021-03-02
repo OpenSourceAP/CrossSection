@@ -51,30 +51,44 @@ writestandard(
 
 # SUMMARY STATS BY SIGNAL -------------------------------------------------
 
-sumbase <- sumportmonth(
-  port,
-  groupme = c("signalname", "port", "samptype"), Nstocksmin = 1
-) %>%
-  left_join(
-    strategylist0 %>%
-      select(
-        sweight, q_cut, q_filt, portperiod, startmonth, filterstr,
-        everything()
-      ),
-    by = "signalname"
-  )
+# reread in case you want to edit the summary later
+port = read.csv(paste0(pathDataPortfolios, "PredictorPortsFull.csv"))
 
+sumbase <- sumportmonth(
+    port,
+    groupme = c("signalname", "port", "samptype"), Nstocksmin = 1
+) %>%
+    left_join(
+        alldocumentation
+      , by = "signalname"
+    )
+
+sumshort = sumbase %>%
+    filter(
+        samptype == "insamp",
+        port == "LS"
+    ) %>%
+    mutate(
+        T.Stat = round(as.numeric(T.Stat),2)
+        , t_err = abs(tstat-T.Stat)
+    ) %>%
+    select(
+        signalname, Predictability.in.OP, Signal.Rep.Quality, Test.in.OP, t_err
+      , tstat, T.Stat, 
+      , rbar, Return
+      , everything()
+    ) %>%
+    arrange(
+        Predictability.in.OP
+        , Signal.Rep.Quality
+        , desc(t_err)
+    )
 
 ## export
 write_xlsx(
   list(
-    ls_insamp_only = sumbase %>%
-      filter(
-        samptype == "insamp",
-        port == "LS"
-      ) %>%
-      arrange(tstat),
-    full = sumbase
+    short = sumshort
+    , full = sumbase
   ),
   paste0(pathDataPortfolios, "PredictorSummary.xlsx")
 )

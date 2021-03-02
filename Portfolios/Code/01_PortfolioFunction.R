@@ -145,7 +145,7 @@ signalname_to_ports = function(
         signal = signal %>%
             left_join(breaklist, by = 'yyyymm') %>%        
             mutate(port = NA_integer_) 
-
+        
         # assign lowest signal
         signal = signal %>%
             mutate(port = if_else(signal <= break1, as.integer(1), port) )
@@ -162,7 +162,7 @@ signalname_to_ports = function(
         # assign highest signal
         breakstr = paste0('break',length(plist))
         id = is.na(signal$port) & (signal$signal >= signal[breakstr])
-        signal$port[id] = length(plist) + 1
+        signal$port[id] = length(plist) + as.integer(1)
 
         signal = signal %>% select(-starts_with('break'))
         
@@ -188,7 +188,7 @@ signalname_to_ports = function(
                 port = if_else(
                 (yyyymm %% 100) %in% rebmonths
               , port
-              , NA_real_
+              , NA_integer_
                 )
             ) %>%
             arrange(permno,yyyymm) %>%
@@ -312,24 +312,25 @@ signalname_to_ports = function(
     if (feed.verbose) {print('assigning stocks to portfolios')}    
     if (Cat.Form == 'continuous'){
         signal = single_sort(q_filt,q_cut)        
-    } else if (Cat.Form == 'binary')  {
-        support = sort(signal$signal %>% unique)        
-        signal = signal %>%
-            mutate(
-                port = case_when(
-                    signal == support[1] ~ 1
-                  , signal == support[2] ~ 2
-                )
-            )        
-    } else if (Cat.Form == 'custom') {
-        # here we just say port = signal (port assigned in previous code)
-        # useful for ff3 style
-        signal = signal %>% mutate(port = signal)
-    }
-
+    } else if (Cat.Form == 'discrete') {
+        # for custom categorical portfolios (e.g. Gov Index, PS, MS)
+        # by default we go long "largest" cat and short "smallest" cat      
+        support =  signal$signal %>% unique %>% sort
+        signal$port = NA_integer_
+        for (i in 1:length(support)) {
+            signal$port[signal$signal==support[i]] = i            
+        }
+        
+            
+    } else if (Cat.Form == 'custom'){
+            # here we just say port = signal (port assigned in previous code)            
+            # eventually useful for ff3 style, maybe
+            signal = signal %>% mutate(port = signal)
+    } # if Cat.Form
+    
     ## calculate portfolio returns (stock weighting happens here)
     port = portfolio_returns(startmonth,portperiod)    
-
+    
     ## add long-short         
     ls = longports_to_longshort(longportname,shortportname)
     

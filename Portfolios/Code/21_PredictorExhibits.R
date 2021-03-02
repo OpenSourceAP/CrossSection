@@ -17,9 +17,9 @@ library(xtable)
 options(xtable.floating = FALSE)
 
 tryCatch(
-  source("00_SettingsAndFunctions.R", echo = TRUE),
+  source("00_SettingsAndTools.R", echo = TRUE),
   error = function(cond) {
-    message("Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/")
+    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
 
@@ -366,13 +366,24 @@ ggsave(filename = paste0(pathResults, "fig2b_reprate_data_Jitter.png"), width = 
 
 # Scatter of replication t-stat vs OP t-stat ------------------------------
 
-df <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx")) %>%
-  transmute(signalname, 
-            tstatRep = abs(tstat), 
-            tstatOP = abs(as.numeric(`T-Stat`)),
-            PredictabilityOP = `Predictability in OP`,
-            ReplicationType = `Replication Type`,
-            OPTest = `Test in OP`)
+docnew = readdocumentation() # for easy updating of documentation
+df <- read_xlsx(
+    paste0(pathDataPortfolios, "PredictorSummary.xlsx")
+  , sheet = 'full'
+) %>%
+    filter(
+        samptype == 'insamp', Cat.Signal == 'Predictor', port == 'LS'
+    ) %>%
+    select(signalname, tstat) %>%
+    left_join(
+        docnew, by='signalname'
+    ) %>%
+    transmute(signalname, 
+              tstatRep = abs(tstat), 
+              tstatOP = abs(as.numeric(T.Stat)),
+              PredictabilityOP = Predictability.in.OP,
+              ReplicationType = Signal.Rep.Quality,
+              OPTest = Test.in.OP)
 
 
 df_plot = df %>% 
@@ -385,7 +396,9 @@ df_plot = df %>%
     grepl('reg', OPTest, ignore.case = TRUE)       ~ 'Regression',
     TRUE ~ 'Other'
   )) %>% 
-  filter(grouper == 'Portfolio sort') 
+  filter(
+      grouper == 'Portfolio sort' & !grepl('nonstandard', OPTest)
+  ) 
 
 reg = lm(tstatRep ~ tstatOP, data = df_plot) %>% summary()
 
@@ -398,7 +411,7 @@ df_plot %>%
        title = paste0('y = ', round(reg$coefficients[1], 2), ' + ', round(reg$coefficients[2], 2), ' * x, R2 = ', round(100*reg$r.squared, 2), '%')) +
   geom_abline(intercept = 0, slope = 1) +
   ggrepel::geom_text_repel() +
-  coord_cartesian(xlim = c(0, 14), ylim = c(0, 14)) +
+  coord_cartesian(xlim = c(0, 17), ylim = c(0, 17)) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
 ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP_Labels.png"), width = 10, height = 8)
@@ -432,7 +445,7 @@ stats <- read_xlsx(
 
 
 # Merge data
-# alldocumentation is created in 00_SettingsAndFunctions.R
+# alldocumentation is created in 00_SettingsAndTools.R
 df_merge <- alldocumentation %>%
   inner_join(stats %>%
     select(signalname, tstat, rbar),
@@ -446,7 +459,7 @@ df_merge <- alldocumentation %>%
     `Mean Return` = round(rbar, digits = 2),
     `t-stat` = round(tstat, digits = 2),
 #    Cat.Signal,
-    Category = `Predictability in OP` %>%
+    Category = Predictability.in.OP %>%
       factor(
         levels = c("no_evidence", "4_not", "3_maybe", "2_likely", "1_clear"),
         labels = c("no evidence", "not", "maybe", "likely", "clear")

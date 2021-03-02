@@ -15,9 +15,9 @@ library(xtable)
 options(xtable.floating = FALSE)
 
 tryCatch(
-  source("00_SettingsAndFunctions.R", echo = TRUE),
+  source("00_SettingsAndTools.R", echo = TRUE),
   error = function(cond) {
-    message("Error: 00_SettingsAndFunctions.R not found.  please setwd to pathProject/Portfolios/Code/")
+    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
 

@@ -1,12 +1,12 @@
 # master.R created 2020 12 AC
 # scripts below do the following
-#   sets up paths (see 00_SettingsAndFunctions.R)
+#   sets up paths (see 00_SettingsAndTools.R)
 #   downloads crsp data that can't be easily shared and creates related predictors
 #   creates all portfolios and saves csvs to disk
 #   creates all exhibits for the paper
 
 # the scripts require
-#   user entry of pathProject in 00_SettingsAndFunctions.R
+#   user entry of pathProject in 00_SettingsAndTools.R
 #   signal-firm-month csvs created by the signals code
 
 # Most people only need to run up to 20_PredictorPorts.R and can skip any exhibits
@@ -23,19 +23,18 @@ source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
 
 
-print('master: 10_DownloadCRSP.R')
-tryCatch({
-    source('10_DownloadCRSP.R', echo=T) 
-})
+## print('master: 10_DownloadCRSP.R')
+## tryCatch({
+##     source('10_DownloadCRSP.R', echo=T) 
+## })
 
 
-print('master: 11_CreateCRSPPredictors.R')
-tryCatch({
-    source('11_CreateCRSPPredictors.R', echo=T) 
-})
+## print('master: 11_CreateCRSPPredictors.R')
+## tryCatch({
+##     source('11_CreateCRSPPredictors.R', echo=T) 
+## })
 
 
-## # this is incomplete 2021 01 17 AC
 ## print('master: 12_SignalExhibits.R')
 ## tryCatch({
 ##     source('12_SignalExhibits.R', echo=T) 
@@ -48,7 +47,6 @@ tryCatch({
 })
 
 
-## # update me
 ## print('master: 21_PredictorExhibits.R')
 ## if (quickrun==F){
 ##     tryCatch({
@@ -83,7 +81,7 @@ tryCatch({
     source('40_PlaceboPorts.R', echo=T) # 30 min
 })
 
-## # incomplete
+
 ## if (quickrun==F){
 ##     print('41_PlaceboExhibits.R')
 ##     tryCatch({

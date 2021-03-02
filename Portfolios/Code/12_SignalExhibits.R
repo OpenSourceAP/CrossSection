@@ -10,7 +10,7 @@ optFontFamily = '' # works with linux command line
 library(extrafont)
 loadfonts()
 
-source('00_SettingsAndFunctions.R')
+source('00_SettingsAndTools.R')
 
 # For fast calculation of stock-level correlations
 library(ccaPP)
@@ -18,6 +18,120 @@ library(foreach)
 library(doParallel)
 cores = detectCores()
 library(tictoc)
+
+
+# Figure N: Dataset Coverage -------------------
+# 2021 02 Andrew: not sure where the old table came from, making a new one
+# It might have been hand constructed
+
+# first count for each paper
+count.us = alldocumentation %>%
+    filter(Predictability.in.OP != '9_drop') %>%
+    mutate(bench = Cat.Signal == 'Predictor') %>%
+    group_by(Predictability.in.OP) %>%
+    summarize(
+        bench = sum(bench), extended = n()
+    )
+
+count.mp = read_excel(
+        paste0(pathProject, 'SignalDocumentation.xlsx')
+      , sheet = 'MP'
+    ) %>%
+    mutate(covered = ClosestMatch != '_missing_') %>%
+    group_by(Predictability.in.OP) %>%
+    summarize(
+        n = n(), covered = sum(covered)
+    ) %>%
+    mutate(pctcov = covered/n*100)
+
+count.ghz = read_excel(
+        paste0(pathProject, 'SignalDocumentation.xlsx')
+      , sheet = 'GHZ'
+    ) %>%
+    mutate(covered = ClosestMatch != '_missing_') %>%
+    group_by(Predictability.in.OP) %>%
+    summarize(
+        n = n(), covered = sum(covered)
+    ) %>%
+    mutate(pctcov = covered/n*100)
+
+count.hlz = read_excel(
+        paste0(pathProject, 'SignalDocumentation.xlsx')
+      , sheet = 'HLZ'
+    ) %>%
+    mutate(
+        covered = Coverage != 'zz missing'
+    ) %>%
+    select('Risk factor', Predictability.in.OP
+         , covered, Coverage) %>%    
+    group_by(Predictability.in.OP) %>%
+    summarize(
+        n = n(), covered = sum(covered)
+    ) %>%
+    mutate(pctcov = covered/n*100)
+
+
+count.hxz = read_excel(
+        paste0(pathProject, 'SignalDocumentation.xlsx')
+      , sheet = 'HXZ'
+    ) %>%
+    mutate(covered = ClosestMatch != '_missing_') %>%
+    select(HXZname, ClosestMatch, covered
+         , Predictability.in.OP.ignoring.holdper
+         , holdper)  %>%    
+    group_by(ClosestMatch) %>%
+    mutate(holdalt = row_number()) %>%
+    ungroup() %>%
+    mutate(
+       Predictability.in.OP = if_else(
+            holdalt == 1
+          , Predictability.in.OP.ignoring.holdper
+          , 'z0_altholdper'
+        )
+    ) %>%
+    group_by(Predictability.in.OP) %>%
+    summarize(
+        n = n(), covered = sum(covered)
+    ) %>%
+    mutate(pctcov = covered/n*100)
+
+
+# merge
+tab.n = count.us %>%
+    full_join(
+        count.mp %>% transmute(Predictability.in.OP, mp = n)
+    ) %>%
+    full_join(
+        count.ghz %>% transmute(Predictability.in.OP, ghz = n)
+    ) %>%
+    full_join(
+        count.hlz %>% transmute(Predictability.in.OP, hlz = n)
+    ) %>%
+    full_join(
+        count.hxz %>% transmute(Predictability.in.OP, hxz = n)
+    ) %>%
+    replace(is.na(.),0) %>%
+    arrange(Predictability.in.OP)
+
+tab.pctcov = count.mp %>%
+    transmute(Predictability.in.OP, mp = pctcov) %>%
+        full_join(
+            count.ghz %>% transmute(Predictability.in.OP, ghz = pctcov)
+        ) %>%
+        full_join(
+            count.hlz %>% transmute(Predictability.in.OP, hlz = pctcov)
+        ) %>%
+        full_join(
+            count.hxz %>% transmute(Predictability.in.OP, hxz = pctcov)
+        ) %>%
+        replace(is.na(.),0) 
+
+# write to disk
+write_xlsx(
+    list(n = tab.n, pctcov = tab.pctcov)
+  , paste0(pathResults,'coverage.xlsx')
+)
+
 
 # Figure 1 (stock): Correlations (stock level) ----------------------------
 
@@ -39,7 +153,10 @@ for (i in prds){
     signals = signals %>% 
       full_join(
         read_csv(paste0(pathPredictors, i, '.csv')) 
-      ) 
+      )
+    print(mem_used())
+    gc()
+    
   } else {
     message(paste(i, ' does not exist in Data/Predictors folder'))
   }
@@ -72,15 +189,18 @@ temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
                 .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                  tempSignals = read_fst(paste0(pathDataIntermediate, 'temp.fst'),
-                                         columns = loopList[i, ] %>% as.character()) %>%
-                    filter(complete.cases(.) == TRUE) %>%
-                    as.matrix()
-                  
-                  corSpearman(x = tempSignals[, 1], 
-                              y = tempSignals[, 2], 
-                              consistent = FALSE)
-                  
+                    tempSignals = read_fst(paste0(pathDataIntermediate, 'temp.fst'),
+                                           columns = loopList[i, ] %>% as.character()) %>%
+                        filter(complete.cases(.) == TRUE) %>%
+                        as.matrix()                    
+                    gc()
+                    
+                    corSpearman(x = tempSignals[, 1], 
+                                y = tempSignals[, 2], 
+                                consistent = FALSE)
+                    gc()
+
+                    print(mem_used())
                 }
 
 #stop cluster
