@@ -1,4 +1,6 @@
 # master.R created 2020 12 AC
+# assumes working directory is the same directory that all R files are in
+
 # scripts below do the following
 #   sets up paths (see 00_SettingsAndTools.R)
 #   downloads crsp data that can't be easily shared and creates related predictors
@@ -47,12 +49,12 @@ tryCatch({
 })
 
 
-## print('master: 21_PredictorExhibits.R')
-## if (quickrun==F){
-##     tryCatch({
-##         source('21_PredictorExhibits.R', echo=T)
-##     })
-## }
+print('master: 21_PredictorExhibits.R')
+if (quickrun==F){
+    tryCatch({
+        source('21_PredictorExhibits.R', echo=T)
+    })
+}
 
 print('master: 30a_CheckPredictorsHoldper.R')
 tryCatch({
@@ -69,12 +71,12 @@ tryCatch({
     source('30c_CheckPredictorsDeciles.R', echo=T) # 30 min
 })
 
-## if (quickrun==F){
-##     print('31_CheckPredictorsExhibits.R')
-##     tryCatch({
-##         source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
-##     })
-## }
+if (quickrun==F){
+    print('31_CheckPredictorsExhibits.R')
+    tryCatch({
+        source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
+    })
+}
 
 print('master: 40 40_PlaceboPorts.R')
 tryCatch({
@@ -82,15 +84,15 @@ tryCatch({
 })
 
 
-## if (quickrun==F){
-##     print('41_PlaceboExhibits.R')
-##     tryCatch({
-##         source('41_PlaceboExhibits.R', echo=T, verbose=T)
-##     })
-## }
+if (quickrun==F){
+    print('41_PlaceboExhibits.R')
+    tryCatch({
+        source('41_PlaceboExhibits.R', echo=T, verbose=T)
+    })
+}
 
 
-print('master: 50_DailyPredictorPorts.R')
-tryCatch({
-    source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
-})
+## print('master: 50_DailyPredictorPorts.R')
+## tryCatch({
+##     source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
+## })

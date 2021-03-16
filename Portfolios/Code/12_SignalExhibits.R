@@ -1,18 +1,6 @@
 ## exhibits that use only signals or documentation
 
 ### ENVIRONMENT ###
-rm(list=ls())
-options(stringsAsFactors = FALSE)
-options(scipen=999)
-optFontsize = 20  # Fix fontsize for graphs here
-# optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
-optFontFamily = '' # works with linux command line
-library(extrafont)
-loadfonts()
-
-pathProject = paste0(getwd(), '/')
-source(paste0(pathProject, 'Portfolios/Code/00_SettingsAndTools.R'))
-
 # For fast calculation of stock-level correlations
 library(ccaPP)
 library(foreach)
@@ -22,11 +10,9 @@ library(tictoc)
 
 
 # Figure N: Dataset Coverage -------------------
-# 2021 02 Andrew: not sure where the old table came from, making a new one
-# It might have been hand constructed
 
 # first count for each paper
-count.us = alldocumentation %>%
+count.us = readdocumentation() %>%
     filter(Predictability.in.OP != '9_drop') %>%
     mutate(bench = Cat.Signal == 'Predictor') %>%
     group_by(Predictability.in.OP) %>%
@@ -144,17 +130,22 @@ prds = alldocumentation %>%
   filter(Cat.Signal == 'Predictor') %>% 
   pull(signalname)
 
+signs = alldocumentation %>% 
+  filter(Cat.Signal == 'Predictor') %>% 
+  pull(Sign)
+
 # Create table with all Predictors
 signals = read_csv(paste0(pathPredictors, prds[1], '.csv')) %>% 
   select(permno, yyyymm)
 
-for (i in prds){
+for (i in 1:length(prds)){
 
-  if (file.exists(paste0(pathPredictors, i, '.csv'))) {
-    signals = signals %>% 
-      full_join(
-        read_csv(paste0(pathPredictors, i, '.csv')) 
-      )
+  if (file.exists(paste0(pathPredictors, prds[i], '.csv'))) {
+      tempin = read_csv(paste0(pathPredictors, prds[i], '.csv'))
+      tempin[,3] = signs[i]*tempin[,3] # sign according top OP
+      
+    signals = signals %>% full_join(tempin)
+      
     print(mem_used())
     gc()
     

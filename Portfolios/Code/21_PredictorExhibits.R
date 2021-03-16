@@ -1,39 +1,5 @@
 ## Exhibits for paper
 
-### ENVIRONMENT ###
-rm(list = ls())
-options(stringsAsFactors = FALSE)
-options(scipen = 999)
-optFontsize <- 20 # Fix fontsize for graphs here
-optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
-#optFontFamily <- "" # works with linux command line
-library(extrafont)
-loadfonts()
-
-library(tidyverse)
-library(readxl)
-library(lubridate)
-library(xtable)
-options(xtable.floating = FALSE)
-
-pathProject = getwd()
-
-tryCatch(
-  source(paste0(pathProject, '/Portfolios/Code/00_SettingsAndTools.R')),
-  error = function(cond) {
-    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
-  }
-)
-
-# check system for dl method
-dlmethod <- "auto"
-sysinfo <- Sys.info()
-if (sysinfo[1] == "Linux") {
-  dlmethod <- "wget"
-}
-
-
-
 # Import factor returns from Kenneth French's website ---------------------
 
 # FF 5 factors
@@ -42,11 +8,12 @@ download.file("http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Re
               method = dlmethod
 )
 
-# incovenenient setwd because of a peculiarity of unzip(), see
+# inconvenient setwd because of a peculiarity of unzip(), see
 # https://stackoverflow.com/questions/15226150/r-exdir-does-not-exist-error
+temp = getwd()
 setwd(pathDataIntermediate)
 unzip("temp.zip") #, exdir = pathDataIntermediate)
-setwd(pathProject)
+setwd(temp)
 
 # Momentum (FF style)
 download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip",
@@ -56,7 +23,7 @@ download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_M
 
 setwd(pathDataIntermediate)
 unzip("temp.zip")
-setwd(pathProject)
+setwd(temp)
 
 # join
 ff <- read_csv(
@@ -283,36 +250,37 @@ ggsave(filename = paste0(pathResults, "fig1Port_jointly.png"), width = 10, heigh
 
 # Figure 2: Replication rates ---------------------------------------------
 
-df <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+df0 <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
                 sheet = 'short') %>%
-  mutate(success = 1 * (round(tstat, digits = 2) >= 1.96))
+  mutate(success = 1 * (round(tstat, digits = 2) >= 1.96)) %>%
+    select(signalname, tstat, success, T.Stat)
 
 # Check if predictor summary has in-sample returns only
-if (sum(df$samptype == 'insamp') != nrow(df)) {
+if (sum(df0$samptype == 'insamp') != nrow(df0)) {
   message('Mixing different sample types below!!')
 }
 
-df_meta <- read_xlsx(
-  path = paste0(pathProject, "SignalDocumentation.xlsx"),
-  sheet = "BasicInfo"
-) %>%
-  mutate_at(
-    .vars = vars(starts_with("Cat.")),
-    .funs = list(str_to_title)
-  )
+# Use most recent Category labels and keep comparable predictors only
+df_meta <- readdocumentation() %>%
+    mutate(
+        comparable = Cat.Signal == 'Predictor'
+        & Predictability.in.OP == '1_clear'
+        & Signal.Rep.Quality != '4_lack_data'
+    ) %>%
+    select(signalname, Cat.Data, comparable
+         , Predictability.in.OP, Signal.Rep.Quality ) %>%
+    mutate(
+        Cat.Data = replace(Cat.Data, Cat.Data == 'Options', 'Other')
+    ) 
 
-# Use most recent Category labels
-df <- df %>%
-  select(signalname, success, tstat) %>%
-  left_join(df_meta %>%
-    select(Acronym, starts_with("Cat.")),
-  by = c("signalname" = "Acronym")
-  )
+df <- df0 %>%
+    select(signalname, success, tstat) %>%
+    left_join(df_meta) %>%
+    filter(comparable)
 
 
 # Replication success by data category (for baseline ones)
 labelData <- df %>%
-  filter(Cat.Signal == "Predictor") %>%
   group_by(Cat.Data) %>%
   summarise(
     rate = mean(success),
@@ -322,7 +290,6 @@ labelData <- df %>%
   ungroup()
 
 df %>%
-  filter(Cat.Signal == "Predictor") %>%
   group_by(Cat.Data, success) %>%
   count() %>%
   ggplot(aes(
@@ -347,9 +314,17 @@ df %>%
 
 ggsave(filename = paste0(pathResults, "fig2b_reprate_data.png"), width = 10, height = 8)
 
+# manual:
+df %>% group_by(Cat.Data) %>% summarize(n())
+159 - 74-41
+df %>% filter(success==0) %>% arrange(Cat.Data) %>% print(n=50)
+
+df0 %>% left_join(df_meta) %>% filter(Predictability.in.OP == '2_likely') %>%
+    select(signalname, tstat, T.Stat) %>% arrange(tstat) %>% print(n=50)
+
+
 # Alternatively: Jitter plot
 df %>%
-  filter(Cat.Signal == "Predictor") %>%
   transmute(Cat.Data, success, tstat = abs(tstat)) %>%
   ggplot(aes(
     x = Cat.Data %>% fct_rev() %>% relevel("Other"),
@@ -372,73 +347,110 @@ ggsave(filename = paste0(pathResults, "fig2b_reprate_data_Jitter.png"), width = 
 docnew = readdocumentation() # for easy updating of documentation
 
 df <- read_xlsx(
-    paste0(pathDataPortfolios, "PredictorSummary.xlsx")
-  , sheet = 'full'
-) %>%
+        paste0(pathDataPortfolios, "PredictorSummary.xlsx")
+      , sheet = 'full'
+    ) %>%
     filter(
-        samptype == 'insamp', Cat.Signal == 'Predictor', port == 'LS'
+        samptype == 'insamp', port == 'LS'
     ) %>%
     select(signalname, tstat) %>%
+    rbind(
+        read_xlsx(paste0(pathDataPortfolios, "PlaceboSummary.xlsx"),
+              sheet = 'ls_insamp_only') %>% 
+      select(signalname, tstat)
+    ) %>%    
     left_join(
         docnew, by='signalname'
     ) %>%
-    transmute(signalname, 
+    transmute(signalname,
+              Authors,
               tstatRep = abs(tstat), 
               tstatOP = abs(as.numeric(T.Stat)),
-              PredictabilityOP = Predictability.in.OP,
-              ReplicationType = Signal.Rep.Quality,
-              OPTest = Test.in.OP)
-
-
-df_plot = df %>% 
-  filter(PredictabilityOP == '1_clear', ReplicationType == '1_good') %>%
-  filter(!is.na(OPTest)) %>% 
-  mutate(grouper = case_when(
-    grepl('port sort', OPTest, ignore.case = TRUE) ~ 'Portfolio sort',
-    grepl('event', OPTest, ignore.case = TRUE)     ~ 'Event Study',
-    grepl('LS', OPTest, ignore.case = FALSE)        ~ 'Portfolio sort',
-    grepl('reg', OPTest, ignore.case = TRUE)       ~ 'Regression',
-    TRUE ~ 'Other'
-  )) %>% 
+              PredOP = Predictability.in.OP,
+              RepType = Signal.Rep.Quality,
+              OPTest = Test.in.OP,
+              Evidence.Summary) %>%
+    mutate(
+        porttest = grepl('port sort', OPTest, ignore.case = TRUE)
+        | grepl('LS', OPTest, ignore.case = FALSE)   
+        | grepl('double sort', OPTest, ignore.case = FALSE)
+        , standard = !( grepl('nonstandard', OPTest) | grepl('FF3 style', OPTest) )
+    ) %>%
   filter(
-      grouper == 'Portfolio sort' & !grepl('nonstandard', OPTest)
+      PredOP %in% c('1_clear', '2_likely')
+  )
+
+    
+# select comparable only
+df_plot = df %>%    
+  filter(
+      !is.na(OPTest), porttest
+     , RepType %in% c('1_good','2_fair')
   ) 
 
+
+# regression
 reg = lm(tstatRep ~ tstatOP, data = df_plot) %>% summary()
+regstr  = paste0(
+    '[t reproduction] = ', round(reg$coefficients[1], 2)
+  , ' + ', format(round(reg$coefficients[2], 2), nsmall = 2)
+  , ' [t original], R-sq = ', round(100*reg$r.squared, 0), '%'
+)
 
-df_plot %>% 
-  ggplot(aes(y = tstatRep, x = tstatOP, label=signalname)) +
-  # ggplot(aes(x = tstatRep, y = tstatOP, label=signalname, group = grouper, color = grouper)) +
-  geom_point() +
-  geom_smooth(method = 'lm', se = F) +
-  labs(y = 't-stat reproduction', x = 't-stat original study', 
-       title = paste0('y = ', round(reg$coefficients[1], 2), ' + ', round(reg$coefficients[2], 2), ' * x, R2 = ', round(100*reg$r.squared, 2), '%')) +
-  geom_abline(intercept = 0, slope = 1) +
-  ggrepel::geom_text_repel() +
-  coord_cartesian(xlim = c(0, 17), ylim = c(0, 17)) +
-  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
-
-ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP_Labels.png"), width = 10, height = 8)
+ablines = tibble(slope = c(1, round(reg$coefficients[2], 2)), 
+                 intercept = c(0, round(reg$coefficients[1], 2)),
+                 group = factor(x = c('45 degree line', 'OLS fit'),
+                                levels = c('OLS fit', '45 degree line')))
 
 
-df_plot %>% 
-  ggplot(aes(y = tstatRep, x = tstatOP, label=signalname)) +
-  geom_point() +
-  geom_smooth(method = 'lm') +
-  labs(y = 't-stat reproduction', x = 't-stat original study', 
-       title = paste0('y = ', round(reg$coefficients[1], 2), ' + ', round(reg$coefficients[2], 2), ' * x, R2 = ', round(100*reg$r.squared, 2), '%')) +
-  geom_abline(intercept = 0, slope = 1) +
-  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
+df_plot %>%
+    mutate(
+        PredOP
+        = factor(PredOP
+               , levels = c('1_clear', '2_likely', '4_not')
+               , labels = c('Clear', 'Likely', 'Not'))
+    ) %>% 
+    ggplot(aes(y = tstatRep, x = tstatOP)) +
+    geom_point(size =4, aes(shape = PredOP)) +
+    scale_shape_manual(values=c(19,2,3)) +
+    geom_abline(data = ablines, aes(slope = slope, intercept = intercept, linetype = group)) +    
+    annotate('text',x=3.3, y=14, label = regstr, size = 8) +
+    coord_trans(x='log10', y='log10', xlim = c(1.5, 17), ylim = c(1.0, 15)) +
+#    coord_trans(x='log10', y='log10', xlim = c(0.5, 17), ylim = c(0.5, 15)) +    
+    labs(y = 't-stat reproduction', 
+         x = 't-stat original study', 
+         linetype = '',
+         shape = 'Predictor Category') + 
+    ggrepel::geom_text_repel(aes(label=signalname)) +
+    scale_x_continuous(breaks=c(2, 5, 10, 15)) +
+    scale_y_continuous(breaks=c(2, 5, 10, 15)) +
+    theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
+    theme(legend.position = c(.8, .25)) 
 
-ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP.png"), width = 10, height = 8)
+
+temp = 1.5
+ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP.png")
+     , width = 10*temp, height = 6*temp)
+
+# hand examine for comparables
+df_plot %>% filter(PredOP == '2_likely', !is.na(tstatOP)) %>%
+    select(signalname, Authors, tstatRep, tstatOP, RepType) %>% arrange(Authors)
 
 
-# Replication rate vis-a-vis other studies --------------------------------
+df %>% filter(porttest, !is.na(tstatOP), !RepType %in% c('1_good','2_fair')) %>%
+    select(signalname, Authors, tstatRep, tstatOP, RepType) %>% arrange(Authors)
 
-df = read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
-                sheet = 'short') %>%
-  mutate(tstat = abs(tstat)) %>% 
-  mutate(success = 1 * (round(tstat, digits = 2) >= 1.96))
+# McLean and Pontiff style graphs -----------------------------------------
+
+# stats
+stats <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+                   sheet = 'short') %>%
+  select(signalname, tstat, rbar)
+
+statsFull <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+                       sheet = 'full') %>%
+  filter(samptype == 'postpub', port == 'LS') %>% 
+  select(signalname, tstat, rbar) 
 
 mpSignals = read_xlsx(
   paste0(pathProject, 'SignalDocumentation.xlsx')
@@ -446,76 +458,84 @@ mpSignals = read_xlsx(
 ) %>%
   filter(ClosestMatch != '_missing_')
 
-hxzSignals = read_xlsx(
-  paste0(pathProject, 'SignalDocumentation.xlsx')
-  , sheet = 'HXZ'
-) %>%
-  filter(ClosestMatch != '_missing_')
+# Merge data
+# alldocumentation is created in 00_SettingsAndTools.R
+df_merge <- readdocumentation() %>%
+  # Add flag for whether in MP
+  mutate(inMP = signalname %in% mpSignals$ClosestMatch) %>% 
+  filter(Cat.Signal == 'Predictor' | inMP) %>% 
+  left_join(stats, by = c("signalname")) %>%
+  left_join(statsFull %>% 
+              transmute(signalname, tstatPS = tstat, rbarPS = rbar),
+            by = 'signalname') %>% 
+  # for easier comparison, make sure all negative t-stats -> abs()
+  mutate_at(.vars = vars(tstat, tstatPS, rbar, rbarPS),
+            .funs = list(~ifelse(tstat <0, abs(.), .))) %>% 
+  transmute(signalname,
+            tstat, tstatPS, DeclineTstat = tstat - tstatPS,
+            rbar, rbarPS, DeclineRBar = rbar - rbarPS,
+            Category = Predictability.in.OP %>%
+              factor(
+                levels = c("indirect", "4_not", "3_maybe", "2_likely", "1_clear"),
+                labels = c("no evidence", "not", "maybe", "likely", "clear")
+              ),
+            CatPredPlacebo = Cat.Signal,
+            inMP
+  ) %>% 
+  filter(signalname != 'IO_ShortInterest') %>%
+    filter(Category %in% c('clear','likely')) 
 
 
-df_tmp = df %>%
-  # Add flag for whether in MP or HXZ
-  transmute(tstat,
-            PredOP = factor(Predictability.in.OP, levels = c('1_clear', '2_likely'), labels = c('Clear', 'Likely')),
-            inMP = signalname %in% mpSignals$ClosestMatch,
-            inHXZ = signalname %in% hxzSignals$ClosestMatch) 
+# In-sample return
+plotret =  df_merge %>%
+  mutate(inMPStr = ifelse(inMP, 'in MP (2016)', 'not in MP (2016)')) %>% 
+  ggplot(aes(x = DeclineRBar, y = rbar)) +
+  geom_smooth(method = 'lm', color = 'black', aes(linetype = inMPStr), show.legend = F) +
+  geom_point(aes(shape = inMPStr), size = 2) +
+  scale_shape_manual(values = c(19, 2)) +
+    # 45 deg line
+  geom_abline(intercept = 0, slope = 1, linetype = 'dotted') +    
+  # Add 0,0 as reference lines
+  geom_hline(yintercept = 0, linetype = 1) +
+  geom_vline(xintercept = 0, linetype = 1) +
+  labs(x = 'Decline in return post-publication', 
+       y = 'In-Sample return',
+       shape = '') +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
+  theme(legend.position = c(0, 1), legend.justification = c(0, 1)) +
+  coord_trans(xlim = c(-1.0, 2), ylim = c(0, 2.5))     
 
-# Make dataset for plotting
-df_plot = df_tmp %>% 
-  select(tstat, PredOP) %>% 
-  mutate(Data = 'CZ') %>% 
-  bind_rows(df_tmp %>% 
-              filter(inMP) %>% 
-              mutate(Data = 'MP') %>% 
-              select(tstat, PredOP, Data)) %>% 
-  bind_rows(df_tmp %>% 
-              filter(inHXZ) %>% 
-              mutate(Data = 'HXZ') %>% 
-              select(tstat, PredOP, Data)) %>% 
-  mutate(Data = factor(Data, levels = c('MP', 'HXZ', 'CZ'), labels = c('MP (2016)', 'HXZ (2020)', 'Our study')))
-
-df_plot %>%
-  ggplot(aes(x = Data, y = tstat, shape = PredOP)) +
-  geom_jitter(width = .2, height = 0, size = 3) +
-  scale_shape_manual(values = c(2, 19)) +
-  geom_hline(yintercept = 1.96, linetype = "dashed") +
-  # geom_col(data = df_plot %>% 
-  #            filter(PredOP == 'Clear') %>% 
-  #            mutate(success = 1 * (round(tstat, digits = 2) >= 1.96)) %>% 
-  #            group_by(Data) %>% 
-  #            summarise(meanSuccess = mean(success, na.rm = TRUE)),
-  #          aes(x = Data, y = 15*meanSuccess), inherit.aes = FALSE, alpha = .2, width = .4) +
-  # scale_y_continuous(sec.axis = sec_axis(~./15, name = "Share of successful replications among predictors")) +
-  #  geom_boxplot(alpha = 0, outlier.shape = NA) +
-  labs(y = 't-statistic',
-       x = '',
-       shape = 'Predictor Category') +
-  coord_flip() +
-  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
-
-ggsave(filename = paste0(pathResults, "fig_reprateCompareMPHXZ.png"), width = 12, height = 8)
+# In-sample t-stat
+plott =  df_merge %>% 
+  mutate(inMPStr = ifelse(inMP, 'in MP (2016)', 'not in MP (2016)')) %>% 
+  ggplot(aes(x = DeclineRBar, y = tstat)) +
+  geom_smooth(method = 'lm', color = 'black', aes(linetype = inMPStr), show.legend = FALSE) +
+  geom_point(aes(shape = inMPStr), size = 2) +
+  scale_shape_manual(values = c(19, 2)) +
+  # Add 0,0 as reference lines
+  geom_hline(yintercept = 0, linetype = 1) +
+  geom_vline(xintercept = 0, linetype = 1) +
+  labs(x = 'Decline in return post-publication', 
+       y = 'In-Sample t-statistic',
+       shape = '') +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
+  theme(legend.position = c(0, 1), legend.justification = c(0, 1)) +
+  coord_trans(xlim = c(-1.0, 2), ylim = c(0, 14)) +
+  scale_y_continuous(breaks=seq(0,14,2))
 
 
+plotboth = grid.arrange(plotret,plott,nrow=2)
 
-df_plot %>%
-  mutate(Text = paste(Data, '-', PredOP)) %>% 
-  ggplot(aes(x = Text, y = tstat, shape = PredOP)) +
-  geom_jitter(width = .2, height = 0, size = 3) +
-  scale_shape_manual(values = c(2, 19)) +
-  geom_hline(yintercept = 1.96, linetype = "dashed") +
-  # geom_col(data = df_plot %>% 
-  #            filter(PredOP == 'Clear') %>% 
-  #            mutate(success = 1 * (round(tstat, digits = 2) >= 1.96)) %>% 
-  #            group_by(Data) %>% 
-  #            summarise(meanSuccess = mean(success, na.rm = TRUE)),
-  #          aes(x = Data, y = 15*meanSuccess), inherit.aes = FALSE, alpha = .2, width = .4) +
-  # scale_y_continuous(sec.axis = sec_axis(~./15, name = "Share of successful replications among predictors")) +
-  #  geom_boxplot(alpha = 0, outlier.shape = NA) +
-  labs(y = 't-statistic',
-       x = '',
-       shape = 'Predictor Category') +
-  coord_flip() +
-  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
+ggsave(filename = paste0(pathResults, 'fig5_MP_both.png')
+     , plot = plotboth
+     , width = 7, height = 8)
+
+# manual inspection 
+df_merge %>% filter(inMP) %>% select(signalname, tstat, Category) %>% arrange(tstat)
+
+df_merge %>% filter(inMP) %>% summarize(mean(rbar), sd(rbar), sum(tstat>1.5))
+
+
 
 
 
@@ -533,7 +553,7 @@ statsFull <- read_xlsx(
 
 # Merge data
 # alldocumentation is created in 00_SettingsAndTools.R
-df_merge <- alldocumentation %>%
+df_merge <- readdocumentation() %>%
   filter(Cat.Signal == 'Predictor') %>% 
   left_join(stats %>%
     select(signalname, tstat, rbar),
@@ -543,23 +563,21 @@ df_merge <- alldocumentation %>%
                filter(samptype == 'postpub', port == 'LS') %>% 
                transmute(signalname, `t-stat PS` = tstat),
              by = 'signalname') %>% 
-  transmute(Authors,
-    Year = as.integer(Year),
+  transmute(
+    ref = paste0(Authors, ' (', Year, ')'),
     Predictor = LongDescription,
-    `Sample Start` = as.integer(SampleStartYear),
-    `Sample End` = as.integer(SampleEndYear),
+    signalname,
+    sample = paste0(SampleStartYear,'-',SampleEndYear),
     `Mean Return` = round(rbar, digits = 2),
     `t-stat IS` = round(tstat, digits = 2),
-    `t-stat PS`,
-    Evidence = Evidence.Summary,
-#    Cat.Signal,
+    Evidence = Evidence.Summary,        
     Category = Predictability.in.OP %>%
       factor(
-        levels = c("no_evidence", "4_not", "3_maybe", "2_likely", "1_clear"),
+        levels = c("indirect", "4_not", "3_maybe", "2_likely", "1_clear"),
         labels = c("no evidence", "not", "maybe", "likely", "clear")
       )
   ) %>%
-  arrange(Authors, Year) 
+  arrange(ref) 
 
 
 
@@ -592,4 +610,86 @@ print(outputtable2,
 )
 
 
+
+## random numbers for paper
+
+
+# for easy updating of documentation
+docnew = readdocumentation()
+
+df <- rbind(
+    read_xlsx(
+        paste0(pathDataPortfolios, "PredictorSummary.xlsx")
+      , sheet = 'full'
+    ) %>%
+    filter(
+        samptype == 'insamp', port == 'LS'
+    ) %>%
+    select(signalname, tstat)
+  , 
+    read_xlsx(
+        paste0(pathDataPortfolios, "PlaceboSummary.xlsx")
+      , sheet = 'full'
+    ) %>%
+    filter(
+        samptype == 'insamp', port == 'LS'
+    ) %>%
+    select(signalname, tstat)
+) %>%
+    left_join(
+        docnew, by='signalname'
+    ) %>%
+    transmute(signalname,
+              Authors,
+              tstatRep = abs(tstat), 
+              tstatOP = abs(as.numeric(T.Stat)),
+              Cat.Signal,
+              PredOP = Predictability.in.OP,
+              RepType = Signal.Rep.Quality,
+              OPTest = Test.in.OP,
+              Evidence.Summary) 
+
+df %>% filter(!is.na(tstatRep))
+
+df %>% group_by(Cat.Signal) %>% summarize(total = n(), fail = sum(tstatRep<1.96), fail/total )
+
+df %>% group_by(PredOP) %>% summarize(total = n(), fail = sum(tstatRep<1.96), fail/total )
+
+df %>% filter(PredOP == '1_clear') %>% arrange(tstatRep) %>%
+    select(signalname, tstatRep, tstatOP, OPTest) %>% print(n=10)
+
+
+df %>% filter(PredOP == '2_likely') %>% arrange(tstatRep) %>%
+    select(signalname, tstatRep, tstatOP, OPTest) %>% print(n=40)
+
+
+
+df %>% distinct(Authors)
+
+df %>% group_by(PredOP) %>% summarize(n(),sum(tstatRep<1.96))
+df %>% filter(Cat.Signal == 'Predictor', tstatRep<1.96) %>%
+    select(signalname, tstatRep, PredOP) %>% arrange(tstatRep) %>% print(n=40)
+
+df %>% filter(grepl('correlated',Evidence.Summary)) %>%
+    select(signalname, Authors, tstatRep, Evidence.Summary)
+
+# mp comparison
+mp = read_xlsx(
+    paste0(pathProject, 'SignalDocumentation.xlsx')
+    , sheet = 'MP'
+) %>%
+    left_join(
+        df %>% transmute(ClosestMatch = signalname, tstatRep, tstatOP)
+    ) %>%
+    transmute(Predictor, ClosestMatch, Cat.Signal, PredOP = Predictability.in.OP, tstatRep) %>%
+    arrange(tstatRep)
+
+mp %>% filter(!PredOP %in% c('1_clear','2_likely'))
+
+mp %>% filter(!is.na(tstatRep)) %>% group_by(Cat.Signal) %>% summarize( reprate = sum(tstatRep>1.96)/n(), n())
+
+mp  %>% filter(!is.na(tstatRep)) %>% group_by(PredOP) %>% summarize( reprate = sum(tstatRep>1.96)/n(), nfail = sum(tstatRep<1.96), n())
+
+
+mp %>% filter(PredOP %in% c('4_not','indirect'))
 

@@ -7,9 +7,7 @@ feed.verbose = F # use T if you want lots of feedback
 options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
-
-#pathProject = '/cm/chen/anomalies.com/cfr1/'
-pathProject = paste0(getwd(), '/')
+pathProject = getwd()
 
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
@@ -44,6 +42,31 @@ library(fst)
 library(RPostgres)
 library(getPass)
 
+
+### EXHIBITS SETTINGS ###
+options(stringsAsFactors = FALSE)
+options(scipen = 999)
+optFontsize <- 20 # Fix fontsize for graphs here
+
+library(extrafont)
+loadfonts()
+
+library(tidyverse)
+library(readxl)
+library(lubridate)
+library(xtable)
+options(xtable.floating = FALSE)
+library(gridExtra)
+
+# system dependent settings 
+dlmethod <- "auto"
+optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
+sysinfo <- Sys.info()
+if (sysinfo[1] == "Linux") {
+  dlmethod <- "wget"
+  optFontFamily <- "" # necessary for linux command line  
+}
+
 #### FUNCTION FOR READING IN DOCUMENTATION
 
 readdocumentation = function(){
@@ -64,7 +87,6 @@ readdocumentation = function(){
       , sheet = 'BasicInfo'
     ) %>%
         rename(signalname = Acronym)  %>%
-        select(-Authors) %>% 
         # Format order of category labels
         mutate(Cat.Data = as_factor(Cat.Data) %>% 
                    factor(levels = c('Accounting', 'Analyst', 'Event', 'Options', 'Price', 'Trading', '13F', 'Other'))) %>% 
@@ -74,7 +96,9 @@ readdocumentation = function(){
     temp2 = read_excel(
         paste0(pathProject, 'SignalDocumentation.xlsx')
       , sheet = 'AddInfo'
-    ) %>% rename(
+    ) %>%
+        select(-Authors) %>%         
+        rename(
             signalname = Acronym
           , sweight = 'Stock Weight'
           , q_cut = 'LS Quantile'

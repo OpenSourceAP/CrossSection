@@ -108,7 +108,7 @@ signalname_to_ports = function(
                 tempbreak = tempbreak %>% filter(exchcd == 1)
             }
         } # if q_filt
-
+        
         ## create breakpoints
         # turn q_cut into a vector carefully
         if (q_cut <= 1/3){

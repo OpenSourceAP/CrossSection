@@ -2,20 +2,7 @@
 # takes about 2 hours, but outputs data every 30 min
 # Andrew Chen 2020 01
 
-rm(list = ls())
-
 ### ENVIRONMENT AND DATA ###
-pathProject = getwd()
-
-tryCatch(
-  source(paste0(pathProject, '/Portfolios/Code/00_SettingsAndTools.R')),
-  error = function(cond) {
-    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
-  }
-)
-
-source(paste0(pathProject, '/Portfolios/Code/01_PortfolioFunction.R'))
-
 source(paste0(pathProject, "/Portfolios/Code/setup_crspm.r"), echo = T)
 
 ######################################################################
