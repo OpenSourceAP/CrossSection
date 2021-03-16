@@ -3,16 +3,18 @@
 rm(list = ls())
 
 ### ENVIRONMENT AND DATA ###
+pathProject = getwd()
 
 tryCatch(
-  source("00_SettingsAndTools.R"),
+  source(paste0(pathProject, '/Portfolios/Code/00_SettingsAndTools.R')),
   error = function(cond) {
     message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
 )
-source('01_PortfolioFunction.R')
 
-source(paste0(pathProject, "Portfolios/Code/setup_crspm.r"), echo = T)
+source(paste0(pathProject, '/Portfolios/Code/01_PortfolioFunction.R'))
+
+source(paste0(pathProject, "/Portfolios/Code/setup_crspm.r"), echo = T)
 
 
 ######################################################################
@@ -37,3 +39,6 @@ port <- loop_over_strategies(
 )
 
 checkport(port, c("signalname", "port"))
+
+
+writestandard(port, pathDataPortfolios, "CheckPredictorPorts_Deciles.csv")

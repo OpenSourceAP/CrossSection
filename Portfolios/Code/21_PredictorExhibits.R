@@ -16,8 +16,10 @@ library(lubridate)
 library(xtable)
 options(xtable.floating = FALSE)
 
+pathProject = getwd()
+
 tryCatch(
-  source("00_SettingsAndTools.R", echo = TRUE),
+  source(paste0(pathProject, '/Portfolios/Code/00_SettingsAndTools.R')),
   error = function(cond) {
     message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
   }
@@ -44,7 +46,7 @@ download.file("http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Re
 # https://stackoverflow.com/questions/15226150/r-exdir-does-not-exist-error
 setwd(pathDataIntermediate)
 unzip("temp.zip") #, exdir = pathDataIntermediate)
-setwd(pathCode)
+setwd(pathProject)
 
 # Momentum (FF style)
 download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Momentum_Factor_CSV.zip",
@@ -54,7 +56,7 @@ download.file("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_M
 
 setwd(pathDataIntermediate)
 unzip("temp.zip")
-setwd(pathCode)
+setwd(pathProject)
 
 # join
 ff <- read_csv(
@@ -281,7 +283,8 @@ ggsave(filename = paste0(pathResults, "fig1Port_jointly.png"), width = 10, heigh
 
 # Figure 2: Replication rates ---------------------------------------------
 
-df <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx")) %>%
+df <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+                sheet = 'short') %>%
   mutate(success = 1 * (round(tstat, digits = 2) >= 1.96))
 
 # Check if predictor summary has in-sample returns only
@@ -367,6 +370,7 @@ ggsave(filename = paste0(pathResults, "fig2b_reprate_data_Jitter.png"), width = 
 # Scatter of replication t-stat vs OP t-stat ------------------------------
 
 docnew = readdocumentation() # for easy updating of documentation
+
 df <- read_xlsx(
     paste0(pathDataPortfolios, "PredictorSummary.xlsx")
   , sheet = 'full'
@@ -406,7 +410,7 @@ df_plot %>%
   ggplot(aes(y = tstatRep, x = tstatOP, label=signalname)) +
   # ggplot(aes(x = tstatRep, y = tstatOP, label=signalname, group = grouper, color = grouper)) +
   geom_point() +
-  geom_smooth(method = 'lm') +
+  geom_smooth(method = 'lm', se = F) +
   labs(y = 't-stat reproduction', x = 't-stat original study', 
        title = paste0('y = ', round(reg$coefficients[1], 2), ' + ', round(reg$coefficients[2], 2), ' * x, R2 = ', round(100*reg$r.squared, 2), '%')) +
   geom_abline(intercept = 0, slope = 1) +
@@ -429,35 +433,125 @@ df_plot %>%
 ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP.png"), width = 10, height = 8)
 
 
+# Replication rate vis-a-vis other studies --------------------------------
+
+df = read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+                sheet = 'short') %>%
+  mutate(tstat = abs(tstat)) %>% 
+  mutate(success = 1 * (round(tstat, digits = 2) >= 1.96))
+
+mpSignals = read_xlsx(
+  paste0(pathProject, 'SignalDocumentation.xlsx')
+  , sheet = 'MP'
+) %>%
+  filter(ClosestMatch != '_missing_')
+
+hxzSignals = read_xlsx(
+  paste0(pathProject, 'SignalDocumentation.xlsx')
+  , sheet = 'HXZ'
+) %>%
+  filter(ClosestMatch != '_missing_')
+
+
+df_tmp = df %>%
+  # Add flag for whether in MP or HXZ
+  transmute(tstat,
+            PredOP = factor(Predictability.in.OP, levels = c('1_clear', '2_likely'), labels = c('Clear', 'Likely')),
+            inMP = signalname %in% mpSignals$ClosestMatch,
+            inHXZ = signalname %in% hxzSignals$ClosestMatch) 
+
+# Make dataset for plotting
+df_plot = df_tmp %>% 
+  select(tstat, PredOP) %>% 
+  mutate(Data = 'CZ') %>% 
+  bind_rows(df_tmp %>% 
+              filter(inMP) %>% 
+              mutate(Data = 'MP') %>% 
+              select(tstat, PredOP, Data)) %>% 
+  bind_rows(df_tmp %>% 
+              filter(inHXZ) %>% 
+              mutate(Data = 'HXZ') %>% 
+              select(tstat, PredOP, Data)) %>% 
+  mutate(Data = factor(Data, levels = c('MP', 'HXZ', 'CZ'), labels = c('MP (2016)', 'HXZ (2020)', 'Our study')))
+
+df_plot %>%
+  ggplot(aes(x = Data, y = tstat, shape = PredOP)) +
+  geom_jitter(width = .2, height = 0, size = 3) +
+  scale_shape_manual(values = c(2, 19)) +
+  geom_hline(yintercept = 1.96, linetype = "dashed") +
+  # geom_col(data = df_plot %>% 
+  #            filter(PredOP == 'Clear') %>% 
+  #            mutate(success = 1 * (round(tstat, digits = 2) >= 1.96)) %>% 
+  #            group_by(Data) %>% 
+  #            summarise(meanSuccess = mean(success, na.rm = TRUE)),
+  #          aes(x = Data, y = 15*meanSuccess), inherit.aes = FALSE, alpha = .2, width = .4) +
+  # scale_y_continuous(sec.axis = sec_axis(~./15, name = "Share of successful replications among predictors")) +
+  #  geom_boxplot(alpha = 0, outlier.shape = NA) +
+  labs(y = 't-statistic',
+       x = '',
+       shape = 'Predictor Category') +
+  coord_flip() +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
+
+ggsave(filename = paste0(pathResults, "fig_reprateCompareMPHXZ.png"), width = 12, height = 8)
+
+
+
+df_plot %>%
+  mutate(Text = paste(Data, '-', PredOP)) %>% 
+  ggplot(aes(x = Text, y = tstat, shape = PredOP)) +
+  geom_jitter(width = .2, height = 0, size = 3) +
+  scale_shape_manual(values = c(2, 19)) +
+  geom_hline(yintercept = 1.96, linetype = "dashed") +
+  # geom_col(data = df_plot %>% 
+  #            filter(PredOP == 'Clear') %>% 
+  #            mutate(success = 1 * (round(tstat, digits = 2) >= 1.96)) %>% 
+  #            group_by(Data) %>% 
+  #            summarise(meanSuccess = mean(success, na.rm = TRUE)),
+  #          aes(x = Data, y = 15*meanSuccess), inherit.aes = FALSE, alpha = .2, width = .4) +
+  # scale_y_continuous(sec.axis = sec_axis(~./15, name = "Share of successful replications among predictors")) +
+  #  geom_boxplot(alpha = 0, outlier.shape = NA) +
+  labs(y = 't-statistic',
+       x = '',
+       shape = 'Predictor Category') +
+  coord_flip() +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily)
+
 
 
 # Big summary table for paper ---------------------------------------------
 
-basicInfo <- read_xlsx(
-  path = paste0(pathProject, "SignalDocumentation.xlsx"),
-  sheet = "BasicInfo"
-) %>%
-  filter(Cat.Signal != "Drop")
-
 stats <- read_xlsx(
-  path = paste0(pathDataPortfolios, "PredictorSummary.xlsx")
+  path = paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+  sheet = 'short'
 )
 
+statsFull <- read_xlsx(
+  path = paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
+  sheet = 'full'
+)
 
 # Merge data
 # alldocumentation is created in 00_SettingsAndTools.R
 df_merge <- alldocumentation %>%
-  inner_join(stats %>%
+  filter(Cat.Signal == 'Predictor') %>% 
+  left_join(stats %>%
     select(signalname, tstat, rbar),
   by = c("signalname")
   ) %>%
+  left_join(statsFull %>% 
+               filter(samptype == 'postpub', port == 'LS') %>% 
+               transmute(signalname, `t-stat PS` = tstat),
+             by = 'signalname') %>% 
   transmute(Authors,
     Year = as.integer(Year),
     Predictor = LongDescription,
     `Sample Start` = as.integer(SampleStartYear),
     `Sample End` = as.integer(SampleEndYear),
     `Mean Return` = round(rbar, digits = 2),
-    `t-stat` = round(tstat, digits = 2),
+    `t-stat IS` = round(tstat, digits = 2),
+    `t-stat PS`,
+    Evidence = Evidence.Summary,
 #    Cat.Signal,
     Category = Predictability.in.OP %>%
       factor(
@@ -465,8 +559,7 @@ df_merge <- alldocumentation %>%
         labels = c("no evidence", "not", "maybe", "likely", "clear")
       )
   ) %>%
-  arrange(Authors, Year)
-
+  arrange(Authors, Year) 
 
 
 
@@ -484,16 +577,19 @@ print(outputtable1,
   file = paste0(pathResults, "bigSignalTableClear.tex")
 )
 
-# Create Latex output table 1: Likely predictors
-outputtable1 <- xtable(df_merge %>%
+# Create Latex output table 2: Likely predictors
+outputtable2 <- xtable(df_merge %>%
   filter(Category == "likely") %>%
   select(-Category))
 
 
-print(outputtable1,
+print(outputtable2,
   include.rownames = FALSE,
   include.colnames = FALSE,
   hline.after = NULL,
   only.contents = TRUE,
   file = paste0(pathResults, "bigSignalTableLikely.tex")
 )
+
+
+

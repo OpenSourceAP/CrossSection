@@ -10,7 +10,8 @@ optFontFamily = '' # works with linux command line
 library(extrafont)
 loadfonts()
 
-source('00_SettingsAndTools.R')
+pathProject = paste0(getwd(), '/')
+source(paste0(pathProject, 'Portfolios/Code/00_SettingsAndTools.R'))
 
 # For fast calculation of stock-level correlations
 library(ccaPP)
@@ -193,14 +194,14 @@ temp = foreach (i = 1:nrow(loopList),
                                            columns = loopList[i, ] %>% as.character()) %>%
                         filter(complete.cases(.) == TRUE) %>%
                         as.matrix()                    
-                    gc()
+                  #  gc()
                     
                     corSpearman(x = tempSignals[, 1], 
                                 y = tempSignals[, 2], 
                                 consistent = FALSE)
-                    gc()
+                   # gc()
 
-                    print(mem_used())
+                  #  print(mem_used())
                 }
 
 #stop cluster

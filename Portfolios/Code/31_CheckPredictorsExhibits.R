@@ -1,44 +1,45 @@
 ### ENVIRONMENT ###
-rm(list=ls())
+rm(list = ls())
 options(stringsAsFactors = FALSE)
-options(scipen=999)
-optFontsize = 20  # Fix fontsize for graphs here
-# optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
-optFontFamily = '' # works with linux command line
+options(scipen = 999)
+optFontsize <- 20 # Fix fontsize for graphs here
+optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
+#optFontFamily <- "" # works with linux command line
 library(extrafont)
 loadfonts()
 
-library(data.table)
 library(tidyverse)
-library(readxl)  # readxl is much faster and cleaner than read.xlsx
+library(readxl)
 library(lubridate)
-library(feather)
 library(xtable)
 options(xtable.floating = FALSE)
-library(ggpubr)
 
+pathProject = getwd()
 
-
-source('setup_crspm.r')
-
-# pathDataPortfolios = '/cm/chen/anomalies.com/cfr1/Portfolios/Data/Portfolios - Copy/'
-
-### LOAD PORT-MONTH RETURNS AND SUMMARIZE
-
-## summarize alt holding period 
-csvlist = c(
-    'CheckPredictorLS_HoldPer_1.csv'
-    , 'CheckPredictorLS_HoldPer_3.csv'
-    , 'CheckPredictorLS_HoldPer_6.csv'
-    , 'CheckPredictorLS_HoldPer_12.csv'    
+tryCatch(
+  source(paste0(pathProject, '/Portfolios/Code/00_SettingsAndTools.R')),
+  error = function(cond) {
+    message("Error: 00_SettingsAndTools.R not found.  please setwd to pathProject/Portfolios/Code/")
+  }
 )
 
+# check system for dl method
+dlmethod <- "auto"
+sysinfo <- Sys.info()
+if (sysinfo[1] == "Linux") {
+  dlmethod <- "wget"
+}
+
+
+### LOAD PORT-MONTH RETURNS AND SUMMARIZE ----
+
+## summarize alt holding period 
 holdperlist = c(1,3,6,12)
 
 sumholdper = tibble()
 for (i in seq(1,length(holdperlist))){
 
-    tempport = read.csv(paste0(pathDataPortfolios,csvlist[i])) %>%
+    tempport = read.csv(paste0(pathDataPortfolios,'CheckPredictorLS_HoldPer_', holdperlist[i], '.csv')) %>%
         mutate(port = 'LS', signallag = NA_real_)
 
     tempsum =   sumportmonth(tempport, c('signalname','samptype','port')
@@ -85,9 +86,16 @@ tempsum = sumportmonth(tempport, c('signalname','samptype','port'), Nstocksmin =
 
 sumliqscreen = rbind(sumliqscreen,tempsum)
 
-### MAKE FIGURES FOR HOLDING PERIODS
+## Summarize decile sorts
+portDeciles   = read.csv(paste0(pathDataPortfolios, 'CheckPredictorPorts_Deciles.csv')) 
 
-# Figure: Holding periods -------------------------------------------------
+sumDeciles = sumportmonth(portDeciles, c('signalname','samptype','port')
+                         , Nstocksmin = 20)   %>%
+  as_tibble() 
+
+
+
+# Figures: Holding periods -------------------------------------------------
 
 df = sumholdper
 
@@ -119,7 +127,6 @@ ggpubr::ggarrange(p1, p2, common.legend = TRUE)
 
 # Save
 ggsave(filename = paste0(pathResults, 'fig4_holding_period_dist.png'), width = 12, height = 8)
-
 
 
 # Plot means as bars
@@ -189,9 +196,8 @@ df %>%
 # Save
 ggsave(filename = paste0(pathResults, 'fig4_holding_period_boxplot_meanJitter.png'), width = 12, height = 8)
 
-### MAKE FIGURES FOR LIQUIDITY SCREENS
 
-# Figure: Liquidity screens -----------------------------------------------
+# Figures: Liquidity screens -----------------------------------------------
 
 df = sumliqscreen
 
@@ -295,6 +301,53 @@ df %>%
 
 # Save
 ggsave(filename = paste0(pathResults, 'fig4_liquidity_boxplot_meanJitter.png'), width = 12, height = 8)
+
+
+# Figures: Deciles ----------------------------- --------------------------------------------------
+
+sumDeciles %>% 
+  filter(port != 'LS', samptype == 'insamp', Nlong > 100) %>% 
+  group_by(signalname) %>% 
+  mutate(Increase = ifelse(port != '01' & rbar >= lag(rbar, n =1), 'Increase', 'No increase')) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = port, y = rbar, shape = factor(Increase, levels = c('Increase', 'No increase')))) +
+  geom_jitter(width = .2, height = 0, size = 2.3) +
+  scale_shape_manual(values = c(19, 2)) +
+  geom_boxplot(aes(x = port, y = rbar), inherit.aes = FALSE, alpha = 0, outlier.shape = NA, coef = 0) +
+  labs(x = 'Decile Portfolio', y = 'Mean Return in-sample (ppt per month)', shape = '') +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
+  theme(legend.position = c(.2, .8))
+
+# Save
+ggsave(filename = paste0(pathResults, 'fig_Decile_boxplot_meanJitter.png'), width = 12, height = 8)
+
+# not used currently
+sumDeciles %>% 
+  filter(port != 'LS', samptype == 'insamp', Nlong > 100) %>% 
+  group_by(signalname) %>% 
+  mutate(Increase = ifelse(port != '01' & rbar >= lag(rbar, n =1), 'Increase', 'No increase')) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = port, y = rbar, shape = factor(Increase, levels = c('No increase', 'Increase')))) +
+  geom_jitter(width = .2, height = 0, size = 2.3) +
+  scale_shape_manual(values = c(2, 19)) +
+  geom_boxplot(aes(x = port, y = rbar), inherit.aes = FALSE, alpha = 0, outlier.shape = NA, coef = 0) +
+  labs(x = 'Decile Portfolio', y = 'Mean Return in-sample (ppt per month)', shape = '') +
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
+  theme(legend.position = c(.2, .8)) +
+  geom_line(data = sumDeciles %>% 
+              #  filter(port != 'LS', samptype == 'insamp', rbar < 10) %>% 
+              filter(port != 'LS', samptype == 'insamp', Nlong > 100) %>% 
+              group_by(signalname) %>% 
+              mutate(Increase = ifelse(port != '01' & rbar >= lag(rbar, n =1), 1, 0)) %>% 
+              group_by(port) %>% 
+              summarise(meanIncrease = mean(Increase)) %>% 
+              ungroup() %>% 
+              filter(port !='01'),
+            aes(x = port, y = 4*meanIncrease, group = 1), inherit.aes = FALSE, size = 1.5, color ='grey') +
+  scale_y_continuous(sec.axis = sec_axis(~./4, name = "Share of increasing portfolio returns")) +
+  theme(axis.text.y.right=element_text(colour='grey'),
+        axis.ticks.y.right=element_line(colour='grey'),
+        axis.title.y.right=element_text(colour='grey'))
 
 
 

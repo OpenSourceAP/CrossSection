@@ -1,12 +1,8 @@
 # creates predictors that are simple transformation of CRSP data
 
-
-
-
 ### READ DATA
 
 crsp = read_fst(paste0(pathDataIntermediate,'m_crsp.fst'))
-
 
 ### MAKE Mom1m
 temp = crsp %>%

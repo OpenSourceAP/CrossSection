@@ -129,3 +129,5 @@ d_crsp = d_crsp %>%
 
 
 write_fst(d_crsp, paste0(pathProject,'Portfolios/Data/Intermediate/d_crsp.fst'))
+
+rm(d_crsp, m_crsp, m_crsp2)
