@@ -5,7 +5,7 @@ log using "$pathLogs/03_CreatePlacebos.log", replace
 
 * ------------------------------------------------------------------------------
 * Log file for signal creation
-
+clear
 gen SignalFile = ""
 gen double SignalTime = .
 gen lastRun = ""

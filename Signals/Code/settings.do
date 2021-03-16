@@ -1,5 +1,3 @@
-
-
 // Set relative paths
 global pathLogs "$pathProject/Signals/Logs/"
 
@@ -15,11 +13,14 @@ global pathDataIntermediate "$pathProject/Signals/Data/Intermediate/"
 global pathDataPredictors "$pathProject/Signals/Data/Predictors/"
 global pathDataPlacebos "$pathProject/Signals/Data/Placebos/"
 
+// Check for prep data
+confirm file "$pathDataPrep/iclink.csv"
 
 // Confirm existence of directories and create data folder if it does not exist
 confirm file "$pathCode/master.do"
 confirm file "$pathCodeDownloads/B_CompustatAnnual.do"
-confirm file "$pathCodePredictors/Mom1m.do"
+confirm file "$pathCodePredictors/STreversal.do"
+
 
 * Create log folder
 cap mkdir "$pathLogs"
@@ -36,23 +37,27 @@ set more off, permanently
 
 
 // Install packages if not already installed
-ssc install tscollap, replace
-ssc install mdesc, replace
-ssc install freduse, replace
-ssc install fsum, replace
-ssc install egenmore, replace
-ssc install asrol, replace
-ssc install asreg, replace
-ssc install _gwtmean, replace
-ssc install fastxtile, replace
-ssc install egenmisc, replace
-ssc install ftools, replace
-ssc install gtools, replace
-ssc install moremata, replace
-ssc install relrank, replace
-ssc install fs, replace
-ssc install filelist, replace
-ssc install rscript, replace
+capture which rscript
+if _rc==111 {
+	ssc install tscollap, replace
+	ssc install mdesc, replace
+	ssc install freduse, replace
+	ssc install fsum, replace
+	ssc install egenmore, replace
+	ssc install asrol, replace
+	ssc install asreg, replace
+	ssc install astile, replace
+	ssc install _gwtmean, replace
+	ssc install fastxtile, replace
+	ssc install egenmisc, replace
+	ssc install ftools, replace
+	ssc install gtools, replace
+	ssc install moremata, replace
+	ssc install relrank, replace
+	ssc install fs, replace
+	ssc install filelist, replace
+	ssc install rscript, replace
+}
 
 // Install ffind.ado (Fed firewall doesn't like first method)
 capture {	

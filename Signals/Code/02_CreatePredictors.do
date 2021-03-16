@@ -5,7 +5,7 @@ log using "$pathLogs/02_CreatePredictors.log", replace
 
 * ------------------------------------------------------------------------------
 * Log file for signal creation
-
+clear
 gen SignalFile = ""
 gen double SignalTime = .
 gen lastRun = ""

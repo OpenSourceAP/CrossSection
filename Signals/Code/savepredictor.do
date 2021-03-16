@@ -17,7 +17,7 @@ preserve
 	}
 
 	// save csv, main output, need to change date from stata format
-	if $save_csv {
+	if $save_csv{
 		gen yyyymm = year(dofm(time_avail_m))*100 + month(dofm(time_avail_m))
 		keep permno yyyymm `1'
 		order permno yyyymm `1'
