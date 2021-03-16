@@ -19,12 +19,10 @@ merge 1:1 permno time_avail_m using "$pathDataIntermediate/m_aCompustat", keep(m
 * only dec fyr ends
 keep if month(datadate) == 12
 
-* adjust for size, crudely
-* OP measures port ret - ret of port in matched size (deciles)
-* this tursn out to be critical
-egen temp = fastxtile(mve_c), by(time_avail_m) n(3)
-keep if temp == 2
-drop temp
+* lower analyst coverage only
+egen tempcoverage = fastxtile(numest), by(time_avail_m) n(2)
+keep if tempcoverage == 1
+
 
 // SIGNAL CONSTRUCTION
 gen sfe =  medest/abs(prc)
@@ -42,3 +40,5 @@ label var sfe "Earnings Forecast"
 
 // SAVE
 do "$pathCode/savepredictor" sfe
+
+
