@@ -7,7 +7,7 @@ local sql_statement
 	FROM crsp.msedist as a;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 keep if acperm >999 & acperm <.
 rename exdt time_d

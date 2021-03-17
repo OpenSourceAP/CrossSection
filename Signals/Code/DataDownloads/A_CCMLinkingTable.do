@@ -11,7 +11,7 @@ local sql_statement
 	ORDER BY a.gvkey;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 export delimited "$pathDataIntermediate/CCMLinkingTable.csv", replace // For processing of IO-Momentum in R
 
 rename linkdt timeLinkStart_d

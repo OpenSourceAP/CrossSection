@@ -18,7 +18,7 @@ local sql_statement
 	AND a.indfmt = 'INDL';
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 gen time_avail_m = mofd(datadate) + 3  // Assume data available with a 3 month lag
 format time_avail_m %tm

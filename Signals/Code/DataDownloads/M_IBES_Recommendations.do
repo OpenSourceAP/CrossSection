@@ -21,7 +21,7 @@ local sql_statement
 	WHERE a.usfirm = '1';
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 destring ireccd, replace
 drop if ireccd == .

@@ -7,7 +7,7 @@ local sql_statement
     FROM comp.adsprate;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 gen time_avail_m = mofd(datadate)
 format time_avail_m %tm

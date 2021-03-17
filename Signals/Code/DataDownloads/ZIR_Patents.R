@@ -1,3 +1,6 @@
+# Check for and potentially install missing packages
+install.packages(setdiff(c('tidyverse', 'zoo', 'tm', 'data.table'), rownames(installed.packages())))
+
 library(tidyverse)
 
 # Parse arguments

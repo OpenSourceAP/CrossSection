@@ -8,7 +8,7 @@ local sql_statement
     FROM crsp.msedist as d;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 * remove duplicates
 * seems like these are data errors, e.g. see permno 93338 or 93223

@@ -24,6 +24,10 @@
 # need to update end date in filenames (first version used end year 2018, then it was 2019)
 
 rm(list = ls())
+
+# Check for and potentially install missing packages
+install.packages(setdiff(c('tidyverse', 'zoo', 'tm', 'data.table'), rownames(installed.packages())))
+
 library(tidyverse) # should be better than xlsx.  definitely faster
 library(data.table)
 library(stringr)

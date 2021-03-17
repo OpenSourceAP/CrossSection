@@ -12,7 +12,7 @@ local sql_statement
 	AND a.indfmt = 'INDL';
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 gen year = year(datadate)
 replace year = year + 1  // Assume data available with a lag of one year

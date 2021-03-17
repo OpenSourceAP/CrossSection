@@ -13,7 +13,7 @@ local sql_statement
 	ON a.permno=c.permno AND date_trunc('month', a.date) = date_trunc('month', c.dlstdt)
 	;
 #delimit cr
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 * Make 2 digit SIC
 rename siccd sicCRSP

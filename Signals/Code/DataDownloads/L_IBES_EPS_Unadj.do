@@ -21,7 +21,7 @@ local sql_statement
 	;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 * Set up linking variables
 gen time_avail_m = mofd(statpers)

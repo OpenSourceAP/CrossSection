@@ -17,7 +17,7 @@ local sql_statement
 	WHERE a.measure = 'EPS';
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 rename shout shoutIBESUnadj
 

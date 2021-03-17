@@ -7,7 +7,7 @@ local sql_statement
     FROM ff.factors_daily;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 rename date time_d 
 

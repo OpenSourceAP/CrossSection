@@ -132,6 +132,8 @@ replace Message = "Processing error" if mi(Message)
 
 save "$pathLogs/01_DownloadDataFlags", replace  // Check this file for errors!!
 
+di("The following download scripts did not complete succcessfully")
+li if ReturnCode !=0
 
 **********
 erase "$pathtemp/tempFilenames.dta"

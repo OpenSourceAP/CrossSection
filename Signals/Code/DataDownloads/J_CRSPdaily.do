@@ -20,7 +20,7 @@ forvalues y=1926/2200{
 		WHERE date >= '`y'-01-01' and date <= '`y'-12-31'
 		;
 	#delimit cr	
-	odbc load, exec("`sql_statement'") dsn(wrds-stata) clear	
+	odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear	
 	
 	if _N >= 1 {
 		save "$pathtemp/tempcrspd`y'"

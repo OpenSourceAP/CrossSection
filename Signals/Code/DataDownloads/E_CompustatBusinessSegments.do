@@ -7,7 +7,7 @@ local sql_statement
     FROM compseg.wrds_segmerged as a;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 destring gvkey sics1 naicsh, replace
 

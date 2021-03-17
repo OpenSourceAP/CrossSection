@@ -7,7 +7,7 @@ local sql_statement
     FROM compseg.wrds_seg_customer as a;
 #delimit cr
 
-odbc load, exec("`sql_statement'") dsn(wrds-stata) clear
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
 rename srcdate datadate
 

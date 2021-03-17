@@ -56,6 +56,10 @@ forvalues i=1/`obs' {
 	
 }
 
+di("The following signal scripts did not complete successfully")
+li if ReturnCode !=0
+
+*******************************************
 erase "$pathLogs/tempFilenames.dta"
 
 log close 
