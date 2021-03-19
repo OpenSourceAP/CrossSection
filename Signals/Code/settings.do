@@ -41,6 +41,7 @@ capture which rscript
 if _rc==111 {
 	ssc install tscollap, replace
 	ssc install mdesc, replace
+	ssc install winsor2, replace
 	ssc install freduse, replace
 	ssc install fsum, replace
 	ssc install egenmore, replace

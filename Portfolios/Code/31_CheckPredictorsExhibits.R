@@ -135,7 +135,7 @@ df %>%
   ggplot(aes(x = screen, y = value)) +
   geom_jitter(width = .2, height = 0) +
   geom_boxplot(alpha = 0, outlier.shape = NA) +
-  labs(x = 'Liquity screen', y = 'Mean Return (% monthly, in-sample)') +
+  labs(x = 'Liquidity screen', y = 'Mean Return (% monthly, in-sample)') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
     ylim(-0.5,2)
 

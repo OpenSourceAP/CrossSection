@@ -1,4 +1,4 @@
-## This is redundant with Signals/Code/DataDownloads/I_CRSPmonthly.do, as well as with the size and price signal do files, but having this script allows the user to just download the shareable signal csvs and ignore all of the Signal code.
+## The first part is redundant with Signals/Code/DataDownloads/I_CRSPmonthly.do, as well as with the size and price signal do files, but having this script allows the user to just download the shareable signal csvs and ignore all of the Signal code.
 
 ## Andrew Chen 2020 12
 

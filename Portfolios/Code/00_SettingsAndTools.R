@@ -7,7 +7,7 @@ feed.verbose = F # use T if you want lots of feedback
 options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
-pathProject = getwd()
+pathProject = paste0(getwd(), '/')
 
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
@@ -29,6 +29,10 @@ dir.create(paste0(pathDataIntermediate))
 dir.create(paste0(pathCRSPPredictors))
 
 #### PACKAGES
+# Check for and potentially install missing packages
+install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'pryr', 'fst',
+                           'RPostgres', 'getPass', 'extrafont', 'xtable', 'gridExtra'), 
+                         rownames(installed.packages())))
 
 options(stringsAsFactors = FALSE)
 library(tidyverse)
@@ -51,9 +55,6 @@ optFontsize <- 20 # Fix fontsize for graphs here
 library(extrafont)
 loadfonts()
 
-library(tidyverse)
-library(readxl)
-library(lubridate)
 library(xtable)
 options(xtable.floating = FALSE)
 library(gridExtra)

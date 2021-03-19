@@ -2,6 +2,9 @@
 
 ### ENVIRONMENT ###
 # For fast calculation of stock-level correlations
+install.packages(setdiff(c('ccaPP', 'foreach', 'doParallel', 'tictoc'), 
+                         rownames(installed.packages())))
+
 library(ccaPP)
 library(foreach)
 library(doParallel)

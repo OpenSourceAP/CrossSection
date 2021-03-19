@@ -6,4 +6,4 @@ bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
 gen RoE = ni/ceq 
 label var RoE "Return on Equity"
 // SAVE
-do "$pathCode/saveplacebo" RoE
+do "$pathCode/savepredictor" RoE
