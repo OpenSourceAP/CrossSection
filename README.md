@@ -67,7 +67,7 @@ A few R scripts download CRSP data directly. WRDS provides [instructions for set
 
 ### 2. FRED
 
-To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`).
+To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`. See the [Stata blog](https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for details).
 
 ----
 
