@@ -10,4 +10,4 @@ replace FirmAge = . if tempcrsptime == FirmAge
 replace FirmAge = . if exchcd != 1 
 label var FirmAge "Firm Age"
 // SAVE
-do "$pathCode/saveplacebo" FirmAge
+do "$pathCode/savepredictor" FirmAge
