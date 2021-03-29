@@ -57,21 +57,10 @@ sumshort = sumbase %>%
         samptype == "insamp",
         port == "LS"
     ) %>%
-    mutate(
-        T.Stat = round(as.numeric(T.Stat),2)
-        , t_err = abs(tstat-T.Stat)
-    ) %>%
-    select(
-        signalname, Predictability.in.OP, Signal.Rep.Quality, Test.in.OP, t_err
-      , tstat, T.Stat, 
-      , rbar, Return
-      , everything()
-    ) %>%
     arrange(
-        Predictability.in.OP
-        , Signal.Rep.Quality
-        , desc(t_err)
-    )
+        signalname
+    ) %>%
+    select(-signallag)
 
 ## export
 write_xlsx(
