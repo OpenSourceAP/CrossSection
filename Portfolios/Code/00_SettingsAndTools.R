@@ -7,8 +7,6 @@ feed.verbose = F # use T if you want lots of feedback
 options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
-pathProject = paste0(getwd(), '/')
-
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
 pathCRSPPredictors = paste0(pathProject, 'Signals/Data/CRSPPredictors/')

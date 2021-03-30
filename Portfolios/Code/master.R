@@ -1,5 +1,6 @@
-# master.R created 2020 12 AC
-# assumes working directory is the same directory that all R files are in
+# master.R 
+
+# You need to set the project path below before executing other scripts
 
 # scripts below do the following
 #   sets up paths (see 00_SettingsAndTools.R)
@@ -21,27 +22,33 @@
 # I think it takes about 12 hours to run everything, and about 45 min to run up
 # to 20_PredictorPorts.R
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
+pathProject = 'PROJECTPATHHERE'      #paste0(getwd(), '/')
+
+# Check whether project path is set correctly
+if (!dir.exists(paste0(pathProject, 'Portfolios'))) {
+    stop('Project path not set correctly')
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
 
+print('master: 10_DownloadCRSP.R')
+tryCatch({
+    source('10_DownloadCRSP.R', echo=T)
+})
 
-## print('master: 10_DownloadCRSP.R')
-## tryCatch({
-##     source('10_DownloadCRSP.R', echo=T) 
-## })
+print('master: 11_CreateCRSPPredictors.R')
+tryCatch({
+    source('11_CreateCRSPPredictors.R', echo=T)
+})
 
-
-## print('master: 11_CreateCRSPPredictors.R')
-## tryCatch({
-##     source('11_CreateCRSPPredictors.R', echo=T) 
-## })
-
-
-## print('master: 12_SignalExhibits.R')
-## tryCatch({
-##     source('12_SignalExhibits.R', echo=T) 
-## })
-
+print('master: 12_SignalExhibits.R')
+tryCatch({
+    source('12_SignalExhibits.R', echo=T)
+})
 
 print('master: 20_PredictorPorts')
 tryCatch({
