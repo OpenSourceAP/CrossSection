@@ -29,7 +29,8 @@ dir.create(paste0(pathCRSPPredictors))
 #### PACKAGES
 # Check for and potentially install missing packages
 install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'pryr', 'fst',
-                           'RPostgres', 'getPass', 'extrafont', 'xtable', 'gridExtra'), 
+                           'RPostgres', 'getPass', 'extrafont', 'xtable', 'gridExtra',
+                           'ggrepel'), 
                          rownames(installed.packages())))
 
 options(stringsAsFactors = FALSE)
@@ -56,6 +57,7 @@ loadfonts()
 library(xtable)
 options(xtable.floating = FALSE)
 library(gridExtra)
+library(ggrepel)
 
 # system dependent settings 
 dlmethod <- "auto"
