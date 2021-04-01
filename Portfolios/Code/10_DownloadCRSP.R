@@ -18,6 +18,7 @@
 user = getPass('wrds username: ')
 pass = getPass('wrds password: ')
 
+gc()
 
 wrds <- dbConnect(Postgres(),
                     host='wrds-pgdata.wharton.upenn.edu',
@@ -28,7 +29,7 @@ wrds <- dbConnect(Postgres(),
                     sslmode='require')
 
 
-
+gc()
 
 
 
@@ -36,6 +37,8 @@ wrds <- dbConnect(Postgres(),
 numRowsToPull = -1  # Set to -1 for all rows and to some positive value for testing
 
 # Follows in part: https://wrds-www.wharton.upenn.edu/pages/support/research-wrds/macros/wrds-macro-crspmerge/
+
+gc()
 
 m_crsp = dbSendQuery(conn = wrds, statement = 
                    "select a.permno, a.permco, a.date, a.ret, a.retx, a.vol, a.shrout, a.prc, a.cfacshr, a.bidlo, a.askhi,
@@ -55,6 +58,7 @@ m_crsp = dbSendQuery(conn = wrds, statement =
     dbFetch(n = numRowsToPull) %>%
     as_tibble()
 
+gc()
 
 # incorporate delisting return
 # GHZ cite Johnson and Zhao (2007), Shumway and Warther (1999)
@@ -99,6 +103,7 @@ m_crsp2 = m_crsp2 %>%
         ret = 100*ret
     )
 
+gc()
 # write to disk (dlret adjusted)
 write_fst(m_crsp2, paste0(pathProject,'Portfolios/Data/Intermediate/m_crsp.fst'))
 
@@ -111,6 +116,7 @@ write_fst(
 
 
 # CRSP daily --------------------------------------------------------------
+gc()
 
 d_crsp = dbSendQuery(conn = wrds, statement = 
                        "select a.permno, a.date, a.ret, a.shrout, a.prc, a.cfacshr

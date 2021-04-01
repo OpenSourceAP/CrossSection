@@ -24,12 +24,15 @@
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-pathProject = 'PROJECTPATHHERE'      #paste0(getwd(), '/')
+pathProject = 'PROJECT_PATH_HERE'
 
 # Check whether project path is set correctly
 if (!dir.exists(paste0(pathProject, 'Portfolios'))) {
     stop('Project path not set correctly')
 }
+
+# setwd to folder with all R scripts for convenience
+setwd(paste0(pathProject,'Portfolios/Code/'))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source('00_SettingsAndTools.R', echo=T)
@@ -45,10 +48,6 @@ tryCatch({
     source('11_CreateCRSPPredictors.R', echo=T)
 })
 
-print('master: 12_SignalExhibits.R')
-tryCatch({
-    source('12_SignalExhibits.R', echo=T)
-})
 
 print('master: 20_PredictorPorts')
 tryCatch({
@@ -98,8 +97,13 @@ if (quickrun==F){
     })
 }
 
+# this can be run at the end since it takes a long time and isn't necessary for other results
+print('master: 12_SignalExhibits.R')
+tryCatch({
+    source('12_SignalExhibits.R', echo=T)
+})
 
-## print('master: 50_DailyPredictorPorts.R')
-## tryCatch({
-##     source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
-## })
+print('master: 50_DailyPredictorPorts.R')
+tryCatch({
+    source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
+})
