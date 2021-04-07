@@ -5,11 +5,28 @@
 source(paste0(pathProject, "/Portfolios/Code/setup_crspm.r"), echo = T)
 
 ######################################################################
-### SELECT SIGNALS
+### SELECT SIGNALS AND CHECK FOR CSVS
 ######################################################################
 
 strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Predictor")
 strategylist0 <- ifquickrun()
+
+csvlist = list.files(pathPredictors) %>% as_tibble() %>% rename(signalname=value) %>%
+  mutate(
+    signalname = substr(signalname,1,str_length(signalname)-4)
+    , in_csv = 1
+  )
+
+missing = strategylist0 %>% select(signalname) %>% left_join(csvlist) %>%
+  filter(is.na(in_csv), !signalname %in% c('Price','Size','STreversal'))
+
+if (dim(missing)[1]>0){
+  print('Warning: the following predictor signal csvs are missing:')
+  print(missing$signalname)
+  
+  temp = readline('press enter to continue, type quit to quit: ')
+  if (temp=='quit'){print('erroring out'); stop()}
+}
 
 
 #####################################################################
