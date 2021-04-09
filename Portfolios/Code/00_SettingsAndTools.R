@@ -29,9 +29,18 @@ dir.create(paste0(pathCRSPPredictors))
 #### PACKAGES
 # Check for and potentially install missing packages
 install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'pryr', 'fst',
-                           'RPostgres', 'getPass', 'extrafont', 'xtable', 'gridExtra',
+                           'RPostgres', 'getPass', 'xtable', 'gridExtra',
                            'ggrepel'), 
                          rownames(installed.packages())))
+
+# Use the extrafonts package, to get nicer fonts for output figures
+# Code issues warnings when not installed but runs nevertheless
+# See https://cran.r-project.org/web/packages/extrafont/README.html
+if (!'extrafont' %in% rownames(installed.packages())) {
+  install.packages('extrafont')
+  extrafont::font_import()
+}
+
 
 options(stringsAsFactors = FALSE)
 library(tidyverse)
