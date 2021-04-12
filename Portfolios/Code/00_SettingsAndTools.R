@@ -70,7 +70,13 @@ library(ggrepel)
 
 # system dependent settings 
 dlmethod <- "auto"
-optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
+
+if ('Palatino Linotype' %in% fonts()) {
+  optFontFamily = 'Palatino Linotype'
+} else {
+  optFontFamily = ''
+}
+
 sysinfo <- Sys.info()
 if (sysinfo[1] == "Linux") {
   dlmethod <- "wget"
