@@ -23,8 +23,6 @@ If you are mostly interested in working with the data, we provide benchmark sign
 
 You can access the benchmark data [here](https://sites.google.com/site/chenandrewy/open-source-ap). Please see the [data documentation](https://drive.google.com/file/d/1adFWMGcXEzF2Jls3qTtqb1fmXUTsRBr1/view?usp=sharing) for a description of individual files that are available.
 
-For reference to individual signals, their acronyms and construction please see the [online appendix to our paper](https://drive.google.com/open?id=1vXRzjxYucXZV-tgLxM26fvRZ5zKvlBXH) and the file `SignalDocumentation.xls` that is part of this repo.
-
 ----
 
 ## Code 
@@ -52,22 +50,48 @@ The _Portfolios_ code constructs portfolio returns from the signal files. The `m
 ---- 
 ## Data access
 
-### 1. Wharton Research Data Services 
+### 1. Connecting to Wharton Research Data Services (WRDS)
 
-To download raw data from the original sources, you will need access to WRDS. At a minimum, you will need access to the following databases:
+To download raw data from the original sources, you will need access to WRDS via Stata / ODBC. At a minimum, you will need access to CRSP and Compustat, but the code is modular and should be able to deal with lack of access to other datasets.
 
-- CRSP
-- Compustat
-- IBES
+#### Setting up Stata / ODBC access to WRDS
 
-To run the download scripts, you will need to install an ODBC driver and have a working Stata version. [WRDS provides instructions for setting up WRDS to work via Stata on your computer.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/)
+WRDS provides instructions for Windows users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/)  
 
-A few R scripts download CRSP data directly. WRDS provides [instructions for setting up WRDS to work via RStudio on your computer](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-your-computer/)
+For Linux users, we recommend the following (This is similar to how it works on the WRDS server):
+
+Step 1 - Create a text file ~/.odbc.ini, and put the following text in there:
+
+    [ODBC Data Sources]
+    wrds-postgres = PostgreSQL
+
+    [wrds-postgres]
+    Driver           = PostgreSQL
+    Description      = Connect to WRDS on the WRDS Cloud
+    Database         = wrds
+    Username         = mcgregor_should_retire
+    Password         = and_teach_classes_on_shorts_grabbing
+    Servername       = wrds-pgdata.wharton.upenn.edu
+    Port             = 9737
+    SSLmode          = require
+
+Step 2 - Check that odbc.ini is working.  Open Stata and run the following:
+
+    set odbcmgr unixodbc
+    odbc load, exec("select * from crsp.dsf limit 10") dsn("wrds-postgres")
+    list
+
+You should see some cusips and other stuff.  If that looks good, then you should be able to run master.do
+
+#### Setting up Rstudio to access to WRDS
+
+For a handful of predictors, we use R scripts to download CRSP data directly. WRDS provides [instructions for setting up WRDS to work via RStudio on your computer](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-your-computer/).  These predictors are optional though, so you can skip this step if you don't need the full dataset.
 
 
 ### 2. FRED
 
-To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`. See the [Stata blog](https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for details).
+To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
+https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
 
 ----
 
