@@ -4,17 +4,17 @@
 
 crsp = read_fst(paste0(pathDataIntermediate,'m_crsp.fst'))
 
-### MAKE Mom1m
+### MAKE STreversal
 if (!file.exists(paste0(pathPredictors, 'STreversal.csv'))) {
     
     temp = crsp %>%
         select(permno, date, ret) %>%
         mutate(
-            Mom1m = if_else(is.na(ret), 0, ret)
+            STreversal = if_else(is.na(ret), 0, ret)
             , yyyymm = year(date)*100 + month(date)
         ) %>%
-        filter(!is.na(Mom1m)) %>%
-        select(permno, yyyymm, Mom1m)
+        filter(!is.na(STreversal)) %>%
+        select(permno, yyyymm, STreversal)
     
     write_csv(temp, paste0(pathPredictors, 'STreversal.csv'))
     
