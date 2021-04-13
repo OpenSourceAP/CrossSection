@@ -37,8 +37,6 @@ if (!file.exists(paste0(pathPredictors, 'Price.csv'))) {
 }
 
 ### MAKE Size
-# in daily data, I think you want cfacprc to be safe
-
 if (!file.exists(paste0(pathPredictors, 'Size.csv'))) {
     
     temp = crsp %>%
@@ -51,6 +49,6 @@ if (!file.exists(paste0(pathPredictors, 'Size.csv'))) {
         filter(!is.na(Size)) %>%
         select(permno, yyyymm, Size)
     
-    write_csv(temp, paste0(pathCRSPPredictors, 'Size.csv'))
+    write_csv(temp, paste0(pathPredictors, 'Size.csv'))
     
 }
