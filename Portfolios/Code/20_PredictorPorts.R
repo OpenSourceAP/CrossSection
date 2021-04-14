@@ -18,7 +18,7 @@ csvlist = list.files(pathPredictors) %>% as_tibble() %>% rename(signalname=value
   )
 
 missing = strategylist0 %>% select(signalname) %>% left_join(csvlist) %>%
-  filter(is.na(in_csv), !signalname %in% c('Price','Size','STreversal'))
+  filter(is.na(in_csv)) # note: CRSP predictors are put into pathPredictors by 11_CreateCRSPPredictors.R
 
 if (dim(missing)[1]>0){
   print('Warning: the following predictor signal csvs are missing:')
@@ -47,7 +47,8 @@ writestandard(port, pathDataPortfolios, "PredictorPortsFull.csv")
 portlswide <- port %>%
   filter(port == "LS") %>%
   select(date, signalname, ret) %>%
-  pivot_wider(names_from = signalname, values_from = ret)
+  pivot_wider(names_from = signalname, values_from = ret) %>%
+  arrange(date)
 
 writestandard(
   portlswide,
@@ -101,3 +102,8 @@ print(
   sumbase %>% filter(is.na(port)) %>% arrange(tstat) %>% as.data.frame() %>%
   select(signalname,port)
 )
+
+if (dim(sumbase %>% filter(is.na(port)))[1] == 0){
+  print('20_PredictorPorts.R: all portfolios successfully computed')
+}
+
