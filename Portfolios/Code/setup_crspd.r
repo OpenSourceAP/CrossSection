@@ -1,4 +1,6 @@
 # copied from setup_crspm.r
+# Seems to run out of memory in newer Rstudio / R, on my 8 gb ram home pc - ac
+# was fixed by buying more ram - ac
 # 2021 01 AC
 
 
@@ -41,5 +43,18 @@ crspret = crspd %>% select(permno, date, yyyymm, ret) %>%
 gc()
 crspinfo = crspm %>%  select(permno, yyyymm, prc, exchcd, me, shrcd) %>%
     arrange(permno, yyyymm)
+
+# add info for easy me quantile screens
+tempcut <- crspinfo %>%
+  filter(exchcd == 1) %>%
+  group_by(yyyymm) %>%
+  summarize(
+    me_nyse10 = quantile(me, probs = 0.1, na.rm = T),
+    me_nyse20 = quantile(me, probs = 0.2, na.rm = T)
+  )
+
+crspinfo <- crspinfo %>%
+  left_join(tempcut, by = "yyyymm")
+
 
 rm(crspd,crspm)
