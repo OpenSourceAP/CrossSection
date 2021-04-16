@@ -1,3 +1,7 @@
+
+# Environment -------------------------------------------------------------
+
+
 ## LOGIN TO WRDS
 user = getPass('wrds username: ')
 pass = getPass('wrds password: ')
@@ -10,10 +14,9 @@ wrds <- dbConnect(Postgres(),
                     password=pass,
                     sslmode='require')
 
-
-# CRSP monthly ------------------------------------------------------------
 numRowsToPull = -1  # Set to -1 for all rows and to some positive value for testing
 
+# CRSP monthly ------------------------------------------------------------
 # Follows in part: https://wrds-www.wharton.upenn.edu/pages/support/research-wrds/macros/wrds-macro-crspmerge/
 
 m_crsp = dbSendQuery(conn = wrds, statement = 
@@ -91,15 +94,29 @@ write_fst(
 )
 
 
-# CRSP daily --------------------------------------------------------------
-d_crsp = dbSendQuery(conn = wrds, statement = 
-                       "select a.permno, a.date, a.ret, a.shrout, a.prc, a.cfacshr
-                     from crsp.dsf as a
-                     "
-) %>% 
-  # Pull data
-  dbFetch(n = numRowsToPull)
 
+# CRSP daily --------------------------------------------------------------
+
+for (year in seq(1926,2100)){
+  print(paste0('downloading daily crsp for year ',year))
+  query = paste0(
+    "select a.permno, a.date, a.ret, a.shrout, a.prc, a.cfacshr
+                     from crsp.dsf as a
+                     where date >= "
+    , "\'", year,"-01-01\'"
+    ,"and date <= "
+    , "\'", year,"-12-31\'"
+  )
+  
+  temp_d_crsp = dbSendQuery(conn = wrds, statement = query) %>% 
+    # Pull data
+    dbFetch(n = numRowsToPull)
+  
+  if (year==1926){
+    d_crsp = temp_d_crsp
+  } else
+    d_crsp = rbind(d_crsp,temp_d_crsp)
+} # for year in seq
 
 # convert ret to pct
 d_crsp = d_crsp %>%
