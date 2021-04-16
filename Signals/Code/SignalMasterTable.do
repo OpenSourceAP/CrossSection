@@ -14,15 +14,29 @@ merge 1:1 permno time_avail_m using "$pathProject/Signals/Data/Intermediate/m_aC
 rename sic sicCS
 
 * Add IBES ticker
-merge m:1 permno using "$pathProject/Signals/Data/Intermediate/IBESCRSPLinkingTable", keep(master match) nogenerate
+cap confirm file "$pathProject/Signals/Data/Intermediate/IBESCRSPLinkingTable.dta"
+
+if _rc == 0 {
+    merge m:1 permno using "$pathProject/Signals/Data/Intermediate/IBESCRSPLinkingTable", keep(master match) nogenerate
+} 
+  else {
+    di("Not adding IBES-CRSP link. Some signals cannot be generated.")
+}
 
 * Finish master table
 gen NYSE = exchcd == 1
 xtset permno time_avail_m
 gen bh1m  = f.ret  // Future buy and hold return
 
-// SAVE 
-keep gvkey permno ticker time_avail_m ret bh1m mve_c prc NYSE exchcd shrcd sicCS sicCRSP tickerIBES
+// SAVE
+cap confirm file "$pathProject/Signals/Data/Intermediate/IBESCRSPLinkingTable.dta"
+if _rc == 0 {
+    keep gvkey permno ticker time_avail_m ret bh1m mve_c prc NYSE exchcd shrcd sicCS sicCRSP tickerIBES    
+} 
+  else {
+    keep gvkey permno ticker time_avail_m ret bh1m mve_c prc NYSE exchcd shrcd sicCS sicCRSP
+}
+
 compress
 
 save "$pathProject/Signals/Data/Intermediate/SignalMasterTable", replace

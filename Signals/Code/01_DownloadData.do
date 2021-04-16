@@ -71,9 +71,12 @@ ZK R 4. Customer Segments
 */
 
 * ------------------------------------------------------------------------------
-* Check prep
-* may want to add more checks here
-confirm file "$pathDataPrep/iclink.csv"
+* Check whether SAS-generated data exist
+cap confirm file "$pathDataPrep/iclink.csv"
+
+if _rc != 0 {
+	di("IBES-CRSP link not available. Some signals cannot be generated")
+}
 
 * ------------------------------------------------------------------------------
 * Log files 
