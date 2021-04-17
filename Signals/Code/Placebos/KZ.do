@@ -16,4 +16,4 @@ gen KZ = -1.002* (ib + dp)/at  ///
  
 label var KZ "Kaplan-Zingales index"
 // SAVE
-do "$pathCode/savepredictor" KZ
+do "$pathCode/saveplacebo" KZ

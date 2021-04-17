@@ -15,5 +15,5 @@ replace ZScore = . if (sic >3999 & sic < 5000) | sic > 5999
 label var ZScore "Altman Z-Score"
 
 // SAVE
-do "$pathCode/savepredictor" ZScore
+do "$pathCode/saveplacebo" ZScore
 
