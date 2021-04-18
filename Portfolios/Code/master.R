@@ -22,9 +22,12 @@
 # I think it takes about 12 hours to run everything, and about 45 min to run up
 # to 20_PredictorPorts.R
 
+# ENVIRONMENT ####
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-pathProject = 'PROJECT_PATH_HERE'
+pathProject = PATH_TO_PROJECT_HERE
+
 
 # Check whether project path is set correctly
 if (!dir.exists(paste0(pathProject, 'Portfolios'))) {
@@ -38,6 +41,8 @@ setwd(paste0(pathProject,'Portfolios/Code/'))
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
 
+# PREPARE INTERMEDIATE DATA ####
+
 print('master: 10_DownloadCRSP.R')
 tryCatch({
     source('10_DownloadCRSP.R', echo=T)
@@ -47,6 +52,9 @@ print('master: 11_CreateCRSPPredictors.R')
 tryCatch({
     source('11_CreateCRSPPredictors.R', echo=T)
 })
+
+# CREATE BASELINE PORTFOLIOS ####
+
 
 
 print('master: 20_PredictorPorts')
@@ -62,20 +70,14 @@ if (quickrun==F){
     })
 }
 
-print('master: 30a_CheckPredictorsHoldper.R')
+# CREATE ALTERNATIVE PORTFOLIOS AND PLACEBOS ####
+
+
+print('master: 30_PredictorAltPorts.R')
 tryCatch({
-    source('30a_CheckPredictorsHoldper.R', echo=T) # 2 hours
+    source('30_PredictorAltPorts.R', echo=T) # about 6 hours
 })
 
-print('master: 30b_CheckPredictorsLiqScreens.R')
-tryCatch({
-    source('30b_CheckPredictorsLiqScreens.R', echo=T) # 2 hours
-})
-
-print('master: 30c_CheckPredictorsDeciles.R')
-tryCatch({
-    source('30c_CheckPredictorsDeciles.R', echo=T) # 30 min
-})
 
 if (quickrun==F){
     print('31_CheckPredictorsExhibits.R')
@@ -96,6 +98,8 @@ if (quickrun==F){
         source('41_PlaceboExhibits.R', echo=T, verbose=T)
     })
 }
+
+# EXTRA STUFF ####
 
 # this can be run at the end since it takes a long time and isn't necessary for other results
 print('master: 12_SignalExhibits.R')
