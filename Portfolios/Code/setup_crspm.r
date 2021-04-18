@@ -13,17 +13,6 @@ crsp <- read_fst(paste0(pathDataIntermediate, "m_crsp.fst")) %>%
     yyyymm = year(date) * 100 + month(date)
   )
 
-# for debugging
-## crsp <- read_fst(paste0(pathDataIntermediate, "m_crsp_nodelistadj.fst")) %>%
-##   mutate(
-##     date = as.Date(date)
-##   ) %>%
-##   mutate(
-##     me = abs(prc) * shrout,
-##     yyyymm = year(date) * 100 + month(date)
-##   )
-
-
 templag <- crsp %>%
   select(permno, yyyymm, me) %>%
   mutate(
@@ -54,4 +43,6 @@ tempcut <- crspinfo %>%
 crspinfo <- crspinfo %>%
   left_join(tempcut, by = "yyyymm")
 
+## clean up
 rm(crsp, templag, tempcut)
+

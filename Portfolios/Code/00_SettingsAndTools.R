@@ -49,6 +49,7 @@ library(readxl)
 library(writexl)
 library(pryr)
 library(fst)
+library(data.table) # for handling daily crsp
 
 # for WRDS access
 library(RPostgres)
@@ -366,6 +367,7 @@ loop_over_strategies = function(
                               , saveportcsv = F
                               , saveportpath = NA
                               , saveportNmin = 20
+                              , sweight_freq = 'monthly'
                                 ){   
 
     Nstrat = dim(strategylist)[1]
@@ -402,6 +404,7 @@ loop_over_strategies = function(
               , portperiod = strategylist$portperiod[i]
               , q_filt = strategylist$q_filt[i]
               , filterstr = strategylist$filterstr[i]
+              , sweight_freq = sweight_freq
             )
             
         }

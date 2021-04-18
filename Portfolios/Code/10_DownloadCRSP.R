@@ -82,6 +82,8 @@ m_crsp2 = m_crsp2 %>%
         ret = 100*ret
     )
 
+m_crsp2$passgainm = 1 # passive gain within the month is always 1 here
+
 
 # write to disk (dlret adjusted)
 write_fst(m_crsp2, paste0(pathProject,'Portfolios/Data/Intermediate/m_crsp.fst'))
@@ -97,7 +99,7 @@ write_fst(
 
 # CRSP daily --------------------------------------------------------------
 
-for (year in seq(1926,2100)){
+for (year in seq(1926,year(Sys.time()))){
   print(paste0('downloading daily crsp for year ',year))
   query = paste0(
     "select a.permno, a.date, a.ret, a.shrout, a.prc, a.cfacshr
@@ -124,6 +126,30 @@ d_crsp = d_crsp %>%
         ret = 100*ret
     )
 
+
+## Calculate passive within-month gains 
+d_crsp = data.table(d_crsp)
+
+# create month index
+d_crsp = d_crsp[
+  , temp := as.Date(date)
+        ][
+  , yyyymm := year(temp)*100 + month(temp)
+][
+  , !c('temp')
+]
+setkey(d_crsp, c('permno','yyyymm')) # not sure this helps
+
+# find passive gain within months (in place) 
+d_crsp = d_crsp[
+  !is.na(ret)
+][
+  order(permno,date)
+][
+  , passgainm := shift(ret, fill=0, type='lag'), by = c('permno','yyyymm')
+][
+  , passgainm := cumprod(1+passgainm/100), by=c('permno','yyyymm')
+] 
 
 write_fst(d_crsp, paste0(pathProject,'Portfolios/Data/Intermediate/d_crsp.fst'))
 

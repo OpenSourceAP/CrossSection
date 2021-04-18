@@ -79,6 +79,7 @@ signalname_to_ports = function(
                              , portperiod = NA
                              , q_filt = NA
                              , filterstr = NA
+                             , sweight_freq = 'monthly'
                                ) {
     
     ### IMPLEMENTATION DEFAULTS AND SETTINGS
@@ -233,7 +234,7 @@ signalname_to_ports = function(
             signal = signal %>% mutate(port = signal)
     } # if Cat.Form
     
-    # calculate portfolio returns (stock weighting happens here) ####
+    # Portfolio Returns (stock weighting happens here) ####
     # make all na except  "rebalancing months", which is actually signal updating months
     # and then fill na with stale data
     
@@ -289,26 +290,31 @@ signalname_to_ports = function(
         , by = c('permno','yyyymm')
       )         
     
+    ## stock weights
+    # equal vs value-weighting
     if (sweight == 'VW'){
       crspret$weight = crspret$melag
     } else {
       crspret$weight = 1
     }    
+    # adjustments for passive gains 
+    # (this is only used for the daily ports right now)
+    if (sweight_freq!='monthly'){
+      crspret$weight = crspret$weight*crspret$passgainm
+    }
     
     
     if (feed.verbose) {print('calculating portfolio returns')}
-    # takes about 25 sec for daily data
-    # data.table is about 2x as fast, prob not worth it
-    # to make daily implementations equivalent to monthly, you would need
-    # to modify the code here.  
-    port = crspret %>%
-      filter(!is.na(port),!is.na(ret),!is.na(weight)) %>%
-      group_by(port, date) %>%
-      summarize(
+    port = crspret[
+      !is.na(port) & !is.na(ret) & !is.na(weight)
+    ][
+      , .(
         ret = weighted.mean(ret, weight)
         , signallag = weighted.mean(signallag, weight)
-        , Nlong = n()
-      )    
+        , Nlong = .N
+        )
+      , by = list(port,date)
+    ]
     
     port = port %>%
       mutate(Nshort = 0) %>%
