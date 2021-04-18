@@ -169,101 +169,6 @@ signalname_to_ports = function(
         
     } ## end sub function
 
-
-    portfolio_returns = function(startmonth,portperiod){        
-        # make all na except  "rebalancing months", which is actually signal updating months
-        # and then fill na with stale data
-        
-        # find months that portfolio assignements are updated
-        rebmonths =  (
-            startmonth
-            + seq(0,12)*portperiod
-        ) %% 12
-        rebmonths[rebmonths == 0] = 12
-        rebmonths = sort(unique(rebmonths))
-        
-        signal =  signal %>%
-            mutate(
-                port = if_else(
-                (yyyymm %% 100) %in% rebmonths
-              , port
-              , NA_integer_
-                )
-            ) %>%
-            arrange(permno,yyyymm) %>%
-            group_by(permno) %>%
-            fill(port) %>%
-            filter(!is.na(port))                   
-        
-        ### CREATE PORTFOLIOS
-        # this can be slow with daily data, about 20 sec per signal
-        # using data.table is only about 2x faster, not worth it
-        # filtering first by date actually makes things a bit slower
-
-
-        ### ASSIGN TO PORTFOLIOS AND SIGN
-        # lag signals: note port could by called portlag here
-        signallag =  signal %>%
-            mutate(
-                yyyymm = yyyymm + 1
-              , yyyymm = if_else(yyyymm %% 100 == 13, yyyymm+100-12,yyyymm)
-            ) %>%
-            transmute(
-                permno
-              , yyyymm
-              , signallag = signal
-              , port
-            ) %>%
-            arrange(permno, yyyymm)    
-        
-        if (feed.verbose) {print('joining lagged signals onto crsp returns')}
-        gc()
-        
-        # R scoping implies crspret won't be modified outside of the function
-        crspret = crspret %>%
-            inner_join(
-                signallag
-              , by = c('permno','yyyymm')
-            )         
-        
-        if (sweight == 'VW'){
-            crspret$weight = crspret$melag
-        } else {
-            crspret$weight = 1
-        }    
-        
-
-        if (feed.verbose) {print('calculating portfolio returns')}
-        # takes about 25 sec for daily data
-        # data.table is about 2x as fast, prob not worth it
-        # to make daily implementations equivalent to monthly, you would need
-        # to modify the code here.  
-        port = crspret %>%
-            filter(!is.na(port),!is.na(ret),!is.na(weight)) %>%
-            group_by(port, date) %>%
-            summarize(
-                ret = weighted.mean(ret, weight)
-              , signallag = weighted.mean(signallag, weight)
-              , Nlong = n()
-            )    
-
-        port = port %>%
-            mutate(Nshort = 0) %>%
-            select(port,date,ret,signallag,Nlong,Nshort) %>%
-            ungroup()
-        
-        
-        if (feed.verbose){
-            print(paste0('end of signalname_to_ports memory used = '))
-            print(mem_used())
-        }    
-        gc()
-        if (feed.verbose){print(gc(T))}
-
-        return(port)
-        
-    } # end sub function
-
     longports_to_longshort = function(longportname, shortportname){
         # allows for ff3 style with something like
         # longportname = c('SH','BH'), shortportname = c('SL','BL')
@@ -328,8 +233,96 @@ signalname_to_ports = function(
             signal = signal %>% mutate(port = signal)
     } # if Cat.Form
     
-    ## calculate portfolio returns (stock weighting happens here)
-    port = portfolio_returns(startmonth,portperiod)    
+    # calculate portfolio returns (stock weighting happens here) ####
+    # make all na except  "rebalancing months", which is actually signal updating months
+    # and then fill na with stale data
+    
+    # find months that portfolio assignements are updated
+    rebmonths =  (
+      startmonth
+      + seq(0,12)*portperiod
+    ) %% 12
+    rebmonths[rebmonths == 0] = 12
+    rebmonths = sort(unique(rebmonths))
+    
+    signal =  signal %>%
+      mutate(
+        port = if_else(
+          (yyyymm %% 100) %in% rebmonths
+          , port
+          , NA_integer_
+        )
+      ) %>%
+      arrange(permno,yyyymm) %>%
+      group_by(permno) %>%
+      fill(port) %>%
+      filter(!is.na(port))                   
+    
+    ### CREATE PORTFOLIOS
+    # this can be slow with daily data, about 20 sec per signal
+    # using data.table is only about 2x faster, not worth it
+    # filtering first by date actually makes things a bit slower
+    
+    
+    ### ASSIGN TO PORTFOLIOS AND SIGN
+    # lag signals: note port could by called portlag here
+    signallag =  signal %>%
+      mutate(
+        yyyymm = yyyymm + 1
+        , yyyymm = if_else(yyyymm %% 100 == 13, yyyymm+100-12,yyyymm)
+      ) %>%
+      transmute(
+        permno
+        , yyyymm
+        , signallag = signal
+        , port
+      ) %>%
+      arrange(permno, yyyymm)    
+    
+    if (feed.verbose) {print('joining lagged signals onto crsp returns')}
+    gc()
+    
+    # R scoping implies crspret won't be modified outside of the function
+    crspret = crspret %>%
+      inner_join(
+        signallag
+        , by = c('permno','yyyymm')
+      )         
+    
+    if (sweight == 'VW'){
+      crspret$weight = crspret$melag
+    } else {
+      crspret$weight = 1
+    }    
+    
+    
+    if (feed.verbose) {print('calculating portfolio returns')}
+    # takes about 25 sec for daily data
+    # data.table is about 2x as fast, prob not worth it
+    # to make daily implementations equivalent to monthly, you would need
+    # to modify the code here.  
+    port = crspret %>%
+      filter(!is.na(port),!is.na(ret),!is.na(weight)) %>%
+      group_by(port, date) %>%
+      summarize(
+        ret = weighted.mean(ret, weight)
+        , signallag = weighted.mean(signallag, weight)
+        , Nlong = n()
+      )    
+    
+    port = port %>%
+      mutate(Nshort = 0) %>%
+      select(port,date,ret,signallag,Nlong,Nshort) %>%
+      ungroup()
+    
+    
+    if (feed.verbose){
+      print(paste0('end of signalname_to_ports memory used = '))
+      print(mem_used())
+    }    
+    gc()
+    if (feed.verbose){print(gc(T))}
+    
     
     ## add long-short         
     ls = longports_to_longshort(longportname,shortportname)
