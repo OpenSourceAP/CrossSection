@@ -237,12 +237,7 @@ signalname_to_ports = function(
         # takes about 25 sec for daily data
         # data.table is about 2x as fast, prob not worth it
         # to make daily implementations equivalent to monthly, you would need
-        # to modify the code here.  Not sure the best way to do it,
-        # but recursively keeping track of the passive portfolio weights
-        # and applying stock weight rebalancing based on the user input
-        # is the most general way.  Alternatively, you could apply a 
-        # sort of cummulative product by at the firm level at the higher frequency.
-        # For now (2021 04) we just keep this simple.
+        # to modify the code here.  
         port = crspret %>%
             filter(!is.na(port),!is.na(ret),!is.na(weight)) %>%
             group_by(port, date) %>%
