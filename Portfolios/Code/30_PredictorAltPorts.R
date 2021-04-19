@@ -2,11 +2,11 @@
 crspinfo = read.fst(
   paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
 ) %>% # me, screens, 
-  data.table()
+  setDT()
 crspret = read.fst(
   paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst')
 ) %>% # returns
-  data.table()
+  setDT()
 
 
 # SELECT SIGNALS 

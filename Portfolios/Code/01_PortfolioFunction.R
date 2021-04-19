@@ -94,13 +94,27 @@ signalname_to_ports = function(
   
   ## checks
   if (!exists('crspret')){
-    print('crspret not in workspace.  Please load Intermediate/crspmret.fst or crspdret.fst as crspret (see 11_ProcessCRSP.R)')
+    print('error: crspret not in workspace.  Please load Intermediate/crspmret.fst or crspdret.fst as crspret (see 11_ProcessCRSP.R)')
     stop()
   }
   if (!exists('crspinfo')){
-    print('crspinfo not in workspace.  Please load Intermediate/crspminfo.fst as crspinfo (see 11_ProcessCRSP.R)')
+    print('error: crspinfo not in workspace.  Please load Intermediate/crspminfo.fst as crspinfo (see 11_ProcessCRSP.R)')
     stop()
   }
+  if (passive_gain){
+    if (!'passgain' %in% colnames(crspret)){
+      print('error: passive_gain = T but crspret does not have a passgain column')
+      print('please check the correct crspret is loaded')
+      stop()
+    }
+  }
+  if (sweight == 'VW'){
+    if (!'melag' %in% colnames(crspret)){
+      print('error: sweight == VW but crspret does not have melag column')
+      print('please check crsp processing')
+      stop()
+    }
+  }  
   
   # function for sorting portfolios if signal is not already a port assignment
   single_sort = function(q_filt,q_cut){
@@ -229,35 +243,27 @@ signalname_to_ports = function(
   
   ### CREATE PORTFOLIOS
   # this can be slow with daily data, about 20 sec per signal
-  # using data.table is only about 2x faster, not worth it
   # filtering first by date actually makes things a bit slower
-  
   
   ### ASSIGN TO PORTFOLIOS AND SIGN
   # lag signals: note port could by called portlag here
-  signallag =  signal %>%
-    mutate(
-      yyyymm = yyyymm + 1
-      , yyyymm = if_else(yyyymm %% 100 == 13, yyyymm+100-12,yyyymm)
-    ) %>%
-    transmute(
-      permno
-      , yyyymm
-      , signallag = signal
-      , port
-    ) %>%
-    arrange(permno, yyyymm)    
+  signallag = setDT(signal)[
+    , .(permno, yyyymm, signal, port)
+  ][
+    , yyyymm := yyyymm + 1
+  ][
+    , yyyymm := if_else(yyyymm %% 100 == 13, yyyymm+100-12,yyyymm)
+  ]
+  setnames(signallag, old = 'signal', new = 'signallag')  
   
   if (feed.verbose) {print('joining lagged signals onto crsp returns')}
   gc()
-  
-  # R scoping implies crspret won't be modified outside of the function
-  crspret = crspret %>%
-    inner_join(
-      signallag
-      , by = c('permno','yyyymm')
-    )         
-  
+  crspret[
+    signallag %>% setDT
+    , on = c('permno','yyyymm')
+    , ':=' (signallag = i.signallag, port = i.port)
+  ]
+
   ## stock weights
   # equal vs value-weighting
   if (sweight == 'VW'){

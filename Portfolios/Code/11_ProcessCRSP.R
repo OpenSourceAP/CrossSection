@@ -97,13 +97,10 @@ rm(list=ls(pattern='temp'))
 
 # ==== DAILY CRSP SETUP ====
 # unlike monthly crsp, we try to do this in place for memory mgmt
-# also don't load up stuff we won't use
 crspdret = read_fst(
   paste0(pathProject,'Portfolios/Data/Intermediate/d_crsp_raw.fst')
   , columns = c('permno','date','ret')
-)
-
-crspdret = data.table(crspdret) # data table for speed
+) %>% setDT()
 
 # drop na, reformat 
 crspdret = crspdret[
@@ -127,6 +124,23 @@ crspdret = crspdret[
 ][
   , passgain := cumprod(1+passgain/100), by=c('permno','yyyymm')
 ] 
+
+# merge on last month's lagged me for fast (monthly-rebalanced) value-weighting
+# other monthly info (e.g. exchcd) is used only in port assignments
+templag = read_fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+  , columns = c('permno','yyyymm','me')
+) %>% 
+  setDT() %>%
+  mutate(
+    yyyymm = yyyymm + 1
+    , yyyymm = if_else(yyyymm %% 100 == 13, yyyymm+100-12,yyyymm)
+  ) %>%
+  transmute(permno, yyyymm, melag = me)
+setkeyv(templag, c('permno','yyyymm'))
+
+# left join update by reference
+crspdret[templag, on = c('permno','yyyymm'), melag := i.melag]
 
 # write to disk
 write_fst(crspdret, paste0(pathProject,'Portfolios/Data/Intermediate/crspdret.fst'))

@@ -8,6 +8,7 @@
 # we do not store Nlong and Nshort, and instead impose the screen at the portfolio 
 # level.  
 
+# takes about 1.5 hours per implementation, or about 10 hours total
 
 ### ENVIRONMENT AND DATA ####
 start_time = Sys.time()
@@ -16,33 +17,15 @@ start_time = Sys.time()
 # setting to 20 removes IO_ShortInterest portfolios
 Nstocksmin = 20 
 
-### FUNCTION FOR CHECKING A WHOLE FOLDER OF DAILY RETURNS
-checkdir = function(dircurr){
-  
-  sumsignal = tibble()
-  for (signalcurr in csvlist$signalname){
-    retd = fread(paste0(pathDataDaily,dircurr,'/',signalcurr,'_ret.csv')) %>%
-      gather(port,'ret',-date) %>%
-      filter(!is.na(ret))
-    tempstat = retd %>% group_by(port) %>% 
-      summarize(
-        nobs_years = n()/250
-        , rbar_monthly = mean(ret,na.rm=T)*20
-      ) %>%
-      mutate(signalname = signalcurr)
-    sumsignal = rbind(sumsignal,tempstat)
-  }
-  
-  sumdir = sumsignal %>% group_by(port) %>% 
-    summarize(
-      n_distinct(signalname)
-      ,mean(nobs_years)
-      ,mean(rbar_monthly)
-    ) %>%
-    mutate(implementation = dircurr)
-  
-} # end function checkdir
-
+### load crsp returns
+crspinfo = read.fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+) %>% # me, screens, 
+  setDT()
+crspret = read.fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspdret.fst')
+) %>% # returns
+  setDT()
 
 ### SET UP PATHS
 
@@ -74,8 +57,8 @@ strategylist0 = ifquickrun()
 
 strategylistcts = strategylist0 %>% filter(Cat.Form == 'continuous')
 
-## load up daily crsp returns
-source(paste0(pathProject, "/Portfolios/Code/setup_crspd.r"), echo = T)
+
+
 
 ### BASELINE ####
 
@@ -87,6 +70,7 @@ port = loop_over_strategies(
   , saveportcsv = T
   , saveportpath = pathDataDailyBase
   , saveportNmin = Nstocksmin
+  , passive_gain = T
 )
 
 ## BASELINE
@@ -97,6 +81,7 @@ port = loop_over_strategies(
   , saveportcsv = T
   , saveportpath = pathDataDailyBaseVW
   , saveportNmin = Nstocksmin
+  , passive_gain = T  
 )
 
 Sys.time()
@@ -113,6 +98,7 @@ port = loop_over_strategies(
   , saveportcsv = T
   , saveportpath = pathDataDailyDecile
   , saveportNmin = Nstocksmin    
+  , passive_gain = T  
 )
 
 
@@ -123,6 +109,7 @@ port = loop_over_strategies(
   , saveportcsv = T
   , saveportpath = pathDataDailyDecileVW
   , saveportNmin = Nstocksmin        
+  , passive_gain = T  
 )
 
 Sys.time()
@@ -136,6 +123,7 @@ port = loop_over_strategies(
   , saveportcsv = T
   , saveportpath = pathDataDailyQuintile
   , saveportNmin = Nstocksmin    
+  , passive_gain = T  
 )
 
 
@@ -146,6 +134,7 @@ port = loop_over_strategies(
   , saveportcsv = T
   , saveportpath = pathDataDailyQuintileVW
   , saveportNmin = Nstocksmin        
+  , passive_gain = T  
 )
 
 print('50_DailyPredictorPorts.R done!')
@@ -158,6 +147,34 @@ print(end_time)
 
 # CHECK CSVS ####
 # this creates DailyPortSummary.xlsx
+
+### FUNCTION FOR CHECKING A WHOLE FOLDER OF DAILY RETURNS
+checkdir = function(dircurr){
+  
+  sumsignal = tibble()
+  for (signalcurr in csvlist$signalname){
+    retd = fread(paste0(pathDataDaily,dircurr,'/',signalcurr,'_ret.csv')) %>%
+      gather(port,'ret',-date) %>%
+      filter(!is.na(ret))
+    tempstat = retd %>% group_by(port) %>% 
+      summarize(
+        nobs_years = n()/250
+        , rbar_monthly = mean(ret,na.rm=T)*20
+      ) %>%
+      mutate(signalname = signalcurr)
+    sumsignal = rbind(sumsignal,tempstat)
+  }
+  
+  sumdir = sumsignal %>% group_by(port) %>% 
+    summarize(
+      n_distinct(signalname)
+      ,mean(nobs_years)
+      ,mean(rbar_monthly)
+    ) %>%
+    mutate(implementation = dircurr)
+  
+} # end function checkdir
+
 
 print(paste0('Checking on Daily Port stats ', Sys.time()))
 dirlist = list.dirs(pathDataDaily, full.names=F)
