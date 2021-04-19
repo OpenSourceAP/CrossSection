@@ -53,11 +53,6 @@ crspm = crspm %>%
     , yyyymm = year(date) * 100 + month(date)    
   )
 
-# passive gain within the month is always 1 for monthly returns
-# this isn't actually used right now, but hopefully it keeps people from getting
-# too confused
-crspm$passgainm = 1 
-
 # keep around me and melag for sanity
 templag <- crspm %>%
   select(permno, yyyymm, me) %>%
@@ -70,7 +65,8 @@ templag <- crspm %>%
 ## subset into two smaller datasets for cleanliness
 gc()
 crspmret <- crspm %>%
-  select(permno, date, yyyymm, ret, passgainm) %>%
+  select(permno, date, yyyymm, ret) %>%
+  filter(!is.na(ret)) %>%
   left_join(templag, by = c("permno", "yyyymm")) %>%
   arrange(permno, yyyymm)
 gc()
@@ -111,7 +107,8 @@ crspdret = data.table(crspdret) # data table for speed
 
 # drop na, reformat 
 crspdret = crspdret[
-  !is.na(ret)
+  !is.na(ret)  
+][
   , ':=' (
     ret = 100*ret
     , date = as.Date(date)
@@ -126,9 +123,9 @@ gc()
 ## Calculate passive within-month gains (calc in place) 
 setkeyv(crspdret, c('permno','yyyymm')) # hopefully this speeds up the passive gain calc
 crspdret = crspdret[
-  , passgainm := shift(ret, fill=0, type='lag'), by = c('permno','yyyymm')
+  , passgain := shift(ret, fill=0, type='lag'), by = c('permno','yyyymm')
 ][
-  , passgainm := cumprod(1+passgainm/100), by=c('permno','yyyymm')
+  , passgain := cumprod(1+passgain/100), by=c('permno','yyyymm')
 ] 
 
 # write to disk
