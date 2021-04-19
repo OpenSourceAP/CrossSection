@@ -1,7 +1,7 @@
 #### GLOBAL SETTINGS
 
 quickrun =  F # use T if you want to run quickly for testing
-quickrunlist = c('DivOmit','realestate','nanalyst')
+quickrunlist = c('AssetGrowth','OperProf','CF')
 feed.verbose = F # use T if you want lots of feedback
 
 options(dplyr.summarise.inform = FALSE)
@@ -30,7 +30,7 @@ dir.create(paste0(pathCRSPPredictors))
 # Check for and potentially install missing packages
 install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'pryr', 'fst',
                            'RPostgres', 'getPass', 'xtable', 'gridExtra',
-                           'ggrepel'), 
+                           'ggrepel','data.table'), 
                          rownames(installed.packages())))
 
 # Use the extrafonts package, to get nicer fonts for output figures
@@ -367,7 +367,7 @@ loop_over_strategies = function(
                               , saveportcsv = F
                               , saveportpath = NA
                               , saveportNmin = 20
-                              , sweight_freq = 'monthly'
+                              , passive_gain = F
                                 ){   
 
     Nstrat = dim(strategylist)[1]
@@ -404,7 +404,7 @@ loop_over_strategies = function(
               , portperiod = strategylist$portperiod[i]
               , q_filt = strategylist$q_filt[i]
               , filterstr = strategylist$filterstr[i]
-              , sweight_freq = sweight_freq
+              , passive_gain = passive_gain
             )
             
         }
