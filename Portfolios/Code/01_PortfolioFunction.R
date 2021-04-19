@@ -23,16 +23,21 @@ import_signal = function(signalname,filterstr,Sign){
     
     ## load signal data 
     # about twice as fast as regular read.csv
-    signal = read.table(
-        csvname
-      , header = T, sep = ',', quote = ""
-      , stringsAsFactors = F, comment.char = ""
-      , colClasses = c('integer','integer','numeric')
-      , check.names = F
-    ) %>%
-        as_tibble() %>%
-        rename(signal = !!signalname) %>%
-        filter(!is.na(signal))
+    # signal = read.table(
+    #     csvname
+    #   , header = T, sep = ',', quote = ""
+    #   , stringsAsFactors = F, comment.char = ""
+    #   , colClasses = c('integer','integer','numeric')
+    #   , check.names = F
+    # ) %>%
+    #     as_tibble() %>%
+    #     rename(signal = !!signalname) %>%
+    #     filter(!is.na(signal))
+    
+    signal = fread(csvname) %>%
+      as_tibble() %>%
+      rename(signal = !!signalname) %>%
+      filter(!is.na(signal))    
     
     ## add crsp prc exchcd me for implementation adjustments
     # sometimes get the follwoing error
@@ -234,7 +239,7 @@ signalname_to_ports = function(
             signal = signal %>% mutate(port = signal)
     } # if Cat.Form
     
-    # Portfolio Returns (stock weighting happens here) ####
+    # == Portfolio Returns (stock weighting happens here) ====
     # make all na except  "rebalancing months", which is actually signal updating months
     # and then fill na with stale data
     

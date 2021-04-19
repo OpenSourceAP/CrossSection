@@ -1,5 +1,13 @@
-#### ENVIRONMENT AND DATA ####
-source(paste0(pathProject, "/Portfolios/Code/setup_crspm.r"), echo = T)
+# ==== ENVIRONMENT AND DATA ====
+crspinfo = read.fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+) %>% # me, screens, 
+  data.table()
+crspret = read.fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst')
+) %>% # returns
+  data.table()
+
 
 # SELECT SIGNALS 
 

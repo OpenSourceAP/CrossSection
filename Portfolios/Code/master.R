@@ -26,7 +26,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-pathProject = PATH_TO_PROJECT_HERE
+pathProject = 'd:/pc_work/CrossSection/'
 
 
 # Check whether project path is set correctly
@@ -43,20 +43,22 @@ source('01_PortfolioFunction.R', echo=T)
 
 # PREPARE INTERMEDIATE DATA ####
 
-print('master: 10_DownloadCRSP.R')
-tryCatch({
-    source('10_DownloadCRSP.R', echo=T)
-})
+# print('master: 10_DownloadCRSP.R')
+# tryCatch({
+#     source('10_DownloadCRSP.R', echo=T)
+# })
+# 
+# print('master: 11_ProcessCrsp.R')
+# tryCatch({
+#     source('11_ProcessCRSP.R', echo=T)
+# })
+# 
+# print('master: 12_CreateCRSPPredictors.R')
+# tryCatch({
+#     source('12_CreateCRSPPredictors.R', echo=T)
+# })
 
-print('master: 11_CreateCRSPPredictors.R')
-tryCatch({
-    source('11_CreateCRSPPredictors.R', echo=T)
-})
-
-# CREATE BASELINE PORTFOLIOS ####
-
-
-
+# ==== CREATE BASELINE PORTFOLIOS ====
 print('master: 20_PredictorPorts')
 tryCatch({
     source('20_PredictorPorts.R', echo=T) # 30 min
