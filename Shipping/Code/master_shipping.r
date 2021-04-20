@@ -1,4 +1,4 @@
-# SETTINGS ####
+# ==== SETTINGS ====
 # this code moves and zips files from the local repo Data subfolders
 # to some storage area for shipping
 # Not sure anyone besides us will need to us it.
@@ -8,11 +8,10 @@ library(tidyverse)
 library(readxl)
 library(data.table) # for speed
 
-pathProject = 'd:/pc_work/crossSection/'
-pathStorage = 'D:/Google Drive/Work/Public/openap/Data Release 2021.04/'
+pathProject = 'd:/pc_work/crossSection/' # local code base directory
+pathStorage = 'D:/Google Drive/Work/Public/openap/Data Release 2021.04/' # a place to store copies for uploading
 
-pathShipping = paste0(pathProject,'Shipping/')
-
+pathShipping = paste0(pathProject,'Shipping/') # where Code/master_shipping.r is
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
 pathPortfolios = paste0(pathProject, 'Portfolios/Data/Portfolios/')
@@ -92,7 +91,14 @@ readdocumentation = function(){
   
 } # end function
 
-# DO STUFF ####
+# ==== DO STUFF ====
+
+# update SignalDocumentation
+file.copy(
+  from = paste0(pathProject,'SignalDocumentation.xlsx')
+  , to = paste0(pathStorage)
+)
+
 source('1_pack_signals.r')
 source('2_pack_portfolios.r')
 source('3_check_storage.r')
