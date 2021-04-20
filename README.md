@@ -19,9 +19,7 @@ year = 2021
 
 ## Data
 
-If you are mostly interested in working with the data, we provide benchmark signal and portfolio returns in separate files for direct download. 
-
-You can access the benchmark data [here](https://sites.google.com/site/chenandrewy/open-source-ap). Please see the [data documentation](https://drive.google.com/file/d/1adFWMGcXEzF2Jls3qTtqb1fmXUTsRBr1/view?usp=sharing) for a description of individual files that are available.
+If you are mostly interested in working with the data, we provide signal and portfolio returns in separate files for direct download [here].
 
 ----
 
