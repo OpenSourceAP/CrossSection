@@ -1,7 +1,7 @@
 #### GLOBAL SETTINGS
 
 quickrun =  F # use T if you want to run quickly for testing
-quickrunlist = c('AssetGrowth','OperProf','CF')
+quickrunlist = c('Accruals')
 feed.verbose = F # use T if you want lots of feedback
 
 options(dplyr.summarise.inform = FALSE)
@@ -366,7 +366,7 @@ loop_over_strategies = function(
                                 strategylist
                               , saveportcsv = F
                               , saveportpath = NA
-                              , saveportNmin = 20
+                              , saveportNmin = 1
                               , passive_gain = F
                                 ){   
 

@@ -243,8 +243,7 @@ signalname_to_ports = function(
   
   ### CREATE PORTFOLIOS
   # this can be slow with daily data, about 20 sec per signal
-  # filtering first by date actually makes things a bit slower
-  
+
   ### ASSIGN TO PORTFOLIOS AND SIGN
   # lag signals: note port could by called portlag here
   signallag = setDT(signal)[
@@ -258,11 +257,12 @@ signalname_to_ports = function(
   
   if (feed.verbose) {print('joining lagged signals onto crsp returns')}
   gc()
-  crspret[
-    signallag %>% setDT
-    , on = c('permno','yyyymm')
-    , ':=' (signallag = i.signallag, port = i.port)
-  ]
+  # scoping implies crspret in the big loop is not affected
+  crspret = crspret %>%
+    left_join(
+      signallag %>% select(permno,yyyymm,signallag, port)
+      , by = c('permno','yyyymm')
+    )
 
   ## stock weights
   # equal vs value-weighting

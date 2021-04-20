@@ -14,8 +14,9 @@
 start_time = Sys.time()
 
 # minimum number of stocks in a portfolio
+# for now set to 1 (2021 04), matching baseline
 # setting to 20 removes IO_ShortInterest portfolios
-Nstocksmin = 20 
+Nstocksmin = 1
 
 ### load crsp returns
 crspinfo = read.fst(
