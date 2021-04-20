@@ -5,6 +5,7 @@
 # goes in order of the data release documentation, except port full sets go first
 
 # ENVIRONMENT, sink to txt ####
+options(width=1e3)
 
 print('pathStorage is ')
 print(pathStorage)
@@ -80,6 +81,29 @@ check_doc = function(tempdir,tempdoc,iszip){
 
 
 # ==== PORTFOLIO FULL SETS ====
+
+print(' === PORTFOLIO FULL SETS === ')
+cat('\n')
+
+## Check timing of baseline 
+port = fread(
+  paste0(pathStorage,'Portfolios/Full Sets OP/PredictorPortsFull.csv')
+)
+
+print('Count of predictors with long-short returns by month')
+
+port %>% 
+filter(
+  port == 'LS', !is.na(ret), month(date) == 12, year(date) >= 2000
+) %>%
+  group_by(date) %>%
+  summarize(n_distinct(signalname)) %>%
+  arrange(desc(date)) %>%
+  as.data.frame() %>% 
+  print()
+
+cat('\n\n')
+
 
 # function of summary statistics for full sets
 # used only for full sets
@@ -181,7 +205,6 @@ rbarimp = rbind(
 ## output port full set stats
 
 options(max.print = 1e5)   
-print(' === PORTFOLIO FULL SETS === ')
 cat('\n')
 print('Summary of portfolio full set mean monthly long-short returns')
 rbarimp %>%
