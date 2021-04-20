@@ -59,55 +59,55 @@ source('01_PortfolioFunction.R', echo=T)
 # })
 
 # ==== CREATE BASELINE PORTFOLIOS ====
-print('master: 20_PredictorPorts')
-tryCatch({
-    source('20_PredictorPorts.R', echo=T) # 30 min
-})
-
-
-print('master: 21_PredictorExhibits.R')
-if (quickrun==F){
-    tryCatch({
-        source('21_PredictorExhibits.R', echo=T)
-    })
-}
-
-# CREATE ALTERNATIVE PORTFOLIOS AND PLACEBOS ####
-
-
-print('master: 30_PredictorAltPorts.R')
-tryCatch({
-    source('30_PredictorAltPorts.R', echo=T) # about 6 hours
-})
-
-
-if (quickrun==F){
-    print('31_CheckPredictorsExhibits.R')
-    tryCatch({
-        source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
-    })
-}
-
-print('master: 40 40_PlaceboPorts.R')
-tryCatch({
-    source('40_PlaceboPorts.R', echo=T) # 30 min
-})
-
-
-if (quickrun==F){
-    print('41_PlaceboExhibits.R')
-    tryCatch({
-        source('41_PlaceboExhibits.R', echo=T, verbose=T)
-    })
-}
-
-# EXTRA STUFF ####
-
-# this can be run at the end since it takes a long time and isn't necessary for other results
-print('master: 12_SignalExhibits.R')
-tryCatch({
-    source('12_SignalExhibits.R', echo=T)
-})
+# print('master: 20_PredictorPorts')
+# tryCatch({
+#     source('20_PredictorPorts.R', echo=T) # 30 min
+# })
+# 
+# 
+# print('master: 21_PredictorExhibits.R')
+# if (quickrun==F){
+#     tryCatch({
+#         source('21_PredictorExhibits.R', echo=T)
+#     })
+# }
+# 
+# # CREATE ALTERNATIVE PORTFOLIOS AND PLACEBOS ####
+# 
+# 
+# print('master: 30_PredictorAltPorts.R')
+# tryCatch({
+#     source('30_PredictorAltPorts.R', echo=T) # about 6 hours
+# })
+# 
+# 
+# if (quickrun==F){
+#     print('31_CheckPredictorsExhibits.R')
+#     tryCatch({
+#         source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
+#     })
+# }
+# 
+# print('master: 40 40_PlaceboPorts.R')
+# tryCatch({
+#     source('40_PlaceboPorts.R', echo=T) # 30 min
+# })
+# 
+# 
+# if (quickrun==F){
+#     print('41_PlaceboExhibits.R')
+#     tryCatch({
+#         source('41_PlaceboExhibits.R', echo=T, verbose=T)
+#     })
+# }
+# 
+# # EXTRA STUFF ####
+# 
+# # this can be run at the end since it takes a long time and isn't necessary for other results
+# print('master: 12_SignalExhibits.R')
+# tryCatch({
+#     source('12_SignalExhibits.R', echo=T)
+# })
 
 print('master: 50_DailyPredictorPorts.R')
 tryCatch({

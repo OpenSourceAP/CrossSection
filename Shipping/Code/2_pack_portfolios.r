@@ -1,10 +1,14 @@
 # pack portfolios for shipping
 # Created 2021 04
+# takes about 20 min
 
+# ==== ENVIRONMENT ====
+starttime = Sys.time()
 
 dir.create(paste0(pathStorage,'Portfolios/'))
 dir.create(paste0(pathStorage,'Portfolios/Full Sets OP/'))
 dir.create(paste0(pathStorage,'Portfolios/Full Sets Alt/'))
+dir.create(paste0(pathStorage,'Portfolios/Individual/'))
 dir.create(paste0(pathStorage,'DailyPortfolios/'))
 
 # ==== FULL SETS OP ====
@@ -55,7 +59,7 @@ print(paste0('Done zipping Predictor Alt csvs ',Sys.time()))
 # write indiv function
 write_indiv  = function(setname,outfolder){
   
-  pathout = paste0(pathShipping,'Data/Portfolios/Individual/',outfolder)
+  pathout = paste0(pathStorage,'Portfolios/Individual/',outfolder)
   
   dir.create(pathout)
   
@@ -80,6 +84,11 @@ write_indiv  = function(setname,outfolder){
 ### WRITE ORIGINAL CUTS
 print('writing portfolios individual original cuts')
 write_indiv('PredictorPortsFull.csv','Original_Cuts/')
+
+### WRITE ORIGINAL CUTS VW
+print('writing portfolios individual original cuts VW')
+write_indiv('PredictorAltPorts_LiqScreen_VWforce.csv','Original_CutsVW/')
+
 
 ### WRITE DECILES
 print('writing portfolios individual cts deciles')
@@ -111,12 +120,18 @@ implist = list.dirs()
 implist = implist[grepl('Predictor',implist)]
 
 print(paste0('Daily Predictor csvs ',Sys.time()))
-for (impcurr in implist[1]){
+for (impcurr in implist){
   zip(
     zipfile = paste0(pathStorage, 'DailyPortfolios/', impcurr, '.zip')
     , files = paste0(impcurr)
   )
 }
+
+# add the summary xlsx 
+file.copy(
+  from = 'DailyPortSummary.xlsx'
+  , to = paste0(pathStorage, 'DailyPortfolios/')
+)
 
 
 # reset folder
@@ -124,3 +139,4 @@ setwd(tempdir)
 
 print(paste0('Done zipping daily portfolio csvs ',Sys.time()))
 
+print(Sys.time() - starttime )

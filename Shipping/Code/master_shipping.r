@@ -1,4 +1,8 @@
 # SETTINGS ####
+# this code moves and zips files from the local repo Data subfolders
+# to some storage area for shipping
+# Not sure anyone besides us will need to us it.
+# But it's good for replication, and to make data updates easier down the road.
 
 library(tidyverse)
 library(readxl)
@@ -21,10 +25,7 @@ dir.create('../Data/Portfolios/Individual')
 dir.create('../Data/temp')
 
 
-
-
-
-### function for reading in documentation, copied for Portfolios/Code/
+# function for reading in documentation, copied for Portfolios/Code/
 readdocumentation = function(){
   
   # little function for converting string NA into numeric NA
@@ -91,10 +92,8 @@ readdocumentation = function(){
   
 } # end function
 
-## run readdocumentaiton
-
 # DO STUFF ####
-# source('check_csv.r')
-
-# source('1_packandsign_predictors.r')
+source('1_pack_signals.r')
+source('2_pack_portfolios.r')
+source('3_check_storage.r')
 
