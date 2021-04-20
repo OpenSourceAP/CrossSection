@@ -25,10 +25,11 @@ If you are mostly interested in working with the data, we provide signal and por
 
 ## Code 
 
-The code is separated into two parts:
+The code is separated into three parts:
 
 1. **Signals**: Contains code to produce stock-level signals
-2. **Portfolios** Contains code to produce portfolio returns
+2. **Portfolios**: Contains code to produce portfolio returns
+3. **Shipping**: You shouldn't need this, this is used by us for replicable data sharing and checking
 
 You can download the individual signals that are outputs of the **Signals** part of the code from the data repository above and start from the **Portfolios** part if you like.
 
@@ -43,7 +44,11 @@ The **Signals code** provides scripts for `DataDownloads`, `Predictors` and `Pla
 
 ### 2. Portfolios
 
-The _Portfolios_ code constructs portfolio returns from the signal files. The `master.R` can serve as a reference as to the order in which files should run. You need to set the project folder (same as for the Stata code) in `00_SettingsAndTools.R` for everything to work.
+The **Portfolios** code constructs portfolio returns from the signal files. The `master.R` can serve as a reference as to the order in which files should run. You need to set the project folder (same as for the Stata code) in `00_SettingsAndTools.R` for everything to work.
+
+### 3. Shipping
+
+This code just zips up selected files, makes some quality checks, and copies files for uploading to Gdrive for sharing.  You shouldn't need to use this but we keep it with the rest of the code to stay organized.
 
 ---- 
 ## Data access
@@ -90,6 +95,11 @@ For a handful of predictors, we use R scripts to download CRSP data directly. WR
 
 To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
 https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
+
+## Stata and R Setup
+
+Stata code was tested using Stata 16.1 running on Ubuntu 18.04.5.
+R code was tested using (tbc)
 
 ----
 
