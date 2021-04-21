@@ -19,7 +19,7 @@ year = 2021
 
 ## Data
 
-If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at the dedicated data page [here](https://sites.google.com/site/chenandrewy/open-source-ap).
+If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at the dedicated data page [here](https://sites.google.com/site/chenandrewy/open-source-ap).  However, this repo may still be useful for understanding the data.
 
 ----
 
@@ -27,20 +27,21 @@ If you are mostly interested in working with the data, we provide both stock-lev
 
 The code is separated into three folders:
 
-1. `Signals/Code/`: Downloads data from WRDS and elsewhere.  Constructs stock-level signals (characteristics) and ouputs to `Signals/Data/`.  Mostly written in Stata.
-2. `Portfolios/Code/`: Takes in signals from `Signals/Data/` and outputs portfolios to `Portfolios/Data`.  Entirely in R.
-3. `Shipping/Code`: You shouldn't need this.  We use it to prepare data for sharing.
+1. `Signals/Code/` Downloads data from WRDS and elsewhere.  Constructs stock-level signals (characteristics) and ouputs to `Signals/Data/`.  Mostly written in Stata.
+2. `Portfolios/Code/` Takes in signals from `Signals/Data/` and outputs portfolios to `Portfolios/Data/`.  Entirely in R.
+3. `Shipping/Code/` You shouldn't need this.  We use this to prepare data for sharing.
 
-We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/Code/` and then do your own thing.  If you just want to create portfolios, you can skip `Signals/Code/` by directly downloading its output via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap).
+We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/Code/` and then do your thing.  If you just want to create portfolios, you can skip `Signals/Code/` by directly downloading its output via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap).
 
 More details are below.
 
 ### 1. Signals/Code/
 
 `master.do` runs everything.  It calls every .do file in the following folders:
-* `DataDownloads/`: downloads data from WRDS and elsewhere
-* `Predictors/`: construct stock-level predictors and outputs to `Signals/Data/Predictors/`
-* `Placebos/`: constructs "not predictors" and "indicrect evidence" signals and outputs to `Signals/Data/Placebos/` 
+
+* `DataDownloads/` downloads data from WRDS and elsewhere
+* `Predictors/` construct stock-level predictors and outputs to `Signals/Data/Predictors/`
+* `Placebos/` constructs "not predictors" and "indirect evidence" signals and outputs to `Signals/Data/Placebos/` 
 
 `master.do` employs exception handling so if any of these .do files errors out (due to lack of a subscription, code being out of date, etc), it'll keep running and output as much as it can.
 
@@ -48,7 +49,7 @@ The whole thing takes roughly 24 hours, but the predictors will be done much soo
 
 #### Minimal Setup
 
-In master.do, set `pathProject` to the root directory of the project (where SignalDocumentation.xlsx is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS.
+In master.do, set `pathProject` to the root directory of the project (where `SignalDocumentation.xlsx` is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS (a.k.a. dsn).
 
 If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for Windows users [here](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for WRDS cloud users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/)  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
 
@@ -72,13 +73,14 @@ https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more det
 ### 2. Portfolios/Code/
 
 `master.R` runs everything. It:
-1. Takes as inputs signal data in csv form from `Signals/Data/Predictors/` and `Signals/Data/Placebos/`,
+
+1. Takes as input signal data in csv form from `Signals/Data/Predictors/` and `Signals/Data/Placebos/`
 2. Outputs portfolio data in csv form to `Portfolios/Data/Portfolios/`
 3. Outputs exhibits found in the paper to `Results/`
 
 It also uses `SignalDocumentation.xlsx` as a guide for how to run the portfolios.
 
-By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
+By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
 #### Minimal Setup
 
@@ -126,7 +128,7 @@ If you use RStudio, take a look at [Hendrik Bruns' guide](https://www.hendrikbru
 
 As a stand-alone client for Windows, we recommend [Sourcetree](https://www.sourcetreeapp.com/).
 
-If you use Git, you should definitely add to .gitignore the following lines:
+If you use Git, you should definitely add the following lines to .gitignore:
 
 ```
 Signals/Data/**
@@ -134,7 +136,7 @@ Shipping/Data/**
 Portfolios/Data/**
 ```
 
-These folders contain a ton of files and will make Git slow to a crawl or crash.
+These folders contain a ton of data and will make Git slow to a crawl or crash.
 
 
 
