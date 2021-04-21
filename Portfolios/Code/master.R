@@ -26,8 +26,11 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-# pathProject = 'MYPATH'
+# pathProject = 'd:/pc_work/DebugCross/'
 
+quickrun =  F # use T if you want to run quickly for testing
+quickrunlist = c('Size','STreversal')
+feed.verbose = F # use T if you want lots of feedback
 
 # Check whether project path is set correctly
 if (!dir.exists(paste0(pathProject, 'Portfolios'))) {
@@ -109,7 +112,9 @@ tryCatch({
     source('12_SignalExhibits.R', echo=T)
 })
 
-print('master: 50_DailyPredictorPorts.R')
-tryCatch({
-    source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
-})
+if (!quickrun){
+    print('master: 50_DailyPredictorPorts.R')
+    tryCatch({
+        source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
+    })
+}

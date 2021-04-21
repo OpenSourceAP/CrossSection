@@ -144,4 +144,8 @@ crspdret[templag, on = c('permno','yyyymm'), melag := i.melag]
 
 # write to disk
 write_fst(crspdret, paste0(pathProject,'Portfolios/Data/Intermediate/crspdret.fst'))
+
+
+
+
 rm(list=ls(pattern='crsp'))

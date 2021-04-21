@@ -1,9 +1,5 @@
 #### GLOBAL SETTINGS
 
-quickrun =  F # use T if you want to run quickly for testing
-quickrunlist = c('Accruals')
-feed.verbose = F # use T if you want lots of feedback
-
 options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
@@ -19,12 +15,19 @@ pathDataSummary = paste0(pathProject, 'Portfolios/Data/Summary/')
 
 pathResults = paste0(pathProject, 'Results/')
 
-# Create folders if they don't exist
+## Create folders if they don't exist
+# Portfolios/ paths
 dir.create(pathResults)
 dir.create(paste0(pathProject, 'Portfolios/Data'))
 dir.create(paste0(pathDataPortfolios))
 dir.create(paste0(pathDataIntermediate))
-dir.create(paste0(pathCRSPPredictors))
+
+# Signals/Data/ paths
+dir.create(paste0(pathProject,'Signals/Data/'))
+dir.create(paste0(pathPredictors))
+dir.create(paste0(pathPlacebos))
+dir.create(paste0(pathtemp))
+
 
 #### PACKAGES
 # Check for and potentially install missing packages
