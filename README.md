@@ -19,7 +19,7 @@ year = 2021
 
 ## Data
 
-If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and portfolios returns for direct download at the dedicated data page [here](https://sites.google.com/site/chenandrewy/open-source-ap).
+If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at the dedicated data page [here](https://sites.google.com/site/chenandrewy/open-source-ap).
 
 ----
 
@@ -27,30 +27,37 @@ If you are mostly interested in working with the data, we provide both stock-lev
 
 The code is separated into three folders:
 
-1. `Signals/Code/`: Downloads data from WRDS and elsewhere.  Constructs stock-level signals (characteristics) and ouputs to `Signals/Data/`.  Mostly in written in Stata.
+1. `Signals/Code/`: Downloads data from WRDS and elsewhere.  Constructs stock-level signals (characteristics) and ouputs to `Signals/Data/`.  Mostly written in Stata.
 2. `Portfolios/Code/`: Takes in signals from `Signals/Data/` and outputs portfolios to `Portfolios/Data`.  Entirely in R.
 3. `Shipping/Code`: You shouldn't need this.  We use it to prepare data for sharing.
 
-We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run `Signals/Code/` and stop there.  If you just want to create portfolios, you can download the `Signals/Data/`files [here](https://sites.google.com/site/chenandrewy/open-source-ap) and run `Portfolios/Code/`.  
+We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/Code/` and then do your own thing.  If you just want to create portfolios, you can skip `Signals/Code/` by directly downloading its output via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap).
+
+More details are below.
 
 ### 1. Signals/Code/
 
-`master.do` runs everything.  It calls every .do file in `DataDownloads/` to download data from WRDS and elsewhere, then calls every .do file in `Predictors/` to construct stock-level predictors, and then every .do file in `Placebos/` to construct the other stock-level signals. `master.do` employs exception handling so if any of these .do files errors out, it'll keep running and output as much as it can.
+`master.do` runs everything.  It calls every .do file in the following folders:
+* `DataDownloads/`: downloads data from WRDS and elsewhere
+* `Predictors/`: construct stock-level predictors and outputs to `Signals/Data/Predictors/`
+* `Placebos/`: constructs "not predictors" and "indicrect evidence" signals and outputs to `Signals/Data/Placebos/` 
 
-The whole thing takes roughly 24 hours, but the predictors will be done much sooner, probably within 12 hours.
+`master.do` employs exception handling so if any of these .do files errors out (due to lack of a subscription, code being out of date, etc), it'll keep running and output as much as it can.
 
-#### Required Setup
+The whole thing takes roughly 24 hours, but the predictors will be done much sooner, probably within 12 hours.  You can keep track of how it's going by checking out the log files in `Signals/Logs/`.
 
-In master.do, set `pathProject` to the root directory of the project (where SignalDocumentation.xlsx is located) and `wrdsConnection` to your name for the ODBC connection to WRDS.
+#### Minimal Setup
 
-If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for Windows users [here](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for WRDS cloud users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/)  Note that `wrdsConnection` in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
+In master.do, set `pathProject` to the root directory of the project (where SignalDocumentation.xlsx is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS.
+
+If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for Windows users [here](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for WRDS cloud users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/)  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
 
 
 #### Optional Setup
 
-The required setup will allow you to produce the vast majority of signals.  And due to the exception handling in `master.do`, the code will run even if you're not set up to produce the remainder.
+The minimal setup will allow you to produce the vast majority of signals.  And due to the exception handling in `master.do`, the code will run even if you're not set up to produce the remainder.
 
-But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random data signals, you'll want to do the following
+But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random signals, you'll want to do the following:
 
 * For IBES signals, 13F signals, and BidAskSpread: Run `Signals/Code/PrepScripts/master.sas` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sas` and [WRDS-Cloud SAS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for more details.   The most important part of this optional setup is the construction of `iclink.csv`, which allows for merging of IBES and CRSP data.
 
@@ -59,36 +66,38 @@ https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more det
 
 * For signals that use patent citations, BEA input-output tables, or Compustat customer data, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  
 
-* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This suggests that Amihud and Mendelsohn's (1986) BidAskSpread doesn't work well post-publication.  Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code [here](https://sites.google.com/site/chenandrewy/code), and WRDS has recently provided a way to download these spreads directly.
+* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This suggests that Amihud and Mendelsohn's (1986) BidAskSpread doesn't work well post-publication, which you can check if you like.  Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code based on Holden and Jacobsen [here](https://sites.google.com/site/chenandrewy/code), and WRDS has recently provided a way to download these spreads directly.
 
 
 ### 2. Portfolios/Code/
 
-`master.R` runs everything. It calls all of the other .R scripts in the correct order.  `0*.R` provide the environment and setup, `1*.R` download and process CRSP data, `2*.R` runs the baseline predictor portfolios based on the original papers, `3*.R` runs alternative implementations of the predictors, `4*.R` runs the placebos, and `5*.R` runs daily portfolios.
+`master.R` runs everything. It:
+1. Takes as inputs signal data in csv form from `Signals/Data/Predictors/` and `Signals/Data/Placebos/`,
+2. Outputs portfolio data in csv form to `Portfolios/Data/Portfolios/`
+3. Outputs exhibits found in the paper to `Results/`
 
-The whole thing takes roughly 24 hours, but the baseline predictor portfolios will be done in just an hour or so.  Actually, they'll be done in about 30 minutes if you comment out the daily CRSP stuff in `10_DownloadCRSP.R` and `11_ProcessCRSP.R`.
+It also uses `SignalDocumentation.xlsx` as a guide for how to run the portfolios.
 
+By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
 #### Minimal Setup
 
-All you need to do is set `pathProject` in `master.R` to the project root directory (where SignalDocumentation.xlsx is).  Then `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
+All you need to do is set `pathProject` in `master.R` to the project root directory (where `SignalDocumentation.xlsx` is).  Then `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
 
 #### Probable Setup
 
-You probably want more than Price, Size, and STreversal, and so you probably want to add some more signal data.  
-
-The portfolios code reads in signal data in csv form from `Signals/Data/Predictors/` and `Signals/Data/Placebos/`, and implements portfolios following the AddInfo sheet in `SignalDocumentation.xlsx`.  
+You probably want more than Price, Size, and STreversal portfolios, and so you probably want to set up more signal data before you run `master.R`.  
 
 There are a couple ways to set up this signal data:
 
 * Run the code in `Signals/Code/` (see above)
 * Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and unzip to `Signals/Data/Predictors/` and `Signals/Data/Placebos/`
-* Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`).
+* Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv` and put them in `Signals/Data/Predictors/`).
 
 
 ### 3. Shipping/Code/
 
-This code just zips up selected files, makes some quality checks, and copies files for uploading to Gdrive for sharing.  You shouldn't need to use this but we keep it with the rest of the code for replicability.
+This code zips up the data, makes some quality checks, and copies files for uploading to Gdrive.  You shouldn't need to use this but we keep it with the rest of the code for replicability.
 
 ----
 
