@@ -20,11 +20,11 @@ These are created by code in Signals/PrepScripts/.  They are required for produc
 */
 
 *------------------------------------------------------------
-// SET PROJECT PATH, R PATH AND WRDS CONNECTION NAME HERE !
+// SET PROJECT PATH AND WRDS CONNECTION NAME HERE !
 *------------------------------------------------------------
-*global pathProject "PATH TO PROJECT HERE"
-*global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe"
-*global wrdsConnection "wrds-stata"
+*global pathProject "PATH TO PROJECT HERE" // required, should point to location of SignalDocumentation.xlsx
+*global wrdsConnection "wrds-stata" // required, see readme
+*global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe" // optional, used for like 3 signals (see DataDownloads/*.R)
 
 if ("$pathProject" != "" & "$RSCRIPT_PATH" != "" & "$wrdsConnection" !="") {
     di("Relevant paths have been set")
@@ -33,6 +33,10 @@ else {
     display as error "Relevant paths have not all been set"
 	exit 999
 }
+if ("$RSCRIPT_PATH" != ""){
+	global RSCRIPT_PATH = "missing"
+}
+
 
 // Set storage option of signal files
 global save_csv 1 // csvs are main output, should always be 1
