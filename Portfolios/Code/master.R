@@ -26,10 +26,10 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-# pathProject = 'd:/pc_work/DebugCross/'
+pathProject = 'd:/pc_work/DebugCross/'
 
 quickrun =  F # use T if you want to run quickly for testing
-quickrunlist = c('Size','STreversal')
+quickrunlist = c('Size','STreversal') # list of signals to use for quickrun
 feed.verbose = F # use T if you want lots of feedback
 
 # Check whether project path is set correctly
