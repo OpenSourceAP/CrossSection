@@ -30,6 +30,7 @@ pathProject = 'd:/pc_work/DebugCross/'
 
 quickrun =  F # use T if you want to run quickly for testing
 quickrunlist = c('Size','STreversal') # list of signals to use for quickrun
+skipdaily = T # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
 # Check whether project path is set correctly
@@ -112,7 +113,7 @@ tryCatch({
     source('12_SignalExhibits.R', echo=T)
 })
 
-if (!quickrun){
+if (!skipdaily){
     print('master: 50_DailyPredictorPorts.R')
     tryCatch({
         source('50_DailyPredictorPorts.R', echo=T) # about 6 hours

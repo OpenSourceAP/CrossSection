@@ -16,11 +16,6 @@ wrds <- dbConnect(Postgres(),
 numRowsToPull = -1 # Set to -1 for all rows and to some positive value for testing
 yearmax_crspd = year(Sys.time()) # set to year(Sys.time()) for all years or 1930 or something for testing
 
-if (quickrun){
-  numRowsToPull = 5000*5
-  yearmax_crspd = 1930
-}
-
 # CRSP monthly ------------------------------------------------------------
 # Follows in part: https://wrds-www.wharton.upenn.edu/pages/support/research-wrds/macros/wrds-macro-crspmerge/
 
@@ -51,30 +46,32 @@ write_fst(
 
 
 # CRSP daily --------------------------------------------------------------
-for (year in seq(1926,yearmax_crspd)){
-  print(paste0('downloading daily crsp for year ',year))
-  query = paste0(
-    "select a.permno, a.date, a.ret, a.shrout, a.prc, a.cfacshr
+if (!skipdaily){
+  for (year in seq(1926,yearmax_crspd)){
+    print(paste0('downloading daily crsp for year ',year))
+    query = paste0(
+      "select a.permno, a.date, a.ret, a.shrout, a.prc, a.cfacshr
                      from crsp.dsf as a
                      where date >= "
-    , "\'", year,"-01-01\'"
-    ,"and date <= "
-    , "\'", year,"-12-31\'"
-  )
+      , "\'", year,"-01-01\'"
+      ,"and date <= "
+      , "\'", year,"-12-31\'"
+    )
+    
+    temp_d_crsp = dbSendQuery(conn = wrds, statement = query) %>% 
+      # Pull data
+      dbFetch(n = -1)
+    
+    if (year==1926){
+      d_crsp = temp_d_crsp
+    } else
+      d_crsp = rbind(d_crsp,temp_d_crsp)
+  } # for year in seq
   
-  temp_d_crsp = dbSendQuery(conn = wrds, statement = query) %>% 
-    # Pull data
-    dbFetch(n = -1)
   
-  if (year==1926){
-    d_crsp = temp_d_crsp
-  } else
-    d_crsp = rbind(d_crsp,temp_d_crsp)
-} # for year in seq
-
-
-# write to disk (raw)
-write_fst(d_crsp, paste0(pathProject,'Portfolios/Data/Intermediate/d_crsp_raw.fst'))
+  # write to disk (raw)
+  write_fst(d_crsp, paste0(pathProject,'Portfolios/Data/Intermediate/d_crsp_raw.fst'))
+}
 
 Sys.time()
 Sys.time() - tic
