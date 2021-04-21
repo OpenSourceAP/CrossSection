@@ -8,12 +8,15 @@ This code is set up to run with the following path structure (Data and Log folde
 |   /Data          (contains all data download scripts)
 |   /Logs          (contains log files created during running scripts) 
 
-Requires:
+Optional inputs:
 	/Data/Prep/
-		corwin_schultz_spread.csv
-		iclink.csv
+		iclink.csv		
 		OptionMetrics.csv
-		tr_13f.csv	
+		tr_13f.csv
+		corwin_schultz_spread.csv		
+
+These are created by code in Signals/PrepScripts/.  They are required for producing the signals that use IBES (iclink.csv), OptionMetrics, and Thomson-Reuter's 
+13f data, but master.do will still produce the CRSP-Compustat signals if you do not have them.  corwin_schultz_spread.csv is only used for the BidAskSpread predictor.
 */
 
 *------------------------------------------------------------
