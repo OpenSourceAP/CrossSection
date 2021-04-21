@@ -26,7 +26,7 @@ These are created by code in Signals/PrepScripts/.  They are required for produc
 *global wrdsConnection "wrds-stata" // required, see readme
 *global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe" // optional, used for like 3 signals (see DataDownloads/*.R)
 
-if ("$pathProject" != "" & "$RSCRIPT_PATH" != "" & "$wrdsConnection" !="") {
+if ("$pathProject" != "" & "$wrdsConnection" !="") {
     di("Relevant paths have been set")
 } 
 else {
