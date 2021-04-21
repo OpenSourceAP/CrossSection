@@ -2,12 +2,13 @@
 
 ### READ DATA
 
-crsp = read_fst(paste0(pathDataIntermediate,'m_crsp.fst'))
+crspret  = read_fst(paste0(pathDataIntermediate,'crspmret.fst'))
+crspinfo = read_fst(paste0(pathDataIntermediate,'crspminfo.fst'))
 
 ### MAKE STreversal
 if (!file.exists(paste0(pathPredictors, 'STreversal.csv'))) {
     
-    temp = crsp %>%
+    temp = crspret %>%
         select(permno, date, ret) %>%
         mutate(
             STreversal = if_else(is.na(ret), 0, ret)
@@ -23,11 +24,10 @@ if (!file.exists(paste0(pathPredictors, 'STreversal.csv'))) {
 ### MAKE Price
 if (!file.exists(paste0(pathPredictors, 'Price.csv'))) {
     
-    temp = crsp %>%
-        select(permno, date, prc) %>%
+    temp = crspinfo %>%
+        select(permno, yyyymm, prc) %>%
         mutate(
             Price = log(abs(prc))
-            , yyyymm = year(date)*100 + month(date)        
         ) %>%
         filter(!is.na(Price)) %>%
         select(permno, yyyymm, Price)
@@ -39,12 +39,10 @@ if (!file.exists(paste0(pathPredictors, 'Price.csv'))) {
 ### MAKE Size
 if (!file.exists(paste0(pathPredictors, 'Size.csv'))) {
     
-    temp = crsp %>%
-        select(permno, date, shrout, prc) %>%
-        filter(shrout > 0) %>%    
+    temp = crspinfo %>%
+        select(permno, yyyymm, me) %>%
         mutate(
-            Size = log(shrout*abs(prc))
-            , yyyymm = year(date)*100 + month(date)        
+            Size = log(me)
         ) %>%
         filter(!is.na(Size)) %>%
         select(permno, yyyymm, Size)
