@@ -27,15 +27,17 @@ If you are mostly interested in working with the data, we provide signal and por
 
 The code is separated into three parts:
 
-1. **Signals**: Contains code to produce stock-level signals
+1. **Signals**: Contains code to produce stock-level signals (characteristics)
 2. **Portfolios**: Contains code to produce portfolio returns
-3. **Shipping**: You shouldn't need this, this is used by us for replicable data sharing and checking
-
-You can download the individual signals that are outputs of the **Signals** part of the code from the data repository above and start from the **Portfolios** part if you like.
+3. **Shipping**: You shouldn't need this, this is used by us for replicable data sharing and data checking
 
 ### 1. Signals
 
-The **Signals code** provides scripts for `DataDownloads`, `Predictors` and `Placebos`. The `master.do` file runs all files but you will need to set paths pointing to your project folder, your R installation and your WRDS connection (see below).  Most of this code is written in Stata.
+The **Signals code** provides scripts for downloading data from WRDS and elsewhere (`DataDownloads`), creating stock-level predictors (`Predictors`), and creating stock-level signals that were not shown to predict (`Placebos`). `master.do` runs all of the files.
+
+Setup: (tbc)
+
+but you will need to set paths pointing to your project folder and your WRDS connection (see below).  Most of this code is written in Stata.
 
 *Optional (i.e. code is modular and will work even if you do not do that)*: To construct signals that rely on IBES, 13F, TAQ or OptionMetrics data run the SAS scripts in `PrepScripts` on the WRDS server. See the [WRDS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for different ways to run these scripts on the WRDS server. Copy the output of those scripts to `Signals/Data/Prep`. Code to construct trading costs from TAQ data is provided separately and can be downloaded [here](https://drive.google.com/open?id=1W256-g-RxqOZBjNtkSJuuWXUqHZEYHsM).
 
@@ -44,9 +46,9 @@ The **Signals code** provides scripts for `DataDownloads`, `Predictors` and `Pla
 
 ### 2. Portfolios
 
-The **Portfolios** code constructs portfolio returns from the signal files. The `master.R` can serve as a reference as to the order in which files should run. You need to set the project folder (same as for the Stata code) in `00_SettingsAndTools.R` for everything to work.
+The **Portfolios** code constructs portfolio returns from the signal files. `master.R` runs all of the files, but once again you need to set the paths.
 
-All of this code is written in R.  So if you do not have access to Stata, you can still use the portfolio code by downloading the individual signal csvs from the data page and running the code in the Portfolios/ folder.  More detailed instructions will be coming when we get the chance.
+All of this code is written in R.  So if you do not have access to Stata, you can still use the portfolio code by downloading the individual signal csvs from the data page and running `master.R`.  More detailed instructions on how to skip to the portfolio code will be coming when we get the chance.
 
 ### 3. Shipping
 
