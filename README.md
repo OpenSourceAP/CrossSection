@@ -25,21 +25,59 @@ If you are mostly interested in working with the data, we provide signal and por
 
 ## Code 
 
-The code is separated into three parts:
+The code is separated into three folders:
 
-1. **Signals**: Contains code to produce stock-level signals (characteristics)
-2. **Portfolios**: Contains code to produce portfolio returns
-3. **Shipping**: You shouldn't need this, this is used by us for replicable data sharing and data checking
+1. `Signals/Code/`: Downloads data from WRDS and elsewhere.  Constructs stock-level signals (characteristics) and ouputs to `Signals/Data/`.  Mostly in Stata.
+2. `Portfolios/Code/`: Takes in signals from `Signals/Data/` and outputs portfolios to `Portfolios/Data`.  Entirely in R.
+3. `Shipping/Code`: You shouldn't need this.  We use it to prepare data for sharing.
+
+We separate the code so you can chose which parts you want to run.  If you only want to create signals, you can run `Signals/Code/` and stop there.  If you just want to create portfolios, you can download the `Signals/Data/`files [here](https://sites.google.com/site/chenandrewy/open-source-ap) and run `Portfolios/Code/`.  
 
 ### 1. Signals
 
-The **Signals code** provides scripts for downloading data from WRDS and elsewhere (`DataDownloads`), creating stock-level predictors (`Predictors`), and creating stock-level signals that were not shown to predict (`Placebos`). `master.do` runs all of the files.
+master.do runs everything.  It calls every script in `DataDownloads/` to download data from WRDS and elsewhere, then calls everything in `Predictors/` to construct stock-level predictors, and then everything in `Placebos/` to construct the other stock-level signals. 
 
-Setup: (tbc)
+#### Required Setup
 
-but you will need to set paths pointing to your project folder and your WRDS connection (see below).  Most of this code is written in Stata.
+In master.do, set `pathProject` to the root directory of the project (where SignalDocumentation.xlsx is located) and `wrdsConnection` to your name for the ODBC connection to WRDS.
 
-*Optional (i.e. code is modular and will work even if you do not do that)*: To construct signals that rely on IBES, 13F, TAQ or OptionMetrics data run the SAS scripts in `PrepScripts` on the WRDS server. See the [WRDS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for different ways to run these scripts on the WRDS server. Copy the output of those scripts to `Signals/Data/Prep`. Code to construct trading costs from TAQ data is provided separately and can be downloaded [here](https://drive.google.com/open?id=1W256-g-RxqOZBjNtkSJuuWXUqHZEYHsM).
+If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for Windows users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for WRDS cloud users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/)  Note that `wrdsConnection` in the WRDS cloud example is `"wrds-postgres"`.
+
+If you use Linux and found that the WRDS cloud instructions did not quite work, you can try the following:
+
+Step 1 - Create a text file ~/.odbc.ini, and put the following text in there:
+
+    [ODBC Data Sources]
+    wrds-postgres = PostgreSQL
+
+    [wrds-postgres]
+    Driver           = PostgreSQL
+    Description      = Connect to WRDS on the WRDS Cloud
+    Database         = wrds
+    Username         = wrds_username
+    Password         = wrds_password
+    Servername       = wrds-pgdata.wharton.upenn.edu
+    Port             = 9737
+    SSLmode          = require
+
+Step 2 - Check that odbc.ini is working.  Open Stata and run the following:
+
+    set odbcmgr unixodbc
+    odbc load, exec("select * from crsp.dsf limit 10") dsn("wrds-postgres")
+    list
+
+You should see some cusips and other stuff if it's working.  Once again, in this example you should set `wrdsConnection` in `master.do` to `"wrds-postgres"`.
+
+#### Optional Setup
+
+The required setup will allow you to produce the vast majority of signals.  But for signals that rely on IBES, 13F, TAQ, OptionMetrics, or a handful of other random data sources, you'll need to do the following
+
+* (tbc)
+
+To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
+https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
+
+*Optional (i.e. code is modular and will work even if you do not do that)*: To construct signals that data run the SAS scripts in `PrepScripts` on the WRDS server. See the [WRDS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for different ways to run these scripts on the WRDS server. Copy the output of those scripts to `Signals/Data/Prep`. Code to construct trading costs from TAQ data is provided separately and can be downloaded [here](https://drive.google.com/open?id=1W256-g-RxqOZBjNtkSJuuWXUqHZEYHsM).
 
 *See **Data access** part of the readme below for some data access steps that you need to complete before you can run the code.*
 
@@ -63,42 +101,14 @@ To download raw data from the original sources, you will need access to WRDS via
 
 #### Setting up Stata / ODBC access to WRDS
 
-WRDS provides instructions for Windows users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/)  
 
-For Linux users, we recommend the following (This is similar to how it works on the WRDS server):
-
-Step 1 - Create a text file ~/.odbc.ini, and put the following text in there:
-
-    [ODBC Data Sources]
-    wrds-postgres = PostgreSQL
-
-    [wrds-postgres]
-    Driver           = PostgreSQL
-    Description      = Connect to WRDS on the WRDS Cloud
-    Database         = wrds
-    Username         = mcgregor_should_retire
-    Password         = and_teach_classes_on_shorts_grabbing
-    Servername       = wrds-pgdata.wharton.upenn.edu
-    Port             = 9737
-    SSLmode          = require
-
-Step 2 - Check that odbc.ini is working.  Open Stata and run the following:
-
-    set odbcmgr unixodbc
-    odbc load, exec("select * from crsp.dsf limit 10") dsn("wrds-postgres")
-    list
-
-You should see some cusips and other stuff.  If that looks good, then you should be able to run master.do
 
 #### Setting up Rstudio to access to WRDS
 
 For a handful of predictors, we use R scripts to download CRSP data directly. WRDS provides [instructions for setting up WRDS to work via RStudio on your computer](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-your-computer/).  These predictors are optional though, so you can skip this step if you don't need the full dataset.
 
 
-### 2. FRED
 
-To download macroeconomic data required for some signals, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, you need to save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
-https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
 
 ## Stata and R Setup
 
