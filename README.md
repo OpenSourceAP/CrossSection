@@ -31,7 +31,7 @@ The code is separated into three folders:
 2. `Portfolios/Code/` Takes in signals from `Signals/Data/` and outputs portfolios to `Portfolios/Data/`.  Entirely in R.
 3. `Shipping/Code/` You shouldn't need this.  We use this to prepare data for sharing.
 
-We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/Code/` and then do your thing.  If you just want to create portfolios, you can skip `Signals/Code/` by directly downloading its output via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap).
+We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/Code/` and then do your thing.  If you just want to create portfolios, you can skip `Signals/Code/` by directly downloading its output via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap).  The whole thing is about 15,000 lines, so you might want to pick your battles.
 
 More details are below.
 
