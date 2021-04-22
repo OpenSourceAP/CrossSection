@@ -98,3 +98,9 @@ file.remove(
 file.remove(
   paste0(pathStorage,'Firm Level Characteristics/Individual/Predictors/STreversal.csv')
 )
+
+# remove TAQ spreads
+file.remove(
+  paste0(pathStorage,'Firm Level Characteristics/Individual/Placebos/BidAskTAQ.csv')
+)
+
