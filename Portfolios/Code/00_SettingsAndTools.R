@@ -1,14 +1,8 @@
 #### GLOBAL SETTINGS
 
-quickrun =  F # use T if you want to run quickly for testing
-quickrunlist = c('DivOmit','realestate','nanalyst')
-feed.verbose = F # use T if you want lots of feedback
-
 options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
-pathProject = paste0(getwd(), '/')
-
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
 pathCRSPPredictors = paste0(pathProject, 'Signals/Data/CRSPPredictors/')
@@ -21,18 +15,35 @@ pathDataSummary = paste0(pathProject, 'Portfolios/Data/Summary/')
 
 pathResults = paste0(pathProject, 'Results/')
 
-# Create folders if they don't exist
+## Create folders if they don't exist
+# Portfolios/ paths
 dir.create(pathResults)
 dir.create(paste0(pathProject, 'Portfolios/Data'))
 dir.create(paste0(pathDataPortfolios))
 dir.create(paste0(pathDataIntermediate))
-dir.create(paste0(pathCRSPPredictors))
+
+# Signals/Data/ paths
+dir.create(paste0(pathProject,'Signals/Data/'))
+dir.create(paste0(pathPredictors))
+dir.create(paste0(pathPlacebos))
+dir.create(paste0(pathtemp))
+
 
 #### PACKAGES
 # Check for and potentially install missing packages
 install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'pryr', 'fst',
-                           'RPostgres', 'getPass', 'extrafont', 'xtable', 'gridExtra'), 
+                           'RPostgres', 'getPass', 'xtable', 'gridExtra',
+                           'ggrepel','data.table'), 
                          rownames(installed.packages())))
+
+# Use the extrafonts package, to get nicer fonts for output figures
+# Code issues warnings when not installed but runs nevertheless
+# See https://cran.r-project.org/web/packages/extrafont/README.html
+if (!'extrafont' %in% rownames(installed.packages())) {
+  install.packages('extrafont')
+  extrafont::font_import()
+}
+
 
 options(stringsAsFactors = FALSE)
 library(tidyverse)
@@ -41,6 +52,7 @@ library(readxl)
 library(writexl)
 library(pryr)
 library(fst)
+library(data.table) # for handling daily crsp
 
 # for WRDS access
 library(RPostgres)
@@ -58,10 +70,17 @@ loadfonts()
 library(xtable)
 options(xtable.floating = FALSE)
 library(gridExtra)
+library(ggrepel)
 
 # system dependent settings 
 dlmethod <- "auto"
-optFontFamily = 'Palatino Linotype' # doesn't agree with linux command line
+
+if ('Palatino Linotype' %in% fonts()) {
+  optFontFamily = 'Palatino Linotype'
+} else {
+  optFontFamily = ''
+}
+
 sysinfo <- Sys.info()
 if (sysinfo[1] == "Linux") {
   dlmethod <- "wget"
@@ -350,7 +369,8 @@ loop_over_strategies = function(
                                 strategylist
                               , saveportcsv = F
                               , saveportpath = NA
-                              , saveportNmin = 20
+                              , saveportNmin = 1
+                              , passive_gain = F
                                 ){   
 
     Nstrat = dim(strategylist)[1]
@@ -387,6 +407,7 @@ loop_over_strategies = function(
               , portperiod = strategylist$portperiod[i]
               , q_filt = strategylist$q_filt[i]
               , filterstr = strategylist$filterstr[i]
+              , passive_gain = passive_gain
             )
             
         }

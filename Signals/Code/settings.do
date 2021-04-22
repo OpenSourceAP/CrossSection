@@ -13,14 +13,10 @@ global pathDataIntermediate "$pathProject/Signals/Data/Intermediate/"
 global pathDataPredictors "$pathProject/Signals/Data/Predictors/"
 global pathDataPlacebos "$pathProject/Signals/Data/Placebos/"
 
-// Check for prep data
-confirm file "$pathDataPrep/iclink.csv"
-
 // Confirm existence of directories and create data folder if it does not exist
 confirm file "$pathCode/master.do"
 confirm file "$pathCodeDownloads/B_CompustatAnnual.do"
 confirm file "$pathCodePredictors/STreversal.do"
-
 
 * Create log folder
 cap mkdir "$pathLogs"
@@ -31,6 +27,7 @@ cap mkdir "$pathtemp"
 cap mkdir "$pathDataIntermediate"
 cap mkdir "$pathDataPredictors"
 cap mkdir "$pathDataPlacebos"
+cap mkdir "$pathDataPrep"
 
 // Other settings
 set more off, permanently

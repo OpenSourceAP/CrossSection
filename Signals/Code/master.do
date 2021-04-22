@@ -8,28 +8,35 @@ This code is set up to run with the following path structure (Data and Log folde
 |   /Data          (contains all data download scripts)
 |   /Logs          (contains log files created during running scripts) 
 
-Requires:
+Optional inputs:
 	/Data/Prep/
-		corwin_schultz_spread.csv
-		iclink.csv
+		iclink.csv		
 		OptionMetrics.csv
-		tr_13f.csv	
+		tr_13f.csv
+		corwin_schultz_spread.csv		
+
+These are created by code in Signals/PrepScripts/.  They are required for producing the signals that use IBES (iclink.csv), OptionMetrics, and Thomson-Reuter's 
+13f data, but master.do will still produce the CRSP-Compustat signals if you do not have them.  corwin_schultz_spread.csv is only used for the BidAskSpread predictor.
 */
 
 *------------------------------------------------------------
-// SET PROJECT PATH, R PATH AND WRDS CONNECTION NAME HERE !
+// SET PROJECT PATH AND WRDS CONNECTION NAME HERE !
 *------------------------------------------------------------
-*global pathProject "PATH TO PROJECT HERE"
-*global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe"
-*global wrdsConnection "wrds-stata"
+*global pathProject "PATH TO PROJECT HERE" // required, should point to location of SignalDocumentation.xlsx
+*global wrdsConnection "wrds-stata" // required, see readme
+*global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe" // optional, used for like 3 signals (see DataDownloads/*.R)
 
-if ("$pathProject" != "" & "$RSCRIPT_PATH" != "" & "$wrdsConnection" !="") {
+if ("$pathProject" != "" & "$wrdsConnection" !="") {
     di("Relevant paths have been set")
 } 
 else {
     display as error "Relevant paths have not all been set"
 	exit 999
 }
+if ("$RSCRIPT_PATH" != ""){
+	global RSCRIPT_PATH = "missing"
+}
+
 
 // Set storage option of signal files
 global save_csv 1 // csvs are main output, should always be 1

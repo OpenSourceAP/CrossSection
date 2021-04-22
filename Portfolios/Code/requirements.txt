@@ -1,0 +1,12 @@
+Package,Version
+extrafont,0.17
+fst,0.9.4
+getPass,0.2-2
+gridExtra,2.3
+lubridate,1.7.9
+pryr,0.1.4
+readxl,1.3.1
+RPostgres,1.2.1
+tidyverse,1.3.0
+writexl,1.3.1
+xtable,1.8-4

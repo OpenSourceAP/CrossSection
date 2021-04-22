@@ -6,8 +6,8 @@ holdperlist = as.character(c(1,3,6,12))
 sumholdper = tibble()
 for (i in seq(1,length(holdperlist))){
 
-    tempport = read.csv(paste0(pathDataPortfolios,'CheckPredictorLS_HoldPer_', holdperlist[i], '.csv')) %>%
-        mutate(port = 'LS', signallag = NA_real_)
+    tempport = read.csv(paste0(pathDataPortfolios,'PredictorAltPorts_HoldPer_', holdperlist[i], '.csv')) %>%
+        filter(port == 'LS')
 
     tempsum =   sumportmonth(tempport, c('signalname','samptype','port')
                            , Nstocksmin = 20)   %>%
@@ -31,10 +31,10 @@ sumholdper = rbind(sumholdper,tempsum)
 
 ## summarize alt liq screens
 csvlist = c(
-     'CheckPredictorLS_LiqScreen_ME_gt_NYSE20pct.csv'
-    , 'CheckPredictorLS_LiqScreen_NYSEonly.csv'
-    , 'CheckPredictorLS_LiqScreen_Price_gt_5.csv'
-    , 'CheckPredictorLS_LiqScreen_VWforce.csv'
+     'PredictorAltPorts_LiqScreen_ME_gt_NYSE20pct.csv'
+    , 'PredictorAltPorts_LiqScreen_NYSEonly.csv'
+    , 'PredictorAltPorts_LiqScreen_Price_gt_5.csv'
+    , 'PredictorAltPorts_LiqScreen_VWforce.csv'
 )
 screenlist = c('me','nyse','price','vwforce')
  
@@ -42,7 +42,7 @@ sumliqscreen = tibble()
 for (i in seq(1,length(csvlist))){
 
     tempport = read.csv(paste0(pathDataPortfolios,csvlist[i])) %>%  
-        mutate(port = 'LS', signallag = NA_real_)
+        filter(port == 'LS')
 
     tempsum =   sumportmonth(tempport, c('signalname','samptype','port')
                            , Nstocksmin = 20)   %>%
@@ -65,7 +65,7 @@ tempsum = sumportmonth(tempport, c('signalname','samptype','port'), Nstocksmin =
 sumliqscreen = rbind(sumliqscreen,tempsum)
 
 ## Summarize decile sorts
-portDeciles = read.csv(paste0(pathDataPortfolios, 'CheckPredictorPorts_Deciles.csv')) 
+portDeciles = read.csv(paste0(pathDataPortfolios, 'PredictorAltPorts_Deciles.csv')) 
 
 sumDeciles =   sumportmonth(portDeciles, c('signalname','samptype','port')
                          , Nstocksmin = 20)   %>%
@@ -96,7 +96,7 @@ ggsave(filename = paste0(pathResults, 'fig_mono.png'), width = 12, height = 8)
 
 # Figures: Holding periods -------------------------------------------------
 
-df = sumholdper
+df = sumholdper %>% filter(port == 'LS')
 xlevels = c('base','1','3','6','12')
 xlabels = c('Original Papers','1 month', '3 months', '6 months', '12 months')
 
@@ -156,4 +156,46 @@ sumDeciles %>%
 # Save
 ggsave(filename = paste0(pathResults, 'fig_Decile_boxplot_meanJitter.png'), width = 12, height = 8)
 
+
+#### CHECK VW FOR QUINT AND DEC ####
+# not used in paper, but good to check
+all = rbind(
+  read.csv(paste0(pathDataPortfolios,'PredictorAltPorts_Deciles.csv')) %>%
+    mutate(q_cut = 0.1, sweight = 'EW')
+  , read.csv(paste0(pathDataPortfolios,'PredictorAltPorts_DecilesVW.csv')) %>%
+    mutate(q_cut = 0.1, sweight = 'VW')
+  , read.csv(paste0(pathDataPortfolios,'PredictorAltPorts_Quintiles.csv')) %>%
+    mutate(q_cut = 0.2, sweight = 'EW')
+  , read.csv(paste0(pathDataPortfolios,'PredictorAltPorts_QuintilesVW.csv')) %>%
+    mutate(q_cut = 0.2, sweight = 'VW')
+)
+
+sumall = sumportmonth(all,c('samptype','signalname','q_cut','sweight','port'))
+
+sumimp = sumall %>% 
+  filter(port != 'LS', samptype == 'insamp') %>%
+  group_by(q_cut,sweight,port) %>%
+  summarize(rbar = mean(rbar))
+
+p1 = ggplot(
+  sumimp %>% filter(q_cut == 0.1)
+  , aes(x=port, y=rbar, group = sweight)
+) +
+  geom_line(aes(color=sweight)) +
+  geom_point(aes(color=sweight)) +
+  theme_minimal() +
+  labs(title = 'Simple Check on Forced Quantile Implementations')
+
+p2 = ggplot(
+  sumimp %>% filter(q_cut == 0.2)
+  , aes(x=port, y=rbar, group = sweight)
+) +
+  geom_line(aes(color=sweight)) +
+  geom_point(aes(color=sweight)) +
+  theme_minimal()
+
+pboth = grid.arrange(p1,p2,nrow=2)
+
+# Save
+ggsave(filename = paste0(pathResults, 'xfig_altquant_check.png'), plot=pboth, width = 12, height = 8)
 

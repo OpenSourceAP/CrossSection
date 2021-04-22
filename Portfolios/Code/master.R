@@ -1,5 +1,6 @@
-# master.R created 2020 12 AC
-# assumes working directory is the same directory that all R files are in
+# master.R 
+
+# You need to set the project path below before executing other scripts
 
 # scripts below do the following
 #   sets up paths (see 00_SettingsAndTools.R)
@@ -21,28 +22,47 @@
 # I think it takes about 12 hours to run everything, and about 45 min to run up
 # to 20_PredictorPorts.R
 
+# ENVIRONMENT ####
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+rm(list = ls())
+# ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
+pathProject = 'd:/pc_work/DebugCross/'
+
+quickrun =  F # use T if you want to run quickly for testing
+quickrunlist = c('Size','STreversal') # list of signals to use for quickrun
+skipdaily = T # use T to skip daily CRSP which is very slow
+feed.verbose = F # use T if you want lots of feedback
+
+# Check whether project path is set correctly
+if (!dir.exists(paste0(pathProject, 'Portfolios'))) {
+    stop('Project path not set correctly')
+}
+
+# setwd to folder with all R scripts for convenience
+setwd(paste0(pathProject,'Portfolios/Code/'))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
 
+# PREPARE INTERMEDIATE DATA ####
 
-## print('master: 10_DownloadCRSP.R')
-## tryCatch({
-##     source('10_DownloadCRSP.R', echo=T) 
-## })
+print('master: 10_DownloadCRSP.R')
+tryCatch({
+    source('10_DownloadCRSP.R', echo=T)
+})
 
+print('master: 11_ProcessCrsp.R')
+tryCatch({
+    source('11_ProcessCRSP.R', echo=T)
+})
 
-## print('master: 11_CreateCRSPPredictors.R')
-## tryCatch({
-##     source('11_CreateCRSPPredictors.R', echo=T) 
-## })
+print('master: 12_CreateCRSPPredictors.R')
+tryCatch({
+    source('12_CreateCRSPPredictors.R', echo=T)
+})
 
-
-## print('master: 12_SignalExhibits.R')
-## tryCatch({
-##     source('12_SignalExhibits.R', echo=T) 
-## })
-
-
+# ==== CREATE BASELINE PORTFOLIOS ====
 print('master: 20_PredictorPorts')
 tryCatch({
     source('20_PredictorPorts.R', echo=T) # 30 min
@@ -56,20 +76,14 @@ if (quickrun==F){
     })
 }
 
-print('master: 30a_CheckPredictorsHoldper.R')
+# CREATE ALTERNATIVE PORTFOLIOS AND PLACEBOS ####
+
+
+print('master: 30_PredictorAltPorts.R')
 tryCatch({
-    source('30a_CheckPredictorsHoldper.R', echo=T) # 2 hours
+    source('30_PredictorAltPorts.R', echo=T) # about 6 hours
 })
 
-print('master: 30b_CheckPredictorsLiqScreens.R')
-tryCatch({
-    source('30b_CheckPredictorsLiqScreens.R', echo=T) # 2 hours
-})
-
-print('master: 30c_CheckPredictorsDeciles.R')
-tryCatch({
-    source('30c_CheckPredictorsDeciles.R', echo=T) # 30 min
-})
 
 if (quickrun==F){
     print('31_CheckPredictorsExhibits.R')
@@ -91,8 +105,17 @@ if (quickrun==F){
     })
 }
 
+# EXTRA STUFF ####
 
-## print('master: 50_DailyPredictorPorts.R')
-## tryCatch({
-##     source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
-## })
+# this can be run at the end since it takes a long time and isn't necessary for other results
+print('master: 12_SignalExhibits.R')
+tryCatch({
+    source('12_SignalExhibits.R', echo=T)
+})
+
+if (!skipdaily){
+    print('master: 50_DailyPredictorPorts.R')
+    tryCatch({
+        source('50_DailyPredictorPorts.R', echo=T) # about 6 hours
+    })
+}

@@ -1,5 +1,6 @@
 ## Exhibits for paper
 
+
 # Import factor returns from Kenneth French's website ---------------------
 
 # FF 5 factors
@@ -314,14 +315,6 @@ df %>%
 
 ggsave(filename = paste0(pathResults, "fig2b_reprate_data.png"), width = 10, height = 8)
 
-# manual:
-df %>% group_by(Cat.Data) %>% summarize(n())
-159 - 74-41
-df %>% filter(success==0) %>% arrange(Cat.Data) %>% print(n=50)
-
-df0 %>% left_join(df_meta) %>% filter(Predictability.in.OP == '2_likely') %>%
-    select(signalname, tstat, T.Stat) %>% arrange(tstat) %>% print(n=50)
-
 
 # Alternatively: Jitter plot
 df %>%
@@ -354,11 +347,6 @@ df <- read_xlsx(
         samptype == 'insamp', port == 'LS'
     ) %>%
     select(signalname, tstat) %>%
-    rbind(
-        read_xlsx(paste0(pathDataPortfolios, "PlaceboSummary.xlsx"),
-              sheet = 'ls_insamp_only') %>% 
-      select(signalname, tstat)
-    ) %>%    
     left_join(
         docnew, by='signalname'
     ) %>%
@@ -611,85 +599,4 @@ print(outputtable2,
 
 
 
-## random numbers for paper
-
-
-# for easy updating of documentation
-docnew = readdocumentation()
-
-df <- rbind(
-    read_xlsx(
-        paste0(pathDataPortfolios, "PredictorSummary.xlsx")
-      , sheet = 'full'
-    ) %>%
-    filter(
-        samptype == 'insamp', port == 'LS'
-    ) %>%
-    select(signalname, tstat)
-  , 
-    read_xlsx(
-        paste0(pathDataPortfolios, "PlaceboSummary.xlsx")
-      , sheet = 'full'
-    ) %>%
-    filter(
-        samptype == 'insamp', port == 'LS'
-    ) %>%
-    select(signalname, tstat)
-) %>%
-    left_join(
-        docnew, by='signalname'
-    ) %>%
-    transmute(signalname,
-              Authors,
-              tstatRep = abs(tstat), 
-              tstatOP = abs(as.numeric(T.Stat)),
-              Cat.Signal,
-              PredOP = Predictability.in.OP,
-              RepType = Signal.Rep.Quality,
-              OPTest = Test.in.OP,
-              Evidence.Summary) 
-
-df %>% filter(!is.na(tstatRep))
-
-df %>% group_by(Cat.Signal) %>% summarize(total = n(), fail = sum(tstatRep<1.96), fail/total )
-
-df %>% group_by(PredOP) %>% summarize(total = n(), fail = sum(tstatRep<1.96), fail/total )
-
-df %>% filter(PredOP == '1_clear') %>% arrange(tstatRep) %>%
-    select(signalname, tstatRep, tstatOP, OPTest) %>% print(n=10)
-
-
-df %>% filter(PredOP == '2_likely') %>% arrange(tstatRep) %>%
-    select(signalname, tstatRep, tstatOP, OPTest) %>% print(n=40)
-
-
-
-df %>% distinct(Authors)
-
-df %>% group_by(PredOP) %>% summarize(n(),sum(tstatRep<1.96))
-df %>% filter(Cat.Signal == 'Predictor', tstatRep<1.96) %>%
-    select(signalname, tstatRep, PredOP) %>% arrange(tstatRep) %>% print(n=40)
-
-df %>% filter(grepl('correlated',Evidence.Summary)) %>%
-    select(signalname, Authors, tstatRep, Evidence.Summary)
-
-# mp comparison
-mp = read_xlsx(
-    paste0(pathProject, 'SignalDocumentation.xlsx')
-    , sheet = 'MP'
-) %>%
-    left_join(
-        df %>% transmute(ClosestMatch = signalname, tstatRep, tstatOP)
-    ) %>%
-    transmute(Predictor, ClosestMatch, Cat.Signal, PredOP = Predictability.in.OP, tstatRep) %>%
-    arrange(tstatRep)
-
-mp %>% filter(!PredOP %in% c('1_clear','2_likely'))
-
-mp %>% filter(!is.na(tstatRep)) %>% group_by(Cat.Signal) %>% summarize( reprate = sum(tstatRep>1.96)/n(), n())
-
-mp  %>% filter(!is.na(tstatRep)) %>% group_by(PredOP) %>% summarize( reprate = sum(tstatRep>1.96)/n(), nfail = sum(tstatRep<1.96), n())
-
-
-mp %>% filter(PredOP %in% c('4_not','indirect'))
 
