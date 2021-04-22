@@ -22,7 +22,9 @@ doc_predictor = alldoc %>% filter(Cat.Signal=='Predictor') %>% select(signalname
 doc_predictor_dl = doc_predictor %>% filter(!signalname %in% c('Price','STreversal','Size'))
 doc_predictor_cts = alldoc %>% filter(Cat.Signal=='Predictor', Cat.Form == 'continuous') %>% 
     select(signalname) %>% mutate(indoc=1)
-doc_placebo = alldoc %>% filter(Cat.Signal=='Placebo') %>% select(signalname) %>% mutate(indoc=1)
+doc_placebo_dl = alldoc %>% filter(Cat.Signal=='Placebo') %>% 
+  select(signalname) %>% mutate(indoc=1) %>% 
+  filter(signalname != 'BidAskTAQ')
 
 
 ## function for checking match with SignalDocumentation.xlsx
@@ -251,7 +253,7 @@ check_doc(
 
 check_doc(
   'Firm Level Characteristics/Full Sets/PlacebosIndiv.zip'
-  , doc_placebo
+  , doc_placebo_dl
   , iszip = T
 )
 
@@ -323,7 +325,7 @@ check_doc(
 
 check_doc(
   'Firm Level Characteristics/Individual/Placebos'
-  , doc_placebo
+  , doc_placebo_dl
   , iszip = F
 )
 
