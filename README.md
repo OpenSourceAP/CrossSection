@@ -19,7 +19,9 @@ year = 2021
 
 ## Data
 
-If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at the dedicated data page [here](https://sites.google.com/site/chenandrewy/open-source-ap).  However, this repo may still be useful for understanding the data.
+If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at [the dedicated data page](https://sites.google.com/site/chenandrewy/open-source-ap).  
+
+However, this repo may still be useful for understanding the data.  For example, if you want to know exactly how we construct BrandInvest (Belo, Lin, and Vitorino 2014), you can just open up `BrandInvest.do` in the repo's webpage for [Signals/Code/Predictors/](https://github.com/OpenSourceAP/CrossSection/tree/master/Signals/Code/Predictors)
 
 ----
 
@@ -51,7 +53,7 @@ The whole thing takes roughly 24 hours, but the predictors will be done much soo
 
 In master.do, set `pathProject` to the root directory of the project (where `SignalDocumentation.xlsx` is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS (a.k.a. dsn).
 
-If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for Windows users [here](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for WRDS cloud users [here.](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/)  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
+If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for [Windows users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for [WRDS cloud users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/).  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
 
 
 #### Optional Setup
@@ -60,27 +62,27 @@ The minimal setup will allow you to produce the vast majority of signals.  And d
 
 But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random signals, you'll want to do the following:
 
-* For IBES signals, 13F signals, and BidAskSpread: Run `Signals/Code/PrepScripts/master.sas` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sas` and [WRDS-Cloud SAS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for more details.   The most important part of this optional setup is the construction of `iclink.csv`, which allows for merging of IBES and CRSP data.
+* For IBES signals, 13F signals, and BidAskSpread: Run `Signals/Code/PrepScripts/master.sas` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sas` and [WRDS-Cloud SAS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for more details.   <ins>The most important part of this optional setup is the construction of `iclink.csv`</ins>, which allows for merging of IBES and CRSP data.
 
 * For signals that use the VIX, inflation, or broker-dealer leverage, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
 https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
 
 * For signals that use patent citations, BEA input-output tables, or Compustat customer data, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  
 
-* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This suggests that Amihud and Mendelsohn's (1986) BidAskSpread doesn't work well post-publication, which you can check if you like.  Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code based on Holden and Jacobsen [here](https://sites.google.com/site/chenandrewy/code), and WRDS has recently provided a way to download these spreads directly.
+* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This is also consistent with the fact that BidAskSpread based on Corwin-Schultz doesn't predict returns well after the publication of Amihud and Mendelsohn (1986).  Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code based on Holden and Jacobsen [here](https://sites.google.com/site/chenandrewy/code), and WRDS has recently provided a way to download these spreads directly.
 
 
 ### 2. Portfolios/Code/
 
 `master.R` runs everything. It:
 
-1. Takes as input signal data in csv form from `Signals/Data/Predictors/` and `Signals/Data/Placebos/`
-2. Outputs portfolio data in csv form to `Portfolios/Data/Portfolios/`
+1. Takes in signal data located in `Signals/Data/Predictors/` and `Signals/Data/Placebos/`
+2. Outputs portfolio data to `Portfolios/Data/Portfolios/`
 3. Outputs exhibits found in the paper to `Results/`
 
 It also uses `SignalDocumentation.xlsx` as a guide for how to run the portfolios.
 
-By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
+By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability results in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
 #### Minimal Setup
 
