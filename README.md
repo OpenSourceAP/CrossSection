@@ -6,11 +6,11 @@ This repo accompanies our paper:
 If you use data or code based on our work, please cite the paper: 
 
 ~~~
-@unpublished{ChenZimmermann2021,
-author = "Chen, Andrew Y. and Tom Zimmermann",
-title = "Open Source Cross Sectional Asset Pricing",
-note = "available at https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3604626",
-year = 2021
+@article{ChenZimmermann2021,
+  title={Open Source Cross Sectional Asset Pricing},
+  author={Chen, Andrew Y. and Tom Zimmermann},
+  journal={Critical Finance Review},
+  year={Forthcoming}
 }
 ~~~
 
