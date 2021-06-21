@@ -19,7 +19,7 @@ If you use data or code based on our work, please cite the paper:
 
 ## Data
 
-If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at [the dedicated data page](https://sites.google.com/site/chenandrewy/open-source-ap).  
+If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at [the dedicated data page](https://www.openassetpricing.com).  
 
 However, this repo may still be useful for understanding the data.  For example, if you want to know exactly how we construct BrandInvest (Belo, Lin, and Vitorino 2014), you can just open up `BrandInvest.do` in the repo's webpage for [Signals/Code/Predictors/](https://github.com/OpenSourceAP/CrossSection/tree/master/Signals/Code/Predictors)
 
