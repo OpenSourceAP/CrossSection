@@ -61,7 +61,7 @@ replace xad0 = 0 if mi(xad)
 
 // For these variables, missing is assumed to be 0
 foreach v of varlist nopi dvt ob dm dc aco ap intan ao lco lo rect ///
-				invt drc spi gdwl che dp act lct tstk dvpa scstkc sstk mib ///
+				invt drc spi gdwl che dp act lct tstkp dvpa scstkc sstk mib ///
 				ivao prstkc prstkcc txditc ivst {
 				
 	replace `v' = 0 if `v' ==.
