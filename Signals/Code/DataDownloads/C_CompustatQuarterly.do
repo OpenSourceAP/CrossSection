@@ -20,6 +20,8 @@ local sql_statement
 
 odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
+bys gvkey fyearq fqtr (datadate): keep if _n == _N // Keep only the most recent data for each fiscal quarter
+
 gen time_avail_m = mofd(datadate) + 3  // Assume data available with a 3 month lag
 format time_avail_m %tm
 bys gvkey time_avail_m (datadate): keep if _n == _N  // A few obervation have two rows in the same quarter (probably change in fiscal year end), keep more recent info
