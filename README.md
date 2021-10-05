@@ -69,7 +69,8 @@ https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more det
 
 * For signals that use patent citations, BEA input-output tables, or Compustat customer data, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  
 
-* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This is also consistent with the fact that BidAskSpread based on Corwin-Schultz doesn't predict returns well after the publication of Amihud and Mendelsohn (1986).  Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code based on Holden and Jacobsen [here](https://sites.google.com/site/chenandrewy/code), and WRDS has recently provided a way to download these spreads directly.
+* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This is also consistent with the fact that BidAskSpread based on Corwin-Schultz doesn't predict returns well after the publication of Amihud and Mendelsohn (1986).  
+* Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code [here](https://github.com/chenandrewy/hf-spreads-all).
 
 
 ### 2. Portfolios/Code/
