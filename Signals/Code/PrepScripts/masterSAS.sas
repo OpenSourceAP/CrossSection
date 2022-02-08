@@ -1,4 +1,4 @@
-*
+/*
 runs all sas predictor files.  Created 2020 11, Andrew Chen 
 You might want to comment out everthing except for the IBES CRSP link,
 since the 13F and Corwin Schultz code only applies to a few signals
@@ -8,12 +8,13 @@ Thanks to Luis Palacios, Rabih Moussawi, and Denys Glushkov for the 13F code
 and thanks to Shane Corwin and Paul Schultz for their code.
 
 Instructions: 
-	- ssh into wrds
+	- ssh into wrds (https://wrds-www.wharton.upenn.edu/pages/support/the-wrds-cloud/using-ssh-connect-wrds-cloud/
+	)
 	- create folders ~/SAS/ and ~/data_sas/
 	- upload sas files to masterSAS.sas
 	- run "qsas masterSAS.sas"
 	- download ~/data_sas/ to $pathProject/Signals/Data/Prep/ using, say, WinSCP
-;
+*/
 
 * clear output and windows;
 dm "out;clear;log;clear;"; 
@@ -44,5 +45,3 @@ run;
 proc export data=hlfinal outfile="&cs_name"
 	dbms=csv replace; 
 run;
-
-*/
