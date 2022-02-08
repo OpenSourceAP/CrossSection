@@ -28,7 +28,7 @@ setwd(temp)
 
 # join
 ff <- read_csv(
-  paste0(pathDataIntermediate, "F-F_Research_Data_5_Factors_2x3.csv"),
+  paste0(pathDataIntermediate, "F-F_Research_Data_5_Factors_2x3.CSV"),
   skip = 3) %>%
   mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>%
            ymd()) %>%
