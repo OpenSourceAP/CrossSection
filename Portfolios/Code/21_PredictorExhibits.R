@@ -486,8 +486,8 @@ plotret =  df_merge %>%
   # Add 0,0 as reference lines
   geom_hline(yintercept = 0, linetype = 1) +
   geom_vline(xintercept = 0, linetype = 1) +
-  labs(x = 'Decline in return post-publication', 
-       y = 'In-Sample return',
+  labs(x = 'Decline in return post-publication (ppt per month)', 
+       y = 'In-Sample return (%, monthly)',
        shape = '') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
   theme(legend.position = c(0, 1), legend.justification = c(0, 1)) +
@@ -503,7 +503,7 @@ plott =  df_merge %>%
   # Add 0,0 as reference lines
   geom_hline(yintercept = 0, linetype = 1) +
   geom_vline(xintercept = 0, linetype = 1) +
-  labs(x = 'Decline in return post-publication', 
+  labs(x = 'Decline in return post-publication (ppt per month)', 
        y = 'In-Sample t-statistic',
        shape = '') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
