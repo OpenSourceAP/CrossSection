@@ -71,6 +71,9 @@ sas iid_to_monthly.sas
 echo "PART 3/3 ADDING PERMNOS"
 sas add_permnos.sas
 
+# clean up
+mv ~/temp_output/*.csv ~/data_prep/
+rm ~/data_prep/issm_daily.csv
 
 echo "DONE"
 echo "output should be in ~/data_prep/"
