@@ -35,6 +35,13 @@ sas iclink_to_csv.sas
 echo "CREATING 13F DATA (10 min?)"
 sas tr13f_pmg_edit.sas
 
+# ==== OPTION METRICS ====
+# no freaking idea why, but this has to be run before the HF spreads
+# otherwise, I don't even get a .Rout file
+echo "CREATING OPTION METRICS DATA (about 3 hours)"
+R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R
+
+
 # === HF SPREADS ====
 # below copied from Chen-Velikov's hf-spreads-all/main.sh
 echo "RUNNING CHEN-VELIKOV FORTH, JFQA HF SPREADS"
@@ -47,7 +54,7 @@ mkdir ~/temp_log/
 echo "PART 1/3 CALCULATING ISSM SPREADS (about 1 hour)"
 echo output will be in ~/temp_output/ and ~/temp_log/
 
-# run spreads code day by day
+# run spreads code day by day (full issm sample is 1983-1992)
 for year in $(seq 1983 1992)
 do
     echo finding spreads for nyse/amex $year.  Today is `date` 
@@ -67,10 +74,9 @@ sas iid_to_monthly.sas
 echo "PART 3/3 ADDING PERMNOS"
 sas add_permnos.sas
 
+# move key output
+mv ~/temp_output/*.csv ~/data_prep/
 
-# ==== OPTION METRICS ====
-echo "CREATING OPTION METRICS DATA (about 3 hours)"
-R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R
 
 echo "DONE"
 echo "output should be in ~/data_prep/"
