@@ -62,7 +62,7 @@ The minimal setup will allow you to produce the vast majority of signals.  And d
 
 But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random signals, you'll want to do the following:
 
-* For IBES signals, 13F signals, and BidAskSpread: Run `Signals/Code/PrepScripts/master.sas` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sas` and [WRDS-Cloud SAS instructions](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-sas/) for more details.   <ins>The most important part of this optional setup is the construction of `iclink.csv`</ins>, which allows for merging of IBES and CRSP data.
+* For IBES, 13F, OptionMetrics, and bid-ask-spread signals: Run `Signals/Code/PrepScripts/master.sh` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sh` for more details.   <ins>The most important part of this optional setup is the construction of `iclink.csv`</ins>, which allows for merging of IBES and CRSP data.  The code here relies heavily on code by Luis Palacios, Rabih Moussawi, Denys Glushkov, Stacey Jacobsen, Craig Holden, and Mihail Velikov.
 
 * For signals that use the VIX, inflation, or broker-dealer leverage, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
 https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
