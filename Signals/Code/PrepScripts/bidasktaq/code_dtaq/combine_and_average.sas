@@ -1,11 +1,10 @@
 /**********************************************************
 combine all sas datasets in a given directory into one dataset
-also averages spreads to monthly and exports csv
-Andrew 2018 08
+Andrew 2018 06
 
-This is for ISSM data
+This is for DTAQ code
 Instructions:
-(1) check the many outputs directory with many annual datasets
+(1) check the scratch directory with many daily datasets
 (2) Find an example date to work off of
 (3) Enter example date in User section
 
@@ -18,15 +17,12 @@ dm "out;clear;log;clear;"; /*clears output and log windows*/
 go directory with files and use ls to find a good date
 */
 
-* where the many datasets are;
-libname many "~/temp_output/";
+libname have "/scratch/frb/ayc_dtaq";
 
-* goodyear is for initializing;
-%let goodyear = 1987;
+%let goodfilename = dtaq_spreads_20181220;
 
-* target files;
-%let dailyname   = '~/temp_output/issm_daily.csv';
-%let monthlyname = '~/temp_output/issm_monthly.csv';
+%let dailyname   = '~/temp_output/dtaq daily.csv';
+%let monthlyname = '~/temp_output/dtaq monthly.csv';
 
 
 
@@ -35,7 +31,7 @@ libname many "~/temp_output/";
 ** called 'contents' using proc 
 ** contents.
 */
-proc contents data = many._all_ noprint out = contents (keep = memname);
+proc contents data = have._all_ noprint out = contents (keep = memname);
 run;
 
 /* Eliminate any duplicate names of the SAS datasets */
@@ -46,7 +42,7 @@ run;
 /*
 ** Create 2 macro variables 
 ** 1. The names of each SAS dataset
-** 2. The number of datasets in 'many'
+** 2. The number of datasets in 'have'
 */
 
 data _null_;
@@ -71,32 +67,29 @@ WARNING: initializing can be tricky
 * initialize dataset by creating an empty one with column names
 use as set the name of any good dataset
 ;
-data final; set many.spread_issm_nyam&goodyear; 
-	where symbol = "00";
+data final; set have.&goodfilename; 
+	where sym_root = "00";
 run;
 
 %macro combine;
   %do i = 1 %to &count;
-  proc append base = final data = many.&&name&i force;
+  proc append base = final data = have.&&name&i force;
     run;
   %end;
 %mend combine;
 
 %combine;
 
-
 /*
 ** Aggregate from daily to monthly
 */
 
-/*
-proc sort data = final; by symbol year month; run;
-*/
+
 
 * take monthly averages;
  proc sql noprint; create table monthly 
 	as
-     select distinct symbol,
+     select distinct sym_root,
 	     year(date)      as year,
 	     month(date)     as month,
 		 count(effectivespread_percent_ave) as eff_spread_n,
@@ -104,11 +97,9 @@ proc sort data = final; by symbol year month; run;
 	     avg(effectivespread_percent_dw) as eff_spread_dw_ave,
 	     avg(effectivespread_percent_sw) as eff_spread_sw_ave
      from final
-     group by symbol, year, month;
+     group by sym_root, year, month;
  quit;
 
-
-proc print data = monthly (obs = 500); run;
 
 /*
 ** Export the dataset to csv
@@ -129,5 +120,13 @@ proc export data = monthly
   replace;
 run;
 
+/*
+summary stats to lst file
+*/
+proc univariate data = final;
+    var effectivespread_percent_ave;
+run;    
 
-
+proc univariate data = monthly;
+    var eff_spread_ave;
+run;

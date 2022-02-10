@@ -1,0 +1,144 @@
+                                 The SAS System                                1
+                                                 12:59 Tuesday, October 30, 2018
+
+                            The UNIVARIATE Procedure
+                     Variable:  EffectiveSpread_Percent_Ave
+
+                                    Moments
+
+        N                     8865627    Sum Weights            8865627
+        Mean                0.0054516    Sum Observations    48331.8573
+        Std Deviation      0.01254321    Variance            0.00015733
+        Skewness           7.65321699    Kurtosis             103.74043
+        Uncorrected SS      1658.3338    Corrected SS        1394.84782
+        Coeff Variation     230.08308    Std Error Mean      4.21264E-6
+
+
+                           Basic Statistical Measures
+ 
+                 Location                    Variability
+
+             Mean     0.005452     Std Deviation            0.01254
+             Median   0.001641     Variance               0.0001573
+             Mode     0.000000     Range                    0.39993
+                                   Interquartile Range      0.00383
+
+
+                           Tests for Location: Mu0=0
+ 
+                Test           -Statistic-    -----p Value------
+
+                Student's t    t  1294.107    Pr > |t|    <.0001
+                Sign           M   4432026    Pr >= |M|   <.0001
+                Signed Rank    S  1.964E13    Pr >= |S|   <.0001
+
+
+                            Quantiles (Definition 5)
+ 
+                           Level             Quantile
+
+                           100% Max       0.399933634
+                           99%            0.058640275
+                           95%            0.023730095
+                           90%            0.013114801
+                           75% Q3         0.004549003
+                           50% Median     0.001641194
+                           25% Q1         0.000714553
+                           10%            0.000352997
+                           5%             0.000252580
+                           1%             0.000151111
+                           0% Min         0.000000000
+
+
+                              Extreme Observations
+ 
+                    ----Lowest----        ------Highest-----
+ 
+                    Value      Obs            Value      Obs
+
+                        0   8.87E6         0.398455   3.69E6
+                        0   8.86E6         0.398792   705751
+                        0   8.86E6         0.398948   4.67E6
+                        0   8.86E6         0.399554   854364
+                        0   8.86E6         0.399934   6.36E6
+
+
+                                 Missing Values
+ 
+                                         -----Percent Of-----
+                  Missing                             Missing
+                    Value       Count     All Obs         Obs
+
+                        .        1567        0.02      100.00
+                                 The SAS System                                2
+                                                 12:59 Tuesday, October 30, 2018
+
+                            The UNIVARIATE Procedure
+                           Variable:  eff_spread_ave
+
+                                    Moments
+
+        N                      439157    Sum Weights             439157
+        Mean               0.00596686    Sum Observations    2620.38947
+        Std Deviation       0.0118738    Variance            0.00014099
+        Skewness           5.34225184    Kurtosis            51.4035642
+        Uncorrected SS     77.5508788    Corrected SS        61.9153749
+        Coeff Variation    198.995753    Std Error Mean      0.00001792
+
+
+                           Basic Statistical Measures
+ 
+                 Location                    Variability
+
+             Mean     0.005967     Std Deviation            0.01187
+             Median   0.001841     Variance               0.0001410
+             Mode     0.000000     Range                    0.36519
+                                   Interquartile Range      0.00454
+
+
+                           Tests for Location: Mu0=0
+ 
+                Test           -Statistic-    -----p Value------
+
+                Student's t    t  333.0168    Pr > |t|    <.0001
+                Sign           M  219573.5    Pr >= |M|   <.0001
+                Signed Rank    S  4.821E10    Pr >= |S|   <.0001
+
+
+                            Quantiles (Definition 5)
+ 
+                           Level             Quantile
+
+                           100% Max       0.365185928
+                           99%            0.058187156
+                           95%            0.027183342
+                           90%            0.015825868
+                           75% Q3         0.005324401
+                           50% Median     0.001840780
+                           25% Q1         0.000782631
+                           10%            0.000374496
+                           5%             0.000265189
+                           1%             0.000160374
+                           0% Min         0.000000000
+
+
+                              Extreme Observations
+ 
+                    ----Lowest----        ------Highest-----
+ 
+                    Value      Obs            Value      Obs
+
+                        0   438980         0.324296   439070
+                        0   337276         0.331748   329765
+                        0   179833         0.350870   224039
+                        0   179832         0.352470   186886
+                        0   179830         0.365186   329764
+
+
+                                 Missing Values
+ 
+                                         -----Percent Of-----
+                  Missing                             Missing
+                    Value       Count     All Obs         Obs
+
+                        .          32        0.01      100.00
