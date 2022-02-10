@@ -1,56 +1,50 @@
+# created 2020? Andrew
+# updated 2022 02
+# Creates two options-related predictors, and downloads option vol data for a third predictor.
 
 ### ENVIRONMENT ###
 rm(list = ls())
+
+path_dl_me = '~/data_prep/'
+
+dir.create(path_dl_me)
+
 library(RPostgres)
 library(tidyverse)
 library(lubridate)
 
-
-numRowsToPull = -1
-
-pathProject = '/cm/chen/anomalies.com/cfr1/'
-
-
-# check system for wrds login
-sysinfo = Sys.info()
-if (sysinfo[1] == "Linux") {
-
-    cat("wrds username: ");
-    user  <- readLines("stdin",n=1);
-    cat( "\n" )
-
-    cat("wrds password: ");
-    pass  <- readLines("stdin",n=1);
-    cat( "\n" )
-
-    wrds <- dbConnect(Postgres(), 
+# heads up: this assumes (1) running on wrds server and (2) pgpass is set up following this:
+# https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-the-web/
+wrds <- dbConnect(Postgres(),
                   host='wrds-pgdata.wharton.upenn.edu',
                   port=9737,
-                  sslmode='require',
-                  user=user,
-                  password=pass,
-                  dbname='wrds')
-}
+                  dbname='wrds',
+                  sslmode='require')
 
+numRowsToPull = -1 # use -1 to run full code.  use 20 for debugging
 
 
 # Download and process options data
 # this code is so involved I decided to make it separate - Andrew 2019 10
 # Whole thing takes about 3 hours to run
 
-## === Options Prep 1/3: Smile Slope a.k.a. Slope (Yan) code
+## === Options Prep 1/3: Smile Slope a.k.a. Slope (Yan) code ====
 # takes about 60 min
 
 # set up loop
 rm(list = ls(pattern = 'temp'))
 
-# retrieve list datasets (which years are available)
-allsets = dbListTables(wrds)
-setlist = allsets[startsWith(allsets,"opprcd")]
-setlist = sort(unique(setlist))
-yearlist = str_sub(setlist,-4,-1)
+vsurf_tables = dbGetQuery(
+  wrds, "
+  SELECT table_name 
+      FROM information_schema.tables
+      WHERE table_schema = 'optionm' 
+        AND table_name like 'vsurfd%'
+  "
+  )
+yearlist = substr(vsurf_tables$table_name, 7,12)
 
-
+# prepare list of data frames
 slopemany = list()
 
 # Setup query
@@ -108,18 +102,12 @@ for (year in yearlist) {
 # finally, merge years together
 slopeall = do.call(rbind,slopemany)
 
-## === Options Prep 2/3: Smirk a.k.a. Skew1 (Xing Zhang, Zhao 2010)
+## === Options Prep 2/3: Smirk a.k.a. Skew1 (Xing Zhang, Zhao 2010) ====
 # may take 2 hours
 
 # set up loop
+# note this loop re-uses the yearlist from Options Prep 1/3
 rm(list = ls(pattern = 'temp'))
-
-# retrieve list datasets (which years are available)
-allsets = dbListTables(wrds)
-setlist = allsets[startsWith(allsets,"opprcd")]
-setlist = sort(unique(setlist))
-yearlist = str_sub(setlist,-4,-1)
-
 skewmany = list()
 
 print("Calculating Smirk aka Skew1 year by year")
@@ -257,7 +245,7 @@ OptionMetrics = temp2 %>% select(-c("match_begin_m","match_end_m"))
 # finally write to csv!
 data.table::fwrite(OptionMetrics,
                    file = paste0(
-                       pathProject
-                       , 'Signals/Data/Prep/OptionMetrics.csv'
+                       path_dl_me
+                       , 'OptionMetrics.csv'
                        )
                    )
