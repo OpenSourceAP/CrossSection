@@ -13,7 +13,7 @@ outputs: ~/temp_output/
 proc datasets library=work kill;run; quit;
 
 /* User and environment */
-
+%let obsmax = 20; * use max for full production;
 %let yyyy = %sysget(yyyy); * get year from command line;
 %let exchprefix = %sysget(exchprefix); * get nyam or nasd from command line;
 libname issm '/wrds/issm/sasdata'; * issm data location on wrds;
@@ -38,7 +38,7 @@ ISSM data is all before 1999, I fix the quote delay at 2.
 data quote (
 		where = ( &sample and (("9:00:00"t) <= time <= ("16:00:00"t)) )
 		);
-    set issm.&exchprefix._qt&yyyy;
+    set issm.&exchprefix._qt&yyyy (obs=&obsmax);
 
     /* Quote Filter 1: Abnormal Modes. Quotes with abnormal modes (i.e.,  
 	   abnormal quote conditions) are set to extreme values so that they   
@@ -119,7 +119,7 @@ run;
 data trade (
 		where = ( &sample and (("9:30:00"t) <= time <= ("16:00:00"t)) )
 		);
-    set issm.&exchprefix._tr&yyyy;
+    set issm.&exchprefix._tr&yyyy (obs=&obsmax);
 
     /* Trade Filter: Keep only trades in which the Correction field 
        contains '00' and the Price field contains a value greater than 
@@ -149,7 +149,7 @@ run;
 
 /* STEP 5: NATIONAL BEST BID AND OFFER (NBB0) CALCULATION */
 
-* Assign ID to Each Unique Exchange or Market Maker and Find 
+/* Assign ID to Each Unique Exchange or Market Maker and Find 
    The Maximum Number of Exchanges
 Andrew - in mtaq
 	ex = exchange on which quote occurred
@@ -162,7 +162,7 @@ Andrew - in mtaq
 	So I'm going to just sort by oexch since this is 
 	using the NYSE file for now
 	
-;
+*/
 proc sort data=quote; 
     *by ex mmid; * old;
 	by oexch; * new;
@@ -330,9 +330,9 @@ data BuySellIndicators;
     if BestOfr2<BestBid2 then cross=1;else cross=0;
 run;
 
-*
+/*
 ac: we probably don't need all these buy sell indicators below
-;
+*/
 
 /* Determine Whether Trade Price is Higher or Lower than Previous Trade 
    Price, or "Trade Direction" */

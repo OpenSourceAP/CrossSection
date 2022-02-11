@@ -81,7 +81,7 @@ data hf1; format permno yearm _all_;  set hf1; run;
 * ==== add permnos using WRDS tclink algo as hf2 ==== ;
 
 * create link table using WRDS code;
-%include '~/hf-spreads-all/macro_tclink.sas';
+%include '~/PrepScripts/taq-chen-velikov/macro_tclink.sas';
 %TCLINK (BEGDATE=199301,ENDDATE=201012,OUTSET=WORK.mtaq_link);
 
 * remove duplicates from mtaq_link by keeping first symbol (also shortest symbol);

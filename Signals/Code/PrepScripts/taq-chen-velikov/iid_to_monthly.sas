@@ -1,4 +1,6 @@
 /* 
+  updated 2022 02 since wrds moved the dtaq iid files - andrew chen
+
   reads in wrds iid data and exports csv to ~/temp_output/ 
   andrew chen 2021 04	
   
@@ -28,20 +30,18 @@
 */
 
 proc datasets library=WORK kill; run; quit;
-dm "out;clear;log;clear;"; /*clears output and log windows*/
+dm "out;clear;log;clear;"; *clears output and log windows;
 
 libname s_iid "/wrds/nyse/sasdata/wrds_taqs_iid_v1/";
 libname ms_iid "/wrds/nyse/sasdata/wrds_taqms_iid/";
-*%let subsamp = month(date) = 1 and year(date) = 2017;
-%let subsamp = not missing(date);
+%let maxobs = 20; * use 20 for debugging, use max for production;
 
 * ==== IMPORT MTAQ AND COLLAPSE TO MONTHLY ====;
 
 * MTAQ; 
 * see https://wrds-www.wharton.upenn.edu/pages/get-data/nyse-trade-and-quote/trade-and-quote-monthly-product-1993-2014/taq-tools/intraday-indicators-by-wrds/;
 * type of spreads chosen here;
-data temp0; set s_iid.wrds_iid:;
-	where &subsamp;
+data temp0; set s_iid.wrds_iid: (obs=&maxobs);
 
 	if year(date) < 1999 then espread_pct = 100*ESpreadPct_VW1;
 	else espread_pct = 100*ESpreadPct_VW0;	
@@ -80,19 +80,45 @@ data monthly_mtaq; set temp2;
 	keep symbol yearm espread: source;
 run;	
 
+
+
 * ==== IMPORT DTAQ AND COLLAPSE TO MONTHLY ====;
 
 * DTAQ;
 * see https://wrds-www.wharton.upenn.edu/pages/get-data/nyse-trade-and-quote/millisecond-trade-and-quote-daily-product-2003-present-updated-daily/taq-millisecond-tools/millisecond-intraday-indicators-by-wrds/;
-data temp0; set ms_iid.wrds_iid_:;
-	where &subsamp;
+
+* in 2022, we need to loop over the datasets;
+
+%macro load_dtaq; 
+	%do year = 2003 %to 2032; * code will prob need updating by 2032;
 	
-	espread_pct = 100*EffectiveSpread_Percent_DW;
-	qspread_pct = 100*QuotedSpread_Percent_tw; 	* time weighted, market hours (only one available);	
-	yearm = year(date)*100 + month(date);		
+	  %let pathyear = "/wrds/nyse/taq_msec&year/wrds_iid/";
 	
-  	keep date symbol sym_root sym_suffix espread_pct qspread_pct year yearm;  	
-run;
+	  %if %sysfunc(fileexist(&pathyear)) %then %do;
+	  
+		libname lib &pathyear;
+		
+	  	data tempy&year; set lib.wrds_iid_&year (obs=&maxobs);
+	  	
+	  		espread_pct = 100*EffectiveSpread_Percent_DW;
+	  		qspread_pct = 100*QuotedSpread_Percent_tw; 	* time weighted, market hours (only one available);	
+	  		yearm = year(date)*100 + month(date);		
+	  		
+	  	  	keep date symbol sym_root sym_suffix espread_pct qspread_pct yearm;  	
+	  	run;	
+		
+		libname lib clear;	
+		
+	  %end; * if year exists;
+	
+	%end; * for year = 2003 to 2032;
+%mend load_dtaq; 
+
+%load_dtaq;
+
+* append all the tempy&year datasets and clean up;
+data temp0; set tempy:; run;
+proc datasets library=work memtype=data nolist; delete tempy_:; run; quit;
 
 * clean and save last obs of month;
 proc sort data=temp0; by symbol yearm date; run;
@@ -122,6 +148,8 @@ data monthly_dtaq; set temp2;
 	rename espread_pct_month_end_Mean = espread_pct_month_end;
 	keep symbol sym_root sym_suffix yearm espread: source;
 run;	
+
+
 
 * ==== FULL JOIN MTAQ AND DTAQ ==== ;
 

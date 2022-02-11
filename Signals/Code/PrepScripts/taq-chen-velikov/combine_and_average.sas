@@ -22,7 +22,7 @@ go directory with files and use ls to find a good date
 libname many "~/temp_output/";
 
 * goodyear is for initializing;
-%let goodyear = 1987;
+%let goodyear = 1983; * be careful with this;
 
 * target files;
 %let dailyname   = '~/temp_output/issm_daily.csv';

@@ -5,6 +5,8 @@
 ### ENVIRONMENT ###
 rm(list = ls())
 
+querylimit = '20' # use 'all' for full data, '20' for debugging
+
 path_dl_me = '~/data_prep/'
 
 dir.create(path_dl_me)
@@ -20,8 +22,6 @@ wrds <- dbConnect(Postgres(),
                   port=9737,
                   dbname='wrds',
                   sslmode='require')
-
-numRowsToPull = -1 # use -1 to run full code.  use 20 for debugging
 
 
 # Download and process options data
@@ -59,6 +59,8 @@ slopemany = list()
      ,"  or (a.cp_flag = \'P\' and a.delta = -50)) "
      ," and a.days = 30 "
      ," and extract(day from a.date) >= 23 "
+	 ," limit "
+	 ,querylimit
   )   
 
 print("Calculating Smile Slope a.k.a. Slope (Yan) year by year")
@@ -73,7 +75,7 @@ for (year in yearlist) {
     conn=wrds,
     statement=paste0(queryprestring,year,querypoststring)
   )
-  tempd <- dbFetch(res, numRowsToPull)
+  tempd <- dbFetch(res)
   tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
   dbClearResult(res)
   
@@ -141,9 +143,12 @@ for (year in yearlist) {
   and (b.best_bid+b.best_offer)/2 > 0.125
   and b.open_interest > 0 and b.volume != 'NaN'    
   and extract(day from a.date) >= 23
-    ")
+    "
+   ," limit "
+   ,querylimit
+	)
   )    
-  tempd <- dbFetch(res, numRowsToPull)
+  tempd <- dbFetch(res)
   
   ## find "money-ness-based skew" daily
   tempcall = tempd  %>%
@@ -194,7 +199,7 @@ res = dbSendQuery(conn = wrds, statement =
                       from optionm.opvold as a
                       where a.cp_flag != 'NaN'"
 ) 
-tempd = res %>% dbFetch(n = numRowsToPull)
+tempd = res %>% dbFetch()
 tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
 dbClearResult(res)
 end_time = Sys.time()
@@ -218,7 +223,7 @@ optID = dbSendQuery(conn = wrds, statement =
                       "select distinct a.secid, a.ticker, a.cusip, a.effect_date
                       from optionm.optionmnames as a
                       "
-) %>% dbFetch(n = numRowsToPull)
+) %>% dbFetch()
 end_time = Sys.time()
 print(end_time-start_time)
 
