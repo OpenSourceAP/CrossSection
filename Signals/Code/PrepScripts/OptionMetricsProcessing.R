@@ -5,7 +5,7 @@
 ### ENVIRONMENT ###
 rm(list = ls())
 
-querylimit = '20' # use 'all' for full data, '20' for debugging
+querylimit = 'all' # use 'all' for full data, '20' for debugging
 
 path_dl_me = '~/data_prep/'
 

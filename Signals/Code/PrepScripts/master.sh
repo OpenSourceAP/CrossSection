@@ -12,7 +12,7 @@
 # - in master.sh (this script), comment out sas tr13f...
 # - in master.sh (this script), use "seq 1983 1983" in issm stuff
 # - in taq-chen-velikov/iid_to_monthly.sas, use "maxobs = 20"
-# - in taq-chen-velikov/issm_preads.sas, use "maxobs = 20"
+# - in taq-chen-velikov/issm_spreads.sas, use "maxobs = 20"
 # - in OptionMetricsProcessing.R, use "querylimit = '20'"
 
 
@@ -35,13 +35,15 @@ echo "Starting Job at `date`"
 echo "output will be in ~/data_prep/"
 
 mkdir ~/data_prep/ # csv output will go here
+mkdir ~/temp_output/
+mkdir ~/temp_log/
 
 # ==== IBES-CRSP LINK, TR 13F ====
 echo "CREATING IBES-CRSP LINK (fast)"
 sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
 
 echo "CREATING 13F DATA (10 min?)"
-# sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.og
+sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
 
 # === HF SPREADS ====
 # below copied from Chen-Velikov's hf-spreads-all/main.sh
@@ -49,16 +51,13 @@ echo "RUNNING CHEN-VELIKOV FORTH, JFQA HF SPREADS"
 
 cd taq-chen-velikov
 
-mkdir ~/temp_output/
-mkdir ~/temp_log/
-
 echo "WRDS IID SPREADS, OUTPUTS TO ~/temp_output/ (15 min?)"
 sas iid_to_monthly.sas -log ~/temp_log/iid_to_monthly.log
 
 
 echo "CALCULATING ISSM SPREADS, OUTPUTS TO ~/temp_output/ (about 1 hour)"
 # run spreads code day by day (full issm sample is 1983-1992)
-for year in $(seq 1983 1983)
+for year in $(seq 1983 1992)
 do
     echo finding spreads for nyse/amex $year.  Today is `date` 
     sas issm_spreads.sas -set yyyy $year -set exchprefix nyam -log ~/temp_log/log_nyam_$year.log

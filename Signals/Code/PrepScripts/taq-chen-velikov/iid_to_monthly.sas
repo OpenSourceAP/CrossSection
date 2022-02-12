@@ -34,7 +34,7 @@ dm "out;clear;log;clear;"; *clears output and log windows;
 
 libname s_iid "/wrds/nyse/sasdata/wrds_taqs_iid_v1/";
 libname ms_iid "/wrds/nyse/sasdata/wrds_taqms_iid/";
-%let maxobs = 20; * use 20 for debugging, use max for production;
+%let maxobs = max; * use 20 for debugging, use max for production;
 
 * ==== IMPORT MTAQ AND COLLAPSE TO MONTHLY ====;
 

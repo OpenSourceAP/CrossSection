@@ -13,7 +13,7 @@ outputs: ~/temp_output/
 proc datasets library=work kill;run; quit;
 
 /* User and environment */
-%let obsmax = 20; * use max for full production;
+%let obsmax = max; * use max for full production, use 20 for debugging;
 %let yyyy = %sysget(yyyy); * get year from command line;
 %let exchprefix = %sysget(exchprefix); * get nyam or nasd from command line;
 libname issm '/wrds/issm/sasdata'; * issm data location on wrds;
