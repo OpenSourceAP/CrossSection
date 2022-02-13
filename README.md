@@ -62,16 +62,12 @@ The minimal setup will allow you to produce the vast majority of signals.  And d
 
 But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random signals, you'll want to do the following:
 
-* For IBES, 13F, OptionMetrics, and bid-ask-spread signals: Run `Signals/Code/PrepScripts/master.sh` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sh` for more details.   <ins>The most important part of this optional setup is the construction of `iclink.csv`</ins>, which allows for merging of IBES and CRSP data.  The code here relies heavily on code by Luis Palacios, Rabih Moussawi, Denys Glushkov, Stacey Jacobsen, Craig Holden, and Mihail Velikov.
+* For IBES, 13F, OptionMetrics, and bid-ask-spread signals: Run `Signals/Code/PrepScripts/master.sh` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sh` for more details.   <ins>The most important part of this optional setup is the construction of `iclink.csv`</ins>, which allows for merging of IBES and CRSP data.  The code here relies heavily on code by Luis Palacios, Rabih Moussawi, Denys Glushkov, Stacey Jacobsen, Craig Holden, Mihail Velikov, Shane Corwin, and Paul Schultz.
 
 * For signals that use the VIX, inflation, or broker-dealer leverage, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
 https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
 
-* For signals that use patent citations, BEA input-output tables, or Compustat customer data, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  
-
-* There is one placebo that is based on effective spreads from TAQ (BidAskTAQ).  Hou and Lou (2016) find that this signal is insignificant in a multivariate regression, and consistent with this we find the long-short portfolio generates a t-stat of 0.4 in Hou and Lou's 1984-2012 sample.  This is also consistent with the fact that BidAskSpread based on Corwin-Schultz doesn't predict returns well after the publication of Amihud and Mendelsohn (1986).  
-* Anyway, you don't really need to produce this signal, but if you really want to, Chen and Velikov (2020) provide code [here](https://github.com/chenandrewy/hf-spreads-all).
-
+* For signals that use patent citations, BEA input-output tables, or Compustat customer data, the code uses Stata to call R scripts, and thus this may need some setup.  If you're on a Windows machine, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  If you're on linux, you will need to just make sure that the `rscript` command is executable from the shell.
 
 ### 2. Portfolios/Code/
 
