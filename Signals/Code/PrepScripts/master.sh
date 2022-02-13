@@ -5,7 +5,8 @@
 # 2022 02 Andrew Chen
 # creates ibes-crsp link, 13f data, option metrics stuff, and hf (taq-issm) spreads
 # takes about four hours, mostly for option metrics
-# runs stuff from fastest to slowest
+# the hf stuff is not really being used right now (it's a placebo, pretty much)
+# so it's okay if the code breaks before then.
 # built from masterSAS.sas, from 2020 11, Andrew Chen 
 
 # For fast debugging:
@@ -14,6 +15,7 @@
 # - in taq-chen-velikov/iid_to_monthly.sas, use "maxobs = 20"
 # - in taq-chen-velikov/issm_spreads.sas, use "maxobs = 20"
 # - in OptionMetricsProcessing.R, use "querylimit = '20'"
+# - in corwin_schultz_edit.sas, use "maxobs = 20"
 
 
 # Instructions: 
@@ -45,6 +47,14 @@ sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
 echo "CREATING 13F DATA (10 min?)"
 sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
 
+# ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
+sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log
+
+# ==== OPTION METRICS ====
+echo "CREATING OPTION METRICS DATA (about 3 hours)"
+R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R ~/temp_log/OptionMetricsProcessing.log
+
+
 # === HF SPREADS ====
 # below copied from Chen-Velikov's hf-spreads-all/main.sh
 echo "RUNNING CHEN-VELIKOV FORTH, JFQA HF SPREADS"
@@ -72,10 +82,6 @@ sas add_permnos.sas -log ~/temp_log/add_permnos.log
 cp ~/temp_output/hf_monthly.csv ~/data_prep/
 
 cd ..
-
-# ==== OPTION METRICS ====
-echo "CREATING OPTION METRICS DATA (about 3 hours)"
-R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R ~/temp_log/OptionMetricsProcessing.log
 
 echo "DONE"
 echo "output should be in ~/data_prep/"
