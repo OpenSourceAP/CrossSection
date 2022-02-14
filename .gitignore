@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+*.csv
+*.Rprofile
+*.Rproj
+*.log
+*.e*
+*.o*
+*.Rout
+
+deleteme*
