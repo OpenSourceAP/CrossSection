@@ -2,7 +2,7 @@
 
 *local webloc "https://site.warrington.ufl.edu/ritter/files/2019/05/age19752019.xlsx" * pre 2021 01 location
 *local webloc "https://site.warrington.ufl.edu/ritter/files/age7520.xlsx" // 2021 01-2021 02 location
-local webloc "https://site.warrington.ufl.edu/ritter/files/IPO-age.xlsx" 
+local webloc "https://site.warrington.ufl.edu/ritter/files/IPO-age.xlsx"  // 2022-02-09 location
 
 
 capture {
@@ -14,10 +14,11 @@ if _rc!= 0 {
 }
 
 rename Founding FoundingYear
-rename PERM permno
+rename CRSPPERM permno
 destring permno, replace
 
-tostring OfferDate, gen(temp)
+*tostring OfferDate, gen(temp)
+gen temp = OfferDate
 gen temp2 = date(temp, "YMD")
 gen IPOdate = mofd(temp2)
 format IPOdate %tm

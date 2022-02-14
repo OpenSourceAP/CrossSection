@@ -1,17 +1,18 @@
 * 27. Probability of informed trading ------------------------------------------
 
-* These data are originally from here: https://sites.google.com/site/hvidkjaer/data
-* import delimited using "https://drive.google.com/uc?export=download&id=15RU_gxWS0rZ8Jyq7MFAno3cLKbB1_P0T", delimiter(whitespace, collapse) clear
-
-local webloc "https://drive.google.com/uc?export=download&id=15RU_gxWS0rZ8Jyq7MFAno3cLKbB1_P0T"
+local webloc "https://sites.google.com/site/hvidkjaer/data/data-files/pin1983-2001.zip"
 capture {
-	import delimited "`webloc'", clear varnames(1) delimiter(whitespace, collapse)
+	copy "`webloc'" temp.zip
+    unzipfile temp.zip
+	import delimited pin1983-2001.dat, clear varnames(1) delimiter(whitespace, collapse)
+	erase temp.zip
 }
 
 if _rc!= 0 {
-	shell wget "`webloc'" -O $pathDataIntermediate/deleteme.dat
-	import delimited "$pathDataIntermediate/deleteme.dat", delimiter(whitespace, collapse) clear
-	shell rm $pathDataIntermediate/deleteme.csv -f
+	shell wget "`webloc'" -O $pathDataIntermediate/deleteme.zip
+    unzipfile $pathDataIntermediate/deleteme.zip
+	import delimited "$pathDataIntermediate/pin1983-2001.dat", delimiter(whitespace, collapse) clear
+	shell rm $pathDataIntermediate/deleteme.zip -f
 }
 
 rename permn permno
