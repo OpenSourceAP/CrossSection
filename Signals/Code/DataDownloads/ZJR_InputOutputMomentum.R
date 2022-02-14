@@ -2,7 +2,7 @@
 ## Manual data download:
 ##  Pre-1996: https://www.bea.gov/industry/input-output-accounts-data, Click: "Historical Make-Use Tables"
 ##  1997-present: download zip file: https://apps.bea.gov//industry/iTables%20Static%20Files/AllTablesSUP.zip
-##    But keep only Supply_1997-2018_SUM.xlsx (a.k.a. Make)  and Use_SUT_Framework_1997-2018_SUM.xlsx (a.k.a. Use)
+##    But keep only Supply_1997-YYYY_SUM.xlsx (a.k.a. Make)  and Use_SUT_Framework_1997-YYYY_SUM.xlsx (a.k.a. Use)
 ## The summary files have roughly 70 industries,
 ## Based on Menzly-Ozbas Section A.2, there is about a 5-year lag between the survey date and release date
 ## (I know that seems very long)
@@ -354,19 +354,26 @@ download.file("https://apps.bea.gov//industry/iTables%20Static%20Files/AllTables
               destfile = tmp, 
               method = dlmethod)
 
+# Find relevant files in zip archive
+fls = unzip(tmp, list = TRUE)
+pathSupply = fls$Name[grepl("Supply_1997-2[0-9]{3}_sum.xlsx", fls$Name, ignore.case = TRUE)]
+pathUse    = fls$Name[grepl("Use_SUT_Framework_1997-2[0-9]{3}_sum.xlsx", fls$Name, ignore.case = TRUE)]
+
+stopifnot(length(pathSupply) == 1)
+stopifnot(length(pathUse) == 1)
+
 unzip(tmp, 
-      files = c('Supply_1997-2019_SUM.xlsx', 'Use_SUT_Framework_1997-2019_SUM.xlsx'),
+      files = c(pathSupply, pathUse),
       exdir = paste0(arg1, '/Signals/Data/Intermediate'))
 
-
 ## customer momentum: weights for an industry are its total sales to other industries: industry comes from rows of make table, matched industries come from cols
-sheet97 = paste0(arg1, '/Signals/Data/Intermediate/Supply_1997-2019_SUM.xlsx')
+sheet97 = paste0(arg1, '/Signals/Data/Intermediate/', pathSupply)
 sheet63 = paste0(arg1, '/Signals/Data/Intermediate/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx')
 
 iomomcust = generate_one_iomom(sheet63,sheet97)
 
 ## supplier momentum: weights for an industry's total purchases from other industries: industry comes from cols of use table, matched industries from from rows
-sheet97 = paste0(arg1, '/Signals/Data/Intermediate/Use_SUT_Framework_1997-2019_SUM.xlsx')
+sheet97 = paste0(arg1, '/Signals/Data/Intermediate/', pathUse)
 sheet63 = paste0(arg1, '/Signals/Data/Intermediate/IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx')
 iomomsupp = generate_one_iomom(sheet63,sheet97)
 
