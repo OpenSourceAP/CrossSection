@@ -1,10 +1,3 @@
-* modified to work on DTAQ data
-Andrew Chen 2018 07
-
-taq changed to taqmsec
-yymm6 changed to yymmdd8
-;
-
 /* ********************************************************************************* */
 /* ******************** W R D S   R E S E A R C H   M A C R O S ******************** */
 /* ********************************************************************************* */
@@ -12,50 +5,40 @@ yymm6 changed to yymmdd8
 /* Summary   : Create TAQ-CRSP Link Table                                            */
 /* Date      : September 20, 2010                                                    */
 /* Author    : Rabih Moussawi, WRDS                                                  */
-/* Variables : - BEGDATE and ENDDATE are Start and End Dates in YYYYMMDD format        */
+/* Variables : - BEGDATE and ENDDATE are Start and End Dates in YYYYMM format        */
 /*             - OUTSET: TAQ-CRSP link table output dataset                          */
 /* ********************************************************************************* */
  
-%MACRO TCLINK (BEGDATE=20150101,ENDDATE=20200101,OUTSET=WORK.TCLINK);
+%MACRO TCLINK (BEGDATE=199301,ENDDATE=201012,OUTSET=WORK.TCLINK);
  
 /* Check Validity of TAQ Library Assignment */
-* updated to use taqmsec - AC 2018 07;
-%if (%sysfunc(libref(taqmsec))) %then %do; libname taq "/wrds/nyse/sasdata/"; %end;
+%if (%sysfunc(libref(taq))) %then %do; libname taq "/wrds/taq/sasdata/"; %end;
 %put; %put ### START . ; %put ;
 /* IDEA: Use VINTAGE-SYMBOL as TAQ Primary Key */
 /*       Then Link it to PERMNO using CUSIP and Ticker Info */
 options nonotes;
-%let date1= %sysfunc(inputn(&begdate,YYMMDD8.));
-%let date2= %sysfunc(inputn(&enddate,YYMMDD8.));
+%let date1= %sysfunc(inputn(&begdate,yymmn6.));
+%let date2= %sysfunc(inputn(&enddate,yymmn6.));
  %if &date1<&date2 %then %let NMONTHS=%sysfunc(intck(MONTH,&date1,&date2));
   %else %let NMONTHS=0;
 data _mast1; set _null_; run;
 /* Begin Loop To Construct a 'Master' TAQ Master Dataset */
 %do m=0 %to &NMONTHS;
 %let date = %sysfunc(intnx(MONTH,&date1,&m,E));
-%let yymmdd = %sysfunc(putn(&date,YYMMDD8));
+%let yymm = %sysfunc(putn(&date,yymmn6));
 /* Make Sure that dataset Exist */
-* updated to use taqmsec, also note the date format change - AC 2018 07;
-%if %sysfunc(exist(taqmsec.mast_&yymmdd))=1 %then
+%if %sysfunc(exist(taq.mast_&yymm))=1 %then
 %do;
- %put ### Processing Master Dataset for &yymmdd ### ;
-
-  * xxx debug;
-  proc contents data = taqmsec.mast_&yymmdd; run;
-
- * read temporarily into _mastm and make some edits; 
+ %put ### Processing Master Dataset for &yymm ### ;
  data _mastm; format DATE date9.;
- * updated to use taqmsec - AC 2018 07;
-  set taqmsec.mast_&yymmdd; 
+  set taq.mast_&yymm;
   date=&date;
-  %if (&yymmdd>=199601 and &yymmdd<=199612) or (&yymmdd>=200407 and &yymmdd<=200412) %then
+  %if (&yymm>=199601 and &yymm<=199612) or (&yymm>=200407 and &yymm<=200412) %then
    %do;
     rename DATEF=FDATE;
     drop CUSIP8;
    %end;
  run;
-
- * add day of data to _mastm;
  %if &m=0 %then %do; data _mast1; set _mastm; run; %end;
   %else %do; proc append base=_mast1 data=_mastm force; run; %end;
  proc sql; drop table _mastm; quit;
@@ -64,12 +47,8 @@ data _mast1; set _null_; run;
 %end;
  
 /* Clean TAQ Master Dataset Information */
-    * xxx debug;
-    proc contents data = _mastm; run;
-    proc contents data = _mast1; run;
-
 data _mast2; format CUSIP8 $8.;
-set _mast1 (keep=DATE FDATE CUSIP SYMBOL NAME SHROUT TYPE); * errors here;
+set _mast1 (keep=DATE FDATE CUSIP SYMBOL NAME SHROUT TYPE);
 CUSIP = strip(compress(CUSIP," ."));
 if missing(FDATE) then fdate=date;
 if not missing(CUSIP)  then CUSIP8=substr(CUSIP,1,8);
@@ -208,17 +187,3 @@ options notes;
 /* *************  Material Copyright Wharton Research Data Services  *************** */
 /* ****************************** All Rights Reserved ****************************** */
 /* ********************************************************************************* */
-
-
-/* run macro to create tclink sas dataset 
-  though the macro calls for up to 2017 12, the data is only available
-  for up to 2014 12 (as of 2018 06)
-*/
-
-%TCLINK(BEGDATE=20150101,ENDDATE=20200101,OUTSET=tclink);
-
-proc export data = tclink
-  outfile = '~/test_output/tclink.csv'
-  dbms = csv
-  replace;
-run;

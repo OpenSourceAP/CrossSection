@@ -1,37 +1,36 @@
-/*
-Andrew Chen 2018 10
+/* 
+Andrew 2018 08
+Adaptation of Holden and Jacobsen's monthly TAQ code to ISSM.
 
-Estimates mtaq spreads based on Holden-Jacobsen code.
+built off issm_spreads_local.sas
+this version should be run on the wrds server.
 
-built off issm code, which is built from HJ code
-
- quote delay is in seconds
-Lou and Shu 2017 RFS use 2 seconds before 1999 
-	0 seconds for 1999-2002
+inputs: /wrds/issm/sasdata
+outputs: ~/temp_output/
 
 */
-
 
 proc datasets library=work kill;run; quit;
 
 /* User and environment */
-%let yyyymmdd = %sysget(yyyymmdd); * get year from command line;
-*libname taq '/wrds/nyse/sasdata/wrds_taq_ct/'; * wrds taq location should be built in...;
-libname output '/scratch/frb/ayc_mtaq/'; * output path;
+%let obsmax = max; * use max for full production, use 20 for debugging;
+%let yyyy = %sysget(yyyy); * get year from command line;
+%let exchprefix = %sysget(exchprefix); * get nyam or nasd from command line;
+libname issm '/wrds/issm/sasdata'; * issm data location on wrds;
+libname output '~/temp_output/'; * output path;
 
 
-	* for local testing; /*
-	%let yyyymmdd = 19940301;
-	libname taq 'b:/costzoo/data/test_data'; 
-	libname output 'b:/costzoo/data/test_data'; 
-    */
 
+
+* quote delay is in seconds
+Lou and Shu 2017 RFS use 2 seconds before 1999. Since
+ISSM data is all before 1999, I fix the quote delay at 2.
+;
+%let quotedelay = 2; 
 
 %let _timer_start = %sysfunc(datetime());
 
-
 %let sample = date > -99999;
-	*%let sample = symbol in ('AAPL','IBM'); * for speedy testing;
 
 
 
@@ -39,14 +38,16 @@ libname output '/scratch/frb/ayc_mtaq/'; * output path;
 data quote (
 		where = ( &sample and (("9:00:00"t) <= time <= ("16:00:00"t)) )
 		);
-    set taq.cq_&yyyymmdd;
+    set issm.&exchprefix._qt&yyyy (obs=&obsmax);
 
     /* Quote Filter 1: Abnormal Modes. Quotes with abnormal modes (i.e.,  
 	   abnormal quote conditions) are set to extreme values so that they   
 	   will not enter the NBBO 
-	*/
+		Andrew - mode is described as "quote condition" in mtaq
+				in ISSM mode is "condition code" 
 
-    if mode in (4,7,9,11,13,14,15,19,20,27,28) then do; 
+	*/
+    if mode in ('C','D','F','G','I','L','N','P','S','V','X','Z') then do; 
         OFR=9999999; 
         BID=0; 
     end;
@@ -84,23 +85,32 @@ data quote (
 		extreme values so that they will not enter the NBBO. They are NOT 
 		deleted, because that would incorrectly allow the prior quote from 
 		that exchange to enter the NBBO. NOTE: Quote Filter 5 must come last
+
+		ac: parts of this filter don't work for issm nasdaq data, since
+		the bidsize and ofrsize variables are missing
 	*/
     if OFR le 0 then OFR=9999999;
     if OFR =. then OFR=9999999;
     if BID le 0 then BID=0;
     if BID =. then BID=0;
 
-    * updated 2018 10 12 to apply only if it's 19930406 or later;
-    if &yyyymmdd >= 19930406 then do;
-        if OFRSIZ le 0 then OFR=9999999;
-        if OFRSIZ =. then OFR=9999999;    
-        if BIDSIZ le 0 then BID=0;
-        if BIDSIZ =. then BID=0;
+
+
+    * updated 2018 10 01 to apply everywhere except NASDAQ 1987-1989;
+*    if '&exchprefix' = 'nyam' or &yyyy <= 1986 or &yyyy >= 1990 then do;
+    if ('&exchprefix' = 'nyam' and &yyyy ~= 1986)  or 
+        ('&exchprefix' = 'nasd' and &yyyy >= 1990) then do;
+	    if ofrsize le 0 then OFR=9999999;
+	    if ofrsize =. then OFR=9999999;
+	    if bidsize le 0 then BID=0;
+	    if bidsize =. then BID=0;
     end;
+
 
 
     format date date9.;
 run;
+
 
 
 
@@ -109,7 +119,7 @@ run;
 data trade (
 		where = ( &sample and (("9:30:00"t) <= time <= ("16:00:00"t)) )
 		);
-    set taq.ct_&yyyymmdd;
+    set issm.&exchprefix._tr&yyyy (obs=&obsmax);
 
     /* Trade Filter: Keep only trades in which the Correction field 
        contains '00' and the Price field contains a value greater than 
@@ -124,7 +134,8 @@ data trade (
 	*/
     *where corr eq 0 and price gt 0;
 
-    where corr eq 0 and price gt 0; 
+    where cond not in ('C','L','N','R','O','Z')
+         and price > 0 and size > 0;    
 
     type='T';
     format date date9.;	
@@ -138,7 +149,7 @@ run;
 
 /* STEP 5: NATIONAL BEST BID AND OFFER (NBB0) CALCULATION */
 
-* Assign ID to Each Unique Exchange or Market Maker and Find 
+/* Assign ID to Each Unique Exchange or Market Maker and Find 
    The Maximum Number of Exchanges
 Andrew - in mtaq
 	ex = exchange on which quote occurred
@@ -151,17 +162,18 @@ Andrew - in mtaq
 	So I'm going to just sort by oexch since this is 
 	using the NYSE file for now
 	
-;
+*/
 proc sort data=quote; 
-    by ex mmid;
+    *by ex mmid; * old;
+	by oexch; * new;
 run;
 
 data quote;
     set quote;
     retain ExchangeID;
     if _N_=1 then ExchangeID=0;
-    if first.ex or first.mmid then ExchangeID=ExchangeID+1;
-    by ex mmid;
+    if first.oexch then ExchangeID=ExchangeID+1;
+    by oexch;
 run;
 
 data _null_;
@@ -185,8 +197,8 @@ data quote;
 	by symbol date;
 	array exbid(&MaxExchangeID);exbid(ExchangeID)=bid;
 	array exofr(&MaxExchangeID);exofr(ExchangeID)=ofr;
-	array exbidsz(&MaxExchangeID);exbidsz(ExchangeID)=bidsiz*100;
-	array exofrsz(&MaxExchangeID);exofrsz(ExchangeID)=ofrsiz*100;
+	array exbidsz(&MaxExchangeID);exbidsz(ExchangeID)=bidsize*100;
+	array exofrsz(&MaxExchangeID);exofrsz(ExchangeID)=ofrsize*100;
 /* For Interpolated Times with No Quote Update, Retain Previous Quote 
    Outstanding*/
 %do i=1 %to &MaxExchangeID;
@@ -260,23 +272,14 @@ run;
    ARE MATCHED WITH QUOTES IN FORCE AT INTERPOLATED TIME TMM(M-1)
    To Do This, Increase Interpolated Quote Time in Quotes Dataset by One
    Millisecond = .001*/
-* ac: i make this lag flexible, see above;
+* ac: skip interpolation.  We found issues with it in WRDS iid data;
+* also, quote delay is set using macro &quotedelay;
+
 
 data CompleteNBBOinforce;
     set CompleteNBBO;
     type='Q';
-    
-	*time + &quotedelay; * old code as of 2018 10;
-
-    * using Lou and Shu;
-    if &yyyymmdd < 19990101 then do;
-        time + 2;
-        end;
-    else do;
-        time + 0.001;
-    end;    
-
-
+	time + &quotedelay;
 run;
 
 /* Stack Quotes and Trades Datasets */
@@ -327,9 +330,9 @@ data BuySellIndicators;
     if BestOfr2<BestBid2 then cross=1;else cross=0;
 run;
 
-*
+/*
 ac: we probably don't need all these buy sell indicators below
-;
+*/
 
 /* Determine Whether Trade Price is Higher or Lower than Previous Trade 
    Price, or "Trade Direction" */
@@ -391,7 +394,7 @@ data BuySellIndicators;
     wEffectiveSpread_Percent=abs(log(price)-log(midpoint))*2;
 
 	* ANDREW EDIT: REMOVE OUTLIERS;
-	if weffectivespread_percent > 0.40 then delete;    
+	if weffectivespread_percent > 0.40 then delete;
 
     dollar=price*size;
     wEffectiveSpread_Dollar_DW=wEffectiveSpread_Dollar*dollar;
@@ -406,6 +409,7 @@ data TSpread2;
     set BuySellIndicators;
     if lock=1 or cross=1 then delete;
 run;
+
 
 /* Find average across firm-day */
 proc sql;
@@ -436,10 +440,14 @@ data EffectiveSpreads;
          waEffectiveSpread_Percent_DW waEffectiveSpread_Percent_SW;
 run;
 
+proc sort data=effectivespreads; by effectivespread_percent_ave; run;
+
+
+
 /* STEP 13: DOWNLOAD THE FILES YOU WANT TO YOUR output FOLDER
 
 */
-data output.mtaq_spreads_&yyyymmdd; set EffectiveSpreads; run;
+data output.spread_issm_&exchprefix.&yyyy; set EffectiveSpreads; run;
 
 
 
@@ -448,13 +456,3 @@ data _null_;
   dur = datetime() - &_timer_start;
   put 30*'-' / ' TOTAL DURATION:' dur time13.2 / 30*'-';
 run;
-
-
-* debug;
-proc univariate data = TSpread2;
-    var weffectivespread_percent;
-run;    
-
-proc univariate data = EffectiveSpreads;
-    var EffectiveSpread_Dollar_DW EffectiveSpread_Percent_Ave;
-run;    

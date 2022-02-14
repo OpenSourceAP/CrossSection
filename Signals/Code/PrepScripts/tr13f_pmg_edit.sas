@@ -1,3 +1,17 @@
+/* minor edit of Palacios, Moussawi, and Glushkov code to simplify and output to csv 
+-Andrew Chen 2022
+
+notes: 
+the PWG code relies on wrds macro crspmerge.
+for some reason, I had to manually load the wrds macros and libraries this year (2022)
+	antonio did not have this issue, it seems.
+*/
+
+* paths;
+%include '/wrds/lib/utility/wrdslib.sas' ;
+options sasautos=('/wrds/wrdsmacros/', SASAUTOS) MAUTOSOURCE;
+%let path_dl_me = ~/data_prep/;
+
 
 /* ********************************************************************************* */
 /* ************** W R D S   R E S E A R C H   A P P L I C A T I O N S ************** */
@@ -254,4 +268,10 @@ run;
 proc sort data = tr_13f_stock2; by permno rdate; run;
 
 
+
+
+/* export as csv */
+proc export data=tr_13f_stock2 outfile="&path_dl_me.tr_13f.csv"
+	dbms=csv replace; 
+run;
 

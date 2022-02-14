@@ -5,6 +5,8 @@ skip the shrcd exchcd screens, and use sas PC connect
 Andrew Chen 2019 10
 
 2020 10 removed sas PC Connect
+
+2022 02 fixed volume bug, added wrds library manual load
 */
 
 
@@ -25,9 +27,17 @@ Andrew Chen 2019 10
 ** High and Low Prices,� forthcoming, Journal of Finance.                                            **;
 *******************************************************************************************************;
 
+* environment;
+
 dm "out;clear;log;clear;"; /*clears output and log windows*/
+* load wrds libraries and macros;
+%include '/wrds/lib/utility/wrdslib.sas' ;
+options sasautos=('/wrds/wrdsmacros/', SASAUTOS) MAUTOSOURCE;
 
+%let obsmax = max; * use max for full production, use 20 for debugging;
 
+* output path;
+%let path_dl_me = ~/data_prep/;
 
 * start timer; 
 %let _sdtm=%sysfunc(datetime());
@@ -45,22 +55,25 @@ dm "out;clear;log;clear;"; /*clears output and log windows*/
 *******************************************************************************************************;
 
 
-
+/*
 * pull and rename stuff in crspa.dsf (daily stock file) to match Corwin's notation
 Note: I don't get exchcd and shrcd which Corwin uses.  These need to be merged
 later (from msenames).  
 Note also: Corwin's code does some odd renaming in the first step that they don't use later
-;
+*/
 
-DATA SAMPLE; SET crspa.dsf;  
+DATA SAMPLE; SET crspa.dsf (obs = &obsmax);  
   where year(date) <= 9999;
 
   loprc = bidlo;
   hiprc = askhi;
   
   month = year(date)*100 + month(date);
+ 
+  KEEP PERMNO DATE vol prc loprc hiprc month;
+  
+  rename vol = volume; * fixed 2022 02;
 
-  KEEP PERMNO DATE VOLUME prc loprc hiprc month;
 run;
 
 
@@ -210,12 +223,15 @@ RUN;
 
 
 
-
-
 * Grab just the primary measure (neg estimates set to zero, following Corwin's program description;
 data hlfinal; set HLSPRD_MO_SAMPLE;
 	keep permno month mspread_0;
 	rename mspread_0 = hlspread;
+run;
+
+* export to csv;
+proc export data=hlfinal outfile="&path_dl_me.corwin_schultz_spread.csv"
+	dbms=csv replace;
 run;
 
 

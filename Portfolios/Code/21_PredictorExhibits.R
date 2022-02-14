@@ -1,6 +1,4 @@
 ## Exhibits for paper
-
-
 # Import factor returns from Kenneth French's website ---------------------
 
 # FF 5 factors
@@ -27,22 +25,23 @@ unzip("temp.zip")
 setwd(temp)
 
 # join
-ff <- read_csv(
-  paste0(pathDataIntermediate, "F-F_Research_Data_5_Factors_2x3.CSV"),
-  skip = 3) %>%
-  mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>%
+ff <- read.csv(
+  paste0(pathDataIntermediate, "F-F_Research_Data_5_Factors_2x3.csv"),
+  skip = 3) %>% 
+  rename(X1 = 1) %>% 
+  mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>% 
            ymd()) %>%
   filter(!is.na(date)) %>%
   mutate_at(
     .vars = vars(SMB, HML, RMW, CMA),
     .funs = list(as.numeric)
   ) %>%
-  select(-X1) %>% 
-  full_join(
-    read_csv(
+  select(-X1) %>% full_join(
+    read.csv(
       paste0(pathDataIntermediate, "F-F_Momentum_Factor.CSV"),
       skip = 13
     ) %>%
+      rename(X1 = 1) %>% 
       mutate(date = as.Date(paste0(as.character(X1), "28"), format = "%Y%m%d") %>%
                ymd()) %>%
       filter(!is.na(date)) %>%
@@ -54,7 +53,6 @@ ff <- read_csv(
   ) %>% 
   select(date, SMB, HML, RMW, CMA, Mom) %>% 
   arrange(date)
-
 
 # Figure 1 (Port): Correlations (Portfolio level) -------------------------
 
@@ -254,7 +252,7 @@ ggsave(filename = paste0(pathResults, "fig1Port_jointly.png"), width = 10, heigh
 df0 <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
                 sheet = 'short') %>%
   mutate(success = 1 * (round(tstat, digits = 2) >= 1.96)) %>%
-    select(signalname, tstat, success, T.Stat)
+    select(signalname, tstat, success, T.Stat, samptype)
 
 # Check if predictor summary has in-sample returns only
 if (sum(df0$samptype == 'insamp') != nrow(df0)) {
@@ -486,8 +484,8 @@ plotret =  df_merge %>%
   # Add 0,0 as reference lines
   geom_hline(yintercept = 0, linetype = 1) +
   geom_vline(xintercept = 0, linetype = 1) +
-  labs(x = 'Decline in return post-publication (ppt per month)', 
-       y = 'In-Sample return (%, monthly)',
+  labs(x = 'Decline in return post-publication', 
+       y = 'In-Sample return',
        shape = '') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
   theme(legend.position = c(0, 1), legend.justification = c(0, 1)) +
@@ -503,7 +501,7 @@ plott =  df_merge %>%
   # Add 0,0 as reference lines
   geom_hline(yintercept = 0, linetype = 1) +
   geom_vline(xintercept = 0, linetype = 1) +
-  labs(x = 'Decline in return post-publication (ppt per month)', 
+  labs(x = 'Decline in return post-publication', 
        y = 'In-Sample t-statistic',
        shape = '') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
