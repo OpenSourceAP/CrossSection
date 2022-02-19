@@ -8,9 +8,10 @@ capture {
 	erase temp.zip
 }
 
+* for fed linux (unzipfile doesn't seem to work)
 if _rc!= 0 {
 	shell wget "`webloc'" -O $pathDataIntermediate/deleteme.zip
-    unzipfile $pathDataIntermediate/deleteme.zip
+    shell unzip -o $pathDataIntermediate/deleteme.zip -d $pathDataIntermediate
 	import delimited "$pathDataIntermediate/pin1983-2001.dat", delimiter(whitespace, collapse) clear
 	shell rm $pathDataIntermediate/deleteme.zip -f
 }
