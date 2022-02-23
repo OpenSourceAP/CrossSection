@@ -8,11 +8,7 @@ gen tempShareVol = (vol + l1.vol + l2.vol)/(3*shrout)*100 // vol and shrout are 
 
 * drop if shrout changes in last 3 months
 gen dshrout = shrout != l1.shrout
-bys permno time_avail_m: replace dshrout = 0 if _n == 1  // Set to no change in first month
-
-gen dropObs = 1 if (dshrout + l1.dshrout + l2.dshrout) > 0
-by permno time_avail_m: replace dropObs = . if _n == 1 | _n == 2  // Don't drop if first two months
-drop if dropObs == 1
+drop if (dshrout + l1.dshrout + l2.dshrout) > 0
 
 gen ShareVol = 0 if tempShareVol < 5 
 replace ShareVol = 1 if tempShareVol > 10
