@@ -11,12 +11,16 @@ asreg retrf mktrf hml smb, window(time_temp 36) min(36) by(permno) fitted
 gen temp = l1._residuals  // To skip most recent month in what follows
 
 * 6 month version
-asrol temp, window(time_temp 6) min(6) by(permno) stat(mean sd)
+asrol temp, window(time_temp 6) min(6) by(permno) stat(mean) gen(mean6_temp)
+asrol temp, window(time_temp 6) min(6) by(permno) stat(sd) gen(sd6_temp)
+
 gen ResidualMomentum6m = mean6_temp/sd6_temp
 
 * 12 month version
-asrol temp, window(time_temp 11) min(11) by(permno) stat(mean sd)
+asrol temp, window(time_temp 11) min(11) by(permno) stat(mean) gen(mean11_temp)
+asrol temp, window(time_temp 11) min(11) by(permno) stat(sd) gen(sd11_temp)
 gen ResidualMomentum = mean11_temp/sd11_temp
+
 label var ResidualMomentum6m "6 month residual momentum"
 label var ResidualMomentum "Momentum based on FF3 residuals"
 

@@ -18,7 +18,8 @@ bys permno (time_d): gen time_temp = _n
 xtset permno time_temp
 
 * Standard deviations of log returns
-asrol Log*, window(time_temp 252) min(120) by(permno) stat(sd)
+asrol LogRet, window(time_temp 252) min(120) by(permno) stat(sd) gen(sd252_LogRet)
+asrol LogMkt, window(time_temp 252) min(120) by(permno) stat(sd) gen(sd252_LogMkt)
 
 * R2 of this regression is squared correlation coefficient
 gen tempRi = l2.LogRet + l1.LogRet + LogRet
