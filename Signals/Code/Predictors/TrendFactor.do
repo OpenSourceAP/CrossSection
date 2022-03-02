@@ -64,20 +64,30 @@ gen fRet = f.ret  // Instead of lagging all moving averages, I lead the return (
 bys time_avail_m: asreg fRet A_*
 
 * Take 12-month rolling average of MA beta coefficients (leaving out most recent one to not use future information from fRet)
-asrol _b_A*, window(time_avail_m -13 -1) stat(mean) by(permno) 
+preserve
+    bys time_avail_m: keep if _n == 1  // Current dataset is firm-time-level but we only need time-level here
+	
+    foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
+		asrol _b_A_`L', window(time_avail_m -13 -1) stat(mean) gen(EBeta_`L')
+	}
+	keep time_avail_m EBeta*
+	save tempBeta, replace
+restore
+
+merge m:1 time_avail_m using tempBeta, nogenerate 
 	
 * Calculate expected return E[r] = \sum E[\beta_i]A_L_i
-gen TrendFactor = _b_A_3_mean_13__1    * A_3 +   ///
-                  _b_A_5_mean_13__1    * A_5 +   ///
-                  _b_A_10_mean_13__1   * A_10 +  ///
-				  _b_A_20_mean_13__1   * A_20 +  ///
-                  _b_A_50_mean_13__1   * A_50 +  ///
-				  _b_A_100_mean_13__1  * A_100 + ///
-                  _b_A_200_mean_13__1  * A_200 + ///
-				  _b_A_400_mean_13__1  * A_400 + ///
-                  _b_A_600_mean_13__1  * A_600 + ///
-				  _b_A_800_mean_13__1  * A_800 + ///
-				  _b_A_1000_mean_13__1 * A_1000
+gen TrendFactor = EBeta_3    * A_3 +   ///
+                  EBeta_5    * A_5 +   ///
+                  EBeta_10   * A_10 +  ///
+				  EBeta_20   * A_20 +  ///
+                  EBeta_50   * A_50 +  ///
+				  EBeta_100  * A_100 + ///
+                  EBeta_200  * A_200 + ///
+				  EBeta_400  * A_400 + ///
+                  EBeta_600  * A_600 + ///
+				  EBeta_800  * A_800 + ///
+				  EBeta_1000 * A_1000
 				  
 label var TrendFactor "Trend Factor"
 
@@ -88,3 +98,4 @@ do "$pathCode/savepredictor" TrendFactor
 * Housekeeping		  
 erase tempMA.dta
 erase tempQU.dta
+erase tempBeta.dta
