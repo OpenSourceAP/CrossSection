@@ -27,9 +27,9 @@ gen divind = div > 0
 
 * quarterly
 order permno time_avail_m divind
-bys permno: asrol divind, window(time_avail_m 3) stat(sum)
+bys permno: asrol divind, window(time_avail_m 3) stat(sum) gen(sum3_divind)
 gen temppaid = sum3_divind == 1
-bys permno: asrol temppaid, window(time_avail_m 18) stat(mean)
+bys permno: asrol temppaid, window(time_avail_m 18) stat(mean) gen(mean18_temppaid)
 gen temppayer = mean18_temppaid == 1
 gen omit_3 = sum3_divind == 0 & l1.sum3_divind > 0 & l3.temppayer == 1 
 
@@ -37,9 +37,9 @@ drop temp* sum* mean*
 
 * semi-annual
 order permno time_avail_m divind
-bys permno: asrol divind, window(time_avail_m 6) stat(sum)
+bys permno: asrol divind, window(time_avail_m 6) stat(sum) gen(sum6_divind)
 gen temppaid = sum6_divind == 1
-bys permno: asrol temppaid, window(time_avail_m 18) stat(mean)
+bys permno: asrol temppaid, window(time_avail_m 18) stat(mean) gen(mean18_temppaid)
 gen temppayer = mean18_temppaid == 1
 gen omit_6 = sum6_divind == 0 & l1.sum6_divind > 0 & l6.temppayer == 1 
 
@@ -47,9 +47,9 @@ drop temp* sum* mean*
 
 * annual
 order permno time_avail_m divind
-bys permno: asrol divind, window(time_avail_m 12) stat(sum)
+bys permno: asrol divind, window(time_avail_m 12) stat(sum) gen(sum12_divind)
 gen temppaid = sum12_divind == 1
-bys permno: asrol temppaid, window(time_avail_m 24) stat(mean)
+bys permno: asrol temppaid, window(time_avail_m 24) stat(mean) gen(mean24_temppaid)
 gen temppayer = mean24_temppaid == 1
 gen omit_12 = sum12_divind == 0 & l1.sum12_divind > 0 & l12.temppayer == 1 
 

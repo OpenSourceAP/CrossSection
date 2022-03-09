@@ -20,7 +20,7 @@ merge 1:1 permno time_avail_m using "$pathtemp/tempdivamt", keep(master match) n
 xtset permno time_avail_m
 replace divamt = 0 if divamt ==.
 asrol divamt, gen(divann) by(permno) stat(sum) window(time_avail_m 12) min(6) 
-gen DivYieldAnn = divamt/abs(prc)
+gen DivYieldAnn = divann/abs(prc)
 
 
 // see table 1B

@@ -75,9 +75,12 @@ gen double templ2 = .25 + l2.tempIll*l.MarketCapitalization
 gen eps_c_i = temp - (APa0 + APa1*templ1 + APa2*templ2)
 
 * Compute betas (requires some work because covariances are not implemented in asrol)
-asrol ret eps_r_M eps_c_i eps_c_M, window(time_avail_m 60) min(24) stat(mean) by(permno)
+asrol ret,     window(time_avail_m 60) min(24) stat(mean) by(permno) gen(mean60_ret)
+asrol eps_r_M, window(time_avail_m 60) min(24) stat(mean) by(permno) gen(mean60_eps_r_M)
+asrol eps_c_i, window(time_avail_m 60) min(24) stat(mean) by(permno) gen(mean60_eps_c_i)
+asrol eps_c_M, window(time_avail_m 60) min(24) stat(mean) by(permno) gen(mean60_eps_c_M)
 gen tempEpsDiff = eps_r_M - eps_c_M
-asrol tempEpsDiff, window(time 60) min(24) stat(sd) by(permno)  // To make steps easier to follow, could have done this above in preserve/restore step
+asrol tempEpsDiff, window(time 60) min(24) stat(sd) by(permno) gen(sd60_tempEpsDiff) // To make steps easier to follow; could have done this above in preserve/restore step
 replace sd60_tempEpsDiff = sd60_tempEpsDiff^2
 
 gen tempRR = (ret - mean60_ret)*(eps_r_M - mean60_eps_r_M)
@@ -85,7 +88,10 @@ gen tempCC = (eps_c_i - mean60_eps_c_i)*(eps_c_M - mean60_eps_c_M)
 gen tempRC = (ret - mean60_ret)*(eps_c_M - mean60_eps_c_M)
 gen tempCR = (eps_c_i - mean60_eps_c_i)*(eps_r_M - mean60_eps_r_M)
 
-asrol tempRR tempCC tempRC tempCR, window(time 60) min(24) stat(mean) by(permno)
+asrol tempRR, window(time 60) min(24) stat(mean) by(permno) gen(mean60_tempRR)
+asrol tempCC, window(time 60) min(24) stat(mean) by(permno) gen(mean60_tempCC)
+asrol tempRC, window(time 60) min(24) stat(mean) by(permno) gen(mean60_tempRC)
+asrol tempCR, window(time 60) min(24) stat(mean) by(permno) gen(mean60_tempCR)
 
 gen betaRR = mean60_tempRR/sd60_tempEpsDiff
 gen betaCC = mean60_tempCC/sd60_tempEpsDiff
