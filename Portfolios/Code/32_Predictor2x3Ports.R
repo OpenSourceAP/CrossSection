@@ -1,137 +1,40 @@
 # For making FF1993 style factors from individual csvs on gdrive
 # Andrew 2021 05
 
+# Made into loop 2022 03 
+
 # FF1993 style is based on WRDS:
 # https://wrds-www.wharton.upenn.edu/pages/support/applications/risk-factors-and-industry-benchmarks/fama-french-factors/
 
-# Load packages (Maybe some need to be added to 0_SettingsAndTools)
-library(tidyverse)
-library(data.table)
-library(googledrive)
-library(getPass)
-library(RPostgres)
-library(dint)
-
-###############
-# Environment #
-###############
-
-# Root of April 2021 release on Gdrive
-pathRelease = 'https://drive.google.com/drive/folders/1I6nMmo8k_zGCcp9tUvmMedKTAkb9734R'
-url_prefix = 'https://drive.google.com/uc?export=download&id='
-
-strategylist0 <- alldocumentation %>% 
-  filter(Cat.Signal == "Predictor") %>%
-  filter(Cat.Form == 'continuous')
-
-#############
-# CRSP Data #
-#############
-
-# login to wrds
-user = getPass('wrds username: ')
-pass = getPass('wrds password: ')
-
-# Connect to WRDS database
-wrds = dbConnect(
-  Postgres()
-  , host='wrds-pgdata.wharton.upenn.edu'
-  , port=9737
-  , dbname='wrds'
-  , user=user
-  , password=pass
-  , sslmode='require'
-)
-
-# Write query
-q <- "select a.permno, a.permco, a.date, a.ret, a.retx, a.vol, a.shrout, a.prc, a.cfacshr, a.bidlo, a.askhi,
-      b.shrcd, b.exchcd, b.siccd, b.ticker, b.shrcls,  -- from identifying info table
-      c.dlstcd, c.dlret                                -- from delistings table
-      from crsp.msf as a
-      left join crsp.msenames as b
-      on a.permno=b.permno
-      and b.namedt<=a.date
-      and a.date<=b.nameendt
-      left join crsp.msedelist as c
-      on a.permno=c.permno
-      and date_trunc('month', a.date) = date_trunc('month', c.dlstdt)
-      "
-
-# Submit query and fetch results
-# Follows in part: https://wrds-www.wharton.upenn.edu/pages/support/research-wrds/macros/wrds-macro-crspmerge/
-crspraw = dbSendQuery(conn = wrds, statement = q) %>%
-  dbFetch(n = -1) %>%
+# ENVIRONMENT AND DATA ====
+crspinfo = read.fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+) %>% # me, screens, 
+  setDT()
+crspret = read.fst(
+  paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst')
+) %>% # returns
   setDT()
 
-# Incorporate delisting return (follows WRDS)
-crsp = crspraw %>%
-  mutate(
-    dlret = if_else(is.na(dlret), 0, dlret)
-    , ret = ret + dlret
-    , ret = ifelse(is.na(ret) & ( dlret != 0), dlret, ret)
-  ) %>% 
-  # convert ret to pct, other formatting
-  mutate(
-    ret = 100 * ret
-    , date = as.Date(date)
-    , me = abs(prc) * shrout
-    , yyyymm = year(date) * 100 + month(date)
-  )
+# SELECT SIGNALS 
+strategylist <- alldocumentation %>% filter(Cat.Signal == "Predictor") %>% 
+  filter(Cat.Form == 'continuous')
+strategylist <- ifquickrun()
 
-###########################
-# Connect to Google Drive #
-###########################
+# FUNCTION FOR CONVERTING SIGNALNAME TO 2X3 PORTS ====
+# analogous to signalname_to_ports in 01_PortFolioFunction.R
 
-# Connect to Google Drive. This prompts a login.
-target_dribble = pathRelease %>% drive_ls() %>% 
-  filter(name == 'Firm Level Characteristics') %>%  drive_ls() %>% 
-  filter(name == 'Individual') %>%  drive_ls() %>% 
-  filter(name == 'Predictors') %>%  drive_ls() %>% 
-  rename(signalname = name) %>% 
-  arrange(signalname)
-
-# Remove csv extension
-target_dribble$signalname = gsub(".csv", "", target_dribble$signalname)
-
-# We only care about continuous signals for the 2x3 portfolios
-target_dribble <- semi_join(target_dribble, strategylistcts, by = "signalname")
-
-# Get the number of signals available in Google Drive folder.
-num_signals = nrow(target_dribble)
-
-##################
-# 2x3 Portfolios #
-##################
-
-# Initialize location in memory to store results
-port <- NULL
-# Loop over the signals
-for(s in 1:num_signals){
+signalname_to_2x3 = function(signalname){
+  # Import signal and sign
+  signal = import_signal(signalname, NA, strategylist$Sign[s])
   
-  # Get signal name
-  signal_name = target_dribble$signalname[s]
-  
-  print(paste0("Processing Signal No. ", s, " ===> ", signal_name))
-  
-  # Download data
-  signal = fread(
-    paste0(url_prefix, target_dribble$id[s])
-  ) %>% 
-    rename(signal = !!signal_name)
-  
-  # ==== ASSIGN TO 2X3 PORTFOLIOS ====
+  # ASSIGN TO 2X3 PORTFOLIOS 
   
   # Keep value of signal corresponding to June.
   # Full join to keep as many market equity observations
   # as possible (FF1993, page 8)
   signaljune = signal %>% 
-    filter(yyyymm %% 100 == 6) %>% 
-    full_join(
-      crsp %>% 
-        filter(yyyymm %% 100 == 6) %>%  
-        select(permno, yyyymm, me, exchcd, shrcd)
-      , by = c('permno','yyyymm')
-    )
+    filter(yyyymm %% 100 == 6) 
   
   # For NYSE subset, compute signal quantiles for high and low
   # as well as median ME. FF93 is unclear about the shrcd screen
@@ -169,12 +72,12 @@ for(s in 1:num_signals){
       permno, yyyymm, port6, signal
     )
   
-  # ==== FIND MONTHLY FACTOR RETURNS ====
+  # FIND MONTHLY FACTOR RETURNS 
   
   # Find VW returns, signal lag, and number of firms
   # for a given portfolio
-  port6ret = crsp %>% 
-    select(permno, yyyymm, ret, me) %>% 
+  port6ret = crspret %>% 
+    select(permno, date, yyyymm, ret, melag) %>% 
     left_join(port6, by = c('permno', 'yyyymm')) %>% 
     # Fill and lag 
     group_by(permno) %>% 
@@ -184,14 +87,13 @@ for(s in 1:num_signals){
     mutate(
       port6_lag = lag(port6)
       , signal_lag = lag(signal)
-      , me_lag = lag(me)
     ) %>% 
-    filter(!is.na(me_lag)) %>% 
+    filter(!is.na(melag)) %>% 
     # Find value-weighted returns and signal by port6_lag month
     group_by(port6_lag, yyyymm) %>% 
     summarize(
-      ret_vw = weighted.mean(ret, me_lag, na.rm = TRUE)
-      , signallag = weighted.mean(signal_lag, me_lag, na.rm = TRUE)
+      ret_vw = weighted.mean(ret, melag, na.rm = TRUE)
+      , signallag = weighted.mean(signal_lag, melag, na.rm = TRUE)
       , n_firms = n()
     ) %>% 
     ungroup() %>% 
@@ -202,7 +104,7 @@ for(s in 1:num_signals){
       , Nlong = n_firms
     ) %>% 
     mutate(
-      signalname = !!signal_name
+      signalname = !!signalname
       , date = last_of_month(as.Date(paste0(as.character(yyyymm), "01"), format = "%Y%m%d"))
       , Nshort = 0L
     ) %>% 
@@ -210,7 +112,7 @@ for(s in 1:num_signals){
     select(signalname, port, date, ret, signallag, Nlong, Nshort)
   
   # Equal-weight extreme portfolios to make FF1993-style factor
-  ff93style_ret = port6ret[,c("port", "date", "ret")] %>% 
+  portls_ret = port6ret[,c("port", "date", "ret")] %>% 
     pivot_wider(
       names_from = port, values_from = ret
     ) %>% 
@@ -220,7 +122,7 @@ for(s in 1:num_signals){
     select(date, ret)
   
   # Get number of firms in long-short stocks
-  ff93style_N = port6ret[,c("port", "date", "Nlong")] %>% 
+  portls_N = port6ret[,c("port", "date", "Nlong")] %>% 
     pivot_wider(
       names_from = port, values_from = Nlong
     ) %>% 
@@ -230,9 +132,10 @@ for(s in 1:num_signals){
     ) %>% 
     select(date, Nlong, Nshort)
   
-  ff93style <- merge(ff93style_ret, ff93style_N, by = "date") %>% 
+  # merge returns with number of firms and fill in LS info
+  portls <- merge(portls_ret, portls_N, by = "date") %>% 
     mutate(
-      signalname = !!signal_name
+      signalname = !!signalname
       , port = "LS"
       , signallag = NA
       , Nshort = if_else(is.na(ret), NA_integer_, Nshort)
@@ -241,28 +144,65 @@ for(s in 1:num_signals){
     select(signalname, port, date, ret, signallag, Nlong, Nshort)
   
   # Append LS portfolios to 2x3 portfolios dataframe and sort  
-  df <- rbind(port6ret, ff93style) %>% 
+  port <- rbind(port6ret, portls) %>% 
     mutate(
       port = factor(
         port, 
         levels = c("SL", "SM", "SH", "BL", "BM", "BH", "LS")
       )
     ) %>% 
-    arrange(port, date)
+    arrange(port, date)  
   
-  port <- rbind(port, df)
   
-}
+} # end signalname_to_2x3
 
-rm(
-  crsp, crspraw, df, ff93style, ff93style_N, ff93style_ret,
-  num_signals, nysebreaks, pass, pathRelease, port6, q, signal,
-  signal_name, signaljune, strategylist0, url_prefix, user,
-  wrds, port6ret, s
-)
+# LOOP OVER SIGNALS ====
+num_signals = nrow(strategylist)
+num_signals = 20
 
+# Initialize location in memory to store results
+allport = list()
+
+# Loop over the signals
+for(s in 1:num_signals){
+  
+  # Get signal name
+  signalname = strategylist$signalname[s]
+  
+  print(paste0("Processing Signal No. ", s, " ===> ", signalname))
+  
+  tempport = tryCatch(
+    {
+      expr = signalname_to_2x3(
+        signalname = strategylist$signalname[s]
+      )
+      
+    }
+    , error = function(e){
+      print('error in signalname_to_2x3, returning df with NA')
+      data.frame(
+        matrix(ncol = dim(allport[[s-1]])[2], nrow = 1)
+      ) 
+    }
+  ) # tryCatch
+  
+  # add column names if signalname_to_2x3 failed
+  if (is.na(tempport[1,1])){
+    colnames(tempport) = colnames(allport[[1]]) # assume strat 1 worked ok
+    tempport$signalname = strategylist$signalname[1]
+  }  
+  
+  allport[[s]] = tempport
+  
+} # for s in 1:num_signals
+
+
+allport = do.call(rbind.data.frame, allport) 
+
+# WRITE TO DISK  ====
 writestandard(
   port,
   pathDataPortfolios,
-  paste0("Predictor2x3Ports.csv")
+  "PredictorAltPorts_FF93style.csv"
 )
+
