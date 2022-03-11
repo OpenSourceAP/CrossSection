@@ -26,10 +26,11 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-pathProject = paste0(getwd(), '/')
+# if working directory is set to location of master.R, '/../../' should work
+pathProject = paste0(getwd(), '/../../')
 
 quickrun =  F # use T if you want to run quickly for testing
-quickrunlist = c('Size','STreversal') # list of signals to use for quickrun
+quickrunlist = c('Accruals','AM') # list of signals to use for quickrun
 skipdaily = T # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
@@ -41,9 +42,10 @@ if (!dir.exists(paste0(pathProject, 'Portfolios'))) {
 # setwd to folder with all R scripts for convenience
 setwd(paste0(pathProject,'Portfolios/Code/'))
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # PREPARE INTERMEDIATE DATA ####
 
@@ -91,6 +93,11 @@ if (quickrun==F){
         source('31_CheckPredictorsExhibits.R', echo=T, verbose=T)
     })
 }
+
+print('master: 32_Predictor2x3Ports.R')
+tryCatch({
+    source('32_Predictor2x3Ports.R', echo=T) 
+})
 
 print('master: 40 40_PlaceboPorts.R')
 tryCatch({
