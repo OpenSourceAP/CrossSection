@@ -27,7 +27,7 @@ doc_placebo_dl = alldoc %>% filter(Cat.Signal=='Placebo') %>%
   filter(signalname != 'BidAskTAQ')
 
 
-## function for checking match with SignalDocumentation.xlsx
+## function for checking match with SignalDoc.csv
 # used repeatedly here
 check_doc = function(tempdir,tempdoc,iszip){
 
@@ -64,7 +64,7 @@ check_doc = function(tempdir,tempdoc,iszip){
   
   
   if (dim(mismatch)[1] == 0){
-    print('The files in the following folder match SignalDocumentation.xlsx!')
+    print('The files in the following folder match SignalDoc.csv!')
     print(tempdir)
     cat('\n\n')
   } else{
@@ -276,10 +276,10 @@ listcomp = full_join(doc_predictor_dl,store_list)
 mismatch =  listcomp %>% filter(is.na(indoc) | is.na(intarget)) %>% arrange(indoc,signalname)
 
 if (dim(mismatch)[1] == 0){
-  print('signed_predictors_dl_wide.zip matches SignalDocumentation.xlsx!')
+  print('signed_predictors_dl_wide.zip matches SignalDoc.csv!')
   cat('\n\n')
 } else{
-  print('signed_predictors_dl_wide.zip does not matche SignalDocumentation.xlsx')
+  print('signed_predictors_dl_wide.zip does not match SignalDoc.csv')
   print(as.data.frame(mismatch))
   cat('\n\n')
 }

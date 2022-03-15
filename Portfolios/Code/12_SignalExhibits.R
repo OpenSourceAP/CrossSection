@@ -16,109 +16,108 @@ library(tictoc)
 
 # first count for each paper
 count.us = readdocumentation() %>%
-    filter(Predictability.in.OP != '9_drop') %>%
-    mutate(bench = Cat.Signal == 'Predictor') %>%
-    group_by(Predictability.in.OP) %>%
-    summarize(
-        bench = sum(bench), extended = n()
+  filter(Predictability.in.OP != '9_drop') %>%
+  mutate(bench = Cat.Signal == 'Predictor') %>%
+  group_by(Predictability.in.OP) %>%
+  summarize(
+    bench = sum(bench), extended = n()
+  )
+
+count.mp = read_csv(
+  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+) %>%
+  filter(metastudy == 'MP') %>% 
+  mutate(covered = ourname != '_missing_') %>%
+  group_by(Predictability.in.OP) %>%
+  summarize(
+    n = n(), covered = sum(covered)
+  ) %>%
+  mutate(pctcov = covered/n*100)
+
+count.ghz = read_csv(
+  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+) %>%
+  filter(metastudy == 'GHZ') %>% 
+  mutate(covered = ourname != '_missing_') %>%
+  group_by(Predictability.in.OP) %>%
+  summarize(
+    n = n(), covered = sum(covered)
+  ) %>%
+  mutate(pctcov = covered/n*100)
+
+# for HXZ, we create a special category for alternative holding periods
+count.hxz = read_csv(
+  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+) %>%
+  filter(metastudy == 'HXZ') %>% 
+  mutate(covered = ourname != '_missing_') %>% 
+  group_by(ourname) %>%
+  mutate(holdalt = row_number()) %>%
+  ungroup() %>%
+  mutate(
+    Predictability.in.OP = if_else(
+      holdalt == 1
+      , Predictability.in.OP
+      , 'z0_altholdper'
     )
+  ) %>%
+  group_by(Predictability.in.OP) %>%
+  summarize(
+    n = n(), covered = sum(covered)
+  ) %>%
+  mutate(pctcov = covered/n*100)
 
-count.mp = read_excel(
-        paste0(pathProject, 'SignalDocumentation.xlsx')
-      , sheet = 'MP'
-    ) %>%
-    mutate(covered = ClosestMatch != '_missing_') %>%
-    group_by(Predictability.in.OP) %>%
-    summarize(
-        n = n(), covered = sum(covered)
-    ) %>%
-    mutate(pctcov = covered/n*100)
-
-count.ghz = read_excel(
-        paste0(pathProject, 'SignalDocumentation.xlsx')
-      , sheet = 'GHZ'
-    ) %>%
-    mutate(covered = ClosestMatch != '_missing_') %>%
-    group_by(Predictability.in.OP) %>%
-    summarize(
-        n = n(), covered = sum(covered)
-    ) %>%
-    mutate(pctcov = covered/n*100)
-
-count.hlz = read_excel(
-        paste0(pathProject, 'SignalDocumentation.xlsx')
-      , sheet = 'HLZ'
-    ) %>%
-    mutate(
-        covered = Coverage != 'zz missing'
-    ) %>%
-    select('Risk factor', Predictability.in.OP
+# HLZ has its own csv since it's so different (not replication)
+# coverage then needs to be more judgmental
+count.hlz = read_csv(
+  paste0(pathProject, 'Comparison_to_HLZ.csv')
+) %>%
+  mutate(
+    covered = Coverage != 'zz missing'
+  ) %>%
+  select('Risk factor', Predictability.in.OP
          , covered, Coverage) %>%    
-    group_by(Predictability.in.OP) %>%
-    summarize(
-        n = n(), covered = sum(covered)
-    ) %>%
-    mutate(pctcov = covered/n*100)
-
-
-count.hxz = read_excel(
-        paste0(pathProject, 'SignalDocumentation.xlsx')
-      , sheet = 'HXZ'
-    ) %>%
-    mutate(covered = ClosestMatch != '_missing_') %>%
-    select(HXZname, ClosestMatch, covered
-         , Predictability.in.OP.ignoring.holdper
-         , holdper)  %>%    
-    group_by(ClosestMatch) %>%
-    mutate(holdalt = row_number()) %>%
-    ungroup() %>%
-    mutate(
-       Predictability.in.OP = if_else(
-            holdalt == 1
-          , Predictability.in.OP.ignoring.holdper
-          , 'z0_altholdper'
-        )
-    ) %>%
-    group_by(Predictability.in.OP) %>%
-    summarize(
-        n = n(), covered = sum(covered)
-    ) %>%
-    mutate(pctcov = covered/n*100)
+  group_by(Predictability.in.OP) %>%
+  summarize(
+    n = n(), covered = sum(covered)
+  ) %>%
+  mutate(pctcov = covered/n*100)
+  
 
 
 # merge
 tab.n = count.us %>%
-    full_join(
-        count.mp %>% transmute(Predictability.in.OP, mp = n)
-    ) %>%
-    full_join(
-        count.ghz %>% transmute(Predictability.in.OP, ghz = n)
-    ) %>%
-    full_join(
-        count.hlz %>% transmute(Predictability.in.OP, hlz = n)
-    ) %>%
-    full_join(
-        count.hxz %>% transmute(Predictability.in.OP, hxz = n)
-    ) %>%
-    replace(is.na(.),0) %>%
-    arrange(Predictability.in.OP)
+  full_join(
+    count.mp %>% transmute(Predictability.in.OP, mp = n)
+  ) %>%
+  full_join(
+    count.ghz %>% transmute(Predictability.in.OP, ghz = n)
+  ) %>%
+  full_join(
+    count.hlz %>% transmute(Predictability.in.OP, hlz = n)
+  ) %>%
+  full_join(
+    count.hxz %>% transmute(Predictability.in.OP, hxz = n)
+  ) %>%
+  replace(is.na(.),0) %>%
+  arrange(Predictability.in.OP)
 
 tab.pctcov = count.mp %>%
-    transmute(Predictability.in.OP, mp = pctcov) %>%
-        full_join(
-            count.ghz %>% transmute(Predictability.in.OP, ghz = pctcov)
-        ) %>%
-        full_join(
-            count.hlz %>% transmute(Predictability.in.OP, hlz = pctcov)
-        ) %>%
-        full_join(
-            count.hxz %>% transmute(Predictability.in.OP, hxz = pctcov)
-        ) %>%
-        replace(is.na(.),0) 
+  transmute(Predictability.in.OP, mp = pctcov) %>%
+  full_join(
+    count.ghz %>% transmute(Predictability.in.OP, ghz = pctcov)
+  ) %>%
+  full_join(
+    count.hlz %>% transmute(Predictability.in.OP, hlz = pctcov)
+  ) %>%
+  full_join(
+    count.hxz %>% transmute(Predictability.in.OP, hxz = pctcov)
+  ) %>%
+  replace(is.na(.),0) 
 
 # write to disk
 write_xlsx(
-    list(n = tab.n, pctcov = tab.pctcov)
+  list(n = tab.n, pctcov = tab.pctcov)
   , paste0(pathResults,'coverage.xlsx')
 )
 
@@ -142,13 +141,13 @@ signals = read_csv(paste0(pathPredictors, prds[1], '.csv')) %>%
   select(permno, yyyymm)
 
 for (i in 1:length(prds)){
-
+  
   if (file.exists(paste0(pathPredictors, prds[i], '.csv'))) {
-      tempin = read_csv(paste0(pathPredictors, prds[i], '.csv'))
-      tempin[,3] = signs[i]*tempin[,3] # sign according top OP
-      
+    tempin = read_csv(paste0(pathPredictors, prds[i], '.csv'))
+    tempin[,3] = signs[i]*tempin[,3] # sign according top OP
+    
     signals = signals %>% full_join(tempin)
-      
+    
     print(mem_used())
     gc()
     
@@ -184,17 +183,17 @@ temp = foreach (i = 1:nrow(loopList),
                 .combine = 'c',
                 .packages = c('dplyr', 'ccaPP', 'fst')) %dopar% {
                   
-                    tempSignals = read_fst(paste0(pathDataIntermediate, 'temp.fst'),
-                                           columns = loopList[i, ] %>% as.character()) %>%
-                        filter(complete.cases(.) == TRUE) %>%
-                        as.matrix()                    
+                  tempSignals = read_fst(paste0(pathDataIntermediate, 'temp.fst'),
+                                         columns = loopList[i, ] %>% as.character()) %>%
+                    filter(complete.cases(.) == TRUE) %>%
+                    as.matrix()                    
                   #  gc()
-                    
-                    corSpearman(x = tempSignals[, 1], 
-                                y = tempSignals[, 2], 
-                                consistent = FALSE)
-                   # gc()
-
+                  
+                  corSpearman(x = tempSignals[, 1], 
+                              y = tempSignals[, 2], 
+                              consistent = FALSE)
+                  # gc()
+                  
                   #  print(mem_used())
                 }
 
@@ -219,17 +218,17 @@ allRhos = tibble(rho = temp, series = 'Pairwise')
 vars = c('Size', 'BM', 'Mom12m', 'GP', 'AssetGrowth')
 
 for (vv in vars) {
-
-    print(vv)
-
+  
+  print(vv)
+  
   # Create grid
   loopList = expand.grid(prds, vv, stringsAsFactors = FALSE) %>% 
     filter(Var1 != Var2)
-
+  
   # Start cluster
   cl = makeCluster(cores[1] - 1) 
   registerDoParallel(cl)
-
+  
   # compute correlations
   rhos = foreach (i = 1:nrow(loopList),
                   .combine = 'c',
@@ -248,7 +247,7 @@ for (vv in vars) {
   
   #stop cluster
   stopCluster(cl)
-
+  
   # Plot histogram  
   tibble(rho = rhos) %>% 
     ggplot(aes(x = rho)) +
@@ -262,7 +261,7 @@ for (vv in vars) {
   
   allRhos = rbind(allRhos,
                   tibble(rho = rhos, series = vv))
-
+  
   rm(loopList, rhos)  
   
 }

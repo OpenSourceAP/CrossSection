@@ -38,51 +38,33 @@ readdocumentation = function(){
   }
   
   ## load signal header
-  temp1 = read_excel(
-    paste0(pathProject, 'SignalDocumentation.xlsx')
-    , sheet = 'BasicInfo'
+  alldocumentation = read_csv(
+    paste0(pathProject, 'SignalDoc.csv')
   ) %>%
     rename(signalname = Acronym)  %>%
     # Format order of category labels
     mutate(Cat.Data = as_factor(Cat.Data) %>% 
              factor(levels = c('Accounting', 'Analyst', 'Event', 'Options', 'Price', 'Trading', '13F', 'Other'))) %>% 
     # Make economic category proper
-    mutate(Cat.Economic = str_to_title(Cat.Economic))
-  
-  temp2 = read_excel(
-    paste0(pathProject, 'SignalDocumentation.xlsx')
-    , sheet = 'AddInfo'
-  ) %>%
-    select(-Authors) %>%         
+    mutate(Cat.Economic = str_to_title(Cat.Economic)) %>% 
+    # Clean column names
     rename(
-      signalname = Acronym
-      , sweight = 'Stock Weight'
+      sweight = 'Stock Weight'
       , q_cut = 'LS Quantile'
       , q_filt = 'Quantile Filter'  
       , portperiod = 'Portfolio Period'
       , startmonth = 'Start Month'
       , filterstr = 'Filter'
     ) %>%
-    mutate_at(
-      c('q_cut','portperiod','startmonth')
-      , .funs = as.num
-      , 
-    ) %>%
     mutate(
       filterstr = if_else(filterstr %in% c('NA','None','none')
                           , NA_character_
                           , filterstr)
     ) %>%
-    select(-c(starts_with('Note')))
-  
-  
-  # merge
-  alldocumentation = temp1 %>% left_join(temp2, by="signalname") %>%
+    select(-c(starts_with('Note'))) %>% 
     arrange(signalname)   
   
-  # clean up
-  alldocumentation = alldocumentation %>%
-    mutate(Sign = as.numeric(Sign))
+  
   
   names(alldocumentation) = make.names(names(alldocumentation))
   
@@ -91,11 +73,12 @@ readdocumentation = function(){
   
 } # end function
 
+
 # ==== DO STUFF ====
 
-# update SignalDocumentation
+# update SignalDo
 file.copy(
-  from = paste0(pathProject,'SignalDocumentation.xlsx')
+  from = paste0(pathProject,'SignalDoc.csv')
   , to = paste0(pathStorage)
 )
 
