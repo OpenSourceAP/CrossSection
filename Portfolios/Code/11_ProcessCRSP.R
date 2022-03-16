@@ -36,7 +36,7 @@ crspm = crspm %>%
       , 0
       , dlret
     )
-    , ret = ret + dlret
+    , ret = (1+ret)*(1+dlret)-1 # 2022 02 patched ret + dlret < -1 problem
     , ret = ifelse(
       is.na(ret) & ( dlret != 0)
       , dlret

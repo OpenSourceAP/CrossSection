@@ -40,7 +40,8 @@ replace dlret = -1 if dlret < -1 & dlret !=.
 
 replace dlret = 0 if dlret ==.
 
-replace ret = ret + dlret
+* updated in 2022 02 to deal with 62 obs of ret < 1 
+replace ret = (1+ret)*(1+dlret) - 1
 
 replace ret = dlret if ret ==. & dlret !=0
 
