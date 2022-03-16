@@ -1,0 +1,652 @@
+﻿metastudy,theirname,theirlongname,Author,Year,Journal,Predictability.in.OP,ourname,Note,holdper
+MP,ΔCAPEX-ΔIndustry CAPEX,ΔCAPEX-ΔIndustry CAPEX,Abarbanell and Bushee,1998,NA,1_clear,ChInvIA,NA,NA
+MP,Earnings Consistency,Earnings Consistency,Alwathainani,2009,NA,1_clear,EarningsConsistency,NA,NA
+MP,Idiosyncratic Risk,Idiosyncratic Risk,Ang et al.,2006,NA,1_clear,IdioRisk,NA,NA
+MP,Momentum-Credit Ratings,Momentum-Credit Ratings,Aramov et al.,2007,NA,1_clear,Mom6mJunk,NA,NA
+MP,Max,Max,"Bali, Cakici, and Whitelaw",2010,NA,1_clear,MaxRet,NA,NA
+MP,Size,Size,Banz,1981,NA,1_clear,Size,NA,NA
+MP,Change in Forecast+ Accrua,Change in Forecast+ Accrua,Barth and Hutton,2004,NA,1_clear,ChForecastAccrual,NA,NA
+MP,M/B and Accruals,M/B and Accruals,Bartov and Kim,2004,NA,1_clear,AccrualsBM,NA,NA
+MP,Earnings / Price,Earnings / Price,Basu,1977,NA,1_clear,EP,NA,NA
+MP,Leverage,Leverage,Bhandari,1988,NA,1_clear,Leverage,NA,NA
+MP,Price,Price,Blume and Husic,1972,NA,1_clear,Price,NA,NA
+MP,Total XFIN,Total XFIN,"Bradshaw, Richardson, and Sloan",2006,NA,1_clear,XFIN,NA,NA
+MP,Momentum and LT Reversal,Momentum and LT Reversal,Chan and Ko,2006,NA,1_clear,MomRev,NA,NA
+MP,R&D / Market Value of Equity,R&D / Market Value of Equity,Chan et al.,2001,NA,1_clear,RD,NA,NA
+MP,Volume Variance,Volume Variance,"Chordia, Subranhmanyam, and Anshuman",2001,NA,1_clear,VolSD,NA,NA
+MP,Asset Growth,Asset Growth,"Cooper, Guylen and Schill",2008,NA,1_clear,AssetGrowth,NA,NA
+MP,Share Issuance (5-Year),Share Issuance (5-Year),Daniel and Titman,2006,NA,1_clear,ShareIss5Y,NA,NA
+MP,Share Volume,Share Volume,"Datair, Naik, and Radcliffe",1998,NA,1_clear,ShareVol,NA,NA
+MP,Long-Term Reversal,Long-Term Reversal,Debondt and Thaler,1985,NA,1_clear,LRreversal,NA,NA
+MP,Exchange Switch,Exchange Switch,Dharan and Ikenberry,1995,NA,1_clear,ExchSwitch,NA,NA
+MP,O-Score (More Financial Distress),O-Score (More Financial Distress),Dichev,1998,NA,1_clear,OScore,NA,NA
+MP,Credit Rating Downgrade,Credit Rating Downgrade,Dichev and Piotroski,2001,NA,1_clear,CredRatDG,NA,NA
+MP,Forecast Dispersion,Forecast Dispersion,"Diether, Malloy, and Scherbina",2002,NA,1_clear,ForecastDispersion,NA,NA
+MP,Unexpected R&D Increases,Unexpected R&D Increases,"Eberhart, Maxwell, and Siddique",2004,NA,1_clear,SurpriseRD,NA,NA
+MP,Org. Capital,Org. Capital,Eisfeldt and Papanikolaou,2013,NA,1_clear,OrgCap,NA,NA
+MP,BookEquity / MarketEquity,BookEquity / MarketEquity,FF,1992,NA,1_clear,BM,NA,NA
+MP,Earnings Surprise,Earnings Surprise,"Foster, Olsen, and Shevlin",1984,NA,1_clear,EarningsSurprise,NA,NA
+MP,G Index,G Index,"Gompers, Ishi and Metrick",2003,NA,1_clear,Governance,NA,NA
+MP,IPO no R&D,IPO no R&D,"Gou, Lev, and Shi",2006,NA,1_clear,RDIPO,NA,NA
+MP,Industry Momentu,Industry Momentu,Grinblatt and Moskwotiz,1999,NA,1_clear,IndMom,NA,NA
+MP,Percent Operating Accrual,Percent Operating Accrual,"Hafzalla, Lundholm, and Van Winkle",2011,NA,1_clear,PctAcc,NA,NA
+MP,Percent Total Accrual,Percent Total Accrual,"Hafzalla, Lundholm, and Van Winkle",2011,NA,1_clear,PctTotAcc,NA,NA
+MP,Dividends,Dividends,Hartzmark and Solomon,2013,NA,1_clear,DivSeason,NA,NA
+MP,Seasonality,Seasonality,Heston and Sadka,2008,NA,1_clear,MomSeason,NA,NA
+MP,Net Operating Assets,Net Operating Assets,Hirshleifer et al.,2004,NA,1_clear,NOA,NA,NA
+MP,Herfindahl Index,Herfindahl Index,Hou and Robinson,2006,NA,1_clear,Herf,NA,NA
+MP,Short-Term Reversal,Short-Term Reversal,Jegadeesh,1989,NA,1_clear,STreversal,NA,NA
+MP,Revenue Surprises,Revenue Surprises,Jegadeesh and Livnat,2006,NA,1_clear,RevenueSurprise,NA,NA
+MP,Momentum,Momentum,Jegadeesh and Titman,1993,NA,1_clear,Mom6m,NA,NA
+MP,Change in Recommendation,Change in Recommendation,Jegadeesh et al.,2004,NA,1_clear,ChangeInRecommendation,NA,NA
+MP,Profitability,Profitability,"Karthik, Bartov, and Faurel",2010,NA,1_clear,roaq,NA,NA
+MP,Mergers,Mergers,Langetieg,1978,NA,1_clear,_missing_,"Cat is hand coded.  The data for this is tricky, not sure we have it.",NA
+MP,Momentum-Volume,Momentum-Volume,Lee and Swaminathan,2000,NA,1_clear,MomVol,NA,NA
+MP,Tax,Tax,Lev and Nissim,2004,NA,1_clear,Tax,NA,NA
+MP,Sustainable Growth,Sustainable Growth,Lockwood and Prombutr,2010,NA,1_clear,ChEQ,NA,NA
+MP,Public Seasoned Equity Offerings,Public Seasoned Equity Offerings,Loughran and Ritter,1995,NA,1_clear,_missing_,"Cat is hand coded.  The data for this is tricky, not sure we have it.",NA
+MP,Enterprise Multiple,Enterprise Multiple,Loughran and Wellman,2011,NA,1_clear,EntMult,NA,NA
+MP,Cash Flow / Market Value of Equity,Cash Flow / Market Value of Equity,LSV,1994,NA,1_clear,CF,NA,NA
+MP,Sales Growth,Sales Growth,LSV,1994,NA,1_clear,MeanRankRevGrowth,NA,NA
+MP,Dividend Omission,Dividend Omission,"Michaely, Thaler, and Womack",1995,NA,1_clear,DivOmit,NA,NA
+MP,Dividend Initiation,Dividend Initiation,"Michaely, Thaler, and Womack",1995,NA,1_clear,DivInit,NA,NA
+MP,G-Score,G-Score,Mohanram,2005,NA,1_clear,MS,NA,NA
+MP,Lagged Momentum,Lagged Momentum,Novy-Marx,2012,NA,1_clear,IntMom,NA,NA
+MP,Operating Leverage,Operating Leverage,Novy-Marx,2010,NA,1_clear,OPLeverage,NA,NA
+MP,Gross Profitability,Gross Profitability,Novy-Marx,2013,NA,1_clear,GP,NA,NA
+MP,Enterprise Component of Book/Price,Enterprise Component of Book/Price,"Penman, Richardson, and Tuna",2007,NA,1_clear,EBM,NA,NA
+MP,Leverage Component of Book/Price,Leverage Component of Book/Price,"Penman, Richardson, and Tuna",2007,NA,1_clear,BPEBM,NA,NA
+MP,F-Score,F-Score,Piotroski,2000,NA,1_clear,PS,NA,NA
+MP,Share Issuance (1-Year),Share Issuance (1-Year),Pontiff and Woodgate,2008,NA,1_clear,ShareIss1Y,NA,NA
+MP,Initial Public Offering,Initial Public Offering,Ritter,1991,NA,1_clear,IndIPO,NA,NA
+MP,Accruals,Accruals,Sloan,1996,NA,1_clear,Accruals,NA,NA
+MP,Change in Asset Turnover,Change in Asset Turnover,Soliman,2008,NA,1_clear,ChAssetTurnover,NA,NA
+MP,Noncurrent Operating Assets Changes,Noncurrent Operating Assets Changes,Soliman,2008,NA,1_clear,ChNNCOA,NA,NA
+MP,Net Working Capital Changes,Net Working Capital Changes,Soliman,2008,NA,1_clear,ChNWC,NA,NA
+MP,Growth in Inventory,Growth in Inventory,Thomas and Zhang,2002,NA,1_clear,ChInv,NA,NA
+MP,Investment,Investment,"Titman, Wei, and Xie",2004,NA,1_clear,Investment,NA,NA
+MP,Firm Age-Momentum,Firm Age-Momentum,Zhang,2994,NA,1_clear,FirmAgeMom,NA,NA
+MP,Amihud's measure (Illiquidity),Amihud's measure (Illiquidity),NA,2002,NA,1_clear,Illiquidity,NA,NA
+MP,ΔSales-ΔInventory,ΔSales-ΔInventory,Abarbanell and Bushee,1998,NA,2_likely,GrSaleToGrInv,NA,NA
+MP,ΔSales-ΔSG&A,ΔSales-ΔSG&A,Abarbanell and Bushee,1998,NA,2_likely,GrSaleToGrOverhead,NA,NA
+MP,Bid-Ask Spread,Bid-Ask Spread,Amihud and Mendelsohn,1986,NA,2_likely,BidAskSpread,NA,NA
+MP,Sales/Price,Sales/Price,Barbee et al,1996,NA,2_likely,SP,NA,NA
+MP,Down Forecast,Down Forecast,Barber et al.,2001,NA,2_likely,UpRecomm,"The description in MP's appendix is closer to Hawkins, Chamberlin, and Daniel, but we follow Barber et al",NA
+MP,Up Forecast,Up Forecast,Barber et al.,2001,NA,2_likely,DownRecomm,"The description in MP's appendix is closer to Hawkins, Chamberlin, and Daniel, but we follow Barber et al",NA
+MP,Firm Age,Firm Age,Barry and Brown,1984,NA,2_likely,FirmAge,NA,NA
+MP,Advertising / Market Value of Equity,Advertising / Market Value of Equity,Chan et al.,2001,NA,2_likely,AdExp,NA,NA
+MP,Spinoffs,Spinoffs,"Cusatis, Miles, and Wooldridge",1993,NA,2_likely,Spinoff,NA,NA
+MP,Short Interest,Short Interest,Dechow et al.,2001,NA,2_likely,ShortInterest,NA,NA
+MP,Growth in LTNOA,Growth in LTNOA,"Fairfield, Whisenant and Yohn",2003,NA,2_likely,GrLTNOA,NA,NA
+MP,Beta,Beta,Fama and MacBeth,1973,NA,2_likely,Beta,NA,NA
+MP,Analyst Value,Analyst Value,Frankel and Lee,1998,NA,2_likely,AnalystValue,NA,NA
+MP,Pension Funding Status,Pension Funding Status,Franzoni and Marin,2006,NA,2_likely,FR,NA,NA
+MP,52-week High,52-week High,George and Hwang,2004,NA,2_likely,High52,NA,NA
+MP,Coskewness,Coskewness,Harvey and Siddique,2000,NA,2_likely,Coskewness,NA,NA
+MP,Return-on-Equity,Return-on-Equity,Haugen and Baker,1996,NA,2_likely,RoE,NA,NA
+MP,Cash Flow Variance,Cash Flow Variance,Haugen and Baker,1996,NA,2_likely,VarCF,NA,NA
+MP,Volume / Market Value of Equity,Volume / Market Value of Equity,Haugen and Baker,1996,NA,2_likely,VolMkt,NA,NA
+MP,Volume Trend,Volume Trend,Haugen and Baker,1996,NA,2_likely,VolumeTrend,NA,NA
+MP,Share Repurchases,Share Repurchases,"Ikenberry, Lakonishok, and Vermaelen",1995,NA,2_likely,ShareRepurchase,NA,NA
+MP,Momentum-Reversal,Momentum-Reversal,Jegadeesh and Titman,1993,NA,2_likely,MRreversal,we cite Debondt and Thaler,NA
+MP,IPO and Age,IPO and Age,Ritter,1991,NA,2_likely,AgeIPO,NA,NA
+MP,Debt Issuance,Debt Issuance,Spiess and Affleck-Graves,1999,NA,2_likely,DebtIssuance,NA,NA
+MP,Dividend Yield,Dividend Yield,"Naranjo, Nimalendran, and Ryngaert",1998,NA,indirect,DivYield,NA,NA
+MP,Asset Turnover,Asset Turnover,Soliman,2008,NA,indirect,AssetTurnover,NA,NA
+MP,Profit Margin,Profit Margin,Soliman,2008,NA,indirect,PM,NA,NA
+MP,Change in Profit Margin,Change in Profit Margin,Soliman,2008,NA,indirect,ChPM,NA,NA
+MP,Z-Score (Less Financial Distress),Z-Score (Less Financial Distress),Dichev,1998,NA,4_not,ZScore,NA,NA
+GHZ,pchcapx_ia,% change in CAPEX - industry % change in CAPEX,Abarbanell & Bushee,1998,TAR,1_clear,ChInvIA,NA,NA
+GHZ,pchgm_pchsale,% change in gross margin - % change in sales,Abarbanell & Bushee,1998,TAR,indirect,GrGMToGrSales,NA,NA
+GHZ,pchsale_pchinvt,% change in sales - % change in inventory,Abarbanell & Bushee,1998,TAR,2_likely,GrSaleToGrInv,NA,NA
+GHZ,pchsale_pchxsga,% change in sales - % change in SG&A,Abarbanell & Bushee,1998,TAR,2_likely,GrSaleToGrOverhead,NA,NA
+GHZ,ill,Illiquidity,Acharya & Pedersen,2005,JF,1_clear,Illiquidity,NA,NA
+GHZ,idiovol,Idiosyncratic return volatility,"Ali, Hwang & Trombley",2003,JFE,1_clear,IdioRisk,NA,NA
+GHZ,grCAPX,% change over two years in CAPEX,Anderson & Garcia-Feijoo,2006,JF,1_clear,grcapx,NA,NA
+GHZ,retvol,Return volatility,"Ang, Hodrick, Xing & Zhang",2006,JF,1_clear,IdioRisk,NA,NA
+GHZ,roaq,"Return on Assets, Quarterly","Balakrishnan, Bartov & Faurel",2010,JAE,1_clear,roaq,NA,NA
+GHZ,maxret,Maximum daily return in prior month,"Bali, Cakici & Whitelaw",2011,JFE,1_clear,MaxRet,NA,NA
+GHZ,mve,Firm size (market cap),Banz,1981,JFE,1_clear,Size,NA,NA
+GHZ,sp,Sales-to-price,"Barbee, Mukherji & Raines",1996,FAJ,2_likely,SP,NA,NA
+GHZ,nincr,# of consecutive earnings increases,"Barth, Elliott & Finn",1999,JAR,1_clear,EarningsConsistency,NA,NA
+GHZ,ep,Earnings-to-price,Basu,1977,JF,1_clear,EP,NA,NA
+GHZ,fgr5yr,Forecasted growth in 5-year EPS,Baumann & Dowen,1988,FAJ,1_clear,fgr5yrLag,NA,NA
+GHZ,hire,Employee growth rate,"Bazdresch, Belo & Lin",2009,WP,1_clear,hire,NA,NA
+GHZ,lev,Leverage,Bhandari,1988,JF,1_clear,Leverage,NA,NA
+GHZ,cashpr,Cash productivity,Chandrashekar & Rao,2009,WP,1_clear,CashProd,NA,NA
+GHZ,dolvol,Dollar trading volume in month t-2,"Chordia, Subrahmanyam & Anshuman",2001,JFE,1_clear,DolVol,NA,NA
+GHZ,std_turn,Volatility of share turnover,"Chordia, Subrahmanyam & Anshuman",2001,JFE,1_clear,std_turn,NA,NA
+GHZ,std_dolvol,Volatility of dollar trading volume,"Chordia, Subrahmanyam & Anshuman",2001,JFE,1_clear,VolSD,NA,NA
+GHZ,agr,Asset growth,"Cooper, Gulen & Schil",2008,JF,1_clear,AssetGrowth,NA,NA
+GHZ,turn,Share turnover,"Datar, Naik & Radcliffe",1998,JFM,1_clear,ShareVol,NA,NA
+GHZ,mom36m,36-month momentum,De Bondt & Thaler,1985,JF,1_clear,LRreversal,NA,NA
+GHZ,cfp,Cash flow-to-price,"Desai, Rajgopal & Venkatachalam",2004,TAR,1_clear,cfp,NA,NA
+GHZ,disp,Dispersion in forecasted eps,"Diether, Malloy & Scherbina",2002,JF,1_clear,ForecastDispersion,NA,NA
+GHZ,rd,RD_increase,"Eberhart, Maxwell & Siddique",2004,JF,1_clear,SurpriseRD,NA,NA
+GHZ,orgcap,Organizational capital,Eisfeldt & Papanikolaou,2013,JF,1_clear,OrgCap,NA,NA
+GHZ,sfe,Scaled analyst forecast of one year ahead earnings,"Elgers, Lo & Pfeiffer",2001,TAR,1_clear,sfe,NA,NA
+GHZ,grltnoa,Growth in long term net operating assets,"Fairfield, Whisenant & Yohn",2003,TAR,2_likely,GrLTNOA,NA,NA
+GHZ,beta,Beta,Fama & MacBeth,1973,JPE,2_likely,Beta,NA,NA
+GHZ,operprof,Operating Profitability,Fama and French,2015,JFE,2_likely,OperProf,NA,NA
+GHZ,rd_mve,R&D-to-market cap,"Guo, Lev & Shi",2006,JBFA,1_clear,RD,NA,NA
+GHZ,pctacc,Percent accruals,"Hafzalla, Lundholm & Van Winkle",2011,TAR,1_clear,PctAcc,NA,NA
+GHZ,tang,Debt capacity-to-firm tangibility,Hahn & Lee,2009,JF,1_clear,tang,NA,NA
+GHZ,chfeps,Change in forecasted annual EPS,"Hawkins, Chamberlin & Daniel",1984,FAJ,1_clear,Rev6,NA,NA
+GHZ,pricedelay,Price delay,Hou & Moskowitz,2005,RFS,1_clear,PriceDelayRsq,NA,NA
+GHZ,herf,Industry sales concentration,Hou & Robinson,2006,JF,1_clear,Herf,NA,NA
+GHZ,roeq,"Return on Equity, Quarterly","Hou, Xue, and Zhang",2015,RFS,2_likely,RoE,NA,NA
+GHZ,mom1m,1-month momentum,Jegadeesh,1990,JF,1_clear,STreversal,NA,NA
+GHZ,mom12m,12-month momentum,Jegadeesh,1990,JF,1_clear,Mom6m,NA,NA
+GHZ,mom6m,6-month momentum,Jegadeesh & Titman,1990,JF,1_clear,Mom6m,NA,NA
+GHZ,rsup,Revenue surprise,Kama,2009,JBFA,1_clear,RevenueSurprise,NA,NA
+GHZ,ear,3-day return around earnings announcement,"Kishore, Brandt, Santa-Clara & Venkatachalam",2008,WP,1_clear,AnnouncementReturn,NA,NA
+GHZ,sgr,Annual sales growth,"Lakonishok, Shleifer & Vishny",1994,JF,indirect,sgr,NA,NA
+GHZ,tb,Taxable income to book income,Lev & Nissim,2004,TAR,1_clear,Tax,NA,NA
+GHZ,dy,Dividends-to-price,Litzenberger & Ramaswamy,1982,JF,indirect,DivYield,NA,NA
+GHZ,zerotrade,Zero-trading days,Liu,2006,JFE,1_clear,zerotrade,NA,NA
+GHZ,IPO,New equity issue,"Loughran, Ritter & Ritter",1995,JF,1_clear,IndIPO,NA,NA
+GHZ,divi,Dividend initiation,"Michaely, Thaler & Womack",1995,JF,1_clear,DivInit,NA,NA
+GHZ,divo,Dividend omission,"Michaely, Thaler & Womack",1995,JF,1_clear,DivOmit,NA,NA
+GHZ,ms,Financial statements score,Mohanram,2005,RAS,1_clear,MS,NA,NA
+GHZ,indmom,Industry momentum,Moskowitz & Grinblatt,1999,JF,1_clear,IndMom,NA,NA
+GHZ,gma,Gross profitability,Novy-Marx,2012,WP,1_clear,GP,NA,NA
+GHZ,cash,Cash holdings,Palazzo,2012,JFE,1_clear,Cash,NA,NA
+GHZ,ps,Financial statements score,Piotroski,2000,JAR,1_clear,PS,NA,NA
+GHZ,chcsho,Change in shares outstanding,Pontiff & Woodgate,2008,JF,1_clear,ShareIss1Y,NA,NA
+GHZ,sue,Unexpected quarterly earnings,"Rendelmann, Jones & Latane",1982,JFE,1_clear,EarningsSurprise,NA,NA
+GHZ,egr,Change in common shareholder equity,"Richardson, Sloan, Soliman & Tun",2005,JAE,1_clear,DelEqu,NA,NA
+GHZ,lgr,Change in long-term debt,"Richardson, Sloan, Soliman & Tun",2005,JAE,1_clear,DelFINL,NA,NA
+GHZ,bm,Book-to-market,"Rosenberg, Reid & Lanstein",1985,JPM,1_clear,BM,NA,NA
+GHZ,chnanalyst,Change in # analysts,Scherbina,2007,WP,1_clear,ChNAnalyst,NA,NA
+GHZ,acc,Working capital accruals,Sloan,1996,TAR,1_clear,Accruals,NA,NA
+GHZ,chatoia,Industry-adjusted change in asset turnover,Soliman,2008,TAR,1_clear,ChAssetTurnover,NA,NA
+GHZ,chtx,Change in tax expense,Thomas & Zhang,2010,WP,1_clear,ChTax,NA,NA
+GHZ,chinv,Changes in inventory,Thomas & Zhang,2002,RAS,1_clear,ChInv,NA,NA
+GHZ,cinvest,Corporate investment,"Titman, Wei & Xie",2004,JFQA,1_clear,Investment,NA,NA
+GHZ,realestate,Real estate holdings,Tuzel,2010,RFS,2_likely,realestate,NA,NA
+GHZ,convind,Convertible debt indicator,Valta,2013,WP,1_clear,ConvDebt,NA,NA
+GHZ,baspread,Illiquidity (bid-ask spread),Amihud & Mendelson,1989,JF,2_likely,BidAskSpread,NA,NA
+GHZ,depr,Depreciation-to-gross PP&E,Holthausen & Larcker,1992,JAE,indirect,depr,NA,NA
+GHZ,pchdepr,% change in depreciation-to-gross PP&E,Holthausen & Larcker,1992,JAE,indirect,pchdepr,NA,NA
+GHZ,sin,Sin stock,Hong & Kacperczyk,2009,JEF,2_likely,sinAlgo,NA,NA
+GHZ,stdcf,Cash flow volatility,Huang,2009,JEF,2_likely,VarCF,NA,NA
+GHZ,cashdebt,Cash flow-to-debt,Ou & Penmann,1989,JAE,indirect,cashdebt,NA,NA
+GHZ,currat,Current ratio,Ou & Penmann,1989,JAE,indirect,currat,NA,NA
+GHZ,pchcurrat,% change in current ratio,Ou & Penmann,1989,JAE,indirect,pchcurrat,NA,NA
+GHZ,pchquick,% change in quick ratio,Ou & Penmann,1989,JAE,indirect,pchquick,NA,NA
+GHZ,pchsaleinv,% change in sales-to-inventory,Ou & Penmann,1989,JAE,indirect,pchsaleinv,NA,NA
+GHZ,quick,Quick ratio,Ou & Penmann,1989,JAE,indirect,quick,NA,NA
+GHZ,salecash,Sales-to-cash,Ou & Penmann,1989,JAE,indirect,salecash,NA,NA
+GHZ,saleinv,Sales-to-inventory,Ou & Penmann,1989,JAE,indirect,saleinv,NA,NA
+GHZ,salerec,Sales-to-receivables,Ou & Penmann,1989,JAE,indirect,salerec,NA,NA
+GHZ,nanalyst,# of analysts covering stock,"Elgers, Lo & Pfeiffer",2001,TAR,indirect,nanalyst,NA,NA
+GHZ,roavol,Earnings volatility,"Francis, LaFond, Olsson & Schipper",2004,TAR,indirect,roavol,NA,NA
+GHZ,age,# of years since first Compustat coverage,"Jiang, Lee & Zhang",2005,RAS,2_likely,FirmAge,NA,NA
+GHZ,secured,Secured debt-to-total debt,Valta,2013,WP,indirect,secured,NA,NA
+GHZ,securedind,Secured debt indicator,Valta,2013,WP,indirect,securedind,NA,NA
+GHZ,pchsale_pchrect,% change in sales - % change in accounts receivable,Abarbanell & Bushee,1998,TAR,indirect,GrSaleToGrReceivables,NA,NA
+GHZ,roic,Return on invested capital,Brown & Rowe,2007,WP,4_not,roic,NA,NA
+GHZ,betasq,Beta squared,Fama & MacBeth,1973,JPE,4_not,BetaSquared,NA,NA
+GHZ,rd_sale,R&D-to-sales,"Guo, Lev & Shi",2006,JBFA,4_not,rd_sale,NA,NA
+GHZ,chpmia,Industry-adjusted change in profit margin,Soliman,2008,TAR,indirect,ChPM,NA,NA
+GHZ,invest,CAPEX and inventory,Chen & Zhang,2010,JF,1_clear,dNOA,"Chen and Zhang was retracted, so we omit it, but other papers are similar",NA
+GHZ,bm_ia,Industry-adjusted book-to-market,"Asness, Porter & Stevens",1994,WP,1_clear,_missing_,similar,NA
+GHZ,cfp_ia,Industry-adjusted cash flow-to-price ratio,"Asness, Porter & Stevens",1994,WP,1_clear,_missing_,similar,NA
+GHZ,chempia,Industry-adjusted change in employees,"Asness, Porter & Stevens",1994,WP,1_clear,_missing_,similar,NA
+GHZ,mve_ia,Industry-adjusted firm size,"Asness, Porter & Stevens",1994,WP,1_clear,_missing_,similar,NA
+GHZ,absacc,Absolute accruals,"Bandyopadhyay, Huang & Wirjanto",2010,WP,1_clear,_missing_,zz missing,NA
+GHZ,stdacc,Accrual volatility,"Bandyopadhyay, Huang & Wirjanto",2010,WP,1_clear,_missing_,zz missing,NA
+GHZ,chmom,Change in 6-month momentum,Gettleman & Marks,2006,WP,1_clear,_missing_,"can't find paper, assume this is clear, though the abstract is not super promising",NA
+GHZ,aeavol,Abnormal volume in earnings announcement month,"Lerman, Livnat & Mendenhall",2007,WP,1_clear,_missing_,zz missing,NA
+HXZ,Dac,Discretionay accruals,Xie,2001,NA,1_clear,AbnormalAccruals,NA,12
+HXZ,Oa,Operating accruals,Sloan,1996,NA,1_clear,Accruals,NA,12
+HXZ,Am,Assets-to-market,Fama and French,1992,NA,1_clear,AM,NA,12
+HXZ,dEf1,Analysts' forecast change,"Hawkins, Chamberlin, and Daniel",1984,NA,1_clear,AnalystRevision,NA,1
+HXZ,Def6,Analysts' forecast change,"Hawkins, Chamberlin, and Daniel",1984,NA,1_clear,AnalystRevision,NA,6
+HXZ,dEf12,Analysts' forecast change,"Hawkins, Chamberlin, and Daniel",1984,NA,1_clear,AnalystRevision,NA,12
+HXZ,Abr1,Cumulative abnormal stock returns around earnings announcements,"Chan, Jegadeesh, and Lakonishok",1996,NA,1_clear,AnnouncementReturn,NA,1
+HXZ,Abr6,Cumulative abnormal stock returns around earnings announcements,"Chan, Jegadeesh, and Lakonishok",1996,NA,1_clear,AnnouncementReturn,NA,6
+HXZ,Abr12,Cumulative abnormal stock returns around earnings announcements,"Chan, Jegadeesh, and Lakonishok",1996,NA,1_clear,AnnouncementReturn,NA,12
+HXZ,I/A,Investment-to-assets,"Cooper, Gulen and Schill",2008,NA,1_clear,AssetGrowth,NA,12
+HXZ,BPS1,Pastor-Stambaugh Liquidity Beta,Pastor and Stambuagh,2003,NA,1_clear,BetaLiquidityPS,NA,1
+HXZ,BPS6,Pastor-Stambaugh Liquidity Beta,Pastor and Stambuagh,2003,NA,1_clear,BetaLiquidityPS,NA,6
+HXZ,BPS12,Pastor-Stambaugh Liquidity Beta,Pastor and Stambuagh,2003,NA,1_clear,BetaLiquidityPS,NA,12
+HXZ,Tail1,Tail risk,Kelly and Jiang,2014,NA,1_clear,BetaTailRisk,NA,1
+HXZ,Tail6,Tail risk,Kelly and Jiang,2014,NA,1_clear,BetaTailRisk,NA,6
+HXZ,Tail12,Tail risk,Kelly and Jiang,2014,NA,1_clear,BetaTailRisk,NA,12
+HXZ,Sv1,Systematic volatillity risk,"Ang, Hodrick, Xing, and Zhang",2007,NA,1_clear,betaVIX,NA,1
+HXZ,Sv6,Systematic volatillity risk,"Ang, Hodrick, Xing, and Zhang",2008,NA,1_clear,betaVIX,NA,6
+HXZ,Sv12,Systematic volatillity risk,"Ang, Hodrick, Xing, and Zhang",2009,NA,1_clear,betaVIX,NA,12
+HXZ,Bmj,Book-to-June-end market equity,Asnesss and Frazzini,2013,NA,1_clear,BM,NA,1
+HXZ,Bm,Book-to-market equity,"Rosenberg, Reid, and Lanstein",1985,NA,1_clear,BMdec,NA,1
+HXZ,Bl,Book leverage,Fama and French,1992,NA,1_clear,BookLeverage,NA,1
+HXZ,Cta1,Cash-to-assets,Palazzo,2012,NA,1_clear,Cash,NA,1
+HXZ,Cta6,Cash-to-assets,Palazzo,2012,NA,1_clear,Cash,NA,6
+HXZ,Cta12,Cash-to-assets,Palazzo,2012,NA,1_clear,Cash,NA,12
+HXZ,Cop,Cash-based operating profitablility,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,1_clear,CBOperProf,NA,1
+HXZ,Cp,Cash flow-to-price,"Lakonishok, Scheifer, and Vishny",1994,NA,1_clear,CF,NA,12
+HXZ,Ocp,Operating cash flow-to-price,"Desai, Rajgopal, and Benkatachalam",2004,NA,1_clear,cfp,NA,12
+HXZ,dBe,Chage in common equity,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,ChEQ,NA,12
+HXZ,Ivc,Inventory changes,Thomas and Zhang,2002,NA,1_clear,ChInv,NA,12
+HXZ,Dli,% change in investment - %change in industry investment,Abarbanell and Bushee,1998,NA,1_clear,ChInvIA,NA,12
+HXZ,dNco,Change in net non-current operating assets,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,ChNNCOA,NA,12
+HXZ,dWc,Change in net non-cash working capital,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,ChNWC,NA,12
+HXZ,Tes1,Tax expense surprise,Thomas and Zhang,2011,NA,1_clear,ChTax,NA,1
+HXZ,Tes6,Tax expense surprise,Thomas and Zhang,2011,NA,1_clear,ChTax,NA,6
+HXZ,Tes12,Tax expense surprise,Thomas and Zhang,2011,NA,1_clear,ChTax,NA,12
+HXZ,Crd,Citations-to-R&D expense,"Hirschleifer, Hsu and Li",2013,NA,1_clear,CitationsRD,NA,1
+HXZ,Cei,Composite equity issuance,Daniel and Titman,2006,NA,1_clear,CompEquIss,NA,12
+HXZ,Cdi,Composite debt issuance,"Lyandres, Sun and Zhang",2008,NA,1_clear,CompositeDebtIssuance,NA,12
+HXZ,Cdd,Convertible debt-to-total debt,Valta,2016,NA,1_clear,ConvDebt,NA,12
+HXZ,Cr1,Credit ratings,"Avramov, Chordia, Jostova, and Philipov",2009,JFM,1_clear,CredRatDG,NA,1
+HXZ,Cr6,Credit ratings,"Avramov, Chordia, Jostova, and Philipov",2009,JFM,1_clear,CredRatDG,NA,6
+HXZ,Cr12,Credit ratings,"Avramov, Chordia, Jostova, and Philipov",2009,JFM,1_clear,CredRatDG,NA,12
+HXZ,Cm1,Customer momentum,Cohen and Frazzini,2008,NA,1_clear,CustomerMomentum,NA,1
+HXZ,Cm6,Customer momentum,Cohen and Frazzini,2008,NA,1_clear,CustomerMomentum,NA,6
+HXZ,Cm12,Customer momentum,Cohen and Frazzini,2008,NA,1_clear,CustomerMomentum,NA,12
+HXZ,dCoa,Change in current operating assets,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,DelCOA,NA,12
+HXZ,dCol,Change in current Ooperating liabilities,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,DelCOL,NA,12
+HXZ,dFnl,Change in financials liabilities,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,DelFINL,NA,12
+HXZ,dLti,Chagne in long-term investments,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,DelLTI,NA,12
+HXZ,dFin,Change in net financial assets,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,DelNetFin,NA,12
+HXZ,dNoa,Change in net operating assets,"Hirshleifer, Hou, Teoh, Zhang",2004,NA,1_clear,dNoa,NA,1
+HXZ,Dtv1,Dollar trading volume,"Brennan, Chordia, and Subrahmanyam",1998,NA,1_clear,DolVol,NA,1
+HXZ,Dtv6,Dollar trading volume,"Brennan, Chordia, and Subrahmanyam",1998,NA,1_clear,DolVol,NA,6
+HXZ,Dtv12,Dollar trading volume,"Brennan, Chordia, and Subrahmanyam",1998,NA,1_clear,DolVol,NA,12
+HXZ,Dls1,Disparing between long- and short-term earnings growth forecasts,Da and Warachka,2011,NA,1_clear,EarningsForecastDisparity,NA,1
+HXZ,Dls6,Disparing between long- and short-term earnings growth forecasts,Da and Warachka,2011,NA,1_clear,EarningsForecastDisparity,NA,6
+HXZ,Dls12,Disparing between long- and short-term earnings growth forecasts,Da and Warachka,2011,NA,1_clear,EarningsForecastDisparity,NA,12
+HXZ,Sue1,Earnings Surprise,"Foster, Olsen and Shevliln",1984,NA,1_clear,EarningsSurprise,NA,1
+HXZ,Sue6,Earnings Surprise,"Foster, Olsen and Shevliln",1984,NA,1_clear,EarningsSurprise,NA,6
+HXZ,Sue12,Earnings Surprise,"Foster, Olsen and Shevliln",1984,NA,1_clear,EarningsSurprise,NA,12
+HXZ,Ile1,Industry lead-lag effect in earnings surprises,Hou,2007,NA,1_clear,EarnSupBig,NA,1
+HXZ,Ile6,Industry lead-lag effect in earnings surprises,Hou,2007,NA,1_clear,EarnSupBig,NA,6
+HXZ,Ile12,Industry lead-lag effect in earnings surprises,Hou,2007,NA,1_clear,EarnSupBig,NA,12
+HXZ,Ebp,Enterprise book-to-price,"Penman, Richardson, and Tuna",2007,NA,1_clear,EBM,NA,12
+HXZ,Em,Enterprise multiple,Loughran and Wellman,2011,NA,1_clear,EntMult,NA,12
+HXZ,Ep,Earnings-to-price,Basu,1983,NA,1_clear,EP,NA,12
+HXZ,Dur,Equity Duration,"Dechow, Sloan and Soliman",2004,NA,1_clear,EquityDuration,NA,12
+HXZ,Ltg,Long-term growth forecasts,La Porta,1996,NA,1_clear,fgr5yrLag,NA,1
+HXZ,Dis1,Dispersion of analysts' earnings forecasts,"Diether, Malloy and Scherbina",2002,NA,1_clear,ForecastDispersion,NA,1
+HXZ,Dis6,Dispersion of analysts' earnings forecasts,"Diether, Malloy and Scherbina",2002,NA,1_clear,ForecastDispersion,NA,6
+HXZ,Dis12,Dispersion of analysts' earnings forecasts,"Diether, Malloy and Scherbina",2002,NA,1_clear,ForecastDispersion,NA,12
+HXZ,Gind,Corporate governance,"Gompers, Ishii and Metrick",2003,NA,1_clear,Governance,NA,1
+HXZ,Gpa,Gross profits-to-assets,Novy-Marx,2013,NA,1_clear,GP,NA,12
+HXZ,gAd,Growth in advertising expense,Lou,2014,NA,1_clear,GrAdExp,NA,12
+HXZ,2Ig,Two-year investment growth,Anderson and Garcia-Feijoo,2006,NA,1_clear,grcapx,NA,12
+HXZ,3Ig,Three-year investment growth,Anderson and Garcia-Feijoo,2006,NA,1_clear,grcapx3y,NA,12
+HXZ,Hs,Industry concentration (sales),Hou and Robinson,2006,NA,1_clear,Herf,NA,1
+HXZ,He,Industry concentration (book equity),Hou and Robinson,2006,NA,1_clear,HerfBE,NA,1
+HXZ,Hn,Hiring rate,"Belo, Lin and Bazdresch",2014,NA,1_clear,hire,NA,1
+HXZ,Tv1,Total volatility,"Ang, Hodrick, Xing, and Zhang",2006,NA,1_clear,IdioRisk,NA,1
+HXZ,Tv6,Total volatility,"Ang, Hodrick, Xing, and Zhang",2006,NA,1_clear,IdioRisk,NA,6
+HXZ,Tv12,Total volatility,"Ang, Hodrick, Xing, and Zhang",2006,NA,1_clear,IdioRisk,NA,12
+HXZ,Ivff1,Idiosyncratic volatility per the FF 3-factor model,"Ang, Hodrick, Xing, and Zhang",2006,NA,1_clear,IdioVol3F,NA,1
+HXZ,Ivff6,Idiosyncratic volatility per the FF 3-factor model,"Ang, Hodrick, Xing, and Zhang",2006,NA,1_clear,IdioVol3F,NA,6
+HXZ,Ivff12,Idiosyncratic volatility per the FF 3-factor model,"Ang, Hodrick, Xing, and Zhang",2006,NA,1_clear,IdioVol3F,NA,12
+HXZ,Iv,Idiosyncratic volatility,"Ali, Hwang, and Trombley",2003,NA,1_clear,IdioVolAHT,NA,1
+HXZ,Ami1,Absolute return-to-volume,Amihud,2002,NA,1_clear,Illiquidity,NA,1
+HXZ,Ami6,Absolute return-to-volume,Amihud,2002,NA,1_clear,Illiquidity,NA,6
+HXZ,Ami12,Absolute return-to-volume,Amihud,2002,NA,1_clear,Illiquidity,NA,12
+HXZ,Im1,Industry momentum,Moskowitz and Grinblatt,1999,NA,1_clear,IndMom,NA,1
+HXZ,Im6,Industry momentum,Moskowitz and Grinblatt,1999,NA,1_clear,IndMom,NA,6
+HXZ,Im12,Industry momentum,Moskowitz and Grinblatt,1999,NA,1_clear,IndMom,NA,12
+HXZ,Ilr1,Industry lead-lag effect in prior returns,Hou,2007,NA,1_clear,IndRetBig,NA,1
+HXZ,Ilr6,Industry lead-lag effect in prior returns,Hou,2007,NA,1_clear,IndRetBig,NA,6
+HXZ,Ilr12,Industry lead-lag effect in prior returns,Hou,2007,NA,1_clear,IndRetBig,NA,12
+HXZ,Ir,Intangible return,Daniel and Titman,2006,NA,1_clear,IntanBM,NA,1
+HXZ,Aci,Abnormal corporate investment,"Titman, Wei, and Xie",2004,NA,1_clear,Investment,NA,1
+HXZ,Dpia,Changes in PPE and inventory/assets,"Lyandres, Sun and Zhang",2008,NA,1_clear,InvestPPEInv,NA,1
+HXZ,Ivg,Inventory growth,Belo and Lin,2011,NA,1_clear,InvGrowth,NA,1
+HXZ,Cim1,Customer industries momentum,Menzly and Ozbas,2010,NA,1_clear,iomom_cust,NA,1
+HXZ,Cim6,Customer industries momentum,Menzly and Ozbas,2010,NA,1_clear,iomom_cust,NA,6
+HXZ,Cim12,Customer industries momentum,Menzly and Ozbas,2010,NA,1_clear,iomom_cust,NA,12
+HXZ,Sim1,Supplier industries momentum,Menzly and Ozbas,2010,NA,1_clear,iomom_supp,NA,1
+HXZ,Sim6,Supplier industries momentum,Menzly and Ozbas,2010,NA,1_clear,iomom_supp,NA,6
+HXZ,Sim12,Supplier industries momentum,Menzly and Ozbas,2010,NA,1_clear,iomom_supp,NA,12
+HXZ,Dm,Debt-to-market,Bhandari,1988,NA,1_clear,Leverage,NA,1
+HXZ,Rev1,Reversal,De Bondt and Thaler,1985,NA,1_clear,LRreversal,NA,1
+HXZ,Rev6,Reversal,De Bondt and Thaler,1985,NA,1_clear,LRreversal,NA,6
+HXZ,Rev12,Reversal,De Bondt and Thaler,1985,NA,1_clear,LRreversal,NA,12
+HXZ,Mdr1,Maximum daily return,"Bali, Cakici, and Whitelaw",2011,NA,1_clear,MaxRet,NA,1
+HXZ,Mdr6,Maximum daily return,"Bali, Cakici, and Whitelaw",2011,NA,1_clear,MaxRet,NA,6
+HXZ,Mdr12,Maximum daily return,"Bali, Cakici, and Whitelaw",2011,NA,1_clear,MaxRet,NA,12
+HXZ,Sr,"Five-year sales growth rank,","Lakonishok, Scheifer, and Vishny",1994,NA,1_clear,MeanRankRevGrowth,NA,12
+HXZ,R111,Price momentum (11-month prior returns),Jegadeesh and Titman,1993,NA,1_clear,Mom12m,NA,1
+HXZ,R116,Price momentum (11-month prior returns),Jegadeesh and Titman,1993,NA,1_clear,Mom12m,NA,6
+HXZ,R1112,Price momentum (11-month prior returns),Jegadeesh and Titman,1993,NA,1_clear,Mom12m,NA,12
+HXZ,R1n,"Year 1-lagged return, nonannual",Heston and Sadka,2008,NA,1_clear,Mom12mOffSeason,NA,1
+HXZ,R61,Price momentum (6-month prior returns),Jegadeesh and Titman,1993,NA,1_clear,Mom6m,NA,1
+HXZ,R66,Price momentum (6-month prior returns),Jegadeesh and Titman,1993,NA,1_clear,Mom6m,NA,6
+HXZ,R612,Price momentum (6-month prior returns),Jegadeesh and Titman,1993,NA,1_clear,Mom6m,NA,12
+HXZ,R[2-5]n,"Years 2-5-lagged returns, nonannual",Heston and Sadka,2008,NA,1_clear,MomOffSeason,NA,1
+HXZ,R[6-10]n,"Years 6-10-lagged returns, nonannual",Heston and Sadka,2008,NA,1_clear,MomOffSeason06YrPlus,NA,1
+HXZ,R[16-20]n,"Years 16-20-lagged returns, nonannual",Heston and Sadka,2008,NA,1_clear,MomOffSeason16YrPlus,NA,1
+HXZ,R[2-5]a,"Years 2-5-lagged returns, annual",Heston and Sadka,2008,NA,1_clear,MomSeason,NA,1
+HXZ,R[6-10]a,"Years 6-10-lagged returns, annual",Heston and Sadka,2008,NA,1_clear,MomSeason06YrPlus,NA,1
+HXZ,R[11-15]a,"Years 11-15-lagged returns, annual",Heston and Sadka,2008,NA,1_clear,MomSeason11YrPlus,NA,1
+HXZ,R[16-20]a,"Years 16-20-lagged returns, annual",Heston and Sadka,2008,NA,1_clear,MomSeason16YrPlus,NA,1
+HXZ,R1a,"12-month-lagged return, annual",Heston and Sadka,2008,NA,1_clear,MomSeasonShort,NA,1
+HXZ,G,Growth (G) score,Mohanram,2005,NA,1_clear,MS,NA,12
+HXZ,Ndf,Neb debt finance,"Bradshaw, Richardson, and Sloan",2006,NA,1_clear,NetDebtFinance,NA,12
+HXZ,Ndp,Net debt-to-price,"Penman, Richardson, and Tuna",2007,NA,1_clear,NetDebtPrice,NA,12
+HXZ,Nef,Net equity finance,"Bradshaw, Richardson, and Sloan",2006,NA,1_clear,NetEquityFinance,NA,12
+HXZ,Nop,Net payout yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,1_clear,NetPayoutYield,NA,12
+HXZ,Noa,Net ooperating assets,"Hirschleifer, Hou Teoh, and Zhang",2004,NA,1_clear,NOA,NA,12
+HXZ,Ol,Operating leverage,Novy-Marx,2011,NA,1_clear,OPLeverage,NA,12
+HXZ,Ob,Order backlag,"Rajgopal, Shevlin and Venkatachalam",2003,NA,1_clear,OrderBacklog,NA,12
+HXZ,Ioca,Industry-adjusted organizationa capital,Eisfeldt and Papanikolaou,2013,NA,1_clear,OrgCap,NA,12
+HXZ,O,O-score,Dichev,1998,NA,1_clear,OScore,NA,12
+HXZ,Parc,Patent-to-R&D capital,"Hirschleifer, Hsu and Li",2013,NA,1_clear,PatentsRD,NA,1
+HXZ,Op,Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,1_clear,PayoutYield,NA,12
+HXZ,Poa,Percent operating accruals,"Hafzalla, Lundholm, and Van Winkle",2011,NA,1_clear,PctAcc,NA,12
+HXZ,Pta,Percent total accruals,"Hafzalla, Lundholm, and Van Winkle",2011,NA,1_clear,PctTotAcc,NA,12
+HXZ,Pps1,Share price,Miller and Scholes,1982,NA,1_clear,Price,NA,1
+HXZ,Pps6,Share price,Miller and Scholes,1982,NA,1_clear,Price,NA,6
+HXZ,Pps12,Share price,Miller and Scholes,1982,NA,1_clear,Price,NA,12
+HXZ,D1,Price delay based on Rsq,Hou and Moskowitz,2005,NA,1_clear,PriceDelayRsq,NA,1
+HXZ,F,Fundamental (F) score,Piotroski,2000,NA,1_clear,PS,NA,1
+HXZ,Rdm,R&D-to-market,"Chan, Lakonishok, and Sougiannis",2001,NA,1_clear,RD,NA,12
+HXZ,Rca,R&D capital-to-assets,Li,2011,NA,1_clear,RDcap,NA,12
+HXZ,epsilon12_1,Eleven-month residual momentum,"Blitz, Huij, and Martens",2011,NA,1_clear,ResidualMomentum,NA,1
+HXZ,epsilon12_6,Eleven-month residual momentum,"Blitz, Huij, and Martens",2011,NA,1_clear,ResidualMomentum,NA,6
+HXZ,epsilon12_12,Eleven-month residual momentum,"Blitz, Huij, and Martens",2011,NA,1_clear,ResidualMomentum,NA,12
+HXZ,Sm1,Segment momentum,Cohen and Lou,2012,NA,1_clear,retConglomerate,NA,1
+HXZ,Sm6,Segment momentum,Cohen and Lou,2012,NA,1_clear,retConglomerate,NA,6
+HXZ,Sm12,Segment momentum,Cohen and Lou,2012,NA,1_clear,retConglomerate,NA,12
+HXZ,Ts1,Total skewness,"Bali, Engle, and Murray",2015,NA,1_clear,ReturnSkew,NA,1
+HXZ,Ts6,Total skewness,"Bali, Engle, and Murray",2015,NA,1_clear,ReturnSkew,NA,6
+HXZ,Ts12,Total skewness,"Bali, Engle, and Murray",2015,NA,1_clear,ReturnSkew,NA,12
+HXZ,Isff1,Idiosyncratic skewness per the FF 3-factor model,"Bali, Engle, and Murray",2015,NA,1_clear,ReturnSkew3F,NA,1
+HXZ,Isff6,Idiosyncratic skewness per the FF 3-factor model,"Bali, Engle, and Murray",2015,NA,1_clear,ReturnSkew3F,NA,6
+HXZ,Isff12,Idiosyncratic skewness per the FF 3-factor model,"Bali, Engle, and Murray",2015,NA,1_clear,ReturnSkew3F,NA,12
+HXZ,Re1,Revisions in analyst's' earnings forecasts,"Chan, Jegadeesh, and Lakonishok",1996,NA,1_clear,REV6,NA,1
+HXZ,Re6,Revisions in analyst's' earnings forecasts,"Chan, Jegadeesh, and Lakonishok",1996,NA,1_clear,REV6,NA,6
+HXZ,Re12,Revisions in analyst's' earnings forecasts,"Chan, Jegadeesh, and Lakonishok",1996,NA,1_clear,REV6,NA,12
+HXZ,Rs1,Revenue surprise,Jegadeesh and Livnat,2006,NA,1_clear,RevenueSurprise,NA,1
+HXZ,Rs6,Revenue surprise,Jegadeesh and Livnat,2006,NA,1_clear,RevenueSurprise,NA,6
+HXZ,Rs12,Revenue surprise,Jegadeesh and Livnat,2006,NA,1_clear,RevenueSurprise,NA,12
+HXZ,Roa1,Return on assets,"Balakrishnan, Bartov, and Faurel",2010,JAE,1_clear,roaq,NA,1
+HXZ,Roa6,Return on assets,"Balakrishnan, Bartov, and Faurel",2010,JAE,1_clear,roaq,NA,6
+HXZ,Roa12,Return on assets,"Balakrishnan, Bartov, and Faurel",2010,JAE,1_clear,roaq,NA,12
+HXZ,Nsi,net stock issues,Pontiff and Woodgate,2008,NA,1_clear,ShareIss1Y,NA,12
+HXZ,Tur1,Share turnover,"Datar, Naik, and Radcliffe",1998,NA,1_clear,ShareVol,NA,1
+HXZ,Tur6,Share turnover,"Datar, Naik, and Radcliffe",1998,NA,1_clear,ShareVol,NA,6
+HXZ,Tur12,Share turnover,"Datar, Naik, and Radcliffe",1998,NA,1_clear,ShareVol,NA,12
+HXZ,Me,Market equity,Banz,1981,NA,1_clear,Size,NA,1
+HXZ,Cvt1,Coefficient of variation for share turnover,"Chordia, Subrahmanyam, and Anshuman",2001,NA,1_clear,std_turn,NA,1
+HXZ,Cvt6,Coefficient of variation for share turnover,"Chordia, Subrahmanyam, and Anshuman",2001,NA,1_clear,std_turn,NA,6
+HXZ,Cvt12,Coefficient of variation for share turnover,"Chordia, Subrahmanyam, and Anshuman",2001,NA,1_clear,std_turn,NA,12
+HXZ,Srev,Short-term reversal,Jegadeesh,1990,NA,1_clear,STreversal,NA,1
+HXZ,Tan,Tangibility of assets,Hahn and Lee,2009,NA,1_clear,tang,NA,12
+HXZ,Tbi,Taxable income-to-book income,Lev and Nissim,2004,NA,1_clear,Tax,NA,12
+HXZ,Ta,Total accruals,"Richardson, Sloan Soliman and Tuna",2005,NA,1_clear,TotalAccruals,NA,12
+HXZ,Cvd1,Coefficient of variation for dollar trading,"Chordia, Subrahmanyam, and Anshuman",2001,NA,1_clear,VolSD,NA,1
+HXZ,Cvd6,Coefficient of variation for dollar trading,"Chordia, Subrahmanyam, and Anshuman",2001,NA,1_clear,VolSD,NA,6
+HXZ,Cvd12,Coefficient of variation for dollar trading,"Chordia, Subrahmanyam, and Anshuman",2001,NA,1_clear,VolSD,NA,12
+HXZ,Nxf,Net external finance,"Bradshaw, Richardson, and Sloan",2006,NA,1_clear,XFIN,NA,12
+HXZ,Lm6_1,Prior 6-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotrade,NA,1
+HXZ,Lm6_6,Prior 6-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotrade,NA,6
+HXZ,Lm6_12,Prior 6-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotrade,NA,12
+HXZ,Lm1_1,Prior 1-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotradeAlt1,NA,1
+HXZ,Lm1_6,Prior 1-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotradeAlt1,NA,6
+HXZ,Lm1_12,Prior 1-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotradeAlt1,NA,12
+HXZ,Lm12_1,Prior 12-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotradeAlt12,NA,1
+HXZ,Lm12_6,Prior 12-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotradeAlt12,NA,6
+HXZ,Lm12_12,Prior 12-month turnoever-adjusted numer of zero daily trading volume,Liu,2006,NA,1_clear,zerotradeAlt12,NA,12
+HXZ,Adm,Advertising expense-to-market,"Chan, Lakonishok, and Sougiannis",2001,NA,2_likely,AdExp,NA,12
+HXZ,Vfp,Analysts-based intrinsic value-to-market,Frankel and Lee,1998,NA,2_likely,AnalystValue,NA,1
+HXZ,Aop,Analysts optimism,Frankel and Lee,1998,NA,2_likely,AOP,NA,1
+HXZ,B1,Market beta,Fama and MacBeth,1973,NA,2_likely,Beta,NA,1
+HXZ,B6,Market beta,Fama and MacBeth,1973,NA,2_likely,Beta,NA,6
+HXZ,B12,Market beta,Fama and MacBeth,1973,NA,2_likely,Beta,NA,12
+HXZ,BFP1,The Frazzini-Pedersen (2014) beta,Frazzini and Pedersen,2014,NA,2_likely,BetaFP,NA,1
+HXZ,BFP6,The Frazzini-Pedersen (2014) beta,Frazzini and Pedersen,2014,NA,2_likely,BetaFP,NA,6
+HXZ,BFP12,The Frazzini-Pedersen (2014) beta,Frazzini and Pedersen,2014,NA,2_likely,BetaFP,NA,12
+HXZ,Shl1,The high-low bid-ask spread estimator,Corwin and Schultz,2012,NA,2_likely,BidAskSpread,NA,1
+HXZ,Shl6,The high-low bid-ask spread estimator,Corwin and Schultz,2012,NA,2_likely,BidAskSpread,NA,6
+HXZ,Shl12,The high-low bid-ask spread estimator,Corwin and Schultz,2012,NA,2_likely,BidAskSpread,NA,12
+HXZ,Cs1,Coskewness,Harvey and Siddique,2000,NA,2_likely,Coskewness,NA,1
+HXZ,Cs6,Coskewness,Harvey and Siddique,2000,NA,2_likely,Coskewness,NA,6
+HXZ,Cs12,Coskewness,Harvey and Siddique,2000,NA,2_likely,Coskewness,NA,12
+HXZ,Age1,Firm age,"Jiange, Lee and Zhang",2005,NA,2_likely,FirmAge,NA,1
+HXZ,Age6,Firm age,"Jiange, Lee and Zhang",2005,NA,2_likely,FirmAge,NA,6
+HXZ,Age12,Firm age,"Jiange, Lee and Zhang",2005,NA,2_likely,FirmAge,NA,12
+HXZ,Frm,Pension funding rate (scaled by market equity),Franzoni and Martin,2006,NA,2_likely,FR,NA,12
+HXZ,dLno,Change in long-term net operating assets,"Fairfield, Whisenant and Yohn",2003,NA,2_likely,GrLTNOA,NA,12
+HXZ,dSi,%change in sales - %change in inventory,Abarbanell and Bushee,1998,NA,2_likely,GrSaleToGrInv,NA,12
+HXZ,dSs,%change in sales - %change in SG&A,Abarbanell and Bushee,1998,NA,2_likely,GrSaleToGrOverhead,NA,12
+HXZ,Ha,Industry concentration (total assets),Hou and Robinson,2006,NA,2_likely,HerfAsset,NA,1
+HXZ,52w1,52-week high,George and Hwang,2004,NA,2_likely,High52,NA,1
+HXZ,52w6,52-week high,George and Hwang,2004,NA,2_likely,High52,NA,6
+HXZ,52w12,52-week high,George and Hwang,2004,NA,2_likely,High52,NA,12
+HXZ,R[11-15]n,"Years 11-15-lagged returns, nonannual",Heston and Sadka,2008,NA,2_likely,MomOffSeason11YrPlus,NA,1
+HXZ,Nei1,# consecutive quarters with earnings increases,"Barth, Elliot, and Finn",1999,NA,2_likely,NumEarnIncrease,NA,1
+HXZ,Nei6,# consecutive quarters with earnings increases,"Barth, Elliot, and Finn",1999,NA,2_likely,NumEarnIncrease,NA,6
+HXZ,Nei12,# consecutive quarters with earnings increases,"Barth, Elliot, and Finn",1999,NA,2_likely,NumEarnIncrease,NA,12
+HXZ,Ope,Operating profits-to-equity,Fama and French,2015,NA,2_likely,OperProf,NA,12
+HXZ,Opa,Operating profits-to-assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,2_likely,OperProfRD,NA,1
+HXZ,Pafe,Predicted analysts focecast erro,Frankel and Lee,1998,NA,2_likely,PredictedFE,NA,1
+HXZ,D2,Price delay based on slopes,Hou and Moskowitz,2005,NA,2_likely,PriceDelaySlope,NA,1
+HXZ,D3,Price delay based on slopes adjusted for standard errors,Hou and Moskowitz,2005,NA,2_likely,PriceDelayTstat,NA,1
+HXZ,Pin,Probability of Informed Trading,"Easley, Hvidkjaer, O'Hara",2002,NA,2_likely,ProbInformedTrading,NA,1
+HXZ,Rer,Rela estate ratio,Tuzel,2010,NA,2_likely,realestate,NA,12
+HXZ,Roe1,Return on equity,"Hou, Xue, and Zhang",2015,NA,2_likely,RoE,NA,1
+HXZ,Roe6,Return on equity,"Hou, Xue, and Zhang",2015,NA,2_likely,RoE,NA,6
+HXZ,Roe12,Return on equity,"Hou, Xue, and Zhang",2015,NA,2_likely,RoE,NA,12
+HXZ,Efp1,Analysts' earnings forecast-to-price,"Elgers, Lo, and Pfeiffer",2001,NA,1_clear,sfe,NA,1
+HXZ,Efp6,Analysts' earnings forecast-to-price,"Elgers, Lo, and Pfeiffer",2001,NA,1_clear,sfe,NA,6
+HXZ,Efp12,Analysts' earnings forecast-to-price,"Elgers, Lo, and Pfeiffer",2001,NA,1_clear,sfe,NA,12
+HXZ,Sp,Sales-to-price,"Barbee, Mukherji, and Raines",1996,NA,2_likely,SP,NA,12
+HXZ,Vcf1,Cash flow volatility,Huang,2009,NA,2_likely,VarCF,NA,1
+HXZ,Vcf6,Cash flow volatility,Huang,2009,NA,2_likely,VarCF,NA,6
+HXZ,Vcf12,Cash flow volatility,Huang,2009,NA,2_likely,VarCF,NA,12
+HXZ,BLev1,Leverage beta,"Adrian, Etula, and Muir",2014,NA,4_not,BetaBDLeverage,NA,1
+HXZ,Blev6,Leverage beta,"Adrian, Etula, and Muir",2014,NA,4_not,BetaBDLeverage,NA,6
+HXZ,Blev12,Leverage beta,"Adrian, Etula, and Muir",2014,NA,4_not,BetaBDLeverage,NA,12
+HXZ,Sba1,Bid-ask spread,Hou and Loh,2015,NA,4_not,BidAskTAQ,NA,1
+HXZ,Sba6,Bid-ask spread,Hou and Loh,2015,NA,4_not,BidAskTAQ,NA,6
+HXZ,Sba12,Bid-ask spread,Hou and Loh,2015,NA,4_not,BidAskTAQ,NA,12
+HXZ,dSti,Change in short-term investments,"Richardson, Sloan Soliman and Tuna",2005,NA,4_not,DelSTI,NA,1
+HXZ,B-1,Downside beta,"Ang, Chen and Xing",2006,NA,4_not,DownsideBeta,NA,1
+HXZ,B-6,Downside beta,"Ang, Chen and Xing",2006,NA,4_not,DownsideBeta,NA,6
+HXZ,B-12,Downside beta,"Ang, Chen and Xing",2006,NA,4_not,DownsideBeta,NA,12
+HXZ,Fpm1,Failure probability monthly sort,"Campbell, Hilscher, and Szilagyi",2008,NA,4_not,FailureProbability,NA,1
+HXZ,Fpm12,Failure probability monthly sort,"Campbell, Hilscher, and Szilagyi",2008,NA,4_not,FailureProbability,NA,6
+HXZ,Fpm6,Failure probability monthly sort,"Campbell, Hilscher, and Szilagyi",2008,NA,4_not,FailureProbability,NA,12
+HXZ,Dlg1,Dispersion in analyst long-term growth forecasts,"Anderson, Ghysels, and Juergens",2005,NA,4_not,ForecastDispersionLT,NA,1
+HXZ,Dlg6,Dispersion in analyst long-term growth forecasts,"Anderson, Ghysels, and Juergens",2005,NA,4_not,ForecastDispersionLT,NA,6
+HXZ,Dlg12,Dispersion in analyst long-term growth forecasts,"Anderson, Ghysels, and Juergens",2005,NA,4_not,ForecastDispersionLT,NA,12
+HXZ,Kz,Financial constraints (the Kaplan-Zingales index),"Lamont, Polk, and Saa-Requejo",2001,NA,4_not,KZ,NA,12
+HXZ,Rds,R&D-to-sales,"Chan, Lakonishok, and Sougiannis",2001,NA,4_not,rd_sale,NA,1
+HXZ,Ww,Financial constraints (the Whited-Wu index),Whited and Wu,2006,NA,4_not,WW,NA,1
+HXZ,Z,Z-score,Dichev,1998,NA,4_not,ZScore,NA,12
+HXZ,Pda,Percent discretionary accruals,"Hafzalla, Lundholm, and Van Winkle",2012,NA,indirect,AbnormalAccrualsPercent,NA,12
+HXZ,Acqm1,Quarterly accrual quality,"Francis, Lafond, Olsson and Schipper",2005,NA,indirect,AccrualQuality,NA,1
+HXZ,Acqm6,Quarterly accrual quality,"Francis, Lafond, Olsson and Schipper",2005,NA,indirect,AccrualQuality,NA,6
+HXZ,Acqm12,Quarterly accrual quality,"Francis, Lafond, Olsson and Schipper",2005,NA,indirect,AccrualQuality,NA,12
+HXZ,Acq,Accrual quality,"Francis, Lafond, Olsson and Schipper",2005,NA,indirect,AccrualQualityJune,NA,1
+HXZ,Amq1,Quarterly Assets-to-market,Fama and French,1992,NA,indirect,AMq,NA,1
+HXZ,Amq6,Quarterly Assets-to-market,Fama and French,1992,NA,indirect,AMq,NA,6
+HXZ,Amq12,Quarterly Assets-to-market,Fama and French,1992,NA,indirect,AMq,NA,12
+HXZ,Iaq1,Quarterly Investment-to-assets,"Cooper, Gulen and Schill",2008,NA,indirect,AssetGrowth_q,NA,1
+HXZ,Iaq6,Quarterly Investment-to-assets,"Cooper, Gulen and Schill",2008,NA,indirect,AssetGrowth_q,NA,6
+HXZ,Iaq12,Quarterly Investment-to-assets,"Cooper, Gulen and Schill",2008,NA,indirect,AssetGrowth_q,NA,12
+HXZ,Ala,Asset liquity (scaled by book assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityBook,NA,1
+HXZ,Alaq1,Quarterly asset liquidity (book assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityBookQuart,NA,1
+HXZ,Alaq6,Quarterly asset liquidity (book assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityBookQuart,NA,6
+HXZ,Alaq12,Quarterly asset liquidity (book assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityBookQuart,NA,12
+HXZ,Alm,Asset liquity (scaled by market assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityMarket,NA,1
+HXZ,Almq1,Quarterly asset liquidity (market assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityMarketQuart,NA,1
+HXZ,Almq6,Quarterly asset liquidity (market assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityMarketQuart,NA,6
+HXZ,Almq12,Quarterly asset liquidity (market assets),Ortiz-Molina and Phillips,2014,NA,indirect,AssetLiquidityMarketQuart,NA,12
+HXZ,Ato,Asset turnover,Soliman,2008,NA,indirect,AssetTurnover,NA,12
+HXZ,Atoq1,Quarterly asset turnover,Soliman,2008,NA,indirect,AssetTurnover_q,NA,1
+HXZ,Atoq6,Quarterly asset turnover,Soliman,2008,NA,indirect,AssetTurnover_q,NA,6
+HXZ,Atoq12,Quarterly asset turnover,Soliman,2008,NA,indirect,AssetTurnover_q,NA,12
+HXZ,Blcc1,Liquidity beta (illiquidity-illiquidity),Acharya and Pederson,2005,NA,indirect,betaCC,NA,1
+HXZ,Blcc6,Liquidity beta (illiquidity-illiquidity),Acharya and Pederson,2005,NA,indirect,betaCC,NA,6
+HXZ,Blcc12,Liquidity beta (illiquidity-illiquidity),Acharya and Pederson,2005,NA,indirect,betaCC,NA,12
+HXZ,Blcr1,Liquidity beta (illiquidity-return),Acharya and Pederson,2005,NA,indirect,betaCR,NA,1
+HXZ,Blcr6,Liquidity beta (illiquidity-return),Acharya and Pederson,2005,NA,indirect,betaCR,NA,6
+HXZ,Blcr12,Liquidity beta (illiquidity-return),Acharya and Pederson,2005,NA,indirect,betaCR,NA,12
+HXZ,BD1,The Dimson (1979) beta,Frazzini and Pedersen,2014,NA,indirect,BetaDimson,NA,1
+HXZ,BD6,The Dimson (1979) beta,Frazzini and Pedersen,2014,NA,indirect,BetaDimson,NA,6
+HXZ,BD12,The Dimson (1979) beta,Frazzini and Pedersen,2014,NA,indirect,BetaDimson,NA,12
+HXZ,Bnet1,Net liquidity beta,Acharya and Pederson,2005,NA,indirect,betaNet,NA,1
+HXZ,Bnet6,Net liquidity beta,Acharya and Pederson,2005,NA,indirect,betaNet,NA,6
+HXZ,Bnet12,Net liquidity beta,Acharya and Pederson,2005,NA,indirect,betaNet,NA,12
+HXZ,Blrc1,Liquidity beta (return-illiquidity),Acharya and Pederson,2005,NA,indirect,betaRC,NA,1
+HXZ,Blrc6,Liquidity beta (return-illiquidity),Acharya and Pederson,2005,NA,indirect,betaRC,NA,6
+HXZ,Blrc12,Liquidity beta (return-illiquidity),Acharya and Pederson,2005,NA,indirect,betaRC,NA,12
+HXZ,Bret1,Liquidity beta (return-return),Acharya and Pederson,2005,NA,indirect,betaRR,NA,1
+HXZ,Bret6,Liquidity beta (return-return),Acharya and Pederson,2005,NA,indirect,betaRR,NA,6
+HXZ,Bret12,Liquidity beta (return-return),Acharya and Pederson,2005,NA,indirect,betaRR,NA,12
+HXZ,Bmq1,Quarterly Book-to-market equity,"Rosenberg, Reid, and Lanstein",1985,NA,indirect,BMq,NA,1
+HXZ,Bmq6,Quarterly Book-to-market equity,"Rosenberg, Reid, and Lanstein",1985,NA,indirect,BMq,NA,6
+HXZ,Bmq12,Quarterly Book-to-market equity,"Rosenberg, Reid, and Lanstein",1985,NA,indirect,BMq,NA,12
+HXZ,Blq1,Quarterly book leverage,Fama and French,1992,NA,indirect,BookLeverageQuarterly,NA,1
+HXZ,Blq6,Quarterly book leverage,Fama and French,1992,NA,indirect,BookLeverageQuarterly,NA,6
+HXZ,Blq12,Quarterly book leverage,Fama and French,1992,NA,indirect,BookLeverageQuarterly,NA,12
+HXZ,Bca,Brand capital-to-assets,"Belo, Lin and Vitorino",2014,NA,indirect,BrandCapital,NA,1
+HXZ,Cto,Capital turnover,Haugen and Baker,1996,NA,indirect,CapTurnover,NA,1
+HXZ,Ctoq1,Quarterly capital turnover,Haugen and Baker,1996,NA,indirect,CapTurnover_q,NA,1
+HXZ,Ctoq6,Quarterly capital turnover,Haugen and Baker,1996,NA,indirect,CapTurnover_q,NA,6
+HXZ,Ctoq12,Quarterly capital turnover,Haugen and Baker,1996,NA,indirect,CapTurnover_q,NA,12
+HXZ,Cla,Cash-based operating profits to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,CBOperProfLagAT,NA,1
+HXZ,Claq1,Quarterly cash-based operating profits to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,CBOperProfLagAT_q,NA,1
+HXZ,Claq6,Quarterly cash-based operating profits to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,CBOperProfLagAT_q,NA,6
+HXZ,Claq12,Quarterly cash-based operating profits to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,CBOperProfLagAT_q,NA,12
+HXZ,Ocpq1,Quarterly operating cash flow-to-price,"Desai, Rajgopal, and Benkatachalam",2004,NA,indirect,cfpq,NA,1
+HXZ,Ocpq6,Quarterly operating cash flow-to-price,"Desai, Rajgopal, and Benkatachalam",2004,NA,indirect,cfpq,NA,6
+HXZ,Ocpq12,Quarterly operating cash flow-to-price,"Desai, Rajgopal, and Benkatachalam",2004,NA,indirect,cfpq,NA,12
+HXZ,Cpq1,Quarterly Cash flow-to-price,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,CFq,NA,1
+HXZ,Cpq6,Quarterly Cash flow-to-price,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,CFq,NA,6
+HXZ,Cpq12,Quarterly Cash flow-to-price,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,CFq,NA,12
+HXZ,dRoa1,Change in Roa,???,???,NA,indirect,ChangeRoA,"This is actually an HXZ original, we don't use the lookup here.",1
+HXZ,dRoa6,Change in Roa,???,???,NA,indirect,ChangeRoA,"This is actually an HXZ original, we don't use the lookup here.",6
+HXZ,dRoa12,Change in Roa,???,???,NA,indirect,ChangeRoA,"This is actually an HXZ original, we don't use the lookup here.",12
+HXZ,dRoe1,Change in ROE,???,???,NA,indirect,ChangeRoE,"This is actually an HXZ original, we don't use the lookup here.",1
+HXZ,dRoe6,Change in ROE,???,???,NA,indirect,ChangeRoE,"This is actually an HXZ original, we don't use the lookup here.",6
+HXZ,dRoe12,Change in ROE,???,???,NA,indirect,ChangeRoE,"This is actually an HXZ original, we don't use the lookup here.",12
+HXZ,dNca,Change in non-current operating assets,"Richardson, Sloan Soliman and Tuna",2005,NA,indirect,ChNCOA,NA,12
+HXZ,dNcl,Change in non-current operating liabilities,"Richardson, Sloan Soliman and Tuna",2005,NA,indirect,ChNCOL,NA,12
+HXZ,Dpq1,Quarterly Dividend yield,Litzenberger and Ramaswamy,1979,NA,indirect,DivYield,HXZ should be citing Naranjo et al,1
+HXZ,Dpq6,Quarterly Dividend yield,Litzenberger and Ramaswamy,1979,NA,indirect,DivYield,HXZ should be citing Naranjo et al,6
+HXZ,Dpq12,Quarterly Dividend yield,Litzenberger and Ramaswamy,1979,NA,indirect,DivYield,HXZ should be citing Naranjo et al,12
+HXZ,Dp,Dividend yield,Litzenberger and Ramaswamy,1979,NA,indirect,DivYieldAnn,Litzenberger and Ramasway use monthly dividend yield,1
+HXZ,Ecs,Earnings Convervatism,"Francis, Lafond, Olsson and Schipper",2004,NA,indirect,EarningsConservatism,NA,1
+HXZ,Eper,Earnings persistence,"Francis, Lafond, Olsson and Schipper",2004,NA,indirect,EarningsPersistence,NA,1
+HXZ,Eprd,Earnigns predictability,"Francis, Lafond, Olsson and Schipper",2004,NA,indirect,EarningsPredictability,NA,1
+HXZ,Esm,Earnings smoothness,"Francis, Lafond, Olsson and Schipper",2004,NA,indirect,EarningsSmoothness,NA,1
+HXZ,Etl,Earnings timeliness,"Francis, Lafond, Olsson and Schipper",2004,NA,indirect,EarningsTimeliness,NA,1
+HXZ,Evr,Value relevance of earnings,"Francis, Lafond, Olsson and Schipper",2004,NA,indirect,EarningsValueRelevance,NA,1
+HXZ,Ebpq1,Quarterly Enterprise book-to-price,"Penman, Richardson, and Tuna",2007,NA,indirect,EBM_q,NA,1
+HXZ,Ebpq6,Quarterly Enterprise book-to-price,"Penman, Richardson, and Tuna",2007,NA,indirect,EBM_q,NA,6
+HXZ,Ebpq12,Quarterly Enterprise book-to-price,"Penman, Richardson, and Tuna",2007,NA,indirect,EBM_q,NA,12
+HXZ,Emq1,Quarterly Enterprise multiple,Loughran and Wellman,2011,NA,indirect,EntMult_q,NA,1
+HXZ,Emq6,Quarterly Enterprise multiple,Loughran and Wellman,2011,NA,indirect,EntMult_q,NA,6
+HXZ,Emq12,Quarterly Enterprise multiple,Loughran and Wellman,2011,NA,indirect,EntMult_q,NA,12
+HXZ,Epq1,Quarterly Earnings-to-price,Basu,1983,NA,indirect,EPq,NA,1
+HXZ,Epq6,Quarterly Earnings-to-price,Basu,1983,NA,indirect,EPq,NA,6
+HXZ,Epq12,Quarterly Earnings-to-price,Basu,1983,NA,indirect,EPq,NA,12
+HXZ,Etr,Effective tax rate,Abarbanell and Bushee,1998,NA,indirect,ETR,NA,12
+HXZ,Fp,Failure probaility,"Campbell, Hilscher, and Szilagyi",2008,NA,indirect,FailureProbabilityJune,NA,1
+HXZ,Ltgm1,"Long-term growth forecasts, monthly sorts",La Porta,1996,NA,indirect,fgr5yrNoLag,NA,1
+HXZ,Ltgm6,"Long-term growth forecasts, monthly sorts",La Porta,1996,NA,indirect,fgr5yrNoLag,NA,6
+HXZ,Ltgm12,"Long-term growth forecasts, monthly sorts",La Porta,1996,NA,indirect,fgr5yrNoLag,NA,12
+HXZ,Fra,Persion funding rate (scaled by assets),Franzoni and Martin,2006,NA,indirect,FRbook,NA,12
+HXZ,Gla,Gross profits-to-lagged assets,Novy-Marx,2013,NA,indirect,GPlag,NA,1
+HXZ,Glaq1,Gross profits-to-lagged assets quarterly,Novy-Marx,2013,NA,indirect,GPlag_q,NA,1
+HXZ,Glaq6,Gross profits-to-lagged assets quarterly,Novy-Marx,2013,NA,indirect,GPlag_q,NA,6
+HXZ,Glaq12,Gross profits-to-lagged assets quarterly,Novy-Marx,2013,NA,indirect,GPlag_q,NA,12
+HXZ,Ig,Inversmtent growth,Xing,2008,NA,indirect,grcapx1y,NA,12
+HXZ,dGs,%change in gross margin - %change in sales,Abarbanell and Bushee,1998,NA,indirect,GrGMToGrSales,NA,12
+HXZ,dSa,%change in sales - %change in accounts receivable,Abarbanell and Bushee,1998,NA,indirect,GrSaleToGrReceivables,NA,12
+HXZ,Ivc1,Idiosyncratic volatility per the CAPM,"Ang, Hodrick, Xing, and Zhang",2006,NA,indirect,IdioVolCAPM,NA,1
+HXZ,Ivc6,Idiosyncratic volatility per the CAPM,"Ang, Hodrick, Xing, and Zhang",2006,NA,indirect,IdioVolCAPM,NA,6
+HXZ,Ivc12,Idiosyncratic volatility per the CAPM,"Ang, Hodrick, Xing, and Zhang",2006,NA,indirect,IdioVolCAPM,NA,12
+HXZ,Ivq1,Idiosyncratic volatility per the q-factor,"Ang, Hodrick, Xing, and Zhang",2006,NA,indirect,IdioVolQF,NA,1
+HXZ,Ivq6,Idiosyncratic volatility per the q-factor,"Ang, Hodrick, Xing, and Zhang",2006,NA,indirect,IdioVolQF,NA,6
+HXZ,Ivq12,Idiosyncratic volatility per the q-factor,"Ang, Hodrick, Xing, and Zhang",2006,NA,indirect,IdioVolQF,NA,12
+HXZ,Vhp,Intrinsic value-to-market,Frankel and Lee,1998,NA,indirect,IntrinsicValue,NA,1
+HXZ,Kzq1,Quarterly Kaplan-Zingales index,"Lamont, Polk, and Saa-Requejo",2001,NA,indirect,KZ_q,NA,1
+HXZ,Kzq6,Quarterly Kaplan-Zingales index,"Lamont, Polk, and Saa-Requejo",2001,NA,indirect,KZ_q,NA,6
+HXZ,Kzq12,Quarterly Kaplan-Zingales index,"Lamont, Polk, and Saa-Requejo",2001,NA,indirect,KZ_q,NA,12
+HXZ,Lfe,Labor force efficiency,Abarbanell and Bushee,1998,NA,indirect,LaborforceEfficiency,NA,12
+HXZ,Dmq1,Quarterly Debt-to-market,Bhandari,1988,NA,indirect,Leverage_q,NA,1
+HXZ,Dmq6,Quarterly Debt-to-market,Bhandari,1988,NA,indirect,Leverage_q,NA,6
+HXZ,Dmq12,Quarterly Debt-to-market,Bhandari,1988,NA,indirect,Leverage_q,NA,12
+HXZ,Ana1,Analysts coverage,"Elgers, Lo, and Pfeiffer",2001,NA,indirect,nanalyst,NA,1
+HXZ,Ana6,Analysts coverage,"Elgers, Lo, and Pfeiffer",2001,NA,indirect,nanalyst,NA,6
+HXZ,Ana12,Analysts coverage,"Elgers, Lo, and Pfeiffer",2001,NA,indirect,nanalyst,NA,12
+HXZ,Ndpq1,Quarterly net debt-to-price,"Penman, Richardson, and Tuna",2007,NA,indirect,NetDebtPrice_q,NA,1
+HXZ,Ndpq6,Quarterly net debt-to-price,"Penman, Richardson, and Tuna",2007,NA,indirect,NetDebtPrice_q,NA,6
+HXZ,Ndpq12,Quarterly net debt-to-price,"Penman, Richardson, and Tuna",2007,NA,indirect,NetDebtPrice_q,NA,12
+HXZ,Nopq1,Quarterly Net Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,indirect,NetPayoutYield_q,NA,1
+HXZ,Nopq6,Quarterly Net Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,indirect,NetPayoutYield_q,NA,6
+HXZ,Nopq12,Quarterly Net Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,indirect,NetPayoutYield_q,NA,12
+HXZ,Ole,Operating profits-to-lagged equity,Fama and French,2015,NA,indirect,OperProfLag,NA,1
+HXZ,Oleq1,Operating profits-to-lagged equity quarterly,Fama and French,2015,NA,indirect,OperProfLag_q,NA,1
+HXZ,Oleq6,Operating profits-to-lagged equity quarterly,Fama and French,2015,NA,indirect,OperProfLag_q,NA,6
+HXZ,Oleq12,Operating profits-to-lagged equity quarterly,Fama and French,2015,NA,indirect,OperProfLag_q,NA,12
+HXZ,Ola,Operating profits-to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,OperProfRDLagAT,NA,1
+HXZ,Olaq1,Quarterly operating profits-to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,OperProfRDLagAT_q,NA,1
+HXZ,Olaq6,Quarterly operating profits-to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,OperProfRDLagAT_q,NA,6
+HXZ,Olaq12,Quarterly operating profits-to-lagged assets,"Ball, Gerakos, Linnainmaa, and Nikolaev",2016,NA,indirect,OperProfRDLagAT_q,NA,12
+HXZ,Olq1,Quarterly operating leverage,Novy-Marx,2011,NA,indirect,OPLeverage_q,NA,1
+HXZ,Olq6,Quarterly operating leverage,Novy-Marx,2011,NA,indirect,OPLeverage_q,NA,6
+HXZ,Olq12,Quarterly operating leverage,Novy-Marx,2011,NA,indirect,OPLeverage_q,NA,12
+HXZ,Oca,Organization capital/assets,Eisfeldt and Papanikolaou,2013,NA,indirect,OrgCapNoAdj,NA,12
+HXZ,Oq1,Quarterly O-Score,Dichev,1998,NA,indirect,OScore_q,NA,1
+HXZ,Oq6,Quarterly O-Score,Dichev,1998,NA,indirect,OScore_q,NA,6
+HXZ,Oq12,Quarterly O-Score,Dichev,1998,NA,indirect,OScore_q,NA,12
+HXZ,Opq1,Quarterly Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,indirect,PayoutYield_q,NA,1
+HXZ,Opq6,Quarterly Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,indirect,PayoutYield_q,NA,6
+HXZ,Opq12,Quarterly Payout Yield,"Boudoukh, Michaely, Richardson, and Roberts",2007,NA,indirect,PayoutYield_q,NA,12
+HXZ,Pm,Profit margin,Soliman,2008,NA,indirect,PM,NA,12
+HXZ,Pmq1,Quarterly profit margin,Soliman,2008,NA,indirect,PM_q,NA,1
+HXZ,Pmq6,Quarterly profit margin,Soliman,2008,NA,indirect,PM_q,NA,6
+HXZ,Pmq12,Quarterly profit margin,Soliman,2008,NA,indirect,PM_q,NA,12
+HXZ,Fq1,Quarterly F-Score,Piotroski,2000,NA,indirect,PS_q,NA,1
+HXZ,Fq6,Quarterly F-Score,Piotroski,2000,NA,indirect,PS_q,NA,6
+HXZ,Fq12,Quarterly F-Score,Piotroski,2000,NA,indirect,PS_q,NA,12
+HXZ,Rdmq1,Quarterly R&D-to-market,"Chan, Lakonishok, and Sougiannis",2001,NA,indirect,RD_q,NA,1
+HXZ,Rdmq6,Quarterly R&D-to-market,"Chan, Lakonishok, and Sougiannis",2001,NA,indirect,RD_q,NA,6
+HXZ,Rdmq12,Quarterly R&D-to-market,"Chan, Lakonishok, and Sougiannis",2001,NA,indirect,RD_q,NA,12
+HXZ,Rdsq1,Quarterly R&D-to-sales,"Chan, Lakonishok, and Sougiannis",2001,NA,indirect,rd_sale_q,NA,1
+HXZ,Rdsq6,Quarterly R&D-to-sales,"Chan, Lakonishok, and Sougiannis",2001,NA,indirect,rd_sale_q,NA,6
+HXZ,Rdsq12,Quarterly R&D-to-sales,"Chan, Lakonishok, and Sougiannis",2001,NA,indirect,rd_sale_q,NA,12
+HXZ,epsilon6_1,Six-month residual momentum,"Blitz, Huij, and Martens",2011,NA,indirect,ResidualMomentum6m,NA,1
+HXZ,epsilon6_6,Six-month residual momentum,"Blitz, Huij, and Martens",2011,NA,indirect,ResidualMomentum6m,NA,6
+HXZ,epsilon6_12,Six-month residual momentum,"Blitz, Huij, and Martens",2011,NA,indirect,ResidualMomentum6m,NA,12
+HXZ,Rna,Return on net operating assets,Soliman,2008,NA,indirect,RetNOA,NA,12
+HXZ,Rnaq1,Quarterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,1
+HXZ,Rna16,Quaterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,6
+HXZ,Rnaq12,Quaterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,12
+HXZ,Isc1,Idiosyncratic skewness per the CAPM,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewCAPM,NA,1
+HXZ,Isc6,Idiosyncratic skewness per the CAPM,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewCAPM,NA,6
+HXZ,Isc12,Idiosyncratic skewness per the CAPM,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewCAPM,NA,12
+HXZ,Isq1,Idiosyncratic skewness per the q-factor model,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewQF,NA,1
+HXZ,Isq6,Idiosyncratic skewness per the q-factor model,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewQF,NA,6
+HXZ,Isq12,Idiosyncratic skewness per the q-factor model,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewQF,NA,12
+HXZ,Sdd,Secured debt-to-total debt,Valta,2016,NA,indirect,secured,NA,1
+HXZ,Sg,Annual sales growth,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,sgr,NA,12
+HXZ,Sgq1,Quarterly sales growth,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,sgr_q,NA,1
+HXZ,Sgq6,Quarterly sales growth,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,sgr_q,NA,6
+HXZ,Sgq12,Quarterly sales growth,"Lakonishok, Scheifer, and Vishny",1994,NA,indirect,sgr_q,NA,12
+HXZ,Spq1,Quarterly Sales-to-price,"Barbee, Mukherji, and Raines",1996,NA,indirect,SP_q,NA,1
+HXZ,Spq6,Quarterly Sales-to-price,"Barbee, Mukherji, and Raines",1996,NA,indirect,SP_q,NA,6
+HXZ,Spq12,Quarterly Sales-to-price,"Barbee, Mukherji, and Raines",1996,NA,indirect,SP_q,NA,12
+HXZ,Tanq1,Quarterly tangibility of assets,Hahn and Lee,2009,NA,indirect,tang_q,NA,1
+HXZ,Tanq6,Quarterly tangibility of assets,Hahn and Lee,2009,NA,indirect,tang_q,NA,6
+HXZ,Tanq12,Quarterly tangibility of assets,Hahn and Lee,2009,NA,indirect,tang_q,NA,12
+HXZ,Tbiq1,Quarterly taxable income-to-book income,Lev and Nissim,2004,NA,indirect,Tax_q,NA,1
+HXZ,Tbiq6,Quarterly taxable income-to-book income,Lev and Nissim,2004,NA,indirect,Tax_q,NA,6
+HXZ,Tbiq12,Quarterly taxable income-to-book income,Lev and Nissim,2004,NA,indirect,Tax_q,NA,12
+HXZ,Wwq1,Quarterly Whited-Wu index,Whited and Wu,2006,NA,indirect,WW_Q,NA,1
+HXZ,Wwq6,Quarterly Whited-Wu index,Whited and Wu,2006,NA,indirect,WW_Q,NA,6
+HXZ,Wwq12,Quarterly Whited-Wu index,Whited and Wu,2006,NA,indirect,WW_Q,NA,12
+HXZ,Zq1,Quarterly Z-score,Dichev,1998,NA,indirect,ZScore_q,NA,1
+HXZ,Zq6,Quarterly Z-score,Dichev,1998,NA,indirect,ZScore_q,NA,6
+HXZ,Zq12,Quarterly Z-score,Dichev,1998,NA,indirect,ZScore_q,NA,12
