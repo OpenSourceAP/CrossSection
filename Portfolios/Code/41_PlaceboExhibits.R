@@ -113,17 +113,16 @@ statsFull <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
       select(signalname, tstat, rbar)
   )
 
-mpSignals = read_xlsx(
-  paste0(pathProject, 'SignalDocumentation.xlsx')
-  , sheet = 'MP'
+mpSignals = read_csv(
+  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
 ) %>%
-  filter(ClosestMatch != '_missing_')
+  filter(metastudy == 'MP', ourname != '_missing_')
 
 # Merge data
 # alldocumentation is created in 00_SettingsAndTools.R
 df_merge <- alldocumentation %>%
   # Add flag for whether in MP
-  mutate(inMP = signalname %in% mpSignals$ClosestMatch) %>% 
+  mutate(inMP = signalname %in% mpSignals$ourname) %>% 
   filter(Cat.Signal == 'Predictor' | inMP) %>% 
   left_join(stats, by = c("signalname")) %>%
   left_join(statsFull %>% 
@@ -208,17 +207,15 @@ df_merge %>% filter(inMP) %>% summarize(mean(rbar), sd(rbar), sum(tstat>1.5))
 
 # Replication rate vis-a-vis other studies --------------------------------
 
-mpSignals = read_xlsx(
-  paste0(pathProject, 'SignalDocumentation.xlsx')
-  , sheet = 'MP'
+mpSignals = read_csv(
+  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
 ) %>%
-  filter(ClosestMatch != '_missing_')
+  filter(metastudy == 'MP', ourname != '_missing_')
 
-hxzSignals = read_xlsx(
-  paste0(pathProject, 'SignalDocumentation.xlsx')
-  , sheet = 'HXZ'
+hxzSignals = read_csv(
+  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
 ) %>%
-  filter(ClosestMatch != '_missing_')
+  filter(metastudy == 'HXZ', ourname != '_missing_')
 
 stats <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
                    sheet = 'short') %>%
@@ -248,8 +245,8 @@ df_tmp = stats %>%
                         labels =
                             c('Clear Predictor', 'Likely Predictor', 'Indirect Signal', 'Indirect Signal', 'Not Predictor')),
         Cat.Signal,
-        inMP = signalname %in% mpSignals$ClosestMatch,
-        inHXZ = signalname %in% hxzSignals$ClosestMatch) 
+        inMP = signalname %in% mpSignals$ourname,
+        inHXZ = signalname %in% hxzSignals$ourname) 
 
 # Our study
 df_tmp %>% 

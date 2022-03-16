@@ -26,7 +26,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder)
-# if working directory is set to location of master.R, '/../../' should work
+# if working directory is set to location of master.R, paste0(getwd(), '/../../') should work
 pathProject = paste0(getwd(), '/../../')
 
 quickrun =  F # use T if you want to run quickly for testing
@@ -49,20 +49,20 @@ source('01_PortfolioFunction.R', echo=T)
 
 # PREPARE INTERMEDIATE DATA ####
 
-print('master: 10_DownloadCRSP.R')
-tryCatch({
-    source('10_DownloadCRSP.R', echo=T)
-})
-
-print('master: 11_ProcessCrsp.R')
-tryCatch({
-    source('11_ProcessCRSP.R', echo=T)
-})
-
-print('master: 12_CreateCRSPPredictors.R')
-tryCatch({
-    source('12_CreateCRSPPredictors.R', echo=T)
-})
+# print('master: 10_DownloadCRSP.R')
+# tryCatch({
+#     source('10_DownloadCRSP.R', echo=T)
+# })
+# 
+# print('master: 11_ProcessCrsp.R')
+# tryCatch({
+#     source('11_ProcessCRSP.R', echo=T)
+# })
+# 
+# print('master: 12_CreateCRSPPredictors.R')
+# tryCatch({
+#     source('12_CreateCRSPPredictors.R', echo=T)
+# })
 
 # ==== CREATE BASELINE PORTFOLIOS ====
 print('master: 20_PredictorPorts')

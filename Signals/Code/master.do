@@ -22,7 +22,7 @@ These are created by code in Signals/PrepScripts/.  They are required for produc
 *------------------------------------------------------------
 // SET PROJECT PATH AND WRDS CONNECTION NAME HERE !
 *------------------------------------------------------------
-*global pathProject "PATH TO PROJECT HERE" // required, should point to location of SignalDocumentation.xlsx
+*global pathProject "PATH TO PROJECT HERE" // required, should point to location of SignalDoc.csv
 *global wrdsConnection "wrds-stata" // required, see readme
 *global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe" // optional, used for like 3 signals (see DataDownloads/*.R)
 

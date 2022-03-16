@@ -51,7 +51,7 @@ The whole thing takes roughly 24 hours, but the predictors will be done much soo
 
 #### Minimal Setup
 
-In master.do, set `pathProject` to the root directory of the project (where `SignalDocumentation.xlsx` is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS (a.k.a. dsn).
+In master.do, set `pathProject` to the root directory of the project (where `SignalDoc.csv` is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS (a.k.a. dsn).
 
 If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for [Windows users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for [WRDS cloud users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/).  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
 
@@ -77,13 +77,13 @@ https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more det
 2. Outputs portfolio data to `Portfolios/Data/Portfolios/`
 3. Outputs exhibits found in the paper to `Results/`
 
-It also uses `SignalDocumentation.xlsx` as a guide for how to run the portfolios.
+It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
 By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability results in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
 #### Minimal Setup
 
-All you need to do is set `pathProject` in `master.R` to the project root directory (where `SignalDocumentation.xlsx` is).  Then `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
+All you need to do is set `pathProject` in `master.R` to the project root directory (where `SignalDoc.csv` is).  Then `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
 
 #### Probable Setup
 
