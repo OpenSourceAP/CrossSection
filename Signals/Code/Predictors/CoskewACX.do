@@ -1,49 +1,18 @@
 * -------------------------
 * follows Appendix and Table 8 caption
-* we download NYSE CRSP only for this predictor and maybe HS version of Cosknewss
-* works a little better with standard CRSP VW index, but t-stat
+* we used to download NYSE CRSP only for this predictor to be super
+* careful but it doesn't make much difference.  Updated 2022 03
+* Our notes say it works better with standard CRSP VW index, but t-stat
 * is closer to OP using NYSE CRSP
 
 timer clear
 timer on 1
 
 // DATA LOAD
-
-// GRAB CRSP VW NYSE (table 8 caption)
-* dsia = NYSE 
-* dsic = NYSE/AMEX
-* doc for tfz*: http://www.crsp.org/products/documentation/daily-data-items
-
-#delimit ;
-local sql_statement
-    SELECT a.caldt, a.vwretd, b.tdyld, b.tdduratn
-    FROM crsp.dsia as a
-	LEFT JOIN crsp.tfz_dly_rf2 as b
-	on a.caldt = b.caldt
-	;
-	
-#delimit cr
-odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
-
-// keep shortest duration 
-sort caldt tdduratn
-by caldt: keep if _n == 1
-
-* convert daily yield to monthly return with filling
-gen ytm = log((1+tdyld)^tdduratn)
-replace ytm = ytm[_n-1] if ytm == .
-drop if ytm == .
-gen rf = ytm[_n-25] // approximate based on mean tdduratn
-
-rename vwretd mkt
-rename caldt time_d
-keep time_d mkt rf
-
-save "$pathtemp/tempmkt", replace
-
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
 	keep if time_d >= date("19620702","YMD")	
-merge m:1 time_d using "$pathtemp/tempmkt", nogenerate keep(match) 
+merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match) keepusing(mktrf rf) 
+gen mkt = mktrf + rf
 
 * convert to cts compounded exret "in place"
 replace mkt = log(1+mkt) - log(1+rf) 
