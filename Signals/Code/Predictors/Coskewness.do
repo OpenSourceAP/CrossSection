@@ -1,10 +1,14 @@
 * Coskewness
 * --------------
 
+* 2022 03 moved to simple ff mkt instead of special NYSE only index
+
+* notes:
 * smaller minimum obs helps, 12 minimum works pretty well
 * choice of msia, msic, or msix actually doesn't matter much
 * using NYSE only in ports helps a bit
 * using simple demeaning (following ACX) works somewhat better
+* real trick is to not use asrol 
 
 timer clear
 timer on 1
@@ -17,41 +21,11 @@ timer on 1
 * msix = NYSE/AMEX/NASDAQ
 * doc for tfz*: http://www.crsp.org/products/documentation/crsp-risk-free-rates-file
 
-#delimit ;
-local sql_statement
-    SELECT a.caldt, a.vwretd, b.tmytm, b.tmduratn
-    FROM crsp.msic as a
-	LEFT JOIN crsp.tfz_mth_rf as b
-	on a.caldt = b.mcaldt
-	;
-	
-#delimit cr
-odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
-
-// keep shortest duration 
-sort caldt tmduratn
-by caldt: keep if _n == 1
-
-* convert annualized yield to monthly return with filling
-gen ytm = tmytm/12/100 // mean is 3.2, must be annualized pct
-replace ytm = ytm[_n-1] if ytm == .
-drop if ytm == .
-gen rf = ytm[_n-1] // this is now a return
-
-* clean up
-gen time_avail_m = mofd(caldt)
-format time_avail_m %tm
-rename vwretd mkt
-rename caldt time_d
-keep time_avail_m mkt rf
-
-save "$pathtemp/tempmkt", replace
-
 use permno time_avail_m ret using "$pathDataIntermediate/monthlyCRSP.dta", clear
-merge m:1 time_avail_m using "$pathtemp/tempmkt", nogenerate keep(match) 
+merge m:1 time_avail_m using "$pathDataIntermediate/monthlyFF", nogenerate keep(match) keepusing(mktrf rf)
 
 * convert to exret "in place"
-replace mkt = mkt - rf
+replace mkt = mktrf
 replace ret = ret - rf
 drop rf
 
@@ -143,5 +117,3 @@ label var Coskewness "Coskewness of stock return wrt market return"
 
 // SAVE
 do "$pathCode/savepredictor" Coskewness
-
-
