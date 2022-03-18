@@ -33,29 +33,26 @@ cap mkdir "$pathDataPrep"
 set more off, permanently
 
 
-// Install packages if not already installed
-capture which rscript
-if _rc==111 {
-	ssc install tscollap, replace
-	ssc install mdesc, replace
-	ssc install winsor2, replace
-	ssc install freduse, replace
-	ssc install fsum, replace
-	ssc install egenmore, replace
-	ssc install asrol, replace
-	ssc install asreg, replace
-	ssc install astile, replace
-	ssc install _gwtmean, replace
-	ssc install fastxtile, replace
-	ssc install egenmisc, replace
-	ssc install ftools, replace
-	ssc install gtools, replace
-	ssc install moremata, replace
-	ssc install relrank, replace
-	ssc install fs, replace
-	ssc install filelist, replace
-	ssc install rscript, replace
-}
+// Install or update packages
+ssc install tscollap, replace
+ssc install mdesc, replace
+ssc install winsor2, replace
+ssc install freduse, replace
+ssc install fsum, replace
+ssc install egenmore, replace
+ssc install asrol, replace
+ssc install asreg, replace
+ssc install astile, replace
+ssc install _gwtmean, replace
+ssc install fastxtile, replace
+ssc install egenmisc, replace
+ssc install ftools, replace
+ssc install gtools, replace
+ssc install moremata, replace
+ssc install relrank, replace
+ssc install fs, replace
+ssc install filelist, replace
+ssc install rscript, replace
 
 // Install ffind.ado (Fed firewall doesn't like first method)
 capture {	
