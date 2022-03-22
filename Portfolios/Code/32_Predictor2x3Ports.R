@@ -17,7 +17,7 @@ crspret = read.fst(
   setDT()
 
 # SELECT SIGNALS 
-strategylist <- alldocumentation %>% filter(Cat.Signal == "Predictor") %>% 
+strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Predictor") %>% 
   filter(Cat.Form == 'continuous')
 strategylist <- ifquickrun()
 
@@ -81,7 +81,7 @@ signalname_to_2x3 = function(signalname){
     left_join(port6, by = c('permno', 'yyyymm')) %>% 
     # Fill and lag 
     group_by(permno) %>% 
-    arrange(permno, yyyymm) %>% 
+    arrange(permno, date) %>% 
     fill(port6) %>% 
     fill(signal) %>% 
     mutate(
@@ -90,7 +90,7 @@ signalname_to_2x3 = function(signalname){
     ) %>% 
     filter(!is.na(melag)) %>% 
     # Find value-weighted returns and signal by port6_lag month
-    group_by(port6_lag, yyyymm) %>% 
+    group_by(port6_lag, date) %>% 
     summarize(
       ret_vw = weighted.mean(ret, melag, na.rm = TRUE)
       , signallag = weighted.mean(signal_lag, melag, na.rm = TRUE)
@@ -105,7 +105,6 @@ signalname_to_2x3 = function(signalname){
     ) %>% 
     mutate(
       signalname = !!signalname
-      , date = last_of_month(as.Date(paste0(as.character(yyyymm), "01"), format = "%Y%m%d"))
       , Nshort = 0L
     ) %>% 
     filter(port %in% c("SL", "SM", "SH", "BL", "BM", "BH")) %>% 
@@ -158,7 +157,6 @@ signalname_to_2x3 = function(signalname){
 
 # LOOP OVER SIGNALS ====
 num_signals = nrow(strategylist)
-num_signals = 20
 
 # Initialize location in memory to store results
 allport = list()
@@ -197,7 +195,7 @@ for(s in 1:num_signals){
 } # for s in 1:num_signals
 
 
-allport = do.call(rbind.data.frame, allport) 
+port = do.call(rbind.data.frame, allport) 
 
 # WRITE TO DISK  ====
 writestandard(
