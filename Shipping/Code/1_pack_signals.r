@@ -1,5 +1,4 @@
-# tbc: zipping full sets
-# Andrew 2021 03
+# zips up signals.  created 2021 03
 
 print('Script: repackaging signals and portfolios')
 Sys.time()
@@ -24,40 +23,38 @@ signs = doc %>% pull(Sign) %>% as.numeric
 
 # initialize
 signals = read_csv(paste0(pathPredictors, prds[1], '.csv')) %>%
-    select(permno, yyyymm) %>%
-    as.data.table
+  select(permno, yyyymm) %>%
+  as.data.table
 
 # loop over predictors and append
 for (i in 1:length(prds)){
-
-    print(paste('Appending ', prds[i], ' #', i, ' of ', length(prds)))
-
-    if (file.exists(paste0(pathPredictors, prds[i], '.csv'))) {
-        tempin = fread(paste0(pathPredictors, prds[i], '.csv'))
-        tempin[,3] = signs[i]*tempin[,3] # sign according top OP
-
-        gc()
-
-        signals = merge(signals,tempin, by=c('permno','yyyymm'), all=T)
-
-        gc()
-
-    } else {
-        message(paste(i, ' does not exist in Data/Predictors folder'))
-    }
+  
+  print(paste('Appending ', prds[i], ' #', i, ' of ', length(prds)))
+  
+  if (file.exists(paste0(pathPredictors, prds[i], '.csv'))) {
+    tempin = fread(paste0(pathPredictors, prds[i], '.csv'))
+    tempin[,3] = signs[i]*tempin[,3] # sign according top OP
+    
+    gc()
+    
+    signals = merge(signals,tempin, by=c('permno','yyyymm'), all=T)
+    
+    gc()
+    
+  } else {
+    message(paste(i, ' does not exist in Data/Predictors folder'))
+  }
 }
 
 ## save to disk
 # first write csv
 fwrite(
-    signals
+  signals
   , file = paste0(pathShipping, 'Data/signed_predictors_dl_wide.csv')
 )
 print(paste0('Done repackaging signals ',Sys.time()))
 
 # zip to storage
-
-
 print(paste0('Zipping Predictor Wide csvs, takes about 20 min ',Sys.time()))
 tempdir = getwd()
 setwd(paste0(pathShipping,'Data/')) # avoids copying paths into zip
@@ -104,3 +101,30 @@ file.remove(
   paste0(pathStorage,'Firm Level Characteristics/Individual/Placebos/BidAskTAQ.csv')
 )
 
+# zip predictors to storage
+print(paste0('Zipping PredictorsIndiv.zip ',Sys.time()))
+tempdir = getwd()
+setwd(paste0(
+  pathStorage,'Firm Level Characteristics/Individual/Predictors/'
+)) # avoids copying paths into zip
+files2zip <- dir()
+zip(
+  zipfile = paste0(pathStorage, 'Firm Level Characteristics/Full Sets/PredictorsIndiv.zip')
+  , files = files2zip
+)
+setwd(tempdir)
+print(paste0('Done zipping PredictorsIndiv.zip ',Sys.time()))
+
+# zip placebos to storage
+print(paste0('Zipping PlacebosIndiv.zip ',Sys.time()))
+tempdir = getwd()
+setwd(paste0(
+  pathStorage,'Firm Level Characteristics/Individual/Placebos/'
+)) # avoids copying paths into zip
+files2zip <- dir()
+zip(
+  zipfile = paste0(pathStorage, 'Firm Level Characteristics/Full Sets/PlacebosIndiv.zip')
+  , files = files2zip
+)
+setwd(tempdir)
+print(paste0('Done zipping PlacebosIndiv.zip ',Sys.time()))

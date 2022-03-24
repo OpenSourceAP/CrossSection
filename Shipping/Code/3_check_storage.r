@@ -21,7 +21,7 @@ alldoc = readdocumentation()
 doc_predictor = alldoc %>% filter(Cat.Signal=='Predictor') %>% select(signalname) %>% mutate(indoc=1)
 doc_predictor_dl = doc_predictor %>% filter(!signalname %in% c('Price','STreversal','Size'))
 doc_predictor_cts = alldoc %>% filter(Cat.Signal=='Predictor', Cat.Form == 'continuous') %>% 
-    select(signalname) %>% mutate(indoc=1)
+  select(signalname) %>% mutate(indoc=1)
 doc_placebo_dl = alldoc %>% filter(Cat.Signal=='Placebo') %>% 
   select(signalname) %>% mutate(indoc=1) %>% 
   filter(signalname != 'BidAskTAQ')
@@ -30,7 +30,7 @@ doc_placebo_dl = alldoc %>% filter(Cat.Signal=='Placebo') %>%
 ## function for checking match with SignalDoc.csv
 # used repeatedly here
 check_doc = function(tempdir,tempdoc,iszip){
-
+  
   if (!file.exists(paste0(pathStorage,tempdir))){
     print('error: path is missing for')
     print(paste0(pathStorage,tempdir))
@@ -41,13 +41,13 @@ check_doc = function(tempdir,tempdoc,iszip){
       paste0(pathStorage,tempdir)
       , files = 'noextractionpls'
       , list = T
-      )
+    )
   } else {
     store_list0 = list.files(paste0(pathStorage,tempdir)) 
     store_list0 = store_list0[grepl('.csv',store_list0)] %>%
       as.data.frame() %>% rename('Name' = '.')
   }
-
+  
   store_list = store_list0 %>%
     as_tibble() %>%
     mutate(
@@ -95,9 +95,9 @@ port = fread(
 print('Count of predictors with long-short returns by month')
 
 port %>% 
-filter(
-  port == 'LS', !is.na(ret), month(date) == 12, year(date) >= 2000
-) %>%
+  filter(
+    port == 'LS', !is.na(ret), month(date) == 12, year(date) >= 2000
+  ) %>%
   group_by(date) %>%
   summarize(n_distinct(signalname)) %>%
   arrange(desc(date)) %>%
@@ -218,6 +218,7 @@ rbarimp %>%
       , grepl('LiqScreen', impname,) ~ 3
       , grepl('Quintiles', impname,) ~ 4
       , grepl('Deciles', impname,) ~ 5
+      , grepl('FF93style', impname,) ~ 6
     )
   ) %>%  
   mutate(
