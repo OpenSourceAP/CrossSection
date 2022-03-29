@@ -407,7 +407,7 @@ df_plot %>%
          x = 't-stat original study', 
          linetype = '',
          shape = 'Predictor Category') + 
-    ggrepel::geom_text_repel(aes(label=signalname)) +
+    ggrepel::geom_text_repel(aes(label=signalname), max.overlaps = Inf, box.padding = 0.5) +
     scale_x_continuous(breaks=c(2, 5, 10, 15)) +
     scale_y_continuous(breaks=c(2, 5, 10, 15)) +
     theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
@@ -425,6 +425,38 @@ df_plot %>% filter(PredOP == '2_likely', !is.na(tstatOP)) %>%
 
 df %>% filter(porttest, !is.na(tstatOP), !RepType %in% c('1_good','2_fair')) %>%
     select(signalname, Authors, tstatRep, tstatOP, RepType) %>% arrange(Authors)
+
+# Same scatter plot but highlighting new predictors
+df_plot %>%
+  mutate(
+    PredOP
+    = factor(PredOP
+             , levels = c('1_clear', '2_likely', '4_not')
+             , labels = c('Clear', 'Likely', 'Not'))
+    , color = signalname %in% c("TrendFactor","Recomm_ShortInterest")
+  ) %>% 
+  ggplot(aes(y = tstatRep, x = tstatOP, color = color)) +
+  geom_point(size =4, aes(shape = PredOP)) +
+  scale_shape_manual(values=c(19,2,3)) +
+  geom_abline(data = ablines, aes(slope = slope, intercept = intercept, linetype = group)) +    
+  annotate('text',x=3.3, y=14, label = regstr, size = 8) +
+  coord_trans(x='log10', y='log10', xlim = c(1.5, 17), ylim = c(1.0, 15)) +
+  #    coord_trans(x='log10', y='log10', xlim = c(0.5, 17), ylim = c(0.5, 15)) +    
+  labs(y = 't-stat reproduction', 
+       x = 't-stat original study', 
+       linetype = '',
+       shape = 'Predictor Category') + 
+  ggrepel::geom_text_repel(aes(label=signalname), max.overlaps = Inf, box.padding = 0.5) +
+  scale_x_continuous(breaks=c(2, 5, 10, 15)) +
+  scale_y_continuous(breaks=c(2, 5, 10, 15)) +
+  scale_color_manual(values=c("#000000","#e41a1c"), guide = "none")+
+  theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
+  theme(legend.position = c(.8, .25))
+
+temp = 1.5
+ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP_withHighlights.png")
+       , width = 10*temp, height = 6*temp)
+
 
 # McLean and Pontiff style graphs -----------------------------------------
 
