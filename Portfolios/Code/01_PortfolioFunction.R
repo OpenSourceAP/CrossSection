@@ -337,13 +337,8 @@ signalname_to_ports = function(
     ) %>%
     select(port,date,ret,signallag,Nlong,Nshort)        
   
-  
-  # convert port to string and pad left if deciles for ease
-  if (max(nchar(as.character(port$port %>% unique()))) == 1){
-    port = port %>% mutate(port = sprintf('%01d',port))
-  } else {
-    port = port %>% mutate(port = sprintf('%02d',port))
-  }
+  # convert port to 2-character string for ease of use
+  port = port %>% mutate(port = sprintf('%02d',port))
   
   # bind long with longshort
   port = rbind(port,longshort)

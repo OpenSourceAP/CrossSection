@@ -1,7 +1,7 @@
 # For baseline portfolio tests
 # Andrew Chen 2020 01
 
-# ==== ENVIRONMENT AND DATA ====
+# ENVIRONMENT AND DATA ====
 crspinfo = read.fst(
   paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
 ) %>% # me, screens, 
@@ -11,10 +11,7 @@ crspret = read.fst(
 ) %>% # returns
   setDT()
 
-
-######################################################################
-### SELECT SIGNALS AND CHECK FOR CSVS
-######################################################################
+# SELECT SIGNALS AND CHECK FOR CSVS ====
 
 strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Predictor")
 strategylist0 <- ifquickrun()
@@ -36,10 +33,7 @@ if (dim(missing)[1]>0){
   if (temp=='quit'){print('erroring out'); stop()}
 }
 
-
-#####################################################################
-### BASE PORTS
-#####################################################################
+# BASE PORTS ====
 port <- loop_over_strategies(
   strategylist0
 )
@@ -64,7 +58,7 @@ writestandard(
   "PredictorLSretWide.csv"
 )
 
-# SUMMARY STATS BY SIGNAL -------------------------------------------------
+# SUMMARY STATS BY SIGNAL ====
 
 # reread in case you want to edit the summary later
 port = read.csv(paste0(pathDataPortfolios, "PredictorPortsFull.csv"))
@@ -98,7 +92,7 @@ write_xlsx(
 )
 
 
-# FEEDBACK ON ERRORS -------------------------------------------------
+# FEEDBACK ON ERRORS ====
 
 print("The following ports are computed succesfully")
 print(
