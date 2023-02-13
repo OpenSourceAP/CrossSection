@@ -1,16 +1,8 @@
 # creates customer momentum
 # Created Andrew 2019 12
 
-
 ## still currently getting poor matches because of poor company name matching
-## > seg_customer %>% filter(gvkey == "001021") %>% select(-c(cid,gareac,gareat)) 
-## 19 001021    Schein Henry Inc COMPANY  2.182   2 BUSSEG 2004-06-30
-## 20 001021    Schein Henry Inc COMPANY     NA   0 BUSSEG 2005-06-30
-## > ccm %>% filter(grepl('SCHEIN',conm))
-##    gvkey                      conm  tic     cusip lpermno lpermco     linkdt
-## 1 109185 SCHEIN PHARMACEUTICAL INC SHP. 806416103   85952   34727 1998-04-09
-## 2 061494          HENRY SCHEIN INC HSIC 806407102   82581   14098 1995-11-03
-
+## (e.g. Henry Schein Inc)
 
 ########## environment
 rm(list = ls())
