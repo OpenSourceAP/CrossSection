@@ -123,7 +123,7 @@ To install the Windows R setup
 ----
 
 ## Git Integration
-If you use RStudio, take a look at [Hendrik Bruns' guide](https://www.hendrikbruns.tk/post/using-rstudio-and-git-version-control/) to set up version control.
+If you use RStudio, take a look at [Hendrik Bruns' guide](https://web.archive.org/web/20220330020856/https://www.hendrikbruns.tk/post/using-rstudio-and-git-version-control/) to set up version control.
 
 As a stand-alone client for Windows, we recommend [Sourcetree](https://www.sourcetreeapp.com/).
 
