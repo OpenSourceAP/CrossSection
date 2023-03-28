@@ -14,11 +14,13 @@ if _rc!= 0 {
 }
 
 rename Founding FoundingYear
-rename CRSPPERM permno
+rename Offerdate OfferDate
+* rename CRSPPERM permno
+rename CRSPpermanentID permno
 destring permno, replace
 
-*tostring OfferDate, gen(temp)
-gen temp = OfferDate
+tostring OfferDate, gen(temp)
+* gen temp = OfferDate
 gen temp2 = date(temp, "YMD")
 gen IPOdate = mofd(temp2)
 format IPOdate %tm
