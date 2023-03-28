@@ -71,6 +71,7 @@ https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more det
 
 * For signals that use ffind.ado signal, the automatic download in `Signals/Code/settings.do` no longer works. STATA doesn't "speak" well with https using "net install". Please manually download ffind.ado into your home directorie's `ado/personal/per/` folder from [Judson Caskey Google Drive](https://drive.google.com/drive/folders/1siOpyI0hiF7B4GTRzO2TEAtoi97kmLgh). You may find your `/per` directory by typing "personal" into your STATA command line. More detailed instructions on [Kai Chen's blog post](http://kaichen.work/?p=294). Affected scripts are `Predictors/IndRetBig.do`, `Predictors/Frontier.do`, and `Predictors/EarnSupBig.do`. 
 
+
 ### 2. Portfolios/Code/
 
 `master.R` runs everything. It:
