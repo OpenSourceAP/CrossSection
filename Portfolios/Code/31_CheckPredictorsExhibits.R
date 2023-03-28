@@ -91,7 +91,7 @@ sumDeciles %>%
     
 
 # Save
-ggsave(filename = paste0(pathResults, 'fig_mono.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig_mono.pdf'), width = 12, height = 8)
 
 
 # Figures: Holding periods -------------------------------------------------
@@ -114,7 +114,7 @@ df %>%
     ylim(-0.5,2)
 
 # Save
-ggsave(filename = paste0(pathResults, 'fig4_holding_period_boxplot_meanJitter.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig4_holding_period_boxplot_meanJitter.pdf'), width = 12, height = 8)
 
 
 # Figures: Liquidity screens -----------------------------------------------
@@ -140,7 +140,7 @@ df %>%
     ylim(-0.5,2)
 
 # Save
-ggsave(filename = paste0(pathResults, 'fig4_liquidity_boxplot_meanJitter.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig4_liquidity_boxplot_meanJitter.pdf'), width = 12, height = 8)
 
 
 # Figures: Deciles --------------------------------------------------------
@@ -154,7 +154,7 @@ sumDeciles %>%
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) 
 
 # Save
-ggsave(filename = paste0(pathResults, 'fig_Decile_boxplot_meanJitter.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig_Decile_boxplot_meanJitter.pdf'), width = 12, height = 8)
 
 
 #### CHECK VW FOR QUINT AND DEC ####
@@ -197,5 +197,5 @@ p2 = ggplot(
 pboth = grid.arrange(p1,p2,nrow=2)
 
 # Save
-ggsave(filename = paste0(pathResults, 'xfig_altquant_check.png'), plot=pboth, width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'xfig_altquant_check.pdf'), plot=pboth, width = 12, height = 8)
 
