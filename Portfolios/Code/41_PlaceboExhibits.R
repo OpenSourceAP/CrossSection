@@ -70,7 +70,7 @@ df_merge %>%
   coord_flip() +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) 
 
-ggsave(filename = paste0(pathResults, "fig2b_reprate_PredictorPlacebo_Jitter.png"), width = 10, height = 8)
+ggsave(filename = paste0(pathResults, "fig2b_reprate_PredictorPlacebo_Jitter.pdf"), width = 10, height = 8)
 
 
 # # Create Latex output table 2: Placebos
@@ -193,7 +193,7 @@ plott = df_merge %>%
 
 plotboth = grid.arrange(plotret,plott,nrow=2)
 
-ggsave(filename = paste0(pathResults, 'fig5_MP_both.png')
+ggsave(filename = paste0(pathResults, 'fig5_MP_both.pdf')
      , plot = plotboth
      , width = 7, height = 8)
 
@@ -261,7 +261,7 @@ df_tmp %>%
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
   theme(legend.position = c(0.8, 0.1))
 
-ggsave(filename = paste0(pathResults, 'fig_reprate_ourstudy.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig_reprate_ourstudy.pdf'), width = 12, height = 8)
 
 # HXZ
 df_tmp %>% 
@@ -278,7 +278,7 @@ df_tmp %>%
   theme(legend.position = c(.8, .15))
 
 
-ggsave(filename = paste0(pathResults, 'fig_reprate_HXZ.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig_reprate_HXZ.pdf'), width = 12, height = 8)
 
 # MP
 df_tmp %>% 
@@ -295,7 +295,7 @@ df_tmp %>%
   theme(legend.position = c(.8, .2))
 
 
-ggsave(filename = paste0(pathResults, 'fig_reprate_MP.png'), width = 12, height = 8)
+ggsave(filename = paste0(pathResults, 'fig_reprate_MP.pdf'), width = 12, height = 8)
 
 
 # manual counts

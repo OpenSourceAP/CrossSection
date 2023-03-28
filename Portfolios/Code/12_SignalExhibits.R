@@ -207,7 +207,7 @@ tibble(rho = temp) %>%
        y = 'Count') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) 
 
-ggsave(filename = paste0(pathResults, 'fig1aStock_pairwisecorrelations.png'), width = 10, height = 8)
+ggsave(filename = paste0(pathResults, 'fig1aStock_pairwisecorrelations.pdf'), width = 10, height = 8)
 
 toc()
 
@@ -257,7 +257,7 @@ for (vv in vars) {
          y = 'Count') +
     theme_minimal(base_size = optFontsize, base_family = optFontFamily) 
   
-  ggsave(filename = paste0(pathResults, 'fig1SignalCorrelationWith_', vv, '.png'), width = 10, height = 8)
+  ggsave(filename = paste0(pathResults, 'fig1SignalCorrelationWith_', vv, '.pdf'), width = 10, height = 8)
   
   allRhos = rbind(allRhos,
                   tibble(rho = rhos, series = vv))
@@ -277,7 +277,7 @@ allRhos %>%
   facet_wrap(~series, scales = 'free_y') +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily) 
 
-ggsave(filename = paste0(pathResults, 'fig1Stock_jointly.png'), width = 10, height = 8)
+ggsave(filename = paste0(pathResults, 'fig1Stock_jointly.pdf'), width = 10, height = 8)
 
 # save correlations
 saveRDS(allRhos, file = paste0(pathResults, 'rhoStockLevel.RDS'))
