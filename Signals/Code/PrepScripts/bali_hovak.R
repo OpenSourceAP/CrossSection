@@ -8,6 +8,16 @@ library(tidyverse)
 library(lubridate)
 library(data.table)
 
+# secid : The Security ID is the unique identifier for this security.
+# Unlike CUSIP numbers and ticker symbols, Security IDs
+# are unique over the security’s lifetime and are not recycled.
+# The Security ID is the primary key for all data contained in
+# IvyDB.
+
+# optionid : Option ID is a unique integer identifier for the option
+# contract. This identifier can be used to track specific
+# option contracts over time.
+
 # heads up: this assumes (1) running on wrds server and (2) pgpass is set up following this:
 # https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-the-web/
 wrds <- dbConnect(Postgres(),
@@ -19,11 +29,9 @@ wrds <- dbConnect(Postgres(),
 
 
 
-# Test Query -------------------------------------------------------------
+#  Query -------------------------------------------------------------
 
-
-year = 2001
-querylimit = '20' # use 'all' for full data, '20' for debugging
+querylimit = 'all' # use 'all' for full data, '20' for debugging
 
 tic = Sys.time()
 print(Sys.time() - tic)
@@ -45,11 +53,11 @@ res <- dbSendQuery(
   paste0("select ticker, secid from optionm.securd", " limit ",querylimit)
 )
 
-tickers <- dbFetch(res)
-setDT(tickers)
+securd <- dbFetch(res)
+setDT(securd)
 
 yearlist = substr(vsurf_tables$table_name, 7,12)
-
+yearlist = c("2001")
 # setup loop ----
 
 bh_many = list()
@@ -90,34 +98,46 @@ for (year in yearlist) {
   tempd <- dbFetch(res)
   setDT(tempd)
   
-
   
   
-  BH_filtered_temp = tempd %>%
+  
+  BH_filtered_clean = tempd %>%                                                 # option month
     
     # keep obs where bid-ask prices are within 50% of the average bid-ask (should we do this within secid groups?)
     filter((best_offer - best_bid) < .5*((best_offer + best_bid)/2)) %>% 
     
-    # keep last monthly obs of each option [TBC]
+    # keep last monthly obs of each optionid
     mutate(month = as.numeric(format(date, "%m")),
            day   = as.numeric(format(date, "%d"))) %>%
-    group_by(secid, month) %>%
+    group_by(optionid, month) %>%
     filter(day == max(day)) %>%
-    arrange(secid, date) %>% 
+    arrange(secid, date, optionid) %>% 
+    ungroup()
+  
+  
+  BH_filtered_temp = BH_filtered_clean %>%                                      # stock c/p month (average implied volatilties for calls/puts)
+    # average monthly implied vol within (stock, call or put)
+    group_by(secid, cp_flag, date) %>%
+    dplyr::summarise(mean_imp_vol = mean(impl_volatility)) %>%
     ungroup() %>%
     
-    # average implied vol within (stock, call or put)
-    group_by(secid, cp_flag, date) %>%
-    summarize(mean_imp_vol = mean(impl_volatility)) %>%
-    ungroup()
+    # tidy up
+    arrange(secid, date, cp_flag) %>%
+    select(secid, date, mean_imp_vol, cp_flag)
   
   ## append
   bh_many[[i]] = BH_filtered_temp
   i = i + 1
 }
 
+BH_filtered_temp %>% pivot_wider(id_cols = c(date, secid), names_from = cp_flag, values_from = mean_imp_vol)
 
-bh_all = do.call(rbind,bh_many)
+bh_all <- do.call(rbind,bh_many) %>%
+  pivot_wider(id_cols = c(date, secid), names_from = cp_flag, values_from = mean_imp_vol) %>%
+  
+  # join bh_all with tickers
+  left_join(securd, by = c("secid")) %>%
+  rename(bh_call = C, bh_put = P)
 
 
 # finally write to csv!
