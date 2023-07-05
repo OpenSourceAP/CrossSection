@@ -2,7 +2,14 @@
 // Prep IBES data
 use "$pathDataIntermediate/IBES_EPS_Unadj", replace
 keep if fpi == "1" 
-keep if fpedats != . & fpedats > statpers + 30 
+ 
+* keep if fpedats != . & fpedats > statpers + 30  // This drops EPS estimates in same month as trading happens
+
+* Set to last non-missing forecast in period that trade happens
+gen tmp = 1 if fpedats != . & fpedats > statpers + 30
+bys tickerIBES: replace meanest = meanest[_n-1] if mi(tmp) & fpedats == fpedats[_n-1]
+drop tmp
+
 save "$pathtemp/temp", replace
 
 // DATA LOAD
