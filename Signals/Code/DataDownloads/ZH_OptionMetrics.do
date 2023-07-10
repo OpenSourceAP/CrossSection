@@ -6,15 +6,11 @@
 import delimited "$pathDataPrep/bali_hovak.csv", clear varnames(1)
 gen time_d = date(date,"YMD")
 drop date
-drop if mi(ticker)
+drop if mi(secid)
 gen time_avail_m = mofd(time_d)
 format time_avail_m %tm
 
-sort time_avail_m ticker // drop if more than one observations per month
-quietly by time_avail_m ticker: gen dup = cond(_N == 1, 0, _n)
-drop if dup > 0
-
-drop time_d dup
+drop time_d
 
 compress
 order secid time_avail_m
