@@ -1,4 +1,5 @@
 * -------------------------
+* Realized Vol is used in one other predictor so this is run before other ZZ stuff
 // DATA LOAD
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
 merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match)keepusing(rf mktrf smb hml)
