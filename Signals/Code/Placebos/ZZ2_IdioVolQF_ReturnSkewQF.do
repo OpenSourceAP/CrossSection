@@ -6,18 +6,20 @@ replace ret = ret - r_f_qfac
 drop r_f_qfac
 
 // SIGNAL CONSTRUCTION
-bys permno (time_d): gen time_temp = _n
-xtset permno time_temp
-* QF model 
-xtset permno time_temp
-asreg ret r_mkt_qfac r_me_qfac r_ia_qfac r_roe_qfac, window(time_temp 20) min(15) by(permno)
-gen epsReturnQF = ret - _b_cons - _b_r_mkt_qfac*r_mkt_qfac - _b_r_me_qfac*r_me_qfac ///
-    - _b_r_ia_qfac*r_ia_qfac - _b_r_roe_qfac*r_roe_qfac 
-    
+sort permno time_d 
+
+* create time_avail_m that is just the year-month of each year-day
 gen time_avail_m = mofd(time_d)
 format time_avail_m %tm
-sort permno time_avail_m time_d
-gcollapse (sd) IdioVolQF = epsReturnQF (skewness) ReturnSkewQF = epsReturnQF, by(permno time_avail_m)
+
+* get qfac residuals within each month
+bys permno time_avail_m: asreg ret r_mkt_qfac r_me_qfac r_ia_qfac r_roe_qfac, fit
+
+* collapse into second and third moments
+gcollapse (sd) IdioVolQF = _residuals (skewness) ReturnSkewQF = _residuals, ///
+	by(permno time_avail_m)
+
+
 label var IdioVolQF "Idiosyncratic Risk (Q factor)"
 label var ReturnSkewQF "Skewness of daily idiosyncratic returns (QF model)"
 
