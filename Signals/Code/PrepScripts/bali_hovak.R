@@ -13,7 +13,7 @@ library(stataXml)
 
 # secid : The Security ID is the unique identifier for this security.
 # Unlike CUSIP numbers and ticker symbols, Security IDs
-# are unique over the security’s lifetime and are not recycled.
+# are unique over the security?s lifetime and are not recycled.
 # The Security ID is the primary key for all data contained in
 # IvyDB.
 
@@ -27,7 +27,9 @@ wrds <- dbConnect(Postgres(),
                   host='wrds-pgdata.wharton.upenn.edu',
                   port=9737,
                   dbname='wrds',
-                  sslmode='require')
+                  sslmode='require',
+                  user   = "alecerbfrb",
+                  pass   = "RedStocking2121!!")
 
 
 
@@ -148,16 +150,14 @@ for (year in yearlist) {
   i = i + 1
 }
 
-BH_filtered_temp %>% pivot_wider(id_cols = c(month, secid), names_from = cp_flag, values_from = mean_imp_vol)
-
 
 start_date = as.Date("1996-02-01")
 end_date   = as.Date("2005-01-31")
 
-bh_all <- do.call(rbind,bh_many) %>%
+bh_cp <- do.call(rbind,bh_many) %>%
   pivot_wider(id_cols = c(date, secid), names_from = cp_flag, values_from = mean_imp_vol) %>%
   
-  # join bh_all with tickers
+  # join with tickers
   left_join(securd, by = c("secid")) %>%
   rename(bh_call = C, bh_put = P) %>%
   
@@ -165,8 +165,24 @@ bh_all <- do.call(rbind,bh_many) %>%
   filter(date > start_date & date <= end_date)
 
 
+bh_ri <- do.call(rbind, bh_many) %>%
+  
+  # average implied call put volatilities
+  group_by(secid, date) %>%
+  dplyr::summarize(mean_imp_vol = mean(mean_imp_vol)) %>%
+  
+  # filter to match sample size
+  filter(date > start_date & date <= end_date)
+
+
+
+
 # finally write to csv!
-data.table::fwrite(bh_all,
-                   "~/data_prep/bali_hovak.csv"
+data.table::fwrite(bh_cp,
+                   "~/data_prep/bali_hovak_cp.csv"
 )
+
+data.table::fwrite(bh_ri,
+                   "~/data_prep/bali_hovak_ri.csv")
+
 
