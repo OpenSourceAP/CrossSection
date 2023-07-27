@@ -1,16 +1,16 @@
 * Signal is actually contructed in PrepScripts/OptionMetricsProcessing.R
 * --------------
 // DATA LOAD
-use permno time_avail_m ticker using "$pathDataIntermediate/SignalMasterTable", clear
+use permno time_avail_m secid using "$pathDataIntermediate/SignalMasterTableOC", clear
 * Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
 preserve
 
-keep if mi(ticker)
+keep if mi(secid)
 
 save "$pathtemp/temp", replace
 restore
-drop if mi(ticker)
-merge m:1 ticker time_avail_m using "$pathDataIntermediate/OptionMetrics", keep(master match) nogenerate
+drop if mi(secid)
+merge m:1 secid time_avail_m using "$pathDataIntermediate/OptionMetrics", keep(master match) nogenerate
 append using "$pathtemp/temp"
 
 // SIGNAL CONSTRUCTION
