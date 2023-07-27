@@ -1,4 +1,4 @@
-* SignalMasterTable
+* SignalMasterTableOC
 * Holds monthly list of firms with identifiers and some meta information
 * --------------
 

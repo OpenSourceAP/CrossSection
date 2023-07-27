@@ -21,7 +21,9 @@ gcollapse (sd) RealizedVol = ret ///
 	(sd) IdioVol3F = _residuals (skewness) ReturnSkew3F = _residuals, ///
 	by(permno time_avail_m)
 
-label var RealizedVol "Realized (Total) Vol"
+
+
+label var RealizedVol "Realized (Total) Vol (Daily)"
 label var IdioVol3F "Idiosyncratic Risk (3 factor)"
 label var ReturnSkew3F "Skewness of daily idiosyncratic returns (3F model)"
 
