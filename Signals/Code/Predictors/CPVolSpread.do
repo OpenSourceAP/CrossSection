@@ -9,7 +9,7 @@ save "$pathtemp/temp", replace
 restore
 
 drop if mi(secid)
-merge m:1 secid time_avail_m using "$pathDataIntermediate/BH", keep(master match) nogenerate
+merge m:1 secid time_avail_m using "$pathDataIntermediate/BH_cp", keep(master match) nogenerate
 append using "$pathtemp/temp"
 
 * drop closed-end funds (6720 : 6730) and REITs (6798)
