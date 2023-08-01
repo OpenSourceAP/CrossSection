@@ -1,21 +1,21 @@
 * --------------
-// Compute IdioRisk as prerequisite to FailureProbability
+// Compute SIGMA as prerequisite to FailureProbability
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
-merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match) keepusing(rf mktrf)
-replace ret = ret - rf
-drop rf 
-* Set up CAPM to estimate idiovol
+	keep if time_d >= date("19601231","YMD")	
+* Set up for asreg
 bys permno (time_d): gen time_temp = _n
 xtset permno time_temp
-* CAPM 
-asreg ret mktrf, window(time_temp 20) min(15) by(permno) rmse
-rename _rmse IdioRisk
-drop if mi(IdioRisk)
+
+* SIGMA is "the standard deviation of each firm's daily stock return over the past 3 months"
+asrol ret, stat(sd) window(time_temp 60) min(10) by(permno) gen(SIGMA)
+drop if mi(SIGMA)
 gen time_avail_m = mofd(time_d)
 format time_avail_m %tm
 sort permno time_avail_m time_d
-gcollapse (lastnm) IdioRisk, by(permno time_avail_m)
+gcollapse (lastnm) SIGMA, by(permno time_avail_m)
 save "$pathtemp/tempPlacebo", replace
+
+
 // DATA LOAD
 use permno gvkey time_avail_m ret prc using "$pathDataIntermediate/SignalMasterTable", clear
 keep if !mi(gvkey)
@@ -46,7 +46,7 @@ gen tempEXRETAVG =( (1 - `rho')/(1-`rho'^12))*(tempEXRET + `rho'^1*l1.tempEXRET 
 gen tempMB = tempMV/ceqq
 gen tempPRICE = log(min(abs(prc), 15))
 gen FailureProbability = -9.16 -.058*tempPRICE + .075*tempMB - 2.13*tempCASHMTA ///
-    -.045*tempRSIZE + 100*1.41*IdioRisk - 7.13*tempEXRETAVG + 1.42*tempTLMTA - 20.26*tempNIMTAAVG  
+    -.045*tempRSIZE + 100*1.41*SIGMA - 7.13*tempEXRETAVG + 1.42*tempTLMTA - 20.26*tempNIMTAAVG  
     
 label var FailureProbability "Failure Probability"
 * Failure probability (June version)

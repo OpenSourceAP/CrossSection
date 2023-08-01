@@ -15,6 +15,7 @@ save "$pathLogs/02_CreatePredictorsFlags", replace
 * ------------------------------------------------------------------------------
 * Create Signal Master Table with some meta data
 do "$pathCode/SignalMasterTable.do"
+do "$pathCode/SignalMasterTableOC.do"
 
 * ------------------------------------------------------------------------------
 * Look-up signal scripts 
