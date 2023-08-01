@@ -6,10 +6,7 @@ rm(list = ls())
 library(RPostgres)
 library(tidyverse)
 library(lubridate)
-library(haven)
 library(data.table)
-library(remotes)
-library(stataXml)
 
 # secid : The Security ID is the unique identifier for this security.
 # Unlike CUSIP numbers and ticker symbols, Security IDs
@@ -27,11 +24,7 @@ wrds <- dbConnect(Postgres(),
                   host='wrds-pgdata.wharton.upenn.edu',
                   port=9737,
                   dbname='wrds',
-                  sslmode='require',
-                  user   = "alecerbfrb",
-                  pass   = "RedStocking2121!!")
-
-
+                  sslmode='require')
 
 
 #  Query -------------------------------------------------------------
@@ -62,127 +55,95 @@ securd <- dbFetch(res)
 setDT(securd)
 
 yearlist = substr(vsurf_tables$table_name, 7,12)
-yearlist = yearlist[1:9]
-# yearlist = c("1996")
-# setup loop ----
+
+
+# Loop over years --------------------------------------------------------------------
+
 
 bh_many = list()
 i = 1
 print("Calculating BH's CP vol spread  year by year")
 for (year in yearlist) {
+  
   print(Sys.time())
   start_time = Sys.time()
   print(year)
   
   
   ## query daily data with lots of filters
+  # about 3 million optionid-dailydate obs per year total
+  # filters follow page 1799 Section 2 paragraph 2
   res <- dbSendQuery(
     wrds
-    ,paste0("
+    , paste0("
   select a.secid, a.date, a.close
-  ,b.optionid, b.cp_flag, b.strike_price, b.impl_volatility, b.best_bid, b.best_offer "
+            , b.optionid, b.cp_flag, b.exdate, b.strike_price, b.impl_volatility, b.best_bid, b.best_offer "
             ,"from optionm.secprd"
             ,year
             ," as a inner join optionm.opprcd"
             ,year
             ," as b   
   on a.secid = b.secid and a.date = b.date
-  where (b.strike_price != 'NaN') and (b.impl_volatility != 'NaN')              
-  and (b.exdate - a.date >= 30) and (b.exdate - a.date <= 90)                 
-  -- and(abs(b.strike_price/1000/a.close-1) < .1)
-  and a.volume > 0
-  and b.impl_volatility != 'NaN'
-  and b.best_bid > 0                                                          
-  and b.open_interest > 0
-  and b.volume != 'NaN'
-  -- and extract(day from a.date) >= 23
-  -- and extract(day from a.date) >= 5
-
+  where (b.exdate - a.date >= 30) and (b.exdate - a.date <= 90)                   
+    and b.open_interest > 0 and b.best_bid > 0 and b.impl_volatility != 'NaN'
+    and (b.best_offer - b.best_bid) < 0.5 * (b.best_offer+best_bid)/2
+    and abs(ln(abs(close)/(strike_price/1000))) < 0.1
     "
-            ," limit "
-            ,querylimit
+    ," limit "
+    ,querylimit
     )
   )      
   tempd <- dbFetch(res)
   setDT(tempd)
   
-
-  
-  
-  BH_filtered_clean = tempd %>%                                                 # option month
-    
-    # delete options with absolute values of the natural log of the ratio of the stock price to the exercise press < .1
-    filter(abs(log((strike_price/1000) / close)) < .1) %>%
-    
-    # keep obs where bid-ask prices are within 50% of the average bid-ask (should we do this within secid groups?)
-    group_by(secid) %>%
-    filter((best_offer - best_bid) < .5*((best_offer + best_bid)/2)) %>%
-    ungroup() %>%
-    
+  # keep last option obs each month (also following same paragraph)
+  tempm1 = tempd %>% 
     # keep last monthly obs of each optionid
     mutate(month = as.numeric(format(date, "%m")),
            day   = as.numeric(format(date, "%d"))) %>%
     group_by(optionid, month) %>%
-    filter(day == max(day)) %>%
-    arrange(secid, optionid, month) %>% 
-    ungroup()
+    filter(day == max(day))
   
+  # average across options (by different groups)
+  tempm2 = tempm1 %>%
+    # by call / put
+    group_by(secid, cp_flag, month) %>% 
+    summarize(
+      mean_imp_vol = mean(impl_volatility), mean_day = mean(day), nobs = n()
+    ) %>%
+    ungroup() %>% 
+    rbind(
+      # overall
+      tempm1 %>%
+        group_by(secid, month) %>% 
+        summarize(
+          mean_imp_vol = mean(impl_volatility), mean_day = mean(day), nobs = n()
+        ) %>% 
+        ungroup() %>% 
+        mutate(cp_flag = 'BOTH')
+    ) %>% 
+  # clean up
+  mutate(date = lubridate::ceiling_date(as.Date(paste0(year, "-", month, "-01")), unit = "month") - 1) %>% 
+  arrange(secid, month, cp_flag) %>% 
+  select(-month) 
   
-  BH_filtered_temp = BH_filtered_clean %>%                                      # stock c/p month (average implied volatilties for calls/puts)
-    # average monthly implied vol within (stock, call or put)
-    group_by(secid, cp_flag, month) %>%
-    # mutate(mean_imp_vol = mean(impl_volatility)) %>%
-    dplyr::summarize(mean_imp_vol = mean(impl_volatility)) %>%
-    ungroup() %>%
-    distinct(secid, month, cp_flag, .keep_all = TRUE) %>%
-  
-    # tidy up
-    arrange(secid, month, cp_flag) %>%
-    select(secid, month, mean_imp_vol, cp_flag) %>%
-    
-    # make date variable
-    mutate(date = lubridate::ceiling_date(as.Date(paste0(year, "-", month, "-01")), unit = "month") - 1)
-    
 
-  
   ## append
-  bh_many[[i]] = BH_filtered_temp
+  bh_many[[i]] = tempm2
   i = i + 1
 }
 
 
-start_date = as.Date("1996-02-01")
-end_date   = as.Date("2005-01-31")
+# Bind and Save ---------------------------------------
 
-bh_cp <- do.call(rbind,bh_many) %>%
-  pivot_wider(id_cols = c(date, secid), names_from = cp_flag, values_from = mean_imp_vol) %>%
-  
+bh_imp_vol = do.call(rbind,bh_many) %>%
   # join with tickers
-  left_join(securd, by = c("secid")) %>%
-  rename(bh_call = C, bh_put = P) %>%
-  
-  # filter to match sample size
-  filter(date > start_date & date <= end_date)
-
-
-bh_ri <- do.call(rbind, bh_many) %>%
-  
-  # average implied call put volatilities
-  group_by(secid, date) %>%
-  dplyr::summarize(mean_imp_vol = mean(mean_imp_vol)) %>%
-  
-  # filter to match sample size
-  filter(date > start_date & date <= end_date)
-
+  left_join(securd, by = c("secid")) 
 
 
 
 # finally write to csv!
-data.table::fwrite(bh_cp,
-                   "~/data_prep/bali_hovak_cp.csv"
+data.table::fwrite(bh_imp_vol,
+                   "~/data_prep/bali_hovak_imp_vol.csv"
 )
-
-data.table::fwrite(bh_ri,
-                   "~/data_prep/bali_hovak_ri.csv")
-
 

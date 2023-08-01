@@ -1,6 +1,6 @@
 * --------------
 // DATA LOAD
-use permno time_avail_m secid using "$pathDataIntermediate/SignalMasterTableOC", clear
+use permno time_avail_m secid using "$pathDataIntermediate/SignalMasterTable", clear
 * Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
 preserve
 

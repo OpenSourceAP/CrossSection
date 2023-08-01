@@ -2,6 +2,7 @@
 * Realized Vol is used in one other predictor so this is run before other ZZ stuff
 // DATA LOAD
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
+
 merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match)keepusing(rf mktrf smb hml)
 replace ret = ret - rf
 drop rf 
@@ -16,11 +17,12 @@ format time_avail_m %tm
 * get FF3 residuals within each month
 bys permno time_avail_m: asreg ret mktrf smb hml, fit
 
+keep if _Nobs >= 15 // Bali-Hovak 2009 footnote 9. AHXZ seem to require > 17
+
 * collapse into second and third moments
 gcollapse (sd) RealizedVol = ret ///
 	(sd) IdioVol3F = _residuals (skewness) ReturnSkew3F = _residuals, ///
 	by(permno time_avail_m)
-
 
 
 label var RealizedVol "Realized (Total) Vol (Daily)"
