@@ -622,7 +622,7 @@ HXZ,epsilon6_6,Six-month residual momentum,"Blitz, Huij, and Martens",2011,NA,in
 HXZ,epsilon6_12,Six-month residual momentum,"Blitz, Huij, and Martens",2011,NA,indirect,ResidualMomentum6m,NA,12
 HXZ,Rna,Return on net operating assets,Soliman,2008,NA,indirect,RetNOA,NA,12
 HXZ,Rnaq1,Quarterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,1
-HXZ,Rna16,Quaterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,6
+HXZ,Rnaq6,Quaterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,6
 HXZ,Rnaq12,Quaterly return on net operating assets,Soliman,2008,NA,indirect,RetNOA_q,NA,12
 HXZ,Isc1,Idiosyncratic skewness per the CAPM,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewCAPM,NA,1
 HXZ,Isc6,Idiosyncratic skewness per the CAPM,"Bali, Engle, and Murray",2015,NA,indirect,ReturnSkewCAPM,NA,6
