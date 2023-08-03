@@ -7,10 +7,8 @@ drop if gvkey ==.
 merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/InputOutputMomentumProcessed", keep(master match) nogenerate
 
 // SIGNAL CONSTRUCTION
-replace iomom_supp = floor(iomom_supp)
-gen temp = 1 if iomom_supp >= 8 & !mi(iomom_supp)
-replace temp = 0 if iomom_supp <= 1
-replace iomom_supp = temp
+gen iomom_supp = retmatchsupplier
+keep if iomom_supp != .
 label var iomom_supp "IO supplier momentum"
 
 // SAVE
