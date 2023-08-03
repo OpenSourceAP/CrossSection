@@ -4,5 +4,6 @@ bysort permno (score): keep if _n == 1  // If link to more than one permno, keep
 
 * rename ticker tickerIBES
 keep if score <= 6  // score is 0 to 6.  6 seems to work best for Bali Hovak
-keep secid permno 
+rename score om_score
+keep secid permno om_score
 save "$pathDataIntermediate/OPTIONMETRICSCRSPLinkingTable", replace

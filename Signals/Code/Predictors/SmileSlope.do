@@ -1,21 +1,25 @@
-* Signal is actually contructed in PrepScripts/OptionMetricsProcessing.R
 * --------------
-// DATA LOAD
-use permno time_avail_m secid using "$pathDataIntermediate/SignalMasterTable", clear
-* Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
-preserve
+* Yan 2011 JFE
 
-keep if mi(secid)
+// Data Prep
+use "$pathDataIntermediate/OptionMetricsVolSurf", clear
+
+* bottom right page 221
+keep if days == 30 & abs(delta) == 50
+
+* make signal
+keep secid time_avail_m cp_flag impl_vol 
+reshape wide impl_vol, i(secid time_avail_m) j(cp_flag) string
+gen SmileSlope = impl_volP - impl_volC
 
 save "$pathtemp/temp", replace
-restore
-drop if mi(secid)
-merge m:1 secid time_avail_m using "$pathDataIntermediate/OptionMetrics", keep(master match) nogenerate
-append using "$pathtemp/temp"
 
-// SIGNAL CONSTRUCTION
-* Construction is done in PrepScripts/R1_OptionMetrics.R
-rename slope SmileSlope 
+// Merge onto master table
+use permno time_avail_m secid using "$pathDataIntermediate/SignalMasterTable", clear
+merge m:1 secid time_avail_m using "$pathtemp/temp", keep(master match) nogenerate
+
+keep if SmileSlope != .
+
 label var SmileSlope "Average Jump Size"
 
 // SAVE
