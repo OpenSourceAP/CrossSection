@@ -23,6 +23,9 @@
 
 # need to update end date in filenames (first version used end year 2018, then it was 2019)
 
+
+# Environment -------------------------------------------------------------
+
 rm(list = ls())
 
 # Check for and potentially install missing packages
@@ -42,7 +45,6 @@ if (length(args)) {
   message('Supply path')
 }
 
-
 # check system for dl method
 dlmethod = 'auto'
 sysinfo = Sys.info()
@@ -50,6 +52,9 @@ if (sysinfo[1] == "Linux") {
     dlmethod = 'wget'
 }
 
+
+
+# Big function declaration ------------------------------------------------
 
 ### DECLARE BIG ASS FUNCTION THAT DOES ALMOST EVERYTHING
 generate_one_iomom = function(sheet63,sheet97) {
@@ -256,7 +261,7 @@ generate_one_iomom = function(sheet63,sheet97) {
     , data.frame(month_avail = 1:12)
   ) %>%
     left_join(
-      tempportind %>% select(year,month,beaind,portind)
+      tempportind %>% select(year,month,beaind,retmatch,portind)
       , by = c("year_avail"="year","month_avail"="month","beaind")
     )
   
@@ -296,7 +301,8 @@ generate_one_iomom = function(sheet63,sheet97) {
   
 } # END BIG ASS FUNCTION
 
-### READ IN RAW DATA 
+
+# Read in Raw Data  -------------------------------------------------------
 
 # read compustat, turn to annual, lag data by one year for simplicity
 # being lazy about timing, this is ridiculously conservative.  Code doesn't handle monthly cleanly
@@ -333,7 +339,7 @@ ccm0  = fread(paste0(arg1, '/Signals/Data/Intermediate//CCMLinkingTable.csv')) %
     , linkenddt = dmy(linkenddt)
   ) 
 
-### MAKE TWO FLAVORS OF MOMENTUM AND MERGE
+
 
 # Make table before 1997
 download.file("https://apps.bea.gov/industry/xls/io-annual/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx",
@@ -366,6 +372,10 @@ unzip(tmp,
       files = c(pathSupply, pathUse),
       exdir = paste0(arg1, '/Signals/Data/Intermediate'))
 
+
+# Generate Momentum -------------------------------------------------------
+
+
 ## customer momentum: weights for an industry are its total sales to other industries: industry comes from rows of make table, matched industries come from cols
 sheet97 = paste0(arg1, '/Signals/Data/Intermediate/', pathSupply)
 sheet63 = paste0(arg1, '/Signals/Data/Intermediate/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx')
@@ -378,24 +388,21 @@ sheet63 = paste0(arg1, '/Signals/Data/Intermediate/IOUse_Before_Redefinitions_PR
 iomomsupp = generate_one_iomom(sheet63,sheet97)
 
 
-iomom = left_join(
-  iomomcust %>% transmute(
-    gvkey
-    , year_avail
-    , month_avail
-    , iomom_cust = portind
+# Bind and Store ----------------------------------------------------------
+
+
+iomom = rbind(
+  iomomcust %>% mutate(
+    type = 'customer'
   )
   ,
-  iomomsupp %>% transmute(
-    gvkey
-    , year_avail
-    , month_avail
-    , iomom_supp = portind
+  iomomsupp %>% mutate(
+    type = 'supplier'
   )
-)
+) %>% 
+  filter(!is.na(retmatch))
 
-iomom = iomom %>% filter( !( is.na(iomom_cust) & is.na(iomom_supp)) )
 
 ### SAVE
 haven::write_dta(iomom, path = paste0(arg1, '/Signals/Data/Intermediate/InputOutputMomentum.dta'))
-#data.table::fwrite(iomom, file = '../Data/InputOutputMomentum.csv') 
+
