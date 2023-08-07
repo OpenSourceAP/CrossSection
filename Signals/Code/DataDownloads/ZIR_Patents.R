@@ -114,10 +114,8 @@ rm(df_npat, df_cite_match, df_cite, df_scale, pat76_06_assg, cite76_06, dynass)
 
 # Expand to balanced panel (within units and add 0 if no patent in expanded year)
 df_patents %>%
-  group_by(gvkey)%>%
   expand(gvkey = sort(unique(gvkey)),
          year = seq(from = min(year), to = max(year))) %>%
-  ungroup() %>%
   left_join(df_patents) -> df_patents
 
 df_patents = df_patents %>% 
