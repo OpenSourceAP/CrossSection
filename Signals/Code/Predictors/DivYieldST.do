@@ -42,12 +42,13 @@ replace Ediv1 = l11.divamt if cd3 == 5
 
 gen Edy1 = Ediv1/abs(prc)
 
-* this is super janky, but we try to imitate their regression with ports
-* 0.008 is the median among positive Eyields, but time series behavior is complicated
-gen DivYieldST = 0 if Edy1 == 0
-replace DivYieldST = 1 if Edy1 > 0     & Edy1 <= 0.005
-replace DivYieldST = 2 if Edy1 > 0.005 & Edy1 <= 0.010
-replace DivYieldST = 3 if Edy1 > 0.010 & Edy1 != .
+* this is super janky, but we try to imitate their regression with ports.
+* the key is you need to separate the big mass of stocks with Edy1 = 0.  
+* more than 50% of stocks lie in this region.
+
+gen Edy1pos = Edy1 if Edy1 > 0
+egen DivYieldST = fastxtile(Edy1pos), by(time_avail_m) n(3)
+replace DivYieldST = 0 if Edy1 == 0
 
 label var DivYieldST "Predicted dividend yield next month"
 

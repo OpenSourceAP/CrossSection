@@ -1,21 +1,28 @@
 * --------------
+* Johnson and So 2012 JFE
 // DATA LOAD
-use permno time_avail_m ticker prc shrcd using "$pathDataIntermediate/SignalMasterTable", clear
+use permno time_avail_m secid prc shrcd using "$pathDataIntermediate/SignalMasterTable", clear
+
+* add stock volume
 merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(vol)
-* Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
+
 preserve
 
-keep if mi(ticker)
+keep if mi(secid)
 
 save "$pathtemp/temp", replace
 restore
-drop if mi(ticker)
-merge m:1 ticker time_avail_m using "$pathDataIntermediate/OptionMetrics", keep(master match) nogenerate keepusing(optvolume)
+drop if mi(secid)
+
+* add option volume
+
+merge m:1 secid time_avail_m using "$pathDataIntermediate/OptionMetricsVolume", keep(master match) nogenerate keepusing(optvolume)
 append using "$pathtemp/temp"
+
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
 gen OptionVolume1 = optvolume/vol
-replace OptionVolume1 = . if abs(prc) < 1 | shrcd > 11 | mi(l1.optvolume) | mi(l1.vol)
+replace OptionVolume1 = . if mi(l1.optvolume) | mi(l1.vol)
 foreach n of numlist 1/6 {
 
 gen tempVol`n' = l`n'.OptionVolume1

@@ -1,6 +1,7 @@
 #!/bin/bash
 #$ -cwd
 #$ -m abe
+#$ -m alec.c.erb@frb.gov
 
 # 2022 02 Andrew Chen
 # creates ibes-crsp link, 13f data, option metrics stuff, and hf (taq-issm) spreads
@@ -12,6 +13,7 @@
 # For fast debugging:
 # - in master.sh (this script), comment out sas tr13f...
 # - in master.sh (this script), use "seq 1983 1983" in issm stuff
+# - in BH_2009.R, use "querylimit = '20'"
 # - in taq-chen-velikov/iid_to_monthly.sas, use "maxobs = 20"
 # - in taq-chen-velikov/issm_spreads.sas, use "maxobs = 20"
 # - in OptionMetricsProcessing.R, use "querylimit = '20'"
@@ -46,6 +48,14 @@ sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
 
 echo "CREATING 13F DATA (10 min?)"
 sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
+
+# ==== OPTION METRICS LINK, ====
+echo "CREATING OPTION METRICS LINK (fast)"
+sas oclink_to_csv.sas -log ~/temp_log/oclink_to_csv.log
+
+# ==== OPTION METRICS: Bali-Hovak ====
+echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
+R CMD BATCH --no-save --no-restore bali_hovak.R ~/temp_log/bali_hovak.log
 
 # ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
 sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log

@@ -1,6 +1,5 @@
 * -------------- 
 * RIO * signals
-* Needs to be run after IdioRisk, so we run it last.  IdioRisk takes about 20 min
 * 
 * --------------
 
