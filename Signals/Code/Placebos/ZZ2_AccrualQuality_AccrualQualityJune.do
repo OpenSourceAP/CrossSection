@@ -17,7 +17,9 @@ gen tempCFO = ib/( (at + l.at)/2) - tempAccruals
 
 * Run regressions for each year and industry
 destring sic, replace
-ffind sic, newvar(FF48) type(48)
+sicff sic, generate(FF48) industry(48)
+drop if mi(FF48)
+
 gen tempResid = .
 levelsof fyear
 foreach y of numlist `r(levels)' {

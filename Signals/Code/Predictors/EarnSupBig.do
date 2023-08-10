@@ -33,7 +33,9 @@ use permno time_avail_m mve_c sicCRSP using "$pathDataIntermediate/SignalMasterT
 merge 1:1 permno time_avail_m using "$pathtemp/temp", keep(master match) nogenerate
 
 // SIGNAL CONSTRUCTION
-ffind sicCRSP, newvar(tempFF48) type(48)
+sicff sicCRSP, generate(tempFF48) industry(48)
+drop if mi(tempFF48)
+
 bys tempFF48 time_avail_m: relrank mve_c, gen(tempRK) ref(mve_c)
 preserve
     keep if tempRK >=.7 & !mi(tempRK)
