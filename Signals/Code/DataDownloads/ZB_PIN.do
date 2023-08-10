@@ -1,23 +1,32 @@
 * 27. Probability of informed trading ------------------------------------------
+local webloc "https://www.dropbox.com/s/45b42e89gaafg0n/cpie_data.zip?dl=1"
+shell wget "`webloc'" -O $pathDataIntermediate/cpie_data.zip
+*shell wget "https://www.dropbox.com/s/45b42e89gaafg0n/cpie_data.zip?dl=1" -O $pathDataIntermediate/cpie_data.zip
+shell unzip -o $pathDataIntermediate/cpie_data.zip -d $pathDataIntermediate
+import delimited "$pathDataIntermediate/pin_yearly.csv", clear
+shell rm $pathDataIntermediate/cpie_data.zip -f
+rm $pathDataIntermediate/owr_yearly.csv
+rm $pathDataIntermediate/pin_yearly.csv
+rm $pathDataIntermediate/cpie_daily.csv
+rm $pathDataIntermediate/gpin_yearly.csv
+rm $pathDataIntermediate/dy_yearly.csv
 
-local webloc "https://sites.google.com/site/hvidkjaer/data/data-files/pin1983-2001.zip"
-capture {
-	copy "`webloc'" temp.zip
-    unzipfile temp.zip
-	import delimited pin1983-2001.dat, clear varnames(1) delimiter(whitespace, collapse)
-	erase temp.zip
-}
 
-* for fed linux (unzipfile doesn't seem to work)
-if _rc!= 0 {
-	shell wget "`webloc'" -O $pathDataIntermediate/deleteme.zip
-    shell unzip -o $pathDataIntermediate/deleteme.zip -d $pathDataIntermediate
-	import delimited "$pathDataIntermediate/pin1983-2001.dat", delimiter(whitespace, collapse) clear
-	shell rm $pathDataIntermediate/deleteme.zip -f
-}
+* generate yearly PIN measure from Easley et al
 
-rename permn permno
-replace year = year +1  // To trade on information from previous year
+
+* conver to monthly
+tset (year permno)
+expand 12
+sort permno year
+by permno year: generate month = _n
+gen modate = ym(year, month)
+format modate %tm
+gen time_avail_m = modate + 11
+format time_avail_m %tm
+
+
+
 
 compress
-save "$pathDataIntermediate/aInformedTrading", replace
+save "$pathDataIntermediate/pin_monthly", replace
