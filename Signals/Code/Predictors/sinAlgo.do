@@ -1,39 +1,77 @@
 * --------------
-// DATA LOAD
-use permno gvkey time_avail_m sicCRSP shrcd using "$pathDataIntermediate/SignalMasterTable", clear
-merge m:1 permno using "$pathDataIntermediate/SinStocksHong", keep(master match) nogenerate
-// SIGNAL CONSTRUCTION
-gen year = year(dofm(time_avail_m))
 
-* Sin stock classification using screening algorithm
-preserve
-    use gvkey sics1 naicsh using "$pathDataIntermediate/CompustatSegments", clear
-    gen sinInd = 0
-    replace sinInd = 1 if (sics1 >= 2100 & sics1 <= 2199) | (sics1 >=2080 & sics1 <= 2085) ///
-		| ((naics == 7132) | (naics == 71312) | (naics == 713210) | ///
-		(naics == 71329) | (naics == 713290) | (naics == 72112) | (naics == 721120))
-    bys gvkey: egen temp = max(sinInd)
-    keep if temp == 1
-    keep gvkey
-    duplicates drop  // THE CRITICAL ASSUMPTION HERE IS (AS IN THE ORIGINAL PAPER) THAT THE SIN INDICATOR PASSES TO THE ENTIRE HISTORY AND FUTURE OF A FIRM
-    save "$pathtemp/temp", replace
-restore
-merge m:1 gvkey using "$pathtemp/temp", keep(master match)
-gen sinAlgo = _merge == 3
-drop _merge
-replace sinAlgo = . if sinAlgo == 0
-replace sinAlgo = 0 if ///
-	(sicCRSP >= 2000 & sicCRSP <= 2046) | (sicCRSP >= 2050 & sicCRSP <= 2063) | ///
-	(sicCRSP >= 2070 & sicCRSP <= 2079) | (sicCRSP >= 2090 & sicCRSP <= 2092) | ///
-	(sicCRSP >= 2095 & sicCRSP <= 2099) | (sicCRSP >= 2064 & sicCRSP <= 2068) | ///
-	(sicCRSP >= 2086 & sicCRSP <= 2087) | (sicCRSP >=  920 & sicCRSP <=  999) | ///
-	(sicCRSP >= 3650 & sicCRSP <= 3652) | sicCRSP == 3732 | ///
-	(sicCRSP >= 3931 & sicCRSP <= 3932) | (sicCRSP >= 3940 & sicCRSP <= 3949) | ///
-	(sicCRSP >= 7800 & sicCRSP <= 7833) | (sicCRSP >= 7840 & sicCRSP <= 7841) | ///
-	(sicCRSP >= 7900 & sicCRSP <= 7911) | (sicCRSP >= 7920 & sicCRSP <= 7933) | ///
-	(sicCRSP >= 7940 & sicCRSP <= 7949) | sicCRSP == 7980 | ///
-	(sicCRSP >= 7990 & sicCRSP <= 7999) & sinAlgo !=1
-	
+* sinAlgo identifies sin stocks from two datasets, firm-level and firm-segment - level. The sin stock filter is the same in both. Implementation also takes care of the fact that tobacco stocks are not considered sin stocks before 1965 (fn 14)
+
+// DATA LOAD (Compustat Segments)
+use gvkey sics1 naicsh datadate using "$pathDataIntermediate/CompustatSegments", clear
+gen year = year(datadate)
+
+// SIGNAL CONSTRUCTION
+gen sinSegTobacco = .
+gen sinSegBeer = .
+gen sinSegGaming = .
+
+* Sin stocks
+replace sinSegTobacco = 1 if sics1 >= 2100 & sics1 <= 2199 
+replace sinSegBeer = 1 if sics1 >=2080 & sics1 <= 2085 
+replace sinSegGaming = 1 if naics == 7132 | naics == 71312 | naics == 713210 | ///
+	naics == 71329 | naics == 713290 | naics == 72112 | naics == 721120
+
+gen sinSegAny = 1 if sinSegTobacco == 1 | sinSegBeer == 1 | sinSegGaming == 1
+keep if sinSegAny == 1
+
+gcollapse (max) sinSeg*, by(gvkey year)
+
+save "$pathtemp/temp", replace
+
+* "a stock identified as sinful using the segments data will be characterized as sinful throughout its history." (page 19)
+bys gvkey (year): keep if _n == 1
+rename year firstYear
+rename sinSeg* sinSeg*FirstYear
+save "$pathtemp/tempFirstYear", replace
+
+// DATA LOAD (Firm-level industry codes)	
+use permno gvkey time_avail_m sicCRSP shrcd bh1m using "$pathDataIntermediate/SignalMasterTable", clear
+
+* Add NAICS codes
+merge 1:1 permno time_avail_m using "$pathProject/Signals/Data/Intermediate/m_aCompustat", keepusing(naicsh) keep(master match) nogenerate  
+
+gen year = year(dofm(time_avail_m))
+destring sicCRSP, replace
+
+// SIGNAL CONSTRUCTION
+gen sinStockTobacco = .
+gen sinStockBeer = .
+gen sinStockGaming = .
+
+* Sin stocks
+replace sinStockTobacco = 1 if sicCRSP >= 2100 & sicCRSP <= 2199 & year >= 1965  // Footnote 14, page 19
+replace sinStockBeer = 1 if sicCRSP >=2080 & sicCRSP <= 2085 
+replace sinStockGaming = 1 if naicsh == 7132 | naicsh == 71312 | naicsh == 713210 | ///
+	naicsh == 71329 | naicsh == 713290 | naicsh == 72112 | naicsh == 721120
+
+gen sinStockAny = 1 if sinStockTobacco == 1 | sinStockBeer == 1 | sinStockGaming == 1
+
+* Comparison group (top of page 22, FF48 groups 2, 3, 7, 43)
+sicff sicCRSP, generate(tmpFF48) industry(48)
+gen ComparableStock = 1 if tmpFF48 == 2 | tmpFF48 == 3 | tmpFF48 == 7 | tmpFF48 == 43
+
+* Merge segment data 
+merge m:1 gvkey year using "$pathtemp/temp", keep(master match) nogenerate
+
+* Merge first year segment data
+merge m:1 gvkey using "$pathtemp/tempFirstYear"
+
+* Finally, create sin stock indicator
+gen sinAlgo = .
+replace sinAlgo = 1 if ///
+        sinStockAny == 1 | /// *Stock-level sin indicator is equal to 1*
+		sinSegAll == 1 |  /// *Stock-segment sin indicator is equal to 1*
+		sinSegAllFirstYear == 1 & year < firstYear & year >=1965  | ///  *backfill sin history (with tobacco not being a sin stock before 1965)
+		sinSegBeerFirstYear == 1 | sinSegGamingFirstYear == 1 & year < firstYear & year <1965
+
+replace sinAlgo = 0 if ComparableStock == 1 & mi(sinAlgo)
+
 replace sinAlgo = . if shrcd > 11
 label var sinAlgo "Sin Stock (algorithm)"
 

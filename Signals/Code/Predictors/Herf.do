@@ -18,5 +18,9 @@ replace Herf = . if tempSIC == "4512" & year <=1978
 replace Herf = . if (tempSIC == "4812" | tempSIC == " 4813") &  year <= 1982
 replace Herf = . if substr(tempSIC, 1,2) == "49"
 label var Herf "Industry concentration"
+
+* Set to missing before 1951 (no sales data)
+replace Herf = . if year < 1951
+
 // SAVE
 do "$pathCode/savepredictor" Herf

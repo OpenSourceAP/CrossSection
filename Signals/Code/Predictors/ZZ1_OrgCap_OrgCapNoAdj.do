@@ -37,7 +37,9 @@ label var OrgCapNoAdj "Organizational capital without industry adjustment"
 
 *Adjusted version
 winsor2 OrgCapNoAdj, suffix("temp") cuts(1 99) by(time_avail_m)
-ffind sicCRSP, newvar(tempFF17) type(17)
+sicff sicCRSP, generate(tempFF17) industry(17)
+drop if mi(tempFF17)
+
 egen tempMean = mean(OrgCapNoAdjtemp), by(tempFF17 time_avail_m)
 egen tempSD   = sd(OrgCapNoAdjtemp), by(tempFF17 time_avail_m)
 gen OrgCap = (OrgCapNoAdjtemp - tempMean)/tempSD
