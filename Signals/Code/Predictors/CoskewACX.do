@@ -11,8 +11,10 @@ timer on 1
 // DATA LOAD
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
 	keep if time_d >= date("19620702","YMD")	
+
 merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match) keepusing(mktrf rf) 
 gen mkt = mktrf + rf
+	
 
 * convert to cts compounded exret "in place"
 replace mkt = log(1+mkt) - log(1+rf) 
@@ -38,10 +40,11 @@ cd `cdir'
 
 forvalues m=1/12 {
 		
-	display `m'
+	use "$pathtemp/tempdailymerge", clear	
 	
-	use "$pathtemp/tempdailymerge", clear
-	
+	* pretend we're in end of month m, and we're looking back over the 12 months	
+	* (dataset is sorted in reverse time)
+	display `m'	
 	gen time_avail_m = mofd(time_d) if month(time_d) == `m'
 	format time_avail_m %tm
 	by permno: replace time_avail_m = time_avail_m[_n-1] if time_avail_m == .
@@ -61,10 +64,12 @@ forvalues m=1/12 {
 	gcollapse (mean) E_ret_mkt2=ret_mkt2 E_ret2=ret2 E_mkt2=mkt2 ///
 		(count) nobs=ret ///
 		, by(permno time_avail_m)
-	gen CoskewACX = E_ret_mkt2 / (sqrt(E_ret2) * E_mkt2)	// eq B-9
-		
+	gen CoskewACX = E_ret_mkt2 / (sqrt(E_ret2) * E_mkt2)	// eq B-9	
+	
+	
 	* exclude of more than five missing obs (just above eq B-7)	
-	drop if nobs <= 252-5  
+	gcollapse (max) max_nobs = nobs, by (time_avail_m) merge
+	drop if max_nobs - nobs > 5	
 	
 	* save
 	save "$pathtemp/tempcoskew`m'", replace

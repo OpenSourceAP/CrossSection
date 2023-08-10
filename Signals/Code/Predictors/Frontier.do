@@ -12,19 +12,19 @@ gen tempRD   = xrd/sale
 gen tempAdv  = xad/sale
 gen tempPPE = ppent/at
 gen tempEBIT = ebitda/at
-ffind sicCRSP, newvar(tempFF48) type(48)
+sicff sicCRSP, generate(tempFF48) industry(48)
+drop if mi(tempFF48)
+
 gen logmefit_NS = .
 levelsof time_avail_m
 foreach t of numlist `r(levels)' {
 
-cap drop tempY
-
-cap reg YtempBM temp* i.tempFF48 if time_avail <= `t' & time_avail_m > `t' - 60
-
-cap predict tempY
-
-cap replace logmefit_NS = tempY if time_avail_m == `t'
+	cap drop tempY
+	cap reg YtempBM temp* i.tempFF48 if time_avail <= `t' & time_avail_m > `t' - 60
+	cap predict tempY
+	cap replace logmefit_NS = tempY if time_avail_m == `t'
 }
+
 cap drop temp*
 
 gen Frontier = YtempBM - logmefit_NS

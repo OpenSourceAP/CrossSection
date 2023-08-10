@@ -53,15 +53,4 @@ ssc install relrank, replace
 ssc install fs, replace
 ssc install filelist, replace
 ssc install rscript, replace
-
-// Install ffind.ado (Fed firewall doesn't like first method)
-capture {	
-	net from https://sites.google.com/site/judsoncaskey/data
-	net install utilities.pkg
-}
-if _rc!= 0 {
-	shell wget 'https://sites.google.com/site/judsoncaskey/data/ffind.ado?attredirects=0' -O $pathCode/ffind.ado
-	adopath + "$pathCode/"
-}
-
-
+ssc install sicff, replace
