@@ -66,8 +66,8 @@ merge m:1 gvkey using "$pathtemp/tempFirstYear"
 gen sinAlgo = .
 replace sinAlgo = 1 if ///
         sinStockAny == 1 | /// *Stock-level sin indicator is equal to 1*
-		sinSegAll == 1 |  /// *Stock-segment sin indicator is equal to 1*
-		sinSegAllFirstYear == 1 & year < firstYear & year >=1965  | ///  *backfill sin history (with tobacco not being a sin stock before 1965)
+		sinSegAny == 1 |  /// *Stock-segment sin indicator is equal to 1*
+		sinSegAnyFirstYear == 1 & year < firstYear & year >=1965  | ///  *backfill sin history (with tobacco not being a sin stock before 1965)
 		sinSegBeerFirstYear == 1 | sinSegGamingFirstYear == 1 & year < firstYear & year <1965
 
 replace sinAlgo = 0 if ComparableStock == 1 & mi(sinAlgo)

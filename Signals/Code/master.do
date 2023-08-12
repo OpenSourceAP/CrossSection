@@ -22,9 +22,9 @@ These are created by code in Signals/PrepScripts/.  They are required for produc
 *------------------------------------------------------------
 // SET PROJECT PATH AND WRDS CONNECTION NAME HERE !
 *------------------------------------------------------------
-*global pathProject "PATH TO PROJECT HERE" // required, should point to location of SignalDoc.csv
-*global wrdsConnection "wrds-stata" // required, see readme
-*global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe" // optional, used for like 3 signals (see DataDownloads/*.R)
+global pathProject "/cm/chen/openap/release_2023/CrossSection-Post-1/" // required, should point to location of SignalDoc.csv
+global wrdsConnection "wrds-stata" // required, see readme
+global RSCRIPT_PATH "C:/Program Files/R/R-4.0.3/bin/Rscript.exe" // optional, used for like 3 signals (see DataDownloads/*.R)
 
 if ("$pathProject" != "" & "$wrdsConnection" !="") {
     di("Relevant paths have been set")
@@ -35,6 +35,13 @@ else {
 }
 if ("$RSCRIPT_PATH" != ""){
 	global RSCRIPT_PATH = "missing"
+}
+
+// Check Fred Import 
+capture import fred VXOCLS, clear
+if _rc!=0{
+	display as error "fredkey is not set (see readme).  This is optional so you can comment out this check. But we thought we should check that you really want to miss about 6 predictors"
+	exit
 }
 
 

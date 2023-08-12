@@ -1,7 +1,9 @@
 #!/bin/bash
 #$ -cwd
 #$ -m abe
-#$ -m alec.c.erb@frb.gov
+
+# for email notification of being done, submit using
+#   qsub -m e -M Harvey_Liu_Zhu_2016_is_seriously_flawed@gmail.com master.sh
 
 # 2022 02 Andrew Chen
 # creates ibes-crsp link, 13f data, option metrics stuff, and hf (taq-issm) spreads
@@ -42,28 +44,27 @@ mkdir ~/data_prep/ # csv output will go here
 mkdir ~/temp_output/
 mkdir ~/temp_log/
 
-# ==== IBES-CRSP LINK, TR 13F ====
-echo "CREATING IBES-CRSP LINK (fast)"
-sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
+# # ==== IBES-CRSP LINK, TR 13F ====
+# echo "CREATING IBES-CRSP LINK (fast)"
+# sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
 
-echo "CREATING 13F DATA (10 min?)"
-sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
+# echo "CREATING 13F DATA (10 min?)"
+# sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
 
-# ==== OPTION METRICS LINK, ====
-echo "CREATING OPTION METRICS LINK (fast)"
-sas oclink_to_csv.sas -log ~/temp_log/oclink_to_csv.log
-
-# ==== OPTION METRICS: Bali-Hovak ====
-echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
-R CMD BATCH --no-save --no-restore bali_hovak.R ~/temp_log/bali_hovak.log
-
-# ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
-sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log
+# # ==== OPTION METRICS LINK, ====
+# echo "CREATING OPTION METRICS LINK (fast)"
+# sas oclink_to_csv.sas -log ~/temp_log/oclink_to_csv.log
 
 # ==== OPTION METRICS ====
 echo "CREATING OPTION METRICS DATA (about 3 hours)"
 R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R ~/temp_log/OptionMetricsProcessing.log
 
+# ==== OPTION METRICS: Bali-Hovak ====
+echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
+R CMD BATCH --no-save --no-restore bali_hovak.R ~/temp_log/bali_hovak.log
+
+# # ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
+# sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log
 
 # === HF SPREADS ====
 # below copied from Chen-Velikov's hf-spreads-all/main.sh

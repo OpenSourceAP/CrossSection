@@ -2,7 +2,9 @@
 # updated 2022 02
 # Creates two options-related predictors, and downloads option vol data for a third predictor.
 
-### ENVIRONMENT ###
+
+# Environment -------------------------------------------------------------
+
 rm(list = ls())
 
 querylimit = 'all' # use 'all' for full data, '20' for debugging
@@ -28,7 +30,48 @@ wrds <- dbConnect(Postgres(),
 # this code is so involved I decided to make it separate - Andrew 2019 10
 # Whole thing takes about 3 hours to run
 
-## === Options Prep 1/3: Smile Slope a.k.a. Slope (Yan) code ====
+# 1/3 Option Volume -------------------------------------------------------
+# from opvold dataset
+# about 2 min for all data, since it's at the (dailydate,secid,cpflag) level
+
+rm(list = ls(pattern = 'temp'))
+
+# download volume data
+start_time = Sys.time()
+res = dbSendQuery(conn = wrds, statement = 
+                    "select a.*
+                      from optionm.opvold as a
+                      where a.cp_flag != 'NaN'"
+) 
+tempd = res %>% dbFetch()
+tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
+dbClearResult(res)
+end_time = Sys.time()
+print(end_time-start_time)
+
+# sum volume over month by secid, month, calls and puts together
+tempm = tempd %>% group_by(secid, time_avail_m) %>%
+  summarize(
+    optVolume = sum(volume), optInterest = sum(open_interest)
+  )
+
+# save
+optVolall = tempm
+
+# write to csv
+data.table::fwrite(optVolall,
+                   file = paste0(
+                     path_dl_me
+                     , 'OptionMetricsVolume.csv'
+                   )
+)
+
+
+# 2/3: Vol Surface -----------------------------------------------------
+# Used in Smile Slope a.k.a. Slope (Yan) 
+# also used in An Ang Bali Cakici 2014
+# right now we DL delta = 50 (NTM) and days in (30,91) but we can adjust later
+
 # takes about 60 min
 
 # set up loop
@@ -45,7 +88,7 @@ vsurf_tables = dbGetQuery(
 yearlist = substr(vsurf_tables$table_name, 7,12)
 
 # prepare list of data frames
-slopemany = list()
+vsurfmany = list()
 
 # Setup query
 # adding the filter for deltas and duration speeds query up a lot I think
@@ -53,21 +96,22 @@ slopemany = list()
                           ,",a.impl_volatility "
                          ,"from optionm.vsurfd")
   querypoststring = paste0(
-      " as a "
-     ,"where (a.impl_volatility != 'NaN')"
-     ," and ((a.cp_flag = \'C\' and a.delta = 50)  "
-     ,"  or (a.cp_flag = \'P\' and a.delta = -50)) "
-     ," and a.days = 30 "
-     ," and extract(day from a.date) >= 23 "
-	 ," limit "
-	 ,querylimit
+    " as a "
+    ,"where (a.impl_volatility != 'NaN')"
+    ," and abs(a.delta) = 50"
+    ," and a.days in (30,91) "
+    ," and extract(day from a.date) >= 0 "
+    ," limit "
+    , querylimit
   )   
+  
 
-print("Calculating Smile Slope a.k.a. Slope (Yan) year by year")
 i = 1
 for (year in yearlist) {
+  
   print(Sys.time())
   start_time = Sys.time()
+  print("Processing Vol Surface for Year: ")
   print(year)
   
   # download data
@@ -76,24 +120,24 @@ for (year in yearlist) {
     statement=paste0(queryprestring,year,querypoststring)
   )
   tempd <- dbFetch(res)
-  tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
   dbClearResult(res)
   
   # take last obs each month
+  tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
   tempm = tempd %>%
-      group_by(secid, cp_flag, time_avail_m) %>%      
-      arrange(secid, cp_flag, date) %>%
-      filter(row_number()==n()) %>%
-      rename(impl_vol = impl_volatility)
+    group_by(secid, cp_flag, delta, days, time_avail_m) %>%      
+    arrange(secid, cp_flag, delta, days, date) %>%
+    filter(row_number()==n()) %>%
+    rename(impl_vol = impl_volatility)
   
-  # compute spread
-  tempmwide = tempm %>% select(secid,time_avail_m,cp_flag,impl_vol) %>%
-      spread(cp_flag, impl_vol)
-  tempmwide = tempmwide %>% mutate(slope = P-C) %>%
-    select(secid, time_avail_m, slope)
+  # # compute spread
+  # tempmwide = tempm %>% select(secid,time_avail_m,cp_flag,impl_vol) %>%
+  #     spread(cp_flag, impl_vol)
+  # tempmwide = tempmwide %>% mutate(slope = P-C) %>%
+  #   select(secid, time_avail_m, slope)
   
   # save and advance  
-  slopemany[[i]] = tempmwide
+  vsurfmany[[i]] = tempm
   i = i + 1
   
   end_time <- Sys.time()
@@ -102,21 +146,44 @@ for (year in yearlist) {
 }  # end Slope loop over years
 
 # finally, merge years together
-slopeall = do.call(rbind,slopemany)
+vsurfall = do.call(rbind,vsurfmany)
 
-## === Options Prep 2/3: Smirk a.k.a. Skew1 (Xing Zhang, Zhao 2010) ====
+# write to csv
+data.table::fwrite(vsurfall,
+                   file = paste0(
+                     path_dl_me
+                     , 'OptionMetricsVolSurf.csv'
+                   )
+)
+
+
+
+# 3/3: Smirk a.k.a. Skew1 (Xing Zhang, Zhao 2010) --------------------
+# from opprcd dataset (option prices)
+# this dataset is too big to download more generally, so we 
+# calculate for specific uses 
 # may take 2 hours
 
 # set up loop
-# note this loop re-uses the yearlist from Options Prep 1/3
 rm(list = ls(pattern = 'temp'))
+
+vsurf_tables = dbGetQuery(
+  wrds, "
+  SELECT table_name 
+      FROM information_schema.tables
+      WHERE table_schema = 'optionm' 
+        AND table_name like 'vsurfd%'
+  "
+)
+yearlist = substr(vsurf_tables$table_name, 7,12)
 skewmany = list()
 
-print("Calculating Smirk aka Skew1 year by year")
+
 i = 1
 for (year in yearlist) {
   print(Sys.time())
   start_time = Sys.time()
+  print("Calculating Smirk aka Skew1 for Year:")
   print(year)     
   
   ## download daily data with lots of filters
@@ -184,73 +251,10 @@ for (year in yearlist) {
 ## finally, merge years together
 skewall = do.call(rbind,skewmany)
 
-
-
-## === Options Prep 3/3: Volume
-rm(list = ls(pattern = 'temp'))
-
-# option volume will later be merged with stock volume
-# about 2 min
-
-# download volume data
-start_time = Sys.time()
-res = dbSendQuery(conn = wrds, statement = 
-                    "select a.*
-                      from optionm.opvold as a
-                      where a.cp_flag != 'NaN'"
-) 
-tempd = res %>% dbFetch()
-tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
-dbClearResult(res)
-end_time = Sys.time()
-print(end_time-start_time)
-
-# sum volume over month by secid, month, calls and puts together
-tempm = tempd %>% group_by(secid, time_avail_m) %>%
-  summarize(optVolume = sum(volume))
-
-# save
-optVolall = tempm
-
-## === Options Finish: merge datasets from Prep 1-3 and add linking info
-
-rm(list = ls(pattern = 'temp'))
-rm(list = c("skewmany","slopemany"))
-
-# download linking file
-start_time = Sys.time()
-optID = dbSendQuery(conn = wrds, statement = 
-                      "select distinct a.secid, a.ticker, a.cusip, a.effect_date
-                      from optionm.optionmnames as a
-                      "
-) %>% dbFetch()
-end_time = Sys.time()
-print(end_time-start_time)
-
-# additional prep:
-# convert effective dates to monthly, find beginning and end dates
-# use year 3000 if no end date
-optID = optID %>% 
-  mutate(match_begin_m = ceiling_date(effect_date, unit = "month")-1)  %>%
-  arrange(secid,match_begin_m) %>%
-  group_by(secid) %>%
-  mutate(match_end_m = lead(match_begin_m, order_by=secid)) %>%
-  mutate(match_end_m = replace_na(match_end_m,as.Date("3000-01-01"))) %>%
-  select(-c("effect_date"))
-
-
-# merge skewall, slopeall, and optID into OptionMetrics
-OptionMetrics = full_join(skewall,slopeall,by= c("secid","time_avail_m"))
-OptionMetrics = full_join(OptionMetrics,optVolall,by= c("secid","time_avail_m"))
-temp1 = left_join(OptionMetrics,optID,by = "secid") 
-temp2 = temp1 %>% 
-  filter(time_avail_m >= match_begin_m & time_avail_m <= match_end_m )
-OptionMetrics = temp2 %>% select(-c("match_begin_m","match_end_m"))
-
-# finally write to csv!
-data.table::fwrite(OptionMetrics,
+# write 
+data.table::fwrite(skewall,
                    file = paste0(
                        path_dl_me
-                       , 'OptionMetrics.csv'
+                       , 'OptionMetricsXZZ.csv'
                        )
                    )
