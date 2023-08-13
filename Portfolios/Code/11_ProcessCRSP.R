@@ -122,7 +122,7 @@ if (!skipdaily){
   ## Calculate passive within-month gains (calc in place) 
   setkeyv(crspdret, c('permno','yyyymm')) # hopefully this speeds up the passive gain calc
   crspdret = crspdret[
-    , passgain := shift(ret, fill=0, type='lag'), by = c('permno','yyyymm')
+    , passgain := data.table::shift(ret, fill=0, type='lag'), by = c('permno','yyyymm')
   ][
     , passgain := cumprod(1+passgain/100), by=c('permno','yyyymm')
   ] 

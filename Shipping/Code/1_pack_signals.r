@@ -29,7 +29,7 @@ signals = read_csv(paste0(pathPredictors, prds[1], '.csv')) %>%
 # loop over predictors and append
 for (i in 1:length(prds)){
   
-  print(paste('Appending ', prds[i], ' #', i, ' of ', length(prds)))
+  print(paste('Appending ', prds[i], ' #', i, ' of ', length(prds), ' non-CRSP predictors'))
   
   if (file.exists(paste0(pathPredictors, prds[i], '.csv'))) {
     tempin = fread(paste0(pathPredictors, prds[i], '.csv'))
@@ -101,13 +101,14 @@ file.remove(
   paste0(pathStorage,'Firm Level Characteristics/Individual/Placebos/BidAskTAQ.csv')
 )
 
-# zip predictors to storage
+
+## zip predictors to storage -----------------------------------------------
 print(paste0('Zipping PredictorsIndiv.zip ',Sys.time()))
 tempdir = getwd()
 setwd(paste0(
   pathStorage,'Firm Level Characteristics/Individual/Predictors/'
 )) # avoids copying paths into zip
-files2zip <- dir()
+files2zip <- dir(pattern = '*.csv')
 zip(
   zipfile = paste0(pathStorage, 'Firm Level Characteristics/Full Sets/PredictorsIndiv.zip')
   , files = files2zip
@@ -115,13 +116,13 @@ zip(
 setwd(tempdir)
 print(paste0('Done zipping PredictorsIndiv.zip ',Sys.time()))
 
-# zip placebos to storage
+## zip placebos  to storage -----------------------------------------------
 print(paste0('Zipping PlacebosIndiv.zip ',Sys.time()))
 tempdir = getwd()
 setwd(paste0(
   pathStorage,'Firm Level Characteristics/Individual/Placebos/'
 )) # avoids copying paths into zip
-files2zip <- dir()
+files2zip <- dir(pattern = '*.csv')
 zip(
   zipfile = paste0(pathStorage, 'Firm Level Characteristics/Full Sets/PlacebosIndiv.zip')
   , files = files2zip
