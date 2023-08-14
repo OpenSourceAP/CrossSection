@@ -60,7 +60,7 @@ gen ComparableStock = 1 if tmpFF48 == 2 | tmpFF48 == 3 | tmpFF48 == 7 | tmpFF48 
 merge m:1 gvkey year using "$pathtemp/temp", keep(master match) nogenerate
 
 * Merge first year segment data
-merge m:1 gvkey using "$pathtemp/tempFirstYear"
+merge m:1 gvkey using "$pathtemp/tempFirstYear", keep(master match) nogenerate
 
 * Finally, create sin stock indicator
 gen sinAlgo = .
