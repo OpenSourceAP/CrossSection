@@ -2,7 +2,7 @@
 // Prep IBES data
 use "$pathDataIntermediate/IBES_EPS_Unadj", replace
 keep if fpi == "1"
-keep if fpedats != . & fpedats > statpers + 30 // keep only forecasts past June
+keep if fpedats != . // & fpedats > statpers + 30 // 
 save "$pathtemp/temp", replace
 
 // DATA LOAD
