@@ -14,9 +14,11 @@ if _rc!= 0 {
 }
 
 rename Founding FoundingYear
-rename Offerdate OfferDate	// variable OfferDate changed to Offerdate
+*rename Offerdate OfferDate	// variable OfferDate changed to Offerdate
+rename offerdate OfferDate	// variable OfferDate changed to offerdate in 2024 version
 
-rename CRSPpermanentID permno
+*rename CRSPpermanentID permno
+rename CRSPperm permno  // var name change in 2024 version
 destring permno, replace
 
 tostring OfferDate, gen(temp)

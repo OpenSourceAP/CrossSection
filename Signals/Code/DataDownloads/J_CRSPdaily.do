@@ -9,9 +9,12 @@ foreach f of local list {
 }
 cd `cdir'
 
+
+local temp_endyear = substr("$S_DATE", -4, 4)
+di `temp_endyear' 
 // Download, loop over years and ave to disk to avoid crashing program 
 // (in case of memory limits)
-forvalues y=1926/2200{
+forvalues y=1926/`temp_endyear'{
 	display "`y'"
 	#delimit ;
 	local sql_statement
