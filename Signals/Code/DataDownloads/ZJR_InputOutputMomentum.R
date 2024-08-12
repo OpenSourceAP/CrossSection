@@ -39,6 +39,7 @@ library(lubridate)
 
 # Parse arguments
 args = commandArgs(trailingOnly = "TRUE")
+args = list('/cm/chen/openap/release_2024/pretest/') # for debugging
 if (length(args)) {
   arg1 <- args[1]
 } else {
@@ -362,8 +363,8 @@ download.file("https://apps.bea.gov//industry/iTables%20Static%20Files/AllTables
 
 # Find relevant files in zip archive
 fls = unzip(tmp, list = TRUE)
-pathSupply = fls$Name[grepl("Supply_Tables_1997-2[0-9]{3}_sum.xlsx", fls$Name, ignore.case = TRUE)]
-pathUse    = fls$Name[grepl("Use_SUT_Framework_1997-2[0-9]{3}_sum.xlsx", fls$Name, ignore.case = TRUE)]
+pathSupply = fls$Name[grepl("Supply_Tables_1997-2[0-9]{3}_Summary.xlsx", fls$Name, ignore.case = TRUE)]
+pathUse    = fls$Name[grepl("Supply-Use_Framework_1997-2[0-9]{3}_Summary.xlsx", fls$Name, ignore.case = TRUE)]
 
 stopifnot(length(pathSupply) == 1)
 stopifnot(length(pathUse) == 1)
