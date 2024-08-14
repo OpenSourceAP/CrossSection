@@ -7,6 +7,9 @@ use permno time_d prc cfacpr using "$pathDataIntermediate/dailyCRSP", clear
 
 * Adjust prices for splits etc
 gen P = abs(prc)/cfacpr // I guess they just take the absolute value of prc but it does not say in the paper
+* Note that cfacpr has look-ahead bias but cfacpr cancels out when we normalize prices below, see
+* https://github.com/OpenSourceAP/CrossSection/issues/95#issuecomment-2286842730
+
 drop cfacpr prc
 
 * Generate time variable without trading day gaps for simplicity and generate month variable for sorting
