@@ -13,14 +13,12 @@ save "$pathtemp/temp_comp_rat", replace
 
 // Define signal for CIQ SP ratings data
 use "$pathDataIntermediate/m_CIQ_creditratings.dta", clear
-gen time_avail_m = mofd(ratingdate)
-format time_avail_m %tm
 
 * let's try it the easy way for now, using CIQ's ratingaction
 keep if !missing(gvkey) & ratingaction == "Downgrade"
 gen ciq_dg = 1 
 order gvkey time_avail_m ciq_dg
-collapse (max) ciq_dg, by(gvkey time_avail_m) // handle dups within month
+collapse (max) ciq_dg, by(gvkey time_avail_m) // handle dups within month by looking for any downgrades
 
 save "$pathtemp/temp_ciq_rat", replace
 
