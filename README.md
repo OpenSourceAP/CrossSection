@@ -10,7 +10,10 @@ If you use data or code based on our work, please cite the paper:
   title={Open Source Cross Sectional Asset Pricing},
   author={Chen, Andrew Y. and Tom Zimmermann},
   journal={Critical Finance Review},
-  year={Forthcoming}
+  year={2022},
+  pages={207-264},
+  volume={11},
+  number={2}
 }
 ~~~
 
