@@ -19,7 +19,7 @@ xtset permno time_avail_m
 // 40n1 Number of days with 0 trades (1 month version)
 gen temp_zerotrade = (countzero + ((1/turn)/480000))*(21/ndays)
 gen zerotrade1M = l.temp_zerotrade
-label var zerotradeAlt1 "Days with zero trades (1 month version)"
+label var zerotrade1M "Days with zero trades (1 month version)"
 
 // 40 Number of days with 0 trades (6 month version)
 gen Turn6 = turn + l1.turn + l2.turn + l3.turn + l4.turn + l5.turn
@@ -29,7 +29,7 @@ gen ndays6 = ndays + l1.ndays + l2.ndays + l3.ndays + l4.ndays + l5.ndays
 gen temp_zerotrade6 = (countzero6 + ((1/Turn6)/11000))*(21*6/ndays6)  /* I use a deflator of 11,000 in constructing LM6 and LM12, and a deflator of 480,000 for LM1 (Liu (2006, fn 4, p. 635)) */
 
 gen zerotrade6M = l.temp_zerotrade6
-label var zerotrade "Days with zero trades (6 month version)"
+label var zerotrade6M "Days with zero trades (6 month version)"
 
 // 40n12 Number of days with 0 trades (12 month version)
 gen Turn12 = turn + l1.turn + l2.turn + l3.turn + l4.turn + l5.turn + l6.turn + l7.turn + l8.turn + l9.turn + l10.turn + l11.turn
@@ -39,7 +39,7 @@ gen ndays12 = ndays + l1.ndays + l2.ndays + l3.ndays + l4.ndays + l5.ndays + l6.
 gen temp_zerotrade12 = (countzero12 + ((1/Turn12)/11000))*(21*12/ndays12)  /* I use a deflator of 11,000 in constructing LM6 and LM12, and a deflator of 480,000 for LM1 (Liu (2006, fn 4, p. 635)) */
 
 gen zerotrade12M = l.temp_zerotrade12
-label var zerotradeAlt12 "Days with zero trades (12 month version)"
+label var zerotrade12M "Days with zero trades (12 month version)"
 
 // SAVE 
 do "$pathCode/savepredictor" zerotrade1M
