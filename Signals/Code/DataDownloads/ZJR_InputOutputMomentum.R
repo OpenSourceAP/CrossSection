@@ -39,7 +39,6 @@ library(lubridate)
 
 # Parse arguments
 args = commandArgs(trailingOnly = "TRUE")
-args = list('/cm/chen/openap/release_2024/pretest/') # for debugging
 if (length(args)) {
   arg1 <- args[1]
 } else {

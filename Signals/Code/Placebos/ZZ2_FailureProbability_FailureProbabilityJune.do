@@ -23,7 +23,7 @@ keep if !mi(gvkey)
 merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(shrout)
 merge m:1 time_avail_m using "$pathDataIntermediate/monthlyFF", keep(master match) nogenerate keepusing(mktrf)
 merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_QCompustat", keepusing(atq ceqq ltq cheq ibq) nogenerate keep(match)
-merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_ACompustat", keepusing(txditc seq ceq at lt pstk pstkrv pstkl txdb) nogenerate keep(match)
+merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_aCompustat", keepusing(txditc seq ceq at lt pstk pstkrv pstkl txdb) nogenerate keep(match)
 merge 1:1 permno time_avail_m using "$pathtemp/tempPlacebo", keep(master match) nogenerate 
 
 // SIGNAL CONSTRUCTION

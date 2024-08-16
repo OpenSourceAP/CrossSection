@@ -45,15 +45,15 @@ mkdir ~/temp_output/
 mkdir ~/temp_log/
 
 # # ==== IBES-CRSP LINK, TR 13F ====
-# echo "CREATING IBES-CRSP LINK (fast)"
-# sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
+echo "CREATING IBES-CRSP LINK (fast)"
+sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
 
-# echo "CREATING 13F DATA (10 min?)"
-# sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
+echo "CREATING 13F DATA (10 min?)"
+sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
 
 # # ==== OPTION METRICS LINK, ====
-# echo "CREATING OPTION METRICS LINK (fast)"
-# sas oclink_to_csv.sas -log ~/temp_log/oclink_to_csv.log
+echo "CREATING OPTION METRICS LINK (fast)"
+sas oclink_to_csv.sas -log ~/temp_log/oclink_to_csv.log
 
 # ==== OPTION METRICS ====
 echo "CREATING OPTION METRICS DATA (about 3 hours)"
@@ -63,8 +63,9 @@ R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R ~/temp_log/OptionMe
 echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
 R CMD BATCH --no-save --no-restore bali_hovak.R ~/temp_log/bali_hovak.log
 
-# # ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
-# sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log
+# ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
+echo "CREATING LF SPREADS (CORWIN-SCHULTZ, about 15 min)"
+sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log
 
 # === HF SPREADS ====
 # below copied from Chen-Velikov's hf-spreads-all/main.sh
