@@ -84,7 +84,7 @@ tibble(rho = temp) %>%
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
 
-ggsave(filename = paste0(pathResults, "fig1aPort_pairwisecorrelations.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1aPort_pairwisecorrelations.pdf"), width = 10, height = 8)
 
 
 allRhos <- tibble(rho = temp, series = "Pairwise")
@@ -110,7 +110,7 @@ tibble(rho = temp) %>%
   ) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig1bPort_correlationSMB.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1bPort_correlationSMB.pdf"), width = 10, height = 8)
 
 allRhos <- rbind(
   allRhos,
@@ -139,7 +139,7 @@ tibble(rho = temp) %>%
   ) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig1cPort_correlationHML.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1cPort_correlationHML.pdf"), width = 10, height = 8)
 
 allRhos <- rbind(
   allRhos,
@@ -168,7 +168,7 @@ tibble(rho = temp) %>%
   ) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig1dPort_correlationMom.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1dPort_correlationMom.pdf"), width = 10, height = 8)
 
 allRhos <- rbind(
   allRhos,
@@ -196,7 +196,7 @@ tibble(rho = temp) %>%
   ) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig1ePort_correlationOP.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1ePort_correlationOP.pdf"), width = 10, height = 8)
 
 allRhos <- rbind(
   allRhos,
@@ -224,7 +224,7 @@ tibble(rho = temp) %>%
   ) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig1fPort_correlationCMA.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1fPort_correlationCMA.pdf"), width = 10, height = 8)
 
 allRhos <- rbind(
   allRhos,
@@ -245,7 +245,7 @@ allRhos %>%
   facet_wrap(~series, scales = "free_y") +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig1Port_jointly.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig1Port_jointly.pdf"), width = 10, height = 8)
 
 # Figure 2: Replication rates ---------------------------------------------
 
@@ -311,7 +311,7 @@ df %>%
   ) +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig2b_reprate_data.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig2b_reprate_data.pdf"), width = 10, height = 8)
 
 
 # Alternatively: Jitter plot
@@ -330,7 +330,7 @@ df %>%
   coord_flip() +
   theme_minimal(base_size = optFontsize, base_family = optFontFamily)
 
-ggsave(filename = paste0(pathResults, "fig2b_reprate_data_Jitter.pdf"), width = 10, height = 8)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig2b_reprate_data_Jitter.pdf"), width = 10, height = 8)
 
 
 # Scatter of replication t-stat vs OP t-stat ------------------------------
@@ -413,10 +413,10 @@ df_plot %>%
     theme_minimal(base_size = optFontsize, base_family = optFontFamily) +
     theme(legend.position = c(.8, .25)) 
 
+knitr::opts_chunk$set(dev = cairo_pdf)
 
 temp = 1.5
-ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP.pdf")
-     , width = 10*temp, height = 6*temp)
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig_tstathand_vs_tstatOP.pdf"), width = 10*temp, height = 6*temp)
 
 # hand examine for comparables
 df_plot %>% filter(PredOP == '2_likely', !is.na(tstatOP)) %>%
@@ -454,7 +454,7 @@ df_plot %>%
   theme(legend.position = c(.8, .25))
 
 temp = 1.5
-ggsave(filename = paste0(pathResults, "fig_tstathand_vs_tstatOP_withHighlights.pdf")
+ggsave(device = cairo_pdf, filename = paste0(pathResults, "fig_tstathand_vs_tstatOP_withHighlights.pdf")
        , width = 10*temp, height = 6*temp)
 
 
@@ -545,7 +545,7 @@ plott =  df_merge %>%
 
 plotboth = grid.arrange(plotret,plott,nrow=2)
 
-ggsave(filename = paste0(pathResults, 'fig5_MP_both.pdf')
+ggsave(device = cairo_pdf, filename = paste0(pathResults, 'fig5_MP_both.pdf')
      , plot = plotboth
      , width = 7, height = 8)
 

@@ -147,8 +147,12 @@ setwd(pathResults)
 
 flist = list.files()
 for (fcurr in flist){
-  file.copy(
+  success = file.copy(
     from = paste0(fcurr)
-    , to = paste0(pathStorage,'Results/')
+    , to = paste0(pathStorage,'Results/', fcurr)
   )
+  if (!success){
+    print(paste0('Failed to copy ', fcurr))
+  }
 }
+
