@@ -10,6 +10,7 @@ dir.create(paste0(pathStorage,'Portfolios/Full Sets OP/'))
 dir.create(paste0(pathStorage,'Portfolios/Full Sets Alt/'))
 dir.create(paste0(pathStorage,'Portfolios/Individual/'))
 dir.create(paste0(pathStorage,'DailyPortfolios/'))
+dir.create(paste0(pathStorage,'Results/'))
 
 # ==== FULL SETS OP ====
 # copy the OP full sets without zipping
@@ -140,3 +141,14 @@ setwd(tempdir)
 print(paste0('Done zipping daily portfolio csvs ',Sys.time()))
 
 print(Sys.time() - starttime )
+
+# ==== RESULTS ====
+setwd(pathResults)
+
+flist = list.files()
+for (fcurr in flist){
+  file.copy(
+    from = paste0(fcurr)
+    , to = paste0(pathStorage,'Results/')
+  )
+}

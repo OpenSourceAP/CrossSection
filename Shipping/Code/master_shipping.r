@@ -8,13 +8,14 @@ library(tidyverse)
 library(readxl)
 library(data.table) # for speed
 
-pathProject = 'D:/OneDrive/AC-OPENAP/CrossSection/' # local code base directory
-pathStorage = 'D:/Gdrive/Work/Public/Open AP/Data Release 2023.08/' # a place to store copies for uploading
+pathProject = 'D:/Dropbox/AC-OPENAP/CrossSection/' # local code base directory
+pathStorage = 'D:/Gdrive/Work/Public/Open AP/Data Release 2024.08/' # a place to store copies for uploading
 
 pathShipping = paste0(pathProject,'Shipping/') # where Code/master_shipping.r is
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
 pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
 pathPortfolios = paste0(pathProject, 'Portfolios/Data/Portfolios/')
+pathResults = paste0(pathProject, 'Results')
 
 # create folders
 dir.create(pathStorage)
