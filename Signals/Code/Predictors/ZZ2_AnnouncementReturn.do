@@ -52,8 +52,8 @@ replace time_ann_d = time_temp - 1 if l1.anndat == 1
 gen AnnTime = time_d if anndat == 1 
 drop if mi(time_ann_d)
 
-gcollapse (sum) AnnouncementReturn (firstnm) AnnTime, by(permno time_ann_d) 
-gen time_avail_m = mofd(AnnTime)
+gcollapse (sum) AnnouncementReturn (max) time_d, by(permno time_ann_d) 
+gen time_avail_m = mofd(time_d)
 format time_avail_m %tm
 
 * Fill in months with no earnings announcements with most recent announcement return at most six months ago
