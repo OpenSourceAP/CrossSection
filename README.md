@@ -1,4 +1,4 @@
-# Open source cross sectional asset pricing
+# Open source cross sectional asset pricing s
 
 This repo accompanies our paper:
 [Chen and Zimmermann (2021), "Open source cross-sectional asset pricing"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3604626)

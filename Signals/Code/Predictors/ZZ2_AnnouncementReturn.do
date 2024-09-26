@@ -38,21 +38,28 @@ drop _merge gvkey
 rename time_ann_d time_d
 merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match) keepusing(mktrf rf)
 
-
 // SIGNAL CONSTRUCTION
 gen AnnouncementReturn = ret - (mktrf + rf)
 bys permno (time_d): gen time_temp = _n  // To deal with weekends
 xtset permno time_temp
 
+* time_temp indexes the business days for a particular permno (1,2,3,..,)
+* time_ann_d creates a window that starts two biz days before anndat
+* 	and ends 1 day after anndat. The value of time_ann_d is the biz day
+* 	of the anndat (unique for each announcement) but is na if outside the window.
 gen time_ann_d = time_temp if anndat == 1 
 replace time_ann_d = time_temp + 1 if f1.anndat == 1
 replace time_ann_d = time_temp + 2 if f2.anndat == 1
 replace time_ann_d = time_temp - 1 if l1.anndat == 1
-
-gen AnnTime = time_d if anndat == 1 
 drop if mi(time_ann_d)
+format time_ann_d %td
 
+* this is key:sum up daily returns over the window, but then assign
+* the daily date as the maximum of these dates in the window. So if the window
+* ends Jan 2, AnnouncementReturn is assigned to Jan 2
 gcollapse (sum) AnnouncementReturn (max) time_d, by(permno time_ann_d) 
+
+* convert the daily date to monthly date
 gen time_avail_m = mofd(time_d)
 format time_avail_m %tm
 
