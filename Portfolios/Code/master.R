@@ -27,7 +27,7 @@
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder & location of SignalDoc.csv)
 # if using Rstudio, pathProject = paste0(getwd(), '/') should work
-pathProject = paste0(getwd(), '/')
+pathProject = 'd:/Dropbox/Open-AP-ac/CrossSection/'
 
 quickrun =  F # use T if you want to run quickly for testing
 quickrunlist = c('Accruals','AM') # list of signals to use for quickrun

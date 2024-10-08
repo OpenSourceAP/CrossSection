@@ -5,39 +5,33 @@
 
 # Prints simple tables to terminal 
 
-# ENVIRONMENT ====
-rm(list = ls())
-library(tidyverse)
-library(data.table)
-library(googledrive)
-library(gridExtra)
+# # ENVIRONMENT ====
+# rm(list = ls())
+# library(tidyverse)
+# library(data.table)
+# library(googledrive)
+# library(gridExtra)
 
-pathProject = 'D:/Dropbox/AC-OPENAP/CrossSection/' 
+# pathProject = 'C:/Dropbox/OPEN-AP-ac/CrossSection/' 
 setwd(paste0(pathProject,'Shipping/Code/'))
 
 dir.create('../Data/temp')
  
-# root of August 2023 release
-OLD_PATH_RELEASES = 'https://drive.google.com/drive/folders/1EP6oEabyZRamveGNyzYU0u6qJ-N43Qfq'
+# # root of August 2023 release
+# OLD_PATH_RELEASES = 'https://drive.google.com/drive/folders/1EP6oEabyZRamveGNyzYU0u6qJ-N43Qfq'
 
-# root of August 2024
-NEW_PATH_RELEASES = 'https://drive.google.com/drive/folders/1-PqsR-tOjv3-U9DRHw85X-VznYlu-Sfc'
-
-# use this for original papers
-SUBDIR = 'Full Sets OP'; FILENAME = 'PredictorPortsFull.csv'
-
-# use this for VW or whatever else
-# SUBDIR = 'Full Sets Alt'; FILENAME = 'PredictorAltPorts_QuintilesVW.zip'
-# SUBDIR = 'Full Sets Alt'; FILENAME = 'PredictorAltPorts_LiqScreen_VWforce.zip'
+# root of October 2024
+# NEW_PATH_RELEASES = 'https://drive.google.com/drive/folders/1SSoHGbwgyhRwUCzLE0YWvUlS0DjLCd4k'
 
 #=====================================================================#
-# Download files                                                  ====
+# Load data                                                  ====
 #=====================================================================#
 
 # download old data
+FILENAME = 'PredictorPortsFull.csv'
 OLD_PATH_RELEASES %>% drive_ls() %>%
   filter(name == "Portfolios") %>% drive_ls() %>% 
-  filter(name == SUBDIR) %>% drive_ls() %>% 
+  filter(name == 'Full Sets OP') %>% drive_ls() %>% 
   filter(name == FILENAME) %>% 
   drive_download(path = paste0("../Data/temp/",FILENAME), overwrite = TRUE)
 
@@ -51,30 +45,32 @@ if (grepl('.csv',FILENAME)){
   )
 }
 
-# download new data
-id <-  NEW_PATH_RELEASES %>% drive_ls() %>%
-  filter(name == "Portfolios") %>% drive_ls() %>% 
-  filter(name == SUBDIR) %>% drive_ls() %>% 
-  filter(name == FILENAME) %>% 
-  drive_download(path = paste0("../Data/temp/",FILENAME), overwrite = TRUE)
+# # download new data
+# id <-  NEW_PATH_RELEASES %>% drive_ls() %>%
+#   filter(name == "Portfolios") %>% drive_ls() %>% 
+#   filter(name == 'Full Sets OP') %>% drive_ls() %>% 
+#   filter(name == FILENAME) %>% 
+#   drive_download(path = paste0("../Data/temp/",FILENAME), overwrite = TRUE)
 
-# import
-if (grepl('.csv',FILENAME)){
-  new_PredictorPortsFull <- fread(paste0("../Data/temp/",FILENAME))
-} else{
-  unzip(zipfile = paste0('../Data/temp',FILENAME), exdir = 'temp')
-  new_PredictorPortsFull <- fread(
-    paste0("../Data/temp/",substr(FILENAME, 1,(nchar(FILENAME)-4)),'.csv')
-  )
-}
+# # import
+# if (grepl('.csv',FILENAME)){
+#   new_PredictorPortsFull <- fread(paste0("../Data/temp/",FILENAME))
+# } else{
+#   unzip(zipfile = paste0('../Data/temp',FILENAME), exdir = 'temp')
+#   new_PredictorPortsFull <- fread(
+#     paste0("../Data/temp/",substr(FILENAME, 1,(nchar(FILENAME)-4)),'.csv')
+#   )
+# }
 
-# download signal doc
-NEW_PATH_RELEASES %>% drive_ls() %>% 
-  filter(name == "SignalDoc.csv") %>% 
-  drive_download(path = "../Data/temp/SignalDoc.csv", overwrite = TRUE)
+# load new data
+new_PredictorPortsFull <- fread(
+  paste0(pathStorage,'Portfolios/Full Sets OP/',FILENAME)
+)
 
-SignalDoc <- fread("../Data/temp/SignalDoc.csv")
-
+# load signal doc
+SignalDoc <- fread(
+  paste0(pathStorage,'SignalDoc.csv')
+)
 
 
 #=====================================================================#
@@ -92,6 +88,9 @@ PredictorPortsFull <- inner_join(
     rename(new_ret = ret) %>% 
     mutate(port = if_else(nchar(port)==2, port, paste0('0',port)))
   , by = c("signalname", "port", "date")
+  ) %>% 
+  mutate(
+    date = as.Date(date)
   )
 
 # Keep only relevant variables
@@ -151,9 +150,10 @@ write.csv(check, "../Data/temp/PredictorPortsCheck.csv", row.names = FALSE)
 
 
 #=====================================================================#
-# Summary stats output to console ====
+# Summary stats output to pathStorage/storage_checks_part2.txt ====
 #=====================================================================#
 
+sink(paste0(pathStorage,'storage_checks_part2.txt'))
 check_ls = check %>% 
   filter(port == 'LS', !is.na(samptype), !is.na(slope)) 
 

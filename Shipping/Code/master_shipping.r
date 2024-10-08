@@ -7,9 +7,12 @@
 library(tidyverse)
 library(readxl)
 library(data.table) # for speed
+library(googledrive)
 
-pathProject = 'D:/Dropbox/AC-OPENAP/CrossSection/' # local code base directory
-pathStorage = 'D:/Gdrive/Work/Public/Open AP/Data Release 2024.08/' # a place to store copies for uploading
+pathProject = 'C:/Dropbox/Open-AP-ac/CrossSection/' # local code base directory
+pathStorage = 'C:/Gdrive/My Drive/Work/Public/Open AP/Data Release 2024.10/' # a place to 
+OLD_PATH_RELEASES = 'https://drive.google.com/drive/folders/1EP6oEabyZRamveGNyzYU0u6qJ-N43Qfq' # location of previous release for comparison (here August 2023)
+
 
 pathShipping = paste0(pathProject,'Shipping/') # where Code/master_shipping.r is
 pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
@@ -25,6 +28,8 @@ dir.create('../Data/Portfolios/')
 dir.create('../Data/Portfolios/Individual')
 dir.create('../Data/temp')
 
+# trigger googledrive auth
+drive_auth()
 
 # function for reading in documentation, copied for Portfolios/Code/
 readdocumentation = function(){
@@ -84,7 +89,7 @@ file.copy(
   , to = paste0(pathStorage)
 )
 
-source('1_pack_signals.r')
-source('2_pack_portfolios_and_results.r')
-source('3_check_storage.r')
+# source('1_pack_signals.r')
+# source('2_pack_portfolios_and_results.r')
+# source('3_check_storage.r')
 
