@@ -5,18 +5,9 @@ library(dtplry)
 library(magrittr)
 DT_CRSP <- fread("Data/CRSP.csv")
 ## Standard Filter is applied to the DT_CRSP 
-
-DT_CRSP <- fread("Data/CRSP.csv")
-
-DT_CRSP$SIC1D = substr(DT_CRSP$SICCD,1,1)
-
-DT_CRSP$date = DT_CRSP$date %>% ceiling_date(., "m") %>% add(-1)
-
-DT_CRSP$RET %<>% as.numeric()
-DT_CRSP$DLRET %<>% as.numeric()
-DT_CRSP <- DT_CRSP %>% 
-  filter( SHRCD %in% c(10,11), EXCHCD %in% c(1,2,3)) %>% as_dt
-DT_CRSP <- DT_CRSP %>% rename(Date = date) %>% as_dt
+DT_CRSP$Date = DT_CRSP$date %>% ceiling_date(., "m") %>% add(-1)
+DT_CRSP <- DT_CRSP %>% filter( SHRCD %in% c(10,11), EXCHCD %in% c(1,2,3)) %>% as_dt
+DT_CRSP$date <- NULL
 DT_CRSP$Date %<>% ymd()
 
 ###### From OAPS 
@@ -42,9 +33,43 @@ DT_OAPS_CRSP <- DT_OAPS_CRSP %>% rename(permno = PERMNO) %>%
   left_join(DT_GP) %>%
   left_join(DT_Roa) %>% left_join(DT_AG) %>%
   left_join(DT_PPE) %>% left_join(DT_Comp) %>%
-  left_join(DT_Failure %>% rename(permno = PERMNO) ) %>% as_dt
+  left_join(DT_Failure) %>% as_dt
 #
-DT_OAPS_CRSP_MISP <- DT_OAPS_CRSP %>% select(-ALTPRC) %>%
+DT_OAPS_CRSP$Date <- DT_OAPS_CRSP$yyyymm * 100 + 1
+DT_OAPS_CRSP$Date <- ymd(DT_OAPS_CRSP$Date)
+DT_OAPS_CRSP$Date <- ceiling_date(DT_OAPS_CRSP$Date ,"m") -1 
+
+DT_OAPS_CRSP %>% 
+  group_by(Date) %>% 
+  mutate( N_Roa = sum( (!is.na(roaq)) ) , 
+          N_ShareIss1Y = sum( (!is.na(ShareIss1Y))),
+          N_Mom12 = sum( (!is.na(Mom12m))),
+          N_GP = sum( (!is.na(GP))),
+          N_Accruals = sum( (!is.na(Accruals))), 
+          N_NOA = sum( (!is.na(NOA))),
+          N_Comp = sum( (!is.na(CompEquIss))),
+          N_Inv = sum( (!is.na(InvestPPEInv))),
+          N_Failure = sum( (!is.na(FailureProbability)))
+          ) %>% ungroup() %>% 
+  as_dt -> DT_OAPS_CRSP
+
+
+DT_OAPS_CRSP <- DT_OAPS_CRSP %>%
+  mutate( roaq = ifelse(N_Roa < 30 , roaq, NA), 
+          ShareIss1Y = ifelse(N_ShareIss1Y < 30 , ShareIss1Y, NA),
+          Mom12m = ifelse(N_Mom12 < 30 , Mom12m, NA),
+          GP = ifelse(N_GP < 30 , GP, NA),
+          Accruals = ifelse(N_Accruals < 30 , Accruals, NA),
+          NOA = ifelse(N_NOA < 30 , NOA, NA),
+          CompEquIss = ifelse(N_Comp < 30 , CompEquIss, NA),
+          InvestPPEInv = ifelse(N_Inv < 30 , InvestPPEInv, NA), 
+          FailureProbability = ifelse(N_Failure < 30 , FailureProbability, NA)
+        ) %>% 
+  as_dt 
+
+
+DT_OAPS_CRSP_MISP <- DT_OAPS_CRSP %>% 
+  select(-ALTPRC) %>%
   group_by(Date) %>%
   mutate( Anom1_Rank = percent_rank(Mom12m ) ,
           Anom2_Rank = percent_rank(-ShareIss1Y) ,
@@ -79,40 +104,10 @@ DT_Misp_OAPS_New <- DT_OAPS_CRSP_MISP %>%
                   (Anom1_Rank_NA + Anom2_Rank_NA + Anom3_Rank_NA + Anom4_Rank_NA + 
                      Anom5_Rank_NA + Anom6_Rank_NA + Anom7_Rank_NA + Anom8_Rank_NA + 
                      Anom9_Rank_NA + Anom10_Rank_NA  ) / valid_anomalies , NA)
-  ) %>% as_dt
+  ) %>% select( PERMNO , Date , MISP) %>%
+ mutate( OAPS_MISP = 100 - 100 * MISP) %>% select(-MISP) %>% as_dt
 
-
-
-original_misp <- fread("Data/Misp_Score.txt")
-original_misp <- original_misp %>% rename( PERMNO = `%` , 
-                                           Date = permno , 
-                                           MISP0 = yyyymm) %>% as_dt
-original_misp$avg_score <- NULL
-
-original_misp$Date = 100* original_misp$Date  + 1 
-original_misp$Date %<>% ymd()
-original_misp$Date %<>% Ceiling_Date_Month_Ntimes(.,0)
-
-
-original_misp_OAPS <- original_misp %>% 
-  left_join(DT_Misp_OAPS_New %>% 
-              rename(PERMNO = permno, MISP_OAPS = MISP) %>%
-              select( PERMNO , Date , MISP_OAPS ))
-
-original_misp_OAPS %>%
-  group_by(Date) %>%
-  summarise( Corr = cor(MISP0,MISP_OAPS , use = "complete")) -> Misp_OAPS_Summary
-
-
-
-
-
-DT_Misp_OAPS_New %>% 
-  rename( PERMNO = permno ) %>%  
-  select( PERMNO , Date , MISP ) %>%
-  mutate( Misp_Score = 100 * (1-MISP)) %>% 
-  select(-MISP ) %>% fwrite("Firm_Level_Mispricng_Score.csv")
-
+# Construct average rank for equity with at least 5 anomaly information
 
 
 
