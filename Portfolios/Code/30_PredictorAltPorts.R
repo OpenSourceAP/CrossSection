@@ -118,6 +118,15 @@ checkport(port, c("signalname", "port"))
 
 writestandard(port, pathDataPortfolios, "PredictorAltPorts_DecilesVW.csv")
 
+# force equal weighting
+port <- loop_over_strategies(
+  strategylistcts %>% mutate(q_cut = 0.1, sweight = 'EW')
+)
+
+checkport(port, c("signalname", "port"))
+
+writestandard(port, pathDataPortfolios, "PredictorAltPorts_DecilesEW.csv")
+
 
 
 ## QUINTILE SORTS
@@ -135,3 +144,10 @@ port <- loop_over_strategies(
 )
 checkport(port, c("signalname", "port"))
 writestandard(port, pathDataPortfolios, "PredictorAltPorts_QuintilesVW.csv")
+
+# force equal weighting
+port <- loop_over_strategies(
+  strategylistcts %>% mutate(q_cut = 0.2, sweight = 'EW')
+)
+checkport(port, c("signalname", "port"))
+writestandard(port, pathDataPortfolios, "PredictorAltPorts_QuintilesEW.csv")
