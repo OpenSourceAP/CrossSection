@@ -9,6 +9,13 @@
 # .env should look like this:
 # WRDS_USERNAME=your_username
 # WRDS_PASSWORD=your_password
+
+if [ ! -f .env ]; then
+    echo "Error: .env file not found in $(pwd)"
+    echo "Please create .env file with WRDS_USERNAME and WRDS_PASSWORD"
+    exit 1
+fi
+
 source .env # should be in Signals/Code/
 
 # Define local and remote directories
@@ -38,3 +45,8 @@ else
 fi
 
 echo "Job submitted: $JOB_OUTPUT"
+
+# run qstat once
+sshpass -p "$WRDS_PASSWORD" ssh -o StrictHostKeyChecking=no "$WRDS_USERNAME@wrds-cloud.wharton.upenn.edu" "qstat"
+
+echo "Impatient? Check most recent file in ~/temp_prep/log/ on WRDS server."
