@@ -9,7 +9,7 @@ rm(list = ls())
 
 querylimit = 'all' # use 'all' for full data, '20' for debugging
 
-path_dl_me = '~/data_prep/'
+path_dl_me = './data_for_dl/'
 
 dir.create(path_dl_me)
 
