@@ -16,6 +16,7 @@ deleteme*
 Results/
 Portfolios/Data/*
 Signals/Data/*
+Signals/Logs/*
 
 *.html
 
@@ -28,4 +29,6 @@ Signals/Data/*
 # Python
 .venv
 
+# Claude Code guides (for now)
+CLAUDE.md
 
