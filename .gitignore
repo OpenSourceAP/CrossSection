@@ -17,8 +17,15 @@ Results/
 Portfolios/Data/*
 Signals/Data/*
 
-
 *.html
 
-.gitignore
+# Credentials
+.env
+
+# Mac
+.DS_Store
+
+# Python
+.venv
+
 
