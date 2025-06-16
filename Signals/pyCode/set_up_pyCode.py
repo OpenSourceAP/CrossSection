@@ -60,6 +60,25 @@ def install_packages():
     return run_command(activate_and_install, "Installing packages")
 
 
+def create_folder_structure():
+    """Create the folder structure matching ../Code/settings.do"""
+    print("Creating folder structure...")
+    
+    folders = [
+        "../Data",
+        "../Data/temp",
+        "../Data/Prep",
+        "../Data/Intermediate", 
+        "../Data/Predictors",
+        "../Data/Placebos",
+        "../Logs"
+    ]
+    
+    for folder in folders:
+        Path(folder).mkdir(parents=True, exist_ok=True)
+        print(f"Created: {folder}")
+
+
 def check_env_file():
     """Check if .env file exists and warn if not"""
     env_file = Path(".env")
@@ -87,6 +106,9 @@ def main():
     
     # Check for .env file
     check_env_file()
+    
+    # Create folder structure
+    create_folder_structure()
     
     # Create virtual environment (this will also set Dropbox ignore)
     if not create_virtual_environment():
