@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""
+Daily Fama-French factors download script - Python equivalent of O_Daily_Fama-French.do
+
+Downloads daily Fama-French factors from WRDS.
+"""
+
+import os
+import psycopg2
+import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
+
+conn = psycopg2.connect(
+    host="wrds-pgdata.wharton.upenn.edu",
+    port=9737,
+    database="wrds",
+    user=os.getenv("WRDS_USERNAME"),
+    password=os.getenv("WRDS_PASSWORD")
+)
+
+QUERY = """
+SELECT date, mktrf, smb, hml, rf, umd
+FROM ff.factors_daily
+"""
+
+ff_daily = pd.read_sql_query(QUERY, conn)
+conn.close()
+
+# Ensure directories exist
+os.makedirs("../Data/Intermediate", exist_ok=True)
+
+# Rename date to time_d (equivalent to Stata rename)
+ff_daily = ff_daily.rename(columns={'date': 'time_d'})
+
+# Save the data
+ff_daily.to_pickle("../Data/Intermediate/dailyFF.pkl")
+
+print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records")
+
+# Show date range and sample data
+ff_daily['time_d'] = pd.to_datetime(ff_daily['time_d'])
+print(f"Date range: {ff_daily['time_d'].min().strftime('%Y-%m-%d')} to {ff_daily['time_d'].max().strftime('%Y-%m-%d')}")
+print("\nSample data:")
+print(ff_daily.head())

@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""
+Monthly Liquidity Factor download script - Python equivalent of R_MonthlyLiquidityFactor.do
+
+Downloads monthly liquidity factor (Pastor-Stambaugh) from WRDS.
+"""
+
+import os
+import psycopg2
+import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
+
+conn = psycopg2.connect(
+    host="wrds-pgdata.wharton.upenn.edu",
+    port=9737,
+    database="wrds",
+    user=os.getenv("WRDS_USERNAME"),
+    password=os.getenv("WRDS_PASSWORD")
+)
+
+QUERY = """
+SELECT date, ps_innov
+FROM ff.liq_ps
+"""
+
+liquidity_data = pd.read_sql_query(QUERY, conn)
+conn.close()
+
+# Ensure directories exist
+os.makedirs("../Data/Intermediate", exist_ok=True)
+
+# Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
+liquidity_data['date'] = pd.to_datetime(liquidity_data['date'])
+liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M')
+
+# Drop original date column
+liquidity_data = liquidity_data.drop('date', axis=1)
+
+# Save the data
+liquidity_data.to_pickle("../Data/Intermediate/monthlyLiquidity.pkl")
+
+print(f"Monthly Liquidity Factor downloaded with {len(liquidity_data)} records")
+
+# Show date range and sample data
+print(f"Date range: {liquidity_data['time_avail_m'].min()} to {liquidity_data['time_avail_m'].max()}")
+print("\nSample data:")
+print(liquidity_data.head())
+
+# Show summary statistics
+print(f"\nLiquidity factor summary:")
+print(f"Mean: {liquidity_data['ps_innov'].mean():.6f}")
+print(f"Std: {liquidity_data['ps_innov'].std():.6f}")
