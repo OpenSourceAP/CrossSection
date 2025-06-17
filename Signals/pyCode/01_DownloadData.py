@@ -57,12 +57,26 @@ def execute_script(script_name, error_log):
     try:
         # Execute the script in the DataDownloads directory
         script_path = Path("DataDownloads") / script_name
-        subprocess.run(
+        
+        # Use Popen for real-time output streaming
+        process = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=".",
-            check=True,
-            text=True  # Remove capture_output=True to stream output
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         )
+        
+        # Stream output in real-time
+        for line in process.stdout:
+            print(line, end='', flush=True)
+        
+        # Wait for completion and check return code
+        process.wait()
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, [sys.executable, str(script_path)])
         
         print("=" * 60)
         print(f"✅ Completed: {script_name}")
@@ -70,11 +84,7 @@ def execute_script(script_name, error_log):
     except subprocess.CalledProcessError as e:
         return_code = e.returncode
         print("=" * 60)
-        print(f"❌ ERROR in {script_name}: {e}")
-        if e.stdout:
-            print(f"Output: {e.stdout}")
-        if e.stderr:
-            print(f"Error: {e.stderr}")
+        print(f"❌ ERROR in {script_name}: Return code {e.returncode}")
     
     except Exception as e:
         return_code = 1
