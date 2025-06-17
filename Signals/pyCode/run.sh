@@ -31,6 +31,6 @@ log_message "🐍 Activating virtual environment..."
 source .venv/bin/activate
 
 log_message "▶️  Starting master.py execution"
-python master.py
+python -u master.py
 
 log_message "✅ Pipeline execution completed successfully"

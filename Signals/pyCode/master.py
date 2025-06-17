@@ -99,15 +99,13 @@ def main():
     # Download data (equivalent to do "$pathCode/01_DownloadData.do")
     print("\n1. Running data downloads...")
     try:
-        result = subprocess.run([sys.executable, "01_DownloadData.py"],
-                              check=True, capture_output=True, text=True)
-        if result.stdout:
-            print(result.stdout)
+        # Use subprocess.run without capture_output for real-time streaming
+        result = subprocess.run([sys.executable, "-u", "01_DownloadData.py"],
+                              check=True)
         print("✓ Data downloads completed")
     except subprocess.CalledProcessError as e:
         print(f"ERROR in data downloads: {e}")
-        if e.stderr:
-            print(f"Error details: {e.stderr}")
+        sys.exit(1)
 
     # TODO: Create predictors (equivalent to do "$pathCode/02_CreatePredictors.do")
     # print("\n2. Creating predictors...")
