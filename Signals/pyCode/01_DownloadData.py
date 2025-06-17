@@ -48,8 +48,8 @@ def find_download_scripts():
 
 def execute_script(script_name, error_log):
     """Execute a single download script and track results"""
-    print(f"\nExecuting: {script_name}")
-    print("-" * 40)
+    print(f"\n🔄 Starting: {script_name}")
+    print("=" * 60)
     
     start_time = time.time()
     return_code = 0
@@ -57,23 +57,20 @@ def execute_script(script_name, error_log):
     try:
         # Execute the script in the DataDownloads directory
         script_path = Path("DataDownloads") / script_name
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, str(script_path)],
             cwd=".",
             check=True,
-            capture_output=True,
-            text=True
+            text=True  # Remove capture_output=True to stream output
         )
         
-        # Print output if any
-        if result.stdout:
-            print(result.stdout)
-        
-        print(f"✓ {script_name} completed successfully")
+        print("=" * 60)
+        print(f"✅ Completed: {script_name}")
         
     except subprocess.CalledProcessError as e:
         return_code = e.returncode
-        print(f"✗ ERROR in {script_name}: {e}")
+        print("=" * 60)
+        print(f"❌ ERROR in {script_name}: {e}")
         if e.stdout:
             print(f"Output: {e.stdout}")
         if e.stderr:
@@ -81,7 +78,8 @@ def execute_script(script_name, error_log):
     
     except Exception as e:
         return_code = 1
-        print(f"✗ UNEXPECTED ERROR in {script_name}: {e}")
+        print("=" * 60)
+        print(f"💥 UNEXPECTED ERROR in {script_name}: {e}")
     
     # Calculate execution time
     execution_time = time.time() - start_time

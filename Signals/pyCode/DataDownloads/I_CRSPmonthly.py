@@ -11,6 +11,10 @@ import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
+print("=" * 60, flush=True)
+print("📊 I_CRSPmonthly.py - CRSP Monthly Stock Data", flush=True)
+print("=" * 60, flush=True)
+
 load_dotenv()
 
 conn = psycopg2.connect(
@@ -99,5 +103,8 @@ crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 # Save the data
 crsp_data.to_pickle("../Data/Intermediate/monthlyCRSP.pkl")
 
-print(f"CRSP Monthly data downloaded with {len(crsp_data)} records")
-print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}")
+print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
+print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)
+print("=" * 60, flush=True)
+print("✅ I_CRSPmonthly.py completed successfully", flush=True)
+print("=" * 60, flush=True)

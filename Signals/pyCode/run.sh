@@ -5,6 +5,11 @@
 
 set -e  # Exit on any error
 
+# Function to print timestamped messages
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
 # Check if we're in the right directory
 if [ ! -f "CLAUDE.md" ]; then
     echo "Error: Please run this script from the pyCode directory"
@@ -17,7 +22,15 @@ if [ ! -d ".venv" ]; then
     exit 1
 fi
 
+# Start execution
+log_message "🚀 Starting pyCode execution pipeline"
+log_message "📁 Working directory: $(pwd)"
+
 # Activate virtual environment and run master.py
-echo "Activating virtual environment and running master.py..."
+log_message "🐍 Activating virtual environment..."
 source .venv/bin/activate
+
+log_message "▶️  Starting master.py execution"
 python master.py
+
+log_message "✅ Pipeline execution completed successfully"

@@ -10,6 +10,10 @@ import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
 
+print("=" * 60, flush=True)
+print("📈 O_Daily_Fama-French.py - Daily Fama-French Factors", flush=True)
+print("=" * 60, flush=True)
+
 load_dotenv()
 
 conn = psycopg2.connect(
@@ -37,10 +41,13 @@ ff_daily = ff_daily.rename(columns={'date': 'time_d'})
 # Save the data
 ff_daily.to_pickle("../Data/Intermediate/dailyFF.pkl")
 
-print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records")
+print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records", flush=True)
 
 # Show date range and sample data
 ff_daily['time_d'] = pd.to_datetime(ff_daily['time_d'])
-print(f"Date range: {ff_daily['time_d'].min().strftime('%Y-%m-%d')} to {ff_daily['time_d'].max().strftime('%Y-%m-%d')}")
-print("\nSample data:")
-print(ff_daily.head())
+print(f"Date range: {ff_daily['time_d'].min().strftime('%Y-%m-%d')} to {ff_daily['time_d'].max().strftime('%Y-%m-%d')}", flush=True)
+print("\nSample data:", flush=True)
+print(ff_daily.head(), flush=True)
+print("=" * 60, flush=True)
+print("✅ O_Daily_Fama-French.py completed successfully", flush=True)
+print("=" * 60, flush=True)
