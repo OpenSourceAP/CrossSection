@@ -11,12 +11,12 @@ andrew chen 2021 08
 
 %include '/wrds/lib/utility/wrdslib.sas' ;
 
-proc import datafile = '~/temp_output/issm_monthly.csv' out=issm 
+proc import datafile = './temp_output/issm_monthly.csv' out=issm 
 	dbms=csv replace;
 	guessingrows=6000;
 run;	
 
-proc import datafile = '~/temp_output/wrds_iid_monthly.csv' out=iid 
+proc import datafile = './temp_output/wrds_iid_monthly.csv' out=iid 
 	dbms=csv replace;
 	guessingrows=6000;
 run;	
@@ -139,7 +139,7 @@ data hf3; set temp_unique temp_nonunique1; run;
 
 * ==== export ==== ;
 proc export data = hf3
-  outfile = "~/temp_output/hf_monthly.csv"
+  outfile = "./temp_output/hf_monthly.csv"
   dbms = csv
   replace;
 run;

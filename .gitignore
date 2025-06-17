@@ -17,8 +17,12 @@ Results/
 Portfolios/Data/*
 Signals/Data/*
 
-
 *.html
 
 .gitignore
 
+# macOS finder
+.DS_Store
+
+# credentials
+.env

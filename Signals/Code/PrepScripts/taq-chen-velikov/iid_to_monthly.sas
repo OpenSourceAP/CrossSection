@@ -170,7 +170,7 @@ run;
 proc print data=monthly_iid (obs=20); run;
 
 proc export data = monthly_iid
-  outfile = "~/temp_output/wrds_iid_monthly.csv"
+  outfile = "./temp_output/wrds_iid_monthly.csv"
   dbms = csv
   replace;
 run;

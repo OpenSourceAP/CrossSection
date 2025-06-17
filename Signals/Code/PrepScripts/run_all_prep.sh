@@ -38,63 +38,62 @@
 
 # ==== SETUP ====
 echo "Starting Job at `date`"
-echo "output will be in ~/data_prep/"
+echo "output will be in ~/temp_prep/"
 
-mkdir ~/data_prep/ # csv output will go here
-mkdir ~/temp_output/
-mkdir ~/temp_log/
+mkdir ~/temp_prep/data_for_dl/ # csv output will go here
+mkdir ~/temp_prep/temp_output/
+mkdir ~/temp_prep/log/
+
+# Change to temp_prep directory for relative paths
+cd ~/temp_prep/
 
 # # ==== IBES-CRSP LINK, TR 13F ====
 echo "CREATING IBES-CRSP LINK (fast)"
-sas iclink_to_csv.sas -log ~/temp_log/iclink_to_csv.log
+sas iclink_to_csv.sas -log log/iclink_to_csv.log
 
 echo "CREATING 13F DATA (10 min?)"
-sas tr13f_pmg_edit.sas -log ~/temp_log/tr13f_pmg_edit.log
-
-# # ==== OPTION METRICS LINK, ====
-echo "CREATING OPTION METRICS LINK (fast)"
-sas oclink_to_csv.sas -log ~/temp_log/oclink_to_csv.log
-
-# ==== OPTION METRICS ====
-echo "CREATING OPTION METRICS DATA (about 3 hours)"
-R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R ~/temp_log/OptionMetricsProcessing.log
-
-# ==== OPTION METRICS: Bali-Hovak ====
-echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
-R CMD BATCH --no-save --no-restore bali_hovak.R ~/temp_log/bali_hovak.log
+sas tr13f_pmg_edit.sas -log log/tr13f_pmg_edit.log
 
 # ==== LF SPREADS (CORWIN-SCHULTZ, about 15 min) ====
 echo "CREATING LF SPREADS (CORWIN-SCHULTZ, about 15 min)"
-sas corwin_schultz_edit.sas -log ~/temp_log/corwin_schultz_edit.log
+sas corwin_schultz_edit.sas -log log/corwin_schultz_edit.log
 
 # === HF SPREADS ====
 # below copied from Chen-Velikov's hf-spreads-all/main.sh
 echo "RUNNING CHEN-VELIKOV FORTH, JFQA HF SPREADS"
 
-cd taq-chen-velikov
-
-echo "WRDS IID SPREADS, OUTPUTS TO ~/temp_output/ (15 min?)"
-sas iid_to_monthly.sas -log ~/temp_log/iid_to_monthly.log
+echo "WRDS IID SPREADS, OUTPUTS TO temp_output/ (15 min?)"
+sas taq-chen-velikov/iid_to_monthly.sas -log log/iid_to_monthly.log
 
 
-echo "CALCULATING ISSM SPREADS, OUTPUTS TO ~/temp_output/ (about 1 hour)"
+echo "CALCULATING ISSM SPREADS, OUTPUTS TO temp_output/ (about 1 hour)"
 # run spreads code day by day (full issm sample is 1983-1992)
 for year in $(seq 1983 1992)
 do
     echo finding spreads for nyse/amex $year.  Today is `date` 
-    sas issm_spreads.sas -set yyyy $year -set exchprefix nyam -log ~/temp_log/log_nyam_$year.log
+    sas taq-chen-velikov/issm_spreads.sas -set yyyy $year -set exchprefix nyam -log log/log_nyam_$year.log
 
     echo finding spreads for nasdaq $year.  Today is `date` 
-    sas issm_spreads.sas -set yyyy $year -set exchprefix nasd -log ~/temp_log/log_nasd_$year.log
+    sas taq-chen-velikov/issm_spreads.sas -set yyyy $year -set exchprefix nasd -log log/log_nasd_$year.log
 done    
-sas combine_and_average.sas -log ~/temp_log/combine_and_average.log
+sas taq-chen-velikov/combine_and_average.sas -log log/combine_and_average.log
 
-echo "ADDING PERMNOS TO IID AND ISSM AND COPYING TO ~/data_prep/"
-sas add_permnos.sas -log ~/temp_log/add_permnos.log
-cp ~/temp_output/hf_monthly.csv ~/data_prep/
+echo "ADDING PERMNOS TO IID AND ISSM AND COPYING TO data_for_dl/"
+sas taq-chen-velikov/add_permnos.sas -log log/add_permnos.log
+cp temp_output/hf_monthly.csv data_for_dl/
 
-cd ..
+# # ==== OPTION METRICS LINK, ====
+echo "CREATING OPTION METRICS LINK (fast)"
+sas oclink_to_csv.sas -log log/oclink_to_csv.log
+
+# ==== OPTION METRICS ====
+echo "CREATING OPTION METRICS DATA (about 3 hours)"
+R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R log/OptionMetricsProcessing.log
+
+# ==== OPTION METRICS: Bali-Hovak ====
+echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
+R CMD BATCH --no-save --no-restore bali_hovak.R log/bali_hovak.log
 
 echo "DONE"
-echo "output should be in ~/data_prep/"
+echo "output should be in ~/temp_prep/data_for_dl/"
 echo "Ending Job at `date`"
