@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
+print("=" * 60, flush=True)
+print("💰 H_CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
+print("=" * 60, flush=True)
+
 load_dotenv()
 
 conn = psycopg2.connect(
@@ -60,9 +64,12 @@ dist_data = dist_data.drop('distcd_str', axis=1)
 # Save the data
 dist_data.to_pickle("../Data/Intermediate/CRSPdistributions.pkl")
 
-print(f"CRSP Distributions data saved with {len(dist_data)} records")
+print(f"CRSP Distributions data saved with {len(dist_data)} records", flush=True)
 
 # Show sample of distribution codes
-print("\nSample distribution codes:")
+print("\nSample distribution codes:", flush=True)
 sample_codes = dist_data['distcd'].value_counts().head(10)
-print(sample_codes)
+print(sample_codes, flush=True)
+print("=" * 60, flush=True)
+print("✅ H_CRSPDistributions.py completed successfully", flush=True)
+print("=" * 60, flush=True)

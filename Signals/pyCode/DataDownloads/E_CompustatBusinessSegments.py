@@ -10,6 +10,10 @@ import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
 
+print("=" * 60, flush=True)
+print("🏢 E_CompustatBusinessSegments.py - Business Segment Data", flush=True)
+print("=" * 60, flush=True)
+
 load_dotenv()
 
 conn = psycopg2.connect(
@@ -56,5 +60,8 @@ if 'datadate' in segments_data.columns:
 print(f"\nUnique companies: {segments_data['gvkey'].nunique()}")
 
 # Sample data
-print("\nSample data:")
-print(segments_data.head())
+print("\nSample data:", flush=True)
+print(segments_data.head(), flush=True)
+print("=" * 60, flush=True)
+print("✅ E_CompustatBusinessSegments.py completed successfully", flush=True)
+print("=" * 60, flush=True)

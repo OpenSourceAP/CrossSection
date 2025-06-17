@@ -11,6 +11,10 @@ import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
 
+print("=" * 60, flush=True)
+print("🏦 D_CompustatPensions.py - Compustat Pension Fund Data", flush=True)
+print("=" * 60, flush=True)
+
 load_dotenv()
 
 conn = psycopg2.connect(
@@ -69,11 +73,14 @@ for var in pension_vars:
 # Save the data
 pensions_data.to_pickle("../Data/Intermediate/CompustatPensions.pkl")
 
-print(f"\nCompustat Pensions data saved with {len(pensions_data)} records")
+print(f"\nCompustat Pensions data saved with {len(pensions_data)} records", flush=True)
 
 # Show year range
-print(f"Year range: {pensions_data['year'].min()} to {pensions_data['year'].max()}")
+print(f"Year range: {pensions_data['year'].min()} to {pensions_data['year'].max()}", flush=True)
 
 # Sample data
-print("\nSample data:")
-print(pensions_data.head())
+print("\nSample data:", flush=True)
+print(pensions_data.head(), flush=True)
+print("=" * 60, flush=True)
+print("✅ D_CompustatPensions.py completed successfully", flush=True)
+print("=" * 60, flush=True)

@@ -11,6 +11,10 @@ import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
+print("=" * 60, flush=True)
+print("📊 C_CompustatQuarterly.py - Compustat Quarterly Fundamentals", flush=True)
+print("=" * 60, flush=True)
+
 load_dotenv()
 
 conn = psycopg2.connect(
@@ -157,5 +161,8 @@ monthly_compustat['gvkey'] = pd.to_numeric(monthly_compustat['gvkey'])
 # Save the data
 monthly_compustat.to_pickle("../Data/Intermediate/m_QCompustat.pkl")
 
-print(f"Compustat Quarterly data saved with {len(monthly_compustat)} monthly records")
-print(f"Date range: {monthly_compustat['time_avail_m'].min()} to {monthly_compustat['time_avail_m'].max()}")
+print(f"Compustat Quarterly data saved with {len(monthly_compustat)} monthly records", flush=True)
+print(f"Date range: {monthly_compustat['time_avail_m'].min()} to {monthly_compustat['time_avail_m'].max()}", flush=True)
+print("=" * 60, flush=True)
+print("✅ C_CompustatQuarterly.py completed successfully", flush=True)
+print("=" * 60, flush=True)
