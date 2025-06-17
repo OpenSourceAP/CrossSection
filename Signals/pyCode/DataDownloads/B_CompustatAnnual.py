@@ -53,10 +53,10 @@ conn.close()
 print(f"Downloaded {len(compustat_data)} annual records", flush=True)
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Save raw data
-compustat_data.to_csv("../Data/Intermediate/CompustatAnnual.csv", index=False)
+compustat_data.to_csv("../pyData/Intermediate/CompustatAnnual.csv", index=False)
 
 # Require some reasonable amount of information
 compustat_data = compustat_data.dropna(subset=['at', 'prcc_c', 'ni'])
@@ -83,7 +83,7 @@ for var in zero_fill_vars:
         compustat_data[var] = compustat_data[var].fillna(0)
 
 # Load CCM linking table for merging
-ccm_data = pd.read_pickle("../Data/Intermediate/CCMLinkingTable.pkl")
+ccm_data = pd.read_pickle("../pyData/Intermediate/CCMLinkingTable.pkl")
 
 # Merge with CCM linking table
 compustat_data = compustat_data.merge(ccm_data, on='gvkey', how='inner')
@@ -108,7 +108,7 @@ annual_data['gvkey'] = pd.to_numeric(annual_data['gvkey'])
 annual_data['time_avail_m'] = (annual_data['datadate'] + pd.DateOffset(months=6))
 
 # Save annual version
-annual_data.to_pickle("../Data/Intermediate/a_aCompustat.pkl")
+annual_data.to_pickle("../pyData/Intermediate/a_aCompustat.pkl")
 
 # Create monthly version (expand each row 12 times)
 print("Expanding annual data to monthly...", flush=True)
@@ -129,7 +129,7 @@ monthly_data = monthly_data.sort_values(['permno', 'time_avail_m', 'datadate'])
 monthly_data = monthly_data.drop_duplicates(['permno', 'time_avail_m'], keep='last')
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
-monthly_data.to_pickle("../Data/Intermediate/m_aCompustat.pkl")
+monthly_data.to_pickle("../pyData/Intermediate/m_aCompustat.pkl")
 
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)

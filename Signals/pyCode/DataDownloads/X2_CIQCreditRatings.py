@@ -74,7 +74,7 @@ def main():
     )
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # Download all three types of ratings
     entity_ratings = download_ciq_ratings("entity", conn)
@@ -128,7 +128,7 @@ def main():
     combined_ratings['gvkey'] = pd.to_numeric(combined_ratings['gvkey'], errors='coerce')
     
     # Save the data
-    combined_ratings.to_pickle("../Data/Intermediate/m_CIQ_creditratings.pkl")
+    combined_ratings.to_pickle("../pyData/Intermediate/m_CIQ_creditratings.pkl")
     
     print(f"CIQ Credit Ratings data saved with {len(combined_ratings)} records")
     print(f"Date range: {combined_ratings['time_avail_m'].min()} to {combined_ratings['time_avail_m'].max()}")

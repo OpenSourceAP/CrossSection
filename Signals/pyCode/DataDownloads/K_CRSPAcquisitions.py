@@ -32,7 +32,7 @@ conn.close()
 print(f"Downloaded {len(acq_data)} distribution records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Keep only records where acperm > 999 and not missing
 # (equivalent to keep if acperm >999 & acperm <.)
@@ -76,7 +76,7 @@ duplicates_removed = initial_count - len(acq_data)
 print(f"Removed {duplicates_removed} duplicate records")
 
 # Save the data
-acq_data.to_pickle("../Data/Intermediate/m_CRSPAcquisitions.pkl")
+acq_data.to_pickle("../pyData/Intermediate/m_CRSPAcquisitions.pkl")
 
 print(f"CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
 

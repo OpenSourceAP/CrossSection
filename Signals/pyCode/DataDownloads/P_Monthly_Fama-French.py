@@ -29,7 +29,7 @@ ff_monthly = pd.read_sql_query(QUERY, conn)
 conn.close()
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
 ff_monthly['date'] = pd.to_datetime(ff_monthly['date'])
@@ -39,7 +39,7 @@ ff_monthly['time_avail_m'] = ff_monthly['date'].dt.to_period('M')
 ff_monthly = ff_monthly.drop('date', axis=1)
 
 # Save the data
-ff_monthly.to_pickle("../Data/Intermediate/monthlyFF.pkl")
+ff_monthly.to_pickle("../pyData/Intermediate/monthlyFF.pkl")
 
 print(f"Monthly Fama-French factors downloaded with {len(ff_monthly)} records")
 

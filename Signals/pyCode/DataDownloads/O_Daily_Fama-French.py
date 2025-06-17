@@ -33,13 +33,13 @@ ff_daily = pd.read_sql_query(QUERY, conn)
 conn.close()
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Rename date to time_d (equivalent to Stata rename)
 ff_daily = ff_daily.rename(columns={'date': 'time_d'})
 
 # Save the data
-ff_daily.to_pickle("../Data/Intermediate/dailyFF.pkl")
+ff_daily.to_pickle("../pyData/Intermediate/dailyFF.pkl")
 
 print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records", flush=True)
 

@@ -65,12 +65,12 @@ def create_folder_structure():
     print("Creating folder structure...")
     
     folders = [
-        "../Data",
-        "../Data/temp",
-        "../Data/Prep",
-        "../Data/Intermediate", 
-        "../Data/Predictors",
-        "../Data/Placebos",
+        "../pyData",
+        "../pyData/temp",
+        "../pyData/Prep",
+        "../pyData/Intermediate", 
+        "../pyData/Predictors",
+        "../pyData/Placebos",
         "../Logs"
     ]
     

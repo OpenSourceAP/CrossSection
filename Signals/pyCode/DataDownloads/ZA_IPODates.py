@@ -17,7 +17,7 @@ def main():
     print("Downloading IPO dates from Ritter's website...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # URL for IPO data (as of 2022-02-09)
     webloc = "https://site.warrington.ufl.edu/ritter/files/IPO-age.xlsx"
@@ -28,7 +28,7 @@ def main():
         response.raise_for_status()
         
         # Save to temporary file
-        temp_file = "../Data/Intermediate/temp_ipo.xlsx"
+        temp_file = "../pyData/Intermediate/temp_ipo.xlsx"
         with open(temp_file, 'wb') as f:
             f.write(response.content)
         
@@ -111,7 +111,7 @@ def main():
         ipo_data.loc[ipo_data['FoundingYear'] < 0, 'FoundingYear'] = None
     
     # Save the data
-    ipo_data.to_pickle("../Data/Intermediate/IPODates.pkl")
+    ipo_data.to_pickle("../pyData/Intermediate/IPODates.pkl")
     
     print(f"IPO Dates data saved with {len(ipo_data)} records")
     

@@ -18,7 +18,7 @@ def main():
     print("Downloading PIN data from Dropbox...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # URL for PIN data
     webloc = "https://www.dropbox.com/s/45b42e89gaafg0n/cpie_data.zip?dl=1"
@@ -29,22 +29,22 @@ def main():
         response.raise_for_status()
         
         # Save zip file
-        zip_path = "../Data/Intermediate/cpie_data.zip"
+        zip_path = "../pyData/Intermediate/cpie_data.zip"
         with open(zip_path, 'wb') as f:
             f.write(response.content)
         
         # Extract zip file
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall("../Data/Intermediate")
+            zip_ref.extractall("../pyData/Intermediate")
         
         # Read the PIN yearly data
-        pin_data = pd.read_csv("../Data/Intermediate/pin_yearly.csv")
+        pin_data = pd.read_csv("../pyData/Intermediate/pin_yearly.csv")
         
         # Clean up files
         os.remove(zip_path)
         for file in ['owr_yearly.csv', 'pin_yearly.csv', 'cpie_daily.csv', 
                      'gpin_yearly.csv', 'dy_yearly.csv']:
-            file_path = f"../Data/Intermediate/{file}"
+            file_path = f"../pyData/Intermediate/{file}"
             if os.path.exists(file_path):
                 os.remove(file_path)
         
@@ -83,7 +83,7 @@ def main():
     print(f"Expanded to {len(pin_monthly)} monthly PIN records")
     
     # Save the data
-    pin_monthly.to_pickle("../Data/Intermediate/pin_monthly.pkl")
+    pin_monthly.to_pickle("../pyData/Intermediate/pin_monthly.pkl")
     
     print(f"PIN monthly data saved with {len(pin_monthly)} records")
     

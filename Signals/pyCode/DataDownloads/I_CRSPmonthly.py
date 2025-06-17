@@ -40,10 +40,10 @@ crsp_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Export for R processing (equivalent to CSV export in Stata)
-crsp_data.to_csv("../Data/Intermediate/mCRSP.csv", index=False)
+crsp_data.to_csv("../pyData/Intermediate/mCRSP.csv", index=False)
 
 # Make 2 digit SIC
 crsp_data['sicCRSP'] = crsp_data['siccd']
@@ -101,7 +101,7 @@ crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
 crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
 # Save the data
-crsp_data.to_pickle("../Data/Intermediate/monthlyCRSP.pkl")
+crsp_data.to_pickle("../pyData/Intermediate/monthlyCRSP.pkl")
 
 print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
 print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)

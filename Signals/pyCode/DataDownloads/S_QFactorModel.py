@@ -17,7 +17,7 @@ def main():
     print("Downloading Q-factor model data...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # URL for Q-factor data
     webloc = "http://global-q.org/uploads/1/2/2/6/122679606/q5_factors_daily_2019.csv"
@@ -28,7 +28,7 @@ def main():
         response.raise_for_status()
         
         # Save to temporary file and read
-        temp_file = "../Data/Intermediate/temp_qfactor.csv"
+        temp_file = "../pyData/Intermediate/temp_qfactor.csv"
         with open(temp_file, 'wb') as f:
             f.write(response.content)
         
@@ -87,7 +87,7 @@ def main():
         qfactor_data[col] = qfactor_data[col] / 100
     
     # Save the data
-    qfactor_data.to_pickle("../Data/Intermediate/d_qfactor.pkl")
+    qfactor_data.to_pickle("../pyData/Intermediate/d_qfactor.pkl")
     
     print(f"Q-factor model data saved with {len(qfactor_data)} records")
     

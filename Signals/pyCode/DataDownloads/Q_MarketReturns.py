@@ -29,7 +29,7 @@ market_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
 market_data['date'] = pd.to_datetime(market_data['date'])
@@ -39,7 +39,7 @@ market_data['time_avail_m'] = market_data['date'].dt.to_period('M')
 market_data = market_data.drop('date', axis=1)
 
 # Save the data
-market_data.to_pickle("../Data/Intermediate/monthlyMarket.pkl")
+market_data.to_pickle("../pyData/Intermediate/monthlyMarket.pkl")
 
 print(f"Monthly Market Returns downloaded with {len(market_data)} records")
 

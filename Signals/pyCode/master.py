@@ -37,12 +37,12 @@ def check_folder_structure():
     print("Checking folder structure...")
 
     required_folders = [
-        "../Data",
-        "../Data/Intermediate",
-        "../Data/Predictors",
-        "../Data/Placebos",
-        "../Data/temp",
-        "../Data/Prep",
+        "../pyData",
+        "../pyData/Intermediate",
+        "../pyData/Predictors",
+        "../pyData/Placebos",
+        "../pyData/temp",
+        "../pyData/Prep",
         "../Logs"
     ]
 

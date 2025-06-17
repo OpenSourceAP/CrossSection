@@ -35,7 +35,7 @@ conn.close()
 print(f"Downloaded {len(segments_data)} business segment records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert columns to numeric (equivalent to destring gvkey sics1 naicsh, replace)
 segments_data['gvkey'] = pd.to_numeric(segments_data['gvkey'], errors='coerce')
@@ -43,7 +43,7 @@ segments_data['sics1'] = pd.to_numeric(segments_data['sics1'], errors='coerce')
 segments_data['naicsh'] = pd.to_numeric(segments_data['naicsh'], errors='coerce')
 
 # Save the data
-segments_data.to_pickle("../Data/Intermediate/CompustatSegments.pkl")
+segments_data.to_pickle("../pyData/Intermediate/CompustatSegments.pkl")
 
 print(f"Compustat Business Segments data saved with {len(segments_data)} records")
 

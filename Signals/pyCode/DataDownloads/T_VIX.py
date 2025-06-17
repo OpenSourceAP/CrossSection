@@ -58,7 +58,7 @@ def main():
         return
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # Download both VIX series
     vxocls_data = download_fred_series('VXOCLS', fred_api_key)  # VXO (older series)
@@ -104,7 +104,7 @@ def main():
     final_data = final_data.dropna(subset=['vix'])
     
     # Save the data
-    final_data.to_pickle("../Data/Intermediate/d_vix.pkl")
+    final_data.to_pickle("../pyData/Intermediate/d_vix.pkl")
     
     print(f"VIX data saved with {len(final_data)} records")
     print(f"Date range: {final_data['time_d'].min().strftime('%Y-%m-%d')} to {final_data['time_d'].max().strftime('%Y-%m-%d')}")

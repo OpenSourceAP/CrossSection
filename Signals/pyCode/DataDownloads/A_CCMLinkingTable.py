@@ -46,11 +46,11 @@ ccm_data = ccm_data.rename(columns={
 })
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Save the data
-ccm_data.to_csv("../Data/Intermediate/CCMLinkingTable.csv", index=False)
-ccm_data.to_pickle("../Data/Intermediate/CCMLinkingTable.pkl")
+ccm_data.to_csv("../pyData/Intermediate/CCMLinkingTable.csv", index=False)
+ccm_data.to_pickle("../pyData/Intermediate/CCMLinkingTable.pkl")
 
 print(f"CCM Linking Table downloaded with {len(ccm_data)} records", flush=True)
 print(f"Unique companies (gvkey): {ccm_data['gvkey'].nunique()}", flush=True)

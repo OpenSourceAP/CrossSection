@@ -32,7 +32,7 @@ conn.close()
 print(f"Downloaded {len(si_data)} short interest records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Create monthly time variable
 si_data['datadate'] = pd.to_datetime(si_data['datadate'])
@@ -57,7 +57,7 @@ print(f"After monthly aggregation: {len(monthly_si)} records")
 monthly_si['gvkey'] = pd.to_numeric(monthly_si['gvkey'], errors='coerce')
 
 # Save the data
-monthly_si.to_pickle("../Data/Intermediate/monthlyShortInterest.pkl")
+monthly_si.to_pickle("../pyData/Intermediate/monthlyShortInterest.pkl")
 
 print(f"Monthly Short Interest data saved with {len(monthly_si)} records")
 

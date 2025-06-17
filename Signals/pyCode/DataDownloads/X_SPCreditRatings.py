@@ -31,7 +31,7 @@ conn.close()
 print(f"Downloaded {len(rating_data)} credit rating records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Create monthly time variable
 rating_data['datadate'] = pd.to_datetime(rating_data['datadate'])
@@ -77,7 +77,7 @@ rating_data = rating_data.drop('sp', axis=1)
 rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
 
 # Save the data
-rating_data.to_pickle("../Data/Intermediate/m_SP_creditratings.pkl")
+rating_data.to_pickle("../pyData/Intermediate/m_SP_creditratings.pkl")
 
 print(f"S&P Credit Ratings data saved with {len(rating_data)} records")
 

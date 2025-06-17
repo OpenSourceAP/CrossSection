@@ -17,7 +17,7 @@ def main():
     print("Downloading Governance Index data...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # URL for governance data
     webloc = "https://spinup-000d1a-wp-offload-media.s3.amazonaws.com/faculty/wp-content/uploads/sites/7/2019/06/Governance.xlsx"
@@ -28,7 +28,7 @@ def main():
         response.raise_for_status()
         
         # Save to temporary file
-        temp_file = "../Data/Intermediate/temp_governance.xlsx"
+        temp_file = "../pyData/Intermediate/temp_governance.xlsx"
         with open(temp_file, 'wb') as f:
             f.write(response.content)
         
@@ -132,7 +132,7 @@ def main():
     print(f"After interpolation: {len(final_data)} records")
     
     # Save the data
-    final_data.to_pickle("../Data/Intermediate/GovIndex.pkl")
+    final_data.to_pickle("../pyData/Intermediate/GovIndex.pkl")
     
     print(f"Governance Index data saved with {len(final_data)} records")
     

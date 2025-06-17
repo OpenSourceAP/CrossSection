@@ -34,7 +34,7 @@ conn.close()
 print(f"Downloaded {len(actuals_data)} IBES actual earnings records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Rename shout to shoutIBESUnadj
 if 'shout' in actuals_data.columns:
@@ -93,7 +93,7 @@ if 'statpers' in actuals_data.columns:
 actuals_data = actuals_data.rename(columns={'ticker': 'tickerIBES'})
 
 # Save the data
-actuals_data.to_pickle("../Data/Intermediate/IBES_UnadjustedActuals.pkl")
+actuals_data.to_pickle("../pyData/Intermediate/IBES_UnadjustedActuals.pkl")
 
 print(f"IBES Unadjusted Actuals data saved with {len(actuals_data)} records")
 

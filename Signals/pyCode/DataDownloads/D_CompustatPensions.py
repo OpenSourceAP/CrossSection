@@ -41,7 +41,7 @@ conn.close()
 print(f"Downloaded {len(pensions_data)} pension records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Create year from datadate and add 1-year lag
 pensions_data['datadate'] = pd.to_datetime(pensions_data['datadate'])
@@ -71,7 +71,7 @@ for var in pension_vars:
         print(f"  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
 
 # Save the data
-pensions_data.to_pickle("../Data/Intermediate/CompustatPensions.pkl")
+pensions_data.to_pickle("../pyData/Intermediate/CompustatPensions.pkl")
 
 print(f"\nCompustat Pensions data saved with {len(pensions_data)} records", flush=True)
 

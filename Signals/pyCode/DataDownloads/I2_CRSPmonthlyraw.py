@@ -38,7 +38,7 @@ conn.close()
 print(f"Downloaded {len(crsp_raw)} CRSP raw monthly records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Make 2 digit SIC
 crsp_raw['sicCRSP'] = crsp_raw['siccd']
@@ -67,7 +67,7 @@ crsp_raw['mve_c'] = crsp_raw['shrout'] * np.abs(crsp_raw['prc'])
 crsp_raw = crsp_raw.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
 # Save the data
-crsp_raw.to_pickle("../Data/Intermediate/monthlyCRSPraw.pkl")
+crsp_raw.to_pickle("../pyData/Intermediate/monthlyCRSPraw.pkl")
 
 print(f"CRSP Monthly Raw data saved with {len(crsp_raw)} records")
 print(f"Date range: {crsp_raw['time_avail_m'].min()} to {crsp_raw['time_avail_m'].max()}")

@@ -17,7 +17,7 @@ def main():
     print("Processing CRSP-IBES linking data...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # Check for iclink.csv in Prep folder
     iclink_path = Path("../Data/Prep/iclink.csv")
@@ -59,7 +59,7 @@ def main():
         })
     
     # Save the data
-    final_data.to_pickle("../Data/Intermediate/IBESCRSPLinkingTable.pkl")
+    final_data.to_pickle("../pyData/Intermediate/IBESCRSPLinkingTable.pkl")
     
     print(f"IBES-CRSP Linking Table saved with {len(final_data)} records")
     

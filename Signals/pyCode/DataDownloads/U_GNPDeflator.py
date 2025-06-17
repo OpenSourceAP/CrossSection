@@ -59,14 +59,14 @@ def main():
             'value': np.linspace(120, 130, len(dates))  # Fake deflator values
         })
         
-        os.makedirs("../Data/Intermediate", exist_ok=True)
+        os.makedirs("../pyData/Intermediate", exist_ok=True)
         
         # Process placeholder data
         deflator_data = placeholder_data.copy()
         
     else:
         # Ensure directories exist
-        os.makedirs("../Data/Intermediate", exist_ok=True)
+        os.makedirs("../pyData/Intermediate", exist_ok=True)
         
         # Download GNPCTPI (GNP: Chain-type Price Index)
         deflator_data = download_fred_series('GNPCTPI', fred_api_key)
@@ -102,7 +102,7 @@ def main():
     final_data = final_data.drop_duplicates(subset=['time_avail_m'])
     
     # Save the data
-    final_data.to_pickle("../Data/Intermediate/GNPdefl.pkl")
+    final_data.to_pickle("../pyData/Intermediate/GNPdefl.pkl")
     
     print(f"GNP Deflator data saved with {len(final_data)} monthly records")
     print(f"Date range: {final_data['time_avail_m'].min()} to {final_data['time_avail_m'].max()}")

@@ -59,13 +59,13 @@ def main():
             'TbillRate3M': [0.01, 0.02, 0.03, 0.04, 0.05]
         })
         
-        os.makedirs("../Data/Intermediate", exist_ok=True)
-        placeholder_data.to_pickle("../Data/Intermediate/TBill3M.pkl")
+        os.makedirs("../pyData/Intermediate", exist_ok=True)
+        placeholder_data.to_pickle("../pyData/Intermediate/TBill3M.pkl")
         print("Created placeholder T-bill data")
         return
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # Download TB3MS (3-Month Treasury Constant Maturity Rate)
     tbill_data = download_fred_series('TB3MS', fred_api_key)
@@ -88,7 +88,7 @@ def main():
     final_data = quarterly_data[['year', 'qtr', 'TbillRate3M']]
     
     # Save the data
-    final_data.to_pickle("../Data/Intermediate/TBill3M.pkl")
+    final_data.to_pickle("../pyData/Intermediate/TBill3M.pkl")
     
     print(f"3-month T-bill rate data saved with {len(final_data)} quarterly records")
     print(f"Date range: {final_data['year'].min()}Q{final_data[final_data['year'] == final_data['year'].min()]['qtr'].min()} to {final_data['year'].max()}Q{final_data[final_data['year'] == final_data['year'].max()]['qtr'].max()}")

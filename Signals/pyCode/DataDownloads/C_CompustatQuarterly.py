@@ -47,7 +47,7 @@ conn.close()
 print(f"Downloaded {len(compustat_q)} quarterly records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert dates to datetime
 compustat_q['datadate'] = pd.to_datetime(compustat_q['datadate'])
@@ -159,7 +159,7 @@ monthly_compustat = monthly_compustat.rename(columns={'datadate': 'datadateq'})
 monthly_compustat['gvkey'] = pd.to_numeric(monthly_compustat['gvkey'])
 
 # Save the data
-monthly_compustat.to_pickle("../Data/Intermediate/m_QCompustat.pkl")
+monthly_compustat.to_pickle("../pyData/Intermediate/m_QCompustat.pkl")
 
 print(f"Compustat Quarterly data saved with {len(monthly_compustat)} monthly records", flush=True)
 print(f"Date range: {monthly_compustat['time_avail_m'].min()} to {monthly_compustat['time_avail_m'].max()}", flush=True)

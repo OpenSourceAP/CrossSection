@@ -36,7 +36,7 @@ conn.close()
 print(f"Downloaded {len(ibes_data)} IBES EPS records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Set up linking variables
 ibes_data['statpers'] = pd.to_datetime(ibes_data['statpers'])
@@ -61,7 +61,7 @@ ibes_data = ibes_data.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], kee
 print(f"After keeping last obs per month: {len(ibes_data)} records")
 
 # Save the data
-ibes_data.to_pickle("../Data/Intermediate/IBES_EPS_Unadj.pkl")
+ibes_data.to_pickle("../pyData/Intermediate/IBES_EPS_Unadj.pkl")
 
 print(f"IBES EPS Unadjusted data saved with {len(ibes_data)} records")
 

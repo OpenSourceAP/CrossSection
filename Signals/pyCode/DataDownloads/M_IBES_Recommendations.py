@@ -37,7 +37,7 @@ conn.close()
 print(f"Downloaded {len(rec_data)} IBES recommendation records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert ireccd to numeric and drop missing values
 rec_data['ireccd'] = pd.to_numeric(rec_data['ireccd'], errors='coerce')
@@ -58,7 +58,7 @@ columns_order = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd'] +
 rec_data = rec_data[columns_order]
 
 # Save the data
-rec_data.to_pickle("../Data/Intermediate/IBES_Recommendations.pkl")
+rec_data.to_pickle("../pyData/Intermediate/IBES_Recommendations.pkl")
 
 print(f"IBES Recommendations data saved with {len(rec_data)} records")
 

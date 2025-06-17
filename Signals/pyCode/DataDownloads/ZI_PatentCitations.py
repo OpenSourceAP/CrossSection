@@ -18,7 +18,7 @@ def main():
     print("Processing Patent Citations data...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # Path to R script (relative to git root)
     r_script_path = Path("../Code/DataDownloads/ZIR_Patents.R")
@@ -37,7 +37,7 @@ def main():
                 print("R script completed successfully")
                 
                 # Check if output file was created
-                output_file = Path("../Data/Intermediate/PatentDataProcessed.dta")
+                output_file = Path("../pyData/Intermediate/PatentDataProcessed.dta")
                 if output_file.exists():
                     print(f"Patent data file created: {output_file}")
                     # Convert .dta to .pkl if needed
@@ -66,7 +66,7 @@ def main():
         })
         
         # Save placeholder
-        placeholder_data.to_pickle("../Data/Intermediate/PatentDataProcessed.pkl")
+        placeholder_data.to_pickle("../pyData/Intermediate/PatentDataProcessed.pkl")
         print(f"Placeholder patent data saved with {len(placeholder_data)} records")
     
     print("Patent Citations processing completed")

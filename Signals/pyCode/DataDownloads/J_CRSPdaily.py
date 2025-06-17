@@ -45,7 +45,7 @@ def main():
     )
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     os.makedirs("../Data/temp", exist_ok=True)
     
     # Get current year for end year (equivalent to substr("$S_DATE", -4, 4))
@@ -86,7 +86,7 @@ def main():
     daily_full = combined_data[full_columns].copy()
     
     # Save full daily data
-    daily_full.to_pickle("../Data/Intermediate/dailyCRSP.pkl")
+    daily_full.to_pickle("../pyData/Intermediate/dailyCRSP.pkl")
     print(f"Saved full daily CRSP data with {len(daily_full)} records")
     
     # Create price-only file (equivalent to second save in Stata)
@@ -94,7 +94,7 @@ def main():
     daily_prc = combined_data[price_columns].copy()
     
     # Save price-only data
-    daily_prc.to_pickle("../Data/Intermediate/dailyCRSPprc.pkl")
+    daily_prc.to_pickle("../pyData/Intermediate/dailyCRSPprc.pkl")
     print(f"Saved price-only daily CRSP data with {len(daily_prc)} records")
     
     # Date range info

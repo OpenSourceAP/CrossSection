@@ -35,7 +35,7 @@ dist_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 print(f"Downloaded {len(dist_data)} distribution records")
 
@@ -62,7 +62,7 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3], errors='coerce'
 dist_data = dist_data.drop('distcd_str', axis=1)
 
 # Save the data
-dist_data.to_pickle("../Data/Intermediate/CRSPdistributions.pkl")
+dist_data.to_pickle("../pyData/Intermediate/CRSPdistributions.pkl")
 
 print(f"CRSP Distributions data saved with {len(dist_data)} records", flush=True)
 

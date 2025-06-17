@@ -16,9 +16,32 @@ The DataDownloads scripts process data from:
   - `corwin_schultz_spread.csv` - Bid-ask spread estimates
 
 ### Output Structure
-- **Current**: Data saved to `Data/Intermediate/` in DTA/CSV format
-- **Target**: Python scripts should output to `Data/Intermediate/` in Parquet format
+- **Stata Output**: Data saved to `Data/Intermediate/` in DTA/CSV format
+- **Python Output**: Data saved to `pyData/Intermediate/` in Parquet format
 - **File naming**: Maintain same base names but with `.parquet` extension
+
+## Directory Structure
+
+```
+Signals/
+├── Code/                    # Original Stata code
+│   ├── DataDownloads/      # Stata data download scripts
+│   ├── Predictors/         # Stata predictor generation
+│   └── Placebos/          # Stata placebo generation
+├── Data/                   # Stata data files
+│   ├── Intermediate/       # Processed data from Stata (.dta/.csv)
+│   ├── Prep/              # Preprocessed inputs
+│   └── temp/              # Temporary Stata files
+├── pyCode/                 # Python equivalent code
+│   ├── DataDownloads/      # Python data download scripts
+│   ├── requirements.txt    # Python dependencies
+│   └── 01_DownloadData.py  # Main download orchestrator
+├── pyData/                 # Python data files
+│   ├── Intermediate/       # Processed data from Python (.parquet)
+│   └── temp/              # Temporary Python files
+├── Logs/                   # Processing logs
+└── .venv/                  # Python virtual environment
+```
 
 ## DataDownloads Script Mapping
 
@@ -96,3 +119,6 @@ Current progress tracked in individual Python files. Focus on replicating core W
 - **Run all downloads**: `python pyCode/01_DownloadData.py`
 - **Test individual script**: `python pyCode/DataDownloads/[SCRIPT_NAME].py`
 - **Check requirements**: `pip install -r pyCode/requirements.txt`
+
+## Python Specific Notes
+- use python3 to run python

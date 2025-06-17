@@ -31,15 +31,15 @@ conn.close()
 print(f"Downloaded {len(customer_data)} customer segment records")
 
 # Ensure directories exist
-os.makedirs("../Data/Intermediate", exist_ok=True)
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Rename srcdate to datadate (equivalent to rename srcdate datadate)
 if 'srcdate' in customer_data.columns:
     customer_data = customer_data.rename(columns={'srcdate': 'datadate'})
 
 # Save as both pickle and CSV (CSV needed for R processing)
-customer_data.to_pickle("../Data/Intermediate/CompustatSegmentDataCustomers.pkl")
-customer_data.to_csv("../Data/Intermediate/CompustatSegmentDataCustomers.csv", index=False)
+customer_data.to_pickle("../pyData/Intermediate/CompustatSegmentDataCustomers.pkl")
+customer_data.to_csv("../pyData/Intermediate/CompustatSegmentDataCustomers.csv", index=False)
 
 print(f"Compustat Customer Segments data saved with {len(customer_data)} records")
 

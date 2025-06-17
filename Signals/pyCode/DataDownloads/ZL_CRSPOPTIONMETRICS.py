@@ -17,7 +17,7 @@ def main():
     print("Processing CRSP-OptionMetrics data...")
     
     # Ensure directories exist
-    os.makedirs("../Data/Intermediate", exist_ok=True)
+    os.makedirs("../pyData/Intermediate", exist_ok=True)
     
     # Check for OptionMetrics.csv in Prep folder
     om_path = Path("../Data/Prep/OptionMetrics.csv")
@@ -33,7 +33,7 @@ def main():
             om_data['time_avail_m'] = om_data['date'].dt.to_period('M')
         
         # Save processed data
-        om_data.to_pickle("../Data/Intermediate/OptionMetrics.pkl")
+        om_data.to_pickle("../pyData/Intermediate/OptionMetrics.pkl")
         
         print(f"OptionMetrics data saved with {len(om_data)} records")
         
@@ -59,7 +59,7 @@ def main():
         placeholder_data['date'] = pd.to_datetime(placeholder_data['date'])
         placeholder_data['time_avail_m'] = placeholder_data['date'].dt.to_period('M')
         
-        placeholder_data.to_pickle("../Data/Intermediate/OptionMetrics.pkl")
+        placeholder_data.to_pickle("../pyData/Intermediate/OptionMetrics.pkl")
         print(f"Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
     
     print("CRSP-OptionMetrics processing completed")
