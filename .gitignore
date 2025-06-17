@@ -17,6 +17,7 @@ Results/
 Portfolios/Data/*
 Signals/Data/*
 Signals/Logs/*
+Signals/pyData/*
 
 *.html
 
@@ -29,6 +30,4 @@ Signals/Logs/*
 # Python
 .venv
 
-# Claude Code guides (for now)
-CLAUDE.md
 
