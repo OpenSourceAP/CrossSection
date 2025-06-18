@@ -27,8 +27,8 @@ conn = psycopg2.connect(
 
 QUERY = """
 SELECT a.permno, a.permco, a.date, a.ret, a.retx, a.vol, a.shrout, a.prc, a.cfacshr, a.bidlo, a.askhi,
-       b.shrcd, b.exchcd, b.siccd, b.ticker, b.shrcls, 
-       c.dlstcd, c.dlret                               
+       b.shrcd, b.exchcd, b.siccd, b.ticker, b.shrcls,
+       c.dlstcd, c.dlret
 FROM crsp.msf as a
 LEFT JOIN crsp.msenames as b
 ON a.permno=b.permno AND b.namedt<=a.date AND a.date<=b.nameendt
@@ -62,15 +62,15 @@ crsp_data = crsp_data.drop('date', axis=1)
 
 # Incorporate delisting return
 # Replace missing dlret with -0.35 for specific delisting codes on NYSE/AMEX
-mask1 = (crsp_data['dlret'].isna() & 
-         ((crsp_data['dlstcd'] == 500) | 
+mask1 = (crsp_data['dlret'].isna() &
+         ((crsp_data['dlstcd'] == 500) |
           ((crsp_data['dlstcd'] >= 520) & (crsp_data['dlstcd'] <= 584))) &
          ((crsp_data['exchcd'] == 1) | (crsp_data['exchcd'] == 2)))
 crsp_data.loc[mask1, 'dlret'] = -0.35
 
 # Replace missing dlret with -0.55 for NASDAQ (exchcd == 3)
-mask2 = (crsp_data['dlret'].isna() & 
-         ((crsp_data['dlstcd'] == 500) | 
+mask2 = (crsp_data['dlret'].isna() &
+         ((crsp_data['dlstcd'] == 500) |
           ((crsp_data['dlstcd'] >= 520) & (crsp_data['dlstcd'] <= 584))) &
          (crsp_data['exchcd'] == 3))
 crsp_data.loc[mask2, 'dlret'] = -0.55
@@ -103,8 +103,8 @@ crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 # Save the data
 crsp_data.to_pickle("../pyData/Intermediate/monthlyCRSP.pkl")
 
-print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
-print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)
+print("CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
+print("Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)
 print("=" * 60, flush=True)
 print("✅ I_CRSPmonthly.py completed successfully", flush=True)
 print("=" * 60, flush=True)

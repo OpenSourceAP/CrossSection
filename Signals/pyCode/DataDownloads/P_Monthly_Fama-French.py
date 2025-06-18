@@ -41,9 +41,9 @@ ff_monthly = ff_monthly.drop('date', axis=1)
 # Save the data
 ff_monthly.to_pickle("../pyData/Intermediate/monthlyFF.pkl")
 
-print(f"Monthly Fama-French factors downloaded with {len(ff_monthly)} records")
+print("Monthly Fama-French factors downloaded with {len(ff_monthly)} records")
 
 # Show date range and sample data
-print(f"Date range: {ff_monthly['time_avail_m'].min()} to {ff_monthly['time_avail_m'].max()}")
+print("Date range: {ff_monthly['time_avail_m'].min()} to {ff_monthly['time_avail_m'].max()}")
 print("\nSample data:")
 print(ff_monthly.head())

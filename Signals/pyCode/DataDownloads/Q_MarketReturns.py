@@ -41,14 +41,14 @@ market_data = market_data.drop('date', axis=1)
 # Save the data
 market_data.to_pickle("../pyData/Intermediate/monthlyMarket.pkl")
 
-print(f"Monthly Market Returns downloaded with {len(market_data)} records")
+print("Monthly Market Returns downloaded with {len(market_data)} records")
 
 # Show date range and sample data
-print(f"Date range: {market_data['time_avail_m'].min()} to {market_data['time_avail_m'].max()}")
+print("Date range: {market_data['time_avail_m'].min()} to {market_data['time_avail_m'].max()}")
 print("\nSample data:")
 print(market_data.head())
 
 # Show summary statistics
-print(f"\nSummary statistics:")
-print(f"Value-weighted return - Mean: {market_data['vwretd'].mean():.4f}, Std: {market_data['vwretd'].std():.4f}")
-print(f"Equal-weighted return - Mean: {market_data['ewretd'].mean():.4f}, Std: {market_data['ewretd'].std():.4f}")
+print("\nSummary statistics:")
+print("Value-weighted return - Mean: {market_data['vwretd'].mean():.4f}, Std: {market_data['vwretd'].std():.4f}")
+print("Equal-weighted return - Mean: {market_data['ewretd'].mean():.4f}, Std: {market_data['ewretd'].std():.4f}")

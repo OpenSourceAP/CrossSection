@@ -41,14 +41,14 @@ liquidity_data = liquidity_data.drop('date', axis=1)
 # Save the data
 liquidity_data.to_pickle("../pyData/Intermediate/monthlyLiquidity.pkl")
 
-print(f"Monthly Liquidity Factor downloaded with {len(liquidity_data)} records")
+print("Monthly Liquidity Factor downloaded with {len(liquidity_data)} records")
 
 # Show date range and sample data
-print(f"Date range: {liquidity_data['time_avail_m'].min()} to {liquidity_data['time_avail_m'].max()}")
+print("Date range: {liquidity_data['time_avail_m'].min()} to {liquidity_data['time_avail_m'].max()}")
 print("\nSample data:")
 print(liquidity_data.head())
 
 # Show summary statistics
-print(f"\nLiquidity factor summary:")
-print(f"Mean: {liquidity_data['ps_innov'].mean():.6f}")
-print(f"Std: {liquidity_data['ps_innov'].std():.6f}")
+print("\nLiquidity factor summary:")
+print("Mean: {liquidity_data['ps_innov'].mean():.6f}")
+print("Std: {liquidity_data['ps_innov'].std():.6f}")

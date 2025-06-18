@@ -15,39 +15,39 @@ load_dotenv()
 def main():
     """Process CRSP-OptionMetrics data"""
     print("Processing CRSP-OptionMetrics data...")
-    
+
     # Ensure directories exist
     os.makedirs("../pyData/Intermediate", exist_ok=True)
-    
+
     # Check for OptionMetrics.csv in Prep folder
     om_path = Path("../Data/Prep/OptionMetrics.csv")
-    
+
     if om_path.exists():
         # Read the OptionMetrics file
         om_data = pd.read_csv(om_path)
-        print(f"Loaded {len(om_data)} OptionMetrics records")
-        
+        print("Loaded {len(om_data)} OptionMetrics records")
+
         # Basic processing (specific processing depends on file structure)
         if 'date' in om_data.columns:
             om_data['date'] = pd.to_datetime(om_data['date'])
             om_data['time_avail_m'] = om_data['date'].dt.to_period('M')
-        
+
         # Save processed data
         om_data.to_pickle("../pyData/Intermediate/OptionMetrics.pkl")
-        
-        print(f"OptionMetrics data saved with {len(om_data)} records")
-        
+
+        print("OptionMetrics data saved with {len(om_data)} records")
+
         # Show summary
         if 'time_avail_m' in om_data.columns:
-            print(f"Date range: {om_data['time_avail_m'].min()} to {om_data['time_avail_m'].max()}")
-        
+            print("Date range: {om_data['time_avail_m'].min()} to {om_data['time_avail_m'].max()}")
+
         if 'permno' in om_data.columns:
-            print(f"Unique permnos: {om_data['permno'].nunique()}")
-    
+            print("Unique permnos: {om_data['permno'].nunique()}")
+
     else:
         print("WARNING: OptionMetrics.csv not found in ../Data/Prep/")
         print("Creating placeholder OptionMetrics data")
-        
+
         # Create placeholder data
         placeholder_data = pd.DataFrame({
             'permno': [10001, 10002, 10003],
@@ -55,13 +55,13 @@ def main():
             'impl_volatility': [0.25, 0.30, 0.22],
             'option_volume': [1000, 1500, 800]
         })
-        
+
         placeholder_data['date'] = pd.to_datetime(placeholder_data['date'])
         placeholder_data['time_avail_m'] = placeholder_data['date'].dt.to_period('M')
-        
+
         placeholder_data.to_pickle("../pyData/Intermediate/OptionMetrics.pkl")
-        print(f"Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
-    
+        print("Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
+
     print("CRSP-OptionMetrics processing completed")
 
 if __name__ == "__main__":

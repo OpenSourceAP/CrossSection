@@ -29,7 +29,7 @@ FROM comp.sec_shortint as a
 si_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print(f"Downloaded {len(si_data)} short interest records")
+print("Downloaded {len(si_data)} short interest records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -51,7 +51,7 @@ monthly_si = si_data.groupby(['gvkey', 'time_avail_m']).agg({
     'shortintadj': first_non_missing
 }).reset_index()
 
-print(f"After monthly aggregation: {len(monthly_si)} records")
+print("After monthly aggregation: {len(monthly_si)} records")
 
 # Convert gvkey to numeric
 monthly_si['gvkey'] = pd.to_numeric(monthly_si['gvkey'], errors='coerce')
@@ -59,16 +59,16 @@ monthly_si['gvkey'] = pd.to_numeric(monthly_si['gvkey'], errors='coerce')
 # Save the data
 monthly_si.to_pickle("../pyData/Intermediate/monthlyShortInterest.pkl")
 
-print(f"Monthly Short Interest data saved with {len(monthly_si)} records")
+print("Monthly Short Interest data saved with {len(monthly_si)} records")
 
 # Show summary statistics
-print(f"Date range: {monthly_si['time_avail_m'].min()} to {monthly_si['time_avail_m'].max()}")
-print(f"Unique companies: {monthly_si['gvkey'].nunique()}")
+print("Date range: {monthly_si['time_avail_m'].min()} to {monthly_si['time_avail_m'].max()}")
+print("Unique companies: {monthly_si['gvkey'].nunique()}")
 
 print("\nSample data:")
 print(monthly_si.head())
 
 # Show missing data summary
-print(f"\nMissing data:")
-print(f"shortint: {monthly_si['shortint'].isna().sum()} missing")
-print(f"shortintadj: {monthly_si['shortintadj'].isna().sum()} missing")
+print("\nMissing data:")
+print("shortint: {monthly_si['shortint'].isna().sum()} missing")
+print("shortintadj: {monthly_si['shortintadj'].isna().sum()} missing")

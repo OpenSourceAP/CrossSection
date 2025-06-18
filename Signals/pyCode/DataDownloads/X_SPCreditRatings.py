@@ -28,7 +28,7 @@ FROM comp.adsprate
 rating_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print(f"Downloaded {len(rating_data)} credit rating records")
+print("Downloaded {len(rating_data)} credit rating records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -79,18 +79,18 @@ rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
 # Save the data
 rating_data.to_pickle("../pyData/Intermediate/m_SP_creditratings.pkl")
 
-print(f"S&P Credit Ratings data saved with {len(rating_data)} records")
+print("S&P Credit Ratings data saved with {len(rating_data)} records")
 
 # Show summary statistics
-print(f"Date range: {rating_data['time_avail_m'].min()} to {rating_data['time_avail_m'].max()}")
-print(f"Unique companies: {rating_data['gvkey'].nunique()}")
+print("Date range: {rating_data['time_avail_m'].min()} to {rating_data['time_avail_m'].max()}")
+print("Unique companies: {rating_data['gvkey'].nunique()}")
 
 print("\nCredit rating distribution:")
 rating_dist = rating_data['credrat'].value_counts().sort_index()
 rating_labels = {v: k for k, v in rating_map.items()}
 for rating_num, count in rating_dist.items():
-    label = rating_labels.get(rating_num, f'Unknown ({rating_num})')
-    print(f"  {rating_num} ({label}): {count:,}")
+    label = rating_labels.get(rating_num, 'Unknown ({rating_num})')
+    print("  {rating_num} ({label}): {count:,}")
 
 print("\nSample data:")
 print(rating_data.head())

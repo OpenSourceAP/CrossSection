@@ -25,7 +25,7 @@ conn = psycopg2.connect(
 )
 
 QUERY = """
-SELECT a.ticker, a.estimid, a.ereccd, a.etext, a.ireccd, a.itext, a.emaskcd, 
+SELECT a.ticker, a.estimid, a.ereccd, a.etext, a.ireccd, a.itext, a.emaskcd,
        a.amaskcd, a.anndats, actdats
 FROM ibes.recddet as a
 WHERE a.usfirm = '1'
@@ -34,7 +34,7 @@ WHERE a.usfirm = '1'
 rec_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print(f"Downloaded {len(rec_data)} IBES recommendation records")
+print("Downloaded {len(rec_data)} IBES recommendation records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -43,7 +43,7 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 rec_data['ireccd'] = pd.to_numeric(rec_data['ireccd'], errors='coerce')
 initial_count = len(rec_data)
 rec_data = rec_data.dropna(subset=['ireccd'])
-print(f"Removed {initial_count - len(rec_data)} records with missing ireccd")
+print("Removed {initial_count - len(rec_data)} records with missing ireccd")
 
 # Clean up and rename
 rec_data = rec_data.rename(columns={'ticker': 'tickerIBES'})
@@ -60,18 +60,18 @@ rec_data = rec_data[columns_order]
 # Save the data
 rec_data.to_pickle("../pyData/Intermediate/IBES_Recommendations.pkl")
 
-print(f"IBES Recommendations data saved with {len(rec_data)} records")
+print("IBES Recommendations data saved with {len(rec_data)} records")
 
 # Show summary statistics
 print("\nRecommendation distribution:")
 rec_counts = rec_data['ireccd'].value_counts().sort_index()
 rec_labels = {1: 'Strong Buy', 2: 'Buy', 3: 'Hold', 4: 'Underperform', 5: 'Sell'}
 for code, count in rec_counts.items():
-    label = rec_labels.get(int(code), f'Unknown ({int(code)})')
-    print(f"  {int(code)} ({label}): {count:,}")
+    label = rec_labels.get(int(code), 'Unknown ({int(code)})')
+    print("  {int(code)} ({label}): {count:,}")
 
 # Show date range
-print(f"\nDate range: {rec_data['time_avail_m'].min()} to {rec_data['time_avail_m'].max()}")
+print("\nDate range: {rec_data['time_avail_m'].min()} to {rec_data['time_avail_m'].max()}")
 
 # Sample data
 print("\nSample data:")

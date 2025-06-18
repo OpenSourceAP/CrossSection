@@ -95,6 +95,99 @@ Signals/
 - Use `pandas_datareader` for external data APIs
 - Follow PEP 8 style guidelines
 
+### Python Code Quality Standards
+**CRITICAL: All Python code must follow these formatting rules to avoid linting errors:**
+
+#### **Line Length & Formatting**
+- **Max line length: 88 characters** (Black standard, more flexible than 79)
+- Break long lines using parentheses or backslashes:
+```python
+# Good - use parentheses for function calls
+result = some_long_function_name(
+    parameter1, parameter2, parameter3
+)
+
+# Good - break long strings
+message = (
+    "This is a very long message that needs to be "
+    "broken across multiple lines"
+)
+```
+
+#### **Import Management**
+- **Remove unused imports** - Only import what you actually use
+- **Import order**: Standard library → Third-party → Local imports
+```python
+# Standard library first
+import os
+from pathlib import Path
+
+# Third-party libraries  
+import pandas as pd
+import numpy as np
+
+# Local imports last
+from .utils import helper_function
+```
+
+#### **Whitespace Rules**
+- **No trailing whitespace** on any line
+- **End files with single newline** character
+- **2 blank lines** before function/class definitions
+- **2 blank lines** after function/class definitions at module level
+
+#### **String Formatting**
+- **Use f-strings only when interpolating variables**:
+```python
+# Good - f-string with variables
+name = "data"
+message = f"Processing {name} file"
+
+# Bad - f-string without variables
+message = f"Processing complete"  # Should be: "Processing complete"
+```
+
+#### **Variable Usage**
+- **No unused variables** - Remove or prefix with underscore:
+```python
+# Bad
+df, meta = read_stata_file()  # meta unused
+
+# Good
+df, _ = read_stata_file()  # or remove meta entirely
+```
+
+#### **Function Documentation**
+- **All functions need docstrings**:
+```python
+def process_data(df):
+    """Process the input dataframe.
+    
+    Args:
+        df: Input pandas DataFrame
+        
+    Returns:
+        Processed DataFrame
+    """
+    return df
+```
+
+#### **Linting Commands**
+Run these before committing code:
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Check specific file
+flake8 filename.py
+
+# Check all Python files
+flake8 .
+
+# Auto-format code (if black is installed)
+black filename.py
+```
+
 ### Data Processing Standards
 1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations
 2. **Preserve column names**: Keep original variable names from Stata
@@ -122,3 +215,6 @@ Current progress tracked in individual Python files. Focus on replicating core W
 
 ## Python Specific Notes
 - use python3 to run python
+
+## Development Environment Setup
+- Install python packages to .venv/, using .venv/bin/activate

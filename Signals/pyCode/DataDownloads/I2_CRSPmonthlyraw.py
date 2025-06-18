@@ -23,8 +23,8 @@ conn = psycopg2.connect(
 
 QUERY = """
 SELECT a.permno, a.permco, a.date, a.ret, a.retx, a.vol, a.shrout, a.prc, a.cfacshr, a.bidlo, a.askhi,
-       b.shrcd, b.exchcd, b.siccd, b.ticker, b.shrcls, 
-       c.dlstcd, c.dlret                               
+       b.shrcd, b.exchcd, b.siccd, b.ticker, b.shrcls,
+       c.dlstcd, c.dlret
 FROM crsp.msf as a
 LEFT JOIN crsp.msenames as b
 ON a.permno=b.permno AND b.namedt<=a.date AND a.date<=b.nameendt
@@ -35,7 +35,7 @@ ON a.permno=c.permno AND date_trunc('month', a.date) = date_trunc('month', c.dls
 crsp_raw = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print(f"Downloaded {len(crsp_raw)} CRSP raw monthly records")
+print("Downloaded {len(crsp_raw)} CRSP raw monthly records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -69,6 +69,6 @@ crsp_raw = crsp_raw.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 # Save the data
 crsp_raw.to_pickle("../pyData/Intermediate/monthlyCRSPraw.pkl")
 
-print(f"CRSP Monthly Raw data saved with {len(crsp_raw)} records")
-print(f"Date range: {crsp_raw['time_avail_m'].min()} to {crsp_raw['time_avail_m'].max()}")
+print("CRSP Monthly Raw data saved with {len(crsp_raw)} records")
+print("Date range: {crsp_raw['time_avail_m'].min()} to {crsp_raw['time_avail_m'].max()}")
 print("Note: This is raw data WITHOUT delisting return adjustments")

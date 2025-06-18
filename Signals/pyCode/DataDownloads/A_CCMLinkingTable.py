@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-CRSP-Compustat Linking Table download script - Python equivalent of A_CCMLinkingTable.do
+CRSP-Compustat Linking Table download script.
+
+Python equivalent of A_CCMLinkingTable.do
 
 Downloads the CRSP-Compustat merged linking table from WRDS.
 """
@@ -25,8 +27,9 @@ conn = psycopg2.connect(
 )
 
 QUERY = """
-SELECT a.gvkey, a.conm, a.tic, a.cusip, a.cik, a.sic, a.naics, b.linkprim, 
-       b.linktype, b.liid, b.lpermno, b.lpermco, b.linkdt, b.linkenddt
+SELECT a.gvkey, a.conm, a.tic, a.cusip, a.cik, a.sic, a.naics,
+       b.linkprim, b.linktype, b.liid, b.lpermno, b.lpermco,
+       b.linkdt, b.linkenddt
 FROM comp.names as a
 INNER JOIN crsp.ccmxpf_lnkhist as b
 ON a.gvkey = b.gvkey
@@ -38,10 +41,10 @@ ORDER BY a.gvkey
 ccm_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-# Rename columns to match expected format
+# Rename columns to match expected format from Stata
 ccm_data = ccm_data.rename(columns={
-    'linkdt': 'timelinkstart_d',
-    'linkenddt': 'timelinkend_d',
+    'linkdt': 'timeLinkStart_d',
+    'linkenddt': 'timeLinkEnd_d',
     'lpermno': 'permno'
 })
 
@@ -50,11 +53,13 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Save the data
 ccm_data.to_csv("../pyData/Intermediate/CCMLinkingTable.csv", index=False)
-ccm_data.to_pickle("../pyData/Intermediate/CCMLinkingTable.pkl")
+ccm_data.to_parquet(
+    "../pyData/Intermediate/CCMLinkingTable.parquet", index=False
+)
 
-print(f"CCM Linking Table downloaded with {len(ccm_data)} records", flush=True)
-print(f"Unique companies (gvkey): {ccm_data['gvkey'].nunique()}", flush=True)
-print(f"Unique stocks (permno): {ccm_data['permno'].nunique()}", flush=True)
+print("CCM Linking Table downloaded with {len(ccm_data)} records", flush=True)
+print("Unique companies (gvkey): {ccm_data['gvkey'].nunique()}", flush=True)
+print("Unique stocks (permno): {ccm_data['permno'].nunique()}", flush=True)
 print("=" * 60, flush=True)
 print("✅ A_CCMLinkingTable.py completed successfully", flush=True)
 print("=" * 60, flush=True)

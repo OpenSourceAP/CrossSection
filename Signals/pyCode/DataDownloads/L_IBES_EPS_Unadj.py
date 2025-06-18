@@ -33,7 +33,7 @@ WHERE a.fpi = '0' or a.fpi = '1' or a.fpi = '2' or a.fpi = '6'
 ibes_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print(f"Downloaded {len(ibes_data)} IBES EPS records")
+print("Downloaded {len(ibes_data)} IBES EPS records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -51,19 +51,19 @@ ibes_data = ibes_data.drop('measure', axis=1)
 # Keep last obs each month - first remove rows with missing meanest
 initial_count = len(ibes_data)
 ibes_data = ibes_data.dropna(subset=['meanest'])
-print(f"Removed {initial_count - len(ibes_data)} records with missing meanest")
+print("Removed {initial_count - len(ibes_data)} records with missing meanest")
 
 # Sort and keep last observation for each tickerIBES/fpi/time_avail_m combination
 # (equivalent to sort tickerIBES fpi time_avail_m statpers; by tickerIBES fpi time_avail_m: keep if _n == _N)
 ibes_data = ibes_data.sort_values(['tickerIBES', 'fpi', 'time_avail_m', 'statpers'])
 ibes_data = ibes_data.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], keep='last')
 
-print(f"After keeping last obs per month: {len(ibes_data)} records")
+print("After keeping last obs per month: {len(ibes_data)} records")
 
 # Save the data
 ibes_data.to_pickle("../pyData/Intermediate/IBES_EPS_Unadj.pkl")
 
-print(f"IBES EPS Unadjusted data saved with {len(ibes_data)} records")
+print("IBES EPS Unadjusted data saved with {len(ibes_data)} records")
 
 # Show summary by FPI
 print("\nRecords by FPI (Forecast Period Indicator):")
@@ -71,7 +71,7 @@ fpi_counts = ibes_data['fpi'].value_counts().sort_index()
 print(fpi_counts)
 
 # Show date range
-print(f"\nDate range: {ibes_data['time_avail_m'].min()} to {ibes_data['time_avail_m'].max()}")
+print("\nDate range: {ibes_data['time_avail_m'].min()} to {ibes_data['time_avail_m'].max()}")
 
 # Sample data
 print("\nSample data:")
