@@ -32,15 +32,16 @@ Signals/
 │   ├── Intermediate/       # Processed data from Stata (.dta/.csv)
 │   ├── Prep/              # Preprocessed inputs
 │   └── temp/              # Temporary Stata files
-├── pyCode/                 # Python equivalent code
+├── pyCode/                 # Python equivalent code (WORKING DIRECTORY)
+│   ├── .venv/              # Python virtual environment
 │   ├── DataDownloads/      # Python data download scripts
 │   ├── requirements.txt    # Python dependencies
-│   └── 01_DownloadData.py  # Main download orchestrator
+│   ├── 01_DownloadData.py  # Main download orchestrator
+│   └── test_datadownloads_comparison.py  # Testing script
 ├── pyData/                 # Python data files
 │   ├── Intermediate/       # Processed data from Python (.parquet)
 │   └── temp/              # Temporary Python files
 ├── Logs/                   # Processing logs
-└── .venv/                  # Python virtual environment
 ```
 
 ## DataDownloads Script Mapping
@@ -87,6 +88,9 @@ Signals/
 - `ZL_CRSPOPTIONMETRICS.do` → `ZL_CRSPOPTIONMETRICS.py` - CRSP-OptionMetrics link
 
 ## Implementation Guidelines
+
+### Python code should follow the stata counterpart as closely as possible
+- The python code should use the same data sources as the stata code
 
 ### Python Environment
 - Use `pandas` for data manipulation
@@ -201,20 +205,54 @@ black filename.py
 - Create error flag system similar to Stata's `01_DownloadDataFlags`
 
 ### Testing Strategy
-- Compare output files with original Stata results
-- Validate row counts, column names, and summary statistics
-- Test edge cases and missing data scenarios
+- Run `test_datadownloads_comparison.py` to compare output files with original Stata results
+- Ensure that at least 95% of the data is exact match
+- Fix inexact matches by making sure the py script follows every step of the stata script
+
 
 ## Project Status
 Current progress tracked in individual Python files. Focus on replicating core WRDS data downloads first (A-K), then market data (O-W), before tackling specialized datasets (X-Z series).
 
 ## Commands
-- **Run all downloads**: `python pyCode/01_DownloadData.py`
-- **Test individual script**: `python pyCode/DataDownloads/[SCRIPT_NAME].py`
-- **Check requirements**: `pip install -r pyCode/requirements.txt`
 
-## Python Specific Notes
-- use python3 to run python
+**IMPORTANT**: All Python commands must be run from the `pyCode/` directory.
 
-## Development Environment Setup
-- Install python packages to .venv/, using .venv/bin/activate
+```bash
+# Navigate to working directory
+cd pyCode/
+
+# Activate virtual environment (required for all operations)
+source .venv/bin/activate
+
+# Install/update dependencies
+pip install -r requirements.txt
+
+# Run all downloads
+python3 01_DownloadData.py
+
+# Run individual DataDownloads script
+python3 DataDownloads/[SCRIPT_NAME].py
+
+# Test data comparison 
+python3 test_datadownloads_comparison.py --list
+```
+
+## Python Development Environment
+
+### Working Directory
+- **All Python scripts must be executed from `pyCode/`**
+- **Virtual environment is located at `pyCode/.venv/`**
+- **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
+
+### Environment Setup
+```bash
+# Initial setup (from pyCode/ directory)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Virtual Environment Management
+- **Only one .venv folder**: Located in `pyCode/.venv/`
+- **Always activate before running scripts**: `source .venv/bin/activate`
+- **Install packages in venv**: `pip install package_name`

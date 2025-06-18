@@ -60,7 +60,7 @@ def load_stata_data(script_name):
     filename = SCRIPT_TO_FILES[script_name]
 
     # Try .dta first
-    dta_path = f"Data/Intermediate/{filename}.dta"
+    dta_path = f"../Data/Intermediate/{filename}.dta"
     if os.path.exists(dta_path):
         try:
             df, _ = pyreadstat.read_dta(dta_path)
@@ -70,7 +70,7 @@ def load_stata_data(script_name):
             return None, f"Error reading {dta_path}: {e}"
 
     # Try .csv as fallback
-    csv_path = f"Data/Intermediate/{filename}.csv"
+    csv_path = f"../Data/Intermediate/{filename}.csv"
     if os.path.exists(csv_path):
         try:
             df = pd.read_csv(csv_path)
@@ -88,7 +88,7 @@ def load_python_data(script_name):
         return None, f"Unknown script: {script_name}"
 
     filename = SCRIPT_TO_FILES[script_name]
-    parquet_path = f"pyData/Intermediate/{filename}.parquet"
+    parquet_path = f"../pyData/Intermediate/{filename}.parquet"
 
     if not os.path.exists(parquet_path):
         return None, f"Python file not found: {parquet_path}"
