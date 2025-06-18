@@ -7,6 +7,7 @@ averages.
 """
 
 import os
+import time
 import pandas as pd
 import requests
 from dotenv import load_dotenv
@@ -14,14 +15,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def download_fred_series(series_id, api_key, start_date='1900-01-01'):
-    """Download a series from FRED API.
-    
+def download_fred_series(series_id, api_key, start_date='1900-01-01',
+                         max_retries=3, retry_delay=1):
+    """Download a series from FRED API with retry logic.
+
     Args:
         series_id: FRED series identifier
         api_key: FRED API key
         start_date: Start date for data retrieval
-        
+        max_retries: Maximum number of retry attempts
+        retry_delay: Initial delay between retries (seconds)
+
     Returns:
         pandas.DataFrame: DataFrame with date and value columns
     """
@@ -33,24 +37,55 @@ def download_fred_series(series_id, api_key, start_date='1900-01-01'):
         'observation_start': start_date
     }
 
-    try:
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
-        data = response.json()
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"Downloading {series_id} (attempt {attempt + 1}...)")
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
 
-        if 'observations' in data:
-            df = pd.DataFrame(data['observations'])
-            df['date'] = pd.to_datetime(df['date'])
-            df['value'] = pd.to_numeric(df['value'], errors='coerce')
-            df = df[['date', 'value']].dropna()
-            return df
-        else:
-            print(f"No observations found for {series_id}")
-            return pd.DataFrame()
+            # Check for API errors in response
+            if 'error_code' in data:
+                raise requests.exceptions.RequestException(
+                    f"FRED API error {data['error_code']}: "
+                    f"{data.get('error_message', 'Unknown error')}"
+                )
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading {series_id}: {e}")
-        return pd.DataFrame()
+            if 'observations' in data:
+                df = pd.DataFrame(data['observations'])
+                if len(df) == 0:
+                    print(f"Warning: No observations found for {series_id}")
+                    return pd.DataFrame()
+
+                df['date'] = pd.to_datetime(df['date'])
+                df['value'] = pd.to_numeric(df['value'], errors='coerce')
+                df = df[['date', 'value']].dropna()
+                print(f"Successfully downloaded {len(df)} observations")
+                return df
+            else:
+                print(f"No observations found for {series_id}")
+                return pd.DataFrame()
+
+        except requests.exceptions.Timeout:
+            print(f"Timeout downloading {series_id} (attempt {attempt + 1})")
+        except requests.exceptions.ConnectionError:
+            print(f"Connection error downloading {series_id} "
+                  f"(attempt {attempt + 1})")
+        except requests.exceptions.RequestException as e:
+            print(f"Request error downloading {series_id}: {e}")
+            if "API key" in str(e) or "error_code" in str(e):
+                # Don't retry on API key errors
+                break
+        except Exception as e:
+            print(f"Unexpected error downloading {series_id}: {e}")
+
+        if attempt < max_retries:
+            delay = retry_delay * (2 ** attempt)  # Exponential backoff
+            print(f"Retrying in {delay} seconds...")
+            time.sleep(delay)
+
+    print(f"Failed to download {series_id} after {max_retries + 1} attempts")
+    return pd.DataFrame()
 
 
 def main():
@@ -58,10 +93,10 @@ def main():
     print("Downloading 3-month T-bill rate from FRED...")
 
     # Get FRED API key from environment
-    fred_api_key = os.getenv("FRED_KEY")
+    fred_api_key = os.getenv("FRED_API_KEY")
     if not fred_api_key:
-        print("ERROR: FRED_KEY not found in environment variables")
-        print("Please set FRED_KEY in your .env file")
+        print("ERROR: FRED_API_KEY not found in environment variables")
+        print("Please set FRED_API_KEY in your .env file")
         return
 
     # Ensure directories exist
@@ -76,7 +111,9 @@ def main():
         return
 
     print(f"Downloaded {len(tbill_data)} monthly observations")
-    print(f"Date range: {tbill_data['date'].min()} to {tbill_data['date'].max()}")
+    date_min = tbill_data['date'].min()
+    date_max = tbill_data['date'].max()
+    print(f"Date range: {date_min} to {date_max}")
 
     # Convert to percentage (divide by 100, equivalent to TB3MS/100)
     tbill_data['TbillRate3M'] = tbill_data['value'] / 100
@@ -100,10 +137,8 @@ def main():
     # Save the data
     final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet")
 
-    print(
-        f"3-month T-bill rate data saved with {len(final_data)} "
-        "quarterly records"
-    )
+    print(f"3-month T-bill rate data saved with {len(final_data)} "
+          "quarterly records")
     min_year = final_data['year'].min()
     max_year = final_data['year'].max()
     min_qtr = (

@@ -2,10 +2,12 @@
 """
 GNP Deflator download script - Python equivalent of U_GNPDeflator.do
 
-Downloads GNP deflator from FRED, expands quarterly to monthly, and adds 3-month lag.
+Downloads GNP deflator from FRED, expands quarterly to monthly,
+and adds 3-month lag.
 """
 
 import os
+import time
 import pandas as pd
 import numpy as np
 import requests
@@ -13,8 +15,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def download_fred_series(series_id, api_key):
-    """Download a series from FRED API"""
+
+def download_fred_series(series_id, api_key, max_retries=3, retry_delay=1):
+    """Download a series from FRED API with retry logic.
+
+    Args:
+        series_id: FRED series identifier
+        api_key: FRED API key
+        max_retries: Maximum number of retry attempts
+        retry_delay: Initial delay between retries (seconds)
+
+    Returns:
+        pandas.DataFrame: DataFrame with date and value columns
+    """
     url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
         'series_id': series_id,
@@ -23,24 +36,56 @@ def download_fred_series(series_id, api_key):
         'observation_start': '1900-01-01'
     }
 
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
+    for attempt in range(max_retries + 1):
+        try:
+            print(f"Downloading {series_id} (attempt {attempt + 1}...)")
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
 
-        if 'observations' in data:
-            df = pd.DataFrame(data['observations'])
-            df['date'] = pd.to_datetime(df['date'])
-            df['value'] = pd.to_numeric(df['value'], errors='coerce')
-            df = df[['date', 'value']].dropna()
-            return df
-        else:
-            print("No observations found for {series_id}")
-            return pd.DataFrame()
+            # Check for API errors in response
+            if 'error_code' in data:
+                raise requests.exceptions.RequestException(
+                    f"FRED API error {data['error_code']}: "
+                    f"{data.get('error_message', 'Unknown error')}"
+                )
 
-    except Exception as e:
-        print("Error downloading {series_id}: {e}")
-        return pd.DataFrame()
+            if 'observations' in data:
+                df = pd.DataFrame(data['observations'])
+                if len(df) == 0:
+                    print(f"Warning: No observations found for {series_id}")
+                    return pd.DataFrame()
+
+                df['date'] = pd.to_datetime(df['date'])
+                df['value'] = pd.to_numeric(df['value'], errors='coerce')
+                df = df[['date', 'value']].dropna()
+                print(f"Successfully downloaded {len(df)} observations")
+                return df
+            else:
+                print(f"No observations found for {series_id}")
+                return pd.DataFrame()
+
+        except requests.exceptions.Timeout:
+            print(f"Timeout downloading {series_id} (attempt {attempt + 1})")
+        except requests.exceptions.ConnectionError:
+            print(f"Connection error downloading {series_id} "
+                  f"(attempt {attempt + 1})")
+        except requests.exceptions.RequestException as e:
+            print(f"Request error downloading {series_id}: {e}")
+            if "API key" in str(e) or "error_code" in str(e):
+                # Don't retry on API key errors
+                break
+        except Exception as e:
+            print(f"Unexpected error downloading {series_id}: {e}")
+
+        if attempt < max_retries:
+            delay = retry_delay * (2 ** attempt)  # Exponential backoff
+            print(f"Retrying in {delay} seconds...")
+            time.sleep(delay)
+
+    print(f"Failed to download {series_id} after {max_retries + 1} attempts")
+    return pd.DataFrame()
+
 
 def main():
     """Main function to download and process GNP deflator data"""
@@ -50,13 +95,16 @@ def main():
     fred_api_key = os.getenv("FRED_API_KEY")
     if not fred_api_key:
         print("WARNING: FRED_API_KEY not found in environment variables")
-        print("GNP deflator data requires FRED API key. Creating placeholder file.")
+        print("GNP deflator data requires FRED API key. "
+              "Creating placeholder file.")
 
         # Create placeholder data (quarterly data)
-        dates = pd.date_range(start='2020-01-01', end='2024-12-31', freq='Q')
+        dates = pd.date_range(
+            start='2020-01-01', end='2024-12-31', freq='Q'
+        )
         placeholder_data = pd.DataFrame({
             'date': dates,
-            'value': np.linspace(120, 130, len(dates))  # Fake deflator values
+            'value': np.linspace(120, 130, len(dates))  # Fake values
         })
 
         os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -75,7 +123,8 @@ def main():
             print("Failed to download GNP deflator data")
             return
 
-    # Convert to monthly periods (equivalent to gen temp_time_m = mofd(daten))
+    # Convert to monthly periods
+    # (equivalent to gen temp_time_m = mofd(daten))
     deflator_data['temp_time_m'] = deflator_data['date'].dt.to_period('M')
 
     # Expand quarterly data to monthly (equivalent to expand 3)
@@ -89,10 +138,12 @@ def main():
 
     monthly_deflator = pd.DataFrame(monthly_data)
 
-    # Add 3-month availability lag (equivalent to replace time_avail_m = time_avail_m + 3)
+    # Add 3-month availability lag
+    # (equivalent to replace time_avail_m = time_avail_m + 3)
     monthly_deflator['time_avail_m'] = monthly_deflator['time_avail_m'] + 3
 
-    # Create gnpdefl variable (equivalent to gen gnpdefl = GNPCTPI/100)
+    # Create gnpdefl variable
+    # (equivalent to gen gnpdefl = GNPCTPI/100)
     monthly_deflator['gnpdefl'] = monthly_deflator['value'] / 100
 
     # Keep only necessary columns
@@ -102,10 +153,12 @@ def main():
     final_data = final_data.drop_duplicates(subset=['time_avail_m'])
 
     # Save the data
-    final_data.to_pickle("../pyData/Intermediate/GNPdefl.pkl")
+    final_data.to_parquet("../pyData/Intermediate/GNPdefl.parquet")
 
-    print("GNP Deflator data saved with {len(final_data)} monthly records")
-    print("Date range: {final_data['time_avail_m'].min()} to {final_data['time_avail_m'].max()}")
+    print(f"GNP Deflator data saved with {len(final_data)} monthly records")
+    date_min = final_data['time_avail_m'].min()
+    date_max = final_data['time_avail_m'].max()
+    print(f"Date range: {date_min} to {date_max}")
 
     # Show sample data
     print("\nSample data:")
@@ -113,9 +166,10 @@ def main():
 
     # Show summary statistics
     print("\nGNP Deflator summary:")
-    print("Mean: {final_data['gnpdefl'].mean():.3f}")
-    print("Min: {final_data['gnpdefl'].min():.3f}")
-    print("Max: {final_data['gnpdefl'].max():.3f}")
+    print(f"Mean: {final_data['gnpdefl'].mean():.3f}")
+    print(f"Min: {final_data['gnpdefl'].min():.3f}")
+    print(f"Max: {final_data['gnpdefl'].max():.3f}")
+
 
 if __name__ == "__main__":
     main()

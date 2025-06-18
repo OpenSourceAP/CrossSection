@@ -89,8 +89,11 @@ Signals/
 
 ## Implementation Guidelines
 
-### Python code should follow the stata counterpart as closely as possible
+### Requirements
+- Python code should follow the stata counterpart as closely as possible
 - The python code should use the same data sources as the stata code
+- Output is parquet
+  - Not pkl
 
 ### Python Environment
 - Use `pandas` for data manipulation
@@ -251,6 +254,16 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### API Keys and External Data Sources
+- **FRED API Key**: Required for Federal Reserve Economic Data scripts
+  - Scripts requiring FRED API: `V_TBill3M.py`, `T_VIX.py`, `U_GNPDeflator.py`
+  - Environment variable: `FRED_API_KEY`
+  - Get free API key: https://fred.stlouisfed.org/docs/api/api_key.html
+  - Set in `.env` file: `FRED_API_KEY = your_api_key_here`
+- **WRDS Access**: Required for financial database scripts
+  - Environment variables: `WRDS_USERNAME`, `WRDS_PASSWORD`
+  - Set in `.env` file with your WRDS credentials
 
 ### Virtual Environment Management
 - **Only one .venv folder**: Located in `pyCode/.venv/`
