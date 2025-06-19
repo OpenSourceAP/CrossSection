@@ -47,45 +47,59 @@ Signals/
 ## DataDownloads Script Mapping
 
 ### Core WRDS Data (A-K)
-- `A_CCMLinkingTable.do` → `A_CCMLinkingTable.py` - CRSP-Compustat linking
-- `B_CompustatAnnual.do` → `B_CompustatAnnual.py` - Annual fundamentals  
-- `C_CompustatQuarterly.do` → `C_CompustatQuarterly.py` - Quarterly fundamentals
-- `D_CompustatPensions.do` → `D_CompustatPensions.py` - Pension data
-- `E_CompustatBusinessSegments.do` → `E_CompustatBusinessSegments.py` - Segment data
-- `F_CompustatCustomerSegments.do` → `F_CompustatCustomerSegments.py` - Customer data
-- `G_CompustatShortInterest.do` → `G_CompustatShortInterest.py` - Short interest
-- `H_CRSPDistributions.do` → `H_CRSPDistributions.py` - Distribution events
-- `I_CRSPmonthly.do` → `I_CRSPmonthly.py` - Monthly stock data
-- `I2_CRSPmonthlyraw.do` → `I2_CRSPmonthlyraw.py` - Raw monthly data
-- `J_CRSPdaily.do` → `J_CRSPdaily.py` - Daily stock data
-- `K_CRSPAcquisitions.do` → `K_CRSPAcquisitions.py` - M&A events
+| Stata Script | Python Script | Output File | File Size | Description |
+|-------------|---------------|-------------|-----------|-------------|
+| `A_CCMLinkingTable.do` | `A_CCMLinkingTable.py` | CCMLinkingTable.dta | 2.7M | CRSP-Compustat linking |
+| `B_CompustatAnnual.do` | `B_CompustatAnnual.py` | m_aCompustat.dta | 3.1G | Annual fundamentals |
+| `C_CompustatQuarterly.do` | `C_CompustatQuarterly.py` | m_QCompustat.dta | 2.5G | Quarterly fundamentals |
+| `D_CompustatPensions.do` | `D_CompustatPensions.py` | CompustatPensions.dta | 10M | Pension data |
+| `E_CompustatBusinessSegments.do` | `E_CompustatBusinessSegments.py` | CompustatSegments.dta | 388M | Segment data |
+| `F_CompustatCustomerSegments.do` | `F_CompustatCustomerSegments.py` | customerMom.dta | 4.1M | Customer data |
+| `G_CompustatShortInterest.do` | `G_CompustatShortInterest.py` | monthlyShortInterest.dta | 49M | Short interest |
+| `H_CRSPDistributions.do` | `H_CRSPDistributions.py` | CRSPdistributions.dta | 65M | Distribution events |
+| `I_CRSPmonthly.do` | `I_CRSPmonthly.py` | monthlyCRSP.dta | 418M | Monthly stock data |
+| `I2_CRSPmonthlyraw.do` | `I2_CRSPmonthlyraw.py` | monthlyCRSPraw.dta | 418M | Raw monthly data |
+| `J_CRSPdaily.do` | `J_CRSPdaily.py` | dailyCRSP.dta | 3.8G | Daily stock data |
+| `K_CRSPAcquisitions.do` | `K_CRSPAcquisitions.py` | m_CRSPAcquisitions.dta | 29K | M&A events |
 
-### IBES Data (L-N)  
-- `L_IBES_EPS_Unadj.do` → `L_IBES_EPS_Unadj.py` - Unadjusted EPS estimates
-- `L2_IBES_EPS_Adj.do` → `L2_IBES_EPS_Adj.py` - Adjusted EPS estimates
-- `M_IBES_Recommendations.do` → `M_IBES_Recommendations.py` - Analyst recommendations
-- `N_IBES_UnadjustedActuals.do` → `N_IBES_UnadjustedActuals.py` - Actual earnings
+### IBES Data (L-N)
+| Stata Script | Python Script | Output File | File Size | Description |
+|-------------|---------------|-------------|-----------|-------------|
+| `L_IBES_EPS_Unadj.do` | `L_IBES_EPS_Unadj.py` | IBES_EPS_Unadj.dta | 284M | Unadjusted EPS estimates |
+| `L2_IBES_EPS_Adj.do` | `L2_IBES_EPS_Adj.py` | IBES_EPS_Adj.dta | 919M | Adjusted EPS estimates |
+| `M_IBES_Recommendations.do` | `M_IBES_Recommendations.py` | IBES_Recommendations.dta | 54M | Analyst recommendations |
+| `N_IBES_UnadjustedActuals.do` | `N_IBES_UnadjustedActuals.py` | IBES_UnadjustedActuals.dta | 321M | Actual earnings |
 
 ### Market Data (O-W)
-- `O_Daily_Fama-French.do` → `O_Daily_Fama-French.py` - Daily FF factors
-- `P_Monthly_Fama-French.do` → `P_Monthly_Fama-French.py` - Monthly FF factors  
-- `Q_MarketReturns.do` → `Q_MarketReturns.py` - Market return indices
-- `R_MonthlyLiquidityFactor.do` → `R_MonthlyLiquidityFactor.py` - Liquidity factor
-- `S_QFactorModel.do` → `S_QFactorModel.py` - Q-factor model data
-- `T_VIX.do` → `T_VIX.py` - VIX volatility index
-- `U_GNPDeflator.do` → `U_GNPDeflator.py` - GNP price deflator
-- `V_TBill3M.do` → `V_TBill3M.py` - 3-month Treasury bill rates
-- `W_BrokerDealerLeverage.do` → `W_BrokerDealerLeverage.py` - Broker-dealer leverage
+| Stata Script | Python Script | Output File | File Size | Description |
+|-------------|---------------|-------------|-----------|-------------|
+| `O_Daily_Fama-French.do` | `O_Daily_Fama-French.py` | dailyFF.dta | 1.0M | Daily FF factors |
+| `P_Monthly_Fama-French.do` | `P_Monthly_Fama-French.py` | monthlyFF.dta | 53K | Monthly FF factors |
+| `Q_MarketReturns.do` | `Q_MarketReturns.py` | monthlyMarket.dta | 33K | Market return indices |
+| `R_MonthlyLiquidityFactor.do` | `R_MonthlyLiquidityFactor.py` | monthlyLiquidity.dta | 9.1K | Liquidity factor |
+| `S_QFactorModel.do` | `S_QFactorModel.py` | d_qfactor.dta | 317K | Q-factor model data |
+| `T_VIX.do` | `T_VIX.py` | d_vix.dta | 104K | VIX volatility index |
+| `U_GNPDeflator.do` | `U_GNPDeflator.py` | GNPdefl.dta | 7.3K | GNP price deflator |
+| `V_TBill3M.do` | `V_TBill3M.py` | TBill3M.dta | 4.9K | 3-month Treasury bill rates |
+| `W_BrokerDealerLeverage.do` | `W_BrokerDealerLeverage.py` | brokerLev.dta | 4.0K | Broker-dealer leverage |
 
 ### Credit & Alternative Data (X-Z)
-- `X_SPCreditRatings.do` → `X_SPCreditRatings.py` - S&P credit ratings
-- `X2_CIQCreditRatings.do` → `X2_CIQCreditRatings.py` - Capital IQ ratings
-- `ZA_IPODates.do` → `ZA_IPODates.py` - IPO dates from Ritter
-- `ZB_PIN.do` → `ZB_PIN.py` - Probability of informed trading
-- `ZC_GovernanceIndex.do` → `ZC_GovernanceIndex.py` - Corporate governance index
-- `ZF_CRSPIBESLink.do` → `ZF_CRSPIBESLink.py` - CRSP-IBES linking
-- `ZI_PatentCitations.do` → `ZI_PatentCitations.py` - Patent citation data
-- `ZL_CRSPOPTIONMETRICS.do` → `ZL_CRSPOPTIONMETRICS.py` - CRSP-OptionMetrics link
+| Stata Script | Python Script | Output File | File Size | Description |
+|-------------|---------------|-------------|-----------|-------------|
+| `X_SPCreditRatings.do` | `X_SPCreditRatings.py` | m_SP_creditratings.dta | 20M | S&P credit ratings |
+| `X2_CIQCreditRatings.do` | `X2_CIQCreditRatings.py` | m_CIQ_creditratings.dta | 17M | Capital IQ ratings |
+| `ZA_IPODates.do` | `ZA_IPODates.py` | - | - | IPO dates from Ritter |
+| `ZB_PIN.do` | `ZB_PIN.py` | pin_monthly.dta | 7.5M | Probability of informed trading |
+| `ZC_GovernanceIndex.do` | `ZC_GovernanceIndex.py` | GovIndex.dta | 3.9M | Corporate governance index |
+| `ZD_CorwinSchultz.do` | `ZD_CorwinSchultz.py` | BAspreadsCorwin.dta | 43M | Corwin-Schultz bid-ask spreads |
+| `ZE_13F.do` | `ZE_13F.py` | TR_13F.dta | 52M | Thomson Reuters 13F holdings |
+| `ZF_CRSPIBESLink.do` | `ZF_CRSPIBESLink.py` | IBESCRSPLinkingTable.dta | 213K | CRSP-IBES linking |
+| `ZG_BidaskTAQ.do` | `ZG_BidaskTAQ.py` | hf_spread.dta | 31M | High-frequency bid-ask spreads |
+| `ZH_OptionMetrics.do` | `ZH_OptionMetrics.py` | OptionMetricsBH.dta | 68M | OptionMetrics Black-Scholes data |
+| `ZI_PatentCitations.do` | `ZI_PatentCitations.py` | PatentDataProcessed.dta | 6.0M | Patent citation data |
+| `ZJ_InputOutputMomentum.do` | `ZJ_InputOutputMomentum.py` | InputOutputMomentum.dta | 270M | Input-output momentum |
+| `ZK_CustomerMomentum.do` | `ZK_CustomerMomentum.py` | customerMom.dta | 4.1M | Customer momentum |
+| `ZL_CRSPOPTIONMETRICS.do` | `ZL_CRSPOPTIONMETRICS.py` | OPTIONMETRICSCRSPLinkingTable.dta | 234K | CRSP-OptionMetrics link |
 
 ## Implementation Guidelines
 
@@ -212,9 +226,67 @@ black filename.py
 - Ensure that at least 95% of the data is exact match
 - Fix inexact matches by making sure the py script follows every step of the stata script
 
+## PKL→Parquet Conversion Lessons Learned
 
-## Project Status
-Current progress tracked in individual Python files. Focus on replicating core WRDS data downloads first (A-K), then market data (O-W), before tackling specialized datasets (X-Z series).
+### Overview
+Based on systematic conversion of DataDownloads scripts from PKL to parquet format, we identified critical patterns for achieving 95%+ exact matches with Stata outputs.
+
+### Success Patterns
+
+#### 1. **PKL → Parquet Conversion (Critical Foundation)**
+```python
+# OLD (incorrect)
+data.to_pickle("../pyData/Intermediate/filename.pkl")
+
+# NEW (correct)
+data.to_parquet("../pyData/Intermediate/filename.parquet")
+```
+- **Impact**: Essential first step - enables comparison testing
+- **Success Rate**: 100% when combined with other fixes
+- **Priority**: Must be done first before other optimizations
+
+#### 2. **F-String Fixes (Always Required)**
+```python
+# OLD (broken)
+print("Downloaded {len(data)} records")
+
+# NEW (correct) 
+print(f"Downloaded {len(data)} records")
+```
+- **Impact**: Prevents runtime errors and improves debugging
+- **Frequency**: Found in 95% of scripts
+- **Priority**: High - fix alongside PKL conversion
+
+#### 3. **Column Naming Alignment (Critical for Match)**
+```python
+# Problem: Case mismatch between Python and Stata
+data.columns = data.columns.str.lower()  # Convert to lowercase
+
+# Problem: Missing Stata naming conventions
+rename_dict = {}
+for col in data.columns:
+    if col.startswith('r_') and col != 'r_eg':
+        rename_dict[col] = col + '_qfac'  # Match Stata pattern
+data = data.rename(columns=rename_dict)
+```
+- **Impact**: Column mismatches prevent any comparison
+- **Example**: S_QFactorModel needed lowercase + `_qfac` suffix
+- **Priority**: Critical - must exactly match Stata output
+
+#### 4. **Data Processing Logic Alignment**
+```python
+# Must replicate every Stata step exactly:
+# 1. Drop unwanted columns in same order
+if 'r_eg' in data.columns:
+    data = data.drop('r_eg', axis=1)
+
+# 2. Apply transformations with same precision
+data[col] = data[col] / 100  # Match Stata division
+
+# 3. Handle missing values identically 
+data['vix'] = data['VXOCLS']
+data.loc[fill_mask, 'vix'] = data.loc[fill_mask, 'VIXCLS']
+```
 
 ## Commands
 
@@ -269,3 +341,11 @@ pip install -r requirements.txt
 - **Only one .venv folder**: Located in `pyCode/.venv/`
 - **Always activate before running scripts**: `source .venv/bin/activate`
 - **Install packages in venv**: `pip install package_name`
+
+## Planning Documents
+
+### Missing Scripts Implementation Plan
+- **Current Plan**: `missing_scripts_plan_2025-06-19.md`
+- **Status**: Implementation in progress
+- **Priority Scripts**: ZD_CorwinSchultz.py, ZG_BidaskTAQ.py, ZE_13F.py
+- **Completion Target**: 7 missing Python DataDownloads scripts

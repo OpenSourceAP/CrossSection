@@ -46,9 +46,14 @@ SCRIPT_TO_FILES = {
     "ZA_IPODates": "IPODates",
     "ZB_PIN": "pin_monthly",
     "ZC_GovernanceIndex": "GovIndex",
+    "ZD_CorwinSchultz": "BAspreadsCorwin",
+    "ZE_13F": "TR_13F",
     "ZF_CRSPIBESLink": "IBESCRSPLinkingTable",
+    "ZG_BidaskTAQ": "hf_spread",
+    "ZH_OptionMetrics": "OptionMetricsBH",
     "ZI_PatentCitations": "PatentDataProcessed",
     "ZL_CRSPOPTIONMETRICS": "OPTIONMETRICSCRSPLinkingTable",
+    "W_BrokerDealerLeverage": "brokerLev",
 }
 
 
