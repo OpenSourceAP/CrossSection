@@ -40,7 +40,7 @@ def main():
         os.remove(temp_file)
 
     except Exception as e:
-        print("Error downloading governance data: {e}")
+        print(f"Error downloading governance data: {e}")
         print("Creating placeholder file")
 
         # Create placeholder data
@@ -50,7 +50,7 @@ def main():
             'G': [8, 10, 7]
         })
 
-    print("Downloaded {len(gov_data)} governance records")
+    print(f"Downloaded {len(gov_data)} governance records")
 
     # Clean ticker column (equivalent to replace ticker = strtrim(ticker))
     if 'ticker' in gov_data.columns:
@@ -59,7 +59,7 @@ def main():
     # Keep first observation per ticker-year
     if 'ticker' in gov_data.columns and 'year' in gov_data.columns:
         gov_data = gov_data.drop_duplicates(['ticker', 'year'], keep='first')
-        print("After removing ticker-year duplicates: {len(gov_data)} records")
+        print(f"After removing ticker-year duplicates: {len(gov_data)} records")
 
     # Replace year 2000 with 1999 (as in original)
     if 'year' in gov_data.columns:
@@ -129,21 +129,21 @@ def main():
     available_cols = [col for col in keep_cols if col in final_data.columns]
     final_data = final_data[available_cols]
 
-    print("After interpolation: {len(final_data)} records")
+    print(f"After interpolation: {len(final_data)} records")
 
     # Save the data
-    final_data.to_pickle("../pyData/Intermediate/GovIndex.pkl")
+    final_data.to_parquet("../pyData/Intermediate/GovIndex.parquet")
 
-    print("Governance Index data saved with {len(final_data)} records")
+    print(f"Governance Index data saved with {len(final_data)} records")
 
     # Show summary statistics
-    print("Date range: {final_data['time_avail_m'].min()} to {final_data['time_avail_m'].max()}")
-    print("Unique tickers: {final_data['ticker'].nunique()}")
+    print(f"Date range: {final_data['time_avail_m'].min()} to {final_data['time_avail_m'].max()}")
+    print(f"Unique tickers: {final_data['ticker'].nunique()}")
 
     if 'G' in final_data.columns:
         g_clean = final_data['G'].dropna()
         if len(g_clean) > 0:
-            print("G-Index summary - Mean: {g_clean.mean():.2f}, Std: {g_clean.std():.2f}")
+            print(f"G-Index summary - Mean: {g_clean.mean():.2f}, Std: {g_clean.std():.2f}")
 
     print("\nSample data:")
     print(final_data.head())

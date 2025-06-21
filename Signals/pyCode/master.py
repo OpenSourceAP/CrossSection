@@ -79,9 +79,11 @@ def main():
     print("Python Master Script - pyCode equivalent of master.do")
     print("=" * 60)
 
-    # Check if we're in the right directory
-    if not Path("CLAUDE.md").exists():
+    # Check if we're in the right directory (should end with pyCode)
+    current_dir = Path.cwd()
+    if current_dir.name != "pyCode":
         print("ERROR: Please run this script from the pyCode directory")
+        print(f"Current directory: {current_dir}")
         sys.exit(1)
 
     # Check environment setup (equivalent to checking globals in master.do)

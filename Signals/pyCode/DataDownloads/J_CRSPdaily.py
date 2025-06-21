@@ -25,10 +25,10 @@ def get_crsp_daily_year(year, conn):
 
     try:
         data = pd.read_sql_query(query, conn)
-        print("Downloaded {len(data)} records for year {year}")
+        print(f"Downloaded {len(data)} records for year {year}")
         return data
     except Exception as e:
-        print("Error downloading year {year}: {e}")
+        print(f"Error downloading year {year}: {e}")
         return pd.DataFrame()
 
 def main():
@@ -55,7 +55,7 @@ def main():
     all_data = []
 
     for year in range(1926, current_year + 1):
-        print("Processing year {year}...")
+        print(f"Processing year {year}...")
 
         year_data = get_crsp_daily_year(year, conn)
 
@@ -76,7 +76,7 @@ def main():
     print("Combining all years of data...")
     combined_data = pd.concat(all_data, ignore_index=True)
 
-    print("Total records downloaded: {len(combined_data)}")
+    print(f"Total records downloaded: {len(combined_data)}")
 
     # Rename date to time_d (equivalent to Stata rename)
     combined_data = combined_data.rename(columns={'date': 'time_d'})
@@ -86,21 +86,21 @@ def main():
     daily_full = combined_data[full_columns].copy()
 
     # Save full daily data
-    daily_full.to_pickle("../pyData/Intermediate/dailyCRSP.pkl")
-    print("Saved full daily CRSP data with {len(daily_full)} records")
+    daily_full.to_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+    print(f"Saved full daily CRSP data with {len(daily_full)} records")
 
     # Create price-only file (equivalent to second save in Stata)
     price_columns = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
     daily_prc = combined_data[price_columns].copy()
 
     # Save price-only data
-    daily_prc.to_pickle("../pyData/Intermediate/dailyCRSPprc.pkl")
-    print("Saved price-only daily CRSP data with {len(daily_prc)} records")
+    daily_prc.to_parquet("../pyData/Intermediate/dailyCRSPprc.parquet")
+    print(f"Saved price-only daily CRSP data with {len(daily_prc)} records")
 
     # Date range info
     min_date = pd.to_datetime(combined_data['time_d']).min()
     max_date = pd.to_datetime(combined_data['time_d']).max()
-    print("Date range: {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}")
+    print(f"Date range: {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}")
 
 if __name__ == "__main__":
     main()

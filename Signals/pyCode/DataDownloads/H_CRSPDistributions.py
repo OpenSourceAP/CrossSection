@@ -37,7 +37,7 @@ conn.close()
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-print("Downloaded {len(dist_data)} distribution records")
+print(f"Downloaded {len(dist_data)} distribution records")
 
 # Remove duplicates (equivalent to bysort permno distcd paydt: keep if _n == 1)
 # These are data errors, e.g. see permno 93338 or 93223
@@ -46,7 +46,7 @@ dist_data = dist_data.drop_duplicates(subset=['permno', 'distcd', 'paydt'], keep
 duplicates_removed = initial_count - len(dist_data)
 
 if duplicates_removed > 0:
-    print("Removed {duplicates_removed} duplicate records")
+    print(f"Removed {duplicates_removed} duplicate records")
 
 # For convenience, extract components of distribution code
 # Convert distcd to string and extract individual digits
@@ -62,9 +62,9 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3], errors='coerce'
 dist_data = dist_data.drop('distcd_str', axis=1)
 
 # Save the data
-dist_data.to_pickle("../pyData/Intermediate/CRSPdistributions.pkl")
+dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")
 
-print("CRSP Distributions data saved with {len(dist_data)} records", flush=True)
+print(f"CRSP Distributions data saved with {len(dist_data)} records", flush=True)
 
 # Show sample of distribution codes
 print("\nSample distribution codes:", flush=True)

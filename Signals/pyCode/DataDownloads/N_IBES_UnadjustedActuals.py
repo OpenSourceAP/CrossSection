@@ -31,7 +31,7 @@ WHERE a.measure = 'EPS'
 actuals_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(actuals_data)} IBES actual earnings records")
+print(f"Downloaded {len(actuals_data)} IBES actual earnings records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -48,7 +48,7 @@ actuals_data['time_avail_m'] = actuals_data['statpers'].dt.to_period('M')
 # (equivalent to egen id = group(ticker); bys id time_av: keep if _n == 1)
 initial_count = len(actuals_data)
 actuals_data = actuals_data.drop_duplicates(['ticker', 'time_avail_m'], keep='first')
-print("After removing within-month duplicates: {len(actuals_data)} records")
+print(f"After removing within-month duplicates: {len(actuals_data)} records")
 
 # Fill time series gaps (equivalent to xtset id time_av; tsfill)
 print("Filling time series gaps...")
@@ -83,7 +83,7 @@ for ticker in tickers:
 # Combine all tickers
 if filled_data:
     actuals_data = pd.concat(filled_data, ignore_index=True)
-    print("After filling time series gaps: {len(actuals_data)} records")
+    print(f"After filling time series gaps: {len(actuals_data)} records")
 
 # Drop statpers (we have time_avail_m now)
 if 'statpers' in actuals_data.columns:
@@ -93,13 +93,13 @@ if 'statpers' in actuals_data.columns:
 actuals_data = actuals_data.rename(columns={'ticker': 'tickerIBES'})
 
 # Save the data
-actuals_data.to_pickle("../pyData/Intermediate/IBES_UnadjustedActuals.pkl")
+actuals_data.to_parquet("../pyData/Intermediate/IBES_UnadjustedActuals.parquet")
 
-print("IBES Unadjusted Actuals data saved with {len(actuals_data)} records")
+print(f"IBES Unadjusted Actuals data saved with {len(actuals_data)} records")
 
 # Show date range and sample data
-print("Date range: {actuals_data['time_avail_m'].min()} to {actuals_data['time_avail_m'].max()}")
-print("Unique tickers: {actuals_data['tickerIBES'].nunique()}")
+print(f"Date range: {actuals_data['time_avail_m'].min()} to {actuals_data['time_avail_m'].max()}")
+print(f"Unique tickers: {actuals_data['tickerIBES'].nunique()}")
 
 print("\nSample data:")
 print(actuals_data[['tickerIBES', 'time_avail_m', 'int0a', 'fy0a']].head())

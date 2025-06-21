@@ -44,12 +44,12 @@ def main():
         os.remove(zip_path)
         for file in ['owr_yearly.csv', 'pin_yearly.csv', 'cpie_daily.csv',
                      'gpin_yearly.csv', 'dy_yearly.csv']:
-            file_path = "../pyData/Intermediate/{file}"
+            file_path = f"../pyData/Intermediate/{file}"
             if os.path.exists(file_path):
                 os.remove(file_path)
 
     except Exception as e:
-        print("Error downloading PIN data: {e}")
+        print(f"Error downloading PIN data: {e}")
         print("Creating placeholder file")
 
         # Create placeholder data
@@ -59,7 +59,7 @@ def main():
             'pin': [0.15, 0.18, 0.12]
         })
 
-    print("Downloaded {len(pin_data)} PIN yearly records")
+    print(f"Downloaded {len(pin_data)} PIN yearly records")
 
     # Convert yearly to monthly (expand 12 times)
     monthly_data = []
@@ -80,22 +80,22 @@ def main():
 
     pin_monthly = pd.DataFrame(monthly_data)
 
-    print("Expanded to {len(pin_monthly)} monthly PIN records")
+    print(f"Expanded to {len(pin_monthly)} monthly PIN records")
 
     # Save the data
-    pin_monthly.to_pickle("../pyData/Intermediate/pin_monthly.pkl")
+    pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet")
 
-    print("PIN monthly data saved with {len(pin_monthly)} records")
+    print(f"PIN monthly data saved with {len(pin_monthly)} records")
 
     # Show summary statistics
     if 'time_avail_m' in pin_monthly.columns:
-        print("Date range: {pin_monthly['time_avail_m'].min()} to {pin_monthly['time_avail_m'].max()}")
+        print(f"Date range: {pin_monthly['time_avail_m'].min()} to {pin_monthly['time_avail_m'].max()}")
 
     if 'permno' in pin_monthly.columns:
-        print("Unique permnos: {pin_monthly['permno'].nunique()}")
+        print(f"Unique permnos: {pin_monthly['permno'].nunique()}")
 
     if 'pin' in pin_monthly.columns:
-        print("PIN summary - Mean: {pin_monthly['pin'].mean():.4f}, Std: {pin_monthly['pin'].std():.4f}")
+        print(f"PIN summary - Mean: {pin_monthly['pin'].mean():.4f}, Std: {pin_monthly['pin'].std():.4f}")
 
     print("\nSample data:")
     print(pin_monthly[['year', 'permno', 'month', 'time_avail_m', 'pin']].head())

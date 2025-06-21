@@ -50,7 +50,7 @@ def download_ciq_ratings(query_type, conn):
 
     try:
         data = pd.read_sql_query(query, conn)
-        print("Downloaded {len(data)} {query_type} rating records")
+        print(f"Downloaded {len(data)} {query_type} rating records")
 
         # Fill in missing columns
         for col, val in fill_cols.items():
@@ -58,7 +58,7 @@ def download_ciq_ratings(query_type, conn):
 
         return data
     except Exception as e:
-        print("Error downloading {query_type} ratings: {e}")
+        print(f"Error downloading {query_type} ratings: {e}")
         return pd.DataFrame()
 
 def main():
@@ -97,13 +97,13 @@ def main():
         return
 
     combined_ratings = pd.concat(all_ratings, ignore_index=True)
-    print("Combined {len(combined_ratings)} total rating records")
+    print(f"Combined {len(combined_ratings)} total rating records")
 
     # Drop "Not Rated" actions
     if 'ratingactionword' in combined_ratings.columns:
         initial_count = len(combined_ratings)
         combined_ratings = combined_ratings[combined_ratings['ratingactionword'] != 'Not Rated']
-        print("Removed {initial_count - len(combined_ratings)} 'Not Rated' records")
+        print(f"Removed {initial_count - len(combined_ratings)} 'Not Rated' records")
 
     # Rank the sources (entity=1, instrument=2, security=3)
     combined_ratings['source'] = 3  # default
@@ -113,7 +113,7 @@ def main():
     # For each gvkey-ratingdate-ratingtime, keep the best source
     combined_ratings = combined_ratings.sort_values(['gvkey', 'ratingdate', 'ratingtime', 'source'])
     combined_ratings = combined_ratings.drop_duplicates(['gvkey', 'ratingdate', 'ratingtime'], keep='first')
-    print("After removing time duplicates: {len(combined_ratings)} records")
+    print(f"After removing time duplicates: {len(combined_ratings)} records")
 
     # Add time_avail_m
     combined_ratings['ratingdate'] = pd.to_datetime(combined_ratings['ratingdate'])
@@ -122,24 +122,24 @@ def main():
     # For each gvkey-time_avail_m, keep last rating (by date and time)
     combined_ratings = combined_ratings.sort_values(['gvkey', 'time_avail_m', 'ratingdate', 'ratingtime'])
     combined_ratings = combined_ratings.drop_duplicates(['gvkey', 'time_avail_m'], keep='last')
-    print("After keeping last rating per month: {len(combined_ratings)} records")
+    print(f"After keeping last rating per month: {len(combined_ratings)} records")
 
     # Convert gvkey to numeric
     combined_ratings['gvkey'] = pd.to_numeric(combined_ratings['gvkey'], errors='coerce')
 
     # Save the data
-    combined_ratings.to_pickle("../pyData/Intermediate/m_CIQ_creditratings.pkl")
+    combined_ratings.to_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet")
 
-    print("CIQ Credit Ratings data saved with {len(combined_ratings)} records")
-    print("Date range: {combined_ratings['time_avail_m'].min()} to {combined_ratings['time_avail_m'].max()}")
+    print(f"CIQ Credit Ratings data saved with {len(combined_ratings)} records")
+    print(f"Date range: {combined_ratings['time_avail_m'].min()} to {combined_ratings['time_avail_m'].max()}")
 
     # Show source distribution
     print("\nSource distribution:")
     source_dist = combined_ratings['source'].value_counts().sort_index()
     source_labels = {1: 'Entity', 2: 'Instrument', 3: 'Security'}
     for source, count in source_dist.items():
-        label = source_labels.get(source, 'Unknown ({source})')
-        print("  {source} ({label}): {count:,}")
+        label = source_labels.get(source, f'Unknown ({source})')
+        print(f"  {source} ({label}): {count:,}")
 
     print("\nSample data:")
     print(combined_ratings[['gvkey', 'time_avail_m', 'currentratingsymbol', 'source']].head())

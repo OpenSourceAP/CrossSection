@@ -39,7 +39,7 @@ def main():
         os.remove(temp_file)
 
     except Exception as e:
-        print("Error downloading IPO data: {e}")
+        print(f"Error downloading IPO data: {e}")
         print("Creating placeholder file")
 
         # Create placeholder data
@@ -49,7 +49,7 @@ def main():
             'offerdate': [19950101, 20000101, 20050101]
         })
 
-    print("Downloaded {len(ipo_data)} IPO records")
+    print(f"Downloaded {len(ipo_data)} IPO records")
 
     # Handle different possible column names (as noted in Stata code)
     # Rename columns to standardize
@@ -100,29 +100,29 @@ def main():
     ipo_data = ipo_data.dropna(subset=['permno'])
     ipo_data = ipo_data[~ipo_data['permno'].isin([999])]
     ipo_data = ipo_data[ipo_data['permno'] > 0]
-    print("Filtered from {initial_count} to {len(ipo_data)} records after cleaning permno")
+    print(f"Filtered from {initial_count} to {len(ipo_data)} records after cleaning permno")
 
     # Keep only first observation per permno
     ipo_data = ipo_data.drop_duplicates(subset=['permno'], keep='first')
-    print("After keeping first obs per permno: {len(ipo_data)} records")
+    print(f"After keeping first obs per permno: {len(ipo_data)} records")
 
     # Clean FoundingYear (set to missing if < 0)
     if 'FoundingYear' in ipo_data.columns:
         ipo_data.loc[ipo_data['FoundingYear'] < 0, 'FoundingYear'] = None
 
     # Save the data
-    ipo_data.to_pickle("../pyData/Intermediate/IPODates.pkl")
+    ipo_data.to_parquet("../pyData/Intermediate/IPODates.parquet")
 
-    print("IPO Dates data saved with {len(ipo_data)} records")
+    print(f"IPO Dates data saved with {len(ipo_data)} records")
 
     # Show summary statistics
     if 'IPOdate' in ipo_data.columns:
-        print("IPO date range: {ipo_data['IPOdate'].min()} to {ipo_data['IPOdate'].max()}")
+        print(f"IPO date range: {ipo_data['IPOdate'].min()} to {ipo_data['IPOdate'].max()}")
 
     if 'FoundingYear' in ipo_data.columns:
         founding_clean = ipo_data['FoundingYear'].dropna()
         if len(founding_clean) > 0:
-            print("Founding year range: {founding_clean.min():.0f} to {founding_clean.max():.0f}")
+            print(f"Founding year range: {founding_clean.min():.0f} to {founding_clean.max():.0f}")
 
     print("\nSample data:")
     print(ipo_data.head())

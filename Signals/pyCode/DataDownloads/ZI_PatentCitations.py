@@ -26,7 +26,7 @@ def main():
 
     try:
         if r_script_path.exists():
-            print("Running R script: {r_script_path}")
+            print(f"Running R script: {r_script_path}")
 
             # Try to run R script
             result = subprocess.run([
@@ -39,22 +39,22 @@ def main():
                 # Check if output file was created
                 output_file = Path("../pyData/Intermediate/PatentDataProcessed.dta")
                 if output_file.exists():
-                    print("Patent data file created: {output_file}")
+                    print(f"Patent data file created: {output_file}")
                     # Convert .dta to .pkl if needed
                     # Note: Would need additional packages to read .dta files
                     print("Note: .dta file created by R script")
                 else:
                     print("R script ran but output file not found")
             else:
-                print("R script failed with return code {result.returncode}")
-                print("Error: {result.stderr}")
+                print(f"R script failed with return code {result.returncode}")
+                print(f"Error: {result.stderr}")
                 raise Exception("R script failed")
         else:
-            print("R script not found: {r_script_path}")
+            print(f"R script not found: {r_script_path}")
             raise Exception("R script not found")
 
     except Exception as e:
-        print("Error running R script: {e}")
+        print(f"Error running R script: {e}")
         print("Creating placeholder patent data")
 
         # Create placeholder patent data
@@ -66,8 +66,8 @@ def main():
         })
 
         # Save placeholder
-        placeholder_data.to_pickle("../pyData/Intermediate/PatentDataProcessed.pkl")
-        print("Placeholder patent data saved with {len(placeholder_data)} records")
+        placeholder_data.to_parquet("../pyData/Intermediate/PatentDataProcessed.parquet")
+        print(f"Placeholder patent data saved with {len(placeholder_data)} records")
 
     print("Patent Citations processing completed")
 

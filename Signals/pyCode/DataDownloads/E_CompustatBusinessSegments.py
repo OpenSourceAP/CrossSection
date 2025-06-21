@@ -32,7 +32,7 @@ FROM compseg.wrds_segmerged as a
 segments_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(segments_data)} business segment records")
+print(f"Downloaded {len(segments_data)} business segment records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -43,9 +43,9 @@ segments_data['sics1'] = pd.to_numeric(segments_data['sics1'], errors='coerce')
 segments_data['naicsh'] = pd.to_numeric(segments_data['naicsh'], errors='coerce')
 
 # Save the data
-segments_data.to_pickle("../pyData/Intermediate/CompustatSegments.pkl")
+segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 
-print("Compustat Business Segments data saved with {len(segments_data)} records")
+print(f"Compustat Business Segments data saved with {len(segments_data)} records")
 
 # Show summary statistics
 print("\nSegment types:")

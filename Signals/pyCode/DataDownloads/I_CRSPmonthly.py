@@ -101,10 +101,10 @@ crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
 crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
 # Save the data
-crsp_data.to_pickle("../pyData/Intermediate/monthlyCRSP.pkl")
+crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 
-print("CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
-print("Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)
+print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
+print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)
 print("=" * 60, flush=True)
 print("✅ I_CRSPmonthly.py completed successfully", flush=True)
 print("=" * 60, flush=True)

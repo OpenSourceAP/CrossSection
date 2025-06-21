@@ -200,7 +200,7 @@ monthly_compustat_pd = monthly_compustat.to_pandas()
 monthly_compustat_pd['time_avail_m'] = pd.to_datetime(monthly_compustat_pd['time_avail_m']).dt.to_period('M')
 
 # Save the data in both pickle and parquet formats
-monthly_compustat_pd.to_pickle("../pyData/Intermediate/m_QCompustat.pkl")
+monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet")
 
 print(

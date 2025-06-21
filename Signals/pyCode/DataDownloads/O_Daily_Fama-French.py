@@ -39,13 +39,13 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 ff_daily = ff_daily.rename(columns={'date': 'time_d'})
 
 # Save the data
-ff_daily.to_pickle("../pyData/Intermediate/dailyFF.pkl")
+ff_daily.to_parquet("../pyData/Intermediate/dailyFF.parquet")
 
-print("Daily Fama-French factors downloaded with {len(ff_daily)} records", flush=True)
+print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records", flush=True)
 
 # Show date range and sample data
 ff_daily['time_d'] = pd.to_datetime(ff_daily['time_d'])
-print("Date range: {ff_daily['time_d'].min().strftime('%Y-%m-%d')} to {ff_daily['time_d'].max().strftime('%Y-%m-%d')}", flush=True)
+print(f"Date range: {ff_daily['time_d'].min().strftime('%Y-%m-%d')} to {ff_daily['time_d'].max().strftime('%Y-%m-%d')}", flush=True)
 print("\nSample data:", flush=True)
 print(ff_daily.head(), flush=True)
 print("=" * 60, flush=True)

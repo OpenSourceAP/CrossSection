@@ -10,11 +10,6 @@ log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
-# Check if we're in the right directory
-if [ ! -f "CLAUDE.md" ]; then
-    echo "Error: Please run this script from the pyCode directory"
-    exit 1
-fi
 
 # Check if virtual environment exists
 if [ ! -d ".venv" ]; then

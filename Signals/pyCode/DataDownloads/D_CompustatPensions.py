@@ -38,7 +38,7 @@ AND a.indfmt = 'INDL'
 pensions_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(pensions_data)} pension records")
+print(f"Downloaded {len(pensions_data)} pension records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -52,7 +52,7 @@ pensions_data['year'] = pensions_data['datadate'].dt.year + 1  # Assume data ava
 pensions_data = pensions_data.sort_values(['gvkey', 'year', 'datadate'])
 pensions_data = pensions_data.drop_duplicates(['gvkey', 'year'], keep='first')
 
-print("After keeping first obs per gvkey/year: {len(pensions_data)} records")
+print(f"After keeping first obs per gvkey/year: {len(pensions_data)} records")
 
 # Drop datadate as in original code
 pensions_data = pensions_data.drop('datadate', axis=1)
@@ -68,15 +68,15 @@ for var in pension_vars:
         missing_count = pensions_data[var].isna().sum()
         total_count = len(pensions_data)
         missing_pct = (missing_count / total_count) * 100
-        print("  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
+        print(f"  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
 
 # Save the data
-pensions_data.to_pickle("../pyData/Intermediate/CompustatPensions.pkl")
+pensions_data.to_parquet("../pyData/Intermediate/CompustatPensions.parquet")
 
-print("\nCompustat Pensions data saved with {len(pensions_data)} records", flush=True)
+print(f"\nCompustat Pensions data saved with {len(pensions_data)} records", flush=True)
 
 # Show year range
-print("Year range: {pensions_data['year'].min()} to {pensions_data['year'].max()}", flush=True)
+print(f"Year range: {pensions_data['year'].min()} to {pensions_data['year'].max()}", flush=True)
 
 # Sample data
 print("\nSample data:", flush=True)

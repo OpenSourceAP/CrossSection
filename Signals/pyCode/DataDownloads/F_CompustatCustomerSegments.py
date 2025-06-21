@@ -28,7 +28,7 @@ FROM compseg.wrds_seg_customer as a
 customer_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(customer_data)} customer segment records")
+print(f"Downloaded {len(customer_data)} customer segment records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -37,19 +37,18 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 if 'srcdate' in customer_data.columns:
     customer_data = customer_data.rename(columns={'srcdate': 'datadate'})
 
-# Save as both pickle and CSV (CSV needed for R processing)
-customer_data.to_pickle("../pyData/Intermediate/CompustatSegmentDataCustomers.pkl")
-customer_data.to_csv("../pyData/Intermediate/CompustatSegmentDataCustomers.csv", index=False)
+# Save as parquet format
+customer_data.to_parquet("../pyData/Intermediate/CompustatSegmentDataCustomers.parquet")
 
-print("Compustat Customer Segments data saved with {len(customer_data)} records")
+print(f"Compustat Customer Segments data saved with {len(customer_data)} records")
 
 # Show summary information
 if 'datadate' in customer_data.columns:
     customer_data['datadate'] = pd.to_datetime(customer_data['datadate'])
-    print("Date range: {customer_data['datadate'].min().strftime('%Y-%m-%d')} to {customer_data['datadate'].max().strftime('%Y-%m-%d')}")
+    print(f"Date range: {customer_data['datadate'].min().strftime('%Y-%m-%d')} to {customer_data['datadate'].max().strftime('%Y-%m-%d')}")
 
 if 'gvkey' in customer_data.columns:
-    print("Unique companies: {customer_data['gvkey'].nunique()}")
+    print(f"Unique companies: {customer_data['gvkey'].nunique()}")
 
 print("\nSample data:")
 print(customer_data.head())

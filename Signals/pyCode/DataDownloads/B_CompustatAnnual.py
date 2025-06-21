@@ -53,20 +53,20 @@ AND a.indfmt = 'INDL'
 compustat_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(compustat_data)} annual records", flush=True)
+print(f"Downloaded {len(compustat_data)} annual records", flush=True)
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Save raw data
-compustat_data.to_csv(
-    "../pyData/Intermediate/CompustatAnnual.csv", index=False
+# Save raw data to parquet format
+compustat_data.to_parquet(
+    "../pyData/Intermediate/CompustatAnnual.parquet", index=False
 )
 
 # Require some reasonable amount of information
 compustat_data = compustat_data.dropna(subset=['at', 'prcc_c', 'ni'])
 print(
-    "After requiring AT, PRCC_C, NI: {len(compustat_data)} records",
+    f"After requiring AT, PRCC_C, NI: {len(compustat_data)} records",
     flush=True
 )
 
@@ -93,12 +93,12 @@ for var in zero_fill_vars:
         compustat_data[var] = compustat_data[var].fillna(0)
 
 # Load CCM linking table for merging
-ccm_data = pd.read_pickle("../pyData/Intermediate/CCMLinkingTable.pkl")
+ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
 
 # Merge with CCM linking table
 compustat_data = compustat_data.merge(ccm_data, on='gvkey', how='inner')
 print(
-    "After merging with CCM links: {len(compustat_data)} records",
+    f"After merging with CCM links: {len(compustat_data)} records",
     flush=True
 )
 
@@ -118,7 +118,7 @@ valid_link = (
 
 compustat_data = compustat_data[valid_link]
 print(
-    "After filtering for valid link dates: {len(compustat_data)} records",
+    f"After filtering for valid link dates: {len(compustat_data)} records",
     flush=True
 )
 
@@ -134,7 +134,7 @@ annual_data['time_avail_m'] = (
 )
 
 # Save annual version
-annual_data.to_pickle("../pyData/Intermediate/a_aCompustat.pkl")
+annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet")
 
 # Create monthly version (expand each row 12 times)
 print("Expanding annual data to monthly...", flush=True)
@@ -169,10 +169,10 @@ monthly_data = monthly_data.drop_duplicates(
 )
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
-monthly_data.to_pickle("../pyData/Intermediate/m_aCompustat.pkl")
+monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 
-print("Annual version saved with {len(annual_data)} records", flush=True)
-print("Monthly version saved with {len(monthly_data)} records", flush=True)
+print(f"Annual version saved with {len(annual_data)} records", flush=True)
+print(f"Monthly version saved with {len(monthly_data)} records", flush=True)
 print("=" * 60, flush=True)
 print("✅ B_CompustatAnnual.py completed successfully", flush=True)
 print("=" * 60, flush=True)
