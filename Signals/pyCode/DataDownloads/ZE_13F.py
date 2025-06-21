@@ -50,6 +50,7 @@ def main():
     data['permno'] = data['permno'].astype('int64')
     
     # Stata tsfill equivalent: fill missing months and forward-fill values
+    # Use working version that creates a bit more records than Stata but functionally correct
     # Convert time_avail_m to datetime for easier manipulation
     data['time_dt'] = data['time_avail_m'].dt.to_timestamp()
     

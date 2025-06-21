@@ -25,13 +25,13 @@ def main():
     if iclink_path.exists():
         # Read the iclink file
         iclink_data = pd.read_csv(iclink_path)
-        print("Loaded {len(iclink_data)} linking records from iclink.csv")
+        print(f"Loaded {len(iclink_data)} linking records from iclink.csv")
 
         # Keep only high-quality links (score <= 2)
         if 'score' in iclink_data.columns:
             initial_count = len(iclink_data)
             iclink_data = iclink_data[iclink_data['score'] <= 2]
-            print("Filtered to {len(iclink_data)} records with score <= 2")
+            print(f"Filtered to {len(iclink_data)} records with score <= 2")
 
         # Keep best match for each permno (lowest score)
         if 'permno' in iclink_data.columns and 'score' in iclink_data.columns:
@@ -59,16 +59,16 @@ def main():
         })
 
     # Save the data
-    final_data.to_pickle("../pyData/Intermediate/IBESCRSPLinkingTable.pkl")
+    final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet")
 
-    print("IBES-CRSP Linking Table saved with {len(final_data)} records")
+    print(f"IBES-CRSP Linking Table saved with {len(final_data)} records")
 
     # Show summary statistics
     if 'permno' in final_data.columns:
-        print("Unique permnos: {final_data['permno'].nunique()}")
+        print(f"Unique permnos: {final_data['permno'].nunique()}")
 
     if 'tickerIBES' in final_data.columns:
-        print("Unique IBES tickers: {final_data['tickerIBES'].nunique()}")
+        print(f"Unique IBES tickers: {final_data['tickerIBES'].nunique()}")
 
     print("\nSample data:")
     print(final_data.head())

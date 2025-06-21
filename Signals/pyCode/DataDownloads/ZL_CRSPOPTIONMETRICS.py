@@ -33,16 +33,16 @@ def main():
             om_data['time_avail_m'] = om_data['date'].dt.to_period('M')
 
         # Save processed data
-        om_data.to_pickle("../pyData/Intermediate/OptionMetrics.pkl")
+        om_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
 
-        print("OptionMetrics data saved with {len(om_data)} records")
+        print(f"OptionMetrics data saved with {len(om_data)} records")
 
         # Show summary
         if 'time_avail_m' in om_data.columns:
-            print("Date range: {om_data['time_avail_m'].min()} to {om_data['time_avail_m'].max()}")
+            print(f"Date range: {om_data['time_avail_m'].min()} to {om_data['time_avail_m'].max()}")
 
         if 'permno' in om_data.columns:
-            print("Unique permnos: {om_data['permno'].nunique()}")
+            print(f"Unique permnos: {om_data['permno'].nunique()}")
 
     else:
         print("WARNING: OptionMetrics.csv not found in ../Data/Prep/")
@@ -59,8 +59,8 @@ def main():
         placeholder_data['date'] = pd.to_datetime(placeholder_data['date'])
         placeholder_data['time_avail_m'] = placeholder_data['date'].dt.to_period('M')
 
-        placeholder_data.to_pickle("../pyData/Intermediate/OptionMetrics.pkl")
-        print("Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
+        placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
+        print(f"Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
 
     print("CRSP-OptionMetrics processing completed")
 

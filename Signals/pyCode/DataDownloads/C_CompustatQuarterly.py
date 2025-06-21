@@ -9,6 +9,8 @@ Downloads Compustat quarterly fundamental data and creates monthly version.
 import os
 import psycopg2
 import pandas as pd
+import polars as pl
+import numpy as np
 from dotenv import load_dotenv
 
 print("=" * 60, flush=True)
@@ -46,70 +48,75 @@ AND a.curcdq = 'USD'
 AND a.indfmt = 'INDL'
 """
 
-compustat_q = pd.read_sql_query(QUERY, conn)
+# Load data with pandas first
+compustat_q_pd = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(compustat_q)} quarterly records")
+print(f"Downloaded {len(compustat_q_pd):,} quarterly records", flush=True)
+
+# Convert to polars for much faster processing
+compustat_q = pl.from_pandas(compustat_q_pd)
+del compustat_q_pd  # Free memory
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Convert dates to datetime
-compustat_q['datadate'] = pd.to_datetime(compustat_q['datadate'])
-compustat_q['rdq'] = pd.to_datetime(compustat_q['rdq'])
+print("Processing with Polars for optimal performance...", flush=True)
 
 # Keep only the most recent data for each fiscal quarter
 # (equivalent to bys gvkey fyearq fqtr (datadate): keep if _n == _N)
-compustat_q = compustat_q.sort_values(
-    ['gvkey', 'fyearq', 'fqtr', 'datadate']
-)
-compustat_q = compustat_q.drop_duplicates(
-    ['gvkey', 'fyearq', 'fqtr'], keep='last'
+compustat_q = (
+    compustat_q
+    .sort(['gvkey', 'fyearq', 'fqtr', 'datadate'])
+    .group_by(['gvkey', 'fyearq', 'fqtr'])
+    .last()
 )
 
-print("After removing duplicates: {len(compustat_q)} records")
+print(f"After removing duplicates: {len(compustat_q):,} records", flush=True)
 
-# Data availability assumed with 3 month lag
+# Data availability assumed with 3 month lag and patch with rdq
 # (equivalent to gen time_avail_m = mofd(datadate) + 3)
-compustat_q['time_avail_m'] = (
-    compustat_q['datadate'] + pd.DateOffset(months=3)
-)
+compustat_q = compustat_q.with_columns([
+    # Add 3 months to datadate
+    (pl.col('datadate') + pl.duration(days=90)).alias('time_avail_m'),
+    # Convert dates to proper datetime
+    pl.col('datadate').cast(pl.Date),
+    pl.col('rdq').cast(pl.Date)
+])
 
 # Patch cases with earlier data availability using rdq
-# (equivalent to replace time_avail_m = mofd(rdq) if !mi(rdq)
-# & mofd(rdq) > time_avail_m)
-rdq_available = compustat_q['rdq'].notna()
-rdq_later = (
-    compustat_q['rdq'] + pd.DateOffset(months=0) >
-    compustat_q['time_avail_m']
+# (equivalent to replace time_avail_m = mofd(rdq) if !mi(rdq) & mofd(rdq) > time_avail_m)
+compustat_q = compustat_q.with_columns(
+    pl.when(
+        pl.col('rdq').is_not_null() & 
+        (pl.col('rdq') > pl.col('time_avail_m'))
+    )
+    .then(pl.col('rdq'))
+    .otherwise(pl.col('time_avail_m'))
+    .alias('time_avail_m')
 )
-mask = rdq_available & rdq_later
-compustat_q.loc[mask, 'time_avail_m'] = compustat_q.loc[mask, 'rdq']
 
 # Drop cases with very late release (> 6 months)
 # (equivalent to drop if mofd(rdq) - mofd(datadate) > 6 & !mi(rdq))
-rdq_not_missing = compustat_q['rdq'].notna()
-late_release = (
-    (compustat_q['rdq'] - compustat_q['datadate']).dt.days > 180
-)  # ~6 months
-drop_mask = rdq_not_missing & late_release
-compustat_q = compustat_q[~drop_mask]
+compustat_q = compustat_q.filter(
+    ~(
+        pl.col('rdq').is_not_null() &
+        ((pl.col('rdq') - pl.col('datadate')).dt.total_days() > 180)
+    )
+)
 
-print("After removing late releases: {len(compustat_q)} records")
-
-# Convert time_avail_m to period for consistency
-compustat_q['time_avail_m'] = compustat_q['time_avail_m'].dt.to_period('M')
+print(f"After removing late releases: {len(compustat_q):,} records", flush=True)
 
 # Keep most recent info for same gvkey/time_avail_m combinations
 # (equivalent to bys gvkey time_avail_m (datadate): keep if _n == _N)
-compustat_q = compustat_q.sort_values(
-    ['gvkey', 'time_avail_m', 'datadate']
-)
-compustat_q = compustat_q.drop_duplicates(
-    ['gvkey', 'time_avail_m'], keep='last'
+compustat_q = (
+    compustat_q
+    .sort(['gvkey', 'time_avail_m', 'datadate'])
+    .group_by(['gvkey', 'time_avail_m'])
+    .last()
 )
 
-print("After removing time duplicates: {len(compustat_q)} records")
+print(f"After removing time duplicates: {len(compustat_q):,} records", flush=True)
 
 # For these variables, missing is assumed to be 0
 zero_fill_vars = [
@@ -118,96 +125,91 @@ zero_fill_vars = [
     'rectq', 'sstky', 'txditcq'
 ]
 
-for var in zero_fill_vars:
-    if var in compustat_q.columns:
-        compustat_q[var] = compustat_q[var].fillna(0)
+# Fill missing values with 0 using polars
+zero_fill_exprs = [
+    pl.col(var).fill_null(0) for var in zero_fill_vars if var in compustat_q.columns
+]
+if zero_fill_exprs:
+    compustat_q = compustat_q.with_columns(zero_fill_exprs)
 
-# Prepare year-to-date items (convert to quarterly)
-# Sort by gvkey, fyearq, fqtr for proper calculation
-compustat_q = compustat_q.sort_values(['gvkey', 'fyearq', 'fqtr'])
+# Prepare year-to-date items (convert to quarterly) - OPTIMIZED WITH POLARS
+print("Converting year-to-date items to quarterly...", flush=True)
+compustat_q = compustat_q.sort(['gvkey', 'fyearq', 'fqtr'])
 
 ytd_vars = ['sstky', 'prstkcy', 'oancfy', 'fopty']
+ytd_exprs = []
+
 for var in ytd_vars:
     if var in compustat_q.columns:
-        # Create quarterly version
         var_q = var + 'q'
-
-        # First quarter gets the full value
-        compustat_q[var_q] = compustat_q[var].where(
-            compustat_q['fqtr'] == 1
+        
+        # Create quarterly version: Q1 gets full value, Q2-Q4 get difference from previous
+        ytd_exprs.append(
+            pl.when(pl.col('fqtr') == 1)
+            .then(pl.col(var))
+            .otherwise(
+                pl.col(var) - pl.col(var).shift(1).over(['gvkey', 'fyearq'])
+            )
+            .alias(var_q)
         )
 
-        # For other quarters, subtract previous quarter's cumulative value
-        for fqtr in [2, 3, 4]:
-            mask = compustat_q['fqtr'] == fqtr
-            if mask.any():
-                # Get previous quarter's cumulative value
-                prev_mask = compustat_q['fqtr'] == (fqtr - 1)
-
-                # For each gvkey/fyearq combination
-                for gvkey, fyearq in compustat_q[mask][
-                    ['gvkey', 'fyearq']
-                ].drop_duplicates().values:
-                    curr_idx = compustat_q[
-                        (compustat_q['gvkey'] == gvkey) &
-                        (compustat_q['fyearq'] == fyearq) &
-                        (compustat_q['fqtr'] == fqtr)
-                    ].index
-                    prev_idx = compustat_q[
-                        (compustat_q['gvkey'] == gvkey) &
-                        (compustat_q['fyearq'] == fyearq) &
-                        (compustat_q['fqtr'] == (fqtr - 1))
-                    ].index
-
-                    if len(curr_idx) > 0 and len(prev_idx) > 0:
-                        curr_val = compustat_q.loc[curr_idx[0], var]
-                        prev_val = compustat_q.loc[prev_idx[0], var]
-                        if pd.notna(curr_val) and pd.notna(prev_val):
-                            compustat_q.loc[
-                                curr_idx[0], var_q
-                            ] = curr_val - prev_val
+if ytd_exprs:
+    compustat_q = compustat_q.with_columns(ytd_exprs)
 
 # Convert to monthly by expanding each quarter to 3 months
-print("Expanding quarterly data to monthly...")
+print("Expanding quarterly data to monthly...", flush=True)
 
-# Create expanded dataset
-monthly_data = []
-for _, row in compustat_q.iterrows():
-    for month_offset in range(3):  # 0, 1, 2 for 3 months
-        new_row = row.copy()
-        new_row['time_avail_m'] = row['time_avail_m'] + month_offset
-        monthly_data.append(new_row)
+# Create month offsets (0, 1, 2) for expansion
+month_offsets = pl.Series("month_offset", [0, 1, 2])
 
-monthly_compustat = pd.DataFrame(monthly_data)
+# Cross join with month offsets to expand
+monthly_compustat = compustat_q.join(
+    pl.DataFrame({"month_offset": month_offsets}),
+    how="cross"
+)
 
-print("Expanded to {len(monthly_compustat)} monthly records")
+# Update time_avail_m with the month offset
+monthly_compustat = monthly_compustat.with_columns(
+    (pl.col('time_avail_m') + pl.duration(days=pl.col('month_offset') * 30)).alias('time_avail_m')
+)
+
+# Remove the month_offset column
+monthly_compustat = monthly_compustat.drop('month_offset')
+
+print(f"Expanded to {len(monthly_compustat):,} monthly records", flush=True)
 
 # Keep most recent info for same gvkey/time_avail_m after expansion
-monthly_compustat = monthly_compustat.sort_values(
-    ['gvkey', 'time_avail_m', 'datadate']
-)
-monthly_compustat = monthly_compustat.drop_duplicates(
-    ['gvkey', 'time_avail_m'], keep='last'
-)
-
-# Rename datadate to datadateq
-monthly_compustat = monthly_compustat.rename(
-    columns={'datadate': 'datadateq'}
+# (equivalent to bysort gvkey time_avail_m (datadate): keep if _n == _N)
+monthly_compustat = (
+    monthly_compustat
+    .sort(['gvkey', 'time_avail_m', 'datadate'])
+    .group_by(['gvkey', 'time_avail_m'])
+    .last()
 )
 
-# Convert gvkey to numeric
-monthly_compustat['gvkey'] = pd.to_numeric(monthly_compustat['gvkey'])
+# Rename datadate to datadateq and convert gvkey to numeric
+monthly_compustat = monthly_compustat.with_columns([
+    pl.col('gvkey').cast(pl.Int64),
+    pl.col('datadate').alias('datadateq')
+]).drop('datadate')
 
-# Save the data
-monthly_compustat.to_pickle("../pyData/Intermediate/m_QCompustat.pkl")
+# Convert back to pandas for saving (polars parquet support is excellent)
+monthly_compustat_pd = monthly_compustat.to_pandas()
+
+# Convert time_avail_m to period for pandas compatibility
+monthly_compustat_pd['time_avail_m'] = pd.to_datetime(monthly_compustat_pd['time_avail_m']).dt.to_period('M')
+
+# Save the data in both pickle and parquet formats
+monthly_compustat_pd.to_pickle("../pyData/Intermediate/m_QCompustat.pkl")
+monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet")
 
 print(
-    "Compustat Quarterly data saved with "
-    "{len(monthly_compustat)} monthly records", flush=True
+    f"Compustat Quarterly data saved with "
+    f"{len(monthly_compustat_pd):,} monthly records", flush=True
 )
 print(
-    "Date range: {monthly_compustat['time_avail_m'].min()} to "
-    "{monthly_compustat['time_avail_m'].max()}", flush=True
+    f"Date range: {monthly_compustat_pd['time_avail_m'].min()} to "
+    f"{monthly_compustat_pd['time_avail_m'].max()}", flush=True
 )
 print("=" * 60, flush=True)
 print("✅ C_CompustatQuarterly.py completed successfully", flush=True)

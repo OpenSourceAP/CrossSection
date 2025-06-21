@@ -129,6 +129,9 @@ def main():
         .mean().reset_index()
     )
 
+    # Convert to float32 to match Stata precision (compress command)
+    quarterly_data['TbillRate3M'] = quarterly_data['TbillRate3M'].astype('float32')
+
     # Reorder columns to match Stata: TbillRate3M, qtr, year
     final_data = quarterly_data[['TbillRate3M', 'qtr', 'year']]
 

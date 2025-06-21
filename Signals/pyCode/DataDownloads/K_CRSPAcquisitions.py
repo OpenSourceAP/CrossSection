@@ -29,7 +29,7 @@ FROM crsp.msedist as a
 acq_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-print("Downloaded {len(acq_data)} distribution records")
+print(f"Downloaded {len(acq_data)} distribution records")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
@@ -38,11 +38,11 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 # (equivalent to keep if acperm >999 & acperm <.)
 initial_count = len(acq_data)
 acq_data = acq_data[(acq_data['acperm'] > 999) & acq_data['acperm'].notna()]
-print("Filtered to {len(acq_data)} records with acperm > 999")
+print(f"Filtered to {len(acq_data)} records with acperm > 999")
 
 # Remove records with missing exdt (equivalent to drop if missing(time_d))
 acq_data = acq_data.dropna(subset=['exdt'])
-print("After removing missing exdt: {len(acq_data)} records")
+print(f"After removing missing exdt: {len(acq_data)} records")
 
 # Rename exdt to time_d and convert to datetime
 acq_data = acq_data.rename(columns={'exdt': 'time_d'})
@@ -73,17 +73,17 @@ acq_data = acq_data[['permno', 'SpinoffCo']]
 initial_count = len(acq_data)
 acq_data = acq_data.drop_duplicates()
 duplicates_removed = initial_count - len(acq_data)
-print("Removed {duplicates_removed} duplicate records")
+print(f"Removed {duplicates_removed} duplicate records")
 
 # Save the data
-acq_data.to_pickle("../pyData/Intermediate/m_CRSPAcquisitions.pkl")
+acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet")
 
-print("CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
+print(f"CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
 
 # Show sample data
 print("\nSample data:")
 print(acq_data.head())
 
 # Show some statistics
-print("\nUnique spinoff companies: {acq_data['permno'].nunique()}")
-print("Total records: {len(acq_data)}")
+print(f"\nUnique spinoff companies: {acq_data['permno'].nunique()}")
+print(f"Total records: {len(acq_data)}")

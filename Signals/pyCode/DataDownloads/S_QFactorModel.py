@@ -52,8 +52,11 @@ def main():
             'r_eg': [0.000, 0.001, -0.001]
         })
 
-    print("Downloaded {len(qfactor_data)} Q-factor records")
+    print(f"Downloaded {len(qfactor_data)} Q-factor records")
 
+    # First, convert column names to lowercase to match Stata convention
+    qfactor_data.columns = qfactor_data.columns.str.lower()
+    
     # Drop r_eg column (as in original)
     if 'r_eg' in qfactor_data.columns:
         qfactor_data = qfactor_data.drop('r_eg', axis=1)
@@ -87,19 +90,19 @@ def main():
         qfactor_data[col] = qfactor_data[col] / 100
 
     # Save the data
-    qfactor_data.to_pickle("../pyData/Intermediate/d_qfactor.pkl")
+    qfactor_data.to_parquet("../pyData/Intermediate/d_qfactor.parquet")
 
-    print("Q-factor model data saved with {len(qfactor_data)} records")
+    print(f"Q-factor model data saved with {len(qfactor_data)} records")
 
     # Show date range and sample data
-    print("Date range: {qfactor_data['time_d'].min().strftime('%Y-%m-%d')} to {qfactor_data['time_d'].max().strftime('%Y-%m-%d')}")
+    print(f"Date range: {qfactor_data['time_d'].min().strftime('%Y-%m-%d')} to {qfactor_data['time_d'].max().strftime('%Y-%m-%d')}")
 
     print("\nSample data:")
     print(qfactor_data.head())
 
     print("\nFactor columns:")
     for col in factor_cols:
-        print("  {col}")
+        print(f"  {col}")
 
 if __name__ == "__main__":
     main()
