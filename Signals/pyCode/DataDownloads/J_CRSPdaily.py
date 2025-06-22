@@ -17,7 +17,7 @@ load_dotenv()
 
 def get_crsp_daily_year(year, conn):
     """Download CRSP daily data for a specific year"""
-    query = """
+    query = f"""
     SELECT a.permno, a.date, a.ret, a.vol, a.shrout, a.prc, a.cfacshr, a.cfacpr
     FROM crsp.dsf as a
     WHERE date >= '{year}-01-01' and date <= '{year}-12-31'

@@ -128,7 +128,7 @@ def main():
     combined_ratings['gvkey'] = pd.to_numeric(combined_ratings['gvkey'], errors='coerce')
 
     # Save the data
-    combined_ratings.to_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet")
+    combined_ratings.to_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet", index=False)
 
     print(f"CIQ Credit Ratings data saved with {len(combined_ratings)} records")
     print(f"Date range: {combined_ratings['time_avail_m'].min()} to {combined_ratings['time_avail_m'].max()}")

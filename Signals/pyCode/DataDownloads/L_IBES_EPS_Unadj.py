@@ -61,7 +61,7 @@ ibes_data = ibes_data.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], kee
 print(f"After keeping last obs per month: {len(ibes_data)} records")
 
 # Save the data
-ibes_data.to_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet")
+ibes_data.to_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet", index=False)
 
 print(f"IBES EPS Unadjusted data saved with {len(ibes_data)} records")
 

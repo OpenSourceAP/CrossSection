@@ -58,7 +58,7 @@ columns_order = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd'] +
 rec_data = rec_data[columns_order]
 
 # Save the data
-rec_data.to_parquet("../pyData/Intermediate/IBES_Recommendations.parquet")
+rec_data.to_parquet("../pyData/Intermediate/IBES_Recommendations.parquet", index=False)
 
 print(f"IBES Recommendations data saved with {len(rec_data)} records")
 

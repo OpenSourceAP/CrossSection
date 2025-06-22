@@ -1,7 +1,7 @@
 # CrossSection Signals - Python Translation Project
 
 ## Project Overview
-This project aims to translate Stata code in `Code/DataDownloads/` to Python equivalents in `pyCode/DataDownloads/`, replicating the exact data processing pipeline while outputting to Parquet format instead of DTA/CSV.
+This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet format instead of DTA/CSV.
 
 ## Data Pipeline Structure
 

@@ -92,8 +92,31 @@ for var in zero_fill_vars:
     if var in compustat_data.columns:
         compustat_data[var] = compustat_data[var].fillna(0)
 
+# Create derived variables that are missing
+# Current debt (dc) = sum of dlc and dlcch if both exist
+compustat_data['dc'] = np.nan
+mask_dc = compustat_data['dlc'].notna() & compustat_data['dlcch'].notna()
+compustat_data.loc[mask_dc, 'dc'] = (
+    compustat_data.loc[mask_dc, 'dlc'] +
+    compustat_data.loc[mask_dc, 'dlcch']
+)
+# If only dlc exists, use that
+mask_dlc_only = compustat_data['dlc'].notna() & compustat_data['dlcch'].isna()
+compustat_data.loc[mask_dlc_only, 'dc'] = compustat_data.loc[mask_dlc_only, 'dlc']
+
+# Create zero-filled versions of expense variables
+compustat_data['xad0'] = compustat_data['xad'].fillna(0)
+compustat_data['xint0'] = compustat_data['xint'].fillna(0)
+compustat_data['xsga0'] = compustat_data['xsga'].fillna(0)
+
 # Load CCM linking table for merging
 ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
+
+# Drop overlapping columns from CCM to avoid _x/_y suffixes
+ccm_columns_to_drop = ['conm', 'tic', 'cusip'] 
+for col in ccm_columns_to_drop:
+    if col in ccm_data.columns:
+        ccm_data = ccm_data.drop(col, axis=1)
 
 # Merge with CCM linking table
 compustat_data = compustat_data.merge(ccm_data, on='gvkey', how='inner')
@@ -104,16 +127,16 @@ print(
 
 # Use only if data date is within the validity period of the link
 compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
-compustat_data['timelinkstart_d'] = pd.to_datetime(
-    compustat_data['timelinkstart_d']
+compustat_data['timeLinkStart_d'] = pd.to_datetime(
+    compustat_data['timeLinkStart_d']
 )
-compustat_data['timelinkend_d'] = pd.to_datetime(
-    compustat_data['timelinkend_d']
+compustat_data['timeLinkEnd_d'] = pd.to_datetime(
+    compustat_data['timeLinkEnd_d']
 )
 
 valid_link = (
-    (compustat_data['timelinkstart_d'] <= compustat_data['datadate']) &
-    (compustat_data['datadate'] <= compustat_data['timelinkend_d'])
+    (compustat_data['timeLinkStart_d'] <= compustat_data['datadate']) &
+    (compustat_data['datadate'] <= compustat_data['timeLinkEnd_d'])
 )
 
 compustat_data = compustat_data[valid_link]
@@ -124,7 +147,7 @@ print(
 
 # Clean up for annual version
 annual_data = compustat_data.drop(columns=[
-    'timelinkstart_d', 'timelinkend_d', 'linkprim', 'liid', 'linktype'
+    'timeLinkStart_d', 'timeLinkEnd_d', 'linkprim', 'liid', 'linktype'
 ])
 annual_data['gvkey'] = pd.to_numeric(annual_data['gvkey'])
 
@@ -134,7 +157,7 @@ annual_data['time_avail_m'] = (
 )
 
 # Save annual version
-annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet")
+annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 
 # Create monthly version (expand each row 12 times)
 print("Expanding annual data to monthly...", flush=True)
@@ -169,7 +192,7 @@ monthly_data = monthly_data.drop_duplicates(
 )
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
-monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet")
+monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)
