@@ -45,13 +45,16 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 # Export for R processing (equivalent to CSV export in Stata)
 crsp_data.to_csv("../pyData/Intermediate/mCRSP.csv", index=False)
 
-# Make 2 digit SIC
+# Make 2 digit SIC (rename siccd to sicCRSP like in Stata)
 crsp_data['sicCRSP'] = crsp_data['siccd']
 crsp_data['sic2D'] = crsp_data['sicCRSP'].astype(str).str[:2]
 
 # Convert back to numeric, handling non-numeric values
 crsp_data['sic2D'] = pd.to_numeric(crsp_data['sic2D'], errors='coerce')
 crsp_data['sicCRSP'] = pd.to_numeric(crsp_data['sicCRSP'], errors='coerce')
+
+# Drop original siccd column (equivalent to Stata's rename)
+crsp_data = crsp_data.drop('siccd', axis=1)
 
 # Create monthly date (equivalent to Stata's mofd function)
 crsp_data['date'] = pd.to_datetime(crsp_data['date'])

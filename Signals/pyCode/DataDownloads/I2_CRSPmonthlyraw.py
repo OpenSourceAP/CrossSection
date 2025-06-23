@@ -40,13 +40,16 @@ print(f"Downloaded {len(crsp_raw)} CRSP raw monthly records")
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Make 2 digit SIC
+# Make 2 digit SIC (rename siccd to sicCRSP like in Stata)
 crsp_raw['sicCRSP'] = crsp_raw['siccd']
 crsp_raw['sic2D'] = crsp_raw['sicCRSP'].astype(str).str[:2]
 
 # Convert back to numeric, handling non-numeric values
 crsp_raw['sic2D'] = pd.to_numeric(crsp_raw['sic2D'], errors='coerce')
 crsp_raw['sicCRSP'] = pd.to_numeric(crsp_raw['sicCRSP'], errors='coerce')
+
+# Drop original siccd column (equivalent to Stata's rename)
+crsp_raw = crsp_raw.drop('siccd', axis=1)
 
 # Create monthly date (equivalent to mofd function)
 crsp_raw['date'] = pd.to_datetime(crsp_raw['date'])
