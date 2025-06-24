@@ -14,6 +14,13 @@ MAX_ROWS_DL = 10
 # Debug mode flag for additional debugging features
 DEBUG_MODE = True
 
+# Timeout for individual DataDownloads scripts (in minutes)
+# 10 = 10 minutes (default for production, handles large downloads like ZB_PIN.py)
+# 0.5 = 30 seconds (for quick testing, may cause timeouts on large downloads)
+# 15 = 15 minutes (for very large downloads or slow connections)
+# Used by 01_DownloadData.py orchestrator script
+SCRIPT_TIMEOUT_MINUTES = 10
+
 # Additional configuration options can be added here as needed
 SAVE_CSV = True  # Whether to save intermediate CSV files
 VERBOSE_OUTPUT = True  # Whether to print detailed progress messages

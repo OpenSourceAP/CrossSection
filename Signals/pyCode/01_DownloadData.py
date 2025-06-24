@@ -14,6 +14,7 @@ import threading
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+from config import SCRIPT_TIMEOUT_MINUTES
 
 def setup_logging():
     """Setup logging equivalent to Stata log files"""
@@ -54,7 +55,7 @@ def find_download_scripts():
     return py_files
 
 def execute_script(script_name, error_log, console_log):
-    """Execute a single download script and track results with 30-second timeout"""
+    """Execute a single download script and track results with configurable timeout"""
     start_msg = f"\n🔄 Starting: {script_name}"
     separator = "=" * 60
     
@@ -96,8 +97,9 @@ def execute_script(script_name, error_log, console_log):
             universal_newlines=True
         )
         
-        # Set up 30-second timeout
-        timer = threading.Timer(30.0, timeout_handler)
+        # Set up configurable timeout (convert minutes to seconds)
+        timeout_seconds = SCRIPT_TIMEOUT_MINUTES * 60
+        timer = threading.Timer(timeout_seconds, timeout_handler)
         timer.start()
         
         # Stream output in real-time and capture for logging
@@ -116,7 +118,7 @@ def execute_script(script_name, error_log, console_log):
         
         if timed_out:
             return_code = -9  # SIGKILL return code
-            timeout_msg = f"⏱️ TIMEOUT in {script_name}: Script exceeded 30 seconds"
+            timeout_msg = f"⏱️ TIMEOUT in {script_name}: Script exceeded {SCRIPT_TIMEOUT_MINUTES} minutes"
             print(separator)
             print(timeout_msg)
             
@@ -124,7 +126,7 @@ def execute_script(script_name, error_log, console_log):
             console_log.extend(script_output)
             console_log.append(separator)
             console_log.append(timeout_msg)
-            console_log.append("Script was terminated due to 30-second timeout")
+            console_log.append(f"Script was terminated due to {SCRIPT_TIMEOUT_MINUTES}-minute timeout")
             
         elif process.returncode != 0:
             raise subprocess.CalledProcessError(process.returncode, [sys.executable, str(script_path)])

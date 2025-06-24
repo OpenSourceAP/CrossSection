@@ -9,6 +9,7 @@ import os
 import pandas as pd
 import requests
 import zipfile
+from requests.exceptions import Timeout, RequestException
 from dotenv import load_dotenv
 import sys
 import os
@@ -24,25 +25,72 @@ def main():
     # Ensure directories exist
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-    # URL for PIN data
-    webloc = "https://www.dropbox.com/s/45b42e89gaafg0n/cpie_data.zip?dl=1"
-
+    # URL for PIN data - use the redirected URL
+    webloc = "https://www.dropbox.com/scl/fi/wjjb1rgwbzn8z8cbllzig/cpie_data.zip?rlkey=yz7nzy7phgs8lxsajuvec1mr3&dl=1"
+    
     try:
-        # Download the zip file
-        response = requests.get(webloc, timeout=60)
+        # Download the zip file with improved headers and timeout
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        print(f"Attempting to download from: {webloc}")
+        response = requests.get(webloc, headers=headers, timeout=30, allow_redirects=True, stream=True)
         response.raise_for_status()
-
-        # Save zip file
+        
+        # Check content type
+        content_type = response.headers.get('content-type', '')
+        print(f"Content-Type: {content_type}")
+        
+        # Save zip file with progress tracking
         zip_path = "../pyData/Intermediate/cpie_data.zip"
+        downloaded_size = 0
+        
+        print("Starting download... (this may take a few minutes)")
         with open(zip_path, 'wb') as f:
-            f.write(response.content)
+            chunk_count = 0
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:  # filter out keep-alive chunks
+                    f.write(chunk)
+                    downloaded_size += len(chunk)
+                    chunk_count += 1
+                    # Print progress every 10MB 
+                    if chunk_count % 1250 == 0:  # ~10MB
+                        print(f"Downloaded {downloaded_size / (1024*1024):.1f} MB...")
+        
+        print("Download stream completed, checking file...")
+        
+        file_size = os.path.getsize(zip_path)
+        print(f"Download complete: {file_size} bytes")
+        
+        # Verify it's a zip file
+        if file_size < 1000:
+            raise Exception(f"Downloaded file too small ({file_size} bytes), likely an error page")
+            
+        # Check if it's actually a zip file
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as test_zip:
+                file_list = test_zip.namelist()
+                print(f"ZIP contains {len(file_list)} files: {file_list[:5]}...")
+        except zipfile.BadZipFile:
+            raise Exception("Downloaded file is not a valid ZIP archive")
 
         # Extract zip file
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall("../pyData/Intermediate")
 
         # Read the PIN yearly data
-        pin_data = pd.read_csv("../pyData/Intermediate/pin_yearly.csv")
+        pin_yearly_path = "../pyData/Intermediate/pin_yearly.csv"
+        if not os.path.exists(pin_yearly_path):
+            raise Exception("pin_yearly.csv not found in extracted files")
+            
+        pin_data = pd.read_csv(pin_yearly_path)
+        print(f"Successfully loaded PIN data from zip file")
 
         # Clean up files
         os.remove(zip_path)
@@ -52,10 +100,27 @@ def main():
             if os.path.exists(file_path):
                 os.remove(file_path)
 
-    except Exception as e:
-        print(f"Error downloading PIN data: {e}")
+    except Timeout:
+        print("Download timed out after 30 seconds")
         print("Creating placeholder file")
-
+        # Create placeholder data
+        pin_data = pd.DataFrame({
+            'year': [2020, 2021, 2022],
+            'permno': [10001, 10001, 10001],
+            'pin': [0.15, 0.18, 0.12]
+        })
+    except RequestException as e:
+        print(f"Network error downloading PIN data: {e}")
+        print("Creating placeholder file")
+        # Create placeholder data
+        pin_data = pd.DataFrame({
+            'year': [2020, 2021, 2022],
+            'permno': [10001, 10001, 10001],
+            'pin': [0.15, 0.18, 0.12]
+        })
+    except Exception as e:
+        print(f"Error processing PIN data: {e}")
+        print("Creating placeholder file")
         # Create placeholder data
         pin_data = pd.DataFrame({
             'year': [2020, 2021, 2022],
@@ -109,7 +174,15 @@ def main():
         print(f"PIN summary - Mean: {pin_monthly['pin'].mean():.4f}, Std: {pin_monthly['pin'].std():.4f}")
 
     print("\nSample data:")
-    print(pin_monthly[['year', 'permno', 'month', 'time_avail_m', 'pin']].head())
+    # Show available columns and select the ones that exist
+    available_cols = ['year', 'permno', 'month', 'time_avail_m']
+    if 'pin' in pin_monthly.columns:
+        available_cols.append('pin')
+    elif 'PIN' in pin_monthly.columns:
+        available_cols.append('PIN')
+    # Show whatever columns are available
+    display_cols = [col for col in available_cols if col in pin_monthly.columns]
+    print(pin_monthly[display_cols].head())
 
 if __name__ == "__main__":
     main()

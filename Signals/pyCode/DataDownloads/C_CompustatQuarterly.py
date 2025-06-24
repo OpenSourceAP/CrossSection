@@ -155,9 +155,9 @@ for var in ytd_vars:
         # Create quarterly version: Q1 gets full value, Q2-Q4 get difference from previous
         ytd_exprs.append(
             pl.when(pl.col('fqtr') == 1)
-            .then(pl.col(var))
+            .then(pl.col(var).cast(pl.Float64))
             .otherwise(
-                pl.col(var) - pl.col(var).shift(1).over(['gvkey', 'fyearq'])
+                pl.col(var).cast(pl.Float64) - pl.col(var).cast(pl.Float64).shift(1).over(['gvkey', 'fyearq'])
             )
             .alias(var_q)
         )

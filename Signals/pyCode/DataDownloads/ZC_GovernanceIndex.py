@@ -139,7 +139,7 @@ def main():
     
     # Apply row limit for debugging if configured
     if MAX_ROWS_DL > 0:
-        data = data.head(MAX_ROWS_DL)
+        final_data = final_data.head(MAX_ROWS_DL)
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data

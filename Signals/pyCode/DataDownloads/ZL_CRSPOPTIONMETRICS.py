@@ -29,7 +29,7 @@ def main():
     if om_path.exists():
         # Read the OptionMetrics file
         om_data = pd.read_csv(om_path)
-        print("Loaded {len(om_data)} OptionMetrics records")
+        print(f"Loaded {len(om_data)} OptionMetrics records")
 
         # Basic processing (specific processing depends on file structure)
         if 'date' in om_data.columns:
@@ -63,14 +63,13 @@ def main():
         placeholder_data['date'] = pd.to_datetime(placeholder_data['date'])
         placeholder_data['time_avail_m'] = placeholder_data['date'].dt.to_period('M')
 
-        
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        placeholder_data = placeholder_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+        # Apply row limit for debugging if configured
+        if MAX_ROWS_DL > 0:
+            placeholder_data = placeholder_data.head(MAX_ROWS_DL)
+            print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
-    # Save the data
-    placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
+        # Save the data
+        placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
         print(f"Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
 
     print("CRSP-OptionMetrics processing completed")
