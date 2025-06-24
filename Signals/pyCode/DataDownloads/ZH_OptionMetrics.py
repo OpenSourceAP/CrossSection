@@ -8,6 +8,10 @@ following the Bali-Hovakimiam (2009) implied volatility processing.
 
 import os
 import pandas as pd
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 
 def process_options_file(input_file, date_col='time_avail_m', output_name=None):
@@ -118,6 +122,13 @@ def main():
     # Save final OptionMetricsBH data
     output_file = "../pyData/Intermediate/OptionMetricsBH.parquet"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        bh_data = bh_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+    # Save the data
     bh_data.to_parquet(output_file, index=False)
     
     print(f"Saved {len(bh_data)} records to {output_file}")

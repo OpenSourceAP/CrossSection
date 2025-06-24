@@ -13,6 +13,10 @@ import os
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -30,6 +34,11 @@ SELECT a.ticker, a.estimid, a.ereccd, a.etext, a.ireccd, a.itext, a.emaskcd,
 FROM ibes.recddet as a
 WHERE a.usfirm = '1'
 """
+
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 rec_data = pd.read_sql_query(QUERY, conn)
 conn.close()

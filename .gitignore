@@ -11,8 +11,6 @@
 *.o*
 *.Rout
 
-deleteme*
-
 Results/
 Portfolios/Data/*
 Signals/Data/*
@@ -29,5 +27,9 @@ Signals/pyData/*
 
 # Python
 .venv
+__pycache__/
 
+# Testing
+deleteme*
+Signals/pyCode/Debug/
 

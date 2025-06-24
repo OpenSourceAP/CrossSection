@@ -9,6 +9,10 @@ import os
 import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -37,7 +41,7 @@ def main():
         if 'permno' in iclink_data.columns and 'score' in iclink_data.columns:
             iclink_data = iclink_data.sort_values(['permno', 'score'])
             iclink_data = iclink_data.drop_duplicates(['permno'], keep='first')
-            print("After keeping best match per permno: {len(iclink_data)} records")
+            print(f"After keeping best match per permno: {len(iclink_data)} records")
 
         # Rename ticker to tickerIBES
         if 'ticker' in iclink_data.columns:
@@ -57,6 +61,11 @@ def main():
             'tickerIBES': ['AAPL', 'MSFT', 'GOOGL'],
             'permno': [14593, 10107, 90319]
         })
+
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        final_data = final_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
     final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet")

@@ -9,6 +9,10 @@ import os
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -88,6 +92,11 @@ def main():
     factor_cols = [col for col in qfactor_data.columns if col.startswith('r_')]
     for col in factor_cols:
         qfactor_data[col] = qfactor_data[col] / 100
+
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        qfactor_data = qfactor_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
     qfactor_data.to_parquet("../pyData/Intermediate/d_qfactor.parquet")

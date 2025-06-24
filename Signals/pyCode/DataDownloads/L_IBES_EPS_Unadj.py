@@ -12,6 +12,10 @@ import os
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -29,6 +33,11 @@ SELECT a.ticker, a.statpers, a.measure, a.fpi, a.numest, a.medest,
 FROM ibes.statsumu_epsus as a
 WHERE a.fpi = '0' or a.fpi = '1' or a.fpi = '2' or a.fpi = '6'
 """
+
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 ibes_data = pd.read_sql_query(QUERY, conn)
 conn.close()

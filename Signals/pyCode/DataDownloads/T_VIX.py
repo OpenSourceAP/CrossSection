@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 import requests
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -58,7 +62,7 @@ def download_fred_series(series_id, api_key, max_retries=3, retry_delay=1):
 
                 df['date'] = pd.to_datetime(df['date'])
                 df['value'] = pd.to_numeric(df['value'], errors='coerce')
-                df = df[['date', 'value']].dropna()
+                df = df[['date', 'value']]
                 df.columns = ['date', series_id]
                 print(f"Successfully downloaded {len(df)} observations")
                 return df
@@ -148,8 +152,12 @@ def main():
     final_data = vix_data[['date', 'vix', 'dVIX']].copy()
     final_data = final_data.rename(columns={'date': 'time_d'})
 
-    # Remove rows with missing VIX data
-    final_data = final_data.dropna(subset=['vix'])
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        final_data = final_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+    # Do NOT drop missing VIX data - Stata keeps all records
 
     # Save the data
     final_data.to_parquet("../pyData/Intermediate/d_vix.parquet")
@@ -165,6 +173,9 @@ def main():
 
     # Show summary statistics
     print("\nVIX summary:")
+    print(f"Total records: {len(final_data)}")
+    print(f"Missing VIX values: {final_data['vix'].isna().sum()}")
+    print(f"Missing dVIX values: {final_data['dVIX'].isna().sum()}")
     print(f"Mean: {final_data['vix'].mean():.2f}")
     print(f"Std: {final_data['vix'].std():.2f}")
     print(f"Min: {final_data['vix'].min():.2f}")

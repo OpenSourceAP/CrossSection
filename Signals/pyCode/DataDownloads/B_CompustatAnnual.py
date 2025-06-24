@@ -12,6 +12,10 @@ import psycopg2
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 print("=" * 60, flush=True)
 print("📈 B_CompustatAnnual.py - Compustat Annual Fundamentals", flush=True)
@@ -50,6 +54,11 @@ AND a.curcd = 'USD'
 AND a.indfmt = 'INDL'
 """
 
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+
 compustat_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
@@ -57,11 +66,6 @@ print(f"Downloaded {len(compustat_data)} annual records", flush=True)
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
-
-# Save raw data to parquet format
-compustat_data.to_parquet(
-    "../pyData/Intermediate/CompustatAnnual.parquet", index=False
-)
 
 # Require some reasonable amount of information
 compustat_data = compustat_data.dropna(subset=['at', 'prcc_c', 'ni'])
@@ -74,16 +78,48 @@ print(
 compustat_data['cnum'] = compustat_data['cusip'].str[:6]
 
 # Create derived variables and fill missing values
-# Deferred revenue
+# Deferred revenue (dr) - replicate Stata logic exactly
 compustat_data['dr'] = np.nan
+# Case 1: Both drc and drlt exist
 mask1 = compustat_data['drc'].notna() & compustat_data['drlt'].notna()
 compustat_data.loc[mask1, 'dr'] = (
     compustat_data.loc[mask1, 'drc'] +
     compustat_data.loc[mask1, 'drlt']
 )
+# Case 2: Only drc exists
+mask2 = compustat_data['drc'].notna() & compustat_data['drlt'].isna()
+compustat_data.loc[mask2, 'dr'] = compustat_data.loc[mask2, 'drc']
+# Case 3: Only drlt exists
+mask3 = compustat_data['drc'].isna() & compustat_data['drlt'].notna()
+compustat_data.loc[mask3, 'dr'] = compustat_data.loc[mask3, 'drlt']
 
-# Variables where missing is assumed to be 0
-zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'aco', 'ap', 'intan', 'ao',
+# Convertible debt (dc) - replicate Stata logic exactly
+# dcpstk = convertible debt and preferred stock, pstk = preferred stock, dcvt = convertible debt
+compustat_data['dc'] = np.nan
+# Case 1: dc = dcpstk - pstk if dcpstk > pstk & pstk !=. & dcpstk !=. & dcvt ==.
+mask_dc1 = (
+    (compustat_data['dcpstk'] > compustat_data['pstk']) &
+    compustat_data['pstk'].notna() &
+    compustat_data['dcpstk'].notna() &
+    compustat_data['dcvt'].isna()
+)
+compustat_data.loc[mask_dc1, 'dc'] = (
+    compustat_data.loc[mask_dc1, 'dcpstk'] -
+    compustat_data.loc[mask_dc1, 'pstk']
+)
+# Case 2: dc = dcpstk if pstk ==. & dcpstk !=. & dcvt ==.
+mask_dc2 = (
+    compustat_data['pstk'].isna() &
+    compustat_data['dcpstk'].notna() &
+    compustat_data['dcvt'].isna()
+)
+compustat_data.loc[mask_dc2, 'dc'] = compustat_data.loc[mask_dc2, 'dcpstk']
+# Case 3: dc = dcvt if dc is still missing
+mask_dc3 = compustat_data['dc'].isna()
+compustat_data.loc[mask_dc3, 'dc'] = compustat_data.loc[mask_dc3, 'dcvt']
+
+# Variables where missing is assumed to be 0 (including dc)
+zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
                   'lco', 'lo', 'rect', 'invt', 'drc', 'spi', 'gdwl', 'che',
                   'dp', 'act', 'lct', 'tstkp', 'dvpa', 'scstkc', 'sstk',
                   'mib', 'ivao', 'prstkc', 'prstkcc', 'txditc', 'ivst']
@@ -91,18 +127,6 @@ zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'aco', 'ap', 'intan', 'ao',
 for var in zero_fill_vars:
     if var in compustat_data.columns:
         compustat_data[var] = compustat_data[var].fillna(0)
-
-# Create derived variables that are missing
-# Current debt (dc) = sum of dlc and dlcch if both exist
-compustat_data['dc'] = np.nan
-mask_dc = compustat_data['dlc'].notna() & compustat_data['dlcch'].notna()
-compustat_data.loc[mask_dc, 'dc'] = (
-    compustat_data.loc[mask_dc, 'dlc'] +
-    compustat_data.loc[mask_dc, 'dlcch']
-)
-# If only dlc exists, use that
-mask_dlc_only = compustat_data['dlc'].notna() & compustat_data['dlcch'].isna()
-compustat_data.loc[mask_dlc_only, 'dc'] = compustat_data.loc[mask_dlc_only, 'dlc']
 
 # Create zero-filled versions of expense variables
 compustat_data['xad0'] = compustat_data['xad'].fillna(0)
@@ -143,6 +167,11 @@ compustat_data = compustat_data[valid_link]
 print(
     f"After filtering for valid link dates: {len(compustat_data)} records",
     flush=True
+)
+
+# Save processed data to parquet format (equivalent to Stata's CompustatAnnual.csv)
+compustat_data.to_parquet(
+    "../pyData/Intermediate/CompustatAnnual.parquet", index=False
 )
 
 # Clean up for annual version

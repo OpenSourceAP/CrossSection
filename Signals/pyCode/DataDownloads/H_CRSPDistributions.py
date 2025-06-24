@@ -11,6 +11,10 @@ import psycopg2
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 print("=" * 60, flush=True)
 print("💰 H_CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
@@ -31,6 +35,11 @@ SELECT d.permno, d.divamt, d.distcd, d.facshr, d.rcrddt, d.exdt, d.paydt
 FROM crsp.msedist as d
 """
 
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+
 dist_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
@@ -39,9 +48,16 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 print(f"Downloaded {len(dist_data)} distribution records")
 
-# Remove duplicates (equivalent to bysort permno distcd paydt: keep if _n == 1)
-# These are data errors, e.g. see permno 93338 or 93223
+# Replicate Stata's exact duplicate removal logic:
+# "bysort permno distcd paydt: keep if _n == 1" 
+# This means: sort by permno distcd paydt, then keep first record in each group
 initial_count = len(dist_data)
+
+# Sort first (this is what bysort does), then remove duplicates
+# Stata's "bysort permno distcd paydt" sorts by exactly these 3 columns
+# For tied records, Stata may use the original dataset order as tie-breaker
+# We need to replicate this by using a stable sort that preserves original order for ties
+dist_data = dist_data.sort_values(['permno', 'distcd', 'paydt'], kind='stable').reset_index(drop=True)
 dist_data = dist_data.drop_duplicates(subset=['permno', 'distcd', 'paydt'], keep='first')
 duplicates_removed = initial_count - len(dist_data)
 
@@ -60,6 +76,8 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3], errors='coerce'
 
 # Drop the temporary string column
 dist_data = dist_data.drop('distcd_str', axis=1)
+
+# Data is already sorted from the duplicate removal step above
 
 # Save the data
 dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")

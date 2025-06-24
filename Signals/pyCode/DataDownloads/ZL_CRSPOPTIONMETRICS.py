@@ -9,6 +9,10 @@ import os
 import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -59,7 +63,14 @@ def main():
         placeholder_data['date'] = pd.to_datetime(placeholder_data['date'])
         placeholder_data['time_avail_m'] = placeholder_data['date'].dt.to_period('M')
 
-        placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
+        
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        placeholder_data = placeholder_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+    # Save the data
+    placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
         print(f"Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
 
     print("CRSP-OptionMetrics processing completed")

@@ -11,6 +11,10 @@ import time
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -115,6 +119,9 @@ def main():
     date_max = tbill_data['date'].max()
     print(f"Date range: {date_min} to {date_max}")
 
+    # Convert to float32 first to match Stata precision (compress command)
+    tbill_data['value'] = tbill_data['value'].astype('float32')
+    
     # Convert to percentage (divide by 100, equivalent to TB3MS/100)
     tbill_data['TbillRate3M'] = tbill_data['value'] / 100
 
@@ -129,13 +136,18 @@ def main():
         .mean().reset_index()
     )
 
-    # Convert to float32 to match Stata precision (compress command)
+    # Ensure float32 precision is maintained after aggregation
     quarterly_data['TbillRate3M'] = quarterly_data['TbillRate3M'].astype('float32')
 
     # Reorder columns to match Stata: TbillRate3M, qtr, year
     final_data = quarterly_data[['TbillRate3M', 'qtr', 'year']]
 
     print(f"Created {len(final_data)} quarterly records")
+
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        final_data = final_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
     final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet")

@@ -3,6 +3,8 @@
 ## Project Overview
 This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet format instead of DTA/CSV.
 
+# Project Structure 
+
 ## Data Pipeline Structure
 
 ### Input Sources
@@ -101,194 +103,35 @@ Signals/
 | `ZK_CustomerMomentum.do` | `ZK_CustomerMomentum.py` | customerMom.dta | 4.1M | Customer momentum |
 | `ZL_CRSPOPTIONMETRICS.do` | `ZL_CRSPOPTIONMETRICS.py` | OPTIONMETRICSCRSPLinkingTable.dta | 234K | CRSP-OptionMetrics link |
 
-## Implementation Guidelines
+# Requirements
 
-### Requirements
+## Basic Requirements
 - Python code should follow the stata counterpart as closely as possible
 - The python code should use the same data sources as the stata code
 - Output is parquet
   - Not pkl
 
-### Python Environment
+## Python Environment
 - Use `pandas` for data manipulation
 - Use `pyarrow` for Parquet I/O  
 - Use `wrds` library for database connections
 - Use `pandas_datareader` for external data APIs
 - Follow PEP 8 style guidelines
 
-### Python Code Quality Standards
-**CRITICAL: All Python code must follow these formatting rules to avoid linting errors:**
 
-#### **Line Length & Formatting**
-- **Max line length: 88 characters** (Black standard, more flexible than 79)
-- Break long lines using parentheses or backslashes:
-```python
-# Good - use parentheses for function calls
-result = some_long_function_name(
-    parameter1, parameter2, parameter3
-)
-
-# Good - break long strings
-message = (
-    "This is a very long message that needs to be "
-    "broken across multiple lines"
-)
-```
-
-#### **Import Management**
-- **Remove unused imports** - Only import what you actually use
-- **Import order**: Standard library → Third-party → Local imports
-```python
-# Standard library first
-import os
-from pathlib import Path
-
-# Third-party libraries  
-import pandas as pd
-import numpy as np
-
-# Local imports last
-from .utils import helper_function
-```
-
-#### **Whitespace Rules**
-- **No trailing whitespace** on any line
-- **End files with single newline** character
-- **2 blank lines** before function/class definitions
-- **2 blank lines** after function/class definitions at module level
-
-#### **String Formatting**
-- **Use f-strings only when interpolating variables**:
-```python
-# Good - f-string with variables
-name = "data"
-message = f"Processing {name} file"
-
-# Bad - f-string without variables
-message = f"Processing complete"  # Should be: "Processing complete"
-```
-
-#### **Variable Usage**
-- **No unused variables** - Remove or prefix with underscore:
-```python
-# Bad
-df, meta = read_stata_file()  # meta unused
-
-# Good
-df, _ = read_stata_file()  # or remove meta entirely
-```
-
-#### **Function Documentation**
-- **All functions need docstrings**:
-```python
-def process_data(df):
-    """Process the input dataframe.
-    
-    Args:
-        df: Input pandas DataFrame
-        
-    Returns:
-        Processed DataFrame
-    """
-    return df
-```
-
-#### **Linting Commands**
-Run these before committing code:
-```bash
-# Activate virtual environment
-source .venv/bin/activate
-
-# Check specific file
-flake8 filename.py
-
-# Check all Python files
-flake8 .
-
-# Auto-format code (if black is installed)
-black filename.py
-```
-
-### Data Processing Standards
+## Data Processing Standards
 1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations
 2. **Preserve column names**: Keep original variable names from Stata
 3. **Handle missing values**: Replicate Stata's missing value conventions
 4. **Date formatting**: Ensure consistent date handling across files
 5. **Data types**: Match Stata numeric precision where possible
 
-### Error Handling
+## Error Handling
 - Implement robust error handling for database connections
 - Log processing times and success/failure status
 - Create error flag system similar to Stata's `01_DownloadDataFlags`
 
-### Testing Strategy
-- Run `test_datadownloads_comparison.py` to compare output files with original Stata results
-- Ensure that at least 95% of the data is exact match
-- Fix inexact matches by making sure the py script follows every step of the stata script
-
-## PKL→Parquet Conversion Lessons Learned
-
-### Overview
-Based on systematic conversion of DataDownloads scripts from PKL to parquet format, we identified critical patterns for achieving 95%+ exact matches with Stata outputs.
-
-### Success Patterns
-
-#### 1. **PKL → Parquet Conversion (Critical Foundation)**
-```python
-# OLD (incorrect)
-data.to_pickle("../pyData/Intermediate/filename.pkl")
-
-# NEW (correct)
-data.to_parquet("../pyData/Intermediate/filename.parquet")
-```
-- **Impact**: Essential first step - enables comparison testing
-- **Success Rate**: 100% when combined with other fixes
-- **Priority**: Must be done first before other optimizations
-
-#### 2. **F-String Fixes (Always Required)**
-```python
-# OLD (broken)
-print("Downloaded {len(data)} records")
-
-# NEW (correct) 
-print(f"Downloaded {len(data)} records")
-```
-- **Impact**: Prevents runtime errors and improves debugging
-- **Frequency**: Found in 95% of scripts
-- **Priority**: High - fix alongside PKL conversion
-
-#### 3. **Column Naming Alignment (Critical for Match)**
-```python
-# Problem: Case mismatch between Python and Stata
-data.columns = data.columns.str.lower()  # Convert to lowercase
-
-# Problem: Missing Stata naming conventions
-rename_dict = {}
-for col in data.columns:
-    if col.startswith('r_') and col != 'r_eg':
-        rename_dict[col] = col + '_qfac'  # Match Stata pattern
-data = data.rename(columns=rename_dict)
-```
-- **Impact**: Column mismatches prevent any comparison
-- **Example**: S_QFactorModel needed lowercase + `_qfac` suffix
-- **Priority**: Critical - must exactly match Stata output
-
-#### 4. **Data Processing Logic Alignment**
-```python
-# Must replicate every Stata step exactly:
-# 1. Drop unwanted columns in same order
-if 'r_eg' in data.columns:
-    data = data.drop('r_eg', axis=1)
-
-# 2. Apply transformations with same precision
-data[col] = data[col] / 100  # Match Stata division
-
-# 3. Handle missing values identically 
-data['vix'] = data['VXOCLS']
-data.loc[fill_mask, 'vix'] = data.loc[fill_mask, 'VIXCLS']
-```
-
-## Commands
+## Paths
 
 **IMPORTANT**: All Python commands must be run from the `pyCode/` directory.
 
@@ -318,6 +161,7 @@ python3 test_datadownloads_comparison.py --list
 - **All Python scripts must be executed from `pyCode/`**
 - **Virtual environment is located at `pyCode/.venv/`**
 - **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
+- Before running any python script, `source .venv/bin/activate`
 
 ### Environment Setup
 ```bash
@@ -327,25 +171,102 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### API Keys and External Data Sources
-- **FRED API Key**: Required for Federal Reserve Economic Data scripts
-  - Scripts requiring FRED API: `V_TBill3M.py`, `T_VIX.py`, `U_GNPDeflator.py`
-  - Environment variable: `FRED_API_KEY`
-  - Get free API key: https://fred.stlouisfed.org/docs/api/api_key.html
-  - Set in `.env` file: `FRED_API_KEY = your_api_key_here`
-- **WRDS Access**: Required for financial database scripts
-  - Environment variables: `WRDS_USERNAME`, `WRDS_PASSWORD`
-  - Set in `.env` file with your WRDS credentials
-
 ### Virtual Environment Management
 - **Only one .venv folder**: Located in `pyCode/.venv/`
 - **Always activate before running scripts**: `source .venv/bin/activate`
 - **Install packages in venv**: `pip install package_name`
 
-## Planning Documents
+# Style Guidelines
 
-### Missing Scripts Implementation Plan
-- **Current Plan**: `missing_scripts_plan_2025-06-19.md`
-- **Status**: Implementation in progress
-- **Priority Scripts**: ZD_CorwinSchultz.py, ZG_BidaskTAQ.py, ZE_13F.py
-- **Completion Target**: 7 missing Python DataDownloads scripts
+## Python Code Quality Standards
+**CRITICAL: All Python code must follow these formatting rules to avoid linting errors:**
+
+### **Line Length & Formatting**
+- **Max line length: 88 characters** (Black standard, more flexible than 79)
+- Break long lines using parentheses or backslashes:
+```python
+# Good - use parentheses for function calls
+result = some_long_function_name(
+    parameter1, parameter2, parameter3
+)
+
+# Good - break long strings
+message = (
+    "This is a very long message that needs to be "
+    "broken across multiple lines"
+)
+```
+
+### **Import Management**
+- **Remove unused imports** - Only import what you actually use
+- **Import order**: Standard library → Third-party → Local imports
+```python
+# Standard library first
+import os
+from pathlib import Path
+
+# Third-party libraries  
+import pandas as pd
+import numpy as np
+
+# Local imports last
+from .utils import helper_function
+```
+
+### **Whitespace Rules**
+- **No trailing whitespace** on any line
+- **End files with single newline** character
+- **2 blank lines** before function/class definitions
+- **2 blank lines** after function/class definitions at module level
+
+### **String Formatting**
+- **Use f-strings only when interpolating variables**:
+```python
+# Good - f-string with variables
+name = "data"
+message = f"Processing {name} file"
+
+# Bad - f-string without variables
+message = f"Processing complete"  # Should be: "Processing complete"
+```
+
+### **Variable Usage**
+- **No unused variables** - Remove or prefix with underscore:
+```python
+# Bad
+df, meta = read_stata_file()  # meta unused
+
+# Good
+df, _ = read_stata_file()  # or remove meta entirely
+```
+
+### **Function Documentation**
+- **All functions need docstrings**:
+```python
+def process_data(df):
+    """Process the input dataframe.
+    
+    Args:
+        df: Input pandas DataFrame
+        
+    Returns:
+        Processed DataFrame
+    """
+    return df
+```
+
+### **Linting Commands**
+Run these before committing code:
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Check specific file
+flake8 filename.py
+
+# Check all Python files
+flake8 .
+
+# Auto-format code (if black is installed)
+black filename.py
+```

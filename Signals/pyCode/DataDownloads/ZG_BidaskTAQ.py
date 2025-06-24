@@ -8,6 +8,10 @@ Created via Chen-Velikov JFQA code, includes ISSM spreads.
 
 import os
 import pandas as pd
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 
 def main():
@@ -52,6 +56,13 @@ def main():
     # Save to parquet
     output_file = "../pyData/Intermediate/hf_spread.parquet"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        data = data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+    # Save the data
     data.to_parquet(output_file, index=False)
     
     print(f"Saved {len(data)} records to {output_file}")

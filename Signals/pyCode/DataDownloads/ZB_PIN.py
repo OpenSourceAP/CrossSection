@@ -10,6 +10,10 @@ import pandas as pd
 import requests
 import zipfile
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -81,6 +85,13 @@ def main():
     pin_monthly = pd.DataFrame(monthly_data)
 
     print(f"Expanded to {len(pin_monthly)} monthly PIN records")
+
+    # Save the data
+    
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        pin_monthly = pin_monthly.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
     pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet")

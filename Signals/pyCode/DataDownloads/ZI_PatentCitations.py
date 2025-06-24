@@ -10,6 +10,10 @@ import subprocess
 import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -66,7 +70,14 @@ def main():
         })
 
         # Save placeholder
-        placeholder_data.to_parquet("../pyData/Intermediate/PatentDataProcessed.parquet")
+        
+    # Apply row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        placeholder_data = placeholder_data.head(MAX_ROWS_DL)
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+    # Save the data
+    placeholder_data.to_parquet("../pyData/Intermediate/PatentDataProcessed.parquet")
         print(f"Placeholder patent data saved with {len(placeholder_data)} records")
 
     print("Patent Citations processing completed")

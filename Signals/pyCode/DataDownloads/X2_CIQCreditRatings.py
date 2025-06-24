@@ -10,6 +10,10 @@ import os
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -47,6 +51,11 @@ def download_ciq_ratings(query_type, conn):
         AND a.ratingdate >= '1970-01-01'
         """
         fill_cols = {'entity_id': '', 'instrument_id': ''}
+
+    # Add row limit for debugging if configured
+    if MAX_ROWS_DL > 0:
+        query += f" LIMIT {MAX_ROWS_DL}"
+        print(f"DEBUG MODE: Limiting {query_type} query to {MAX_ROWS_DL} rows")
 
     try:
         data = pd.read_sql_query(query, conn)

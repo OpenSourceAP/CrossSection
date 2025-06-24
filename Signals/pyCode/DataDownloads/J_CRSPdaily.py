@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -51,10 +55,20 @@ def main():
     # Get current year for end year (equivalent to substr("$S_DATE", -4, 4))
     current_year = datetime.now().year
 
-    # Download data year by year (1926 to current year)
+    # Determine year range based on debug mode
+    if MAX_ROWS_DL > 0:
+        # DEBUG MODE: Only download first year to test quickly
+        year_range = [1926]
+        print(f"DEBUG MODE: Only downloading year 1926 (instead of 1926-{current_year})")
+    else:
+        # PRODUCTION MODE: Download all years
+        year_range = range(1926, current_year + 1)
+        print(f"PRODUCTION MODE: Downloading years 1926-{current_year}")
+
+    # Download data year by year
     all_data = []
 
-    for year in range(1926, current_year + 1):
+    for year in year_range:
         print(f"Processing year {year}...")
 
         year_data = get_crsp_daily_year(year, conn)

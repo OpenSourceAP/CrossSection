@@ -8,6 +8,10 @@ Includes forward-fill logic for missing months.
 
 import os
 import pandas as pd
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 
 def main():
@@ -20,8 +24,12 @@ def main():
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")
     
-    # Read CSV with headers
-    data = pd.read_csv(input_file)
+    # Read CSV with headers, applying row limit if configured
+    nrows = None if MAX_ROWS_DL == -1 else MAX_ROWS_DL
+    data = pd.read_csv(input_file, nrows=nrows)
+    
+    if MAX_ROWS_DL > 0:
+        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
     print(f"Loaded {len(data)} records from {input_file}")
     
     # Drop rows with missing PERMNO

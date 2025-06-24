@@ -12,6 +12,10 @@ import pandas as pd
 import polars as pl
 import numpy as np
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 print("=" * 60, flush=True)
 print(
@@ -47,6 +51,11 @@ AND a.datafmt = 'STD'
 AND a.curcdq = 'USD'
 AND a.indfmt = 'INDL'
 """
+
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 # Load data with pandas first
 compustat_q_pd = pd.read_sql_query(QUERY, conn)

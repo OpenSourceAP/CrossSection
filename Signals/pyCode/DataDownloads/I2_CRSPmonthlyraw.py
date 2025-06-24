@@ -10,6 +10,10 @@ import psycopg2
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 load_dotenv()
 
@@ -31,6 +35,11 @@ ON a.permno=b.permno AND b.namedt<=a.date AND a.date<=b.nameendt
 LEFT JOIN crsp.msedelist as c
 ON a.permno=c.permno AND date_trunc('month', a.date) = date_trunc('month', c.dlstdt)
 """
+
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 crsp_raw = pd.read_sql_query(QUERY, conn)
 conn.close()

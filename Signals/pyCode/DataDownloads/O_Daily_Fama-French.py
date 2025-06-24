@@ -9,6 +9,10 @@ import os
 import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 print("=" * 60, flush=True)
 print("📈 O_Daily_Fama-French.py - Daily Fama-French Factors", flush=True)
@@ -28,6 +32,11 @@ QUERY = """
 SELECT date, mktrf, smb, hml, rf, umd
 FROM ff.factors_daily
 """
+
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 ff_daily = pd.read_sql_query(QUERY, conn)
 conn.close()
