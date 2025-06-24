@@ -10,6 +10,7 @@ import os
 import sys
 import time
 import subprocess
+import threading
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
@@ -21,7 +22,13 @@ def setup_logging():
     
     # Create error tracking DataFrame (equivalent to 01_DownloadDataFlags.dta)
     error_log = pd.DataFrame(columns=['DataFile', 'DataTime', 'ReturnCode', 'Message'])
-    return error_log
+    
+    # Initialize console log list for detailed txt output
+    console_log = []
+    console_log.append(f"Data Download Log - Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    console_log.append("=" * 80)
+    
+    return error_log, console_log
 
 def find_download_scripts():
     """Find all .py files in DataDownloads/ directory"""
@@ -46,19 +53,39 @@ def find_download_scripts():
     
     return py_files
 
-def execute_script(script_name, error_log):
-    """Execute a single download script and track results"""
-    print(f"\n🔄 Starting: {script_name}")
-    print("=" * 60)
+def execute_script(script_name, error_log, console_log):
+    """Execute a single download script and track results with 30-second timeout"""
+    start_msg = f"\n🔄 Starting: {script_name}"
+    separator = "=" * 60
+    
+    print(start_msg)
+    print(separator)
+    
+    # Add to console log
+    console_log.append(f"\n{start_msg}")
+    console_log.append(separator)
     
     start_time = time.time()
     return_code = 0
+    script_output = []
+    process = None
+    timer = None
+    timed_out = False
+    
+    def timeout_handler():
+        """Handle timeout by terminating the process"""
+        nonlocal timed_out
+        timed_out = True
+        if process and process.poll() is None:
+            process.terminate()
+            # Give it 2 seconds to terminate gracefully, then kill
+            threading.Timer(2.0, lambda: process.kill() if process.poll() is None else None).start()
     
     try:
         # Execute the script in the DataDownloads directory
         script_path = Path("DataDownloads") / script_name
         
-        # Use Popen for real-time output streaming
+        # Use Popen for real-time output streaming and capture
         process = subprocess.Popen(
             [sys.executable, str(script_path)],
             cwd=".",
@@ -69,33 +96,92 @@ def execute_script(script_name, error_log):
             universal_newlines=True
         )
         
-        # Stream output in real-time
+        # Set up 30-second timeout
+        timer = threading.Timer(30.0, timeout_handler)
+        timer.start()
+        
+        # Stream output in real-time and capture for logging
         for line in process.stdout:
+            if timed_out:
+                break
             print(line, end='', flush=True)
+            script_output.append(line.rstrip())
+        
+        # Cancel timer if process completed normally
+        if timer:
+            timer.cancel()
         
         # Wait for completion and check return code
         process.wait()
-        if process.returncode != 0:
-            raise subprocess.CalledProcessError(process.returncode, [sys.executable, str(script_path)])
         
-        print("=" * 60)
-        print(f"✅ Completed: {script_name}")
+        if timed_out:
+            return_code = -9  # SIGKILL return code
+            timeout_msg = f"⏱️ TIMEOUT in {script_name}: Script exceeded 30 seconds"
+            print(separator)
+            print(timeout_msg)
+            
+            # Add timeout details to console log
+            console_log.extend(script_output)
+            console_log.append(separator)
+            console_log.append(timeout_msg)
+            console_log.append("Script was terminated due to 30-second timeout")
+            
+        elif process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, [sys.executable, str(script_path)])
+        else:
+            success_msg = f"✅ Completed: {script_name}"
+            print(separator)
+            print(success_msg)
+            
+            # Add success to console log
+            console_log.extend(script_output)
+            console_log.append(separator)
+            console_log.append(success_msg)
         
     except subprocess.CalledProcessError as e:
         return_code = e.returncode
-        print("=" * 60)
-        print(f"❌ ERROR in {script_name}: Return code {e.returncode}")
+        error_msg = f"❌ ERROR in {script_name}: Return code {e.returncode}"
+        print(separator)
+        print(error_msg)
+        
+        # Add error details to console log
+        console_log.extend(script_output)
+        console_log.append(separator)
+        console_log.append(error_msg)
+        console_log.append(f"Error details: Script failed with return code {e.returncode}")
     
     except Exception as e:
         return_code = 1
-        print("=" * 60)
-        print(f"💥 UNEXPECTED ERROR in {script_name}: {e}")
+        error_msg = f"💥 UNEXPECTED ERROR in {script_name}: {e}"
+        print(separator)
+        print(error_msg)
+        
+        # Add exception details to console log
+        console_log.extend(script_output)
+        console_log.append(separator)
+        console_log.append(error_msg)
+        console_log.append(f"Exception details: {str(e)}")
+        console_log.append(f"Exception type: {type(e).__name__}")
+    
+    finally:
+        # Clean up timer and process
+        if timer:
+            timer.cancel()
+        if process and process.poll() is None:
+            process.terminate()
     
     # Calculate execution time
     execution_time = time.time() - start_time
+    time_msg = f"Execution time: {execution_time:.2f} seconds"
+    console_log.append(time_msg)
     
     # Log results (equivalent to Stata's error tracking)
-    message = "Processing successful" if return_code == 0 else "Processing error"
+    if timed_out:
+        message = "Processing timeout"
+    elif return_code == 0:
+        message = "Processing successful"
+    else:
+        message = "Processing error"
     
     new_row = pd.DataFrame({
         'DataFile': [script_name],
@@ -106,16 +192,24 @@ def execute_script(script_name, error_log):
     
     error_log = pd.concat([error_log, new_row], ignore_index=True)
     
-    return error_log, return_code
+    return error_log, return_code, console_log
 
-def save_error_log(error_log):
+def save_error_log(error_log, console_log):
     """Save error log to files (equivalent to Stata's save and export)"""
-    log_path = Path("../Logs/01_DownloadDataFlags.csv")
+    csv_path = Path("../Logs/01_DownloadDataFlags.csv")
+    txt_path = Path("../Logs/01_DownloadData_console.txt")
     
     # Save to CSV
-    error_log.to_csv(log_path, index=False)
+    error_log.to_csv(csv_path, index=False)
+    
+    # Save detailed console output to txt file
+    with open(txt_path, 'w') as f:
+        f.write('\n'.join(console_log))
+        f.write(f"\n\nLog completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
   
-    print(f"\nError log saved to: {log_path}")
+    print(f"\nLog files saved:")
+    print(f"  CSV: {csv_path}")
+    print(f"  TXT: {txt_path}")
 
 def check_optional_files():
     """Check for optional preprocessed files (equivalent to Stata's confirm file checks)"""
@@ -152,7 +246,7 @@ def main():
     check_optional_files()
     
     # Setup logging
-    error_log = setup_logging()
+    error_log, console_log = setup_logging()
     
     # Find all download scripts
     download_scripts = find_download_scripts()
@@ -167,13 +261,13 @@ def main():
     failed_scripts = []
     
     for script in download_scripts:
-        error_log, return_code = execute_script(script, error_log)
+        error_log, return_code, console_log = execute_script(script, error_log, console_log)
         
         if return_code != 0:
             failed_scripts.append(script)
         
         # Save error log after each script (like Stata does)
-        save_error_log(error_log)
+        save_error_log(error_log, console_log)
     
     # Final summary (equivalent to Stata's final checks)
     print("\n" + "=" * 60)
