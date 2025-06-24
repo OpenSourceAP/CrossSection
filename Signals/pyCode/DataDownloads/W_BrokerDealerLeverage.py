@@ -98,64 +98,64 @@ def main():
     # Compute log leverage change
     data['levfacnsa'] = np.log(data['lev']) - np.log(data['lev'].shift(1))
     
-    # Compute seasonal adjustment (rolling mean of quarter values)
-    # This replicates the Stata seasonal adjustment logic
+    # Compute seasonal adjustment using Stata's cumulative sum logic
+    # bys qtr (year): gen tempMean = sum(levfacnsa)/_n
     data['tempMean'] = 0.0
     
     for qtr in [1, 2, 3, 4]:
-        qtr_data = data[data['qtr'] == qtr].copy()
-        qtr_data = qtr_data.sort_values('year').reset_index(drop=True)
+        qtr_mask = (data['qtr'] == qtr)
+        qtr_data = data[qtr_mask].copy().sort_values('year').reset_index(drop=True)
         
-        # Compute rolling mean for each quarter
-        for i in range(len(qtr_data)):
-            if qtr == 1 and i > 0:
-                # Special case for Q1: use (_n-1) observations
-                qtr_data.loc[i, 'tempMean'] = qtr_data.loc[:i-1, 'levfacnsa'].mean()
-            elif i > 0:
-                # Regular case: use _n observations
-                qtr_data.loc[i, 'tempMean'] = qtr_data.loc[:i, 'levfacnsa'].mean()
-            else:
-                qtr_data.loc[i, 'tempMean'] = 0.0
+        # Calculate cumulative sum and running count
+        qtr_data['cumsum'] = qtr_data['levfacnsa'].cumsum()
+        qtr_data['count'] = range(1, len(qtr_data) + 1)
+        
+        # Standard case: tempMean = cumsum / count
+        qtr_data['tempMean'] = qtr_data['cumsum'] / qtr_data['count']
+        
+        # Special case for Q1: use (count-1) instead of count when count > 1
+        if qtr == 1:
+            mask_adj = qtr_data['count'] > 1
+            qtr_data.loc[mask_adj, 'tempMean'] = qtr_data.loc[mask_adj, 'cumsum'] / (qtr_data.loc[mask_adj, 'count'] - 1)
         
         # Set to 0 for 1968 (first year)
         qtr_data.loc[qtr_data['year'] == 1968, 'tempMean'] = 0.0
         
         # Update main dataframe
-        data.loc[data['qtr'] == qtr, 'tempMean'] = qtr_data['tempMean'].values
+        data.loc[qtr_mask, 'tempMean'] = qtr_data['tempMean'].values
     
     # Compute seasonally adjusted leverage factor
+    # Replicate Stata logic: by qtr: gen levfac = levfacnsa - tempMean[_n-1]
     data['levfac'] = data['levfacnsa']  # Default value
     
     for qtr in [1, 2, 3, 4]:
-        qtr_mask = data['qtr'] == qtr
-        qtr_data = data[qtr_mask].copy()
-        qtr_data = qtr_data.sort_values('year').reset_index(drop=True)
+        qtr_mask = (data['qtr'] == qtr)
+        qtr_indices = data[qtr_mask].sort_values('year').index
         
-        # Apply seasonal adjustment using previous period's tempMean
-        for i in range(len(qtr_data)):
-            if i == 0:
-                # First observation in quarter keeps original value
-                levfac_val = qtr_data.loc[i, 'levfacnsa']
-            else:
-                # Subtract previous period's tempMean
-                levfac_val = (qtr_data.loc[i, 'levfacnsa'] - 
-                             qtr_data.loc[i-1, 'tempMean'])
-            
-            # Special case for Q1 1969
-            if qtr == 1 and qtr_data.loc[i, 'year'] == 1969:
-                levfac_val = qtr_data.loc[i, 'levfacnsa']
-            
-            qtr_data.loc[i, 'levfac'] = levfac_val
+        # Create tempMean lagged by 1 position within quarter
+        tempMean_lagged = data.loc[qtr_indices, 'tempMean'].shift(1)
         
-        # Update main dataframe
-        data.loc[qtr_mask, 'levfac'] = qtr_data['levfac'].values
+        # Apply seasonal adjustment: levfac = levfacnsa - tempMean[_n-1]
+        data.loc[qtr_indices, 'levfac'] = (
+            data.loc[qtr_indices, 'levfacnsa'] - tempMean_lagged
+        )
+        
+        # First observation in each quarter keeps original value (_n==1)
+        first_idx = qtr_indices[0]
+        data.loc[first_idx, 'levfac'] = data.loc[first_idx, 'levfacnsa']
+        
+        # Special case for Q1 1969
+        if qtr == 1:
+            q1_1969_mask = (data['year'] == 1969) & (data['qtr'] == 1)
+            if q1_1969_mask.any():
+                q1_1969_idx = data[q1_1969_mask].index[0]
+                data.loc[q1_1969_idx, 'levfac'] = data.loc[q1_1969_idx, 'levfacnsa']
     
-    # Keep only required columns
-    output_data = data[['year', 'qtr', 'levfac']].copy()
+    # Keep only required columns (match Stata output column order)
+    output_data = data[['qtr', 'year', 'levfac']].copy()
     output_data = output_data.sort_values(['year', 'qtr'])
     
-    # Drop any rows with missing levfac
-    output_data = output_data.dropna(subset=['levfac'])
+    # Keep all observations including missing levfac (matching Stata behavior)
     
     print(f"Processed {len(output_data)} quarterly observations")
     
