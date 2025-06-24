@@ -114,11 +114,7 @@ def save_error_log(error_log):
     
     # Save to CSV
     error_log.to_csv(log_path, index=False)
-    
-    # Also save as pickle (Python equivalent of .dta)
-    pickle_path = Path("../Logs/01_DownloadDataFlags.pkl")
-    error_log.to_pickle(pickle_path)
-    
+  
     print(f"\nError log saved to: {log_path}")
 
 def check_optional_files():
