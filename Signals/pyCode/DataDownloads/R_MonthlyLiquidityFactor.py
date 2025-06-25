@@ -40,9 +40,10 @@ conn.close()
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
+# Convert date to monthly datetime (preserve as datetime64[ns] for parquet compatibility)
 liquidity_data['date'] = pd.to_datetime(liquidity_data['date'])
-liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M').dt.to_timestamp()
 
 # Drop original date column
 liquidity_data = liquidity_data.drop('date', axis=1)

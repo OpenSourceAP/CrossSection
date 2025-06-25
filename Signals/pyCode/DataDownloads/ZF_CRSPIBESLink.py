@@ -32,23 +32,26 @@ def main():
         print(f"Loaded {len(iclink_data)} linking records from iclink.csv")
 
         # Keep only high-quality links (score <= 2)
-        if 'score' in iclink_data.columns:
+        if 'SCORE' in iclink_data.columns:
             initial_count = len(iclink_data)
-            iclink_data = iclink_data[iclink_data['score'] <= 2]
-            print(f"Filtered to {len(iclink_data)} records with score <= 2")
+            iclink_data = iclink_data[iclink_data['SCORE'] <= 2]
+            print(f"Filtered to {len(iclink_data)} records with SCORE <= 2")
 
         # Keep best match for each permno (lowest score)
-        if 'permno' in iclink_data.columns and 'score' in iclink_data.columns:
-            iclink_data = iclink_data.sort_values(['permno', 'score'])
-            iclink_data = iclink_data.drop_duplicates(['permno'], keep='first')
-            print(f"After keeping best match per permno: {len(iclink_data)} records")
+        if 'PERMNO' in iclink_data.columns and 'SCORE' in iclink_data.columns:
+            iclink_data = iclink_data.sort_values(['PERMNO', 'SCORE'])
+            iclink_data = iclink_data.drop_duplicates(['PERMNO'], keep='first')
+            print(f"After keeping best match per PERMNO: {len(iclink_data)} records")
 
-        # Rename ticker to tickerIBES
-        if 'ticker' in iclink_data.columns:
-            iclink_data = iclink_data.rename(columns={'ticker': 'tickerIBES'})
+        # Rename columns to match expected output
+        column_mapping = {
+            'TICKER': 'tickeribes',
+            'PERMNO': 'permno'
+        }
+        iclink_data = iclink_data.rename(columns=column_mapping)
 
         # Keep only necessary columns
-        keep_cols = ['tickerIBES', 'permno']
+        keep_cols = ['tickeribes', 'permno']
         available_cols = [col for col in keep_cols if col in iclink_data.columns]
         final_data = iclink_data[available_cols]
 
@@ -58,7 +61,7 @@ def main():
 
         # Create placeholder data
         final_data = pd.DataFrame({
-            'tickerIBES': ['AAPL', 'MSFT', 'GOOGL'],
+            'tickeribes': ['AAPL', 'MSFT', 'GOOGL'],
             'permno': [14593, 10107, 90319]
         })
 
@@ -68,7 +71,7 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
-    final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet")
+    final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet", index=False)
 
     print(f"IBES-CRSP Linking Table saved with {len(final_data)} records")
 
@@ -76,8 +79,8 @@ def main():
     if 'permno' in final_data.columns:
         print(f"Unique permnos: {final_data['permno'].nunique()}")
 
-    if 'tickerIBES' in final_data.columns:
-        print(f"Unique IBES tickers: {final_data['tickerIBES'].nunique()}")
+    if 'tickeribes' in final_data.columns:
+        print(f"Unique IBES tickers: {final_data['tickeribes'].nunique()}")
 
     print("\nSample data:")
     print(final_data.head())

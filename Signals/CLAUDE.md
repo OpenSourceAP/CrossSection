@@ -37,6 +37,7 @@ Signals/
 ├── pyCode/                 # Python equivalent code (WORKING DIRECTORY)
 │   ├── .venv/              # Python virtual environment
 │   ├── DataDownloads/      # Python data download scripts
+│   ├── Debug/              # Debugging and validation scripts
 │   ├── requirements.txt    # Python dependencies
 │   ├── 01_DownloadData.py  # Main download orchestrator
 │   └── test_datadownloads_comparison.py  # Testing script
@@ -153,6 +154,10 @@ python3 DataDownloads/[SCRIPT_NAME].py
 
 # Test data comparison 
 python3 test_datadownloads_comparison.py --list
+
+# Debug and validation scripts
+python3 Debug/check_colnames.py  # Check column name matches between DTA/Parquet
+python3 Debug/validate_parquet_dta.py  # Comprehensive validation
 ```
 
 ## Python Development Environment

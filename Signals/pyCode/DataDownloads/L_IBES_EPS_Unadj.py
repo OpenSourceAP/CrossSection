@@ -49,7 +49,8 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Set up linking variables
 ibes_data['statpers'] = pd.to_datetime(ibes_data['statpers'])
-ibes_data['time_avail_m'] = ibes_data['statpers'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+ibes_data['time_avail_m'] = ibes_data['statpers'].dt.to_period('M').dt.to_timestamp()
 
 # Rename ticker to tickerIBES
 ibes_data = ibes_data.rename(columns={'ticker': 'tickerIBES'})

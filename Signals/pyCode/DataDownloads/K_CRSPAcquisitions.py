@@ -58,7 +58,8 @@ acq_data = acq_data.rename(columns={'exdt': 'time_d'})
 acq_data['time_d'] = pd.to_datetime(acq_data['time_d'])
 
 # Create monthly availability date (equivalent to gen time_avail_m = mofd(time_d))
-acq_data['time_avail_m'] = acq_data['time_d'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+acq_data['time_avail_m'] = acq_data['time_d'].dt.to_period('M').dt.to_timestamp()
 
 # Drop time_d as in original Stata code
 acq_data = acq_data.drop('time_d', axis=1)
@@ -85,7 +86,7 @@ duplicates_removed = initial_count - len(acq_data)
 print(f"Removed {duplicates_removed} duplicate records")
 
 # Save the data
-acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet")
+acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet", index=False)
 
 print(f"CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
 

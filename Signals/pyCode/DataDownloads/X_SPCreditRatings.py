@@ -44,7 +44,8 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Create monthly time variable
 rating_data['datadate'] = pd.to_datetime(rating_data['datadate'])
-rating_data['time_avail_m'] = rating_data['datadate'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+rating_data['time_avail_m'] = rating_data['datadate'].dt.to_period('M').dt.to_timestamp()
 rating_data = rating_data.drop('datadate', axis=1)
 
 # Rename splticrm to sp for easier reference
@@ -84,6 +85,9 @@ rating_data = rating_data.drop('sp', axis=1)
 
 # Convert gvkey to numeric
 rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
+
+# Preserve int8 dtype for credrat column to match DTA format
+rating_data['credrat'] = rating_data['credrat'].astype('int8')
 
 # Save the data
 rating_data.to_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")

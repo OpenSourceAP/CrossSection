@@ -45,7 +45,8 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Create monthly time variable
 si_data['datadate'] = pd.to_datetime(si_data['datadate'])
-si_data['time_avail_m'] = si_data['datadate'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+si_data['time_avail_m'] = si_data['datadate'].dt.to_period('M').dt.to_timestamp()
 
 # Collapse to monthly data using first non-missing values
 # (equivalent to gcollapse (firstnm) shortint shortintadj, by(gvkey time_avail_m))

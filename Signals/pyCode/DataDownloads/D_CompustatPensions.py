@@ -14,6 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
 
 print("=" * 60, flush=True)
 print("🏦 D_CompustatPensions.py - Compustat Pension Fund Data", flush=True)
@@ -79,8 +80,15 @@ for var in pension_vars:
         missing_pct = (missing_count / total_count) * 100
         print(f"  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
 
+# Standardize columns to match DTA file (removes index columns and fixes order)
+pensions_data = standardize_against_dta(
+    pensions_data, 
+    "../Data/Intermediate/CompustatPensions.dta",
+    "CompustatPensions"
+)
+
 # Save the data
-pensions_data.to_parquet("../pyData/Intermediate/CompustatPensions.parquet")
+pensions_data.to_parquet("../pyData/Intermediate/CompustatPensions.parquet", index=False)
 
 print(f"\nCompustat Pensions data saved with {len(pensions_data)} records", flush=True)
 

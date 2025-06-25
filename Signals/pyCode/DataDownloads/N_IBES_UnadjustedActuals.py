@@ -51,7 +51,8 @@ if 'shout' in actuals_data.columns:
 
 # Set up monthly time (equivalent to gen time_avail_m = mofd(statpers))
 actuals_data['statpers'] = pd.to_datetime(actuals_data['statpers'])
-actuals_data['time_avail_m'] = actuals_data['statpers'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+actuals_data['time_avail_m'] = actuals_data['statpers'].dt.to_period('M').dt.to_timestamp()
 
 # Keep only one observation per ticker/time_avail_m
 # (equivalent to egen id = group(ticker); bys id time_av: keep if _n == 1)

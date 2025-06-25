@@ -16,6 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
 
 load_dotenv()
 
@@ -99,16 +100,36 @@ def main():
     full_columns = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
     daily_full = combined_data[full_columns].copy()
 
+    # Ensure datetime64[ns] format to prevent PyArrow date32[day] optimization
+    daily_full['time_d'] = pd.to_datetime(daily_full['time_d'])
+
+    # Standardize columns to match DTA file
+    daily_full = standardize_against_dta(
+        daily_full, 
+        "../Data/Intermediate/dailyCRSP.dta",
+        "dailyCRSP"
+    )
+
     # Save full daily data
-    daily_full.to_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+    daily_full.to_parquet("../pyData/Intermediate/dailyCRSP.parquet", index=False)
     print(f"Saved full daily CRSP data with {len(daily_full)} records")
 
     # Create price-only file (equivalent to second save in Stata)
     price_columns = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
     daily_prc = combined_data[price_columns].copy()
 
+    # Ensure datetime64[ns] format to prevent PyArrow date32[day] optimization
+    daily_prc['time_d'] = pd.to_datetime(daily_prc['time_d'])
+
+    # Standardize columns to match DTA file
+    daily_prc = standardize_against_dta(
+        daily_prc, 
+        "../Data/Intermediate/dailyCRSPprc.dta",
+        "dailyCRSPprc"
+    )
+
     # Save price-only data
-    daily_prc.to_parquet("../pyData/Intermediate/dailyCRSPprc.parquet")
+    daily_prc.to_parquet("../pyData/Intermediate/dailyCRSPprc.parquet", index=False)
     print(f"Saved price-only daily CRSP data with {len(daily_prc)} records")
 
     # Date range info

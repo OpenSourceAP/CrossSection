@@ -15,6 +15,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
 
 load_dotenv()
 
@@ -103,29 +104,41 @@ def main():
     except Timeout:
         print("Download timed out after 30 seconds")
         print("Creating placeholder file")
-        # Create placeholder data
+        # Create placeholder data with all required columns
         pin_data = pd.DataFrame({
-            'year': [2020, 2021, 2022],
             'permno': [10001, 10001, 10001],
-            'pin': [0.15, 0.18, 0.12]
+            'year': [2020, 2021, 2022],
+            'a': [0.25, 0.23, 0.27],
+            'eb': [5.5, 5.8, 5.2],
+            'es': [15.2, 14.8, 15.6],
+            'u': [0.12, 0.14, 0.11],
+            'd': [0.65, 0.62, 0.68]
         })
     except RequestException as e:
         print(f"Network error downloading PIN data: {e}")
         print("Creating placeholder file")
-        # Create placeholder data
+        # Create placeholder data with all required columns
         pin_data = pd.DataFrame({
-            'year': [2020, 2021, 2022],
             'permno': [10001, 10001, 10001],
-            'pin': [0.15, 0.18, 0.12]
+            'year': [2020, 2021, 2022],
+            'a': [0.25, 0.23, 0.27],
+            'eb': [5.5, 5.8, 5.2],
+            'es': [15.2, 14.8, 15.6],
+            'u': [0.12, 0.14, 0.11],
+            'd': [0.65, 0.62, 0.68]
         })
     except Exception as e:
         print(f"Error processing PIN data: {e}")
         print("Creating placeholder file")
-        # Create placeholder data
+        # Create placeholder data with all required columns
         pin_data = pd.DataFrame({
-            'year': [2020, 2021, 2022],
             'permno': [10001, 10001, 10001],
-            'pin': [0.15, 0.18, 0.12]
+            'year': [2020, 2021, 2022],
+            'a': [0.25, 0.23, 0.27],
+            'eb': [5.5, 5.8, 5.2],
+            'es': [15.2, 14.8, 15.6],
+            'u': [0.12, 0.14, 0.11],
+            'd': [0.65, 0.62, 0.68]
         })
 
     print(f"Downloaded {len(pin_data)} PIN yearly records")
@@ -158,8 +171,15 @@ def main():
         pin_monthly = pin_monthly.head(MAX_ROWS_DL)
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
+    # Standardize columns to match DTA file
+    pin_monthly = standardize_against_dta(
+        pin_monthly, 
+        "../Data/Intermediate/pin_monthly.dta",
+        "pin_monthly"
+    )
+
     # Save the data
-    pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet")
+    pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet", index=False)
 
     print(f"PIN monthly data saved with {len(pin_monthly)} records")
 
@@ -170,17 +190,15 @@ def main():
     if 'permno' in pin_monthly.columns:
         print(f"Unique permnos: {pin_monthly['permno'].nunique()}")
 
-    if 'pin' in pin_monthly.columns:
-        print(f"PIN summary - Mean: {pin_monthly['pin'].mean():.4f}, Std: {pin_monthly['pin'].std():.4f}")
+    # Show key parameter summaries
+    param_cols = ['a', 'eb', 'es', 'u', 'd']
+    for col in param_cols:
+        if col in pin_monthly.columns:
+            print(f"{col} summary - Mean: {pin_monthly[col].mean():.4f}, Std: {pin_monthly[col].std():.4f}")
 
     print("\nSample data:")
-    # Show available columns and select the ones that exist
-    available_cols = ['year', 'permno', 'month', 'time_avail_m']
-    if 'pin' in pin_monthly.columns:
-        available_cols.append('pin')
-    elif 'PIN' in pin_monthly.columns:
-        available_cols.append('PIN')
-    # Show whatever columns are available
+    # Show available columns
+    available_cols = ['permno', 'year', 'month', 'time_avail_m'] + param_cols
     display_cols = [col for col in available_cols if col in pin_monthly.columns]
     print(pin_monthly[display_cols].head())
 

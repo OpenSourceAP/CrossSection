@@ -126,7 +126,8 @@ def main():
 
     # Add time_avail_m
     combined_ratings['ratingdate'] = pd.to_datetime(combined_ratings['ratingdate'])
-    combined_ratings['time_avail_m'] = combined_ratings['ratingdate'].dt.to_period('M')
+    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+    combined_ratings['time_avail_m'] = combined_ratings['ratingdate'].dt.to_period('M').dt.to_timestamp()
 
     # For each gvkey-time_avail_m, keep last rating (by date and time)
     combined_ratings = combined_ratings.sort_values(['gvkey', 'time_avail_m', 'ratingdate', 'ratingtime'])

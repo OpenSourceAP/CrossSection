@@ -40,9 +40,10 @@ conn.close()
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
+# Convert date to monthly datetime (preserve as datetime64[ns] for parquet compatibility)
 ff_monthly['date'] = pd.to_datetime(ff_monthly['date'])
-ff_monthly['time_avail_m'] = ff_monthly['date'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+ff_monthly['time_avail_m'] = ff_monthly['date'].dt.to_period('M').dt.to_timestamp()
 
 # Drop original date column
 ff_monthly = ff_monthly.drop('date', axis=1)

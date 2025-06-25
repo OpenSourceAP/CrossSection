@@ -42,7 +42,8 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
 market_data['date'] = pd.to_datetime(market_data['date'])
-market_data['time_avail_m'] = market_data['date'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+market_data['time_avail_m'] = market_data['date'].dt.to_period('M').dt.to_timestamp()
 
 # Drop original date column
 market_data = market_data.drop('date', axis=1)

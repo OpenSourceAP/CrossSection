@@ -63,10 +63,10 @@ def main():
 
         # Create placeholder patent data
         placeholder_data = pd.DataFrame({
-            'permno': [10001, 10002, 10003],
+            'gvkey': ['001001', '001002', '001003'],
             'year': [2020, 2021, 2022],
-            'patent_count': [5, 8, 3],
-            'citation_count': [25, 40, 15]
+            'npat': [5, 8, 3],
+            'ncitscale': [25, 40, 15]
         })
 
         # Apply row limit for debugging if configured
@@ -75,7 +75,7 @@ def main():
             print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
         # Save the data
-        placeholder_data.to_parquet("../pyData/Intermediate/PatentDataProcessed.parquet")
+        placeholder_data.to_parquet("../pyData/Intermediate/PatentDataProcessed.parquet", index=False)
         print(f"Placeholder patent data saved with {len(placeholder_data)} records")
 
     print("Patent Citations processing completed")

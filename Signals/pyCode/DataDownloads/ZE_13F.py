@@ -43,7 +43,8 @@ def main():
     
     # Convert rdate to datetime and create time_avail_m
     data['time_d'] = pd.to_datetime(data['rdate'], format='%d%b%Y')
-    data['time_avail_m'] = data['time_d'].dt.to_period('M')
+    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+    data['time_avail_m'] = data['time_d'].dt.to_period('M').dt.to_timestamp()
     
     # Drop intermediate columns
     data = data.drop(['rdate', 'time_d'], axis=1)
@@ -80,7 +81,8 @@ def main():
     
     # Convert back to period format
     data = data.reset_index()
-    data['time_avail_m'] = data['time_dt'].dt.to_period('M')
+    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+    data['time_avail_m'] = data['time_dt'].dt.to_period('M').dt.to_timestamp()
     data = data.drop('time_dt', axis=1)
     
     # Drop rows where all value columns are NaN (no data was available to forward-fill)

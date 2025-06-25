@@ -14,6 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
 
 print("=" * 60, flush=True)
 print("📊 I_CRSPmonthly.py - CRSP Monthly Stock Data", flush=True)
@@ -67,7 +68,8 @@ crsp_data = crsp_data.drop('siccd', axis=1)
 
 # Create monthly date (equivalent to Stata's mofd function)
 crsp_data['date'] = pd.to_datetime(crsp_data['date'])
-crsp_data['time_avail_m'] = crsp_data['date'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+crsp_data['time_avail_m'] = crsp_data['date'].dt.to_period('M').dt.to_timestamp()
 
 # Drop original date column
 crsp_data = crsp_data.drop('date', axis=1)
@@ -112,8 +114,15 @@ crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
 # Housekeeping - drop columns
 crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
+# Standardize columns to match DTA file
+crsp_data = standardize_against_dta(
+    crsp_data, 
+    "../Data/Intermediate/monthlyCRSP.dta",
+    "monthlyCRSP"
+)
+
 # Save the data
-crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
+crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet", index=False)
 
 print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
 print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)

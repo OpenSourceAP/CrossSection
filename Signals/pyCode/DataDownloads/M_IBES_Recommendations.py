@@ -59,7 +59,8 @@ rec_data = rec_data.rename(columns={'ticker': 'tickerIBES'})
 
 # Convert anndats to datetime and create time_avail_m
 rec_data['anndats'] = pd.to_datetime(rec_data['anndats'])
-rec_data['time_avail_m'] = rec_data['anndats'].dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+rec_data['time_avail_m'] = rec_data['anndats'].dt.to_period('M').dt.to_timestamp()
 
 # Reorder columns to put important stuff first
 columns_order = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd'] + \

@@ -16,6 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
 
 print("=" * 60, flush=True)
 print(
@@ -205,12 +206,19 @@ monthly_compustat = monthly_compustat.with_columns([
 # Convert back to pandas for saving (polars parquet support is excellent)
 monthly_compustat_pd = monthly_compustat.to_pandas()
 
-# Convert time_avail_m to period for pandas compatibility
-monthly_compustat_pd['time_avail_m'] = pd.to_datetime(monthly_compustat_pd['time_avail_m']).dt.to_period('M')
+# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+monthly_compustat_pd['time_avail_m'] = pd.to_datetime(monthly_compustat_pd['time_avail_m']).dt.to_period('M').dt.to_timestamp()
+
+# Standardize columns to match DTA file
+monthly_compustat_pd = standardize_against_dta(
+    monthly_compustat_pd, 
+    "../Data/Intermediate/m_QCompustat.dta",
+    "m_QCompustat"
+)
 
 # Save the data in both pickle and parquet formats
-monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet")
-monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet")
+monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False)
+monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet", index=False)
 
 print(
     f"Compustat Quarterly data saved with "

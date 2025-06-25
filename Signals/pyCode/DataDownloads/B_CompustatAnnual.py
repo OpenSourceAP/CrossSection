@@ -16,6 +16,8 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
+import pyarrow as pa
 
 print("=" * 60, flush=True)
 print("📈 B_CompustatAnnual.py - Compustat Annual Fundamentals", flush=True)
@@ -133,6 +135,101 @@ compustat_data['xad0'] = compustat_data['xad'].fillna(0)
 compustat_data['xint0'] = compustat_data['xint'].fillna(0)
 compustat_data['xsga0'] = compustat_data['xsga'].fillna(0)
 
+
+def preserve_dtypes_for_parquet(df):
+    """
+    Preserve pandas dtypes when saving to parquet to match DTA file types.
+    Handles null-only columns and ensures consistent type preservation.
+    """
+    # Create a copy to avoid modifying original
+    df_copy = df.copy()
+    
+    # Define explicit type mapping based on DTA file structure
+    dtype_map = {
+        # Integer columns that should stay as int32
+        'gvkey': 'int32',
+        'fyear': 'int16', 
+        'permno': 'int32',
+        'lpermco': 'int32',
+        
+        # String columns that should be preserved even if null
+        'conm': 'string',
+        'tic': 'string', 
+        'cusip': 'string',
+        'cnum': 'string',
+        'cik': 'string',
+        'sic': 'string',
+        'naics': 'string',
+        
+        # Float columns that should stay float64 even if all null
+        'naicsh': 'float64',
+        'sich': 'float64',
+        'cshrc': 'float64',
+        'dlcch': 'float64', 
+        'dltis': 'float64',
+        'dltr': 'float64',
+        'drlt': 'float64',
+        'dv': 'float64',
+        'dvpd': 'float64',
+        'fatb': 'float64',
+        'fatl': 'float64',
+        'ffo': 'float64',
+        'fincf': 'float64',
+        'fopt': 'float64',
+        'gdwlia': 'float64',
+        'gdwlip': 'float64',
+        'gwo': 'float64',
+        'ivncf': 'float64',
+        'msa': 'float64',
+        'oancf': 'float64',
+        'recta': 'float64',
+        'txfo': 'float64',
+        'txfed': 'float64',
+        'wcapch': 'float64',
+        'xad': 'float64',
+        'xrd': 'float64',
+        
+        # Float32 columns that should be preserved as float32
+        'dr': 'float32',
+        'xad0': 'float32',
+        'xint0': 'float32', 
+        'xsga0': 'float32',
+        
+        # Columns that should remain float64 (not convert to int64)
+        'dm': 'float64',
+        'drc': 'float64',
+        'gdwl': 'float64',
+        'dvpa': 'float64',
+        'ob': 'float64',
+        'prstkc': 'float64',
+        'prstkcc': 'float64',
+        'scstkc': 'float64',
+        'sstk': 'float64',
+        'tstkp': 'float64',
+    }
+    
+    # Apply dtype mapping
+    for col, target_dtype in dtype_map.items():
+        if col in df_copy.columns:
+            try:
+                if target_dtype == 'string':
+                    # For string columns, ensure they're treated as string type
+                    df_copy[col] = df_copy[col].astype('string')
+                elif target_dtype.startswith('float'):
+                    # For float columns, preserve as float even if all null
+                    df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').astype(target_dtype)
+                elif target_dtype.startswith('int'):
+                    # For integer columns, handle nulls properly
+                    if df_copy[col].isna().all():
+                        # If all null, keep as nullable int
+                        df_copy[col] = df_copy[col].astype(f'{target_dtype.capitalize()}')
+                    else:
+                        df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce').astype(target_dtype)
+            except Exception as e:
+                print(f"Warning: Could not convert {col} to {target_dtype}: {e}")
+    
+    return df_copy
+
 # Load CCM linking table for merging
 ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
 
@@ -185,8 +282,17 @@ annual_data['time_avail_m'] = (
     annual_data['datadate'] + pd.DateOffset(months=6)
 )
 
-# Save annual version
-annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
+# Save annual version with preserved dtypes
+annual_data_typed = preserve_dtypes_for_parquet(annual_data)
+
+# Standardize columns to match DTA file
+annual_data_typed = standardize_against_dta(
+    annual_data_typed, 
+    "../Data/Intermediate/a_aCompustat.dta",
+    "a_aCompustat"
+)
+
+annual_data_typed.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 
 # Create monthly version (expand each row 12 times)
 print("Expanding annual data to monthly...", flush=True)
@@ -221,7 +327,18 @@ monthly_data = monthly_data.drop_duplicates(
 )
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
-monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
+
+# Save monthly version with preserved dtypes
+monthly_data_typed = preserve_dtypes_for_parquet(monthly_data)
+
+# Standardize columns to match DTA file
+monthly_data_typed = standardize_against_dta(
+    monthly_data_typed, 
+    "../Data/Intermediate/m_aCompustat.dta",
+    "m_aCompustat"
+)
+
+monthly_data_typed.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)

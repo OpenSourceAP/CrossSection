@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer import standardize_against_dta
 
 load_dotenv()
 
@@ -23,54 +24,74 @@ def main():
     # Ensure directories exist
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-    # Check for OptionMetrics.csv in Prep folder
-    om_path = Path("../Data/Prep/OptionMetrics.csv")
+    # Check for oclink.csv in Prep folder
+    om_path = Path("../Data/Prep/oclink.csv")
 
     if om_path.exists():
-        # Read the OptionMetrics file
+        # Read the OptionMetrics linking file
         om_data = pd.read_csv(om_path)
-        print(f"Loaded {len(om_data)} OptionMetrics records")
+        print(f"Loaded {len(om_data)} OptionMetrics linking records")
 
-        # Basic processing (specific processing depends on file structure)
-        if 'date' in om_data.columns:
-            om_data['date'] = pd.to_datetime(om_data['date'])
-            om_data['time_avail_m'] = om_data['date'].dt.to_period('M')
+        # Keep only records with score <= 6 (good matches)
+        if 'SCORE' in om_data.columns:
+            om_data = om_data[om_data['SCORE'] <= 6]
+            print(f"After filtering for score <= 6: {len(om_data)} records")
+
+        # Rename columns to match expected output
+        column_mapping = {
+            'PERMNO': 'permno',
+            'SCORE': 'om_score'
+        }
+        om_data = om_data.rename(columns=column_mapping)
+
+        # Keep only required columns
+        required_cols = ['secid', 'permno', 'om_score']
+        available_cols = [col for col in required_cols if col in om_data.columns]
+        om_data = om_data[available_cols]
+
+        # Keep best match (lowest score) per permno
+        if 'om_score' in om_data.columns and 'permno' in om_data.columns:
+            om_data = om_data.sort_values('om_score').groupby('permno').first().reset_index()
+
+        # Standardize columns to match DTA file
+        om_data = standardize_against_dta(
+            om_data, 
+            "../Data/Intermediate/OPTIONMETRICSCRSPLinkingTable.dta",
+            "OPTIONMETRICSCRSPLinkingTable"
+        )
 
         # Save processed data
-        om_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
+        om_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)
 
-        print(f"OptionMetrics data saved with {len(om_data)} records")
-
-        # Show summary
-        if 'time_avail_m' in om_data.columns:
-            print(f"Date range: {om_data['time_avail_m'].min()} to {om_data['time_avail_m'].max()}")
-
-        if 'permno' in om_data.columns:
-            print(f"Unique permnos: {om_data['permno'].nunique()}")
+        print(f"OptionMetrics linking data saved with {len(om_data)} records")
+        print(f"Unique permnos: {om_data['permno'].nunique()}")
 
     else:
-        print("WARNING: OptionMetrics.csv not found in ../Data/Prep/")
-        print("Creating placeholder OptionMetrics data")
+        print("WARNING: oclink.csv not found in ../Data/Prep/")
+        print("Creating placeholder OptionMetrics linking data")
 
         # Create placeholder data
         placeholder_data = pd.DataFrame({
+            'secid': [100001, 100002, 100003],
             'permno': [10001, 10002, 10003],
-            'date': ['2020-01-01', '2020-02-01', '2020-03-01'],
-            'impl_volatility': [0.25, 0.30, 0.22],
-            'option_volume': [1000, 1500, 800]
+            'om_score': [1, 2, 3]
         })
-
-        placeholder_data['date'] = pd.to_datetime(placeholder_data['date'])
-        placeholder_data['time_avail_m'] = placeholder_data['date'].dt.to_period('M')
 
         # Apply row limit for debugging if configured
         if MAX_ROWS_DL > 0:
             placeholder_data = placeholder_data.head(MAX_ROWS_DL)
             print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
+        # Standardize columns to match DTA file
+        placeholder_data = standardize_against_dta(
+            placeholder_data, 
+            "../Data/Intermediate/OPTIONMETRICSCRSPLinkingTable.dta",
+            "OPTIONMETRICSCRSPLinkingTable"
+        )
+
         # Save the data
-        placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet")
-        print(f"Placeholder OptionMetrics data saved with {len(placeholder_data)} records")
+        placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)
+        print(f"Placeholder OptionMetrics linking data saved with {len(placeholder_data)} records")
 
     print("CRSP-OptionMetrics processing completed")
 

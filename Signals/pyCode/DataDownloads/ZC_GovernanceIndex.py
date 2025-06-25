@@ -86,9 +86,10 @@ def main():
     gov_data.loc[gov_data['year'] >= 2002, 'month'] = 1
 
     # Create time_avail_m (equivalent to ym(year, month))
+    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
     gov_data['time_avail_m'] = pd.to_datetime(
         gov_data['year'].astype(str) + '-' + gov_data['month'].astype(str) + '-01'
-    ).dt.to_period('M')
+    ).dt.to_period('M').dt.to_timestamp()
 
     # Interpolate missing dates and extend one year beyond end
     print("Interpolating time series...")
@@ -133,10 +134,15 @@ def main():
     available_cols = [col for col in keep_cols if col in final_data.columns]
     final_data = final_data[available_cols]
 
+    # Convert Period objects to datetime64[ns] for parquet compatibility (Pattern 1)
+    final_data['time_avail_m'] = final_data['time_avail_m'].dt.to_timestamp()
+    
+    # Preserve int8 dtype for G column to match DTA format
+    if 'G' in final_data.columns:
+        final_data['G'] = final_data['G'].astype('int8')
+
     print(f"After interpolation: {len(final_data)} records")
 
-    # Save the data
-    
     # Apply row limit for debugging if configured
     if MAX_ROWS_DL > 0:
         final_data = final_data.head(MAX_ROWS_DL)

@@ -127,29 +127,35 @@ def main():
             print("Failed to download GNP deflator data")
             return
 
-    # Convert to monthly periods
+    # Convert to monthly periods (preserve as datetime64[ns] for parquet compatibility)
     # (equivalent to gen temp_time_m = mofd(daten))
-    deflator_data['temp_time_m'] = deflator_data['date'].dt.to_period('M')
+    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+    deflator_data['temp_time_m'] = deflator_data['date'].dt.to_period('M').dt.to_timestamp()
 
     # Expand quarterly data to monthly (equivalent to expand 3)
     monthly_data = []
     for _, row in deflator_data.iterrows():
-        base_period = row['temp_time_m']
+        # Convert to period for arithmetic, then back to timestamp
+        base_period = pd.to_datetime(row['temp_time_m']).to_period('M')
         for i in range(3):  # 3 months per quarter
             new_row = row.copy()
-            new_row['time_avail_m'] = base_period + i
+            # Add months and convert back to timestamp
+            new_row['time_avail_m'] = (base_period + i).to_timestamp()
             monthly_data.append(new_row)
 
     monthly_deflator = pd.DataFrame(monthly_data)
 
     # Add 3-month availability lag
     # (equivalent to replace time_avail_m = time_avail_m + 3)
-    monthly_deflator['time_avail_m'] = monthly_deflator['time_avail_m'] + 3
+    # Convert to period for arithmetic, then back to timestamp
+    monthly_deflator['time_avail_m'] = (
+        pd.to_datetime(monthly_deflator['time_avail_m']).dt.to_period('M') + 3
+    ).dt.to_timestamp()
 
     # Create gnpdefl variable
     # (equivalent to gen gnpdefl = GNPCTPI/100)
     monthly_deflator['gnpdefl'] = monthly_deflator['value'] / 100
-
+    
     # Keep only necessary columns
     final_data = monthly_deflator[['time_avail_m', 'gnpdefl']].copy()
 
@@ -162,7 +168,7 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
-    final_data.to_parquet("../pyData/Intermediate/GNPdefl.parquet")
+    final_data.to_parquet("../pyData/Intermediate/GNPdefl.parquet", index=False)
 
     print(f"GNP Deflator data saved with {len(final_data)} monthly records")
     date_min = final_data['time_avail_m'].min()

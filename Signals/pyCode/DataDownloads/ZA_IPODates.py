@@ -88,7 +88,8 @@ def main():
             ipo_data['temp2'] = pd.to_datetime(ipo_data['temp'], errors='coerce')
 
         # Convert to monthly period (equivalent to gen IPOdate = mofd(temp2))
-        ipo_data['IPOdate'] = ipo_data['temp2'].dt.to_period('M')
+        # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+        ipo_data['IPOdate'] = ipo_data['temp2'].dt.to_period('M').dt.to_timestamp()
 
         # Drop temporary columns
         ipo_data = ipo_data.drop(['temp', 'temp2'], axis=1)
