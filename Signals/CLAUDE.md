@@ -37,10 +37,10 @@ Signals/
 ├── pyCode/                 # Python equivalent code (WORKING DIRECTORY)
 │   ├── .venv/              # Python virtual environment
 │   ├── DataDownloads/      # Python data download scripts
-│   ├── Debug/              # Debugging and validation scripts
+│   ├── Debug/              # Temporary testing scripts and data
 │   ├── requirements.txt    # Python dependencies
 │   ├── 01_DownloadData.py  # Main download orchestrator
-│   └── test_datadownloads_comparison.py  # Testing script
+|   ├── utils/              # Utility functions and persistent testing scripts
 ├── pyData/                 # Python data files
 │   ├── Intermediate/       # Processed data from Python (.parquet)
 │   └── temp/              # Temporary Python files

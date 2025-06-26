@@ -1188,13 +1188,13 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
         all_columns.update(row.keys())
     all_columns -= exclude_cols
     
-    # Sort columns with identifier columns first
-    identifier_cols = ['gvkey', 'time_avail_m']
+    # Sort columns to match data sample table order (excluding 'source')
+    priority_cols = ['gvkey', 'time_avail_m', 'datadateq', 'fyearq', 'fqtr', 'datacqtr', 'datafqtr']
     sorted_columns = []
-    for id_col in identifier_cols:
-        if id_col in all_columns:
-            sorted_columns.append(id_col)
-            all_columns.remove(id_col)
+    for col in priority_cols:
+        if col in all_columns:
+            sorted_columns.append(col)
+            all_columns.remove(col)
     sorted_columns.extend(sorted(all_columns))
     
     # Calculate column widths (no limit for scrollable display)
