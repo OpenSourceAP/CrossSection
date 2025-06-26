@@ -45,64 +45,12 @@ Signals/
 │   ├── Intermediate/       # Processed data from Python (.parquet)
 │   └── temp/              # Temporary Python files
 ├── Logs/                   # Processing logs
+├── Journal/                # Journaling
 ```
 
 ## DataDownloads Script Mapping
 
-### Core WRDS Data (A-K)
-| Stata Script | Python Script | Output File | File Size | Description |
-|-------------|---------------|-------------|-----------|-------------|
-| `A_CCMLinkingTable.do` | `A_CCMLinkingTable.py` | CCMLinkingTable.dta | 2.7M | CRSP-Compustat linking |
-| `B_CompustatAnnual.do` | `B_CompustatAnnual.py` | m_aCompustat.dta | 3.1G | Annual fundamentals |
-| `C_CompustatQuarterly.do` | `C_CompustatQuarterly.py` | m_QCompustat.dta | 2.5G | Quarterly fundamentals |
-| `D_CompustatPensions.do` | `D_CompustatPensions.py` | CompustatPensions.dta | 10M | Pension data |
-| `E_CompustatBusinessSegments.do` | `E_CompustatBusinessSegments.py` | CompustatSegments.dta | 388M | Segment data |
-| `F_CompustatCustomerSegments.do` | `F_CompustatCustomerSegments.py` | customerMom.dta | 4.1M | Customer data |
-| `G_CompustatShortInterest.do` | `G_CompustatShortInterest.py` | monthlyShortInterest.dta | 49M | Short interest |
-| `H_CRSPDistributions.do` | `H_CRSPDistributions.py` | CRSPdistributions.dta | 65M | Distribution events |
-| `I_CRSPmonthly.do` | `I_CRSPmonthly.py` | monthlyCRSP.dta | 418M | Monthly stock data |
-| `I2_CRSPmonthlyraw.do` | `I2_CRSPmonthlyraw.py` | monthlyCRSPraw.dta | 418M | Raw monthly data |
-| `J_CRSPdaily.do` | `J_CRSPdaily.py` | dailyCRSP.dta | 3.8G | Daily stock data |
-| `K_CRSPAcquisitions.do` | `K_CRSPAcquisitions.py` | m_CRSPAcquisitions.dta | 29K | M&A events |
-
-### IBES Data (L-N)
-| Stata Script | Python Script | Output File | File Size | Description |
-|-------------|---------------|-------------|-----------|-------------|
-| `L_IBES_EPS_Unadj.do` | `L_IBES_EPS_Unadj.py` | IBES_EPS_Unadj.dta | 284M | Unadjusted EPS estimates |
-| `L2_IBES_EPS_Adj.do` | `L2_IBES_EPS_Adj.py` | IBES_EPS_Adj.dta | 919M | Adjusted EPS estimates |
-| `M_IBES_Recommendations.do` | `M_IBES_Recommendations.py` | IBES_Recommendations.dta | 54M | Analyst recommendations |
-| `N_IBES_UnadjustedActuals.do` | `N_IBES_UnadjustedActuals.py` | IBES_UnadjustedActuals.dta | 321M | Actual earnings |
-
-### Market Data (O-W)
-| Stata Script | Python Script | Output File | File Size | Description |
-|-------------|---------------|-------------|-----------|-------------|
-| `O_Daily_Fama-French.do` | `O_Daily_Fama-French.py` | dailyFF.dta | 1.0M | Daily FF factors |
-| `P_Monthly_Fama-French.do` | `P_Monthly_Fama-French.py` | monthlyFF.dta | 53K | Monthly FF factors |
-| `Q_MarketReturns.do` | `Q_MarketReturns.py` | monthlyMarket.dta | 33K | Market return indices |
-| `R_MonthlyLiquidityFactor.do` | `R_MonthlyLiquidityFactor.py` | monthlyLiquidity.dta | 9.1K | Liquidity factor |
-| `S_QFactorModel.do` | `S_QFactorModel.py` | d_qfactor.dta | 317K | Q-factor model data |
-| `T_VIX.do` | `T_VIX.py` | d_vix.dta | 104K | VIX volatility index |
-| `U_GNPDeflator.do` | `U_GNPDeflator.py` | GNPdefl.dta | 7.3K | GNP price deflator |
-| `V_TBill3M.do` | `V_TBill3M.py` | TBill3M.dta | 4.9K | 3-month Treasury bill rates |
-| `W_BrokerDealerLeverage.do` | `W_BrokerDealerLeverage.py` | brokerLev.dta | 4.0K | Broker-dealer leverage |
-
-### Credit & Alternative Data (X-Z)
-| Stata Script | Python Script | Output File | File Size | Description |
-|-------------|---------------|-------------|-----------|-------------|
-| `X_SPCreditRatings.do` | `X_SPCreditRatings.py` | m_SP_creditratings.dta | 20M | S&P credit ratings |
-| `X2_CIQCreditRatings.do` | `X2_CIQCreditRatings.py` | m_CIQ_creditratings.dta | 17M | Capital IQ ratings |
-| `ZA_IPODates.do` | `ZA_IPODates.py` | - | - | IPO dates from Ritter |
-| `ZB_PIN.do` | `ZB_PIN.py` | pin_monthly.dta | 7.5M | Probability of informed trading |
-| `ZC_GovernanceIndex.do` | `ZC_GovernanceIndex.py` | GovIndex.dta | 3.9M | Corporate governance index |
-| `ZD_CorwinSchultz.do` | `ZD_CorwinSchultz.py` | BAspreadsCorwin.dta | 43M | Corwin-Schultz bid-ask spreads |
-| `ZE_13F.do` | `ZE_13F.py` | TR_13F.dta | 52M | Thomson Reuters 13F holdings |
-| `ZF_CRSPIBESLink.do` | `ZF_CRSPIBESLink.py` | IBESCRSPLinkingTable.dta | 213K | CRSP-IBES linking |
-| `ZG_BidaskTAQ.do` | `ZG_BidaskTAQ.py` | hf_spread.dta | 31M | High-frequency bid-ask spreads |
-| `ZH_OptionMetrics.do` | `ZH_OptionMetrics.py` | OptionMetricsBH.dta | 68M | OptionMetrics Black-Scholes data |
-| `ZI_PatentCitations.do` | `ZI_PatentCitations.py` | PatentDataProcessed.dta | 6.0M | Patent citation data |
-| `ZJ_InputOutputMomentum.do` | `ZJ_InputOutputMomentum.py` | InputOutputMomentum.dta | 270M | Input-output momentum |
-| `ZK_CustomerMomentum.do` | `ZK_CustomerMomentum.py` | customerMom.dta | 4.1M | Customer momentum |
-| `ZL_CRSPOPTIONMETRICS.do` | `ZL_CRSPOPTIONMETRICS.py` | OPTIONMETRICSCRSPLinkingTable.dta | 234K | CRSP-OptionMetrics link |
+See pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md
 
 # Requirements
 
@@ -275,3 +223,63 @@ flake8 .
 # Auto-format code (if black is installed)
 black filename.py
 ```
+
+# Interaction 
+
+- Any time you interact with me, you MUST address me as "Anderoo"
+
+## Our relationship
+
+- We're coworkers. When you think of me, think of me as your colleague "Anderoo", not as "the user" or "the human"
+- We are a team of people working together. Your success is my success, and my success is yours.
+- I'm smart, but not infallible.
+- You are much better read than I am. I have more experience of the physical world than you do. Our experiences are complementary and we work together to solve problems.
+- Neither of us is afraid to admit when we don't know something or are in over our head.
+- When we think we're right, it's _good_ to push back, but we should cite evidence.
+
+# Writing code
+
+- CRITICAL: NEVER USE --no-verify WHEN COMMITTING CODE
+- We prefer simple, clean, maintainable solutions over clever or complex ones, even if the latter are more concise or performant. Readability and maintainability are primary concerns.
+- Make the smallest reasonable changes to get to the desired outcome. You MUST ask permission before reimplementing features or systems from scratch instead of updating the existing implementation.
+- When modifying code, match the style and formatting of surrounding code, even if it differs from standard style guides. Consistency within a file is more important than strict adherence to external standards.
+- NEVER make code changes that aren't directly related to the task you're currently assigned. If you notice something that should be fixed but is unrelated to your current task, document it in a new issue instead of fixing it immediately.
+- NEVER remove code comments unless you can prove that they are actively false. Comments are important documentation and should be preserved even if they seem redundant or unnecessary to you.
+- All code files should start with a brief 2 line comment explaining what the file does. Each line of the comment should start with the string "ABOUTME: " to make it easy to grep for.
+- When writing comments, avoid referring to temporal context about refactors or recent changes. Comments should be evergreen and describe the code as it is, not how it evolved or was recently changed.
+- NEVER implement a mock mode for testing or for any purpose. We always use real data and real APIs, never mock implementations.
+- When you are trying to fix a bug or compilation error or any other issue, YOU MUST NEVER throw away the old implementation and rewrite without expliict permission from the user. If you are going to do this, YOU MUST STOP and get explicit permission from the user.
+- NEVER name things as 'improved' or 'new' or 'enhanced', etc. Code naming should be evergreen. What is new today will be "old" someday.
+
+# Getting help
+
+- ALWAYS ask for clarification rather than making assumptions.
+- If you're having trouble with something, it's ok to stop and ask for help. Especially if it's something your human might be better at.
+
+# Testing
+
+- Tests MUST cover the functionality being implemented.
+- NEVER ignore the output of the system or the tests - Logs and messages often contain CRITICAL information.
+- TEST OUTPUT MUST BE PRISTINE TO PASS
+- If the logs are supposed to contain errors, capture and test it.
+- NO EXCEPTIONS POLICY: Under no circumstances should you mark any test type as "not applicable". Every project, regardless of size or complexity, MUST have unit tests, integration tests, AND end-to-end tests. If you believe a test type doesn't apply, you need the human to say exactly "I AUTHORIZE YOU TO SKIP WRITING TESTS THIS TIME"
+
+## We practice TDD. That means:
+
+- Write tests before writing the implementation code
+- Only write enough code to make the failing test pass
+- Refactor code continuously while ensuring tests still pass
+
+### TDD Implementation Process
+
+- Write a failing test that defines a desired function or improvement
+- Run the test to confirm it fails as expected
+- Write minimal code to make the test pass
+- Run the test to confirm success
+- Refactor code to improve design while keeping tests green
+- Repeat the cycle for each new feature or bugfix
+
+# Journaling
+
+- Keep track of lessons learned in Journal/
+

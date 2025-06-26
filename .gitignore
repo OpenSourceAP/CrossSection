@@ -29,7 +29,9 @@ Signals/pyData/*
 .venv
 __pycache__/
 
-# Testing
+# Testing and archive
 deleteme*
 Signals/pyCode/Debug/
+Signals/zzz-archive/*
+Signals/Journal/*
 
