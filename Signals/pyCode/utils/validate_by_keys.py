@@ -10,6 +10,8 @@ This script compares datasets between pyData/ and Data/ directories by:
 
 The validation ensures our Python data pipeline produces identical results
 to the Stata pipeline, which is essential for downstream analysis.
+
+To use: `python3 utils/validate_by_keys.py --datasets CompustatAnnual m_QCompustat`
 """
 
 import sys
@@ -1096,7 +1098,141 @@ def generate_comparison_table_text(table_data: List[Dict[str, Any]]) -> str:
         text += '  ' + ' | '.join(row_parts) + '\n'
     
     text += '```\n'
-    text += f'*Showing {min(len(table_data), 10)} of {len(table_data)} rows with {len(sorted_columns)} columns*\n\n'
+    text += f'*Showing {min(len(table_data), 10)} mismatched rows (Python vs Stata comparison) with {len(sorted_columns)} columns*\n\n'
+    
+    return text
+
+
+def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
+    """Generate text table showing numeric differences (Stata - Python) in scientific notation."""
+    if not table_data:
+        return ""
+    
+    # Group data by row index to pair Python and Stata values
+    rows_by_index = {}
+    for row in table_data:
+        idx = row.get('row_index')
+        if idx is not None:
+            if idx not in rows_by_index:
+                rows_by_index[idx] = {}
+            source = row.get('source')
+            if source:
+                rows_by_index[idx][source] = row
+    
+    # Calculate differences for rows with both Python and Stata data
+    difference_data = []
+    for idx, sources in rows_by_index.items():
+        if 'Python' in sources and 'Stata' in sources:
+            python_row = sources['Python']
+            stata_row = sources['Stata']
+            
+            diff_row = {'row_index': idx}
+            
+            # Add identifier columns to difference row for easy identification
+            identifier_cols = ['gvkey', 'time_avail_m']
+            
+            # Get all columns (excluding internal ones)
+            exclude_cols = {'source', 'row_index'}
+            all_columns = set()
+            all_columns.update(python_row.keys())
+            all_columns.update(stata_row.keys())
+            all_columns -= exclude_cols
+            
+            for col in sorted(all_columns):
+                python_val = python_row.get(col)
+                stata_val = stata_row.get(col)
+                
+                # For identifier columns, show actual values instead of differences
+                if col in identifier_cols:
+                    # Show the actual value since they match by construction
+                    diff_row[col] = python_val if python_val is not None else stata_val
+                else:
+                    # Check for exact matches first (including N/A cases)
+                    if ((pd.isna(python_val) or python_val is None or str(python_val) == 'nan') and 
+                        (pd.isna(stata_val) or stata_val is None or str(stata_val) == 'nan')):
+                        # Both are N/A/None/nan - exact match
+                        diff_row[col] = 'same'
+                    elif python_val == stata_val:
+                        # Exact value match
+                        diff_row[col] = 'same'
+                    else:
+                        # Calculate difference for numeric columns
+                        try:
+                            if (pd.api.types.is_numeric_dtype(type(python_val)) and 
+                                pd.api.types.is_numeric_dtype(type(stata_val)) and
+                                python_val is not None and stata_val is not None and
+                                not pd.isna(python_val) and not pd.isna(stata_val)):
+                                
+                                py_num = float(python_val)
+                                stata_num = float(stata_val)
+                                difference = stata_num - py_num
+                                if abs(difference) < 1e-15:  # Handle floating point precision
+                                    diff_row[col] = 'same'
+                                else:
+                                    diff_row[col] = f'{difference:.2e}'
+                            else:
+                                # Non-numeric or missing values that differ
+                                diff_row[col] = 'N/A'
+                        except (ValueError, TypeError, OverflowError):
+                            diff_row[col] = 'N/A'
+            
+            difference_data.append(diff_row)
+    
+    if not difference_data:
+        return ""
+    
+    # Get all difference columns
+    exclude_cols = {'row_index'}
+    all_columns = set()
+    for row in difference_data:
+        all_columns.update(row.keys())
+    all_columns -= exclude_cols
+    
+    # Sort columns with identifier columns first
+    identifier_cols = ['gvkey', 'time_avail_m']
+    sorted_columns = []
+    for id_col in identifier_cols:
+        if id_col in all_columns:
+            sorted_columns.append(id_col)
+            all_columns.remove(id_col)
+    sorted_columns.extend(sorted(all_columns))
+    
+    # Calculate column widths (no limit for scrollable display)
+    col_widths = {}
+    for col in sorted_columns:
+        col_widths[col] = max(len(str(col)), 
+                             max(len(str(row.get(col, 'N/A'))) for row in difference_data))
+    
+    # Build text table
+    text = '\n```\n'
+    
+    # Header row
+    header_parts = []
+    for col in sorted_columns:
+        header_parts.append(f"{col:<{col_widths[col]}}")
+    text += '  ' + ' | '.join(header_parts) + '\n'
+    
+    # Separator row
+    sep_parts = []
+    for col in sorted_columns:
+        sep_parts.append('-' * col_widths[col])
+    text += '  ' + '-+-'.join(sep_parts) + '\n'
+    
+    # Data rows
+    for i, row in enumerate(difference_data):
+        if i >= 5:  # Limit to first 5 rows for readability
+            remaining = len(difference_data) - i
+            text += f'  ... and {remaining} more rows\n'
+            break
+            
+        row_parts = []
+        for col in sorted_columns:
+            value = str(row.get(col, 'N/A'))
+            row_parts.append(f"{value:<{col_widths[col]}}")
+        text += '  ' + ' | '.join(row_parts) + '\n'
+    
+    text += '```\n'
+    text += f'*Showing differences (Stata - Python) for {min(len(difference_data), 5)} mismatched rows with {len(sorted_columns)} columns*\n\n'
     
     return text
 
@@ -1174,10 +1310,13 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                         report += f"  - {col}: {diff['match_rate']:.4f} match rate ({diff['mismatched_rows']}/{diff['total_rows']} mismatched)\n"
                         
                 
-                # Add comparison table if available
+                # Add comparison tables if available
                 if 'comparison_table_data' in details and details['comparison_table_data']:
-                    report += f"\n- **Detailed Row Comparison Table**:\n"
+                    report += f"\n- **Mismatched data sample**:\n"
                     report += generate_comparison_table_text(details['comparison_table_data'])
+                    
+                    report += f"- **Mismatched row differences**:\n"
+                    report += generate_difference_table_text(details['comparison_table_data'])
 
         report += "\n"
 
