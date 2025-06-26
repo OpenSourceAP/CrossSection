@@ -17,14 +17,18 @@ All Columns:
 
 Sample Data:
 ```
-  gvkey conm            tic    cusip     cik      sic   naics    linkprim linktype liid  lpermno lpermco linkdt    linkenddt
-  <dbl> <chr>           <chr>  <chr>     <dbl>    <dbl> <dbl>    <chr>    <chr>    <chr> <dbl>   <dbl>   <chr>     <chr>    
-1  1000 A & E PLASTIK … AE.2   000032102 NA        3089 NA       P        LU       01      25881   23369 13nov1970 30jun1978
-2  1001 A & M FOOD SER… AMFD.  000165100 7.24e+05  5812      722 P        LU       01      10015    6398 20sep1983 31jul1986
-3  1002 AAI CORP        AAIC.1 000352104 1.31e+06  3825 NA       C        LC       01      10023   22159 14dec1972 05jun1973
-4  1003 A.A. IMPORTING… ANTQ   000354100 7.30e+05  5712 4.42e+05 C        LU       01      10031    6672 07dec1983 16aug1989
+  gvkey conm            tic    cusip     cik      sic   ... linktype liid  lpermno lpermco linkdt    linkenddt
+  <dbl> <chr>           <chr>  <chr>     <dbl>    <dbl> ... <chr>    <chr> <dbl>   <dbl>   <chr>     <chr>    
+1  1000 A & E PLASTIK … AE.2   000032102 NA        3089 ... LU       01      25881   23369 13nov1970 30jun1978
+2  1001 A & M FOOD SER… AMFD.  000165100 7.24e+05  5812 ... LU       01      10015    6398 20sep1983 31jul1986
+3  1002 AAI CORP        AAIC.1 000352104 1.31e+06  3825 ... LC       01      10023   22159 14dec1972 05jun1973
+4  1003 A.A. IMPORTING… ANTQ   000354100 7.30e+05  5712 ... LU       01      10031    6672 07dec1983 16aug1989
 ```
 ... with 31,871 more rows
+
+IDENTIFIERS:
+- stock: lpermno
+- time: linkdt
 
 ### 2. CCMLinkingTable.dta
 
@@ -50,6 +54,10 @@ Sample Data:
 ```
 ... with 31,871 more rows
 
+IDENTIFIERS:
+- stock: gvkey
+- time: timeLinkStart_d
+
 ## B_CompustatAnnual.do
 
 ### 3. CompustatAnnual.csv
@@ -70,14 +78,18 @@ All Columns:
 
 Sample Data:
 ```
-  gvkey datadate  conm            fyear tic   cusip     naicsh sich  aco   act   ajex   am    ao    ap
-  <dbl> <chr>     <chr>           <dbl> <chr> <chr>     <dbl>  <dbl> <dbl> <dbl> <dbl>  <dbl> <dbl> <dbl>
-1  1000 31dec1961 A & E PLASTIK …  1961 AE.2  000032102 NA     NA    NA    NA    3.3418 NA    NA    NA
-2  1000 31dec1962 A & E PLASTIK …  1962 AE.2  000032102 NA     NA    NA    NA    3.3418 NA    NA    NA
-3  1000 31dec1963 A & E PLASTIK …  1963 AE.2  000032102 NA     NA    NA    0.408 3.2445 NA    NA    0.096
-4  1000 31dec1964 A & E PLASTIK …  1964 AE.2  000032102 NA     NA    0.015 0.718   3.09 NA    0.072 0.146
+  gvkey datadate  conm            fyear tic   cusip     ... xacc  xad   xint  xrd   xpp   xsga 
+  <dbl> <chr>     <chr>           <dbl> <chr> <chr>     ... <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+1  1000 31dec1961 A & E PLASTIK …  1961 AE.2  000032102 ... NA    NA    NA    NA    NA    NA   
+2  1000 31dec1962 A & E PLASTIK …  1962 AE.2  000032102 ... NA    NA     0.01 NA    NA    NA   
+3  1000 31dec1963 A & E PLASTIK …  1963 AE.2  000032102 ... NA    NA     0.02 NA    NA    0.346
+4  1000 31dec1964 A & E PLASTIK …  1964 AE.2  000032102 ... NA    NA    0.033 NA    NA    0.431
 ```
 ... with 516,265 more rows
+
+IDENTIFIERS:
+- stock: gvkey
+- time: datadate
 
 ### 4. a_aCompustat.dta
 
@@ -91,18 +103,24 @@ All Columns:
   7. naicsh <dbl>             8. sich <dbl>              9. aco <dbl>
  10. act <dbl>              11. ajex <dbl>             12. am <dbl>
  13. ao <dbl>               14. ap <dbl>               15. at <dbl>
+ 16. capx <dbl>             17. ceq <dbl>              18. ceqt <dbl>
+ 19. che <dbl>              20. cogs <dbl>             21. csho <dbl>
  ... (122 columns total)
 
 Sample Data:
 ```
-  gvkey datadate   conm            fyear tic   cusip     naicsh sich  aco   act    ajex  am
-  <dbl> <date>     <chr>           <dbl> <chr> <chr>     <dbl>  <dbl> <dbl> <dbl>  <dbl> <dbl>
-1  1000 1970-12-31 A & E PLASTIK …  1970 AE.2  000032102 NA     NA    0.579 21.351  1.0 0.028
-2  1000 1971-12-31 A & E PLASTIK …  1971 AE.2  000032102 NA     NA    0.546 19.688  1.0 0.028
-3  1000 1972-12-31 A & E PLASTIK …  1972 AE.2  000032102 NA     NA     0.37 11.326  1.0 NA
-4  1000 1973-12-31 A & E PLASTIK …  1973 AE.2  000032102 NA     NA    0.325 12.969  1.0 NA
+  gvkey datadate   conm            fyear tic   cusip     ... cik   sic   naics permno lpermco time_avail_m
+  <dbl> <date>     <chr>           <dbl> <chr> <chr>     ... <chr> <chr> <chr> <dbl>  <dbl>   <date>      
+1  1000 1970-12-31 A & E PLASTIK …  1970 AE.2  000032102 ...       3089         25881   23369 1971-06-01  
+2  1000 1971-12-31 A & E PLASTIK …  1971 AE.2  000032102 ...       3089         25881   23369 1972-06-01  
+3  1000 1972-12-31 A & E PLASTIK …  1972 AE.2  000032102 ...       3089         25881   23369 1973-06-01  
+4  1000 1973-12-31 A & E PLASTIK …  1973 AE.2  000032102 ...       3089         25881   23369 1974-06-01  
 ```
 ... with 302,228 more rows
+
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
 
 ### 5. m_aCompustat.dta
 
@@ -120,14 +138,18 @@ All Columns:
 
 Sample Data:
 ```
-  gvkey datadate   conm            fyear tic   cusip     naicsh sich  aco   act    ajex  am
-  <dbl> <date>     <chr>           <dbl> <chr> <chr>     <dbl>  <dbl> <dbl> <dbl>  <dbl> <dbl>
-1  1000 1971-01-31 A & E PLASTIK …  1970 AE.2  000032102 NA     NA    0.579 21.351  1.0 0.028
-2  1000 1971-02-28 A & E PLASTIK …  1970 AE.2  000032102 NA     NA    0.579 21.351  1.0 0.028
-3  1000 1971-03-31 A & E PLASTIK …  1970 AE.2  000032102 NA     NA    0.579 21.351  1.0 0.028
-4  1000 1971-04-30 A & E PLASTIK …  1970 AE.2  000032102 NA     NA    0.579 21.351  1.0 0.028
+  gvkey datadate   conm            fyear tic   cusip     ... cik   sic   naics  permno lpermco time_avail_m
+  <dbl> <date>     <chr>           <dbl> <chr> <chr>     ... <chr> <chr> <chr>  <dbl>  <dbl>   <date>      
+1 13007 1986-10-31 OPTIMUM MANUFA…  1986 OMFGA 683916100 ...       3942  339931  10000    7952 1987-04-01  
+2 13007 1986-10-31 OPTIMUM MANUFA…  1986 OMFGA 683916100 ...       3942  339931  10000    7952 1987-05-01  
+3 13007 1986-10-31 OPTIMUM MANUFA…  1986 OMFGA 683916100 ...       3942  339931  10000    7952 1987-06-01  
+4 13007 1986-10-31 OPTIMUM MANUFA…  1986 OMFGA 683916100 ...       3942  339931  10000    7952 1987-07-01  
 ```
 ... with 3,624,359 more rows
+
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
 
 ## C_CompustatQuarterly.do
 
@@ -147,14 +169,18 @@ All Columns:
 
 Sample Data:
 ```
-  gvkey datadateq fyearq fqtr datacqtr datafqtr acoq  actq  ajexq aoq   apq   atq
-  <dbl> <date>     <dbl>  <dbl> <chr>    <chr>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
-1  1000 1971-01-31   1971    1 1971Q1   1971Q1   0.546 19.69  1.0  0.53  4.326 29.33
-2  1000 1971-02-28   1971    1 1971Q1   1971Q1   0.546 19.69  1.0  0.53  4.326 29.33
-3  1000 1971-03-31   1971    1 1971Q1   1971Q1   0.546 19.69  1.0  0.53  4.326 29.33
-4  1000 1971-04-30   1971    2 1971Q2   1971Q2   0.546 19.69  1.0  0.53  4.326 29.33
+  gvkey datadateq  fyearq fqtr  datacqtr datafqtr ... capxy time_avail_m sstkyq prstkcyq oancfyq foptyq
+  <dbl> <date>     <dbl>  <dbl> <chr>    <chr>    ... <dbl> <date>       <dbl>  <dbl>    <dbl>   <dbl> 
+1  1000 1966-03-31   1966     1 1966Q1   1966Q1   ... NA    1966-06-01      0.0      0.0 NA      NA    
+2  1000 1966-03-31   1966     1 1966Q1   1966Q1   ... NA    1966-07-01      0.0      0.0 NA      NA    
+3  1000 1966-03-31   1966     1 1966Q1   1966Q1   ... NA    1966-08-01      0.0      0.0 NA      NA    
+4  1000 1966-06-30   1966     2 1966Q2   1966Q2   ... NA    1966-09-01      0.0      0.0 NA      NA    
 ```
 ... with 5,429,195 more rows
+
+IDENTIFIERS:
+- stock: gvkey
+- time: time_avail_m
 
 ## D_CompustatPensions.do
 
