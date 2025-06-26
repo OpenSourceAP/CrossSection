@@ -86,25 +86,37 @@ print(f"After removing duplicates: {len(compustat_q):,} records", flush=True)
 
 # Data availability assumed with 3 month lag and patch with rdq
 # (equivalent to gen time_avail_m = mofd(datadate) + 3)
+# Note: Stata's mofd() + 3 creates beginning-of-month dates
 compustat_q = compustat_q.with_columns([
-    # Add 3 months to datadate
-    (pl.col('datadate') + pl.duration(days=90)).alias('time_avail_m'),
-    # Convert dates to proper datetime
+    # Convert dates to proper datetime first
     pl.col('datadate').cast(pl.Date),
     pl.col('rdq').cast(pl.Date)
 ])
 
+# Convert to pandas temporarily for proper period arithmetic (matching Stata's mofd() behavior)
+temp_df = compustat_q.to_pandas()
+# Replicate Stata's mofd(datadate) + 3 logic: beginning-of-month + 3 months
+temp_df['time_avail_m'] = (
+    temp_df['datadate'].dt.to_period('M') + 3
+).dt.to_timestamp()
+
+# Convert back to polars
+compustat_q = pl.from_pandas(temp_df)
+del temp_df  # Free memory
+
 # Patch cases with earlier data availability using rdq
 # (equivalent to replace time_avail_m = mofd(rdq) if !mi(rdq) & mofd(rdq) > time_avail_m)
-compustat_q = compustat_q.with_columns(
-    pl.when(
-        pl.col('rdq').is_not_null() & 
-        (pl.col('rdq') > pl.col('time_avail_m'))
-    )
-    .then(pl.col('rdq'))
-    .otherwise(pl.col('time_avail_m'))
-    .alias('time_avail_m')
-)
+# Convert to pandas temporarily for proper period arithmetic with rdq
+temp_df = compustat_q.to_pandas()
+# Apply Stata's mofd() logic to rdq as well
+rdq_monthly = temp_df['rdq'].dt.to_period('M').dt.to_timestamp()
+# Update time_avail_m with rdq if rdq is not null and rdq > time_avail_m
+mask = temp_df['rdq'].notna() & (rdq_monthly > temp_df['time_avail_m'])
+temp_df.loc[mask, 'time_avail_m'] = rdq_monthly[mask]
+
+# Convert back to polars
+compustat_q = pl.from_pandas(temp_df)
+del temp_df  # Free memory
 
 # Drop cases with very late release (> 6 months)
 # (equivalent to drop if mofd(rdq) - mofd(datadate) > 6 & !mi(rdq))
@@ -178,13 +190,17 @@ monthly_compustat = compustat_q.join(
     how="cross"
 )
 
-# Update time_avail_m with the month offset
-monthly_compustat = monthly_compustat.with_columns(
-    (pl.col('time_avail_m') + pl.duration(days=pl.col('month_offset') * 30)).alias('time_avail_m')
-)
+# Convert to pandas temporarily for proper monthly period arithmetic
+temp_df = monthly_compustat.to_pandas()
+# Apply proper monthly period arithmetic instead of days-based calculation
+# This matches Stata's exact monthly arithmetic
+temp_df['time_avail_m'] = (
+    temp_df['time_avail_m'].dt.to_period('M') + temp_df['month_offset']
+).dt.to_timestamp()
 
-# Remove the month_offset column
-monthly_compustat = monthly_compustat.drop('month_offset')
+# Convert back to polars and remove the month_offset column
+monthly_compustat = pl.from_pandas(temp_df).drop('month_offset')
+del temp_df  # Free memory
 
 print(f"Expanded to {len(monthly_compustat):,} monthly records", flush=True)
 
@@ -206,8 +222,8 @@ monthly_compustat = monthly_compustat.with_columns([
 # Convert back to pandas for saving (polars parquet support is excellent)
 monthly_compustat_pd = monthly_compustat.to_pandas()
 
-# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
-monthly_compustat_pd['time_avail_m'] = pd.to_datetime(monthly_compustat_pd['time_avail_m']).dt.to_period('M').dt.to_timestamp()
+# time_avail_m is already in proper datetime64[ns] format from period arithmetic above
+# No additional conversion needed - it already matches Stata's format
 
 # Standardize columns to match DTA file
 monthly_compustat_pd = standardize_against_dta(
