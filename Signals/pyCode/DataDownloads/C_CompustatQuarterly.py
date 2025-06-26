@@ -104,9 +104,9 @@ temp_df['time_avail_m'] = (
 compustat_q = pl.from_pandas(temp_df)
 del temp_df  # Free memory
 
-# Patch cases with earlier data availability using rdq
+# Patch cases with later data availability using rdq
 # (equivalent to replace time_avail_m = mofd(rdq) if !mi(rdq) & mofd(rdq) > time_avail_m)
-# Convert to pandas temporarily for proper period arithmetic with rdq
+# This handles cases where actual filing date is later than the 3-month assumption
 temp_df = compustat_q.to_pandas()
 # Apply Stata's mofd() logic to rdq as well
 rdq_monthly = temp_df['rdq'].dt.to_period('M').dt.to_timestamp()
@@ -120,12 +120,19 @@ del temp_df  # Free memory
 
 # Drop cases with very late release (> 6 months)
 # (equivalent to drop if mofd(rdq) - mofd(datadate) > 6 & !mi(rdq))
-compustat_q = compustat_q.filter(
-    ~(
-        pl.col('rdq').is_not_null() &
-        ((pl.col('rdq') - pl.col('datadate')).dt.total_days() > 180)
-    )
-)
+# Need to convert to pandas temporarily to replicate Stata's month arithmetic
+temp_df = compustat_q.to_pandas()
+# Calculate month difference using period arithmetic to match Stata exactly
+rdq_months = temp_df['rdq'].dt.to_period('M')
+datadate_months = temp_df['datadate'].dt.to_period('M')
+# Convert period difference to integer months
+month_diff = (rdq_months - datadate_months).apply(lambda x: x.n if pd.notna(x) else 0)
+# Drop rows where month difference > 6 and rdq is not null
+drop_mask = temp_df['rdq'].notna() & (month_diff > 6)
+temp_df = temp_df[~drop_mask]
+# Convert back to polars
+compustat_q = pl.from_pandas(temp_df)
+del temp_df  # Free memory
 
 print(f"After removing late releases: {len(compustat_q):,} records", flush=True)
 
