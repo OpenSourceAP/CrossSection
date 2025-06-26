@@ -79,6 +79,64 @@ print(
 # 6 digit CUSIP
 compustat_data['cnum'] = compustat_data['cusip'].str[:6]
 
+# Load CCM linking table for merging
+ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
+
+# Drop overlapping columns from CCM to avoid _x/_y suffixes
+ccm_columns_to_drop = ['conm', 'tic', 'cusip'] 
+for col in ccm_columns_to_drop:
+    if col in ccm_data.columns:
+        ccm_data = ccm_data.drop(col, axis=1)
+
+# Merge with CCM linking table
+compustat_data = compustat_data.merge(ccm_data, on='gvkey', how='inner')
+print(
+    f"After merging with CCM links: {len(compustat_data)} records",
+    flush=True
+)
+
+# Use only if data date is within the validity period of the link
+compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
+compustat_data['timeLinkStart_d'] = pd.to_datetime(
+    compustat_data['timeLinkStart_d']
+)
+compustat_data['timeLinkEnd_d'] = pd.to_datetime(
+    compustat_data['timeLinkEnd_d']
+)
+
+valid_link = (
+    (compustat_data['timeLinkStart_d'] <= compustat_data['datadate']) &
+    (compustat_data['datadate'] <= compustat_data['timeLinkEnd_d'])
+)
+
+compustat_data = compustat_data[valid_link]
+print(
+    f"After filtering for valid link dates: {len(compustat_data)} records",
+    flush=True
+)
+
+# Save CompustatAnnual.csv BEFORE any derived variables or zero-fill (matches Stata line 30)
+compustat_csv_data = compustat_data.copy()
+
+# Convert gvkey to integer to match Stata format
+compustat_csv_data['gvkey'] = pd.to_numeric(compustat_csv_data['gvkey'])
+
+# Convert datadate to string format to match Stata expectations
+compustat_csv_data['datadate'] = compustat_csv_data['datadate'].dt.strftime('%d%b%Y').str.lower()
+
+# Remove extra columns from CCMLinkingTable merge 
+ccm_extra_columns = ['timeLinkStart_d', 'timeLinkEnd_d', 'cik', 'linkprim', 'linktype', 'sic', 'cnum', 'permno', 'liid', 'naics', 'lpermco']
+for col in ccm_extra_columns:
+    if col in compustat_csv_data.columns:
+        compustat_csv_data = compustat_csv_data.drop(col, axis=1)
+
+# Save CompustatAnnual.csv with raw missing values (matching Stata's export at line 30)
+compustat_csv_data.to_csv(
+    "../pyData/Intermediate/CompustatAnnual.csv", index=False
+)
+
+print(f"CompustatAnnual.csv saved with {len(compustat_csv_data)} records", flush=True)
+
 # Create derived variables and fill missing values
 # Deferred revenue (dr) - replicate Stata logic exactly
 compustat_data['dr'] = np.nan
@@ -120,12 +178,14 @@ compustat_data.loc[mask_dc2, 'dc'] = compustat_data.loc[mask_dc2, 'dcpstk']
 mask_dc3 = compustat_data['dc'].isna()
 compustat_data.loc[mask_dc3, 'dc'] = compustat_data.loc[mask_dc3, 'dcvt']
 
-# Variables where missing is assumed to be 0 (including dc)
+# Variables where missing is assumed to be 0 (exact match to Stata logic in lines 63-69)
+# From Stata: nopi dvt ob dm dc aco ap intan ao lco lo rect invt drc spi gdwl che dp act lct tstkp dvpa scstkc sstk mib ivao prstkc prstkcc txditc ivst
 zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
                   'lco', 'lo', 'rect', 'invt', 'drc', 'spi', 'gdwl', 'che',
                   'dp', 'act', 'lct', 'tstkp', 'dvpa', 'scstkc', 'sstk',
                   'mib', 'ivao', 'prstkc', 'prstkcc', 'txditc', 'ivst']
 
+# Apply zero-fill logic exactly as in Stata
 for var in zero_fill_vars:
     if var in compustat_data.columns:
         compustat_data[var] = compustat_data[var].fillna(0)
@@ -230,43 +290,7 @@ def preserve_dtypes_for_parquet(df):
     
     return df_copy
 
-# Load CCM linking table for merging
-ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
-
-# Drop overlapping columns from CCM to avoid _x/_y suffixes
-ccm_columns_to_drop = ['conm', 'tic', 'cusip'] 
-for col in ccm_columns_to_drop:
-    if col in ccm_data.columns:
-        ccm_data = ccm_data.drop(col, axis=1)
-
-# Merge with CCM linking table
-compustat_data = compustat_data.merge(ccm_data, on='gvkey', how='inner')
-print(
-    f"After merging with CCM links: {len(compustat_data)} records",
-    flush=True
-)
-
-# Use only if data date is within the validity period of the link
-compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
-compustat_data['timeLinkStart_d'] = pd.to_datetime(
-    compustat_data['timeLinkStart_d']
-)
-compustat_data['timeLinkEnd_d'] = pd.to_datetime(
-    compustat_data['timeLinkEnd_d']
-)
-
-valid_link = (
-    (compustat_data['timeLinkStart_d'] <= compustat_data['datadate']) &
-    (compustat_data['datadate'] <= compustat_data['timeLinkEnd_d'])
-)
-
-compustat_data = compustat_data[valid_link]
-print(
-    f"After filtering for valid link dates: {len(compustat_data)} records",
-    flush=True
-)
-
-# Save processed data to parquet format (equivalent to Stata's CompustatAnnual.csv)
+# Also save full parquet version for internal use (with all derived variables)
 compustat_data.to_parquet(
     "../pyData/Intermediate/CompustatAnnual.parquet", index=False
 )
@@ -277,10 +301,11 @@ annual_data = compustat_data.drop(columns=[
 ])
 annual_data['gvkey'] = pd.to_numeric(annual_data['gvkey'])
 
-# Assume 6 month reporting lag
+# Assume 6 month reporting lag - replicate Stata's mofd(datadate) + 6 logic
+# Stata's mofd() converts to beginning of month, then adds 6 months
 annual_data['time_avail_m'] = (
-    annual_data['datadate'] + pd.DateOffset(months=6)
-)
+    annual_data['datadate'].dt.to_period('M') + 6
+).dt.to_timestamp()
 
 # Save annual version with preserved dtypes
 annual_data_typed = preserve_dtypes_for_parquet(annual_data)
@@ -294,22 +319,22 @@ annual_data_typed = standardize_against_dta(
 
 annual_data_typed.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 
-# Create monthly version (expand each row 12 times)
+# Create monthly version (expand each row 12 times) - replicate Stata logic exactly
 print("Expanding annual data to monthly...", flush=True)
 monthly_data = annual_data.copy()
 monthly_data = pd.concat([monthly_data] * 12, ignore_index=True)
 
-# Create time series for each observation
-monthly_data = monthly_data.sort_values(
-    ['gvkey', 'time_avail_m']
-).reset_index(drop=True)
-monthly_data['month_offset'] = monthly_data.groupby(
-    ['gvkey', 'datadate']
-).cumcount()
+# Replicate Stata's logic: bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
+monthly_data = monthly_data.sort_values(['gvkey', 'time_avail_m']).reset_index(drop=True)
+monthly_data['tempTime'] = monthly_data['time_avail_m']
+monthly_data['month_offset'] = monthly_data.groupby(['gvkey', 'tempTime']).cumcount()
+
+# Add months using period arithmetic to match Stata's monthly format
 monthly_data['time_avail_m'] = (
-    monthly_data['time_avail_m'] +
-    pd.to_timedelta(monthly_data['month_offset'] * 30.44, unit='D')
-)
+    monthly_data['time_avail_m'].dt.to_period('M') + monthly_data['month_offset']
+).dt.to_timestamp()
+
+monthly_data = monthly_data.drop('tempTime', axis=1)
 
 # Keep only the most recent info for duplicate time periods
 monthly_data = monthly_data.sort_values(

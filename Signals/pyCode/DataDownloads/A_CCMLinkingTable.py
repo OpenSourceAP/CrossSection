@@ -50,20 +50,9 @@ if MAX_ROWS_DL > 0:
 ccm_data = pd.read_sql_query(QUERY, conn)
 conn.close()
 
-# Apply Stata's implicit filtering logic:
-# Stata excludes the 2 most recent records with missing linkenddt
-# This matches the exact behavior observed in the original Stata script
+# Convert date columns to proper datetime format
 ccm_data['linkdt'] = pd.to_datetime(ccm_data['linkdt'])
 ccm_data['linkenddt'] = pd.to_datetime(ccm_data['linkenddt'])
-
-# Find the 2 most recent records with missing linkenddt and exclude them
-missing_enddt = ccm_data[ccm_data['linkenddt'].isna()].copy()
-if len(missing_enddt) >= 2:
-    # Sort by linkdt descending to find the 2 most recent
-    missing_enddt_sorted = missing_enddt.sort_values('linkdt', ascending=False)
-    top_2_indices = missing_enddt_sorted.head(2).index
-    # Exclude these 2 records to match Stata's behavior
-    ccm_data = ccm_data[~ccm_data.index.isin(top_2_indices)]
 
 # Rename columns to match expected format from Stata
 ccm_data = ccm_data.rename(columns={
@@ -71,6 +60,15 @@ ccm_data = ccm_data.rename(columns={
     'linkenddt': 'timeLinkEnd_d',
     'lpermno': 'permno'
 })
+
+# Convert NaN to empty strings to match Stata behavior
+ccm_data['naics'] = ccm_data['naics'].fillna('')
+ccm_data['cik'] = ccm_data['cik'].fillna('')
+
+# Ensure data type consistency
+ccm_data['gvkey'] = ccm_data['gvkey'].astype(str)
+ccm_data['naics'] = ccm_data['naics'].astype(str)
+ccm_data['cik'] = ccm_data['cik'].astype(str)
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
