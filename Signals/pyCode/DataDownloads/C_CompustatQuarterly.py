@@ -4,6 +4,8 @@ Compustat Quarterly data download script.
 
 Python equivalent of C_CompustatQuarterly.do
 Downloads Compustat quarterly fundamental data and creates monthly version.
+
+tbc: check ivaoq is at least sometimes stored as int64 instead of float64
 """
 
 import os
@@ -155,9 +157,15 @@ zero_fill_vars = [
 ]
 
 # Fill missing values with 0 using polars
-zero_fill_exprs = [
-    pl.col(var).fill_null(0) for var in zero_fill_vars if var in compustat_q.columns
-]
+zero_fill_exprs = []
+for var in zero_fill_vars:
+    if var in compustat_q.columns:
+        if var == 'ivaoq':
+            # Explicit float casting for ivaoq to match Stata's float64 type
+            zero_fill_exprs.append(pl.col(var).fill_null(0).cast(pl.Float64))
+        else:
+            zero_fill_exprs.append(pl.col(var).fill_null(0))
+
 if zero_fill_exprs:
     compustat_q = compustat_q.with_columns(zero_fill_exprs)
 
