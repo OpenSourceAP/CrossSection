@@ -206,6 +206,10 @@ Sample Data:
 ```
 ... with 105,129 more rows
 
+IDENTIFIERS:
+- stock: gvkey
+- time: datadate
+
 ## E_CompustatBusinessSegments.do
 
 ### 8. CompustatSegments.dta
@@ -229,6 +233,10 @@ Sample Data:
 4  1000 1979-12-31 BUSSEG    10  37.75 1980-03-19 NA     3089 INJECTION MOLDED PLASTIC PRODUCTS
 ```
 ... with 2,766,337 more rows
+
+IDENTIFIERS:
+- stock: gvkey
+- time: datadate
 
 ## F_CompustatCustomerSegments.do
 
@@ -256,6 +264,10 @@ Sample Data:
 ```
 ... with 61,171 more rows
 
+IDENTIFIERS:
+- stock: gvkey
+- time: datadate
+
 ## G_CompustatShortInterest.do
 
 ### 10. monthlyShortInterest.dta
@@ -278,6 +290,10 @@ Sample Data:
 4  1000 1988-10-31  0.03     0.03
 ```
 ... with 859,084 more rows
+
+IDENTIFIERS:
+- stock: gvkey
+- time: time_avail_m
 
 ## H_CRSPDistributions.do
 
@@ -303,6 +319,10 @@ Sample Data:
 ```
 ... with 1,447,768 more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: exdt
+
 ## I_CRSPmonthly.do
 
 ### 12. mCRSP.csv
@@ -327,6 +347,10 @@ Sample Data:
 ```
 ... with 4,219,644 more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: date
+
 ### 13. monthlyCRSP.dta
 
 Size: 417.71 MB
@@ -348,6 +372,10 @@ Sample Data:
 4  10001 1972-04-28 -0.038 -0.038    25   6.25  1600   10.0     3
 ```
 ... with 4,219,644 more rows
+
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
 
 ## I2_CRSPmonthlyraw.do
 
@@ -373,6 +401,10 @@ Sample Data:
 ```
 ... with 4,219,644 more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
+
 ## J_CRSPdaily.do
 
 ### 15. dailyCRSP.dta
@@ -397,6 +429,10 @@ Sample Data:
 ```
 ... with 107,662,957 more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: time_d
+
 ### 16. dailyCRSPprc.dta
 
 Size: 2784.86 MB
@@ -417,6 +453,10 @@ Sample Data:
 4  10030 1932-01-02 -16.75    628 2.3957
 ```
 ... with 107,662,957 more rows
+
+IDENTIFIERS:
+- stock: permno
+- time: time_d
 
 ## K_CRSPAcquisitions.do
 
@@ -440,6 +480,9 @@ permno SpinoffCo
 4  13856         1
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: permno
 
 ## L_IBES_EPS_Unadj.do
 
@@ -470,6 +513,10 @@ tickerIBES statpers   fpi   numest medest meanest stdev fpedats    time_avail_m
 4 0000       2014-07-17 1          3   0.58    0.56  0.05 2014-12-31 2014-07-01
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: tickerIBES
+- time: time_avail_m
 
 ## L2_IBES_EPS_Adj.do
 
@@ -506,6 +553,10 @@ fpi   tickerIBES statpers   fpedats    anndats_act meanest actual medest stdev n
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: tickerIBES
+- time: time_avail_m
+
 ## M_IBES_Recommendations.do
 
 ### 20. IBES_Recommendations.dta
@@ -537,6 +588,10 @@ tickerIBES amaskcd anndats    time_avail_m ireccd estimid  ereccd etext      ite
 4 0000         80474 2014-03-10 2014-03-01        1 RAYMOND  1      STRONG BUY STRONG BUY    1929 2014-03-11
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: tickerIBES
+- time: time_avail_m
 
 ## N_IBES_UnadjustedActuals.do
 
@@ -578,6 +633,10 @@ tickerIBES cusip    oftic cname           measure fy0a  curcode fvyrgro fvyrsta 
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: tickerIBES
+- time: time_avail_m
+
 ## O_Daily_Fama-French.do
 
 ### 22. dailyFF.dta
@@ -604,6 +663,9 @@ time_d     mktrf  smb     hml     rf     umd
 4 1926-07-07 0.0009 -0.0058  0.0002 0.0001 NA
 ```
 ... with more rows
+
+IDENTIFIERS:
+- time: time_d
 
 ## P_Monthly_Fama-French.do
 
@@ -632,6 +694,9 @@ mktrf   smb     hml     rf     umd   time_avail_m
 ```
 ... with more rows
 
+IDENTIFIERS:
+- time: time_avail_m
+
 ## Q_MarketReturns.do
 
 ### 24. monthlyMarket.dta
@@ -657,6 +722,9 @@ vwretd ewretd  usdval   time_avail_m
 ```
 ... with more rows
 
+IDENTIFIERS:
+- time: time_avail_m
+
 ## R_MonthlyLiquidityFactor.do
 
 ### 25. monthlyLiquidity.dta
@@ -679,6 +747,9 @@ ps_innov time_avail_m
 4   0.0282 1962-11-01
 ```
 ... with more rows
+
+IDENTIFIERS:
+- time: time_avail_m
 
 ## S_QFactorModel.do
 
@@ -707,6 +778,9 @@ r_f_qfac r_mkt_qfac r_me_qfac r_ia_qfac      r_roe_qfac   time_d
 ```
 ... with more rows
 
+IDENTIFIERS:
+- time: time_d
+
 ## T_VIX.do
 
 ### 27. d_vix.dta
@@ -731,6 +805,9 @@ time_d     vix   dVIX
 ```
 ... with more rows
 
+IDENTIFIERS:
+- time: time_d
+
 ## U_GNPDeflator.do
 
 ### 28. GNPdefl.dta
@@ -753,6 +830,9 @@ time_avail_m gnpdefl
 4 1947-07-01   0.112799995
 ```
 ... with more rows
+
+IDENTIFIERS:
+- time: time_avail_m
 
 ## V_TBill3M.do
 
@@ -778,6 +858,9 @@ TbillRate3M  qtr   year
 ```
 ... with more rows
 
+IDENTIFIERS:
+- time: time_avail_m
+
 ## W_BrokerDealerLeverage.do
 
 ### 30. brokerLev.dta
@@ -802,6 +885,9 @@ qtr   year  levfac
 ```
 ... with more rows
 
+IDENTIFIERS:
+- time: time_avail_m
+
 ## X_SPCreditRatings.do
 
 ### 31. m_SP_creditratings.dta
@@ -825,6 +911,10 @@ gvkey time_avail_m credrat
 4  1003 2004-09-01         0
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: gvkey
+- time: time_avail_m
 
 ## X2_CIQCreditRatings.do
 
@@ -858,11 +948,18 @@ gvkey ticker ratingdate ratingtime ratingactionword currentratingsymbol entity_i
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: gvkey
+- time: time_avail_m
+
 ## ZA_IPODates.do
 
 ### 33. IPODates.dta
 
 *File not found in Data/Intermediate/ directory*
+
+IDENTIFIERS:
+- stock: ticker
 
 ## ZB_PIN.do
 
@@ -895,6 +992,10 @@ permno year  a          eb        es        u         d         month modate    
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
+
 ## ZC_GovernanceIndex.do
 
 ### 35. GovIndex.dta
@@ -919,6 +1020,10 @@ ticker G     time_avail_m
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: ticker
+- time: time_avail_m
+
 ## ZD_CorwinSchultz.do
 
 ### 36. BAspreadsCorwin.dta
@@ -942,6 +1047,10 @@ permno BidAskSpread time_avail_m
 4  10001   0.04141999 1986-12-01
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
 
 ## ZE_13F.do
 
@@ -971,6 +1080,10 @@ permno numinstown dbreadth instown_perc maxinstown_perc numinstblock time_avail_
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
+
 ## ZF_CRSPIBESLink.do
 
 ### 38. IBESCRSPLinkingTable.dta
@@ -993,6 +1106,9 @@ tickerIBES permno
 4 GACO        10008
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: permno
 
 ## ZG_BidaskTAQ.do
 
@@ -1018,6 +1134,10 @@ permno time_avail_m hf_spread
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
+
 ## ZH_OptionMetrics.do
 
 ### 40. OptionMetricsVolume.dta
@@ -1042,6 +1162,10 @@ secid optvolume optinterest time_avail_m
 4  5005      3393       56422 1996-04-01
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: secid
+- time: time_avail_m
 
 ### 41. OptionMetricsVolSurf.dta
 
@@ -1069,6 +1193,10 @@ secid days  delta cp_flag time_avail_m date       impl_vol
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: secid
+- time: time_avail_m
+
 ### 42. OptionMetricsXZZ.dta
 
 Size: 5.84 MB
@@ -1090,6 +1218,10 @@ secid time_avail_m skew1
 4  5015 1996-05-01    0.06860217
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: secid
+- time: time_avail_m
 
 ### 43. OptionMetricsBH.dta
 
@@ -1117,6 +1249,10 @@ secid time_avail_m cp_flag mean_imp_vol mean_day  nobs  ticker
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: secid
+- time: time_avail_m
+
 ## ZI_PatentCitations.do
 
 ### 44. PatentDataProcessed.dta
@@ -1141,6 +1277,9 @@ gvkey    year     npat  ncitscale
 4 1.00e+03 1.98e+03     0         0
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: gvkey
 
 ## ZJ_InputOutputMomentum.do
 
@@ -1169,6 +1308,10 @@ gvkey time_avail_m retmatchcustomer portindcustomer retmatchsupplier portindsupp
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: gvkey
+- time: time_avail_m
+
 ## ZK_CustomerMomentum.do
 
 ### 46. customerMom.dta
@@ -1193,6 +1336,10 @@ permno custmom   time_avail_m
 ```
 ... with more rows
 
+IDENTIFIERS:
+- stock: permno
+- time: time_avail_m
+
 ## ZL_CRSPOPTIONMETRICS.do
 
 ### 47. OPTIONMETRICSCRSPLinkingTable.dta
@@ -1216,4 +1363,7 @@ secid  permno om_score
 4   6518  10011        1
 ```
 ... with more rows
+
+IDENTIFIERS:
+- stock: permno
 
