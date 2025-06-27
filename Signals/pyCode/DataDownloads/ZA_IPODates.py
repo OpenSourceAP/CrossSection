@@ -61,7 +61,9 @@ def main():
         ipo_data = ipo_data.rename(columns={'Founding': 'FoundingYear'})
 
     # Handle different offer date column names
-    if 'Offerdate' in ipo_data.columns:
+    if 'offer date' in ipo_data.columns:
+        ipo_data = ipo_data.rename(columns={'offer date': 'OfferDate'})
+    elif 'Offerdate' in ipo_data.columns:
         ipo_data = ipo_data.rename(columns={'Offerdate': 'OfferDate'})
     elif 'offerdate' in ipo_data.columns:
         ipo_data = ipo_data.rename(columns={'offerdate': 'OfferDate'})
@@ -69,6 +71,8 @@ def main():
     # Handle different CRSP permno column names
     if 'CRSPpermanentID' in ipo_data.columns:
         ipo_data = ipo_data.rename(columns={'CRSPpermanentID': 'permno'})
+    elif 'CRSP Perm' in ipo_data.columns:
+        ipo_data = ipo_data.rename(columns={'CRSP Perm': 'permno'})
     elif 'CRSPperm' in ipo_data.columns:
         ipo_data = ipo_data.rename(columns={'CRSPperm': 'permno'})
 
