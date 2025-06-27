@@ -100,7 +100,7 @@ def main():
     print("=" * 50)
     
     # Check if we're in the right directory
-    if not Path("CLAUDE.md").exists():
+    if not Path("master.py").exists():
         print("Error: Please run this script from the pyCode directory")
         sys.exit(1)
     
