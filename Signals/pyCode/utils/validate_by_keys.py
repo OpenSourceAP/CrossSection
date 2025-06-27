@@ -1554,7 +1554,7 @@ def main():
     parser.add_argument(
         '--maxrows',
         type=int,
-        default=None,
+        default=1000,
         help='Maximum number of rows to load from each dataset (default: unlimited)'
     )
 

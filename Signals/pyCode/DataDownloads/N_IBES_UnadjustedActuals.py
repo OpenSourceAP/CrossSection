@@ -88,7 +88,7 @@ for ticker in tickers:
         fill_vars = ['int0a', 'fy0a', 'shoutIBESUnadj', 'ticker']
         for var in fill_vars:
             if var in ticker_data.columns:
-                ticker_data[var] = ticker_data[var].fillna(method='ffill')
+                ticker_data[var] = ticker_data[var].ffill()
 
     filled_data.append(ticker_data)
 
@@ -109,6 +109,19 @@ actuals_data['tickerIBES'] = actuals_data['tickerIBES'].astype(str)
 
 # Ensure time_avail_m is properly datetime64[ns] format after time series operations
 actuals_data['time_avail_m'] = pd.to_datetime(actuals_data['time_avail_m'])
+
+# Convert missing values to match Stata format
+# String columns: None → empty string
+string_columns = ['curr_price', 'measure', 'cusip', 'cname', 'curcode', 'oftic']
+for col in string_columns:
+    if col in actuals_data.columns:
+        actuals_data[col] = actuals_data[col].fillna('')
+
+# Date columns: None → pd.NaT (ensure proper datetime type)
+date_columns = ['prdays', 'fy0edats', 'int0dats']
+for col in date_columns:
+    if col in actuals_data.columns:
+        actuals_data[col] = pd.to_datetime(actuals_data[col])
 
 # Save the data
 actuals_data.to_parquet("../pyData/Intermediate/IBES_UnadjustedActuals.parquet")

@@ -335,6 +335,11 @@ class InputOutputMomentum:
         """Generate momentum signals using I-O weights."""
         logger.info(f"Generating {momentum_type} momentum signals...")
         
+        # Check if indret_df is empty
+        if len(indret_df) == 0:
+            logger.warning(f"Empty industry returns data for {momentum_type} momentum - returning empty result")
+            return pd.DataFrame(columns=['year', 'month', 'beaind', 'retmatch', 'portind'])
+        
         # Remove self-industry weights
         indweight_filtered = indweight_df[indweight_df['beaind'] != indweight_df['beaindmatch']]
         
@@ -360,12 +365,23 @@ class InputOutputMomentum:
         
         momentum_data = momentum_data.dropna(subset=['retmatch'])
         
+        # Check if momentum_data is empty after filtering
+        if len(momentum_data) == 0:
+            logger.warning(f"No valid momentum data after filtering for {momentum_type} - returning empty result")
+            return pd.DataFrame(columns=['year', 'month', 'beaind', 'retmatch', 'portind'])
+        
         # Calculate weighted average returns
         matchret = momentum_data.groupby(['year', 'month', 'beaind']).apply(
             lambda x: np.average(x['retmatch'], weights=x['weight']),
             include_groups=False
         ).reset_index()
-        matchret.columns = ['year', 'month', 'beaind', 'retmatch']
+        
+        # Handle column naming based on actual result
+        if len(matchret.columns) == 4:
+            matchret.columns = ['year', 'month', 'beaind', 'retmatch']
+        else:
+            logger.warning(f"Unexpected number of columns in groupby result: {len(matchret.columns)}. Columns: {list(matchret.columns)}")
+            return pd.DataFrame(columns=['year', 'month', 'beaind', 'retmatch', 'portind'])
         
         # Create portfolio rankings
         matchret['portind'] = matchret.groupby(['year', 'month'])['retmatch'].transform(
@@ -379,27 +395,46 @@ class InputOutputMomentum:
         """Create final output with customer and supplier momentum combined."""
         logger.info("Creating final output...")
         
+        # Check if we have valid data
+        if len(comp_mapped) == 0:
+            logger.warning("No mapped companies - returning empty output")
+            return pd.DataFrame(columns=['gvkey', 'time_avail_m', 'retmatchcustomer', 
+                                       'portindcustomer', 'retmatchsupplier', 'portindsupplier'])
+        
+        if len(customer_momentum) == 0 and len(supplier_momentum) == 0:
+            logger.warning("No momentum data available - returning empty output")
+            return pd.DataFrame(columns=['gvkey', 'time_avail_m', 'retmatchcustomer', 
+                                       'portindcustomer', 'retmatchsupplier', 'portindsupplier'])
+        
         # Create monthly grid for all firm-years
         months_df = pd.DataFrame({'month_avail': range(1, 13)})
         firm_months = comp_mapped.merge(months_df, how='cross')
         
-        # Merge customer momentum
-        firm_months = firm_months.merge(
-            customer_momentum[['year', 'month', 'beaind', 'retmatch', 'portind']],
-            left_on=['year_avail', 'month_avail', 'beaind'],
-            right_on=['year', 'month', 'beaind'],
-            how='left',
-            suffixes=('', '_customer')
-        )
+        # Merge customer momentum (if available)
+        if len(customer_momentum) > 0:
+            firm_months = firm_months.merge(
+                customer_momentum[['year', 'month', 'beaind', 'retmatch', 'portind']],
+                left_on=['year_avail', 'month_avail', 'beaind'],
+                right_on=['year', 'month', 'beaind'],
+                how='left',
+                suffixes=('', '_customer')
+            )
+        else:
+            firm_months['retmatch_customer'] = np.nan
+            firm_months['portind_customer'] = np.nan
         
-        # Merge supplier momentum
-        firm_months = firm_months.merge(
-            supplier_momentum[['year', 'month', 'beaind', 'retmatch', 'portind']],
-            left_on=['year_avail', 'month_avail', 'beaind'],
-            right_on=['year', 'month', 'beaind'],
-            how='left',
-            suffixes=('_customer', '_supplier')
-        )
+        # Merge supplier momentum (if available)
+        if len(supplier_momentum) > 0:
+            firm_months = firm_months.merge(
+                supplier_momentum[['year', 'month', 'beaind', 'retmatch', 'portind']],
+                left_on=['year_avail', 'month_avail', 'beaind'],
+                right_on=['year', 'month', 'beaind'],
+                how='left',
+                suffixes=('_customer', '_supplier')
+            )
+        else:
+            firm_months['retmatch_supplier'] = np.nan
+            firm_months['portind_supplier'] = np.nan
         
         # Create time_avail_m
         firm_months['time_avail_m'] = pd.to_datetime(
@@ -416,9 +451,19 @@ class InputOutputMomentum:
             'portind_supplier': 'portindsupplier'
         }
         
-        output_df = firm_months[list(final_columns.keys())].rename(columns=final_columns)
-        output_df = output_df.dropna(subset=['retmatchcustomer', 'retmatchsupplier'])
+        # Check which columns actually exist
+        available_columns = [col for col in final_columns.keys() if col in firm_months.columns]
+        if len(available_columns) < len(final_columns):
+            missing_cols = set(final_columns.keys()) - set(available_columns)
+            logger.warning(f"Missing columns in final output: {missing_cols}")
+            # Add missing columns with NaN
+            for col in missing_cols:
+                if col not in firm_months.columns:
+                    firm_months[col] = np.nan
         
+        output_df = firm_months[list(final_columns.keys())].rename(columns=final_columns)
+        
+        # Keep all rows (don't filter out NaN) to maintain structure
         logger.info(f"Final output: {len(output_df):,} rows")
         return output_df
     

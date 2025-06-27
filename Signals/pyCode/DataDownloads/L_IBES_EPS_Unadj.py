@@ -54,6 +54,9 @@ ibes_data['time_avail_m'] = ibes_data['statpers'].dt.to_period('M').dt.to_timest
 # Ensure it's properly datetime64[ns] format to match Stata expectations
 ibes_data['time_avail_m'] = pd.to_datetime(ibes_data['time_avail_m'])
 
+# Convert fpedats to datetime to match Stata format (NaT for missing values)
+ibes_data['fpedats'] = pd.to_datetime(ibes_data['fpedats'])
+
 # Rename ticker to tickerIBES
 ibes_data = ibes_data.rename(columns={'ticker': 'tickerIBES'})
 

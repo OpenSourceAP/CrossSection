@@ -57,8 +57,13 @@ print(f"Removed {initial_count - len(rec_data)} records with missing ireccd")
 # Clean up and rename
 rec_data = rec_data.rename(columns={'ticker': 'tickerIBES'})
 
-# Convert anndats to datetime and create time_avail_m
+# Convert date columns to datetime to match Stata format
 rec_data['anndats'] = pd.to_datetime(rec_data['anndats'])
+rec_data['actdats'] = pd.to_datetime(rec_data['actdats'])
+
+# Convert None values in ereccd to empty strings to match Stata format
+rec_data['ereccd'] = rec_data['ereccd'].fillna('')
+
 # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
 rec_data['time_avail_m'] = rec_data['anndats'].dt.to_period('M').dt.to_timestamp()
 # Ensure it's properly datetime64[ns] format to match Stata expectations
