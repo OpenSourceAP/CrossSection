@@ -678,9 +678,8 @@ def filter_dataset_by_identifiers(df: pd.DataFrame, identifiers: pd.DataFrame,
     # Perform inner join to filter
     filtered_df = df_copy.merge(identifiers[merge_cols], on=merge_cols, how='inner')
 
-    # Remove composite time column if added
-    if '_composite_time' in filtered_df.columns:
-        filtered_df = filtered_df.drop('_composite_time', axis=1)
+    # Keep composite time column if it was used for merging - needed for later alignment
+    # Only remove it if it's not in the identifiers (meaning it won't be used downstream)
 
     logger.info(f"Filtered dataset from {len(df):,} to {len(filtered_df):,} rows")
 
@@ -944,25 +943,33 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
             logger.warning(f"Filtering returned 0 rows despite {len(common_identifiers)} common identifiers - likely identifier format mismatch")
 
         # Create backbone from common identifiers to ensure exact alignment
-        id_cols = []
-        if stock_col: 
-            id_cols.append(stock_col)
+        # Use the actual merge columns from the common_identifiers DataFrame
+        available_merge_cols = []
+        if stock_col and stock_col in common_identifiers.columns:
+            available_merge_cols.append(stock_col)
         if time_col:
-            if isinstance(time_col, list): 
-                id_cols.extend(time_col)
-            else: 
-                id_cols.append(time_col)
+            if isinstance(time_col, list):
+                if '_composite_time' in common_identifiers.columns:
+                    available_merge_cols.append('_composite_time')
+                else:
+                    # Fallback to individual columns if composite wasn't created
+                    for col in time_col:
+                        if col in common_identifiers.columns:
+                            available_merge_cols.append(col)
+            else:
+                if time_col in common_identifiers.columns:
+                    available_merge_cols.append(time_col)
 
-        if id_cols:
+        if available_merge_cols:
             # Use common identifiers as backbone for perfect alignment
-            common_backbone = common_identifiers[id_cols].copy()
+            common_backbone = common_identifiers[available_merge_cols].copy()
             
             # Merge both datasets onto common backbone to ensure identical structure
             aligned_python_df = common_backbone.merge(
-                filtered_python_df, on=id_cols, how='left'
+                filtered_python_df, on=available_merge_cols, how='left'
             )
             aligned_stata_df = common_backbone.merge(
-                filtered_stata_df, on=id_cols, how='left'
+                filtered_stata_df, on=available_merge_cols, how='left'
             )
             
             logger.info(f"Aligned datasets: Python {len(aligned_python_df)}, Stata {len(aligned_stata_df)}")
