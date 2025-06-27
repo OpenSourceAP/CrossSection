@@ -100,12 +100,9 @@ python3 01_DownloadData.py
 # Run individual DataDownloads script
 python3 DataDownloads/[SCRIPT_NAME].py
 
-# Test data comparison 
-python3 test_datadownloads_comparison.py --list
+# Validate Python and Stata data are the same
+python3 utils/validate_by_keys.py 
 
-# Debug and validation scripts
-python3 Debug/check_colnames.py  # Check column name matches between DTA/Parquet
-python3 Debug/validate_parquet_dta.py  # Comprehensive validation
 ```
 
 ## Python Development Environment

@@ -51,6 +51,10 @@ segments_data['gvkey'] = pd.to_numeric(segments_data['gvkey'], errors='coerce')
 segments_data['sics1'] = pd.to_numeric(segments_data['sics1'], errors='coerce')
 segments_data['naicsh'] = pd.to_numeric(segments_data['naicsh'], errors='coerce')
 
+# Convert date columns to datetime format to match Stata output
+segments_data['datadate'] = pd.to_datetime(segments_data['datadate'])
+segments_data['srcdate'] = pd.to_datetime(segments_data['srcdate'])
+
 # Save the data
 segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 
@@ -63,10 +67,9 @@ if 'stype' in segments_data.columns:
 
 print("\nDate range:")
 if 'datadate' in segments_data.columns:
-    segments_data['datadate'] = pd.to_datetime(segments_data['datadate'])
-    print("  {segments_data['datadate'].min().strftime('%Y-%m-%d')} to {segments_data['datadate'].max().strftime('%Y-%m-%d')}")
+    print(f"  {segments_data['datadate'].min().strftime('%Y-%m-%d')} to {segments_data['datadate'].max().strftime('%Y-%m-%d')}")
 
-print("\nUnique companies: {segments_data['gvkey'].nunique()}")
+print(f"\nUnique companies: {segments_data['gvkey'].nunique()}")
 
 # Sample data
 print("\nSample data:", flush=True)

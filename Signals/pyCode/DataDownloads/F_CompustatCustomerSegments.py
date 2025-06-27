@@ -46,6 +46,13 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 if 'srcdate' in customer_data.columns:
     customer_data = customer_data.rename(columns={'srcdate': 'datadate'})
 
+# Convert gvkey to numeric format to match Stata
+customer_data['gvkey'] = pd.to_numeric(customer_data['gvkey'], errors='coerce')
+
+# Convert datadate to datetime format to match Stata before saving
+if 'datadate' in customer_data.columns:
+    customer_data['datadate'] = pd.to_datetime(customer_data['datadate'])
+
 # Save as parquet format
 customer_data.to_parquet("../pyData/Intermediate/CompustatSegmentDataCustomers.parquet")
 
@@ -53,7 +60,6 @@ print(f"Compustat Customer Segments data saved with {len(customer_data)} records
 
 # Show summary information
 if 'datadate' in customer_data.columns:
-    customer_data['datadate'] = pd.to_datetime(customer_data['datadate'])
     print(f"Date range: {customer_data['datadate'].min().strftime('%Y-%m-%d')} to {customer_data['datadate'].max().strftime('%Y-%m-%d')}")
 
 if 'gvkey' in customer_data.columns:

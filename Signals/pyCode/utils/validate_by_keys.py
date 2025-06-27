@@ -1,15 +1,16 @@
 """
-ABOUTME: Validates Python vs Stata datasets by filtering on matching identifiers
+ABOUTME: Validates Python vs Stata datasets using inner join on common identifiers
 ABOUTME: Critical script for ensuring data pipeline accuracy across both systems
 
 This script compares datasets between pyData/ and Data/ directories by:
 1. Loading both Python (parquet) and Stata (DTA/CSV) versions
-2. Extracting unique identifier combinations from Python version
-3. Filtering Stata version to matching identifiers only  
-4. Comparing filtered datasets for exact matches
+2. Extracting unique identifier combinations from BOTH versions
+3. Finding intersection (common identifiers) to eliminate data recency differences
+4. Filtering BOTH datasets to common identifiers only
+5. Comparing aligned datasets for exact matches
 
-The validation ensures our Python data pipeline produces identical results
-to the Stata pipeline, which is essential for downstream analysis.
+The inner join approach eliminates false positives from data availability timing
+differences while focusing on true data processing accuracy.
 
 To use: `python3 utils/validate_by_keys.py --datasets CompustatAnnual m_QCompustat`
 """
@@ -78,13 +79,13 @@ DATASET_IDENTIFIERS = {
         'stock': 'gvkey', 
         'time': 'time_avail_m',
         'stata_file': 'm_QCompustat.dta',
-        'python_file': 'CompustatQuarterly.parquet'
+        'python_file': 'm_QCompustat.parquet'
     },
 
     # Compustat Specialized
     'CompustatPensions': {
         'stock': 'gvkey', 
-        'time': 'datadate',
+        'time': 'year',
         'stata_file': 'CompustatPensions.dta',
         'python_file': 'CompustatPensions.parquet'
     },
@@ -102,7 +103,7 @@ DATASET_IDENTIFIERS = {
     },
     'monthlyShortInterest': {
         'stock': 'gvkey', 
-        'time': 'time_m',
+        'time': 'time_avail_m',
         'stata_file': 'monthlyShortInterest.dta',
         'python_file': 'monthlyShortInterest.parquet'
     },
@@ -122,13 +123,13 @@ DATASET_IDENTIFIERS = {
     },
     'monthlyCRSP': {
         'stock': 'permno', 
-        'time': 'time_m',
+        'time': 'time_avail_m',
         'stata_file': 'monthlyCRSP.dta',
         'python_file': 'monthlyCRSP.parquet'
     },
     'monthlyCRSPraw': {
         'stock': 'permno', 
-        'time': 'time_m',
+        'time': 'time_avail_m',
         'stata_file': 'monthlyCRSPraw.dta',
         'python_file': 'monthlyCRSPraw.parquet'
     },
@@ -331,6 +332,22 @@ DATASET_IDENTIFIERS = {
         'time': 'year',
         'stata_file': 'PatentDataProcessed.dta',
         'python_file': 'PatentDataProcessed.parquet'
+    },
+
+    # Input-Output Momentum Data
+    'InputOutputMomentumProcessed': {
+        'stock': 'gvkey', 
+        'time': 'time_avail_m',
+        'stata_file': 'InputOutputMomentumProcessed.dta',
+        'python_file': 'InputOutputMomentumProcessed.parquet'
+    },
+
+    # Customer Momentum Data
+    'customerMom': {
+        'stock': 'permno', 
+        'time': 'time_avail_m',
+        'stata_file': 'customerMom.dta',
+        'python_file': 'customerMom.parquet'
     }
 }
 
@@ -856,12 +873,43 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6) -> Dict[
             python_df = normalize_identifier_types(python_df, id_cols)
             stata_df = normalize_identifier_types(stata_df, id_cols)
 
-        # Extract identifiers from Python dataset (the "quick download")
+        # Extract identifiers from BOTH datasets for inner join approach
         python_identifiers = extract_identifiers(python_df, stock_col, time_col)
+        stata_identifiers = extract_identifiers(stata_df, stock_col, time_col)
+        
+        # Find common identifiers (intersection) to eliminate data recency differences
+        if len(python_identifiers) > 0 and len(stata_identifiers) > 0:
+            # Get merge columns for intersection
+            merge_cols = []
+            if stock_col and stock_col in python_identifiers.columns and stock_col in stata_identifiers.columns:
+                merge_cols.append(stock_col)
+            if time_col:
+                if isinstance(time_col, list):
+                    if '_composite_time' in python_identifiers.columns and '_composite_time' in stata_identifiers.columns:
+                        merge_cols.append('_composite_time')
+                else:
+                    if time_col in python_identifiers.columns and time_col in stata_identifiers.columns:
+                        merge_cols.append(time_col)
+            
+            if merge_cols:
+                # Find intersection of identifiers
+                common_identifiers = python_identifiers[merge_cols].merge(
+                    stata_identifiers[merge_cols], on=merge_cols, how='inner'
+                )
+                logger.info(f"Common identifiers: {len(common_identifiers):,} (Python: {len(python_identifiers):,}, Stata: {len(stata_identifiers):,})")
+            else:
+                logger.warning("No merge columns found - using Python identifiers as fallback")
+                common_identifiers = python_identifiers
+        else:
+            logger.warning("One dataset has no identifiers - using Python identifiers as fallback")
+            common_identifiers = python_identifiers
 
-        # Filter Stata dataset to matching identifiers only
+        # Filter BOTH datasets to common identifiers only
+        filtered_python_df = filter_dataset_by_identifiers(
+            python_df, common_identifiers, stock_col, time_col
+        )
         filtered_stata_df = filter_dataset_by_identifiers(
-            stata_df, python_identifiers, stock_col, time_col
+            stata_df, common_identifiers, stock_col, time_col
         )
 
         # Log identifier compatibility issues
@@ -870,10 +918,10 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6) -> Dict[
                 logger.warning(f"Identifier issue: {issue}")
         
         # Warn if filtering returned no results
-        if len(filtered_stata_df) == 0 and len(python_identifiers) > 0:
-            logger.warning(f"Filtering returned 0 rows despite {len(python_identifiers)} Python identifiers - likely identifier format mismatch")
+        if len(filtered_stata_df) == 0 and len(common_identifiers) > 0:
+            logger.warning(f"Filtering returned 0 rows despite {len(common_identifiers)} common identifiers - likely identifier format mismatch")
 
-        # Create backbone from Python identifiers to ensure exact alignment
+        # Create backbone from common identifiers to ensure exact alignment
         id_cols = []
         if stock_col: 
             id_cols.append(stock_col)
@@ -884,23 +932,27 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6) -> Dict[
                 id_cols.append(time_col)
 
         if id_cols:
-            # Use Python identifiers as backbone
-            python_backbone = python_df[id_cols].copy()
+            # Use common identifiers as backbone for perfect alignment
+            common_backbone = common_identifiers[id_cols].copy()
             
-            # Merge Stata data onto Python backbone to ensure perfect alignment
-            aligned_stata_df = python_backbone.merge(
+            # Merge both datasets onto common backbone to ensure identical structure
+            aligned_python_df = common_backbone.merge(
+                filtered_python_df, on=id_cols, how='left'
+            )
+            aligned_stata_df = common_backbone.merge(
                 filtered_stata_df, on=id_cols, how='left'
             )
             
-            logger.info(f"Aligned datasets: Python {len(python_df)}, Stata {len(aligned_stata_df)}")
+            logger.info(f"Aligned datasets: Python {len(aligned_python_df)}, Stata {len(aligned_stata_df)}")
         else:
             # Fallback for datasets without identifiers
+            aligned_python_df = filtered_python_df
             aligned_stata_df = filtered_stata_df
             logger.warning("No identifier columns found - using unaligned comparison")
 
-        # Compare the aligned datasets
+        # Compare the aligned datasets (now both filtered to common identifiers)
         comparison = compare_datasets(
-            python_df, aligned_stata_df, dataset_name, tolerance
+            aligned_python_df, aligned_stata_df, dataset_name, tolerance
         )
 
         # Add identifier analysis to results

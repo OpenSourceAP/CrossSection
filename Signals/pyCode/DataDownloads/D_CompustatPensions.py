@@ -64,7 +64,8 @@ pensions_data = pensions_data.drop_duplicates(['gvkey', 'year'], keep='first')
 
 print(f"After keeping first obs per gvkey/year: {len(pensions_data)} records")
 
-# Drop datadate as in original code
+# Keep year column to match actual Stata output structure, drop datadate
+# Actual Stata file has: gvkey, paddml, pbnaa, pbnvv, pbpro, pbpru, pcupsu, pplao, pplau, year
 pensions_data = pensions_data.drop('datadate', axis=1)
 
 # Convert gvkey to numeric
@@ -80,12 +81,10 @@ for var in pension_vars:
         missing_pct = (missing_count / total_count) * 100
         print(f"  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
 
-# Standardize columns to match DTA file (removes index columns and fixes order)
-pensions_data = standardize_against_dta(
-    pensions_data, 
-    "../Data/Intermediate/CompustatPensions.dta",
-    "CompustatPensions"
-)
+# Manually ensure columns match actual Stata format (bypass standardize_against_dta issues)
+# Actual Stata columns: gvkey, paddml, pbnaa, pbnvv, pbpro, pbpru, pcupsu, pplao, pplau, year
+expected_columns = ['gvkey', 'paddml', 'pbnaa', 'pbnvv', 'pbpro', 'pbpru', 'pcupsu', 'pplao', 'pplau', 'year']
+pensions_data = pensions_data[expected_columns]
 
 # Save the data
 pensions_data.to_parquet("../pyData/Intermediate/CompustatPensions.parquet", index=False)
