@@ -65,6 +65,8 @@ if duplicates_removed > 0:
     print(f"Removed {duplicates_removed} duplicate records")
 
 # For convenience, extract components of distribution code
+# IMPORTANT: In Stata, the tostring distcd happens AFTER deduplication
+# So we need to work with the numeric distcd for digit extraction
 # Convert distcd to string and extract individual digits
 dist_data['distcd_str'] = dist_data['distcd'].astype(str).str.zfill(4)  # Pad with zeros to ensure 4 digits
 
@@ -82,6 +84,14 @@ date_columns = ['rcrddt', 'exdt', 'paydt']
 for col in date_columns:
     if col in dist_data.columns:
         dist_data[col] = pd.to_datetime(dist_data[col])
+
+# Standardize columns to match DTA file
+from utils.column_standardizer import standardize_against_dta
+dist_data = standardize_against_dta(
+    dist_data, 
+    "../Data/Intermediate/CRSPdistributions.dta",
+    "CRSPdistributions"
+)
 
 # Save the data
 dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")

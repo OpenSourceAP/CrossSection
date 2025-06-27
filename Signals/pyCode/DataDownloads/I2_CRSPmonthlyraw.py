@@ -49,6 +49,13 @@ print(f"Downloaded {len(crsp_raw)} CRSP raw monthly records")
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
+# Handle string columns that should be empty strings instead of NaN (to match Stata behavior)
+# In Stata, missing string values appear as empty strings, not NaN
+string_columns = ['ticker', 'shrcls']
+for col in string_columns:
+    if col in crsp_raw.columns:
+        crsp_raw[col] = crsp_raw[col].fillna('')
+
 # Make 2 digit SIC (rename siccd to sicCRSP like in Stata)
 crsp_raw['sicCRSP'] = crsp_raw['siccd']
 crsp_raw['sic2D'] = crsp_raw['sicCRSP'].astype(str).str[:2]
@@ -80,6 +87,14 @@ crsp_raw['mve_c'] = crsp_raw['shrout'] * np.abs(crsp_raw['prc'])
 
 # Housekeeping - drop columns (note: NOT processing delisting returns)
 crsp_raw = crsp_raw.drop(['dlret', 'dlstcd', 'permco'], axis=1)
+
+# Standardize columns to match DTA file
+from utils.column_standardizer import standardize_against_dta
+crsp_raw = standardize_against_dta(
+    crsp_raw, 
+    "../Data/Intermediate/monthlyCRSPraw.dta",
+    "monthlyCRSPraw"
+)
 
 # Save the data
 crsp_raw.to_parquet("../pyData/Intermediate/monthlyCRSPraw.parquet")

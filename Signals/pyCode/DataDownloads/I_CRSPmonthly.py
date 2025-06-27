@@ -52,6 +52,13 @@ conn.close()
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
+# Handle string columns that should be empty strings instead of NaN (to match Stata behavior)
+# In Stata, missing string values appear as empty strings, not NaN
+string_columns = ['ticker', 'shrcls']
+for col in string_columns:
+    if col in crsp_data.columns:
+        crsp_data[col] = crsp_data[col].fillna('')
+
 # Convert date to Stata format for CSV export to match expected format
 crsp_data_csv = crsp_data.copy()
 crsp_data_csv['date'] = pd.to_datetime(crsp_data_csv['date'])
