@@ -279,4 +279,18 @@ black filename.py
 # Journaling
 
 - Keep track of lessons learned in Journal/
+- But do not commit Journal/ to the repo. 
+  - These notes may be messy. 
 
+## Data Processing Notes
+- **Row Count Handling**: Row count mismatch is fine unless explicitly requested to fix. This is because downloads at different times can imply different number of rows.
+
+## Data Validation Workflow
+- Closely follow @pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md when validating datasets
+- Only compare parquet files with files actually listed in @pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md
+- These files can also be found in @Data/Intermediate/
+
+## Memories
+
+### Project Workflow Memories
+- Only mark as complete if the code passes @pyCode/utils/validate_by_keys.py. 

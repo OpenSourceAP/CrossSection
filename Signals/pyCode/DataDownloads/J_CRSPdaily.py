@@ -100,8 +100,10 @@ def main():
     full_columns = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
     daily_full = combined_data[full_columns].copy()
 
+    # Convert data types to match Stata format exactly
+    daily_full['permno'] = daily_full['permno'].astype('int32')  # Match Stata int32
     # Ensure datetime64[ns] format to prevent PyArrow date32[day] optimization
-    daily_full['time_d'] = pd.to_datetime(daily_full['time_d'])
+    daily_full['time_d'] = pd.to_datetime(daily_full['time_d']).dt.floor('D')
 
     # Standardize columns to match DTA file
     daily_full = standardize_against_dta(
@@ -118,8 +120,10 @@ def main():
     price_columns = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
     daily_prc = combined_data[price_columns].copy()
 
+    # Convert data types to match Stata format exactly
+    daily_prc['permno'] = daily_prc['permno'].astype('int32')  # Match Stata int32
     # Ensure datetime64[ns] format to prevent PyArrow date32[day] optimization
-    daily_prc['time_d'] = pd.to_datetime(daily_prc['time_d'])
+    daily_prc['time_d'] = pd.to_datetime(daily_prc['time_d']).dt.floor('D')
 
     # Standardize columns to match DTA file
     daily_prc = standardize_against_dta(

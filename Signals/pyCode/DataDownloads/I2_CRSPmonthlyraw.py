@@ -62,8 +62,10 @@ crsp_raw = crsp_raw.drop('siccd', axis=1)
 
 # Create monthly date (equivalent to mofd function)
 crsp_raw['date'] = pd.to_datetime(crsp_raw['date'])
-# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+# Convert to monthly timestamp to match Stata datetime format
 crsp_raw['time_avail_m'] = crsp_raw['date'].dt.to_period('M').dt.to_timestamp()
+# Ensure it's properly datetime64[ns] format
+crsp_raw['time_avail_m'] = pd.to_datetime(crsp_raw['time_avail_m'])
 
 # Drop original date column
 crsp_raw = crsp_raw.drop('date', axis=1)

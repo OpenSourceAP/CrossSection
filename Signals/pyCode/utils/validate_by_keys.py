@@ -99,7 +99,7 @@ DATASET_IDENTIFIERS = {
         'stock': 'gvkey', 
         'time': 'datadate',
         'stata_file': 'CompustatSegmentDataCustomers.csv',
-        'python_file': 'CompustatSegmentDataCustomers.parquet'
+        'python_file': 'CompustatSegmentDataCustomers.csv'
     },
     'monthlyShortInterest': {
         'stock': 'gvkey', 

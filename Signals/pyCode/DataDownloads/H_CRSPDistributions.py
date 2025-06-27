@@ -77,7 +77,11 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3], errors='coerce'
 # Drop the temporary string column
 dist_data = dist_data.drop('distcd_str', axis=1)
 
-# Data is already sorted from the duplicate removal step above
+# Convert date columns to datetime format to match Stata expectations
+date_columns = ['rcrddt', 'exdt', 'paydt']
+for col in date_columns:
+    if col in dist_data.columns:
+        dist_data[col] = pd.to_datetime(dist_data[col])
 
 # Save the data
 dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")

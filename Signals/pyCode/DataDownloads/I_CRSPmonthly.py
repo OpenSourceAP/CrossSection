@@ -52,8 +52,14 @@ conn.close()
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
+# Convert date to Stata format for CSV export to match expected format
+crsp_data_csv = crsp_data.copy()
+crsp_data_csv['date'] = pd.to_datetime(crsp_data_csv['date'])
+# Convert to Stata date string format: "31dec1985"
+crsp_data_csv['date'] = crsp_data_csv['date'].dt.strftime('%d%b%Y').str.lower()
+
 # Export for R processing (equivalent to CSV export in Stata)
-crsp_data.to_csv("../pyData/Intermediate/mCRSP.csv", index=False)
+crsp_data_csv.to_csv("../pyData/Intermediate/mCRSP.csv", index=False)
 
 # Make 2 digit SIC (rename siccd to sicCRSP like in Stata)
 crsp_data['sicCRSP'] = crsp_data['siccd']

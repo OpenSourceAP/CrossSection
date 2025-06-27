@@ -49,18 +49,20 @@ if 'srcdate' in customer_data.columns:
 # Convert gvkey to numeric format to match Stata
 customer_data['gvkey'] = pd.to_numeric(customer_data['gvkey'], errors='coerce')
 
-# Convert datadate to datetime format to match Stata before saving
+# Convert datadate to Stata string format to match expected output
 if 'datadate' in customer_data.columns:
     customer_data['datadate'] = pd.to_datetime(customer_data['datadate'])
+    # Convert to Stata date string format: "31may1980"
+    customer_data['datadate'] = customer_data['datadate'].dt.strftime('%d%b%Y').str.lower()
 
-# Save as parquet format
-customer_data.to_parquet("../pyData/Intermediate/CompustatSegmentDataCustomers.parquet")
+# Save as CSV format to match Stata behavior (used for downstream R processing)
+customer_data.to_csv("../pyData/Intermediate/CompustatSegmentDataCustomers.csv", index=False)
 
 print(f"Compustat Customer Segments data saved with {len(customer_data)} records")
 
 # Show summary information
 if 'datadate' in customer_data.columns:
-    print(f"Date range: {customer_data['datadate'].min().strftime('%Y-%m-%d')} to {customer_data['datadate'].max().strftime('%Y-%m-%d')}")
+    print(f"Date range: {customer_data['datadate'].min()} to {customer_data['datadate'].max()}")
 
 if 'gvkey' in customer_data.columns:
     print(f"Unique companies: {customer_data['gvkey'].nunique()}")
