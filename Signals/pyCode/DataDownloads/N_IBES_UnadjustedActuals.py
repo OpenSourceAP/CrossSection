@@ -53,6 +53,8 @@ if 'shout' in actuals_data.columns:
 actuals_data['statpers'] = pd.to_datetime(actuals_data['statpers'])
 # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
 actuals_data['time_avail_m'] = actuals_data['statpers'].dt.to_period('M').dt.to_timestamp()
+# Ensure it's properly datetime64[ns] format to match Stata expectations
+actuals_data['time_avail_m'] = pd.to_datetime(actuals_data['time_avail_m'])
 
 # Keep only one observation per ticker/time_avail_m
 # (equivalent to egen id = group(ticker); bys id time_av: keep if _n == 1)
@@ -72,10 +74,10 @@ for ticker in tickers:
     ticker_data = ticker_data.sort_values('time_avail_m')
 
     if len(ticker_data) > 1:
-        # Create full time range for this ticker
+        # Create full time range for this ticker using datetime to avoid period conversion
         min_time = ticker_data['time_avail_m'].min()
         max_time = ticker_data['time_avail_m'].max()
-        full_time_range = pd.period_range(start=min_time, end=max_time, freq='M')
+        full_time_range = pd.date_range(start=min_time, end=max_time, freq='MS')
 
         # Reindex to fill gaps
         ticker_data = ticker_data.set_index('time_avail_m').reindex(full_time_range)
@@ -101,6 +103,12 @@ if 'statpers' in actuals_data.columns:
 
 # Rename ticker to tickerIBES for consistency
 actuals_data = actuals_data.rename(columns={'ticker': 'tickerIBES'})
+
+# Ensure tickerIBES is object type to match Stata expectations
+actuals_data['tickerIBES'] = actuals_data['tickerIBES'].astype(str)
+
+# Ensure time_avail_m is properly datetime64[ns] format after time series operations
+actuals_data['time_avail_m'] = pd.to_datetime(actuals_data['time_avail_m'])
 
 # Save the data
 actuals_data.to_parquet("../pyData/Intermediate/IBES_UnadjustedActuals.parquet")
