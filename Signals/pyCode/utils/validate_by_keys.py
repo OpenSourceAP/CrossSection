@@ -356,26 +356,40 @@ PYDATA_PATH = Path("../pyData/Intermediate")
 DATA_PATH = Path("../Data/Intermediate")
 
 
-def load_parquet_file(file_path: Path) -> pd.DataFrame:
+def load_parquet_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFrame:
     """Load parquet file with error handling."""
     try:
         df = pd.read_parquet(file_path)
-        logger.info(f"Loaded parquet file: {file_path.name} ({len(df):,} rows)")
+        original_rows = len(df)
+        
+        if maxrows is not None and maxrows < original_rows:
+            df = df.head(maxrows)
+            logger.info(f"Loaded parquet file: {file_path.name} ({len(df):,} rows, limited from {original_rows:,})")
+            logger.warning(f"Row limiting applied: validation uses subset of data ({maxrows:,}/{original_rows:,} rows)")
+        else:
+            logger.info(f"Loaded parquet file: {file_path.name} ({len(df):,} rows)")
+        
         return df
     except Exception as e:
         logger.error(f"Error loading parquet {file_path}: {e}")
         raise
 
 
-def load_csv_file(file_path: Path) -> pd.DataFrame:
+def load_csv_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFrame:
     """Load CSV file with error handling and type inference."""
     try:
         # Try different encodings and separators
         encodings = ['utf-8', 'latin1', 'cp1252']
         for encoding in encodings:
             try:
-                df = pd.read_csv(file_path, encoding=encoding, low_memory=False)
-                logger.info(f"Loaded CSV file: {file_path.name} ({len(df):,} rows)")
+                df = pd.read_csv(file_path, encoding=encoding, low_memory=False, nrows=maxrows)
+                
+                if maxrows is not None:
+                    logger.info(f"Loaded CSV file: {file_path.name} ({len(df):,} rows, limited to maxrows={maxrows:,})")
+                    logger.warning(f"Row limiting applied: validation uses subset of data (max {maxrows:,} rows)")
+                else:
+                    logger.info(f"Loaded CSV file: {file_path.name} ({len(df):,} rows)")
+                
                 return df
             except UnicodeDecodeError:
                 continue
@@ -388,29 +402,37 @@ def load_csv_file(file_path: Path) -> pd.DataFrame:
         raise
 
 
-def load_dta_file(file_path: Path) -> pd.DataFrame:
+def load_dta_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFrame:
     """Load Stata DTA file with error handling."""
     try:
-        df = pd.read_stata(file_path, preserve_dtypes=False)
-        logger.info(f"Loaded DTA file: {file_path.name} ({len(df):,} rows)")
+        if maxrows is not None:
+            # For DTA files, we need to read in chunks or limit rows after loading
+            df = pd.read_stata(file_path, preserve_dtypes=False, chunksize=maxrows)
+            df = next(df)  # Get first chunk
+            logger.info(f"Loaded DTA file: {file_path.name} ({len(df):,} rows, limited to maxrows={maxrows:,})")
+            logger.warning(f"Row limiting applied: validation uses subset of data (max {maxrows:,} rows)")
+        else:
+            df = pd.read_stata(file_path, preserve_dtypes=False)
+            logger.info(f"Loaded DTA file: {file_path.name} ({len(df):,} rows)")
+        
         return df
     except Exception as e:
         logger.error(f"Error loading DTA {file_path}: {e}")
         raise
 
 
-def load_dataset(file_path: Path) -> pd.DataFrame:
+def load_dataset(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFrame:
     """Load dataset based on file extension."""
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
     suffix = file_path.suffix.lower()
     if suffix == '.parquet':
-        return load_parquet_file(file_path)
+        return load_parquet_file(file_path, maxrows)
     elif suffix == '.csv':
-        return load_csv_file(file_path)
+        return load_csv_file(file_path, maxrows)
     elif suffix == '.dta':
-        return load_dta_file(file_path)
+        return load_dta_file(file_path, maxrows)
     else:
         raise ValueError(f"Unsupported file format: {suffix}")
 
@@ -814,7 +836,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
     return comparison
 
 
-def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6) -> Dict[str, Any]:
+def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows: Optional[int] = None) -> Dict[str, Any]:
     """Validate a single dataset by comparing Python vs Stata versions."""
     logger.info(f"Validating dataset: {dataset_name}")
 
@@ -848,10 +870,10 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6) -> Dict[
 
         # Load datasets
         logger.info(f"Loading Python file: {python_file}")
-        python_df = load_dataset(python_file)
+        python_df = load_dataset(python_file, maxrows)
 
         logger.info(f"Loading Stata file: {stata_file}")
-        stata_df = load_dataset(stata_file)
+        stata_df = load_dataset(stata_file, maxrows)
 
         # Normalize data for comparison
         id_cols = []
@@ -976,7 +998,7 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6) -> Dict[
 
 
 def validate_all_datasets(datasets: Optional[List[str]] = None, 
-                         tolerance: float = 1e-6) -> List[Dict[str, Any]]:
+                         tolerance: float = 1e-6, maxrows: Optional[int] = None) -> List[Dict[str, Any]]:
     """Validate all or specified datasets."""
     if datasets is None:
         datasets = list(DATASET_IDENTIFIERS.keys())
@@ -986,7 +1008,7 @@ def validate_all_datasets(datasets: Optional[List[str]] = None,
     results = []
     for dataset in datasets:
         try:
-            result = validate_single_dataset(dataset, tolerance)
+            result = validate_single_dataset(dataset, tolerance, maxrows)
             results.append(result)
         except Exception as e:
             logger.error(f"Failed to validate {dataset}: {e}")
@@ -1006,12 +1028,18 @@ def generate_summary_report(results: List[Dict[str, Any]]) -> str:
     """Generate a summary report of validation results."""
     total_datasets = len(results)
     perfect_matches = sum(1 for r in results 
-                         if r.get('comparison', {}).get('match_status') == 'perfect_match')
+                         if r.get('comparison') and r['comparison'].get('match_status') == 'perfect_match')
     minor_differences = sum(1 for r in results 
-                           if r.get('comparison', {}).get('match_status') == 'minor_differences')
+                           if r.get('comparison') and r['comparison'].get('match_status') == 'minor_differences')
     major_differences = sum(1 for r in results 
-                           if r.get('comparison', {}).get('match_status') == 'major_differences')
+                           if r.get('comparison') and r['comparison'].get('match_status') == 'major_differences')
     errors = sum(1 for r in results if r['status'] == 'error')
+    
+    # Categorize errors
+    missing_datasets = [r for r in results if r['status'] == 'error' and 
+                       any('not found' in str(err) for err in r.get('errors', []))]
+    processing_errors = [r for r in results if r['status'] == 'error' and 
+                        not any('not found' in str(err) for err in r.get('errors', []))]
 
     total_processing_time = sum(r.get('processing_time', 0) for r in results)
 
@@ -1024,17 +1052,33 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 - **Perfect Matches**: {perfect_matches} ({perfect_matches/total_datasets*100:.1f}%)
 - **Minor Differences**: {minor_differences} ({minor_differences/total_datasets*100:.1f}%)
 - **Major Differences**: {major_differences} ({major_differences/total_datasets*100:.1f}%)
-- **Processing Errors**: {errors} ({errors/total_datasets*100:.1f}%)
+- **⚠️ MISSING DATASETS**: {len(missing_datasets)} ({len(missing_datasets)/total_datasets*100:.1f}%)
+- **Processing Errors**: {len(processing_errors)} ({len(processing_errors)/total_datasets*100:.1f}%)
 - **Total Processing Time**: {total_processing_time:.1f} seconds
 
 ## Status Breakdown
+"""
+
+    # Add missing datasets section first for high visibility
+    if missing_datasets:
+        report += f"""
+### ⚠️ MISSING DATASETS ({len(missing_datasets)} datasets) ⚠️
+**CRITICAL: These datasets could not be found and need immediate attention!**
+
+"""
+        for result in missing_datasets:
+            dataset = result['dataset']
+            errors_list = result['errors']
+            report += f"- **{dataset}**: {'; '.join(errors_list)}\n"
+
+    report += f"""
 
 ### Perfect Matches ({perfect_matches} datasets)
 """
 
     # List perfect matches
     perfect_match_datasets = [r['dataset'] for r in results 
-                             if r.get('comparison', {}).get('match_status') == 'perfect_match']
+                             if r.get('comparison') and r['comparison'].get('match_status') == 'perfect_match']
     for dataset in perfect_match_datasets:
         report += f"- {dataset}\n"
 
@@ -1042,7 +1086,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
     # List minor differences with details
     minor_diff_datasets = [r for r in results 
-                          if r.get('comparison', {}).get('match_status') == 'minor_differences']
+                          if r.get('comparison') and r['comparison'].get('match_status') == 'minor_differences']
     for result in minor_diff_datasets:
         dataset = result['dataset']
         comparison = result['comparison']
@@ -1056,7 +1100,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
     # List major differences with details
     major_diff_datasets = [r for r in results 
-                          if r.get('comparison', {}).get('match_status') == 'major_differences']
+                          if r.get('comparison') and r['comparison'].get('match_status') == 'major_differences']
     for result in major_diff_datasets:
         dataset = result['dataset']
         comparison = result['comparison']
@@ -1069,11 +1113,10 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         if comparison['details']['df2_only_columns']:
             report += f"  - Stata-only columns: {comparison['details']['df2_only_columns']}\n"
 
-    report += f"\n### Processing Errors ({errors} datasets)\n"
+    report += f"\n### Processing Errors ({len(processing_errors)} datasets)\n"
 
-    # List errors
-    error_datasets = [r for r in results if r['status'] == 'error']
-    for result in error_datasets:
+    # List processing errors (excluding missing datasets which are shown above)
+    for result in processing_errors:
         dataset = result['dataset']
         errors_list = result['errors']
         report += f"- **{dataset}**: {'; '.join(errors_list)}\n"
@@ -1291,13 +1334,43 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
 
 def generate_detailed_report(results: List[Dict[str, Any]]) -> str:
     """Generate a detailed report with full comparison results."""
+    # Categorize errors for prominent display
+    missing_datasets = [r for r in results if r['status'] == 'error' and 
+                       any('not found' in str(err) for err in r.get('errors', []))]
+    processing_errors = [r for r in results if r['status'] == 'error' and 
+                        not any('not found' in str(err) for err in r.get('errors', []))]
+    successful_results = [r for r in results if r['status'] != 'error']
+    
     report = f"""
 # Detailed Dataset Validation Report
 Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 """
 
-    for result in results:
+    # Add missing datasets section first with high visibility
+    if missing_datasets:
+        report += f"""
+# ⚠️ CRITICAL: MISSING DATASETS ⚠️
+
+**{len(missing_datasets)} DATASETS COULD NOT BE FOUND AND NEED IMMEDIATE ATTENTION!**
+
+"""
+        for result in missing_datasets:
+            dataset = result['dataset']
+            errors_list = result['errors']
+            processing_time = result.get('processing_time', 0)
+            
+            report += f"""
+## ❌ MISSING: {dataset}
+- **STATUS**: MISSING FILE
+- **PROCESSING TIME**: {processing_time:.2f} seconds
+- **ERRORS**: {'; '.join(errors_list)}
+
+"""
+
+    # Process successful results and processing errors
+    all_other_results = successful_results + processing_errors
+    for result in all_other_results:
         dataset = result['dataset']
         status = result['status']
         processing_time = result.get('processing_time', 0)
@@ -1408,12 +1481,17 @@ def print_summary_stats(results: List[Dict[str, Any]]) -> None:
     """Print summary statistics to console."""
     total_datasets = len(results)
     perfect_matches = sum(1 for r in results 
-                         if r.get('comparison', {}).get('match_status') == 'perfect_match')
+                         if r.get('comparison') and r['comparison'].get('match_status') == 'perfect_match')
     minor_differences = sum(1 for r in results 
-                           if r.get('comparison', {}).get('match_status') == 'minor_differences')
+                           if r.get('comparison') and r['comparison'].get('match_status') == 'minor_differences')
     major_differences = sum(1 for r in results 
-                           if r.get('comparison', {}).get('match_status') == 'major_differences')
-    errors = sum(1 for r in results if r['status'] == 'error')
+                           if r.get('comparison') and r['comparison'].get('match_status') == 'major_differences')
+    
+    # Categorize errors
+    missing_datasets = [r for r in results if r['status'] == 'error' and 
+                       any('not found' in str(err) for err in r.get('errors', []))]
+    processing_errors = [r for r in results if r['status'] == 'error' and 
+                        not any('not found' in str(err) for err in r.get('errors', []))]
 
     print(f"\n{'='*60}")
     print(f"VALIDATION SUMMARY")
@@ -1422,8 +1500,17 @@ def print_summary_stats(results: List[Dict[str, Any]]) -> None:
     print(f"Perfect Matches:    {perfect_matches:3d} ({perfect_matches/total_datasets*100:5.1f}%)")
     print(f"Minor Differences:  {minor_differences:3d} ({minor_differences/total_datasets*100:5.1f}%)")
     print(f"Major Differences:  {major_differences:3d} ({major_differences/total_datasets*100:5.1f}%)")
-    print(f"Processing Errors:  {errors:3d} ({errors/total_datasets*100:5.1f}%)")
-    print(f"{'='*60}\n")
+    if missing_datasets:
+        print(f"⚠️  MISSING FILES:   {len(missing_datasets):3d} ({len(missing_datasets)/total_datasets*100:5.1f}%) ⚠️")
+    print(f"Processing Errors:  {len(processing_errors):3d} ({len(processing_errors)/total_datasets*100:5.1f}%)")
+    print(f"{'='*60}")
+    
+    # Show missing datasets prominently
+    if missing_datasets:
+        print(f"\n⚠️  CRITICAL: {len(missing_datasets)} MISSING DATASETS:")
+        for result in missing_datasets:
+            print(f"  - {result['dataset']}")
+        print()
 
 
 def main():
@@ -1464,6 +1551,12 @@ def main():
         action='store_true',
         help='Skip generating report files'
     )
+    parser.add_argument(
+        '--maxrows',
+        type=int,
+        default=None,
+        help='Maximum number of rows to load from each dataset (default: unlimited)'
+    )
 
     args = parser.parse_args()
 
@@ -1499,12 +1592,14 @@ def main():
 
     print(f"Starting validation of {len(datasets_to_validate)} datasets...")
     print(f"Tolerance: {args.tolerance}")
+    if args.maxrows:
+        print(f"Max rows per dataset: {args.maxrows:,}")
     if not args.quiet:
         print(f"Output directory: {args.output_dir}")
 
     # Run validation
     try:
-        results = validate_all_datasets(datasets_to_validate, args.tolerance)
+        results = validate_all_datasets(datasets_to_validate, args.tolerance, args.maxrows)
 
         # Print summary statistics
         if not args.quiet:
@@ -1520,9 +1615,9 @@ def main():
         # Only exit with non-zero code for actual processing errors, not data differences
         errors = sum(1 for r in results if r['status'] == 'error')
         major_differences = sum(1 for r in results 
-                               if r.get('comparison', {}).get('match_status') == 'major_differences')
+                               if r.get('comparison') and r['comparison'].get('match_status') == 'major_differences')
         perfect_matches = sum(1 for r in results 
-                             if r.get('comparison', {}).get('match_status') == 'perfect_match')
+                             if r.get('comparison') and r['comparison'].get('match_status') == 'perfect_match')
 
         if errors > 0:
             print(f"Validation completed with {errors} processing errors")
