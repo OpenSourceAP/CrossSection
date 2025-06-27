@@ -282,6 +282,8 @@ black filename.py
 - But do not commit Journal/ to the repo. 
   - These notes may be messy. 
 
+# Unsorted Notes
+
 ## Data Processing Notes
 - **Row Count Handling**: Row count mismatch is fine unless explicitly requested to fix. This is because downloads at different times can imply different number of rows.
 
@@ -290,7 +292,12 @@ black filename.py
 - Only compare parquet files with files actually listed in @pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md
 - These files can also be found in @Data/Intermediate/
 
+## Clear all Fallbacks with Anderoo
+- The code should follow exactly the Stata logic. Do not improvise fallbacks.
+- If you really wanto do some error handling, due to mising urls, ask Anderoo for permission.
+
 ## Memories
 
 ### Project Workflow Memories
 - Only mark as complete if the code passes @pyCode/utils/validate_by_keys.py. 
+- always source .venv/bin/activate before starting work
