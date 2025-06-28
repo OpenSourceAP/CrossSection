@@ -86,7 +86,7 @@ See pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md
 
 ```bash
 # Navigate to working directory
-cd pyCode/
+cd /Users/chen1678/Dropbox/oap-ac/CrossSection/Signals/pyCode/
 
 # Activate virtual environment (required for all operations)
 source .venv/bin/activate

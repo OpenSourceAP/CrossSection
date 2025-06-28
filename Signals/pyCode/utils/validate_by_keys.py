@@ -1524,6 +1524,12 @@ def main():
     """Main execution function with command-line interface."""
     import argparse
 
+    # Check that script is being run from the correct directory (pyCode/)
+    if not Path("01_DownloadData.py").exists():
+        print("ERROR: This script must be run from the pyCode/ directory.")
+        print("Usage: cd pyCode/ && python3 utils/validate_by_keys.py")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(
         description="Validate Python vs Stata datasets by comparing on matching identifiers"
     )
