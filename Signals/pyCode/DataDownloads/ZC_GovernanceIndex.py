@@ -140,6 +140,9 @@ def main():
     # Preserve int8 dtype for G column to match DTA format
     if 'G' in final_data.columns:
         final_data['G'] = final_data['G'].astype('int8')
+    
+    # Sort to match Stata ordering: by ticker, then by time_avail_m
+    final_data = final_data.sort_values(['ticker', 'time_avail_m']).reset_index(drop=True)
 
     print(f"After interpolation: {len(final_data)} records")
 

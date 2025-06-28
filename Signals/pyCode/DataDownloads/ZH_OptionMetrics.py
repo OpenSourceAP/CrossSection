@@ -61,12 +61,30 @@ def main():
     """Process OptionMetrics data files."""
     print("Processing OptionMetrics data...")
     
-    # Process OptionMetrics Volume data  
-    process_options_file(
-        "../Data/Prep/OptionMetricsVolume.csv",
-        date_col='time_avail_m',
-        output_name='OptionMetricsVolume'
-    )
+    # Process OptionMetrics Volume data
+    print("Processing OptionMetricsVolume with case-sensitive column fixes...")
+    vol_data = pd.read_csv("../Data/Prep/OptionMetricsVolume.csv")
+    # Fix column names case before processing
+    vol_data = vol_data.rename(columns={'optVolume': 'optvolume', 'optInterest': 'optinterest'})
+    
+    # Convert time_avail_m to proper format
+    vol_data['time_avail_m'] = pd.to_datetime(vol_data['time_avail_m']).dt.to_period('M')
+    
+    # Standardize columns
+    dta_path = "../Data/Intermediate/OptionMetricsVolume.dta"
+    if os.path.exists(dta_path):
+        vol_data = standardize_against_dta(vol_data, dta_path, "OptionMetricsVolume")
+    
+    # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
+    if 'time_avail_m' in vol_data.columns:
+        vol_data['time_avail_m'] = vol_data['time_avail_m'].dt.to_timestamp()
+        print("OptionMetricsVolume: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
+    
+    # Save the data
+    output_file = "../pyData/Intermediate/OptionMetricsVolume.parquet"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    vol_data.to_parquet(output_file, index=False)
+    print(f"Saved OptionMetricsVolume: {len(vol_data)} records")
     
     # Process OptionMetrics Volatility Surface data
     vol_surf_data = process_options_file(
@@ -95,30 +113,31 @@ def main():
         print(f"Saved OptionMetricsVolSurf: {len(vol_surf_data)} records")
     
     # Process OptionMetrics XZZ data
-    xzz_data = process_options_file(
-        "../Data/Prep/OptionMetricsXZZ.csv",
-        date_col='time_avail_m',
-        output_name=None  # Don't save intermediate file
+    print("Processing OptionMetricsXZZ with case-sensitive column fixes...")
+    xzz_data = pd.read_csv("../Data/Prep/OptionMetricsXZZ.csv")
+    # Fix column names case before processing  
+    xzz_data = xzz_data.rename(columns={'Skew1': 'skew1'})
+    
+    # Convert time_avail_m to proper format
+    xzz_data['time_avail_m'] = pd.to_datetime(xzz_data['time_avail_m']).dt.to_period('M')
+    
+    # Standardize columns to match DTA file
+    xzz_data = standardize_against_dta(
+        xzz_data, 
+        "../Data/Intermediate/OptionMetricsXZZ.dta",
+        "OptionMetricsXZZ"
     )
     
-    if xzz_data is not None:
-        # Standardize columns to match DTA file
-        xzz_data = standardize_against_dta(
-            xzz_data, 
-            "../Data/Intermediate/OptionMetricsXZZ.dta",
-            "OptionMetricsXZZ"
-        )
-        
-        # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
-        if 'time_avail_m' in xzz_data.columns:
-            xzz_data['time_avail_m'] = xzz_data['time_avail_m'].dt.to_timestamp()
-            print("OptionMetricsXZZ: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
-        
-        # Save standardized data
-        output_file = "../pyData/Intermediate/OptionMetricsXZZ.parquet"
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        xzz_data.to_parquet(output_file, index=False)
-        print(f"Saved OptionMetricsXZZ: {len(xzz_data)} records")
+    # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
+    if 'time_avail_m' in xzz_data.columns:
+        xzz_data['time_avail_m'] = xzz_data['time_avail_m'].dt.to_timestamp()
+        print("OptionMetricsXZZ: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
+    
+    # Save standardized data
+    output_file = "../pyData/Intermediate/OptionMetricsXZZ.parquet"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    xzz_data.to_parquet(output_file, index=False)
+    print(f"Saved OptionMetricsXZZ: {len(xzz_data)} records")
     
     # Process Bali-Hovakimian (2009) implied volatility data
     print("Processing Bali-Hovakimian implied volatility data...")

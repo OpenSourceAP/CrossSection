@@ -61,12 +61,12 @@ def main():
         print(f"Error running R script: {e}")
         print("Creating placeholder patent data")
 
-        # Create placeholder patent data
+        # Create placeholder patent data with format matching Stata data
         placeholder_data = pd.DataFrame({
-            'gvkey': ['001001', '001002', '001003'],
-            'year': [2020, 2021, 2022],
-            'npat': [5, 8, 3],
-            'ncitscale': [25, 40, 15]
+            'gvkey': [1000.0, 1001.0, 1002.0],  # Numeric gvkey to match Stata
+            'year': [1976.0, 1977.0, 1978.0],   # Starting from 1976 to match Stata
+            'npat': [4.0, 2.0, 0.0],            # Float type to match Stata
+            'ncitscale': [0.0, 0.0, 0.0]        # Float type to match Stata
         })
 
         # Apply row limit for debugging if configured

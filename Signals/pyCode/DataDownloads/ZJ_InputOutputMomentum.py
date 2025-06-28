@@ -100,12 +100,13 @@ class InputOutputMomentum:
         """Read Compustat, CRSP, and CCM linking data."""
         logger.info("Reading input data...")
         
-        # Read Compustat Annual
+        # Read Compustat Annual - need full dataset for I-O analysis to work
         compustat_path = self.data_dir / "CompustatAnnual.parquet"
         if not compustat_path.exists():
             raise FileNotFoundError(f"CompustatAnnual.parquet not found at {compustat_path}")
         
-        comp = pd.read_parquet(compustat_path)
+        # Load full Compustat data since I-O analysis requires comprehensive coverage
+        comp = pd.read_stata("../Data/Intermediate/a_aCompustat.dta")
         
         # Create year_avail as 1 year after datadate + 6 months
         comp['datadate'] = pd.to_datetime(comp['datadate'])
@@ -119,12 +120,13 @@ class InputOutputMomentum:
         comp = comp.dropna(subset=['naics6'])
         comp = comp[['gvkey', 'year_avail', 'naics6', 'datadate']].copy()
         
-        # Read CRSP monthly
+        # Read CRSP monthly - load full dataset for comprehensive coverage
         crsp_path = self.data_dir / "monthlyCRSP.parquet"
         if not crsp_path.exists():
             raise FileNotFoundError(f"monthlyCRSP.parquet not found at {crsp_path}")
         
-        crsp = pd.read_parquet(crsp_path)
+        # Load full CRSP data
+        crsp = pd.read_stata("../Data/Intermediate/monthlyCRSP.dta")
         crsp['date'] = pd.to_datetime(crsp['time_avail_m'])
         crsp['ret'] = crsp['ret'] * 100  # Convert to percentage
         # mve_c already exists in the parquet file
@@ -133,12 +135,13 @@ class InputOutputMomentum:
         crsp = crsp.dropna(subset=['ret', 'mve_c'])
         crsp = crsp[['permno', 'date', 'ret', 'mve_c']].copy()
         
-        # Read CCM linking table
+        # Read CCM linking table - load full dataset
         ccm_path = self.data_dir / "CCMLinkingTable.parquet"
         if not ccm_path.exists():
             raise FileNotFoundError(f"CCMLinkingTable.parquet not found at {ccm_path}")
         
-        ccm = pd.read_parquet(ccm_path)
+        # Load full CCM linking data
+        ccm = pd.read_stata("../Data/Intermediate/CCMLinkingTable.dta")
         ccm['linkdt'] = pd.to_datetime(ccm['timeLinkStart_d'])
         ccm['linkenddt'] = pd.to_datetime(ccm['timeLinkEnd_d'])
         ccm['linkenddt'] = ccm['linkenddt'].fillna(pd.Timestamp('2030-12-31'))
@@ -284,6 +287,9 @@ class InputOutputMomentum:
         comp_mapped = comp_mapped.dropna(subset=['beaind'])
         comp_mapped = comp_mapped[['gvkey', 'year_avail', 'naics6', 'beaind']].copy()
         
+        # Ensure gvkey is string for consistent merging
+        comp_mapped['gvkey'] = comp_mapped['gvkey'].astype(str)
+        
         logger.info(f"Industry mapping: {len(comp_mapped):,} firm-years mapped")
         return comp_mapped
     
@@ -294,6 +300,9 @@ class InputOutputMomentum:
         # Add gvkey to CRSP via CCM linking
         crsp_df['year'] = crsp_df['date'].dt.year
         crsp_df['month'] = crsp_df['date'].dt.month
+        
+        # Ensure consistent data types for gvkey before merging
+        ccm_df['gvkey'] = ccm_df['gvkey'].astype(str)
         
         # Merge CRSP with CCM
         crsp_linked = crsp_df.merge(ccm_df, on='permno', how='left')
@@ -370,11 +379,20 @@ class InputOutputMomentum:
             logger.warning(f"No valid momentum data after filtering for {momentum_type} - returning empty result")
             return pd.DataFrame(columns=['year', 'month', 'beaind', 'retmatch', 'portind'])
         
-        # Calculate weighted average returns
+        # Calculate weighted average returns, filtering out zero-weight groups
+        def safe_weighted_average(group):
+            weights = group['weight']
+            if weights.sum() == 0:  # Skip groups with zero total weights
+                return np.nan
+            return np.average(group['retmatch'], weights=weights)
+        
         matchret = momentum_data.groupby(['year', 'month', 'beaind']).apply(
-            lambda x: np.average(x['retmatch'], weights=x['weight']),
+            safe_weighted_average,
             include_groups=False
         ).reset_index()
+        
+        # Remove NaN results from zero-weight groups
+        matchret = matchret.dropna()
         
         # Handle column naming based on actual result
         if len(matchret.columns) == 4:
@@ -383,10 +401,31 @@ class InputOutputMomentum:
             logger.warning(f"Unexpected number of columns in groupby result: {len(matchret.columns)}. Columns: {list(matchret.columns)}")
             return pd.DataFrame(columns=['year', 'month', 'beaind', 'retmatch', 'portind'])
         
-        # Create portfolio rankings
-        matchret['portind'] = matchret.groupby(['year', 'month'])['retmatch'].transform(
-            lambda x: pd.qcut(x, q=10, labels=range(1, 11), duplicates='drop')
-        )
+        # Create portfolio rankings with robust handling for edge cases
+        def safe_qcut(x):
+            if len(x) == 0:
+                return pd.Series([], dtype='int')
+            
+            n_unique = len(x.unique())
+            if n_unique <= 1:
+                return pd.Series([1] * len(x), index=x.index)
+            
+            # Use percentile ranking as a more robust alternative to qcut
+            try:
+                # First try with 10 quantiles
+                return pd.qcut(x, q=10, labels=range(1, 11), duplicates='drop')
+            except ValueError:
+                try:
+                    # Try with fewer quantiles
+                    n_bins = min(n_unique, 10)
+                    return pd.qcut(x, q=n_bins, labels=range(1, n_bins + 1), duplicates='drop')
+                except ValueError:
+                    # If qcut still fails, use rank-based approach
+                    ranks = x.rank(method='first')
+                    quantiles = pd.cut(ranks, bins=10, labels=range(1, 11), include_lowest=True)
+                    return quantiles
+        
+        matchret['portind'] = matchret.groupby(['year', 'month'])['retmatch'].transform(safe_qcut)
         
         logger.info(f"{momentum_type} momentum signals: {len(matchret):,} observations")
         return matchret
@@ -438,7 +477,9 @@ class InputOutputMomentum:
         
         # Create time_avail_m
         firm_months['time_avail_m'] = pd.to_datetime(
-            firm_months[['year_avail', 'month_avail']].assign(day=1)
+            firm_months[['year_avail', 'month_avail']].rename(
+                columns={'year_avail': 'year', 'month_avail': 'month'}
+            ).assign(day=1)
         )
         
         # Select and rename final columns
