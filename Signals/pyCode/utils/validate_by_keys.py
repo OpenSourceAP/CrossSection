@@ -797,17 +797,19 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                         for sample in diff['mismatch_samples']:
                             all_mismatched_indices.add(sample['row_index'])
                 
-                # Collect full row data for mismatched records (limit to first 5)
+                # Collect full row data for mismatched records (limit to first 10)
                 comparison_table_data = []
-                for idx in sorted(list(all_mismatched_indices))[:5]:
+                for idx in sorted(list(all_mismatched_indices))[:10]:
                     if idx < len(df1_norm) and idx < len(df2_norm):
                         # Python row
-                        python_row = {'source': 'Python', 'row_index': idx}
-                        python_row.update(df1_norm.iloc[idx].to_dict())
+                        python_row = df1_norm.iloc[idx].to_dict()
+                        python_row['_validation_source'] = 'Python'
+                        python_row['row_index'] = idx
                         
                         # Stata row  
-                        stata_row = {'source': 'Stata', 'row_index': idx}
-                        stata_row.update(df2_norm.iloc[idx].to_dict())
+                        stata_row = df2_norm.iloc[idx].to_dict()
+                        stata_row['_validation_source'] = 'Stata'
+                        stata_row['row_index'] = idx
                         
                         comparison_table_data.extend([python_row, stata_row])
                 
@@ -1144,7 +1146,7 @@ def generate_comparison_table_text(table_data: List[Dict[str, Any]]) -> str:
     all_columns -= exclude_cols
     
     # Sort columns with important ones first
-    priority_cols = ['source', 'gvkey', 'time_avail_m', 'datadateq', 'fyearq', 'fqtr', 'datacqtr', 'datafqtr']
+    priority_cols = ['_validation_source', 'gvkey', 'time_avail_m', 'datadateq', 'fyearq', 'fqtr', 'datacqtr', 'datafqtr']
     sorted_columns = []
     for col in priority_cols:
         if col in all_columns:
@@ -1185,7 +1187,7 @@ def generate_comparison_table_text(table_data: List[Dict[str, Any]]) -> str:
     
     # Data rows
     for i, row in enumerate(table_data):
-        if i >= 10:  # Limit to first 10 rows for readability
+        if i >= 20:  # Limit to first 20 rows for readability
             remaining = len(table_data) - i
             text += f'  ... and {remaining} more rows\n'
             break
@@ -1200,7 +1202,7 @@ def generate_comparison_table_text(table_data: List[Dict[str, Any]]) -> str:
         text += '  ' + ' | '.join(row_parts) + '\n'
     
     text += '```\n'
-    text += f'*Showing {min(len(table_data), 10)} mismatched rows (Python vs Stata comparison) with {len(sorted_columns)} columns*\n\n'
+    text += f'*Showing {min(len(table_data), 20)} mismatched rows (Python vs Stata comparison) with {len(sorted_columns)} columns*\n\n'
     
     return text
 
@@ -1217,7 +1219,7 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
         if idx is not None:
             if idx not in rows_by_index:
                 rows_by_index[idx] = {}
-            source = row.get('source')
+            source = row.get('_validation_source')
             if source:
                 rows_by_index[idx][source] = row
     
@@ -1234,7 +1236,7 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
             identifier_cols = ['gvkey', 'time_avail_m']
             
             # Get all columns (excluding internal ones)
-            exclude_cols = {'source', 'row_index'}
+            exclude_cols = {'_validation_source', 'row_index'}
             all_columns = set()
             all_columns.update(python_row.keys())
             all_columns.update(stata_row.keys())
@@ -1284,7 +1286,7 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
         return ""
     
     # Get all difference columns
-    exclude_cols = {'row_index'}
+    exclude_cols = {'_validation_source', 'row_index'}
     all_columns = set()
     for row in difference_data:
         all_columns.update(row.keys())
@@ -1322,7 +1324,7 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
     
     # Data rows
     for i, row in enumerate(difference_data):
-        if i >= 5:  # Limit to first 5 rows for readability
+        if i >= 10:  # Limit to first 10 rows for readability
             remaining = len(difference_data) - i
             text += f'  ... and {remaining} more rows\n'
             break
@@ -1334,7 +1336,7 @@ def generate_difference_table_text(table_data: List[Dict[str, Any]]) -> str:
         text += '  ' + ' | '.join(row_parts) + '\n'
     
     text += '```\n'
-    text += f'*Showing differences (Stata - Python) for {min(len(difference_data), 5)} mismatched rows with {len(sorted_columns)} columns*\n\n'
+    text += f'*Showing differences (Stata - Python) for {min(len(difference_data), 10)} mismatched rows with {len(sorted_columns)} columns*\n\n'
     
     return text
 
