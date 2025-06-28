@@ -97,11 +97,11 @@ CRSPdistributions:
   key1: permno
   key2: exdt
   key3: distcd
+  key4: paydt
   stata_file: CRSPdistributions.dta
   python_file: CRSPdistributions.parquet
   stata_script: H_CRSPDistributions.do
   python_script: H_CRSPDistributions.py
-  stata_dups: TRUE
 
 mCRSP:
   key1: permno
@@ -184,6 +184,7 @@ IBES_Recommendations:
   python_file: IBES_Recommendations.parquet
   stata_script: M_IBES_Recommendations.do
   python_script: M_IBES_Recommendations.py
+  stata_dups: TRUE
 
 IBES_UnadjustedActuals:
   key1: tickerIBES

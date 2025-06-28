@@ -70,7 +70,8 @@ def load_dataset_config() -> Dict[str, Dict[str, Any]]:
                     'stata_file': dataset_info.get('stata_file'),
                     'python_file': dataset_info.get('python_file'),
                     'stata_script': dataset_info.get('stata_script'),
-                    'python_script': dataset_info.get('python_script')
+                    'python_script': dataset_info.get('python_script'),
+                    'stata_dups': dataset_info.get('stata_dups')
                 }
         
         logger.info(f"Loaded configuration for {len(config)} datasets from {YAML_CONFIG_PATH}")
@@ -265,15 +266,15 @@ def filter_dataset_by_identifiers(df: pd.DataFrame, identifiers: pd.DataFrame,
     return filtered_df
 
 
-def deduplicate_ibes_recommendations(df: pd.DataFrame, id_cols: List[str]) -> pd.DataFrame:
-    """Special handling for IBES_Recommendations which has exact duplicates."""
+def deduplicate_dataset(df: pd.DataFrame, id_cols: List[str], dataset_name: str) -> pd.DataFrame:
+    """Remove exact duplicates from datasets marked with stata_dups: TRUE."""
     original_count = len(df)
     # Drop duplicates based on all identifier columns
     df_dedup = df.drop_duplicates(subset=id_cols)
     final_count = len(df_dedup)
     
     if original_count != final_count:
-        logger.info(f"IBES_Recommendations: Removed {original_count - final_count:,} duplicate rows")
+        logger.info(f"{dataset_name}: Removed {original_count - final_count:,} duplicate rows")
     
     return df_dedup
 
@@ -468,10 +469,10 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
         logger.info(f"Loading Stata file: {stata_file}")
         stata_df = load_dataset(stata_file, maxrows)
 
-        # Special handling for IBES_Recommendations which has duplicates
-        if dataset_name == 'IBES_Recommendations':
-            python_df = deduplicate_ibes_recommendations(python_df, id_cols)
-            stata_df = deduplicate_ibes_recommendations(stata_df, id_cols)
+        # Special handling for datasets marked with stata_dups: TRUE
+        if config.get('stata_dups') == 'TRUE':
+            python_df = deduplicate_dataset(python_df, id_cols, dataset_name)
+            stata_df = deduplicate_dataset(stata_df, id_cols, dataset_name)
 
         # Normalize identifier types
         if id_cols:
