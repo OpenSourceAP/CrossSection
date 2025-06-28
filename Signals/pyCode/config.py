@@ -9,17 +9,10 @@ all DataDownloads scripts. It is version controlled and not private.
 # Row limit for DataDownloads scripts
 # 1000 = debug mode (download only 1000 rows per query)
 # -1 = production mode (download all rows)
-MAX_ROWS_DL = 1000
-
-# Debug mode flag for additional debugging features
-DEBUG_MODE = True
+MAX_ROWS_DL = -1
 
 # Timeout for individual DataDownloads scripts (in minutes)
 # 10 = 10 minutes (default for production, handles large downloads like ZB_PIN.py)
 # 0.5 = 30 seconds (for quick testing, may cause timeouts on large downloads)
 # Used by 01_DownloadData.py orchestrator script
 SCRIPT_TIMEOUT_MINUTES = 0.5
-
-# Additional configuration options can be added here as needed
-SAVE_CSV = True  # Whether to save intermediate CSV files
-VERBOSE_OUTPUT = True  # Whether to print detailed progress messages
