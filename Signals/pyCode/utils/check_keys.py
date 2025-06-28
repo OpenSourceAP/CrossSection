@@ -10,7 +10,7 @@ import yaml
 import pandas as pd
 
 
-def main(max_rows=None):
+def main(maxrows=None):
     """Check key uniqueness for all datasets and generate report."""
 
     # Load dataset mapping
@@ -28,12 +28,12 @@ def main(max_rows=None):
         if isinstance(config, dict) and 'stata_file' in config:
             total_datasets += 1
 
-            # Get key columns
+            # Get all key columns (key1, key2, key3, etc.)
             key_cols = []
-            if config.get('key1'):
-                key_cols.append(config['key1'])
-            if config.get('key2'):
-                key_cols.append(config['key2'])
+            key_num = 1
+            while f'key{key_num}' in config and config.get(f'key{key_num}'):
+                key_cols.append(config[f'key{key_num}'])
+                key_num += 1
             
             if not key_cols:
                 continue  # Skip datasets with no keys
@@ -54,17 +54,17 @@ def main(max_rows=None):
                 # Load and check uniqueness
                 file_ext = data_file.suffix.lower()
                 if file_ext == '.csv':
-                    if max_rows:
-                        df = pd.read_csv(data_file, nrows=max_rows)
-                        print(f"  {dataset_name}: Testing first {max_rows} rows")
+                    if maxrows:
+                        df = pd.read_csv(data_file, nrows=maxrows)
+                        print(f"  {dataset_name}: Testing first {maxrows} rows")
                     else:
                         df = pd.read_csv(data_file)
                 else:  # .dta file
-                    if max_rows:
+                    if maxrows:
                         df = pd.read_stata(data_file, preserve_dtypes=False, 
-                                         chunksize=max_rows)
+                                         chunksize=maxrows)
                         df = next(df)  # Get first chunk
-                        print(f"  {dataset_name}: Testing first {max_rows} rows")
+                        print(f"  {dataset_name}: Testing first {maxrows} rows")
                     else:
                         df = pd.read_stata(data_file, preserve_dtypes=False)
                 original_rows = len(df)
@@ -150,8 +150,8 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
-        max_rows = int(sys.argv[1])
-        print(f"Testing with max {max_rows} rows per dataset")
-        main(max_rows)
+        maxrows = int(sys.argv[1])
+        print(f"Testing with max {maxrows} rows per dataset")
+        main(maxrows)
     else:
         main()

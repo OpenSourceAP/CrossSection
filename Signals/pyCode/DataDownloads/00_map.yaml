@@ -64,7 +64,10 @@ CompustatPensions:
 
 CompustatSegments:
   key1: gvkey
-  key2: datadate
+  key2: stype
+  key3: sid
+  key4: datadate
+  key5: srcdate
   stata_file: CompustatSegments.dta
   python_file: CompustatSegments.parquet
   stata_script: E_CompustatBusinessSegments.do
@@ -72,7 +75,8 @@ CompustatSegments:
 
 CompustatSegmentDataCustomers:
   key1: gvkey
-  key2: datadate
+  key2: cid
+  key3: datadate
   stata_file: CompustatSegmentDataCustomers.csv
   python_file: CompustatSegmentDataCustomers.csv
   stata_script: F_CompustatCustomerSegments.do
@@ -86,14 +90,18 @@ monthlyShortInterest:
   stata_script: G_CompustatShortInterest.do
   python_script: G_CompustatShortInterest.py
 
-# CRSP Data
+# ===== CRSP Data =====
+# CRSPdistributions seems to have duplicates. 
+# but based on how DivYield.do handles it, we want to keep the duplicates.
 CRSPdistributions:
   key1: permno
   key2: exdt
+  key3: distcd
   stata_file: CRSPdistributions.dta
   python_file: CRSPdistributions.parquet
   stata_script: H_CRSPDistributions.do
   python_script: H_CRSPDistributions.py
+  stata_dups: TRUE
 
 mCRSP:
   key1: permno
@@ -145,7 +153,8 @@ m_CRSPAcquisitions:
 # IBES Data
 IBES_EPS_Unadj:
   key1: tickerIBES
-  key2: time_avail_m
+  key2: statpers
+  key3: fpi
   stata_file: IBES_EPS_Unadj.dta
   python_file: IBES_EPS_Unadj.parquet
   stata_script: L_IBES_EPS_Unadj.do
@@ -153,15 +162,24 @@ IBES_EPS_Unadj:
 
 IBES_EPS_Adj:
   key1: tickerIBES
-  key2: time_avail_m
+  key2: statpers
+  key3: fpi
   stata_file: IBES_EPS_Adj.dta
   python_file: IBES_EPS_Adj.parquet
   stata_script: L2_IBES_EPS_Adj.do
   python_script: L2_IBES_EPS_Adj.py
 
+# IBES_Recommendations has exact duplicates. 
+# stata handling from ChangeInRecommendation.do:
+# * collapse down to firm-month
+# gcollapse (lastnm) ireccd, by(tickerIBES amaskcd time_avail_m) // drops only 3/80
+# gcollapse (mean) ireccd, by(tickerIBES time_avail_m)  // drops about 1/2
 IBES_Recommendations:
   key1: tickerIBES
-  key2: time_avail_m
+  key2: anndats
+  key3: estimid
+  key4: ireccd
+  key5: ereccd
   stata_file: IBES_Recommendations.dta
   python_file: IBES_Recommendations.parquet
   stata_script: M_IBES_Recommendations.do
@@ -184,8 +202,7 @@ dailyFF:
   python_script: O_Daily_Fama-French.py
 
 monthlyFF:
-  key1: null
-  key2: time_avail_m
+  key1: time_avail_m
   stata_file: monthlyFF.dta
   python_file: monthlyFF.parquet
   stata_script: P_Monthly_Fama-French.do
@@ -318,7 +335,9 @@ OptionMetricsVolume:
 
 OptionMetricsVolSurf:
   key1: secid
-  key2: time_avail_m
+  key2: days
+  key3: cp_flag
+  key4: date
   stata_file: OptionMetricsVolSurf.dta
   python_file: OptionMetricsVolSurf.parquet
   stata_script: ZH_OptionMetrics.do
@@ -334,7 +353,8 @@ OptionMetricsXZZ:
 
 OptionMetricsBH:
   key1: secid
-  key2: time_avail_m
+  key2: cp_flag
+  key3: time_avail_m
   stata_file: OptionMetricsBH.dta
   python_file: OptionMetricsBH.parquet
   stata_script: ZH_OptionMetrics.do
