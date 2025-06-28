@@ -1,0 +1,393 @@
+# DataDownloads Dataset Mapping
+# This file maps each dataset to its identifiers, file names, and generating scripts
+# Generated from DATASET_IDENTIFIERS and SCRIPT_OUTPUT_MAPPING in utils/update_01_dd_doc.py
+# Stata scripts extracted from 00_Stata_DataDownloadsDoc.md
+
+# CCM Linking Tables
+CCMLinkingTable.csv:
+  stock: lpermno
+  time: linkdt
+  stata_file: CCMLinkingTable.csv
+  python_file: CCMLinkingTable.csv
+  stata_script: A_CCMLinkingTable.do
+  python_script: A_CCMLinkingTable.py
+
+CCMLinkingTable:
+  stock: gvkey
+  time: timeLinkStart_d
+  stata_file: CCMLinkingTable.dta
+  python_file: CCMLinkingTable.parquet
+  stata_script: A_CCMLinkingTable.do
+  python_script: A_CCMLinkingTable.py
+
+# Compustat Annual/Quarterly
+CompustatAnnual:
+  stock: gvkey
+  time: datadate
+  stata_file: CompustatAnnual.csv
+  python_file: CompustatAnnual.csv
+  stata_script: B_CompustatAnnual.do
+  python_script: B_CompustatAnnual.py
+
+a_aCompustat:
+  stock: permno
+  time: time_avail_m
+  stata_file: a_aCompustat.dta
+  python_file: a_aCompustat.parquet
+  stata_script: B_CompustatAnnual.do
+  python_script: B_CompustatAnnual.py
+
+m_aCompustat:
+  stock: permno
+  time: time_avail_m
+  stata_file: m_aCompustat.dta
+  python_file: m_aCompustat.parquet
+  stata_script: B_CompustatAnnual.do
+  python_script: B_CompustatAnnual.py
+
+m_QCompustat:
+  stock: gvkey
+  time: time_avail_m
+  stata_file: m_QCompustat.dta
+  python_file: m_QCompustat.parquet
+  stata_script: C_CompustatQuarterly.do
+  python_script: C_CompustatQuarterly.py
+
+# Compustat Specialized
+CompustatPensions:
+  stock: gvkey
+  time: year
+  stata_file: CompustatPensions.dta
+  python_file: CompustatPensions.parquet
+  stata_script: D_CompustatPensions.do
+  python_script: D_CompustatPensions.py
+
+CompustatSegments:
+  stock: gvkey
+  time: datadate
+  stata_file: CompustatSegments.dta
+  python_file: CompustatSegments.parquet
+  stata_script: E_CompustatBusinessSegments.do
+  python_script: E_CompustatBusinessSegments.py
+
+CompustatSegmentDataCustomers:
+  stock: gvkey
+  time: datadate
+  stata_file: CompustatSegmentDataCustomers.csv
+  python_file: CompustatSegmentDataCustomers.csv
+  stata_script: F_CompustatCustomerSegments.do
+  python_script: F_CompustatCustomerSegments.py
+
+monthlyShortInterest:
+  stock: gvkey
+  time: time_avail_m
+  stata_file: monthlyShortInterest.dta
+  python_file: monthlyShortInterest.parquet
+  stata_script: G_CompustatShortInterest.do
+  python_script: G_CompustatShortInterest.py
+
+# CRSP Data
+CRSPdistributions:
+  stock: permno
+  time: exdt
+  stata_file: CRSPdistributions.dta
+  python_file: CRSPdistributions.parquet
+  stata_script: H_CRSPDistributions.do
+  python_script: H_CRSPDistributions.py
+
+mCRSP:
+  stock: permno
+  time: date
+  stata_file: mCRSP.csv
+  python_file: mCRSP.csv
+  stata_script: I_CRSPmonthly.do
+  python_script: I_CRSPmonthly.py
+
+monthlyCRSP:
+  stock: permno
+  time: time_avail_m
+  stata_file: monthlyCRSP.dta
+  python_file: monthlyCRSP.parquet
+  stata_script: I_CRSPmonthly.do
+  python_script: I_CRSPmonthly.py
+
+monthlyCRSPraw:
+  stock: permno
+  time: time_avail_m
+  stata_file: monthlyCRSPraw.dta
+  python_file: monthlyCRSPraw.parquet
+  stata_script: I2_CRSPmonthlyraw.do
+  python_script: I2_CRSPmonthlyraw.py
+
+dailyCRSP:
+  stock: permno
+  time: time_d
+  stata_file: dailyCRSP.dta
+  python_file: dailyCRSP.parquet
+  stata_script: J_CRSPdaily.do
+  python_script: J_CRSPdaily.py
+
+dailyCRSPprc:
+  stock: permno
+  time: time_d
+  stata_file: dailyCRSPprc.dta
+  python_file: dailyCRSPprc.parquet
+  stata_script: J_CRSPdaily.do
+  python_script: J_CRSPdaily.py
+
+m_CRSPAcquisitions:
+  stock: permno
+  time: null
+  stata_file: m_CRSPAcquisitions.dta
+  python_file: m_CRSPAcquisitions.parquet
+  stata_script: K_CRSPAcquisitions.do
+  python_script: K_CRSPAcquisitions.py
+
+# IBES Data
+IBES_EPS_Unadj:
+  stock: tickerIBES
+  time: time_avail_m
+  stata_file: IBES_EPS_Unadj.dta
+  python_file: IBES_EPS_Unadj.parquet
+  stata_script: L_IBES_EPS_Unadj.do
+  python_script: L_IBES_EPS_Unadj.py
+
+IBES_EPS_Adj:
+  stock: tickerIBES
+  time: time_avail_m
+  stata_file: IBES_EPS_Adj.dta
+  python_file: IBES_EPS_Adj.parquet
+  stata_script: L2_IBES_EPS_Adj.do
+  python_script: L2_IBES_EPS_Adj.py
+
+IBES_Recommendations:
+  stock: tickerIBES
+  time: time_avail_m
+  stata_file: IBES_Recommendations.dta
+  python_file: IBES_Recommendations.parquet
+  stata_script: M_IBES_Recommendations.do
+  python_script: M_IBES_Recommendations.py
+
+IBES_UnadjustedActuals:
+  stock: tickerIBES
+  time: time_avail_m
+  stata_file: IBES_UnadjustedActuals.dta
+  python_file: IBES_UnadjustedActuals.parquet
+  stata_script: N_IBES_UnadjustedActuals.do
+  python_script: N_IBES_UnadjustedActuals.py
+
+# Market-Level Data (no stock identifier)
+dailyFF:
+  stock: null
+  time: time_d
+  stata_file: dailyFF.dta
+  python_file: dailyFF.parquet
+  stata_script: O_Daily_Fama-French.do
+  python_script: O_Daily_Fama-French.py
+
+monthlyFF:
+  stock: null
+  time: time_avail_m
+  stata_file: monthlyFF.dta
+  python_file: monthlyFF.parquet
+  stata_script: P_Monthly_Fama-French.do
+  python_script: P_Monthly_Fama-French.py
+
+monthlyMarket:
+  stock: null
+  time: time_avail_m
+  stata_file: monthlyMarket.dta
+  python_file: monthlyMarket.parquet
+  stata_script: Q_MarketReturns.do
+  python_script: Q_MarketReturns.py
+
+monthlyLiquidity:
+  stock: null
+  time: time_avail_m
+  stata_file: monthlyLiquidity.dta
+  python_file: monthlyLiquidity.parquet
+  stata_script: R_MonthlyLiquidityFactor.do
+  python_script: R_MonthlyLiquidityFactor.py
+
+d_qfactor:
+  stock: null
+  time: time_d
+  stata_file: d_qfactor.dta
+  python_file: d_qfactor.parquet
+  stata_script: S_QFactorModel.do
+  python_script: S_QFactorModel.py
+
+d_vix:
+  stock: null
+  time: time_d
+  stata_file: d_vix.dta
+  python_file: d_vix.parquet
+  stata_script: T_VIX.do
+  python_script: T_VIX.py
+
+GNPdefl:
+  stock: null
+  time: time_avail_m
+  stata_file: GNPdefl.dta
+  python_file: GNPdefl.parquet
+  stata_script: U_GNPDeflator.do
+  python_script: U_GNPDeflator.py
+
+TBill3M:
+  stock: null
+  time: [qtr, year]
+  stata_file: TBill3M.dta
+  python_file: TBill3M.parquet
+  stata_script: V_TBill3M.do
+  python_script: V_TBill3M.py
+
+brokerLev:
+  stock: null
+  time: [qtr, year]
+  stata_file: brokerLev.dta
+  python_file: brokerLev.parquet
+  stata_script: W_BrokerDealerLeverage.do
+  python_script: W_BrokerDealerLeverage.py
+
+# Credit Ratings
+m_SP_creditratings:
+  stock: gvkey
+  time: time_avail_m
+  stata_file: m_SP_creditratings.dta
+  python_file: m_SP_creditratings.parquet
+  stata_script: X_SPCreditRatings.do
+  python_script: X_SPCreditRatings.py
+
+m_CIQ_creditratings:
+  stock: gvkey
+  time: time_avail_m
+  stata_file: m_CIQ_creditratings.dta
+  python_file: m_CIQ_creditratings.parquet
+  stata_script: X2_CIQCreditRatings.do
+  python_script: X2_CIQCreditRatings.py
+
+# Other Specialized Data
+IPODates:
+  stock: ticker
+  time: null
+  stata_file: IPODates.dta
+  python_file: IPODates.parquet
+  stata_script: ZA_IPODates.do
+  python_script: ZA_IPODates.py
+
+pin_monthly:
+  stock: permno
+  time: time_avail_m
+  stata_file: pin_monthly.dta
+  python_file: pin_monthly.parquet
+  stata_script: ZB_PIN.do
+  python_script: ZB_PIN.py
+
+GovIndex:
+  stock: ticker
+  time: time_avail_m
+  stata_file: GovIndex.dta
+  python_file: GovIndex.parquet
+  stata_script: ZC_GovernanceIndex.do
+  python_script: ZC_GovernanceIndex.py
+
+BAspreadsCorwin:
+  stock: permno
+  time: time_avail_m
+  stata_file: BAspreadsCorwin.dta
+  python_file: BAspreadsCorwin.parquet
+  stata_script: ZD_CorwinSchultz.do
+  python_script: ZD_CorwinSchultz.py
+
+TR_13F:
+  stock: permno
+  time: time_avail_m
+  stata_file: TR_13F.dta
+  python_file: TR_13F.parquet
+  stata_script: ZE_13F.do
+  python_script: ZE_13F.py
+
+hf_spread:
+  stock: permno
+  time: time_avail_m
+  stata_file: hf_spread.dta
+  python_file: hf_spread.parquet
+  stata_script: ZG_BidaskTAQ.do
+  python_script: ZG_BidaskTAQ.py
+
+# OptionMetrics Data
+OptionMetricsVolume:
+  stock: secid
+  time: time_avail_m
+  stata_file: OptionMetricsVolume.dta
+  python_file: OptionMetricsVolume.parquet
+  stata_script: ZH_OptionMetrics.do
+  python_script: ZH_OptionMetrics.py
+
+OptionMetricsVolSurf:
+  stock: secid
+  time: time_avail_m
+  stata_file: OptionMetricsVolSurf.dta
+  python_file: OptionMetricsVolSurf.parquet
+  stata_script: ZH_OptionMetrics.do
+  python_script: ZH_OptionMetrics.py
+
+OptionMetricsXZZ:
+  stock: secid
+  time: time_avail_m
+  stata_file: OptionMetricsXZZ.dta
+  python_file: OptionMetricsXZZ.parquet
+  stata_script: ZH_OptionMetrics.do
+  python_script: ZH_OptionMetrics.py
+
+OptionMetricsBH:
+  stock: secid
+  time: time_avail_m
+  stata_file: OptionMetricsBH.dta
+  python_file: OptionMetricsBH.parquet
+  stata_script: ZH_OptionMetrics.do
+  python_script: ZH_OptionMetrics.py
+
+# Linking Tables (no time filtering needed)
+IBESCRSPLinkingTable:
+  stock: permno
+  time: null
+  stata_file: IBESCRSPLinkingTable.dta
+  python_file: IBESCRSPLinkingTable.parquet
+  stata_script: ZF_CRSPIBESLink.do
+  python_script: ZF_CRSPIBESLink.py
+
+OPTIONMETRICSCRSPLinkingTable:
+  stock: permno
+  time: null
+  stata_file: OPTIONMETRICSCRSPLinkingTable.dta
+  python_file: OPTIONMETRICSCRSPLinkingTable.parquet
+  stata_script: ZL_CRSPOPTIONMETRICS.do
+  python_script: ZL_CRSPOPTIONMETRICS.py
+
+# Patent Data
+PatentDataProcessed:
+  stock: gvkey
+  time: year
+  stata_file: PatentDataProcessed.dta
+  python_file: PatentDataProcessed.parquet
+  stata_script: ZI_PatentCitations.do
+  python_script: ZI_PatentCitations.py
+
+# Input-Output Momentum Data
+InputOutputMomentumProcessed:
+  stock: gvkey
+  time: time_avail_m
+  stata_file: InputOutputMomentumProcessed.dta
+  python_file: InputOutputMomentumProcessed.parquet
+  stata_script: ZJ_InputOutputMomentum.do
+  python_script: ZJ_InputOutputMomentum.py
+
+# Customer Momentum Data
+customerMom:
+  stock: permno
+  time: time_avail_m
+  stata_file: customerMom.dta
+  python_file: customerMom.parquet
+  stata_script: ZK_CustomerMomentum.do
+  python_script: ZK_CustomerMomentum.py
