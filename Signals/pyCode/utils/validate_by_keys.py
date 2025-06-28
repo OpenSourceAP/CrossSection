@@ -18,12 +18,13 @@ To use: `python3 utils/validate_by_keys.py --datasets CompustatAnnual m_QCompust
 import sys
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 import warnings
 
 import pandas as pd
 import numpy as np
+import yaml
 warnings.filterwarnings('ignore')
 
 # Configure logging
@@ -40,320 +41,48 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Dataset identifier mapping based on documentation
-DATASET_IDENTIFIERS = {
-    # CCM Linking Tables
-    'CCMLinkingTable.csv': {
-        'stock': 'lpermno', 
-        'time': 'linkdt',
-        'stata_file': 'CCMLinkingTable.csv',
-        'python_file': 'CCMLinkingTable.csv'
-    },
-    'CCMLinkingTable': {
-        'stock': 'gvkey', 
-        'time': 'timeLinkStart_d',
-        'stata_file': 'CCMLinkingTable.dta',
-        'python_file': 'CCMLinkingTable.parquet'
-    },
-
-    # Compustat Annual/Quarterly
-    'CompustatAnnual': {
-        'stock': 'gvkey', 
-        'time': 'datadate',
-        'stata_file': 'CompustatAnnual.csv',
-        'python_file': 'CompustatAnnual.csv'
-    },
-    'a_aCompustat': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'a_aCompustat.dta',
-        'python_file': 'a_aCompustat.parquet'
-    },
-    'm_aCompustat': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'm_aCompustat.dta',
-        'python_file': 'm_aCompustat.parquet'
-    },
-    'm_QCompustat': {
-        'stock': 'gvkey', 
-        'time': 'time_avail_m',
-        'stata_file': 'm_QCompustat.dta',
-        'python_file': 'm_QCompustat.parquet'
-    },
-
-    # Compustat Specialized
-    'CompustatPensions': {
-        'stock': 'gvkey', 
-        'time': 'year',
-        'stata_file': 'CompustatPensions.dta',
-        'python_file': 'CompustatPensions.parquet'
-    },
-    'CompustatSegments': {
-        'stock': 'gvkey', 
-        'time': 'datadate',
-        'stata_file': 'CompustatSegments.dta',
-        'python_file': 'CompustatSegments.parquet'
-    },
-    'CompustatSegmentDataCustomers': {
-        'stock': 'gvkey', 
-        'time': 'datadate',
-        'stata_file': 'CompustatSegmentDataCustomers.csv',
-        'python_file': 'CompustatSegmentDataCustomers.csv'
-    },
-    'monthlyShortInterest': {
-        'stock': 'gvkey', 
-        'time': 'time_avail_m',
-        'stata_file': 'monthlyShortInterest.dta',
-        'python_file': 'monthlyShortInterest.parquet'
-    },
-
-    # CRSP Data
-    'CRSPdistributions': {
-        'stock': 'permno', 
-        'time': 'exdt',
-        'stata_file': 'CRSPdistributions.dta',
-        'python_file': 'CRSPdistributions.parquet'
-    },
-    'mCRSP': {
-        'stock': 'permno', 
-        'time': 'date',
-        'stata_file': 'mCRSP.csv',
-        'python_file': 'mCRSP.csv'
-    },
-    'monthlyCRSP': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'monthlyCRSP.dta',
-        'python_file': 'monthlyCRSP.parquet'
-    },
-    'monthlyCRSPraw': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'monthlyCRSPraw.dta',
-        'python_file': 'monthlyCRSPraw.parquet'
-    },
-    'dailyCRSP': {
-        'stock': 'permno', 
-        'time': 'time_d',
-        'stata_file': 'dailyCRSP.dta',
-        'python_file': 'dailyCRSP.parquet'
-    },
-    'dailyCRSPprc': {
-        'stock': 'permno', 
-        'time': 'time_d',
-        'stata_file': 'dailyCRSPprc.dta',
-        'python_file': 'dailyCRSPprc.parquet'
-    },
-    'm_CRSPAcquisitions': {
-        'stock': 'permno', 
-        'time': None,
-        'stata_file': 'm_CRSPAcquisitions.dta',
-        'python_file': 'm_CRSPAcquisitions.parquet'
-    },
-
-    # IBES Data
-    'IBES_EPS_Unadj': {
-        'stock': 'tickerIBES', 
-        'time': 'time_avail_m',
-        'stata_file': 'IBES_EPS_Unadj.dta',
-        'python_file': 'IBES_EPS_Unadj.parquet'
-    },
-    'IBES_EPS_Adj': {
-        'stock': 'tickerIBES', 
-        'time': 'time_avail_m',
-        'stata_file': 'IBES_EPS_Adj.dta',
-        'python_file': 'IBES_EPS_Adj.parquet'
-    },
-    'IBES_Recommendations': {
-        'stock': 'tickerIBES', 
-        'time': 'time_avail_m',
-        'stata_file': 'IBES_Recommendations.dta',
-        'python_file': 'IBES_Recommendations.parquet'
-    },
-    'IBES_UnadjustedActuals': {
-        'stock': 'tickerIBES', 
-        'time': 'time_avail_m',
-        'stata_file': 'IBES_UnadjustedActuals.dta',
-        'python_file': 'IBES_UnadjustedActuals.parquet'
-    },
-
-    # Market-Level Data (no stock identifier)
-    'dailyFF': {
-        'stock': None, 
-        'time': 'time_d',
-        'stata_file': 'dailyFF.dta',
-        'python_file': 'dailyFF.parquet'
-    },
-    'monthlyFF': {
-        'stock': None, 
-        'time': 'time_avail_m',
-        'stata_file': 'monthlyFF.dta',
-        'python_file': 'monthlyFF.parquet'
-    },
-    'monthlyMarket': {
-        'stock': None, 
-        'time': 'time_avail_m',
-        'stata_file': 'monthlyMarket.dta',
-        'python_file': 'monthlyMarket.parquet'
-    },
-    'monthlyLiquidity': {
-        'stock': None, 
-        'time': 'time_avail_m',
-        'stata_file': 'monthlyLiquidity.dta',
-        'python_file': 'monthlyLiquidity.parquet'
-    },
-    'd_qfactor': {
-        'stock': None, 
-        'time': 'time_d',
-        'stata_file': 'd_qfactor.dta',
-        'python_file': 'd_qfactor.parquet'
-    },
-    'd_vix': {
-        'stock': None, 
-        'time': 'time_d',
-        'stata_file': 'd_vix.dta',
-        'python_file': 'd_vix.parquet'
-    },
-    'GNPdefl': {
-        'stock': None, 
-        'time': 'time_avail_m',
-        'stata_file': 'GNPdefl.dta',
-        'python_file': 'GNPdefl.parquet'
-    },
-    'TBill3M': {
-        'stock': None, 
-        'time': ['qtr', 'year'],  # Composite time identifier
-        'stata_file': 'TBill3M.dta',
-        'python_file': 'TBill3M.parquet'
-    },
-    'brokerLev': {
-        'stock': None, 
-        'time': ['qtr', 'year'],  # Composite time identifier
-        'stata_file': 'brokerLev.dta',
-        'python_file': 'brokerLev.parquet'
-    },
-
-    # Credit Ratings
-    'm_SP_creditratings': {
-        'stock': 'gvkey', 
-        'time': 'time_avail_m',
-        'stata_file': 'm_SP_creditratings.dta',
-        'python_file': 'm_SP_creditratings.parquet'
-    },
-    'm_CIQ_creditratings': {
-        'stock': 'gvkey', 
-        'time': 'time_avail_m',
-        'stata_file': 'm_CIQ_creditratings.dta',
-        'python_file': 'm_CIQ_creditratings.parquet'
-    },
-
-    # Other Specialized Data
-    'IPODates': {
-        'stock': 'ticker', 
-        'time': None,
-        'stata_file': 'IPODates.dta',
-        'python_file': 'IPODates.parquet'
-    },
-    'pin_monthly': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'pin_monthly.dta',
-        'python_file': 'pin_monthly.parquet'
-    },
-    'GovIndex': {
-        'stock': 'ticker', 
-        'time': 'time_avail_m',
-        'stata_file': 'GovIndex.dta',
-        'python_file': 'GovIndex.parquet'
-    },
-    'BAspreadsCorwin': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'BAspreadsCorwin.dta',
-        'python_file': 'BAspreadsCorwin.parquet'
-    },
-    'TR_13F': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'TR_13F.dta',
-        'python_file': 'TR_13F.parquet'
-    },
-    'hf_spread': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'hf_spread.dta',
-        'python_file': 'hf_spread.parquet'
-    },
-
-    # OptionMetrics Data
-    'OptionMetricsVolume': {
-        'stock': 'secid', 
-        'time': 'time_avail_m',
-        'stata_file': 'OptionMetricsVolume.dta',
-        'python_file': 'OptionMetricsVolume.parquet'
-    },
-    'OptionMetricsVolSurf': {
-        'stock': 'secid', 
-        'time': 'time_avail_m',
-        'stata_file': 'OptionMetricsVolSurf.dta',
-        'python_file': 'OptionMetricsVolSurf.parquet'
-    },
-    'OptionMetricsXZZ': {
-        'stock': 'secid', 
-        'time': 'time_avail_m',
-        'stata_file': 'OptionMetricsXZZ.dta',
-        'python_file': 'OptionMetricsXZZ.parquet'
-    },
-    'OptionMetricsBH': {
-        'stock': 'secid', 
-        'time': 'time_avail_m',
-        'stata_file': 'OptionMetricsBH.dta',
-        'python_file': 'OptionMetricsBH.parquet'
-    },
-
-    # Linking Tables (no time filtering needed)
-    'IBESCRSPLinkingTable': {
-        'stock': 'permno', 
-        'time': None,
-        'stata_file': 'IBESCRSPLinkingTable.dta',
-        'python_file': 'IBESCRSPLinkingTable.parquet'
-    },
-    'OPTIONMETRICSCRSPLinkingTable': {
-        'stock': 'permno', 
-        'time': None,
-        'stata_file': 'OPTIONMETRICSCRSPLinkingTable.dta',
-        'python_file': 'OPTIONMETRICSCRSPLinkingTable.parquet'
-    },
-
-    # Patent Data
-    'PatentDataProcessed': {
-        'stock': 'gvkey', 
-        'time': 'year',
-        'stata_file': 'PatentDataProcessed.dta',
-        'python_file': 'PatentDataProcessed.parquet'
-    },
-
-    # Input-Output Momentum Data
-    'InputOutputMomentumProcessed': {
-        'stock': 'gvkey', 
-        'time': 'time_avail_m',
-        'stata_file': 'InputOutputMomentumProcessed.dta',
-        'python_file': 'InputOutputMomentumProcessed.parquet'
-    },
-
-    # Customer Momentum Data
-    'customerMom': {
-        'stock': 'permno', 
-        'time': 'time_avail_m',
-        'stata_file': 'customerMom.dta',
-        'python_file': 'customerMom.parquet'
-    }
-}
-
 # File paths
 PYDATA_PATH = Path("../pyData/Intermediate")
 DATA_PATH = Path("../Data/Intermediate")
+YAML_CONFIG_PATH = Path("DataDownloads/00_map.yaml")
+
+
+def load_dataset_config() -> Dict[str, Dict[str, Any]]:
+    """Load dataset configuration from YAML file."""
+    try:
+        with open(YAML_CONFIG_PATH, 'r') as f:
+            yaml_data = yaml.safe_load(f)
+        
+        config = {}
+        for dataset_name, dataset_info in yaml_data.items():
+            if isinstance(dataset_info, dict):
+                # Extract keys (key1, key2, key3, etc.) and convert to list
+                keys = []
+                for i in range(1, 10):  # Support up to 9 keys
+                    key_name = f'key{i}'
+                    if key_name in dataset_info:
+                        keys.append(dataset_info[key_name])
+                    else:
+                        break
+                
+                config[dataset_name] = {
+                    'keys': keys,
+                    'stata_file': dataset_info.get('stata_file'),
+                    'python_file': dataset_info.get('python_file'),
+                    'stata_script': dataset_info.get('stata_script'),
+                    'python_script': dataset_info.get('python_script')
+                }
+        
+        logger.info(f"Loaded configuration for {len(config)} datasets from {YAML_CONFIG_PATH}")
+        return config
+        
+    except Exception as e:
+        logger.error(f"Error loading dataset config from {YAML_CONFIG_PATH}: {e}")
+        raise
+
+
+# Load dataset configuration from YAML
+DATASET_CONFIG = load_dataset_config()
 
 
 def load_parquet_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFrame:
@@ -479,213 +208,74 @@ def normalize_identifier_types(df: pd.DataFrame, id_cols: List[str]) -> pd.DataF
     return df
 
 
-def get_identifier_columns(dataset_name: str) -> Tuple[Optional[str], Union[str, List[str], None]]:
-    """Get stock and time identifier columns for a dataset."""
-    if dataset_name not in DATASET_IDENTIFIERS:
-        raise ValueError(f"Dataset {dataset_name} not found in identifier mapping")
+def get_identifier_columns(dataset_name: str) -> List[str]:
+    """Get all identifier columns for a dataset."""
+    if dataset_name not in DATASET_CONFIG:
+        raise ValueError(f"Dataset {dataset_name} not found in configuration")
 
-    config = DATASET_IDENTIFIERS[dataset_name]
-    return config['stock'], config['time']
-
-
-def create_composite_identifier(df: pd.DataFrame, time_cols: List[str]) -> pd.Series:
-    """Create composite identifier from multiple time columns."""
-    if len(time_cols) == 2 and set(time_cols) == {'qtr', 'year'}:
-        # Special handling for quarter-year combinations
-        return df['year'].astype(str) + '-Q' + df['qtr'].astype(str)
-    else:
-        # General case: concatenate all columns
-        return df[time_cols].astype(str).apply(lambda x: '_'.join(x), axis=1)
+    config = DATASET_CONFIG[dataset_name]
+    return config['keys']
 
 
-def extract_identifiers(df: pd.DataFrame, stock_col: Optional[str], 
-                       time_col: Union[str, List[str], None]) -> pd.DataFrame:
+
+
+def extract_identifiers(df: pd.DataFrame, id_cols: List[str]) -> pd.DataFrame:
     """Extract unique identifier combinations from dataset."""
-    id_cols = []
-
-    # Add stock identifier if present
-    if stock_col and stock_col in df.columns:
-        id_cols.append(stock_col)
-
-    # Handle time identifier(s)
-    if time_col:
-        if isinstance(time_col, list):
-            # Composite time identifier
-            if all(col in df.columns for col in time_col):
-                df = df.copy()
-                composite_time = create_composite_identifier(df, time_col)
-                df['_composite_time'] = composite_time
-                id_cols.append('_composite_time')
-            else:
-                missing_cols = [col for col in time_col if col not in df.columns]
-                logger.warning(f"Missing time columns: {missing_cols}")
-        else:
-            # Single time identifier
-            if time_col in df.columns:
-                id_cols.append(time_col)
-            else:
-                logger.warning(f"Missing time column: {time_col}")
-
-    if not id_cols:
+    # Filter to only existing columns
+    existing_cols = [col for col in id_cols if col in df.columns]
+    missing_cols = [col for col in id_cols if col not in df.columns]
+    
+    if missing_cols:
+        logger.warning(f"Missing identifier columns: {missing_cols}")
+    
+    if not existing_cols:
         # No identifiers found - return all rows
         logger.warning("No identifier columns found - using all rows")
         return df.copy()
 
     # Extract unique combinations
-    unique_ids = df[id_cols].drop_duplicates()
+    unique_ids = df[existing_cols].drop_duplicates()
     logger.info(f"Extracted {len(unique_ids):,} unique identifier combinations")
 
     return unique_ids
 
 
-def analyze_identifier_compatibility(python_df: pd.DataFrame, stata_df: pd.DataFrame,
-                                   stock_col: Optional[str], 
-                                   time_col: Union[str, List[str], None]) -> Dict[str, Any]:
-    """Analyze identifier type compatibility between Python and Stata datasets."""
-    analysis = {
-        'compatible': True,
-        'issues': [],
-        'stock_analysis': None,
-        'time_analysis': None,
-        'overlap_analysis': None
-    }
-    
-    # Analyze stock identifier
-    if stock_col and stock_col in python_df.columns and stock_col in stata_df.columns:
-        py_type = python_df[stock_col].dtype
-        stata_type = stata_df[stock_col].dtype
-        
-        py_samples = python_df[stock_col].dropna().head(5).tolist()
-        stata_samples = stata_df[stock_col].dropna().head(5).tolist()
-        
-        # Check for type mismatches
-        type_mismatch = False
-        if py_type == 'object' and pd.api.types.is_numeric_dtype(stata_type):
-            type_mismatch = True
-            analysis['issues'].append(f"Stock identifier type mismatch: Python={py_type} (strings), Stata={stata_type} (numeric)")
-        elif pd.api.types.is_numeric_dtype(py_type) and stata_type == 'object':
-            type_mismatch = True
-            analysis['issues'].append(f"Stock identifier type mismatch: Python={py_type} (numeric), Stata={stata_type} (strings)")
-        
-        # Test overlap
-        py_values = set(str(v) for v in python_df[stock_col].dropna().unique()[:1000])
-        stata_values = set(str(v) for v in stata_df[stock_col].dropna().unique()[:1000])
-        direct_overlap = len(py_values.intersection(stata_values))
-        
-        # Try numeric conversion if string/int mismatch
-        numeric_overlap = 0
-        if type_mismatch:
-            try:
-                py_numeric = set()
-                for val in python_df[stock_col].dropna().unique()[:1000]:
-                    try:
-                        py_numeric.add(int(float(str(val))))
-                    except:
-                        pass
-                        
-                stata_numeric = set()
-                for val in stata_df[stock_col].dropna().unique()[:1000]:
-                    try:
-                        stata_numeric.add(int(float(str(val))))
-                    except:
-                        pass
-                        
-                numeric_overlap = len(py_numeric.intersection(stata_numeric))
-            except:
-                pass
-        
-        analysis['stock_analysis'] = {
-            'column': stock_col,
-            'python_type': str(py_type),
-            'stata_type': str(stata_type),
-            'python_samples': py_samples,
-            'stata_samples': stata_samples,
-            'type_mismatch': type_mismatch,
-            'direct_overlap': direct_overlap,
-            'numeric_overlap': numeric_overlap,
-            'python_unique_count': len(py_values),
-            'stata_unique_count': len(stata_values)
-        }
-        
-        if direct_overlap == 0 and numeric_overlap == 0:
-            analysis['compatible'] = False
-            analysis['issues'].append(f"No identifier overlap found for {stock_col}")
-    
-    # Analyze time identifier
-    if time_col and not isinstance(time_col, list):
-        if time_col in python_df.columns and time_col in stata_df.columns:
-            py_type = python_df[time_col].dtype
-            stata_type = stata_df[time_col].dtype
-            
-            py_samples = python_df[time_col].dropna().head(5).tolist()
-            stata_samples = stata_df[time_col].dropna().head(5).tolist()
-            
-            # Check for date format mismatches
-            date_mismatch = False
-            if pd.api.types.is_datetime64_any_dtype(py_type) and stata_type == 'object':
-                date_mismatch = True
-                analysis['issues'].append(f"Time identifier format mismatch: Python=datetime, Stata=string")
-            elif py_type == 'object' and pd.api.types.is_datetime64_any_dtype(stata_type):
-                date_mismatch = True
-                analysis['issues'].append(f"Time identifier format mismatch: Python=string, Stata=datetime")
-            
-            analysis['time_analysis'] = {
-                'column': time_col,
-                'python_type': str(py_type),
-                'stata_type': str(stata_type),
-                'python_samples': [str(s) for s in py_samples],
-                'stata_samples': [str(s) for s in stata_samples],
-                'date_mismatch': date_mismatch
-            }
-            
-            if date_mismatch:
-                analysis['compatible'] = False
-    
-    return analysis
 
 
 def filter_dataset_by_identifiers(df: pd.DataFrame, identifiers: pd.DataFrame,
-                                 stock_col: Optional[str], 
-                                 time_col: Union[str, List[str], None]) -> pd.DataFrame:
+                                 id_cols: List[str]) -> pd.DataFrame:
     """Filter dataset to only include rows matching the given identifiers."""
     if len(identifiers) == 0:
         logger.warning("No identifiers provided - returning empty dataset")
         return df.iloc[:0].copy()
 
-    # Prepare merge columns
-    merge_cols = []
-    df_copy = df.copy()
-
-    # Handle stock identifier
-    if stock_col and stock_col in df.columns and stock_col in identifiers.columns:
-        merge_cols.append(stock_col)
-
-    # Handle time identifier(s)
-    if time_col:
-        if isinstance(time_col, list):
-            # Composite time identifier
-            if all(col in df.columns for col in time_col):
-                composite_time = create_composite_identifier(df_copy, time_col)
-                df_copy['_composite_time'] = composite_time
-                merge_cols.append('_composite_time')
-        else:
-            # Single time identifier
-            if time_col in df.columns and time_col in identifiers.columns:
-                merge_cols.append(time_col)
+    # Find common columns between dataset and identifiers
+    merge_cols = [col for col in id_cols 
+                  if col in df.columns and col in identifiers.columns]
 
     if not merge_cols:
         logger.warning("No matching columns for filtering - returning original dataset")
         return df.copy()
 
     # Perform inner join to filter
-    filtered_df = df_copy.merge(identifiers[merge_cols], on=merge_cols, how='inner')
-
-    # Keep composite time column if it was used for merging - needed for later alignment
-    # Only remove it if it's not in the identifiers (meaning it won't be used downstream)
+    filtered_df = df.merge(identifiers[merge_cols], on=merge_cols, how='inner')
 
     logger.info(f"Filtered dataset from {len(df):,} to {len(filtered_df):,} rows")
 
     return filtered_df
+
+
+def deduplicate_ibes_recommendations(df: pd.DataFrame, id_cols: List[str]) -> pd.DataFrame:
+    """Special handling for IBES_Recommendations which has exact duplicates."""
+    original_count = len(df)
+    # Drop duplicates based on all identifier columns
+    df_dedup = df.drop_duplicates(subset=id_cols)
+    final_count = len(df_dedup)
+    
+    if original_count != final_count:
+        logger.info(f"IBES_Recommendations: Removed {original_count - final_count:,} duplicate rows")
+    
+    return df_dedup
 
 
 def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame, 
@@ -855,11 +445,11 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
 
     try:
         # Get dataset configuration
-        if dataset_name not in DATASET_IDENTIFIERS:
+        if dataset_name not in DATASET_CONFIG:
             raise ValueError(f"Dataset {dataset_name} not found in configuration")
 
-        config = DATASET_IDENTIFIERS[dataset_name]
-        stock_col, time_col = config['stock'], config['time']
+        config = DATASET_CONFIG[dataset_name]
+        id_cols = config['keys']
 
         # Build file paths
         python_file = PYDATA_PATH / config['python_file']
@@ -878,20 +468,10 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
         logger.info(f"Loading Stata file: {stata_file}")
         stata_df = load_dataset(stata_file, maxrows)
 
-        # Normalize data for comparison
-        id_cols = []
-        if stock_col:
-            id_cols.append(stock_col)
-        if time_col:
-            if isinstance(time_col, list):
-                id_cols.extend(time_col)
-            else:
-                id_cols.append(time_col)
-
-        # Analyze identifier compatibility BEFORE normalization
-        identifier_analysis = analyze_identifier_compatibility(
-            python_df, stata_df, stock_col, time_col
-        )
+        # Special handling for IBES_Recommendations which has duplicates
+        if dataset_name == 'IBES_Recommendations':
+            python_df = deduplicate_ibes_recommendations(python_df, id_cols)
+            stata_df = deduplicate_ibes_recommendations(stata_df, id_cols)
 
         # Normalize identifier types
         if id_cols:
@@ -899,22 +479,14 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
             stata_df = normalize_identifier_types(stata_df, id_cols)
 
         # Extract identifiers from BOTH datasets for inner join approach
-        python_identifiers = extract_identifiers(python_df, stock_col, time_col)
-        stata_identifiers = extract_identifiers(stata_df, stock_col, time_col)
+        python_identifiers = extract_identifiers(python_df, id_cols)
+        stata_identifiers = extract_identifiers(stata_df, id_cols)
         
         # Find common identifiers (intersection) to eliminate data recency differences
         if len(python_identifiers) > 0 and len(stata_identifiers) > 0:
-            # Get merge columns for intersection
-            merge_cols = []
-            if stock_col and stock_col in python_identifiers.columns and stock_col in stata_identifiers.columns:
-                merge_cols.append(stock_col)
-            if time_col:
-                if isinstance(time_col, list):
-                    if '_composite_time' in python_identifiers.columns and '_composite_time' in stata_identifiers.columns:
-                        merge_cols.append('_composite_time')
-                else:
-                    if time_col in python_identifiers.columns and time_col in stata_identifiers.columns:
-                        merge_cols.append(time_col)
+            # Find common columns between the two identifier sets
+            merge_cols = [col for col in id_cols 
+                         if col in python_identifiers.columns and col in stata_identifiers.columns]
             
             if merge_cols:
                 # Find intersection of identifiers
@@ -931,38 +503,18 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
 
         # Filter BOTH datasets to common identifiers only
         filtered_python_df = filter_dataset_by_identifiers(
-            python_df, common_identifiers, stock_col, time_col
+            python_df, common_identifiers, id_cols
         )
         filtered_stata_df = filter_dataset_by_identifiers(
-            stata_df, common_identifiers, stock_col, time_col
+            stata_df, common_identifiers, id_cols
         )
 
-        # Log identifier compatibility issues
-        if not identifier_analysis['compatible']:
-            for issue in identifier_analysis['issues']:
-                logger.warning(f"Identifier issue: {issue}")
-        
         # Warn if filtering returned no results
         if len(filtered_stata_df) == 0 and len(common_identifiers) > 0:
             logger.warning(f"Filtering returned 0 rows despite {len(common_identifiers)} common identifiers - likely identifier format mismatch")
 
         # Create backbone from common identifiers to ensure exact alignment
-        # Use the actual merge columns from the common_identifiers DataFrame
-        available_merge_cols = []
-        if stock_col and stock_col in common_identifiers.columns:
-            available_merge_cols.append(stock_col)
-        if time_col:
-            if isinstance(time_col, list):
-                if '_composite_time' in common_identifiers.columns:
-                    available_merge_cols.append('_composite_time')
-                else:
-                    # Fallback to individual columns if composite wasn't created
-                    for col in time_col:
-                        if col in common_identifiers.columns:
-                            available_merge_cols.append(col)
-            else:
-                if time_col in common_identifiers.columns:
-                    available_merge_cols.append(time_col)
+        available_merge_cols = [col for col in id_cols if col in common_identifiers.columns]
 
         if available_merge_cols:
             # Use common identifiers as backbone for perfect alignment
@@ -988,9 +540,6 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
             aligned_python_df, aligned_stata_df, dataset_name, tolerance
         )
 
-        # Add identifier analysis to results
-        comparison['identifier_analysis'] = identifier_analysis
-
         result['comparison'] = comparison
         result['status'] = 'completed'
 
@@ -1012,7 +561,7 @@ def validate_all_datasets(datasets: Optional[List[str]] = None,
                          tolerance: float = 1e-6, maxrows: Optional[int] = None) -> List[Dict[str, Any]]:
     """Validate all or specified datasets."""
     if datasets is None:
-        datasets = list(DATASET_IDENTIFIERS.keys())
+        datasets = list(DATASET_CONFIG.keys())
 
     logger.info(f"Starting validation of {len(datasets)} datasets")
 
@@ -1585,27 +1134,24 @@ def main():
     if args.list:
         print("Available datasets for validation:")
         print("=" * 50)
-        for i, dataset in enumerate(sorted(DATASET_IDENTIFIERS.keys()), 1):
-            config = DATASET_IDENTIFIERS[dataset]
-            stock_col = config['stock'] or 'None'
-            time_col = config['time'] or 'None'
-            if isinstance(time_col, list):
-                time_col = '+'.join(time_col)
-            print(f"{i:2d}. {dataset:<30} (stock: {stock_col:<15} time: {time_col})")
-        print(f"\nTotal: {len(DATASET_IDENTIFIERS)} datasets")
+        for i, dataset in enumerate(sorted(DATASET_CONFIG.keys()), 1):
+            config = DATASET_CONFIG[dataset]
+            keys = '+'.join(config['keys']) if config['keys'] else 'None'
+            print(f"{i:2d}. {dataset:<30} (keys: {keys})")
+        print(f"\nTotal: {len(DATASET_CONFIG)} datasets")
         return
 
     # Determine which datasets to validate
     if args.datasets:
         # Validate that requested datasets exist
-        invalid_datasets = [d for d in args.datasets if d not in DATASET_IDENTIFIERS]
+        invalid_datasets = [d for d in args.datasets if d not in DATASET_CONFIG]
         if invalid_datasets:
             print(f"Error: Invalid datasets specified: {invalid_datasets}")
             print("Use --list to see available datasets")
             return
         datasets_to_validate = args.datasets
     else:
-        datasets_to_validate = list(DATASET_IDENTIFIERS.keys())
+        datasets_to_validate = list(DATASET_CONFIG.keys())
 
     print(f"Starting validation of {len(datasets_to_validate)} datasets...")
     print(f"Tolerance: {args.tolerance}")
