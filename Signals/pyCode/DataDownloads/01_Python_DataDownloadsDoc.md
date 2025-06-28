@@ -1,6 +1,6 @@
 # Python DataDownloads Script Documentation
 
-*Generated on: 2025-06-28 09:52:16*
+*Generated on: 2025-06-28 10:39:12*
 
 This document provides comprehensive documentation of Python scripts in the DataDownloads directory and their output files.
 
@@ -664,8 +664,8 @@ CRSP Daily data download script - Python equivalent of J_CRSPdaily.do
 
 ### 1. dailyCRSP.parquet
 
-Size: 68.51 MB
-Rows: 4,136,543
+Size: 1.04 MB
+Rows: 160,937
 Columns: 7
 
 All Columns:
@@ -677,10 +677,10 @@ Sample Data:
 ```
    1  2  3  4  5  6  7
   permno <chr> time_d <chr> ret <chr> vol <chr> shrout <chr> prc <chr> ...
-1        10026 2020-01-02 0    -0.014056     8.83e+04     1.89e+04    181.67999          ...
-2        10028 2020-01-02 0     0.022222     4.40e+03     2.69e+04         1.38          ...
-3        10032 2020-01-02 0     0.003769     8.21e+04     2.92e+04        77.23          ...
-4        10044 2020-01-02 0    -0.019502     1.54e+04     6.00e+03         9.05          ...
+1        10006 1926-01-02 0     0.001147        700.0        600.0      109.125          ...
+2        10022 1926-01-02 0     0.004464        100.0        200.0        56.25          ...
+3        10030 1926-01-02 0           NA           NA        156.0           NA          ...
+4        10049 1926-01-02 0    -0.010135          0.0        250.0       -73.25          ...
 ```
 ... with 1 more rows
 
@@ -689,8 +689,8 @@ IDENTIFIERS:
 - time: time_d
 ### 2. dailyCRSPprc.parquet
 
-Size: 28.78 MB
-Rows: 4,136,543
+Size: 0.42 MB
+Rows: 160,937
 Columns: 5
 
 All Columns:
@@ -701,10 +701,10 @@ Sample Data:
 ```
    1  2  3  4  5
   permno <chr> time_d <chr> shrout <chr> prc <chr> cfacpr <chr>
-1        10026 2020-01-02 0     1.89e+04    181.67999          1.0
-2        10028 2020-01-02 0     2.69e+04         1.38          1.0
-3        10032 2020-01-02 0     2.92e+04        77.23          1.0
-4        10044 2020-01-02 0     6.00e+03         9.05          1.0
+1        10006 1926-01-02 0        600.0      109.125     7.412625
+2        10022 1926-01-02 0        200.0        56.25     9.365437
+3        10030 1926-01-02 0        156.0           NA     9.969793
+4        10049 1926-01-02 0        250.0       -73.25          2.0
 ```
 ... with 1 more rows
 

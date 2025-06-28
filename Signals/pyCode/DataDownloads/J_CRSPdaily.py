@@ -59,8 +59,8 @@ def main():
     # Determine year range based on debug mode
     if MAX_ROWS_DL > 0:
         # DEBUG MODE: Only download first year to test quickly
-        year_range = [1926]
-        print(f"DEBUG MODE: Only downloading year 1926 (instead of 1926-{current_year})")
+        year_range = [1932]
+        print(f"DEBUG MODE: Only downloading year 1932 (instead of 1926-{current_year})")
     else:
         # PRODUCTION MODE: Download all years
         year_range = range(1926, current_year + 1)

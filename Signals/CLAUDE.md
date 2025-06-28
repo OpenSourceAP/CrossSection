@@ -304,6 +304,6 @@ black filename.py
 
 ## Workflows
 
-### Fix mismatch single dataset
+### Fix mismatches in dataset
 Make a plan to fix mismatches in DATASETNAME. 
 Use Logs/validation_detailed.md for info on the mismatches between the Stata and Python outputs. Use 00_Stata_DataDownloadsDoc.md and 01_Python_DataDownloadsDoc.md to see what the datasets look like. Examine the most recent 2 md files in @Journal/ to take on lessons from previous fixes. 

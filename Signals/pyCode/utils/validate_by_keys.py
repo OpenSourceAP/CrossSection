@@ -362,7 +362,7 @@ def load_parquet_file(file_path: Path, maxrows: Optional[int] = None) -> pd.Data
         df = pd.read_parquet(file_path)
         original_rows = len(df)
         
-        if maxrows is not None and maxrows < original_rows:
+        if maxrows is not None and maxrows > 0 and maxrows < original_rows:
             df = df.head(maxrows)
             logger.info(f"Loaded parquet file: {file_path.name} ({len(df):,} rows, limited from {original_rows:,})")
             logger.warning(f"Row limiting applied: validation uses subset of data ({maxrows:,}/{original_rows:,} rows)")
@@ -382,9 +382,11 @@ def load_csv_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFram
         encodings = ['utf-8', 'latin1', 'cp1252']
         for encoding in encodings:
             try:
-                df = pd.read_csv(file_path, encoding=encoding, low_memory=False, nrows=maxrows)
+                # Set nrows=None if maxrows is -1 (unlimited) or None
+                nrows_param = None if maxrows is None or maxrows == -1 else maxrows
+                df = pd.read_csv(file_path, encoding=encoding, low_memory=False, nrows=nrows_param)
                 
-                if maxrows is not None:
+                if maxrows is not None and maxrows > 0:
                     logger.info(f"Loaded CSV file: {file_path.name} ({len(df):,} rows, limited to maxrows={maxrows:,})")
                     logger.warning(f"Row limiting applied: validation uses subset of data (max {maxrows:,} rows)")
                 else:
@@ -405,7 +407,7 @@ def load_csv_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFram
 def load_dta_file(file_path: Path, maxrows: Optional[int] = None) -> pd.DataFrame:
     """Load Stata DTA file with error handling."""
     try:
-        if maxrows is not None:
+        if maxrows is not None and maxrows > 0:
             # For DTA files, we need to read in chunks or limit rows after loading
             df = pd.read_stata(file_path, preserve_dtypes=False, chunksize=maxrows)
             df = next(df)  # Get first chunk
@@ -1570,7 +1572,7 @@ def main():
         '--maxrows',
         type=int,
         default=1000,
-        help='Maximum number of rows to load from each dataset (default: unlimited)'
+        help='Maximum number of rows to load from each dataset (default: 1000, use -1 for unlimited)'
     )
 
     args = parser.parse_args()
@@ -1607,7 +1609,9 @@ def main():
 
     print(f"Starting validation of {len(datasets_to_validate)} datasets...")
     print(f"Tolerance: {args.tolerance}")
-    if args.maxrows:
+    if args.maxrows == -1:
+        print("Max rows per dataset: unlimited")
+    elif args.maxrows and args.maxrows > 0:
         print(f"Max rows per dataset: {args.maxrows:,}")
     if not args.quiet:
         print(f"Output directory: {args.output_dir}")
