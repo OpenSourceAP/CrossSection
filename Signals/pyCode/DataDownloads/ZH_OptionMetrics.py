@@ -178,6 +178,11 @@ def main():
         bh_data['time_avail_m'] = bh_data['time_avail_m'].dt.to_timestamp()
         print("OptionMetricsBH: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
     
+    # MISSING VALUE FIX: Convert NaN to empty string for ticker column to match Stata format
+    if 'ticker' in bh_data.columns:
+        bh_data['ticker'] = bh_data['ticker'].fillna('')
+        print("OptionMetricsBH: Applied missing value fix - converted ticker NaN to empty string")
+    
     # Save final OptionMetricsBH data
     output_file = "../pyData/Intermediate/OptionMetricsBH.parquet"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
