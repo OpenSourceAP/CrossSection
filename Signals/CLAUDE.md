@@ -278,8 +278,8 @@ black filename.py
 
 # Journaling
 
-- Keep track of lessons learned in Journal/
-- But do not commit Journal/ to the repo. 
+- Keep track of lessons learned in @Journal/
+- But do not commit @Journal/ to the repo. 
   - These notes may be messy. 
 
 # Unsorted Notes
@@ -301,3 +301,9 @@ black filename.py
 ### Project Workflow Memories
 - Only mark as complete if the code passes @pyCode/utils/validate_by_keys.py. 
 - always source .venv/bin/activate before starting work
+
+## Workflows
+
+### Fix mismatch single dataset
+Make a plan to fix mismatches in DATASETNAME. 
+Use Logs/validation_detailed.md for info on the mismatches between the Stata and Python outputs. Use 00_Stata_DataDownloadsDoc.md and 01_Python_DataDownloadsDoc.md to see what the datasets look like. Examine the most recent 2 md files in @Journal/ to take on lessons from previous fixes. 
