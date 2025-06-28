@@ -6,16 +6,18 @@ Downloads CIQ credit ratings from entity, instrument, and security ratings table
 Extends coverage beyond Compustat ratings which end in 2017.
 """
 
-from config import MAX_ROWS_DL
+
 import sys
 import os
 import time
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
 
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 
 load_dotenv()
