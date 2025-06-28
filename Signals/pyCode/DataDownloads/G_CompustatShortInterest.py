@@ -7,7 +7,7 @@ Data reported bi-weekly with 4-day lag; using mid-month observation for real-tim
 """
 
 import os
-import psycopg2
+from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
@@ -17,12 +17,9 @@ from config import MAX_ROWS_DL
 
 load_dotenv()
 
-conn = psycopg2.connect(
-    host="wrds-pgdata.wharton.upenn.edu",
-    port=9737,
-    database="wrds",
-    user=os.getenv("WRDS_USERNAME"),
-    password=os.getenv("WRDS_PASSWORD")
+# Create SQLAlchemy engine for database connection
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
 QUERY = """
@@ -35,8 +32,8 @@ if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-si_data = pd.read_sql_query(QUERY, conn)
-conn.close()
+si_data = pd.read_sql_query(QUERY, engine)
+engine.dispose()
 
 print(f"Downloaded {len(si_data)} short interest records")
 

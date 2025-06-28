@@ -6,9 +6,9 @@ Downloads daily Fama-French factors from WRDS.
 """
 
 import os
-import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -20,12 +20,9 @@ print("=" * 60, flush=True)
 
 load_dotenv()
 
-conn = psycopg2.connect(
-    host="wrds-pgdata.wharton.upenn.edu",
-    port=9737,
-    database="wrds",
-    user=os.getenv("WRDS_USERNAME"),
-    password=os.getenv("WRDS_PASSWORD")
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@"
+    f"wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
 QUERY = """
@@ -38,8 +35,7 @@ if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-ff_daily = pd.read_sql_query(QUERY, conn)
-conn.close()
+ff_daily = pd.read_sql_query(QUERY, engine)
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
