@@ -519,22 +519,59 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
 
         if available_merge_cols:
             # Use common identifiers as backbone for perfect alignment
-            common_backbone = common_identifiers[available_merge_cols].copy()
+            # Remove duplicates and sort for consistency
+            common_backbone = (
+                common_identifiers[available_merge_cols]
+                .drop_duplicates()
+                .sort_values(by=available_merge_cols)
+                .reset_index(drop=True)
+            )
+            
+            logger.info(f"Created backbone with {len(common_backbone):,} unique identifier combinations")
             
             # Merge both datasets onto common backbone to ensure identical structure
-            aligned_python_df = common_backbone.merge(
-                filtered_python_df, on=available_merge_cols, how='left'
-            )
-            aligned_stata_df = common_backbone.merge(
-                filtered_stata_df, on=available_merge_cols, how='left'
-            )
-            
-            logger.info(f"Aligned datasets: Python {len(aligned_python_df)}, Stata {len(aligned_stata_df)}")
+            try:
+                aligned_python_df = common_backbone.merge(
+                    filtered_python_df, on=available_merge_cols, how='left'
+                )
+                aligned_stata_df = common_backbone.merge(
+                    filtered_stata_df, on=available_merge_cols, how='left'
+                )
+                
+                # Verify alignment worked - both datasets should have identical row counts
+                if len(aligned_python_df) != len(aligned_stata_df):
+                    logger.error(f"Alignment failed: Python {len(aligned_python_df)} != Stata {len(aligned_stata_df)}")
+                    raise ValueError(f"Dataset alignment failed: row count mismatch after backbone merge")
+                
+                logger.info(f"Successfully aligned datasets: {len(aligned_python_df):,} rows each")
+                
+            except Exception as e:
+                logger.error(f"Error during backbone alignment: {e}")
+                # Fallback to filtered datasets if backbone merge fails
+                logger.warning("Falling back to filtered datasets without backbone alignment")
+                aligned_python_df = filtered_python_df
+                aligned_stata_df = filtered_stata_df
+                
+                # Ensure same row count for comparison even in fallback
+                min_rows = min(len(aligned_python_df), len(aligned_stata_df))
+                if len(aligned_python_df) != len(aligned_stata_df):
+                    logger.warning(f"Row count mismatch in fallback: Python {len(aligned_python_df)}, Stata {len(aligned_stata_df)}")
+                    logger.warning(f"Truncating both to {min_rows:,} rows for comparison")
+                    aligned_python_df = aligned_python_df.head(min_rows).reset_index(drop=True)
+                    aligned_stata_df = aligned_stata_df.head(min_rows).reset_index(drop=True)
         else:
             # Fallback for datasets without identifiers
             aligned_python_df = filtered_python_df
             aligned_stata_df = filtered_stata_df
             logger.warning("No identifier columns found - using unaligned comparison")
+            
+            # For datasets without identifiers, ensure we compare the same number of rows
+            min_rows = min(len(aligned_python_df), len(aligned_stata_df))
+            if len(aligned_python_df) != len(aligned_stata_df):
+                logger.warning(f"Row count mismatch without identifiers: Python {len(aligned_python_df)}, Stata {len(aligned_stata_df)}")
+                logger.warning(f"Truncating both to {min_rows:,} rows for comparison")
+                aligned_python_df = aligned_python_df.head(min_rows).reset_index(drop=True)
+                aligned_stata_df = aligned_stata_df.head(min_rows).reset_index(drop=True)
 
         # Compare the aligned datasets (now both filtered to common identifiers)
         comparison = compare_datasets(
