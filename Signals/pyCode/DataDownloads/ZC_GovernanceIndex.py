@@ -103,14 +103,14 @@ def main():
         # Add extension to 2007-01
         if not ticker_data.empty:
             last_row = ticker_data.iloc[-1].copy()
-            last_row['time_avail_m'] = pd.Period('2007-01')
+            last_row['time_avail_m'] = pd.Timestamp('2007-01-01')
             ticker_data = pd.concat([ticker_data, pd.DataFrame([last_row])], ignore_index=True)
 
         # Create full time range and forward fill
         if len(ticker_data) > 1:
             min_time = ticker_data['time_avail_m'].min()
             max_time = ticker_data['time_avail_m'].max()
-            full_range = pd.period_range(start=min_time, end=max_time, freq='M')
+            full_range = pd.date_range(start=min_time, end=max_time, freq='MS')
 
             # Reindex and forward fill
             ticker_data = ticker_data.set_index('time_avail_m').reindex(full_range)
@@ -118,9 +118,9 @@ def main():
             ticker_data = ticker_data.reset_index()
 
             # Forward fill ticker and G
-            ticker_data['ticker'] = ticker_data['ticker'].fillna(method='ffill')
+            ticker_data['ticker'] = ticker_data['ticker'].ffill()
             if 'G' in ticker_data.columns:
-                ticker_data['G'] = ticker_data['G'].fillna(method='ffill')
+                ticker_data['G'] = ticker_data['G'].ffill()
 
         extended_data.append(ticker_data)
 
@@ -134,8 +134,8 @@ def main():
     available_cols = [col for col in keep_cols if col in final_data.columns]
     final_data = final_data[available_cols]
 
-    # Convert Period objects to datetime64[ns] for parquet compatibility (Pattern 1)
-    final_data['time_avail_m'] = final_data['time_avail_m'].dt.to_timestamp()
+    # Ensure datetime64[ns] format for parquet compatibility (Pattern 1)
+    final_data['time_avail_m'] = pd.to_datetime(final_data['time_avail_m'])
     
     # Preserve int8 dtype for G column to match DTA format
     if 'G' in final_data.columns:

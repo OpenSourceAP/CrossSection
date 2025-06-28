@@ -126,8 +126,19 @@ def main():
 
     # Add time_avail_m
     combined_ratings['ratingdate'] = pd.to_datetime(combined_ratings['ratingdate'])
-    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
+    # Apply Pattern 1 fix: Convert Period to datetime64[ns] BEFORE saving
     combined_ratings['time_avail_m'] = combined_ratings['ratingdate'].dt.to_period('M').dt.to_timestamp()
+
+    # Fix ratingtime format to match Stata (time -> datetime with dummy date 1960-01-01)
+    if 'ratingtime' in combined_ratings.columns:
+        # Convert time to full datetime by adding dummy date 1960-01-01
+        dummy_date = pd.Timestamp('1960-01-01')
+        combined_ratings['ratingtime'] = pd.to_datetime(combined_ratings['ratingtime'].astype(str), format='%H:%M:%S', errors='coerce')
+        # Replace the date part with 1960-01-01 while keeping the time part
+        combined_ratings['ratingtime'] = combined_ratings['ratingtime'].apply(
+            lambda x: dummy_date.replace(hour=x.hour, minute=x.minute, second=x.second) if pd.notna(x) else dummy_date
+        )
+        print("Applied ratingtime datetime conversion with dummy date 1960-01-01")
 
     # For each gvkey-time_avail_m, keep last rating (by date and time)
     combined_ratings = combined_ratings.sort_values(['gvkey', 'time_avail_m', 'ratingdate', 'ratingtime'])
@@ -136,6 +147,15 @@ def main():
 
     # Convert gvkey to numeric
     combined_ratings['gvkey'] = pd.to_numeric(combined_ratings['gvkey'], errors='coerce')
+
+    # Apply IBES Pattern: Convert None/NaN to empty string for string columns
+    # This matches Stata's treatment of missing string values
+    string_columns = ['ticker', 'ratingactionword', 'currentratingsymbol', 'entity_id', 'instrument_id', 'security_id']
+    for col in string_columns:
+        if col in combined_ratings.columns:
+            # Convert both None values and "None" strings to empty strings
+            combined_ratings[col] = combined_ratings[col].fillna('')
+            combined_ratings[col] = combined_ratings[col].replace('None', '')
 
     # Save the data
     combined_ratings.to_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet", index=False)

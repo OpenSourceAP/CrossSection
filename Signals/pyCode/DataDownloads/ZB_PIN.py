@@ -156,6 +156,7 @@ def main():
             new_row['modate'] = modate
 
             # Add 11 months availability lag (equivalent to gen time_avail_m = modate + 11)
+            # Store as Period initially, will convert to datetime64[ns] later (Pattern 1 fix)
             new_row['time_avail_m'] = modate + 11
 
             monthly_data.append(new_row)
@@ -164,7 +165,9 @@ def main():
 
     print(f"Expanded to {len(pin_monthly)} monthly PIN records")
 
-    # Save the data
+    # Apply data type fixes
+    # Fix permno to int64 to match Stata
+    pin_monthly['permno'] = pin_monthly['permno'].astype('int64')
     
     # Apply row limit for debugging if configured
     if MAX_ROWS_DL > 0:
@@ -177,6 +180,12 @@ def main():
         "../Data/Intermediate/pin_monthly.dta",
         "pin_monthly"
     )
+
+    # PATTERN 1 FIX: Convert Period columns to datetime64[ns] AFTER column standardization and BEFORE saving
+    for col in ['time_avail_m', 'modate']:
+        if col in pin_monthly.columns and hasattr(pin_monthly[col].dtype, 'freq'):
+            pin_monthly[col] = pin_monthly[col].dt.to_timestamp()
+            print(f"Applied Pattern 1 fix - converted {col} to datetime64[ns]")
 
     # Save the data
     pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet", index=False)

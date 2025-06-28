@@ -29,20 +29,24 @@ def process_options_file(input_file, date_col='time_avail_m', output_name=None):
     if date_col != 'time_avail_m' and date_col in data.columns:
         # Convert date column to datetime and create time_avail_m
         data['time_d'] = pd.to_datetime(data[date_col], format='%Y-%m-%d')
-        # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
-        data['time_avail_m'] = data['time_d'].dt.to_period('M').dt.to_timestamp()
+        # Create period first, then convert to timestamp AFTER column standardization
+        data['time_avail_m'] = data['time_d'].dt.to_period('M')
         # Keep the original date column and drop only intermediate columns
         data = data.drop(['time_d'], axis=1)
     elif 'time_avail_m' in data.columns:
         # time_avail_m already exists, convert to proper period format
-        # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
-        data['time_avail_m'] = pd.to_datetime(data['time_avail_m']).dt.to_period('M').dt.to_timestamp()
+        data['time_avail_m'] = pd.to_datetime(data['time_avail_m']).dt.to_period('M')
     
     if output_name:
         # Standardize columns if we have a corresponding DTA file
         dta_path = f"../Data/Intermediate/{output_name}.dta"
         if os.path.exists(dta_path):
             data = standardize_against_dta(data, dta_path, output_name)
+        
+        # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
+        if 'time_avail_m' in data.columns:
+            data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
+            print(f"{output_name}: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
         
         # Save intermediate file if specified
         output_file = f"../pyData/Intermediate/{output_name}.parquet"
@@ -79,6 +83,11 @@ def main():
             "OptionMetricsVolSurf"
         )
         
+        # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
+        if 'time_avail_m' in vol_surf_data.columns:
+            vol_surf_data['time_avail_m'] = vol_surf_data['time_avail_m'].dt.to_timestamp()
+            print("OptionMetricsVolSurf: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
+        
         # Save standardized data
         output_file = "../pyData/Intermediate/OptionMetricsVolSurf.parquet"
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -100,6 +109,11 @@ def main():
             "OptionMetricsXZZ"
         )
         
+        # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
+        if 'time_avail_m' in xzz_data.columns:
+            xzz_data['time_avail_m'] = xzz_data['time_avail_m'].dt.to_timestamp()
+            print("OptionMetricsXZZ: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
+        
         # Save standardized data
         output_file = "../pyData/Intermediate/OptionMetricsXZZ.parquet"
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
@@ -118,8 +132,8 @@ def main():
     
     # Convert date column to datetime and create time_avail_m
     bh_data['time_d'] = pd.to_datetime(bh_data['date'], format='%Y-%m-%d')
-    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
-    bh_data['time_avail_m'] = bh_data['time_d'].dt.to_period('M').dt.to_timestamp()
+    # Create period first, then convert to timestamp AFTER column standardization
+    bh_data['time_avail_m'] = bh_data['time_d'].dt.to_period('M')
     
     # Drop intermediate columns
     bh_data = bh_data.drop(['date', 'time_d'], axis=1)
@@ -139,6 +153,11 @@ def main():
         "../Data/Intermediate/OptionMetricsBH.dta",
         "OptionMetricsBH"
     )
+    
+    # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
+    if 'time_avail_m' in bh_data.columns:
+        bh_data['time_avail_m'] = bh_data['time_avail_m'].dt.to_timestamp()
+        print("OptionMetricsBH: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
     
     # Save final OptionMetricsBH data
     output_file = "../pyData/Intermediate/OptionMetricsBH.parquet"

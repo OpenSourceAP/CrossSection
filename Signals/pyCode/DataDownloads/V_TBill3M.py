@@ -9,6 +9,7 @@ averages.
 import os
 import time
 import pandas as pd
+import numpy as np
 import requests
 from dotenv import load_dotenv
 import sys
@@ -119,24 +120,27 @@ def main():
     date_max = tbill_data['date'].max()
     print(f"Date range: {date_min} to {date_max}")
 
-    # Convert to float32 first to match Stata precision (compress command)
-    tbill_data['value'] = tbill_data['value'].astype('float32')
-    
-    # Convert to percentage (divide by 100, equivalent to TB3MS/100)
+    # Convert to percentage first (divide by 100, equivalent to TB3MS/100)
     tbill_data['TbillRate3M'] = tbill_data['value'] / 100
+    
+    # Apply precision control BEFORE aggregation (Pattern 2)
+    tbill_data['TbillRate3M'] = tbill_data['TbillRate3M'].astype('float32')
 
     # Extract year and quarter
     tbill_data['year'] = tbill_data['date'].dt.year
     tbill_data['qtr'] = tbill_data['date'].dt.quarter
 
-    # Aggregate to quarterly averages (equivalent to aggregate(q, avg))
+    # Aggregate to quarterly averages using numpy.mean for consistency with Stata
     print("Aggregating to quarterly averages...")
+    
+    # Use numpy.mean with float32 to match Stata's aggregation behavior
     quarterly_data = (
         tbill_data.groupby(['year', 'qtr'])['TbillRate3M']
-        .mean().reset_index()
+        .agg(lambda x: np.mean(x.values.astype('float32')))
+        .reset_index()
     )
 
-    # Ensure float32 precision is maintained after aggregation
+    # Ensure float32 dtype is maintained
     quarterly_data['TbillRate3M'] = quarterly_data['TbillRate3M'].astype('float32')
 
     # Reorder columns to match Stata: TbillRate3M, qtr, year

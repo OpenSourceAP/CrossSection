@@ -43,8 +43,8 @@ def main():
     
     # Convert rdate to datetime and create time_avail_m
     data['time_d'] = pd.to_datetime(data['rdate'], format='%d%b%Y')
-    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
-    data['time_avail_m'] = data['time_d'].dt.to_period('M').dt.to_timestamp()
+    # Store as period initially, will convert to datetime64[ns] at the end (Pattern 1 fix)
+    data['time_avail_m'] = data['time_d'].dt.to_period('M')
     
     # Drop intermediate columns
     data = data.drop(['rdate', 'time_d'], axis=1)
@@ -59,8 +59,7 @@ def main():
     data['permno'] = data['permno'].astype('int64')
     
     # Stata tsfill equivalent: fill missing months and forward-fill values
-    # Use working version that creates a bit more records than Stata but functionally correct
-    # Convert time_avail_m to datetime for easier manipulation
+    # Convert time_avail_m to datetime for panel operations
     data['time_dt'] = data['time_avail_m'].dt.to_timestamp()
     
     # Set index for panel data
@@ -79,17 +78,24 @@ def main():
     # Reindex to full panel and forward-fill
     data = data.reindex(full_index).groupby('permno').ffill()
     
-    # Convert back to period format
+    # Reset index and clean up
     data = data.reset_index()
-    # Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
-    data['time_avail_m'] = data['time_dt'].dt.to_period('M').dt.to_timestamp()
-    data = data.drop('time_dt', axis=1)
+    # Keep time_dt as the working datetime column, will rename and convert at the end
+    data = data.drop('time_avail_m', axis=1)  # Remove the period column
+    data = data.rename(columns={'time_dt': 'time_avail_m'})  # Use the datetime column
     
     # Drop rows where all value columns are NaN (no data was available to forward-fill)
     value_cols = ['numinstown', 'dbreadth', 'instown_perc', 'maxinstown_perc', 'numinstblock']
     data = data.dropna(how='all', subset=value_cols)
     
     print(f"After forward-fill and cleanup: {len(data)} records")
+    
+    # PATTERN 1 FIX: Ensure time_avail_m is datetime64[ns] format BEFORE saving
+    if 'time_avail_m' in data.columns:
+        # time_avail_m should already be datetime64[ns] from the panel operations
+        if data['time_avail_m'].dtype != 'datetime64[ns]':
+            data['time_avail_m'] = pd.to_datetime(data['time_avail_m'])
+        print("Pattern 1 fix: Verified time_avail_m is datetime64[ns] format")
     
     # Save to parquet
     output_file = "../pyData/Intermediate/TR_13F.parquet"

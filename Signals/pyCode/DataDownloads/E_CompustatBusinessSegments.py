@@ -55,6 +55,10 @@ segments_data['naicsh'] = pd.to_numeric(segments_data['naicsh'], errors='coerce'
 segments_data['datadate'] = pd.to_datetime(segments_data['datadate'])
 segments_data['srcdate'] = pd.to_datetime(segments_data['srcdate'])
 
+# Apply IBES Pattern: Convert None/NaN to empty string for string columns (snms)
+# This matches Stata's treatment of missing string values
+segments_data['snms'] = segments_data['snms'].fillna('')
+
 # Save the data
 segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 

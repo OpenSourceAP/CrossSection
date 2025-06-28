@@ -55,6 +55,9 @@ def main():
     # Ensure optimal data types
     data['permno'] = data['permno'].astype('int64')
     
+    # Apply Pattern 1 fix: Convert Period to datetime64[ns] BEFORE saving
+    data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
+    
     # Save to parquet
     output_file = "../pyData/Intermediate/BAspreadsCorwin.parquet"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)

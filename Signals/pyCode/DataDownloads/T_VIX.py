@@ -144,13 +144,17 @@ def main():
 
     vix_data.loc[fill_mask, 'vix'] = vix_data.loc[fill_mask, 'VIXCLS']
 
-    # Calculate daily change in VIX
-    # (equivalent to gen dVIX = vix - l.vix)
-    vix_data['dVIX'] = vix_data['vix'].diff()
-
-    # Keep only necessary columns and rename date
-    final_data = vix_data[['date', 'vix', 'dVIX']].copy()
+    # Keep only necessary columns and rename date first
+    final_data = vix_data[['date', 'vix']].copy()
     final_data = final_data.rename(columns={'date': 'time_d'})
+    
+    # Apply precision control to match Stata format BEFORE calculations (Pattern 2)
+    # Convert VIX to float32 first to match Stata precision
+    final_data['vix'] = final_data['vix'].astype('float32')
+    
+    # Calculate daily change in VIX using float32 precision throughout
+    # (equivalent to gen dVIX = vix - l.vix)
+    final_data['dVIX'] = final_data['vix'].diff().astype('float32')
 
     # Apply row limit for debugging if configured
     if MAX_ROWS_DL > 0:
