@@ -6,10 +6,10 @@ Downloads CRSP monthly data WITHOUT delisting return adjustments for testing.
 """
 
 import os
-import psycopg2
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -17,12 +17,9 @@ from config import MAX_ROWS_DL
 
 load_dotenv()
 
-conn = psycopg2.connect(
-    host="wrds-pgdata.wharton.upenn.edu",
-    port=9737,
-    database="wrds",
-    user=os.getenv("WRDS_USERNAME"),
-    password=os.getenv("WRDS_PASSWORD")
+# Create SQLAlchemy engine for database connection
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
 QUERY = """
@@ -41,8 +38,8 @@ if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-crsp_raw = pd.read_sql_query(QUERY, conn)
-conn.close()
+crsp_raw = pd.read_sql_query(QUERY, engine)
+engine.dispose()
 
 print(f"Downloaded {len(crsp_raw)} CRSP raw monthly records")
 

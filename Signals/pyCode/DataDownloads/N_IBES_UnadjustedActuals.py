@@ -6,7 +6,7 @@ Downloads IBES actual earnings data (unadjusted) and fills time series gaps.
 """
 
 import os
-import psycopg2
+from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
@@ -17,12 +17,9 @@ from config import MAX_ROWS_DL
 
 load_dotenv()
 
-conn = psycopg2.connect(
-    host="wrds-pgdata.wharton.upenn.edu",
-    port=9737,
-    database="wrds",
-    user=os.getenv("WRDS_USERNAME"),
-    password=os.getenv("WRDS_PASSWORD")
+# Create SQLAlchemy engine for database connection
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
 # Download everything (newer approach as noted in comments)
@@ -37,8 +34,8 @@ if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-actuals_data = pd.read_sql_query(QUERY, conn)
-conn.close()
+actuals_data = pd.read_sql_query(QUERY, engine)
+engine.dispose()
 
 print(f"Downloaded {len(actuals_data)} IBES actual earnings records")
 

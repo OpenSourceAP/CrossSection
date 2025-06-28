@@ -9,11 +9,11 @@ tbc: check ivaoq is at least sometimes stored as int64 instead of float64
 """
 
 import os
-import psycopg2
 import pandas as pd
 import polars as pl
 import numpy as np
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -29,12 +29,9 @@ print("=" * 60, flush=True)
 
 load_dotenv()
 
-conn = psycopg2.connect(
-    host="wrds-pgdata.wharton.upenn.edu",
-    port=9737,
-    database="wrds",
-    user=os.getenv("WRDS_USERNAME"),
-    password=os.getenv("WRDS_PASSWORD")
+# Create SQLAlchemy engine for database connection
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
 QUERY = """
@@ -61,8 +58,8 @@ if MAX_ROWS_DL > 0:
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 # Load data with pandas first
-compustat_q_pd = pd.read_sql_query(QUERY, conn)
-conn.close()
+compustat_q_pd = pd.read_sql_query(QUERY, engine)
+engine.dispose()
 
 print(f"Downloaded {len(compustat_q_pd):,} quarterly records", flush=True)
 

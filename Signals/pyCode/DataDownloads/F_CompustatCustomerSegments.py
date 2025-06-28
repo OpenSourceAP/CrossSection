@@ -9,7 +9,7 @@ Note to Claude: Do not put use MAX_ROWS_DL in this script, even when testing.
 """
 
 import os
-import psycopg2
+from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
@@ -19,12 +19,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 load_dotenv()
 
-conn = psycopg2.connect(
-    host="wrds-pgdata.wharton.upenn.edu",
-    port=9737,
-    database="wrds",
-    user=os.getenv("WRDS_USERNAME"),
-    password=os.getenv("WRDS_PASSWORD")
+# Create SQLAlchemy engine for database connection
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
 QUERY = """
@@ -37,8 +34,8 @@ FROM compseg.wrds_seg_customer as a
 #     QUERY += f" LIMIT {MAX_ROWS_DL}"
 #     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-customer_data = pd.read_sql_query(QUERY, conn)
-conn.close()
+customer_data = pd.read_sql_query(QUERY, engine)
+engine.dispose()
 
 print(f"Downloaded {len(customer_data)} customer segment records")
 

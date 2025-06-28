@@ -7,9 +7,9 @@ Extends coverage beyond Compustat ratings which end in 2017.
 """
 
 import os
-import psycopg2
 import pandas as pd
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -17,7 +17,7 @@ from config import MAX_ROWS_DL
 
 load_dotenv()
 
-def download_ciq_ratings(query_type, conn):
+def download_ciq_ratings(query_type, engine):
     """Download one type of CIQ ratings"""
     if query_type == "entity":
         query = """
@@ -58,7 +58,7 @@ def download_ciq_ratings(query_type, conn):
         print(f"DEBUG MODE: Limiting {query_type} query to {MAX_ROWS_DL} rows")
 
     try:
-        data = pd.read_sql_query(query, conn)
+        data = pd.read_sql_query(query, engine)
         print(f"Downloaded {len(data)} {query_type} rating records")
 
         # Fill in missing columns
@@ -74,23 +74,20 @@ def main():
     """Main function to download and process CIQ credit ratings"""
     print("Downloading CIQ Credit Ratings...")
 
-    conn = psycopg2.connect(
-        host="wrds-pgdata.wharton.upenn.edu",
-        port=9737,
-        database="wrds",
-        user=os.getenv("WRDS_USERNAME"),
-        password=os.getenv("WRDS_PASSWORD")
+    # Create SQLAlchemy engine for database connection
+    engine = create_engine(
+        f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
     )
 
     # Ensure directories exist
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
     # Download all three types of ratings
-    entity_ratings = download_ciq_ratings("entity", conn)
-    instrument_ratings = download_ciq_ratings("instrument", conn)
-    security_ratings = download_ciq_ratings("security", conn)
+    entity_ratings = download_ciq_ratings("entity", engine)
+    instrument_ratings = download_ciq_ratings("instrument", engine)
+    security_ratings = download_ciq_ratings("security", engine)
 
-    conn.close()
+    engine.dispose()
 
     # Combine all ratings
     all_ratings = []

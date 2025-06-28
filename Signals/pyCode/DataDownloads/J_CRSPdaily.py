@@ -7,11 +7,11 @@ Creates two output files: full daily data and price-only version.
 """
 
 import os
-import psycopg2
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -20,7 +20,7 @@ from utils.column_standardizer import standardize_against_dta
 
 load_dotenv()
 
-def get_crsp_daily_year(year, conn):
+def get_crsp_daily_year(year, engine):
     """Download CRSP daily data for a specific year"""
     query = f"""
     SELECT a.permno, a.date, a.ret, a.vol, a.shrout, a.prc, a.cfacshr, a.cfacpr
@@ -29,7 +29,7 @@ def get_crsp_daily_year(year, conn):
     """
 
     try:
-        data = pd.read_sql_query(query, conn)
+        data = pd.read_sql_query(query, engine)
         print(f"Downloaded {len(data)} records for year {year}")
         return data
     except Exception as e:
@@ -40,13 +40,9 @@ def main():
     """Main function to download CRSP daily data"""
     print("Starting CRSP Daily data download...")
 
-    # Connect to WRDS
-    conn = psycopg2.connect(
-        host="wrds-pgdata.wharton.upenn.edu",
-        port=9737,
-        database="wrds",
-        user=os.getenv("WRDS_USERNAME"),
-        password=os.getenv("WRDS_PASSWORD")
+    # Create SQLAlchemy engine for database connection
+    engine = create_engine(
+        f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
     )
 
     # Ensure directories exist
@@ -72,7 +68,7 @@ def main():
     for year in year_range:
         print(f"Processing year {year}...")
 
-        year_data = get_crsp_daily_year(year, conn)
+        year_data = get_crsp_daily_year(year, engine)
 
         if not year_data.empty:
             all_data.append(year_data)
@@ -81,7 +77,7 @@ def main():
         import time
         time.sleep(1)
 
-    conn.close()
+    engine.dispose()
 
     if not all_data:
         print("No data downloaded")

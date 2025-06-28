@@ -25,6 +25,15 @@ log_message "📁 Working directory: $(pwd)"
 log_message "🐍 Activating virtual environment..."
 source .venv/bin/activate
 
+# Display current config
+log_message "⚙️ Current config: MAX_ROWS_DL=100000, SCRIPT_TIMEOUT_MINUTES=10"
+echo "Press Enter to continue or 'q' to quit..."
+read -r input
+if [ "$input" = "q" ]; then
+    log_message "❌ Execution cancelled by user"
+    exit 0
+fi
+
 log_message "▶️  Starting master.py execution"
 python -u master.py
 
