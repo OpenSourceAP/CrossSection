@@ -10,6 +10,10 @@ log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# Function to get config values from Python
+get_config_value() {
+    python3 -c "import config; print(config.$1)"
+}
 
 # Check if virtual environment exists
 if [ ! -d ".venv" ]; then
@@ -25,8 +29,12 @@ log_message "📁 Working directory: $(pwd)"
 log_message "🐍 Activating virtual environment..."
 source .venv/bin/activate
 
+# Get config values from Python
+MAX_ROWS_DL=$(get_config_value "MAX_ROWS_DL")
+SCRIPT_TIMEOUT=$(get_config_value "SCRIPT_TIMEOUT_MINUTES")
+
 # Display current config
-log_message "⚙️ Current config: MAX_ROWS_DL=100000, SCRIPT_TIMEOUT_MINUTES=10"
+log_message "⚙️ Current config: MAX_ROWS_DL=$MAX_ROWS_DL, SCRIPT_TIMEOUT_MINUTES=$SCRIPT_TIMEOUT"
 echo "Press Enter to continue or 'q' to quit..."
 read -r input
 if [ "$input" = "q" ]; then
