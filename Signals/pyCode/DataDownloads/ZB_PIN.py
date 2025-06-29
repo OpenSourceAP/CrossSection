@@ -15,7 +15,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 load_dotenv()
 
@@ -175,11 +175,7 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Standardize columns to match DTA file
-    pin_monthly = standardize_against_dta(
-        pin_monthly, 
-        "../Data/Intermediate/pin_monthly.dta",
-        "pin_monthly"
-    )
+    pin_monthly = yaml_standardize_columns(pin_monthly, "pin_monthly")
 
     # PATTERN 1 FIX: Convert Period columns to datetime64[ns] AFTER column standardization and BEFORE saving
     for col in ['time_avail_m', 'modate']:

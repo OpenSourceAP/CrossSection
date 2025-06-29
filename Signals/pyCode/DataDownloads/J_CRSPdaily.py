@@ -16,7 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 load_dotenv()
 
@@ -102,11 +102,7 @@ def main():
     daily_full['time_d'] = pd.to_datetime(daily_full['time_d']).dt.floor('D')
 
     # Standardize columns to match DTA file
-    daily_full = standardize_against_dta(
-        daily_full, 
-        "../Data/Intermediate/dailyCRSP.dta",
-        "dailyCRSP"
-    )
+    daily_full = yaml_standardize_columns(daily_full, "dailyCRSP")
 
     # Save full daily data
     daily_full.to_parquet("../pyData/Intermediate/dailyCRSP.parquet", index=False)
@@ -122,11 +118,7 @@ def main():
     daily_prc['time_d'] = pd.to_datetime(daily_prc['time_d']).dt.floor('D')
 
     # Standardize columns to match DTA file
-    daily_prc = standardize_against_dta(
-        daily_prc, 
-        "../Data/Intermediate/dailyCRSPprc.dta",
-        "dailyCRSPprc"
-    )
+    daily_prc = yaml_standardize_columns(daily_prc, "dailyCRSPprc")
 
     # Save price-only data
     daily_prc.to_parquet("../pyData/Intermediate/dailyCRSPprc.parquet", index=False)

@@ -41,7 +41,12 @@ def yaml_standardize_columns(df, dataset_name):
         return df
 
     schema = schemas[dataset_name]
-    target_columns = schema['columns']
+    # Handle both comma-delimited strings and lists for backward compatibility
+    columns_data = schema['columns']
+    if isinstance(columns_data, str):
+        target_columns = [col.strip() for col in columns_data.split(',')]
+    else:
+        target_columns = columns_data
     special_handling = schema.get('special_handling', {})
 
     print(f"{dataset_name}: Starting YAML-based column standardization")
@@ -84,7 +89,14 @@ def yaml_standardize_columns(df, dataset_name):
         print(f"{dataset_name}: Removing unwanted columns: {unwanted_cols}")
         df_standardized = df_standardized.drop(columns=unwanted_cols)
 
-    # Check for missing columns
+    # Handle default values for specific columns
+    default_values = special_handling.get('default_values', {})
+    for col, default_value in default_values.items():
+        if col not in df_standardized.columns:
+            print(f"{dataset_name}: Adding missing column with default: {col} = {default_value}")
+            df_standardized[col] = default_value
+
+    # Check for missing columns (without defaults)
     missing_cols = [col for col in target_columns
                     if col not in df_standardized.columns]
     if missing_cols:

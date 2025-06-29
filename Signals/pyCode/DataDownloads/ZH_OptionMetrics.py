@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 
 def process_options_file(input_file, date_col='time_avail_m', output_name=None):
@@ -38,10 +38,8 @@ def process_options_file(input_file, date_col='time_avail_m', output_name=None):
         data['time_avail_m'] = pd.to_datetime(data['time_avail_m']).dt.to_period('M')
     
     if output_name:
-        # Standardize columns if we have a corresponding DTA file
-        dta_path = f"../Data/Intermediate/{output_name}.dta"
-        if os.path.exists(dta_path):
-            data = standardize_against_dta(data, dta_path, output_name)
+        # Standardize columns using YAML schema
+        data = yaml_standardize_columns(data, output_name)
         
         # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
         if 'time_avail_m' in data.columns:
@@ -70,10 +68,8 @@ def main():
     # Convert time_avail_m to proper format
     vol_data['time_avail_m'] = pd.to_datetime(vol_data['time_avail_m']).dt.to_period('M')
     
-    # Standardize columns
-    dta_path = "../Data/Intermediate/OptionMetricsVolume.dta"
-    if os.path.exists(dta_path):
-        vol_data = standardize_against_dta(vol_data, dta_path, "OptionMetricsVolume")
+    # Standardize columns using YAML schema
+    vol_data = yaml_standardize_columns(vol_data, "OptionMetricsVolume")
     
     # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
     if 'time_avail_m' in vol_data.columns:
@@ -95,11 +91,7 @@ def main():
     
     if vol_surf_data is not None:
         # Standardize columns to match DTA file
-        vol_surf_data = standardize_against_dta(
-            vol_surf_data, 
-            "../Data/Intermediate/OptionMetricsVolSurf.dta",
-            "OptionMetricsVolSurf"
-        )
+        vol_surf_data = yaml_standardize_columns(vol_surf_data, "OptionMetricsVolSurf")
         
         # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
         if 'time_avail_m' in vol_surf_data.columns:
@@ -122,11 +114,7 @@ def main():
     xzz_data['time_avail_m'] = pd.to_datetime(xzz_data['time_avail_m']).dt.to_period('M')
     
     # Standardize columns to match DTA file
-    xzz_data = standardize_against_dta(
-        xzz_data, 
-        "../Data/Intermediate/OptionMetricsXZZ.dta",
-        "OptionMetricsXZZ"
-    )
+    xzz_data = yaml_standardize_columns(xzz_data, "OptionMetricsXZZ")
     
     # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
     if 'time_avail_m' in xzz_data.columns:
@@ -167,11 +155,7 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Standardize columns to match DTA file
-    bh_data = standardize_against_dta(
-        bh_data, 
-        "../Data/Intermediate/OptionMetricsBH.dta",
-        "OptionMetricsBH"
-    )
+    bh_data = yaml_standardize_columns(bh_data, "OptionMetricsBH")
     
     # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
     if 'time_avail_m' in bh_data.columns:

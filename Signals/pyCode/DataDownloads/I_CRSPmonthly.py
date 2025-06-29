@@ -14,7 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 print("=" * 60, flush=True)
 print("📊 I_CRSPmonthly.py - CRSP Monthly Stock Data", flush=True)
@@ -125,11 +125,7 @@ crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
 crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
 # Standardize columns to match DTA file
-crsp_data = standardize_against_dta(
-    crsp_data, 
-    "../Data/Intermediate/monthlyCRSP.dta",
-    "monthlyCRSP"
-)
+crsp_data = yaml_standardize_columns(crsp_data, "monthlyCRSP")
 
 # Save the data
 crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet", index=False)

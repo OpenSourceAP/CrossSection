@@ -38,8 +38,14 @@ def main(maxrows=None):
             if not key_cols:
                 continue  # Skip datasets with no keys
 
-            # Load file (CSV or DTA based on extension)
-            data_file = Path(f"../Data/Intermediate/{config['stata_file']}")
+            # Load file from pyData (parquet or CSV based on extension)
+            if config['stata_file'].endswith('.dta'):
+                # Convert DTA to parquet filename for pyData
+                python_file = config['stata_file'].replace('.dta', '.parquet')
+            else:
+                # Keep CSV filename as-is for pyData
+                python_file = config['stata_file']
+            data_file = Path(f"../pyData/Intermediate/{python_file}")
 
             try:
                 if not data_file.exists():
@@ -59,7 +65,12 @@ def main(maxrows=None):
                         print(f"  {dataset_name}: Testing first {maxrows} rows")
                     else:
                         df = pd.read_csv(data_file)
-                else:  # .dta file
+                elif file_ext == '.parquet':
+                    df = pd.read_parquet(data_file)
+                    if maxrows:
+                        df = df.head(maxrows)
+                        print(f"  {dataset_name}: Testing first {maxrows} rows")
+                else:  # .dta file (fallback)
                     if maxrows:
                         df = pd.read_stata(data_file, preserve_dtypes=False, 
                                          chunksize=maxrows)

@@ -100,11 +100,11 @@ class InputOutputMomentum:
         """Read Compustat, CRSP, and CCM linking data from CSV files."""
         logger.info("Reading input data from CSV files...")
         
-        # Read Compustat Annual from CSV (matching R implementation)
-        compustat_csv_path = "../Data/Intermediate/CompustatAnnual.csv"
-        logger.info(f"Reading Compustat from: {compustat_csv_path}")
+        # Read Compustat Annual from Python parquet file
+        compustat_parquet_path = "../pyData/Intermediate/CompustatAnnual.parquet"
+        logger.info(f"Reading Compustat from: {compustat_parquet_path}")
         
-        comp = pd.read_csv(compustat_csv_path)
+        comp = pd.read_parquet(compustat_parquet_path)
         logger.info(f"Raw Compustat loaded: {len(comp):,} rows, {len(comp.columns)} columns")
         
         # Create NAICS codes (matching R implementation logic)
@@ -112,7 +112,11 @@ class InputOutputMomentum:
         comp['naics6'] = pd.to_numeric(comp['naicsstr'], errors='coerce')
         
         # Create year_avail as 1 year after datadate + 6 months (matching R logic)
-        comp['datadate'] = pd.to_datetime(comp['datadate'], format='%d%b%Y')
+        # Handle both parquet datetime and CSV string formats
+        if comp['datadate'].dtype == 'object':
+            comp['datadate'] = pd.to_datetime(comp['datadate'], format='%d%b%Y')
+        else:
+            comp['datadate'] = pd.to_datetime(comp['datadate'])
         comp['year_avail'] = (comp['datadate'] + pd.DateOffset(months=6)).dt.year + 1
         
         # Filter valid NAICS and select columns
@@ -121,15 +125,19 @@ class InputOutputMomentum:
         logger.info(f"Compustat after processing: {len(comp):,} rows")
         logger.info(f"Missing NAICS6: {comp['naics6'].isna().sum():,} rows")
         
-        # Read CRSP monthly from CSV (matching R implementation)
-        crsp_csv_path = "../Data/Intermediate/mCRSP.csv"
+        # Read CRSP monthly from Python CSV file (intermediate output)
+        crsp_csv_path = "../pyData/Intermediate/mCRSP.csv"
         logger.info(f"Reading CRSP from: {crsp_csv_path}")
         
         crsp = pd.read_csv(crsp_csv_path)
         logger.info(f"Raw CRSP loaded: {len(crsp):,} rows, {len(crsp.columns)} columns")
         
         # Process CRSP data (matching R implementation)
-        crsp['date'] = pd.to_datetime(crsp['date'], format='%d%b%Y')
+        # Handle both parquet datetime and CSV string formats
+        if crsp['date'].dtype == 'object':
+            crsp['date'] = pd.to_datetime(crsp['date'], format='%d%b%Y')
+        else:
+            crsp['date'] = pd.to_datetime(crsp['date'])
         crsp['ret'] = crsp['ret'] * 100  # Convert to percentage
         crsp['mve_c'] = (crsp['prc'].abs() * crsp['shrout'])  # Calculate market cap like R
         
@@ -140,21 +148,41 @@ class InputOutputMomentum:
         logger.info(f"Missing returns: {crsp['ret'].isna().sum():,} rows")
         logger.info(f"Missing mve_c: {crsp['mve_c'].isna().sum():,} rows")
         
-        # Read CCM linking table from CSV (matching R implementation)
-        ccm_csv_path = "../Data/Intermediate/CCMLinkingTable.csv"
-        logger.info(f"Reading CCM from: {ccm_csv_path}")
+        # Read CCM linking table from Python parquet file
+        ccm_parquet_path = "../pyData/Intermediate/CCMLinkingTable.parquet"
+        logger.info(f"Reading CCM from: {ccm_parquet_path}")
         
-        ccm = pd.read_csv(ccm_csv_path)
+        ccm = pd.read_parquet(ccm_parquet_path)
         logger.info(f"Raw CCM loaded: {len(ccm):,} rows, {len(ccm.columns)} columns")
         
         # Process CCM data (matching R implementation)
-        ccm['linkdt'] = pd.to_datetime(ccm['linkdt'], format='%d%b%Y')
-        # Handle missing linkenddt by replacing empty strings with far future date
-        ccm['linkenddt'] = ccm['linkenddt'].replace('', '31dec3000')
-        ccm['linkenddt'] = pd.to_datetime(ccm['linkenddt'], format='%d%b%Y')
+        # Handle both parquet datetime and CSV string formats
+        if 'linkdt' in ccm.columns:
+            if ccm['linkdt'].dtype == 'object':
+                ccm['linkdt'] = pd.to_datetime(ccm['linkdt'], format='%d%b%Y')
+            else:
+                ccm['linkdt'] = pd.to_datetime(ccm['linkdt'])
+        elif 'timeLinkStart_d' in ccm.columns:
+            ccm = ccm.rename(columns={'timeLinkStart_d': 'linkdt'})
+            ccm['linkdt'] = pd.to_datetime(ccm['linkdt'])
+            
+        if 'linkenddt' in ccm.columns:
+            # Handle missing linkenddt by replacing empty strings with far future date
+            ccm['linkenddt'] = ccm['linkenddt'].replace('', '31dec3000')
+            if ccm['linkenddt'].dtype == 'object':
+                ccm['linkenddt'] = pd.to_datetime(ccm['linkenddt'], format='%d%b%Y')
+            else:
+                ccm['linkenddt'] = pd.to_datetime(ccm['linkenddt'])
+        elif 'timeLinkEnd_d' in ccm.columns:
+            ccm = ccm.rename(columns={'timeLinkEnd_d': 'linkenddt'})
+            ccm['linkenddt'] = pd.to_datetime(ccm['linkenddt'])
         
-        # Rename permno column to match R logic
-        ccm = ccm.rename(columns={'lpermno': 'permno'})
+        # Rename permno column to match R logic (handle both lpermno and permno)
+        if 'lpermno' in ccm.columns and 'permno' not in ccm.columns:
+            ccm = ccm.rename(columns={'lpermno': 'permno'})
+        elif 'permno' in ccm.columns and 'lpermno' not in ccm.columns:
+            pass  # Already has correct column name
+            
         ccm = ccm[['gvkey', 'permno', 'linkprim', 'linkdt', 'linkenddt']].copy()
         logger.info(f"CCM after processing: {len(ccm):,} rows")
         

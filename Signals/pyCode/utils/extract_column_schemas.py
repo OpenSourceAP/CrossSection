@@ -10,6 +10,7 @@ to extract column information from DTA files, preparing for YAML-based replaceme
 import os
 import sys
 import yaml
+import pandas as pd
 from pathlib import Path
 
 # Add parent directory to path to import column_standardizer
@@ -17,34 +18,42 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from utils.column_standardizer import get_dta_column_order
 
-def extract_dataset_schema(dataset_name, dta_filename):
+def extract_dataset_schema(dataset_name, stata_filename):
     """
-    Extract column schema for a specific dataset.
+    Extract column schema for a specific dataset from DTA or CSV file.
     
     Args:
         dataset_name (str): Name of the dataset
-        dta_filename (str): Name of the DTA file
+        stata_filename (str): Name of the Stata file (DTA or CSV)
         
     Returns:
         dict: Schema information with columns list
     """
-    # Path to DTA file
-    dta_path = f"../Data/Intermediate/{dta_filename}"
+    # Path to Stata file
+    stata_path = f"../Data/Intermediate/{stata_filename}"
     
     print(f"\n=== Extracting schema for {dataset_name} ===")
-    print(f"DTA file: {dta_path}")
+    print(f"Stata file: {stata_path}")
     
     # Check if file exists
-    if not os.path.exists(dta_path):
-        print(f"❌ File not found: {dta_path}")
+    if not os.path.exists(stata_path):
+        print(f"❌ File not found: {stata_path}")
         return None
     
-    # Get column order from DTA file
+    # Get column order from file
     try:
-        columns = get_dta_column_order(dta_path)
+        if stata_filename.endswith('.dta'):
+            columns = get_dta_column_order(stata_path)
+        elif stata_filename.endswith('.csv'):
+            # For CSV files, read just the header
+            csv_df = pd.read_csv(stata_path, nrows=0)
+            columns = list(csv_df.columns)
+        else:
+            print(f"❌ Unsupported file type: {stata_filename}")
+            return None
         
         if columns is None:
-            print(f"❌ Failed to read columns from {dta_path}")
+            print(f"❌ Failed to read columns from {stata_path}")
             return None
             
         print(f"✅ Successfully read {len(columns)} columns")
@@ -52,7 +61,7 @@ def extract_dataset_schema(dataset_name, dta_filename):
         
         schema = {
             'dataset_name': dataset_name,
-            'dta_file': dta_filename,
+            'stata_file': stata_filename,
             'columns': columns,
             'num_columns': len(columns)
         }
@@ -60,7 +69,7 @@ def extract_dataset_schema(dataset_name, dta_filename):
         return schema
         
     except Exception as e:
-        print(f"❌ Error reading {dta_path}: {e}")
+        print(f"❌ Error reading {stata_path}: {e}")
         return None
 
 def analyze_special_cases(dataset_name):
@@ -104,7 +113,7 @@ def generate_yaml_schema(schemas):
     # Group schemas by type
     for dataset_name, schema in schemas.items():
         yaml_data[dataset_name] = {
-            'columns': schema['columns'],
+            'columns': ', '.join(schema['columns']),
             'special_handling': {}
         }
         
@@ -147,24 +156,51 @@ def save_yaml_schema(schemas, output_file="column_schemas.yaml"):
     print(f"\n✅ YAML schema saved to: {output_path}")
     return output_path
 
+def load_datasets_from_yaml():
+    """
+    Load dataset information from 00_map.yaml
+    
+    Returns:
+        list: List of (dataset_name, stata_filename) tuples
+    """
+    yaml_path = os.path.join(os.path.dirname(__file__), "../DataDownloads/00_map.yaml")
+    
+    try:
+        with open(yaml_path, 'r', encoding='utf-8') as f:
+            map_data = yaml.safe_load(f)
+    except Exception as e:
+        print(f"❌ Error loading map YAML: {e}")
+        return []
+    
+    datasets = []
+    
+    for dataset_name, dataset_info in map_data.items():
+        if isinstance(dataset_info, dict) and 'stata_file' in dataset_info:
+            stata_file = dataset_info['stata_file']
+            # Only include DTA and CSV files that we can process for column schemas
+            if stata_file.endswith('.dta') or stata_file.endswith('.csv'):
+                datasets.append((dataset_name, stata_file))
+    
+    return datasets
+
 def main():
-    """Extract schemas for test datasets"""
+    """Extract schemas for all datasets from YAML mapping"""
     print("Column Schema Extraction Tool")
     print("=" * 50)
     
-    # Test datasets - start with these 3, plus a few more to test
-    test_datasets = [
-        ("pin_monthly", "pin_monthly.dta"),
-        ("CRSPdistributions", "CRSPdistributions.dta"), 
-        ("a_aCompustat", "a_aCompustat.dta"),
-        ("m_aCompustat", "m_aCompustat.dta"),
-        ("monthlyCRSP", "monthlyCRSP.dta")
-    ]
+    # Load datasets from YAML mapping
+    all_datasets = load_datasets_from_yaml()
+    
+    if not all_datasets:
+        print("❌ No datasets found in YAML mapping")
+        return {}
+    
+    print(f"Found {len(all_datasets)} datasets to process")
     
     schemas = {}
     
-    for dataset_name, dta_filename in test_datasets:
-        schema = extract_dataset_schema(dataset_name, dta_filename)
+    for dataset_name, stata_filename in all_datasets:
+        schema = extract_dataset_schema(dataset_name, stata_filename)
         if schema:
             # Add special case analysis
             schema['special_cases'] = analyze_special_cases(dataset_name)

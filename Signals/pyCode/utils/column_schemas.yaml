@@ -1,17 +1,225 @@
 '# Column Schemas': Generated from DTA files using extract_column_schemas.py
 '# This replaces column_standardizer.py DTA file dependencies': null
+CCMLinkingTable.csv:
+  columns: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid, lpermno, lpermco, linkdt, linkenddt
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+CCMLinkingTable:
+  columns: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid, permno, lpermco, timeLinkStart_d, timeLinkEnd_d
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+CompustatAnnual:
+  columns: gvkey, datadate, conm, fyear, tic, cusip, naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs,
+    csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c, dvt, ebit,
+    ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt, ivao, ivncf,
+    ivst, lco, lct, lo, lt, mib, msa, ni, nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f,
+    prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi, txditc,
+    txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+a_aCompustat:
+  columns: gvkey, datadate, conm, fyear, tic, cusip, naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs,
+    csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c, dvt, ebit,
+    ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt, ivao, ivncf,
+    ivst, lco, lct, lo, lt, mib, msa, ni, nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f,
+    prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi, txditc,
+    txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga, cnum, dr, dc, xint0, xsga0, xad0, cik, sic, naics,
+    permno, lpermco, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+m_aCompustat:
+  columns: gvkey, datadate, conm, fyear, tic, cusip, naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs,
+    csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c, dvt, ebit,
+    ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt, ivao, ivncf,
+    ivst, lco, lct, lo, lt, mib, msa, ni, nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f,
+    prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi, txditc,
+    txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga, cnum, dr, dc, xint0, xsga0, xad0, cik, sic, naics,
+    permno, lpermco, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+m_QCompustat:
+  columns: gvkey, datadateq, fyearq, fqtr, datacqtr, datafqtr, acoq, actq, ajexq, apq, atq, ceqq, cheq, cogsq, cshoq, cshprq,
+    dlcq, dlttq, dpq, drcq, drltq, dvpsxq, dvpq, dvy, epspiq, epspxq, fopty, gdwlq, ibq, invtq, intanq, ivaoq, lcoq, lctq,
+    loq, ltq, mibq, niq, oancfy, oiadpq, oibdpq, piq, ppentq, ppegtq, prstkcy, prccq, pstkq, rdq, req, rectq, revtq, saleq,
+    seqq, sstky, txdiq, txditcq, txpq, txtq, xaccq, xintq, xsgaq, xrdq, capxy, time_avail_m, sstkyq, prstkcyq, oancfyq, foptyq
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+CompustatPensions:
+  columns: gvkey, paddml, pbnaa, pbnvv, pbpro, pbpru, pcupsu, pplao, pplau, year
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+CompustatSegments:
+  columns: gvkey, datadate, stype, sid, sales, srcdate, naicsh, sics1, snms
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+CompustatSegmentDataCustomers:
+  columns: gvkey, cid, cnms, ctype, gareac, gareat, salecs, sid, stype, datadate
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+monthlyShortInterest:
+  columns: gvkey, time_avail_m, shortint, shortintadj
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+CRSPdistributions:
+  columns: permno, divamt, distcd, facshr, rcrddt, exdt, paydt, cd1, cd2, cd3, cd4
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+mCRSP:
+  columns: permno, permco, date, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, siccd, ticker, shrcls,
+    dlstcd, dlret
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+monthlyCRSP:
+  columns: permno, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D, time_avail_m,
+    mve_c
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+monthlyCRSPraw:
+  columns: permno, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D, time_avail_m,
+    mve_c
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+dailyCRSP:
+  columns: permno, time_d, ret, vol, shrout, prc, cfacpr
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+dailyCRSPprc:
+  columns: permno, time_d, shrout, prc, cfacpr
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+m_CRSPAcquisitions:
+  columns: permno, SpinoffCo
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+IBES_EPS_Unadj:
+  columns: tickerIBES, statpers, fpi, numest, medest, meanest, stdev, fpedats, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+IBES_EPS_Adj:
+  columns: fpi, tickerIBES, statpers, fpedats, anndats_act, meanest, actual, medest, stdev, numest, prdays, price, shout,
+    time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+IBES_Recommendations:
+  columns: tickerIBES, amaskcd, anndats, time_avail_m, ireccd, estimid, ereccd, etext, itext, emaskcd, actdats
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+IBES_UnadjustedActuals:
+  columns: tickerIBES, cusip, oftic, cname, measure, fy0a, curcode, fvyrgro, fvyrsta, usfirm, fy0edats, int0a, int0dats, price,
+    prdays, shoutIBESUnadj, iadiv, curr_price, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+dailyFF:
+  columns: time_d, mktrf, smb, hml, rf, umd
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+monthlyFF:
+  columns: mktrf, smb, hml, rf, umd, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+monthlyMarket:
+  columns: vwretd, ewretd, usdval, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+monthlyLiquidity:
+  columns: ps_innov, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+d_qfactor:
+  columns: r_f_qfac, r_mkt_qfac, r_me_qfac, r_ia_qfac, r_roe_qfac, time_d
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+d_vix:
+  columns: time_d, vix, dVIX
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+GNPdefl:
+  columns: time_avail_m, gnpdefl
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+TBill3M:
+  columns: TbillRate3M, qtr, year
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+brokerLev:
+  columns: qtr, year, levfac
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+m_SP_creditratings:
+  columns: gvkey, time_avail_m, credrat
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+m_CIQ_creditratings:
+  columns: gvkey, ticker, ratingdate, ratingtime, ratingactionword, currentratingsymbol, entity_id, instrument_id, security_id,
+    source, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
 pin_monthly:
-  columns:
-  - permno
-  - year
-  - a
-  - eb
-  - es
-  - u
-  - d
-  - month
-  - modate
-  - time_avail_m
+  columns: permno, year, a, eb, es, u, d, month, modate, time_avail_m
   special_handling:
     pin_parameters:
       remove_columns:
@@ -25,379 +233,82 @@ pin_monthly:
     remove_patterns:
     - __index_level_*
     - index
-CRSPdistributions:
-  columns:
-  - permno
-  - divamt
-  - distcd
-  - facshr
-  - rcrddt
-  - exdt
-  - paydt
-  - cd1
-  - cd2
-  - cd3
-  - cd4
+GovIndex:
+  columns: ticker, G, time_avail_m
   special_handling:
     remove_patterns:
     - __index_level_*
     - index
-a_aCompustat:
-  columns:
-  - gvkey
-  - datadate
-  - conm
-  - fyear
-  - tic
-  - cusip
-  - naicsh
-  - sich
-  - aco
-  - act
-  - ajex
-  - am
-  - ao
-  - ap
-  - at
-  - capx
-  - ceq
-  - ceqt
-  - che
-  - cogs
-  - csho
-  - cshrc
-  - dcpstk
-  - dcvt
-  - dlc
-  - dlcch
-  - dltis
-  - dltr
-  - dltt
-  - dm
-  - dp
-  - drc
-  - drlt
-  - dv
-  - dvc
-  - dvp
-  - dvpa
-  - dvpd
-  - dvpsx_c
-  - dvt
-  - ebit
-  - ebitda
-  - emp
-  - epspi
-  - epspx
-  - fatb
-  - fatl
-  - ffo
-  - fincf
-  - fopt
-  - gdwl
-  - gdwlia
-  - gdwlip
-  - gwo
-  - ib
-  - ibcom
-  - intan
-  - invt
-  - ivao
-  - ivncf
-  - ivst
-  - lco
-  - lct
-  - lo
-  - lt
-  - mib
-  - msa
-  - ni
-  - nopi
-  - oancf
-  - ob
-  - oiadp
-  - oibdp
-  - pi
-  - ppenb
-  - ppegt
-  - ppenls
-  - ppent
-  - prcc_c
-  - prcc_f
-  - prstkc
-  - prstkcc
-  - pstk
-  - pstkl
-  - pstkrv
-  - re
-  - rect
-  - recta
-  - revt
-  - sale
-  - scstkc
-  - seq
-  - spi
-  - sstk
-  - tstkp
-  - txdb
-  - txdi
-  - txditc
-  - txfo
-  - txfed
-  - txp
-  - txt
-  - wcap
-  - wcapch
-  - xacc
-  - xad
-  - xint
-  - xrd
-  - xpp
-  - xsga
-  - cnum
-  - dr
-  - dc
-  - xint0
-  - xsga0
-  - xad0
-  - cik
-  - sic
-  - naics
-  - permno
-  - lpermco
-  - time_avail_m
+BAspreadsCorwin:
+  columns: permno, BidAskSpread, time_avail_m
   special_handling:
     remove_patterns:
     - __index_level_*
     - index
-m_aCompustat:
-  columns:
-  - gvkey
-  - datadate
-  - conm
-  - fyear
-  - tic
-  - cusip
-  - naicsh
-  - sich
-  - aco
-  - act
-  - ajex
-  - am
-  - ao
-  - ap
-  - at
-  - capx
-  - ceq
-  - ceqt
-  - che
-  - cogs
-  - csho
-  - cshrc
-  - dcpstk
-  - dcvt
-  - dlc
-  - dlcch
-  - dltis
-  - dltr
-  - dltt
-  - dm
-  - dp
-  - drc
-  - drlt
-  - dv
-  - dvc
-  - dvp
-  - dvpa
-  - dvpd
-  - dvpsx_c
-  - dvt
-  - ebit
-  - ebitda
-  - emp
-  - epspi
-  - epspx
-  - fatb
-  - fatl
-  - ffo
-  - fincf
-  - fopt
-  - gdwl
-  - gdwlia
-  - gdwlip
-  - gwo
-  - ib
-  - ibcom
-  - intan
-  - invt
-  - ivao
-  - ivncf
-  - ivst
-  - lco
-  - lct
-  - lo
-  - lt
-  - mib
-  - msa
-  - ni
-  - nopi
-  - oancf
-  - ob
-  - oiadp
-  - oibdp
-  - pi
-  - ppenb
-  - ppegt
-  - ppenls
-  - ppent
-  - prcc_c
-  - prcc_f
-  - prstkc
-  - prstkcc
-  - pstk
-  - pstkl
-  - pstkrv
-  - re
-  - rect
-  - recta
-  - revt
-  - sale
-  - scstkc
-  - seq
-  - spi
-  - sstk
-  - tstkp
-  - txdb
-  - txdi
-  - txditc
-  - txfo
-  - txfed
-  - txp
-  - txt
-  - wcap
-  - wcapch
-  - xacc
-  - xad
-  - xint
-  - xrd
-  - xpp
-  - xsga
-  - cnum
-  - dr
-  - dc
-  - xint0
-  - xsga0
-  - xad0
-  - cik
-  - sic
-  - naics
-  - permno
-  - lpermco
-  - time_avail_m
+TR_13F:
+  columns: permno, numinstown, dbreadth, instown_perc, maxinstown_perc, numinstblock, time_avail_m
   special_handling:
     remove_patterns:
     - __index_level_*
     - index
-m_QCompustat:
-  columns:
-  - gvkey
-  - datadateq
-  - fyearq
-  - fqtr
-  - datacqtr
-  - datafqtr
-  - acoq
-  - actq
-  - ajexq
-  - apq
-  - atq
-  - ceqq
-  - cheq
-  - cogsq
-  - cshoq
-  - cshtrdq
-  - dlcq
-  - dlttq
-  - dpq
-  - dvpq
-  - dvpsxq
-  - epspiq
-  - epspxq
-  - gdwlq
-  - ibq
-  - icaptq
-  - intanq
-  - invtq
-  - lctq
-  - ltq
-  - niq
-  - oiadpq
-  - oibdpq
-  - piq
-  - ppentq
-  - pstkq
-  - req
-  - revtq
-  - saleq
-  - seqq
-  - spiq
-  - txpq
-  - txtq
-  - wcapq
-  - xintq
-  - xsgaq
-  - xrdq
-  - rdq
-  - rcp
-  - conm
-  - tic
-  - cusip
-  - cik
-  - sic
-  - naics
-  - naicsh
-  - prccq
-  - prchq
-  - prclq
-  - ajexq
-  - trfq
-  - srcq
-  - subfq
-  - permno
-  - lpermco
-  - xaccq
-  - xintq
-  - xsgaq
-  - xrdq
-  - capxy
-  - time_avail_m
-  - sstkyq
-  - prstkcyq
-  - oancfyq
-  - foptyq
+hf_spread:
+  columns: permno, time_avail_m, hf_spread
   special_handling:
     remove_patterns:
     - __index_level_*
     - index
-monthlyCRSP:
-  columns:
-  - permno
-  - ret
-  - retx
-  - vol
-  - shrout
-  - prc
-  - cfacshr
-  - bidlo
-  - askhi
-  - shrcd
-  - exchcd
-  - sicCRSP
-  - ticker
-  - shrcls
-  - sic2D
-  - time_avail_m
-  - mve_c
+OptionMetricsVolume:
+  columns: secid, optvolume, optinterest, time_avail_m
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+OptionMetricsVolSurf:
+  columns: secid, days, delta, cp_flag, time_avail_m, date, impl_vol
+  special_handling:
+    default_values:
+      date: '2020-01-01'
+    remove_patterns:
+    - __index_level_*
+    - index
+OptionMetricsXZZ:
+  columns: secid, time_avail_m, skew1
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+OptionMetricsBH:
+  columns: secid, time_avail_m, cp_flag, mean_imp_vol, mean_day, nobs, ticker
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+IBESCRSPLinkingTable:
+  columns: tickerIBES, permno
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+OPTIONMETRICSCRSPLinkingTable:
+  columns: secid, permno, om_score
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+PatentDataProcessed:
+  columns: gvkey, year, npat, ncitscale
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+InputOutputMomentumProcessed:
+  columns: gvkey, time_avail_m, retmatchcustomer, portindcustomer, retmatchsupplier, portindsupplier
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
+customerMom:
+  columns: permno, custmom, time_avail_m
   special_handling:
     remove_patterns:
     - __index_level_*

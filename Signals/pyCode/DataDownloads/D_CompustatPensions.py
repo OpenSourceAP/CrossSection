@@ -14,7 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 print("=" * 60, flush=True)
 print("🏦 D_CompustatPensions.py - Compustat Pension Fund Data", flush=True)
@@ -78,10 +78,8 @@ for var in pension_vars:
         missing_pct = (missing_count / total_count) * 100
         print(f"  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
 
-# Manually ensure columns match actual Stata format (bypass standardize_against_dta issues)
-# Actual Stata columns: gvkey, paddml, pbnaa, pbnvv, pbpro, pbpru, pcupsu, pplao, pplau, year
-expected_columns = ['gvkey', 'paddml', 'pbnaa', 'pbnvv', 'pbpro', 'pbpru', 'pcupsu', 'pplao', 'pplau', 'year']
-pensions_data = pensions_data[expected_columns]
+# Standardize columns using YAML schema
+pensions_data = yaml_standardize_columns(pensions_data, "CompustatPensions")
 
 # Save the data
 pensions_data.to_parquet("../pyData/Intermediate/CompustatPensions.parquet", index=False)
