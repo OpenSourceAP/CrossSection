@@ -18,7 +18,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 print("=" * 60, flush=True)
 print(
@@ -237,12 +237,8 @@ monthly_compustat_pd = monthly_compustat.to_pandas()
 # time_avail_m is already in proper datetime64[ns] format from period arithmetic above
 # No additional conversion needed - it already matches Stata's format
 
-# Standardize columns to match DTA file
-monthly_compustat_pd = standardize_against_dta(
-    monthly_compustat_pd, 
-    "../Data/Intermediate/m_QCompustat.dta",
-    "m_QCompustat"
-)
+# Standardize columns using YAML schema
+monthly_compustat_pd = yaml_standardize_columns(monthly_compustat_pd, "m_QCompustat")
 
 # Save the data in both pickle and parquet formats
 monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False)

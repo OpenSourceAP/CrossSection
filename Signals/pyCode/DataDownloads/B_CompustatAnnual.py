@@ -16,7 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer import standardize_against_dta
+from utils.column_standardizer_yaml import yaml_standardize_columns
 import pyarrow as pa
 
 print("=" * 60, flush=True)
@@ -307,12 +307,8 @@ annual_data['time_avail_m'] = (
 # Save annual version with preserved dtypes
 annual_data_typed = preserve_dtypes_for_parquet(annual_data)
 
-# Standardize columns to match DTA file
-annual_data_typed = standardize_against_dta(
-    annual_data_typed, 
-    "../Data/Intermediate/a_aCompustat.dta",
-    "a_aCompustat"
-)
+# Standardize columns using YAML schema
+annual_data_typed = yaml_standardize_columns(annual_data_typed, "a_aCompustat")
 
 annual_data_typed.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 
@@ -353,12 +349,8 @@ monthly_data = monthly_data.drop(columns=['month_offset'])
 # Save monthly version with preserved dtypes
 monthly_data_typed = preserve_dtypes_for_parquet(monthly_data)
 
-# Standardize columns to match DTA file
-monthly_data_typed = standardize_against_dta(
-    monthly_data_typed, 
-    "../Data/Intermediate/m_aCompustat.dta",
-    "m_aCompustat"
-)
+# Standardize columns using YAML schema
+monthly_data_typed = yaml_standardize_columns(monthly_data_typed, "m_aCompustat")
 
 monthly_data_typed.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 

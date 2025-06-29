@@ -9,7 +9,6 @@ http://www.crsp.org/products/documentation/distribution-codes
 
 import os
 import sys
-import yaml
 from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
@@ -17,6 +16,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import yaml_standardize_columns
 
 print("=" * 60, flush=True)
 print("💰 H_CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
@@ -24,84 +24,6 @@ print("=" * 60, flush=True)
 
 load_dotenv()
 
-
-def yaml_standardize_columns(df, dataset_name="CRSPdistributions"):
-    """
-    Standardize DataFrame columns using YAML schema instead of DTA files.
-
-    Args:
-        df (pandas.DataFrame): Input DataFrame to standardize
-        dataset_name (str): Name of dataset in YAML schema
-
-    Returns:
-        pandas.DataFrame: DataFrame with standardized columns
-    """
-    # Load YAML schema
-    yaml_path = os.path.join(os.path.dirname(__file__),
-                             "../utils/column_schemas.yaml")
-
-    try:
-        with open(yaml_path, 'r', encoding='utf-8') as f:
-            schemas = yaml.safe_load(f)
-    except Exception as e:
-        print(f"❌ Error loading YAML schema: {e}")
-        return df
-
-    if dataset_name not in schemas:
-        print(f"❌ Dataset '{dataset_name}' not found in YAML schema")
-        return df
-
-    schema = schemas[dataset_name]
-    target_columns = schema['columns']
-    special_handling = schema.get('special_handling', {})
-
-    print(f"{dataset_name}: Starting YAML-based column standardization")
-
-    df_standardized = df.copy()
-
-    # Remove unwanted columns based on patterns
-    remove_patterns = special_handling.get('remove_patterns', [])
-    unwanted_cols = []
-
-    for pattern in remove_patterns:
-        if pattern == '__index_level_*':
-            # Find columns starting with '__index_level_'
-            unwanted_cols.extend([col for col in df_standardized.columns
-                                  if col.startswith('__index_level_')])
-        elif pattern == 'index':
-            # Find exact 'index' column
-            if 'index' in df_standardized.columns:
-                unwanted_cols.append('index')
-
-    if unwanted_cols:
-        print(f"{dataset_name}: Removing unwanted columns: {unwanted_cols}")
-        df_standardized = df_standardized.drop(columns=unwanted_cols)
-
-    # Check for missing columns
-    missing_cols = [col for col in target_columns
-                    if col not in df_standardized.columns]
-    if missing_cols:
-        print(f"{dataset_name}: Adding missing columns: {missing_cols}")
-        for col in missing_cols:
-            df_standardized[col] = np.nan
-
-    # Check for extra columns
-    extra_cols = [col for col in df_standardized.columns
-                  if col not in target_columns]
-    if extra_cols:
-        print(f"{dataset_name}: Removing extra columns: {extra_cols}")
-        df_standardized = df_standardized.drop(columns=extra_cols)
-
-    # Reorder columns to match target order
-    try:
-        df_standardized = df_standardized[target_columns]
-        print(f"{dataset_name}: Column order standardized successfully "
-              "using YAML schema")
-    except KeyError as e:
-        print(f"{dataset_name}: Error reordering columns: {e}")
-        return df
-
-    return df_standardized
 
 
 # Create SQLAlchemy engine for database connection

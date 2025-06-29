@@ -298,6 +298,87 @@ m_aCompustat:
     remove_patterns:
     - __index_level_*
     - index
+m_QCompustat:
+  columns:
+  - gvkey
+  - datadateq
+  - fyearq
+  - fqtr
+  - datacqtr
+  - datafqtr
+  - acoq
+  - actq
+  - ajexq
+  - apq
+  - atq
+  - ceqq
+  - cheq
+  - cogsq
+  - cshoq
+  - cshtrdq
+  - dlcq
+  - dlttq
+  - dpq
+  - dvpq
+  - dvpsxq
+  - epspiq
+  - epspxq
+  - gdwlq
+  - ibq
+  - icaptq
+  - intanq
+  - invtq
+  - lctq
+  - ltq
+  - niq
+  - oiadpq
+  - oibdpq
+  - piq
+  - ppentq
+  - pstkq
+  - req
+  - revtq
+  - saleq
+  - seqq
+  - spiq
+  - txpq
+  - txtq
+  - wcapq
+  - xintq
+  - xsgaq
+  - xrdq
+  - rdq
+  - rcp
+  - conm
+  - tic
+  - cusip
+  - cik
+  - sic
+  - naics
+  - naicsh
+  - prccq
+  - prchq
+  - prclq
+  - ajexq
+  - trfq
+  - srcq
+  - subfq
+  - permno
+  - lpermco
+  - xaccq
+  - xintq
+  - xsgaq
+  - xrdq
+  - capxy
+  - time_avail_m
+  - sstkyq
+  - prstkcyq
+  - oancfyq
+  - foptyq
+  special_handling:
+    remove_patterns:
+    - __index_level_*
+    - index
 monthlyCRSP:
   columns:
   - permno
