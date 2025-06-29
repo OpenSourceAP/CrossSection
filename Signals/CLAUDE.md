@@ -307,3 +307,8 @@ black filename.py
 ### Fix mismatches in dataset
 Make a plan to fix mismatches in DATASETNAME. 
 Use Logs/validation_detailed.md for info on the mismatches between the Stata and Python outputs. Use 00_Stata_DataDownloadsDoc.md and 01_Python_DataDownloadsDoc.md to see what the datasets look like. Examine the most recent 2 md files in @Journal/ to take on lessons from previous fixes. 
+
+## To Do
+- run validate_by_keys.py with maxrows 1 million
+- Update column_standardizer.py to not rely on dta files.
+- make sure datadownloads runs without dta files.
