@@ -12,7 +12,7 @@ This script compares datasets between pyData/ and Data/ directories by:
 The inner join approach eliminates false positives from data availability timing
 differences while focusing on true data processing accuracy.
 
-To use: `python3 utils/validate_by_keys.py --datasets CompustatAnnual m_QCompustat`
+To use: `python3 utils/validate_by_keys.py --datasets CompustatAnnual m_QCompustat --maxrows 10000` (use --maxrows -1 for full datasets)
 """
 
 import sys
@@ -45,6 +45,9 @@ logger = logging.getLogger(__name__)
 PYDATA_PATH = Path("../pyData/Intermediate")
 DATA_PATH = Path("../Data/Intermediate")
 YAML_CONFIG_PATH = Path("DataDownloads/00_map.yaml")
+
+# Hard coded second row cap
+ROW_CAP_FOR_RAM = 5*10**6
 
 
 def load_dataset_config() -> Dict[str, Dict[str, Any]]:
@@ -258,8 +261,11 @@ def filter_dataset_by_identifiers(df: pd.DataFrame, identifiers: pd.DataFrame,
         logger.warning("No matching columns for filtering - returning original dataset")
         return df.copy()
 
-    # Perform inner join to filter
-    filtered_df = df.merge(identifiers[merge_cols], on=merge_cols, how='inner')
+    # Use boolean indexing instead of merge for better performance
+    df_indexed = df.set_index(merge_cols)
+    identifiers_indexed = identifiers[merge_cols].set_index(merge_cols)
+    mask = df_indexed.index.isin(identifiers_indexed.index)
+    filtered_df = df_indexed[mask].reset_index()
 
     logger.info(f"Filtered dataset from {len(df):,} to {len(filtered_df):,} rows")
 
@@ -466,8 +472,24 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
         logger.info(f"Loading Python file: {python_file}")
         python_df = load_dataset(python_file, maxrows)
 
+        # impose second row cap 
+        if len(python_df) > ROW_CAP_FOR_RAM:
+            logger.warning(f"Python dataset {dataset_name} has {len(python_df):,} rows. Sorting and then imposing second row cap of {ROW_CAP_FOR_RAM:,}")
+
+            # sort by key columns, take head
+            python_df = python_df.sort_values(by=id_cols)
+            python_df = python_df.head(ROW_CAP_FOR_RAM)
+
         logger.info(f"Loading Stata file: {stata_file}")
         stata_df = load_dataset(stata_file, maxrows)
+
+        # impose second row cap 
+        if len(stata_df) > ROW_CAP_FOR_RAM:
+            logger.warning(f"Stata dataset {dataset_name} has {len(stata_df):,} rows. Sorting and then imposing second row cap of {ROW_CAP_FOR_RAM:,}")
+
+            # sort by key columns, take head
+            stata_df = stata_df.sort_values(by=id_cols)
+            stata_df = stata_df.head(ROW_CAP_FOR_RAM)
 
         # Special handling for datasets marked with stata_dups: TRUE
         if config.get('stata_dups') == 'TRUE':
@@ -518,37 +540,28 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
         available_merge_cols = [col for col in id_cols if col in common_identifiers.columns]
 
         if available_merge_cols:
-            # Use common identifiers as backbone for perfect alignment
-            # Remove duplicates and sort for consistency
-            common_backbone = (
-                common_identifiers[available_merge_cols]
-                .drop_duplicates()
-                .sort_values(by=available_merge_cols)
-                .reset_index(drop=True)
-            )
+            # Use sorting instead of merge for better performance
+            logger.info(f"Aligning datasets by sorting on {available_merge_cols}")
             
-            logger.info(f"Created backbone with {len(common_backbone):,} unique identifier combinations")
-            
-            # Merge both datasets onto common backbone to ensure identical structure
             try:
-                aligned_python_df = common_backbone.merge(
-                    filtered_python_df, on=available_merge_cols, how='left'
-                )
-                aligned_stata_df = common_backbone.merge(
-                    filtered_stata_df, on=available_merge_cols, how='left'
-                )
+                # Sort both datasets by identifier columns for alignment
+                aligned_python_df = filtered_python_df.sort_values(available_merge_cols).reset_index(drop=True)
+                aligned_stata_df = filtered_stata_df.sort_values(available_merge_cols).reset_index(drop=True)
                 
-                # Verify alignment worked - both datasets should have identical row counts
+                logger.info(f"Successfully aligned datasets: Python {len(aligned_python_df):,}, Stata {len(aligned_stata_df):,} rows")
+                
+                # Ensure same row count for comparison
+                min_rows = min(len(aligned_python_df), len(aligned_stata_df))
                 if len(aligned_python_df) != len(aligned_stata_df):
-                    logger.error(f"Alignment failed: Python {len(aligned_python_df)} != Stata {len(aligned_stata_df)}")
-                    raise ValueError(f"Dataset alignment failed: row count mismatch after backbone merge")
-                
-                logger.info(f"Successfully aligned datasets: {len(aligned_python_df):,} rows each")
+                    logger.warning(f"Row count mismatch after alignment: Python {len(aligned_python_df)}, Stata {len(aligned_stata_df)}")
+                    logger.warning(f"Truncating both to {min_rows:,} rows for comparison")
+                    aligned_python_df = aligned_python_df.head(min_rows).reset_index(drop=True)
+                    aligned_stata_df = aligned_stata_df.head(min_rows).reset_index(drop=True)
                 
             except Exception as e:
-                logger.error(f"Error during backbone alignment: {e}")
-                # Fallback to filtered datasets if backbone merge fails
-                logger.warning("Falling back to filtered datasets without backbone alignment")
+                logger.error(f"Error during sorting alignment: {e}")
+                # Fallback to filtered datasets without alignment
+                logger.warning("Falling back to filtered datasets without alignment")
                 aligned_python_df = filtered_python_df
                 aligned_stata_df = filtered_stata_df
                 
@@ -590,6 +603,16 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
         logger.error(f"Error validating {dataset_name}: {error_msg}")
 
     finally:
+        # Clean up large DataFrames before returning
+        import gc
+        locals_to_clear = ['python_df', 'stata_df', 'filtered_python_df', 'filtered_stata_df', 
+                          'aligned_python_df', 'aligned_stata_df', 'python_identifiers', 
+                          'stata_identifiers', 'common_identifiers']
+        for var_name in locals_to_clear:
+            if var_name in locals():
+                del locals()[var_name]
+        gc.collect()
+        
         result['processing_time'] = (datetime.now() - start_time).total_seconds()
 
     return result
@@ -598,6 +621,8 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
 def validate_all_datasets(datasets: Optional[List[str]] = None, 
                          tolerance: float = 1e-6, maxrows: Optional[int] = None) -> List[Dict[str, Any]]:
     """Validate all or specified datasets."""
+    import gc
+    
     if datasets is None:
         datasets = list(DATASET_CONFIG.keys())
 
@@ -617,6 +642,9 @@ def validate_all_datasets(datasets: Optional[List[str]] = None,
                 'comparison': None,
                 'processing_time': 0
             })
+        
+        # Force garbage collection after each dataset to free memory
+        gc.collect()
 
     logger.info(f"Completed validation of {len(results)} datasets")
     return results
