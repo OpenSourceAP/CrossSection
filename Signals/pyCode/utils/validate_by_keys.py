@@ -374,11 +374,39 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                                     sample['time_avail_m'] = str(df1_norm.iloc[idx]['time_avail_m']) if idx < len(df1_norm) else 'N/A'
                                 mismatch_samples.append(sample)
                         
+                        # Calculate mean absolute difference for numeric columns
+                        mean_abs_diff = None
+                        rel_mean_abs_diff = None
+                        if pd.api.types.is_numeric_dtype(s1) and pd.api.types.is_numeric_dtype(s2):
+                            try:
+                                # Get mismatched values where both are numeric and not NaN
+                                mismatched_s1 = s1[mismatched_mask]
+                                mismatched_s2 = s2[mismatched_mask]
+                                
+                                # Filter out NaN values
+                                valid_mask = ~(pd.isna(mismatched_s1) | pd.isna(mismatched_s2))
+                                if valid_mask.sum() > 0:
+                                    valid_s1 = mismatched_s1[valid_mask]
+                                    valid_s2 = mismatched_s2[valid_mask]
+                                    mean_abs_diff = np.mean(np.abs(valid_s1 - valid_s2))
+                                    
+                                    # Calculate relative mean absolute difference (mean abs diff / mean of original values)
+                                    # Use all valid values from the original column for the denominator
+                                    all_valid_s1 = s1[~pd.isna(s1)]
+                                    if len(all_valid_s1) > 0:
+                                        mean_orig = np.mean(np.abs(all_valid_s1))
+                                        if mean_orig != 0:
+                                            rel_mean_abs_diff = mean_abs_diff / mean_orig
+                            except Exception as e:
+                                logger.warning(f"Could not calculate mean absolute difference for column {col}: {e}")
+                        
                         data_differences[col] = {
                             'match_rate': match_rate,
                             'total_rows': len(matches),
                             'mismatched_rows': (~matches).sum(),
-                            'mismatch_samples': mismatch_samples
+                            'mismatch_samples': mismatch_samples,
+                            'mean_abs_diff': mean_abs_diff,
+                            'rel_mean_abs_diff': rel_mean_abs_diff
                         }
 
                 except Exception as e:
@@ -720,7 +748,31 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         if 'data_differences' in comparison['details']:
             for col, diff in comparison['details']['data_differences'].items():
                 if 'match_rate' in diff:
-                    report += f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows)\n"
+                    base_info = f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows"
+                    if diff.get('mean_abs_diff') is not None:
+                        # Format mean absolute difference appropriately
+                        mean_abs_diff = diff['mean_abs_diff']
+                        if mean_abs_diff < 1e-10:
+                            diff_str = f"{mean_abs_diff:.2e}"
+                        elif mean_abs_diff < 0.001:
+                            diff_str = f"{mean_abs_diff:.6f}"
+                        elif mean_abs_diff < 1000:
+                            diff_str = f"{mean_abs_diff:.6f}"
+                        else:
+                            diff_str = f"{mean_abs_diff:.2e}"
+                        
+                        # Add relative mean absolute difference if available
+                        if diff.get('rel_mean_abs_diff') is not None:
+                            rel_diff = diff['rel_mean_abs_diff']
+                            if rel_diff < 0.001:
+                                rel_diff_str = f"{rel_diff:.2e}"
+                            else:
+                                rel_diff_str = f"{rel_diff:.4f}"
+                            report += f"{base_info}, mean abs diff: {diff_str}, rel: {rel_diff_str})\n"
+                        else:
+                            report += f"{base_info}, mean abs diff: {diff_str})\n"
+                    else:
+                        report += f"{base_info})\n"
 
     report += f"\n### Major Differences ({major_differences} datasets)\n"
 
@@ -1058,7 +1110,31 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                     if 'error' in diff:
                         report += f"  - {col}: Error - {diff['error']}\n"
                     else:
-                        report += f"  - {col}: {diff['match_rate']:.4f} match rate ({diff['mismatched_rows']}/{diff['total_rows']} mismatched)\n"
+                        base_info = f"  - {col}: {diff['match_rate']:.4f} match rate ({diff['mismatched_rows']}/{diff['total_rows']} mismatched"
+                        if diff.get('mean_abs_diff') is not None:
+                            # Format mean absolute difference appropriately
+                            mean_abs_diff = diff['mean_abs_diff']
+                            if mean_abs_diff < 1e-10:
+                                diff_str = f"{mean_abs_diff:.2e}"
+                            elif mean_abs_diff < 0.001:
+                                diff_str = f"{mean_abs_diff:.6f}"
+                            elif mean_abs_diff < 1000:
+                                diff_str = f"{mean_abs_diff:.6f}"
+                            else:
+                                diff_str = f"{mean_abs_diff:.2e}"
+                            
+                            # Add relative mean absolute difference if available
+                            if diff.get('rel_mean_abs_diff') is not None:
+                                rel_diff = diff['rel_mean_abs_diff']
+                                if rel_diff < 0.001:
+                                    rel_diff_str = f"{rel_diff:.2e}"
+                                else:
+                                    rel_diff_str = f"{rel_diff:.4f}"
+                                report += f"{base_info}, mean abs diff: {diff_str}, rel: {rel_diff_str})\n"
+                            else:
+                                report += f"{base_info}, mean abs diff: {diff_str})\n"
+                        else:
+                            report += f"{base_info})\n"
                         
                 
                 # Add comparison tables if available
