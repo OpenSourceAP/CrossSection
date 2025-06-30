@@ -70,6 +70,37 @@ Signals/
 - Follow PEP 8 style guidelines
 
 
+## Translation Philosophy (CRITICAL)
+**LEARNED FROM COMPUSTAT ANNUAL SHAPE MISMATCH FIX (2025-06-30)**
+
+### 1. **Line-by-Line Translation**
+- **❌ NEVER**: Add functions, abstractions, or "improvements" during translation
+- **✅ ALWAYS**: Translate Stata code line-by-line, preserving exact order
+- **✅ ALWAYS**: Use linear, procedural structure matching Stata
+- **Lesson**: Overengineering caused 40% data loss in CompustatAnnual
+
+### 2. **Execution Order is Critical**
+- **❌ NEVER**: Change the timing of data saves or processing steps
+- **✅ ALWAYS**: Match exact execution order from Stata script
+- **Example**: Stata saves CSV immediately after download, Python must do same
+- **Lesson**: Wrong save timing caused major shape mismatches
+
+### 3. **Missing Data Handling**
+- **Stata**: Missing dates often mean "infinity" or "still active" → TRUE
+- **Python**: `datadate <= NaT` → FALSE  
+- **✅ ALWAYS**: Use explicit null handling: `(condition) | column.isna()`
+- **Lesson**: Missing data logic differences lost 19% of records
+
+### 4. **Simplicity Over Cleverness**  
+- **❌ NEVER**: Add complex dtype handling, YAML standardization, helper functions
+- **✅ ALWAYS**: Keep code simple, direct, and readable
+- **Principle**: **EXACT REPLICATION BEATS CLEVER ENGINEERING**
+
+### 5. **Immediate Validation**
+- **✅ ALWAYS**: Run `validate_by_keys.py` after every translation
+- **✅ ALWAYS**: Fix shape mismatches before data mismatches
+- **✅ ALWAYS**: Achieve 99%+ row count match with Stata
+
 ## Data Processing Standards
 1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations
 2. **Preserve column names**: Keep original variable names from Stata
