@@ -272,6 +272,52 @@ def filter_dataset_by_identifiers(df: pd.DataFrame, identifiers: pd.DataFrame,
     return filtered_df
 
 
+def check_original_shapes(python_df: pd.DataFrame, stata_df: pd.DataFrame, dataset_name: str) -> Dict[str, Any]:
+    """Check and compare original dataset shapes before any processing."""
+    python_shape = python_df.shape
+    stata_shape = stata_df.shape
+    
+    shape_info = {
+        'python_shape': python_shape,
+        'stata_shape': stata_shape,
+        'row_ratio': python_shape[0] / stata_shape[0] if stata_shape[0] > 0 else float('inf'),
+        'col_difference': python_shape[1] - stata_shape[1],
+        'warnings': []
+    }
+    
+    logger.info(f"ORIGINAL SHAPES for {dataset_name}:")
+    logger.info(f"  Python: {python_shape[0]:,} rows × {python_shape[1]} columns")
+    logger.info(f"  Stata:  {stata_shape[0]:,} rows × {stata_shape[1]} columns")
+    
+    # Check for significant row count differences
+    row_ratio = shape_info['row_ratio']
+    if row_ratio > 2.0:
+        warning = f"Python dataset has {row_ratio:.1f}x more rows than Stata (major pipeline issue)"
+        shape_info['warnings'].append(warning)
+        logger.warning(f"  🚨  {warning}")
+    elif row_ratio < 0.5:
+        warning = f"Stata dataset has {1/row_ratio:.1f}x more rows than Python (major pipeline issue)"
+        shape_info['warnings'].append(warning)
+        logger.warning(f"  🚨  {warning}")
+    elif abs(row_ratio - 1.0) > 0.1:
+        logger.info(f"  Row count difference: {abs(python_shape[0] - stata_shape[0]):,} rows ({row_ratio:.2f}x ratio)")
+    else:
+        logger.info(f"  Row counts are very similar (ratio: {row_ratio:.3f})")
+    
+    # Check for column count differences
+    col_diff = shape_info['col_difference']
+    if abs(col_diff) > 5:
+        warning = f"Significant column count difference: {col_diff} columns (pipeline issue)"
+        shape_info['warnings'].append(warning)
+        logger.warning(f"  🚨  {warning}")
+    elif col_diff != 0:
+        logger.info(f"  Column count difference: {col_diff} columns")
+    else:
+        logger.info(f"  Column counts match exactly")
+    
+    return shape_info
+
+
 def deduplicate_dataset(df: pd.DataFrame, id_cols: List[str], dataset_name: str) -> pd.DataFrame:
     """Remove exact duplicates from datasets marked with stata_dups: TRUE."""
     original_count = len(df)
@@ -286,7 +332,8 @@ def deduplicate_dataset(df: pd.DataFrame, id_cols: List[str], dataset_name: str)
 
 
 def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame, 
-                    dataset_name: str, tolerance: float = 1e-6) -> Dict[str, Any]:
+                    dataset_name: str, tolerance: float = 1e-6, 
+                    original_shapes: Dict[str, Any] = None) -> Dict[str, Any]:
     """Compare two datasets and return detailed comparison results."""
     comparison = {
         'dataset': dataset_name,
@@ -442,10 +489,20 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                 
                 comparison['details']['comparison_table_data'] = comparison_table_data
 
-        # Overall match status
-        if (comparison['row_count_match'] and 
-            comparison['column_names_match'] and 
-            comparison['data_match']):
+        # Check for shape matching (within 99.9% tolerance)
+        shape_match = True
+        if original_shapes is not None:
+            row_ratio = original_shapes['row_ratio']
+            shape_match = 0.999 <= row_ratio <= 1.001
+        
+        # Overall match status - Shape mismatches are ALWAYS major differences
+        if not shape_match:
+            # Shape mismatch = automatic major difference (pipeline failure)
+            comparison['match_status'] = 'major_differences'
+        elif (comparison['row_count_match'] and 
+              comparison['column_names_match'] and 
+              comparison['data_match'] and
+              shape_match):
             comparison['match_status'] = 'perfect_match'
         elif (comparison['row_count_match'] and 
               len(comparison['details']['common_columns']) > 0 and
@@ -510,6 +567,9 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
 
         logger.info(f"Loading Stata file: {stata_file}")
         stata_df = load_dataset(stata_file, maxrows)
+
+        # Check original shapes before any processing
+        shape_info = check_original_shapes(python_df, stata_df, dataset_name)
 
         # impose second row cap 
         if len(stata_df) > ROW_CAP_FOR_RAM:
@@ -616,8 +676,11 @@ def validate_single_dataset(dataset_name: str, tolerance: float = 1e-6, maxrows:
 
         # Compare the aligned datasets (now both filtered to common identifiers)
         comparison = compare_datasets(
-            aligned_python_df, aligned_stata_df, dataset_name, tolerance
+            aligned_python_df, aligned_stata_df, dataset_name, tolerance, shape_info
         )
+
+        # Add original shape information to comparison
+        comparison['original_shapes'] = shape_info
 
         result['comparison'] = comparison
         result['status'] = 'completed'
@@ -689,6 +752,12 @@ def generate_summary_report(results: List[Dict[str, Any]]) -> str:
                            if r.get('comparison') and r['comparison'].get('match_status') == 'major_differences')
     errors = sum(1 for r in results if r['status'] == 'error')
     
+    # Count shape mismatches (datasets with row ratio outside 99.9% tolerance)
+    shape_mismatches = sum(1 for r in results 
+                          if (r.get('comparison') and 
+                              'original_shapes' in r['comparison'] and
+                              not (0.999 <= r['comparison']['original_shapes']['row_ratio'] <= 1.001)))
+    
     # Categorize errors
     missing_datasets = [r for r in results if r['status'] == 'error' and 
                        any('not found' in str(err) for err in r.get('errors', []))]
@@ -706,9 +775,39 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 - **Perfect Matches**: {perfect_matches} ({perfect_matches/total_datasets*100:.1f}%)
 - **Minor Differences**: {minor_differences} ({minor_differences/total_datasets*100:.1f}%)
 - **Major Differences**: {major_differences} ({major_differences/total_datasets*100:.1f}%)
+- **Shape Mismatches**: {shape_mismatches} ({shape_mismatches/total_datasets*100:.1f}%)
 - **⚠️ MISSING DATASETS**: {len(missing_datasets)} ({len(missing_datasets)/total_datasets*100:.1f}%)
 - **Processing Errors**: {len(processing_errors)} ({len(processing_errors)/total_datasets*100:.1f}%)
 - **Total Processing Time**: {total_processing_time:.1f} seconds
+
+## Original Dataset Shapes
+"""
+
+    # Add original shapes section
+    shape_warnings = []
+    for result in results:
+        if result.get('comparison') and 'original_shapes' in result['comparison']:
+            dataset = result['dataset']
+            shapes = result['comparison']['original_shapes']
+            python_shape = shapes['python_shape']
+            stata_shape = shapes['stata_shape']
+            row_ratio = shapes['row_ratio']
+            warnings = shapes.get('warnings', [])
+            
+            shape_line = f"- **{dataset}**: Python {python_shape[0]:,}×{python_shape[1]} vs Stata {stata_shape[0]:,}×{stata_shape[1]}"
+            if abs(row_ratio - 1.0) > 0.1:
+                shape_line += f" (ratio: {row_ratio:.2f})"
+            if warnings:
+                shape_line += f" ⚠️"
+                shape_warnings.extend([(dataset, w) for w in warnings])
+            report += shape_line + "\n"
+    
+    if shape_warnings:
+        report += "\n### Shape Problems\n"
+        for dataset, warning in shape_warnings:
+            report += f"- **{dataset}**: {warning}\n"
+
+    report += f"""
 
 ## Status Breakdown
 """
@@ -1097,10 +1196,19 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             report += f"- **Column Names Match**: {comp['column_names_match']}\n"
             report += f"- **Data Match**: {comp['data_match']}\n"
 
-            # Shape details
+            # Original shape details
+            if 'original_shapes' in comp:
+                orig_shapes = comp['original_shapes']
+                report += f"- **Original Python Shape**: {orig_shapes['python_shape'][0]:,} rows × {orig_shapes['python_shape'][1]} columns\n"
+                report += f"- **Original Stata Shape**: {orig_shapes['stata_shape'][0]:,} rows × {orig_shapes['stata_shape'][1]} columns\n"
+                if orig_shapes['warnings']:
+                    report += f"- **Original Shape Problems**: {'; '.join(orig_shapes['warnings'])}\n"
+                report += f"- **Row Ratio (Python/Stata)**: {orig_shapes['row_ratio']:.3f}\n"
+
+            # Processed shape details (after filtering)
             details = comp['details']
-            report += f"- **Python Shape**: {details['df1_shape']}\n"
-            report += f"- **Stata Shape**: {details['df2_shape']}\n"
+            report += f"- **Processed Python Shape**: {details['df1_shape']}\n"
+            report += f"- **Processed Stata Shape**: {details['df2_shape']}\n"
 
             # Column differences
             if details['df1_only_columns']:
