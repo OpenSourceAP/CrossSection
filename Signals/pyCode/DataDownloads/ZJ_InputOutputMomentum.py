@@ -50,16 +50,16 @@ def main():
         logger.error(f"Error running R script: {str(e)}")
         raise
     
-    # Read the original Stata InputOutputMomentum.dta file
-    # This ensures we use exactly the same raw data as the Stata implementation
-    logger.info("Reading original Stata InputOutputMomentum.dta...")
-    stata_raw_path = "../Data/Intermediate/InputOutputMomentum.dta"
+    # Read the R script output instead of Stata data
+    # This uses the R script's output which processes Python-generated data
+    logger.info("Reading R script output...")
+    r_output_path = "../pyData/Intermediate/InputOutputMomentum_R.csv"
     
-    if not os.path.exists(stata_raw_path):
-        raise FileNotFoundError(f"Original Stata file not found at {stata_raw_path}")
+    if not os.path.exists(r_output_path):
+        raise FileNotFoundError(f"R script output file not found at {r_output_path}")
     
-    iomom = pd.read_stata(stata_raw_path)
-    logger.info(f"Loaded original Stata data: {len(iomom):,} rows")
+    iomom = pd.read_csv(r_output_path)
+    logger.info(f"Loaded R script output: {len(iomom):,} rows")
     
     # Stata post-processing following ZJ_InputOutputMomentum.do
     logger.info("Applying Stata post-processing...")

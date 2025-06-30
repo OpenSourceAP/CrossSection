@@ -57,7 +57,8 @@ Signals/
 
 ## Basic Requirements
 - Python code should follow the stata counterpart as closely as possible
-- The python code should use the same data sources as the stata code
+- The Python code must **not** use any data from the Stata project.
+  - Do **not** use anything in `Data/`, including `Data/Intermediate/` or `Data/Prep/`
 - Output is parquet
   - Not pkl
 
