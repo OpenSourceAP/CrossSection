@@ -50,7 +50,8 @@ Signals/
 
 ## DataDownloads Script Mapping
 
-See pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md
+- DataDownloads/00_map.yaml
+- DataDownloads/column_schemas.yaml
 
 # Requirements
 
