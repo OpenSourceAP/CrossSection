@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 """
-ABOUTME: YAML-based column standardization module for DataDownloads scripts
+ABOUTME: YAML-based column schema enforcement module for DataDownloads scripts
 ABOUTME: Replaces DTA file dependencies with version-controlled YAML schemas
 
-This module provides the yaml_standardize_columns function that standardizes
-DataFrame columns using YAML schema definitions instead of reading DTA files.
-This eliminates the dependency on ../Data/Intermediate/ files while producing
-identical results.
+This module provides the yaml_standardize_columns function that enforces consistent
+DataFrame column schemas using YAML definitions instead of reading DTA files.
+The function performs these specific operations to ensure DataFrame compatibility:
+
+1. COLUMN SELECTION: Keeps only the exact columns specified in the YAML schema
+2. COLUMN ORDERING: Reorders columns to match the exact sequence in the schema
+3. MISSING COLUMNS: Adds missing columns with NaN values
+4. EXTRA COLUMNS: Removes columns not in the schema
+5. SPECIAL HANDLING: Applies dataset-specific transformations (PIN parameters,
+   etc.)
+6. CLEANUP: Removes unwanted columns (index columns, __index_level_* patterns)
+
+This eliminates the dependency on ../Data/Intermediate/ DTA files while producing
+identical column structures for downstream processing.
 """
 
 import os
@@ -17,14 +27,27 @@ import numpy as np
 
 def yaml_standardize_columns(df, dataset_name):
     """
-    Standardize DataFrame columns using YAML schema instead of DTA files.
-
+    Enforce DataFrame column schema using YAML definitions instead of DTA files.
+    
+    This function ensures the DataFrame has exactly the columns specified in the
+    YAML schema, in the correct order, with proper handling of missing/extra
+    columns.
+    
+    Specific operations performed:
+    - Removes columns not in the target schema
+    - Adds missing columns with NaN values
+    - Reorders columns to match schema sequence
+    - Applies dataset-specific transformations (PIN parameters, etc.)
+    - Removes unwanted columns (index columns, __index_level_* patterns)
+    
     Args:
         df (pandas.DataFrame): Input DataFrame to standardize
-        dataset_name (str): Name of dataset in YAML schema
+        dataset_name (str): Name of dataset in YAML schema (e.g.,
+                           'a_aCompustat')
 
     Returns:
-        pandas.DataFrame: DataFrame with standardized columns
+        pandas.DataFrame: DataFrame with enforced column schema matching YAML
+                         definition
     """
     # Load YAML schema
     yaml_path = os.path.join(os.path.dirname(__file__), "column_schemas.yaml")
