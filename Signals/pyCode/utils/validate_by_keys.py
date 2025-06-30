@@ -790,6 +790,36 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             report += f"  - Python-only columns: {comparison['details']['df1_only_columns']}\n"
         if comparison['details']['df2_only_columns']:
             report += f"  - Stata-only columns: {comparison['details']['df2_only_columns']}\n"
+        
+        # Add detailed data differences statistics for Major Differences (same as Minor Differences)
+        if 'data_differences' in comparison['details']:
+            for col, diff in comparison['details']['data_differences'].items():
+                if 'match_rate' in diff:
+                    base_info = f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows"
+                    if diff.get('mean_abs_diff') is not None:
+                        # Format mean absolute difference appropriately
+                        mean_abs_diff = diff['mean_abs_diff']
+                        if mean_abs_diff < 1e-10:
+                            diff_str = f"{mean_abs_diff:.2e}"
+                        elif mean_abs_diff < 0.001:
+                            diff_str = f"{mean_abs_diff:.6f}"
+                        elif mean_abs_diff < 1000:
+                            diff_str = f"{mean_abs_diff:.6f}"
+                        else:
+                            diff_str = f"{mean_abs_diff:.2e}"
+                        
+                        # Add relative mean absolute difference if available
+                        if diff.get('rel_mean_abs_diff') is not None:
+                            rel_diff = diff['rel_mean_abs_diff']
+                            if rel_diff < 0.001:
+                                rel_diff_str = f"{rel_diff:.2e}"
+                            else:
+                                rel_diff_str = f"{rel_diff:.4f}"
+                            report += f"{base_info}, mean abs diff: {diff_str}, rel: {rel_diff_str})\n"
+                        else:
+                            report += f"{base_info}, mean abs diff: {diff_str})\n"
+                    else:
+                        report += f"{base_info})\n"
 
     report += f"\n### Processing Errors ({len(processing_errors)} datasets)\n"
 
