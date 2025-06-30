@@ -57,6 +57,13 @@ compustat_data_raw = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
 
+# Fix column types to match Stata behavior - convert object columns with all None to float64
+# This addresses the dvpd and gwo column type mismatch issue
+for col in compustat_data_raw.columns:
+    if (compustat_data_raw[col].dtype == 'object' and 
+        compustat_data_raw[col].isna().all()):
+        compustat_data_raw[col] = compustat_data_raw[col].astype('float64')
+
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
@@ -138,9 +145,19 @@ for var in zero_fill_vars:
 # Load CCM linking table and merge - Stata line 72 (joinby equivalent)
 ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
 
-# Replicate Stata's joinby behavior (many-to-many merge)
-compustat_data = compustat_data.merge(ccm_data, on='gvkey', how='inner')
+# Replicate Stata's "joinby update" behavior - drop duplicate columns from CCM to avoid suffixes
+# In Stata joinby update, the original columns (conm, cusip, tic) are kept and updated
+ccm_columns_to_drop = ['conm', 'cusip', 'tic']  # Keep these from compustat_data
+ccm_merge_data = ccm_data.drop(columns=[col for col in ccm_columns_to_drop if col in ccm_data.columns])
+
+# Clean merge without duplicate columns (replicates Stata joinby update behavior)
+compustat_data = compustat_data.merge(ccm_merge_data, on='gvkey', how='inner')
 print(f"After merging with CCM links: {len(compustat_data)} records", flush=True)
+
+# Verify no duplicate column suffixes exist (validation check)
+duplicate_suffixes = [col for col in compustat_data.columns if col.endswith(('_x', '_y'))]
+if duplicate_suffixes:
+    raise ValueError(f"Unexpected duplicate columns after merge: {duplicate_suffixes}")
 
 # Date validity filtering - Stata lines 75-78
 compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
