@@ -292,13 +292,13 @@ def check_original_shapes(python_df: pd.DataFrame, stata_df: pd.DataFrame, datas
     # Check for significant row count differences
     row_ratio = shape_info['row_ratio']
     if row_ratio > 2.0:
-        warning = f"Python dataset has {row_ratio:.1f}x more rows than Stata (major pipeline issue)"
+        warning = f"Major row count difference (pipeline issue)"
         shape_info['warnings'].append(warning)
-        logger.warning(f"  🚨  {warning}")
+        logger.warning(f"  🚨  Python dataset has {row_ratio:.1f}x more rows than Stata (major pipeline issue)")
     elif row_ratio < 0.5:
-        warning = f"Stata dataset has {1/row_ratio:.1f}x more rows than Python (major pipeline issue)"
+        warning = f"Major row count difference (pipeline issue)"
         shape_info['warnings'].append(warning)
-        logger.warning(f"  🚨  {warning}")
+        logger.warning(f"  🚨  Stata dataset has {1/row_ratio:.1f}x more rows than Python (major pipeline issue)")
     elif abs(row_ratio - 1.0) > 0.1:
         logger.info(f"  Row count difference: {abs(python_shape[0] - stata_shape[0]):,} rows ({row_ratio:.2f}x ratio)")
     else:
@@ -307,9 +307,9 @@ def check_original_shapes(python_df: pd.DataFrame, stata_df: pd.DataFrame, datas
     # Check for column count differences
     col_diff = shape_info['col_difference']
     if abs(col_diff) > 5:
-        warning = f"Significant column count difference: {col_diff} columns (pipeline issue)"
+        warning = f"Significant column count difference (pipeline issue)"
         shape_info['warnings'].append(warning)
-        logger.warning(f"  🚨  {warning}")
+        logger.warning(f"  🚨  Significant column count difference: {col_diff} columns (pipeline issue)")
     elif col_diff != 0:
         logger.info(f"  Column count difference: {col_diff} columns")
     else:
@@ -341,6 +341,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
         'row_count_match': False,
         'column_count_match': False,
         'column_names_match': False,
+        'column_types_match': False,
         'data_match': False,
         'details': {},
         'errors': []
@@ -365,15 +366,52 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
         comparison['details']['df1_only_columns'] = list(cols1 - cols2)
         comparison['details']['df2_only_columns'] = list(cols2 - cols1)
 
-        # Data comparison for common columns
+        # Column type comparison for common columns
+        type_mismatches = {}
         if comparison['details']['common_columns']:
             # Normalize column names for comparison
             df1_norm = normalize_column_names(df1.copy())
             df2_norm = normalize_column_names(df2.copy())
+            
+            for col in comparison['details']['common_columns']:
+                try:
+                    dtype1 = df1_norm[col].dtype
+                    dtype2 = df2_norm[col].dtype
+                    
+                    # Check for type compatibility
+                    types_compatible = True
+                    
+                    # Both numeric types (int, float) are considered compatible
+                    if (pd.api.types.is_numeric_dtype(dtype1) and pd.api.types.is_numeric_dtype(dtype2)):
+                        types_compatible = True
+                    # Both object types are compatible
+                    elif (dtype1 == 'object' and dtype2 == 'object'):
+                        types_compatible = True
+                    # Both datetime types are compatible
+                    elif (pd.api.types.is_datetime64_any_dtype(dtype1) and pd.api.types.is_datetime64_any_dtype(dtype2)):
+                        types_compatible = True
+                    # Mixed types are incompatible
+                    else:
+                        types_compatible = False
+                    
+                    if not types_compatible:
+                        type_mismatches[col] = {
+                            'python_type': str(dtype1),
+                            'stata_type': str(dtype2)
+                        }
+                        
+                except Exception as e:
+                    logger.warning(f"Could not compare types for column {col}: {e}")
+        
+        comparison['column_types_match'] = len(type_mismatches) == 0
+        comparison['details']['type_mismatches'] = type_mismatches
+
+        # Data comparison for common columns
+        if comparison['details']['common_columns']:
 
             # Compare common columns
             common_cols = comparison['details']['common_columns']
-            data_differences = {}
+            value_differences = {}
 
             for col in common_cols:
                 try:
@@ -447,7 +485,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                             except Exception as e:
                                 logger.warning(f"Could not calculate mean absolute difference for column {col}: {e}")
                         
-                        data_differences[col] = {
+                        value_differences[col] = {
                             'match_rate': match_rate,
                             'total_rows': len(matches),
                             'mismatched_rows': (~matches).sum(),
@@ -457,16 +495,16 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                         }
 
                 except Exception as e:
-                    data_differences[col] = {'error': str(e)}
+                    value_differences[col] = {'error': str(e)}
 
-            comparison['details']['data_differences'] = data_differences
-            comparison['data_match'] = len(data_differences) == 0
+            comparison['details']['value_differences'] = value_differences
+            comparison['data_match'] = len(value_differences) == 0
             
             # Store full row data for creating comparison tables
-            if data_differences:
+            if value_differences:
                 # Find rows with any mismatches for table generation
                 all_mismatched_indices = set()
-                for col, diff in data_differences.items():
+                for col, diff in value_differences.items():
                     if 'mismatch_samples' in diff:
                         for sample in diff['mismatch_samples']:
                             all_mismatched_indices.add(sample['row_index'])
@@ -495,19 +533,26 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
             row_ratio = original_shapes['row_ratio']
             shape_match = 0.999 <= row_ratio <= 1.001
         
-        # Overall match status - Shape mismatches are ALWAYS major differences
+        # Overall match status - Three distinct major difference triggers
         if not shape_match:
             # Shape mismatch = automatic major difference (pipeline failure)
             comparison['match_status'] = 'major_differences'
+        elif not comparison['column_names_match']:
+            # Column name mismatch = automatic major difference (schema issue)
+            comparison['match_status'] = 'major_differences'
+        elif not comparison['column_types_match']:
+            # Column type mismatch = automatic major difference (schema issue)  
+            comparison['match_status'] = 'major_differences'
         elif (comparison['row_count_match'] and 
               comparison['column_names_match'] and 
+              comparison['column_types_match'] and
               comparison['data_match'] and
               shape_match):
             comparison['match_status'] = 'perfect_match'
         elif (comparison['row_count_match'] and 
               len(comparison['details']['common_columns']) > 0 and
               all(diff.get('match_rate', 0) > 0.99 
-                  for diff in comparison['details']['data_differences'].values()
+                  for diff in comparison['details']['value_differences'].values()
                   if 'error' not in diff)):
             comparison['match_status'] = 'minor_differences'
         else:
@@ -779,33 +824,85 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 - **⚠️ MISSING DATASETS**: {len(missing_datasets)} ({len(missing_datasets)/total_datasets*100:.1f}%)
 - **Processing Errors**: {len(processing_errors)} ({len(processing_errors)/total_datasets*100:.1f}%)
 - **Total Processing Time**: {total_processing_time:.1f} seconds
-
-## Original Dataset Shapes
 """
 
-    # Add original shapes section
-    shape_warnings = []
+    # Collect shape problems - only for datasets with actual shape issues
+    shape_problems = []
     for result in results:
         if result.get('comparison') and 'original_shapes' in result['comparison']:
             dataset = result['dataset']
             shapes = result['comparison']['original_shapes']
             python_shape = shapes['python_shape']
             stata_shape = shapes['stata_shape']
-            row_ratio = shapes['row_ratio']
             warnings = shapes.get('warnings', [])
             
-            shape_line = f"- **{dataset}**: Python {python_shape[0]:,}×{python_shape[1]} vs Stata {stata_shape[0]:,}×{stata_shape[1]}"
-            if abs(row_ratio - 1.0) > 0.1:
-                shape_line += f" (ratio: {row_ratio:.2f})"
+            # Only include if there are actual warnings/problems
             if warnings:
-                shape_line += f" ⚠️"
-                shape_warnings.extend([(dataset, w) for w in warnings])
-            report += shape_line + "\n"
+                shape_info = f"Python {python_shape[0]:,}×{python_shape[1]} vs Stata {stata_shape[0]:,}×{stata_shape[1]}"
+                shape_problems.append((dataset, shape_info))
     
-    if shape_warnings:
-        report += "\n### Shape Problems\n"
-        for dataset, warning in shape_warnings:
-            report += f"- **{dataset}**: {warning}\n"
+    if shape_problems:
+        report += f"""
+
+### Shape Problems ({len(shape_problems)} datasets)
+"""
+        for dataset, shape_info in shape_problems:
+            report += f"- **{dataset}**: {shape_info}\n"
+
+    # Collect column name problems - datasets with mismatched column names
+    column_name_problems = []
+    for result in results:
+        if (result.get('comparison') and 
+            not result['comparison'].get('column_names_match', True)):
+            dataset = result['dataset']
+            details = result['comparison']['details']
+            python_only = details.get('df1_only_columns', [])
+            stata_only = details.get('df2_only_columns', [])
+            
+            problem_desc = []
+            if python_only:
+                problem_desc.append(f"Python-only: {', '.join(python_only[:3])}{'...' if len(python_only) > 3 else ''}")
+            if stata_only:
+                problem_desc.append(f"Stata-only: {', '.join(stata_only[:3])}{'...' if len(stata_only) > 3 else ''}")
+            
+            column_name_problems.append((dataset, '; '.join(problem_desc)))
+    
+    if column_name_problems:
+        report += f"""
+
+### Column Name Problems ({len(column_name_problems)} datasets)
+"""
+        for dataset, problem_desc in column_name_problems:
+            report += f"- **{dataset}**: {problem_desc}\n"
+
+    # Collect column type problems - datasets with incompatible column types
+    column_type_problems = []
+    for result in results:
+        if (result.get('comparison') and 
+            not result['comparison'].get('column_types_match', True)):
+            dataset = result['dataset']
+            type_mismatches = result['comparison']['details'].get('type_mismatches', {})
+            
+            if type_mismatches:
+                mismatch_count = len(type_mismatches)
+                # Show first few mismatches as examples
+                examples = []
+                for col, types in list(type_mismatches.items())[:2]:
+                    examples.append(f"{col}: {types['python_type']} vs {types['stata_type']}")
+                
+                problem_desc = f"{mismatch_count} type mismatch{'es' if mismatch_count > 1 else ''}"
+                if examples:
+                    problem_desc += f" (e.g., {'; '.join(examples)})"
+                
+                column_type_problems.append((dataset, problem_desc))
+    
+    if column_type_problems:
+        report += f"""
+
+### Column Type Problems ({len(column_type_problems)} datasets)
+"""
+        for dataset, problem_desc in column_type_problems:
+            report += f"- **{dataset}**: {problem_desc}\n"
 
     report += f"""
 
@@ -844,8 +941,8 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         dataset = result['dataset']
         comparison = result['comparison']
         report += f"- **{dataset}**:\n"
-        if 'data_differences' in comparison['details']:
-            for col, diff in comparison['details']['data_differences'].items():
+        if 'value_differences' in comparison['details']:
+            for col, diff in comparison['details']['value_differences'].items():
                 if 'match_rate' in diff:
                     base_info = f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows"
                     if diff.get('mean_abs_diff') is not None:
@@ -890,9 +987,9 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         if comparison['details']['df2_only_columns']:
             report += f"  - Stata-only columns: {comparison['details']['df2_only_columns']}\n"
         
-        # Add detailed data differences statistics for Major Differences (same as Minor Differences)
-        if 'data_differences' in comparison['details']:
-            for col, diff in comparison['details']['data_differences'].items():
+        # Add detailed value differences statistics for Major Differences (same as Minor Differences)
+        if 'value_differences' in comparison['details']:
+            for col, diff in comparison['details']['value_differences'].items():
                 if 'match_rate' in diff:
                     base_info = f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows"
                     if diff.get('mean_abs_diff') is not None:
@@ -1194,6 +1291,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             report += f"- **Match Status**: {comp['match_status']}\n"
             report += f"- **Row Count Match**: {comp['row_count_match']}\n"
             report += f"- **Column Names Match**: {comp['column_names_match']}\n"
+            report += f"- **Column Types Match**: {comp['column_types_match']}\n"
             report += f"- **Data Match**: {comp['data_match']}\n"
 
             # Original shape details
@@ -1215,6 +1313,12 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 report += f"- **Python-only Columns**: {details['df1_only_columns']}\n"
             if details['df2_only_columns']:
                 report += f"- **Stata-only Columns**: {details['df2_only_columns']}\n"
+            
+            # Column type differences
+            if 'type_mismatches' in details and details['type_mismatches']:
+                report += f"- **Column Type Mismatches**:\n"
+                for col, types in details['type_mismatches'].items():
+                    report += f"  - {col}: Python {types['python_type']} vs Stata {types['stata_type']}\n"
 
             # Identifier analysis
             if 'identifier_analysis' in comp:
@@ -1241,10 +1345,10 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                     report += f"  - Python type: {time['python_type']}, samples: {time['python_samples']}\n"
                     report += f"  - Stata type: {time['stata_type']}, samples: {time['stata_samples']}\n"
 
-            # Data differences
-            if 'data_differences' in details and details['data_differences']:
-                report += f"- **Data Differences**:\n"
-                for col, diff in details['data_differences'].items():
+            # Value differences
+            if 'value_differences' in details and details['value_differences']:
+                report += f"- **Value Differences**:\n"
+                for col, diff in details['value_differences'].items():
                     if 'error' in diff:
                         report += f"  - {col}: Error - {diff['error']}\n"
                     else:
@@ -1473,7 +1577,7 @@ def main():
                 if perfect_matches == len(results):
                     print("Validation completed successfully - all datasets have perfect matches!")
                 elif major_differences > 0:
-                    print(f"Validation completed successfully - found {major_differences} datasets with data differences (see reports for details)")
+                    print(f"Validation completed successfully - found {major_differences} datasets with value differences (see reports for details)")
                 else:
                     print("Validation completed successfully!")
             sys.exit(0)  # Always exit successfully if no processing errors occurred
