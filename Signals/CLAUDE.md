@@ -57,8 +57,9 @@ Signals/
 
 ## Basic Requirements
 - Python code should follow the stata counterpart as closely as possible
-- The Python code must **not** use any data from the Stata project.
+- The Python code must **not** use any data or code from the Stata project.
   - Do **not** use anything in `Data/`, including `Data/Intermediate/` or `Data/Prep/`
+  - Do **not** use any code in `Code/`
 - Output is parquet
   - Not pkl
 
@@ -226,9 +227,8 @@ pip install -r requirements.txt
 - **Row Count Handling**: Row count mismatch is fine unless explicitly requested to fix. This is because downloads at different times can imply different number of rows.
 
 ## Data Validation Workflow
-- Closely follow @pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md when validating datasets
-- Only compare parquet files with files actually listed in @pyCode/DataDownloads/00_Stata_DataDownloadsDoc.md
-- These files can also be found in @Data/Intermediate/
+- use pyCode/utils/validate_by_keys.py to validate datasets
+- check pyCode/DataDownloads/00_map.yaml to see which scripts should be used to download a given dataset
 
 ## Clear all Fallbacks with Anderoo
 - The code should follow exactly the Stata logic. Do not improvise fallbacks.

@@ -787,7 +787,7 @@ def validate_all_datasets(datasets: Optional[List[str]] = None,
     return results
 
 
-def generate_summary_report(results: List[Dict[str, Any]]) -> str:
+def generate_summary_report(results: List[Dict[str, Any]], maxrows: Optional[int] = None) -> str:
     """Generate a summary report of validation results."""
     total_datasets = len(results)
     perfect_matches = sum(1 for r in results 
@@ -815,6 +815,7 @@ def generate_summary_report(results: List[Dict[str, Any]]) -> str:
     report = f"""
 # Dataset Validation Summary Report
 Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+maxrows: {maxrows}
 
 ## Overall Results
 - **Total Datasets Processed**: {total_datasets}
@@ -1393,13 +1394,13 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     return report
 
 
-def save_reports(results: List[Dict[str, Any]], output_dir: str = ".") -> None:
+def save_reports(results: List[Dict[str, Any]], output_dir: str = ".", maxrows: Optional[int] = None) -> None:
     """Save both summary and detailed reports to files."""
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
 
     # Generate reports
-    summary_report = generate_summary_report(results)
+    summary_report = generate_summary_report(results, maxrows)
     detailed_report = generate_detailed_report(results)
 
     # Save summary report
@@ -1557,7 +1558,7 @@ def main():
 
         # Generate and save reports
         if not args.no_reports:
-            save_reports(results, args.output_dir)
+            save_reports(results, args.output_dir, args.maxrows)
             if not args.quiet:
                 print(f"Reports saved to {args.output_dir}")
 
