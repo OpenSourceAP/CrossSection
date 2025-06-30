@@ -1,172 +1,99 @@
-#!/usr/bin/env python3
-"""
-3-month T-bill rate download script - Python equivalent of V_TBill3M.do
-
-Downloads 3-month Treasury bill rate from FRED and aggregates to quarterly
-averages.
-"""
+# ABOUTME: Downloads 3-month T-bill rate from FRED and aggregates to quarterly averages
+# ABOUTME: Complete rewrite following Stata script V_TBill3M.do exactly
 
 import os
-import time
 import pandas as pd
 import numpy as np
 import requests
 from dotenv import load_dotenv
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
 
 load_dotenv()
 
 
-def download_fred_series(series_id, api_key, start_date='1900-01-01',
-                         max_retries=3, retry_delay=1):
-    """Download a series from FRED API with retry logic.
+def download_fred_tb3ms(api_key):
+    """Download TB3MS series from FRED API exactly as Stata import fred command."""
+    print("Downloading TB3MS from FRED...")
 
-    Args:
-        series_id: FRED series identifier
-        api_key: FRED API key
-        start_date: Start date for data retrieval
-        max_retries: Maximum number of retry attempts
-        retry_delay: Initial delay between retries (seconds)
-
-    Returns:
-        pandas.DataFrame: DataFrame with date and value columns
-    """
     url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
-        'series_id': series_id,
+        'series_id': 'TB3MS',
         'api_key': api_key,
         'file_type': 'json',
-        'observation_start': start_date
+        'observation_start': '1900-01-01'
     }
 
-    for attempt in range(max_retries + 1):
-        try:
-            print(f"Downloading {series_id} (attempt {attempt + 1}...)")
-            response = requests.get(url, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
+    response = requests.get(url, params=params, timeout=30)
+    response.raise_for_status()
+    data = response.json()
 
-            # Check for API errors in response
-            if 'error_code' in data:
-                raise requests.exceptions.RequestException(
-                    f"FRED API error {data['error_code']}: "
-                    f"{data.get('error_message', 'Unknown error')}"
-                )
+    if 'observations' not in data:
+        raise ValueError("No observations found in FRED response")
 
-            if 'observations' in data:
-                df = pd.DataFrame(data['observations'])
-                if len(df) == 0:
-                    print(f"Warning: No observations found for {series_id}")
-                    return pd.DataFrame()
+    df = pd.DataFrame(data['observations'])
+    df['date'] = pd.to_datetime(df['date'])
+    df['TB3MS'] = pd.to_numeric(df['value'], errors='coerce')
+    df = df[['date', 'TB3MS']].dropna()
 
-                df['date'] = pd.to_datetime(df['date'])
-                df['value'] = pd.to_numeric(df['value'], errors='coerce')
-                df = df[['date', 'value']].dropna()
-                print(f"Successfully downloaded {len(df)} observations")
-                return df
-            else:
-                print(f"No observations found for {series_id}")
-                return pd.DataFrame()
-
-        except requests.exceptions.Timeout:
-            print(f"Timeout downloading {series_id} (attempt {attempt + 1})")
-        except requests.exceptions.ConnectionError:
-            print(f"Connection error downloading {series_id} "
-                  f"(attempt {attempt + 1})")
-        except requests.exceptions.RequestException as e:
-            print(f"Request error downloading {series_id}: {e}")
-            if "API key" in str(e) or "error_code" in str(e):
-                # Don't retry on API key errors
-                break
-        except Exception as e:
-            print(f"Unexpected error downloading {series_id}: {e}")
-
-        if attempt < max_retries:
-            delay = retry_delay * (2 ** attempt)  # Exponential backoff
-            print(f"Retrying in {delay} seconds...")
-            time.sleep(delay)
-
-    print(f"Failed to download {series_id} after {max_retries + 1} attempts")
-    return pd.DataFrame()
+    print(f"Downloaded {len(df)} monthly observations")
+    return df
 
 
 def main():
-    """Main function to download and process T-bill data"""
-    print("Downloading 3-month T-bill rate from FRED...")
-
-    # Get FRED API key from environment
+    """Main function exactly following Stata V_TBill3M.do logic."""
+    print("Processing 3-month T-bill rate...")
+    
+    # Get FRED API key
     fred_api_key = os.getenv("FRED_API_KEY")
     if not fred_api_key:
         print("ERROR: FRED_API_KEY not found in environment variables")
-        print("Please set FRED_API_KEY in your .env file")
         return
-
-    # Ensure directories exist
+    
+    # Ensure output directory exists
     os.makedirs("../pyData/Intermediate", exist_ok=True)
-
-    # Download TB3MS (3-Month Treasury Constant Maturity Rate)
-    print("Downloading TB3MS series from FRED...")
-    tbill_data = download_fred_series('TB3MS', fred_api_key)
-
-    if tbill_data.empty:
-        print("Failed to download T-bill data")
-        return
-
-    print(f"Downloaded {len(tbill_data)} monthly observations")
-    date_min = tbill_data['date'].min()
-    date_max = tbill_data['date'].max()
-    print(f"Date range: {date_min} to {date_max}")
-
-    # Convert to percentage first (divide by 100, equivalent to TB3MS/100)
-    tbill_data['TbillRate3M'] = tbill_data['value'] / 100
     
-    # Apply precision control BEFORE aggregation (Pattern 2)
-    tbill_data['TbillRate3M'] = tbill_data['TbillRate3M'].astype('float32')
-
-    # Extract year and quarter
-    tbill_data['year'] = tbill_data['date'].dt.year
-    tbill_data['qtr'] = tbill_data['date'].dt.quarter
-
-    # Aggregate to quarterly averages using numpy.mean for consistency with Stata
-    print("Aggregating to quarterly averages...")
+    # Stata: import fred TB3MS, clear aggregate(q, avg)
+    # Download monthly data first
+    monthly_data = download_fred_tb3ms(fred_api_key)
     
-    # Use numpy.mean with float32 to match Stata's aggregation behavior
-    quarterly_data = (
-        tbill_data.groupby(['year', 'qtr'])['TbillRate3M']
-        .agg(lambda x: np.mean(x.values.astype('float32')))
-        .reset_index()
+    # Set date as index for resampling
+    monthly_data = monthly_data.set_index('date')
+    
+    
+    # Aggregate to quarterly averages using pandas resample to match Stata exactly
+    # Stata's aggregate(q, avg) uses quarterly means in double precision
+    quarterly_data = monthly_data.resample('QE').mean()
+    quarterly_data = quarterly_data.dropna().reset_index()
+
+    print(f"Aggregated to {len(quarterly_data)} quarterly observations")
+
+    # Stata: gen TbillRate3M = TB3MS/100
+    # Use double precision (float64) like Stata does for all calculations
+    quarterly_data['TbillRate3M'] = quarterly_data['TB3MS'] / 100.0
+    
+    # Stata: gen qtr = quarter(daten)
+    quarterly_data['qtr'] = quarterly_data['date'].dt.quarter
+
+    # Stata: gen year = yofd(daten)
+    quarterly_data['year'] = quarterly_data['date'].dt.year
+
+    # Stata: keep year qtr TbillRate3M
+    final_data = quarterly_data[['year', 'qtr', 'TbillRate3M']].copy()
+
+    print(f"Final dataset: {len(final_data)} quarterly records")
+    date_range_start = (
+        f"{final_data['year'].min()}Q"
+        f"{final_data[final_data['year'] == final_data['year'].min()]['qtr'].min()}"
     )
-
-    # Ensure float32 dtype is maintained
-    quarterly_data['TbillRate3M'] = quarterly_data['TbillRate3M'].astype('float32')
-
-    # Reorder columns to match Stata: TbillRate3M, qtr, year
-    final_data = quarterly_data[['TbillRate3M', 'qtr', 'year']]
-
-    print(f"Created {len(final_data)} quarterly records")
-
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
-
-    # Save the data
-    final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet")
-
-    print(f"3-month T-bill rate data saved with {len(final_data)} "
-          "quarterly records")
-    min_year = final_data['year'].min()
-    max_year = final_data['year'].max()
-    min_qtr = (
-        final_data[final_data['year'] == min_year]['qtr'].min()
+    date_range_end = (
+        f"{final_data['year'].max()}Q"
+        f"{final_data[final_data['year'] == final_data['year'].max()]['qtr'].max()}"
     )
-    max_qtr = (
-        final_data[final_data['year'] == max_year]['qtr'].max()
-    )
-    print(f"Date range: {min_year}Q{min_qtr} to {max_year}Q{max_qtr}")
+    print(f"Date range: {date_range_start} to {date_range_end}")
+
+    # Stata: save (equivalent)
+    final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet", index=False)
+
+    print("3-month T-bill rate data saved successfully")
 
     # Show sample data
     print("\nSample data:")
@@ -174,10 +101,10 @@ def main():
 
     # Show summary statistics
     print("\nT-bill rate summary:")
-    print(f"Mean: {final_data['TbillRate3M'].mean():.4f}")
-    print(f"Std: {final_data['TbillRate3M'].std():.4f}")
-    print(f"Min: {final_data['TbillRate3M'].min():.4f}")
-    print(f"Max: {final_data['TbillRate3M'].max():.4f}")
+    print(f"Mean: {final_data['TbillRate3M'].mean():.6f}")
+    print(f"Std: {final_data['TbillRate3M'].std():.6f}")
+    print(f"Min: {final_data['TbillRate3M'].min():.6f}")
+    print(f"Max: {final_data['TbillRate3M'].max():.6f}")
 
 
 if __name__ == "__main__":
