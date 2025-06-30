@@ -342,7 +342,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
         'column_count_match': False,
         'column_names_match': False,
         'column_types_match': False,
-        'data_match': False,
+        'value_match': False,
         'details': {},
         'errors': []
     }
@@ -435,6 +435,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                         matches = (s1 == s2)
 
                     match_rate = matches.mean() if len(matches) > 0 else 0
+                    mismatch_rate = 1 - match_rate
                     if match_rate < 1.0:
                         # Get sample of mismatched rows for diagnosis
                         mismatched_mask = ~matches
@@ -486,7 +487,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                                 logger.warning(f"Could not calculate mean absolute difference for column {col}: {e}")
                         
                         value_differences[col] = {
-                            'match_rate': match_rate,
+                            'mismatch_rate': mismatch_rate,
                             'total_rows': len(matches),
                             'mismatched_rows': (~matches).sum(),
                             'mismatch_samples': mismatch_samples,
@@ -498,7 +499,7 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
                     value_differences[col] = {'error': str(e)}
 
             comparison['details']['value_differences'] = value_differences
-            comparison['data_match'] = len(value_differences) == 0
+            comparison['value_match'] = len(value_differences) == 0
             
             # Store full row data for creating comparison tables
             if value_differences:
@@ -546,12 +547,12 @@ def compare_datasets(df1: pd.DataFrame, df2: pd.DataFrame,
         elif (comparison['row_count_match'] and 
               comparison['column_names_match'] and 
               comparison['column_types_match'] and
-              comparison['data_match'] and
+              comparison['value_match'] and
               shape_match):
             comparison['match_status'] = 'perfect_match'
         elif (comparison['row_count_match'] and 
               len(comparison['details']['common_columns']) > 0 and
-              all(diff.get('match_rate', 0) > 0.99 
+              all(diff.get('mismatch_rate', 1) < 0.01 
                   for diff in comparison['details']['value_differences'].values()
                   if 'error' not in diff)):
             comparison['match_status'] = 'minor_differences'
@@ -943,8 +944,8 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         report += f"- **{dataset}**:\n"
         if 'value_differences' in comparison['details']:
             for col, diff in comparison['details']['value_differences'].items():
-                if 'match_rate' in diff:
-                    base_info = f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows"
+                if 'mismatch_rate' in diff:
+                    base_info = f"  - {col}: {diff['mismatch_rate']:.2e} mismatch rate ({diff['mismatched_rows']} mismatched rows"
                     if diff.get('mean_abs_diff') is not None:
                         # Format mean absolute difference appropriately
                         mean_abs_diff = diff['mean_abs_diff']
@@ -981,7 +982,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         report += f"- **{dataset}**:\n"
         report += f"  - Row count match: {comparison['row_count_match']}\n"
         report += f"  - Column names match: {comparison['column_names_match']}\n"
-        report += f"  - Data match: {comparison['data_match']}\n"
+        report += f"  - Value match: {comparison['value_match']}\n"
         if comparison['details']['df1_only_columns']:
             report += f"  - Python-only columns: {comparison['details']['df1_only_columns']}\n"
         if comparison['details']['df2_only_columns']:
@@ -990,8 +991,8 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         # Add detailed value differences statistics for Major Differences (same as Minor Differences)
         if 'value_differences' in comparison['details']:
             for col, diff in comparison['details']['value_differences'].items():
-                if 'match_rate' in diff:
-                    base_info = f"  - {col}: {diff['match_rate']:.3f} match rate ({diff['mismatched_rows']} mismatched rows"
+                if 'mismatch_rate' in diff:
+                    base_info = f"  - {col}: {diff['mismatch_rate']:.2e} mismatch rate ({diff['mismatched_rows']} mismatched rows"
                     if diff.get('mean_abs_diff') is not None:
                         # Format mean absolute difference appropriately
                         mean_abs_diff = diff['mean_abs_diff']
@@ -1292,7 +1293,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             report += f"- **Row Count Match**: {comp['row_count_match']}\n"
             report += f"- **Column Names Match**: {comp['column_names_match']}\n"
             report += f"- **Column Types Match**: {comp['column_types_match']}\n"
-            report += f"- **Data Match**: {comp['data_match']}\n"
+            report += f"- **Value Match**: {comp['value_match']}\n"
 
             # Original shape details
             if 'original_shapes' in comp:
@@ -1352,7 +1353,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                     if 'error' in diff:
                         report += f"  - {col}: Error - {diff['error']}\n"
                     else:
-                        base_info = f"  - {col}: {diff['match_rate']:.4f} match rate ({diff['mismatched_rows']}/{diff['total_rows']} mismatched"
+                        base_info = f"  - {col}: {diff['mismatch_rate']:.2e} mismatch rate ({diff['mismatched_rows']}/{diff['total_rows']} mismatched"
                         if diff.get('mean_abs_diff') is not None:
                             # Format mean absolute difference appropriately
                             mean_abs_diff = diff['mean_abs_diff']
