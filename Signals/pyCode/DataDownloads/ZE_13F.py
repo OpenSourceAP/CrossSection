@@ -20,7 +20,7 @@ def main():
     print("Processing Thomson Reuters 13F holdings data...")
     
     # Load the CSV data
-    input_file = "../Data/Prep/tr_13f.csv"
+    input_file = "../pyData/Prep/tr_13f.csv"
     
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")

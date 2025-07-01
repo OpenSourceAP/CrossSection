@@ -25,7 +25,7 @@ def main():
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
     # Check for oclink.csv in Prep folder
-    om_path = Path("../Data/Prep/oclink.csv")
+    om_path = Path("../pyData/Prep/oclink.csv")
 
     if om_path.exists():
         # Read the OptionMetrics linking file
@@ -63,7 +63,7 @@ def main():
         print(f"Unique permnos: {om_data['permno'].nunique()}")
 
     else:
-        print("WARNING: oclink.csv not found in ../Data/Prep/")
+        print("WARNING: oclink.csv not found in ../pyData/Prep/")
         print("Creating placeholder OptionMetrics linking data")
 
         # Create placeholder data

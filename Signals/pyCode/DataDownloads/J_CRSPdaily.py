@@ -47,7 +47,7 @@ def main():
 
     # Ensure directories exist
     os.makedirs("../pyData/Intermediate", exist_ok=True)
-    os.makedirs("../Data/temp", exist_ok=True)
+    os.makedirs("../pyData/temp", exist_ok=True)
 
     # Get current year for end year (equivalent to substr("$S_DATE", -4, 4))
     current_year = datetime.now().year

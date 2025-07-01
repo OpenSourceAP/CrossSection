@@ -25,7 +25,7 @@ def main():
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
     # Check for iclink.csv in Prep folder
-    iclink_path = Path("../Data/Prep/iclink.csv")
+    iclink_path = Path("../pyData/Prep/iclink.csv")
 
     if iclink_path.exists():
         # Read the iclink file
@@ -57,7 +57,7 @@ def main():
         final_data = iclink_data[available_cols]
 
     else:
-        print("WARNING: iclink.csv not found in ../Data/Prep/")
+        print("WARNING: iclink.csv not found in ../pyData/Prep/")
         print("Creating placeholder linking table")
 
         # Create placeholder data

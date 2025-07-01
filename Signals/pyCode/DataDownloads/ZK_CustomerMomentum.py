@@ -23,7 +23,7 @@ def main():
     logger.info("Starting customer momentum processing...")
     
     # Data paths - using relative paths from pyCode directory
-    data_path = Path("../Data/Intermediate")
+    data_path = Path("../pyData/Intermediate")
     output_path = Path("../pyData/Intermediate")
     
     # Step 1: Load data exactly like R script (lines 29-37)

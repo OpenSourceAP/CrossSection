@@ -19,7 +19,7 @@ def main():
     print("Processing Corwin-Schultz bid-ask spread data...")
     
     # Load the CSV data
-    input_file = "../Data/Prep/corwin_schultz_spread.csv"
+    input_file = "../pyData/Prep/corwin_schultz_spread.csv"
     
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")

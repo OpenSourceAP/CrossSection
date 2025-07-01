@@ -20,7 +20,7 @@ def main():
     print("Processing high-frequency bid-ask spread data...")
     
     # Load the CSV data
-    input_file = "../Data/Prep/hf_monthly.csv"
+    input_file = "../pyData/Prep/hf_monthly.csv"
     
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")

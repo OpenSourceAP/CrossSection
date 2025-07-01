@@ -61,7 +61,7 @@ def main():
     
     # Process OptionMetrics Volume data
     print("Processing OptionMetricsVolume with case-sensitive column fixes...")
-    vol_data = pd.read_csv("../Data/Prep/OptionMetricsVolume.csv")
+    vol_data = pd.read_csv("../pyData/Prep/OptionMetricsVolume.csv")
     # Fix column names case before processing
     vol_data = vol_data.rename(columns={'optVolume': 'optvolume', 'optInterest': 'optinterest'})
     
@@ -84,7 +84,7 @@ def main():
     
     # Process OptionMetrics Volatility Surface data
     vol_surf_data = process_options_file(
-        "../Data/Prep/OptionMetricsVolSurf.csv",
+        "../pyData/Prep/OptionMetricsVolSurf.csv",
         date_col='date',
         output_name=None  # Don't save intermediate file
     )
@@ -106,7 +106,7 @@ def main():
     
     # Process OptionMetrics XZZ data
     print("Processing OptionMetricsXZZ with case-sensitive column fixes...")
-    xzz_data = pd.read_csv("../Data/Prep/OptionMetricsXZZ.csv")
+    xzz_data = pd.read_csv("../pyData/Prep/OptionMetricsXZZ.csv")
     # Fix column names case before processing  
     xzz_data = xzz_data.rename(columns={'Skew1': 'skew1'})
     
@@ -129,7 +129,7 @@ def main():
     
     # Process Bali-Hovakimian (2009) implied volatility data
     print("Processing Bali-Hovakimian implied volatility data...")
-    bh_file = "../Data/Prep/bali_hovak_imp_vol.csv"
+    bh_file = "../pyData/Prep/bali_hovak_imp_vol.csv"
     
     if not os.path.exists(bh_file):
         raise FileNotFoundError(f"Input file not found: {bh_file}")
