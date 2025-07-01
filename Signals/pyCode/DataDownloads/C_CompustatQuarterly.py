@@ -18,7 +18,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import yaml_standardize_columns
+from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print(
@@ -238,7 +238,7 @@ monthly_compustat_pd = monthly_compustat.to_pandas()
 # No additional conversion needed - it already matches Stata's format
 
 # Standardize columns using YAML schema
-monthly_compustat_pd = yaml_standardize_columns(monthly_compustat_pd, "m_QCompustat")
+monthly_compustat_pd = standardize_columns(monthly_compustat_pd, "m_QCompustat")
 
 # Save the data in both pickle and parquet formats
 monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False)

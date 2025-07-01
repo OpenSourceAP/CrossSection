@@ -13,7 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import yaml_standardize_columns
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -54,7 +54,7 @@ def main():
             om_data = om_data.sort_values('om_score').groupby('permno').first().reset_index()
 
         # Standardize columns to match DTA file
-        om_data = yaml_standardize_columns(om_data, "OPTIONMETRICSCRSPLinkingTable")
+        om_data = standardize_columns(om_data, "OPTIONMETRICSCRSPLinkingTable")
 
         # Save processed data
         om_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)
@@ -79,7 +79,7 @@ def main():
             print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
         # Standardize columns to match DTA file
-        placeholder_data = yaml_standardize_columns(placeholder_data, "OPTIONMETRICSCRSPLinkingTable")
+        placeholder_data = standardize_columns(placeholder_data, "OPTIONMETRICSCRSPLinkingTable")
 
         # Save the data
         placeholder_data.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)

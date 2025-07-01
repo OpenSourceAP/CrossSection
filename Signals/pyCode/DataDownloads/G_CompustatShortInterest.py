@@ -14,6 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -62,6 +63,9 @@ print(f"After monthly aggregation: {len(monthly_si)} records")
 
 # Convert gvkey to numeric
 monthly_si['gvkey'] = pd.to_numeric(monthly_si['gvkey'], errors='coerce')
+
+# Apply column standardization with data type enforcement
+monthly_si = standardize_columns(monthly_si, "monthlyShortInterest")
 
 # Save the data
 monthly_si.to_parquet("../pyData/Intermediate/monthlyShortInterest.parquet")

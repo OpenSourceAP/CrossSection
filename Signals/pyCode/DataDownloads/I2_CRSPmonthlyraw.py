@@ -86,8 +86,8 @@ crsp_raw['mve_c'] = crsp_raw['shrout'] * np.abs(crsp_raw['prc'])
 crsp_raw = crsp_raw.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
 # Standardize columns to match DTA file
-from utils.column_standardizer_yaml import yaml_standardize_columns
-crsp_raw = yaml_standardize_columns(crsp_raw, "monthlyCRSPraw")
+from utils.column_standardizer_yaml import standardize_columns
+crsp_raw = standardize_columns(crsp_raw, "monthlyCRSPraw")
 
 # Save the data
 crsp_raw.to_parquet("../pyData/Intermediate/monthlyCRSPraw.parquet")

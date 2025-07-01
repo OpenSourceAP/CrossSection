@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import yaml_standardize_columns
+from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("💰 H_CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
@@ -96,8 +96,8 @@ for col in date_columns:
     if col in dist_data.columns:
         dist_data[col] = pd.to_datetime(dist_data[col])
 
-# YAML-based column standardization (replaces standardize_against_dta)
-dist_data = yaml_standardize_columns(dist_data, "CRSPdistributions")
+# Column standardization with data type enforcement
+dist_data = standardize_columns(dist_data, "CRSPdistributions")
 
 # Save the data
 dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")

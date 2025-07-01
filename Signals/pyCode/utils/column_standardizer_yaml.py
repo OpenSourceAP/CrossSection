@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """
-ABOUTME: YAML-based column schema enforcement module for DataDownloads scripts
-ABOUTME: Replaces DTA file dependencies with version-controlled YAML schemas
+ABOUTME: Column structure enforcement module for DataDownloads scripts
+ABOUTME: Uses 01_columns.yaml to enforce exact column order and data types
 
-This module provides the yaml_standardize_columns function that enforces consistent
-DataFrame column schemas using YAML definitions instead of reading DTA files.
+This module provides the standardize_columns function that enforces consistent
+DataFrame column schemas and data types using the new 01_columns.yaml format.
 The function performs these specific operations to ensure DataFrame compatibility:
 
-1. COLUMN SELECTION: Keeps only the exact columns specified in the YAML schema
-2. COLUMN ORDERING: Reorders columns to match the exact sequence in the schema
-3. MISSING COLUMNS: Adds missing columns with NaN values
-4. EXTRA COLUMNS: Removes columns not in the schema
-5. SPECIAL HANDLING: Applies dataset-specific transformations (PIN parameters,
-   etc.)
-6. CLEANUP: Removes unwanted columns (index columns, __index_level_* patterns)
+1. COLUMN SELECTION: Keeps only the exact columns specified in the YAML structure
+2. COLUMN ORDERING: Reorders columns to match the exact sequence in column_order
+3. DATA TYPE ENFORCEMENT: Applies exact pandas dtypes from YAML (int32, float64, etc.)
+4. MISSING COLUMNS: Adds missing columns with NaN values
+5. EXTRA COLUMNS: Removes columns not in the structure
+6. SPECIAL HANDLING: Handles index column cleanup
 
-This eliminates the dependency on ../Data/Intermediate/ DTA files while producing
-identical column structures for downstream processing.
+This eliminates the dependency on old column_schemas.yaml and provides exact
+data type replication of Stata datasets.
 """
 
 import os
@@ -25,101 +24,71 @@ import pandas as pd
 import numpy as np
 
 
-def yaml_standardize_columns(df, dataset_name):
+def standardize_columns(df, dataset_name):
     """
-    Enforce DataFrame column schema using YAML definitions instead of DTA files.
+    Enforce DataFrame column structure and data types using 01_columns.yaml.
     
     This function ensures the DataFrame has exactly the columns specified in the
-    YAML schema, in the correct order, with proper handling of missing/extra
-    columns.
+    column structure, in the correct order, with exact data types matching Stata.
     
     Specific operations performed:
-    - Removes columns not in the target schema
+    - Removes columns not in the target structure
     - Adds missing columns with NaN values
-    - Reorders columns to match schema sequence
-    - Applies dataset-specific transformations (PIN parameters, etc.)
+    - Reorders columns to match column_order sequence
+    - Enforces exact pandas dtypes (int32, float64, datetime64[ns], etc.)
     - Removes unwanted columns (index columns, __index_level_* patterns)
     
     Args:
         df (pandas.DataFrame): Input DataFrame to standardize
-        dataset_name (str): Name of dataset in YAML schema (e.g.,
-                           'a_aCompustat')
+        dataset_name (str): Name of dataset in 01_columns.yaml (e.g.,
+                           'CRSPdistributions')
 
     Returns:
-        pandas.DataFrame: DataFrame with enforced column schema matching YAML
-                         definition
+        pandas.DataFrame: DataFrame with enforced column structure and data types
+                         matching YAML definition
     """
-    # Load YAML schema
-    yaml_path = os.path.join(os.path.dirname(__file__), "column_schemas.yaml")
+    # Load column structure from 01_columns.yaml
+    yaml_path = os.path.join(os.path.dirname(__file__), "../DataDownloads/01_columns.yaml")
 
     try:
         with open(yaml_path, 'r', encoding='utf-8') as f:
-            schemas = yaml.safe_load(f)
+            structures = yaml.safe_load(f)
     except Exception as e:
-        print(f"❌ Error loading YAML schema: {e}")
+        print(f"❌ Error loading column structure: {e}")
         return df
 
-    if dataset_name not in schemas:
-        print(f"❌ Dataset '{dataset_name}' not found in YAML schema")
+    if dataset_name not in structures:
+        print(f"❌ Dataset '{dataset_name}' not found in column structure")
         return df
 
-    schema = schemas[dataset_name]
-    # Handle both comma-delimited strings and lists for backward compatibility
-    columns_data = schema['columns']
-    if isinstance(columns_data, str):
-        target_columns = [col.strip() for col in columns_data.split(',')]
+    structure = structures[dataset_name]
+    # Parse column_order (comma-separated string)
+    column_order = structure.get('column_order', '')
+    if isinstance(column_order, str):
+        target_columns = [col.strip() for col in column_order.split(',')]
     else:
-        target_columns = columns_data
-    special_handling = schema.get('special_handling', {})
+        target_columns = column_order
 
-    print(f"{dataset_name}: Starting YAML-based column standardization")
+    print(f"{dataset_name}: Starting column standardization with data type enforcement")
 
     df_standardized = df.copy()
 
-    # Handle PIN special case: remove PIN column and add default parameters
-    pin_parameters = special_handling.get('pin_parameters', {})
-    if pin_parameters:
-        remove_columns = pin_parameters.get('remove_columns', [])
-        add_defaults = pin_parameters.get('add_defaults', {})
-        
-        # Remove specified columns
-        for col in remove_columns:
-            if col in df_standardized.columns:
-                print(f"{dataset_name}: Removing PIN column: {col}")
-                df_standardized = df_standardized.drop(columns=[col])
-        
-        # Add default parameter values
-        for param, default_value in add_defaults.items():
-            if param not in df_standardized.columns:
-                print(f"{dataset_name}: Adding PIN parameter {param} = {default_value}")
-                df_standardized[param] = default_value
-
-    # Remove unwanted columns based on patterns
-    remove_patterns = special_handling.get('remove_patterns', [])
+    # Remove unwanted index columns
     unwanted_cols = []
-
-    for pattern in remove_patterns:
-        if pattern == '__index_level_*':
-            # Find columns starting with '__index_level_'
-            unwanted_cols.extend([col for col in df_standardized.columns
-                                  if col.startswith('__index_level_')])
-        elif pattern == 'index':
-            # Find exact 'index' column
-            if 'index' in df_standardized.columns:
-                unwanted_cols.append('index')
+    
+    # Remove columns starting with '__index_level_'
+    unwanted_cols.extend([col for col in df_standardized.columns
+                          if col.startswith('__index_level_')])
+    
+    # Remove exact 'index' column
+    if 'index' in df_standardized.columns:
+        unwanted_cols.append('index')
 
     if unwanted_cols:
         print(f"{dataset_name}: Removing unwanted columns: {unwanted_cols}")
         df_standardized = df_standardized.drop(columns=unwanted_cols)
 
-    # Handle default values for specific columns
-    default_values = special_handling.get('default_values', {})
-    for col, default_value in default_values.items():
-        if col not in df_standardized.columns:
-            print(f"{dataset_name}: Adding missing column with default: {col} = {default_value}")
-            df_standardized[col] = default_value
-
-    # Check for missing columns (without defaults)
+    # Check for missing columns
     missing_cols = [col for col in target_columns
                     if col not in df_standardized.columns]
     if missing_cols:
@@ -137,10 +106,40 @@ def yaml_standardize_columns(df, dataset_name):
     # Reorder columns to match target order
     try:
         df_standardized = df_standardized[target_columns]
-        print(f"{dataset_name}: Column order standardized successfully "
-              "using YAML schema")
+        print(f"{dataset_name}: Column order standardized successfully")
     except KeyError as e:
         print(f"{dataset_name}: Error reordering columns: {e}")
         return df
+
+    # Apply data type enforcement from structure
+    dtype_mappings = {
+        'int8': 'int8',
+        'int16': 'int16', 
+        'int32': 'int32',
+        'int64': 'int64',
+        'float32': 'float32',
+        'float64': 'float64',
+        'datetime64[ns]': 'datetime64[ns]',
+        'object': 'object'
+    }
+    
+    for dtype_key, pandas_dtype in dtype_mappings.items():
+        if dtype_key in structure:
+            # Parse comma-separated column list
+            dtype_columns_str = structure[dtype_key]
+            if isinstance(dtype_columns_str, str):
+                dtype_columns = [col.strip() for col in dtype_columns_str.split(',')]
+            else:
+                dtype_columns = dtype_columns_str
+            
+            # Apply dtype to existing columns
+            existing_dtype_cols = [col for col in dtype_columns if col in df_standardized.columns]
+            if existing_dtype_cols:
+                try:
+                    # Apply the exact dtype specified in YAML
+                    df_standardized[existing_dtype_cols] = df_standardized[existing_dtype_cols].astype(pandas_dtype)
+                    print(f"{dataset_name}: Applied {pandas_dtype} to {len(existing_dtype_cols)} columns")
+                except Exception as e:
+                    print(f"{dataset_name}: Warning - Could not apply {pandas_dtype} to {existing_dtype_cols}: {e}")
 
     return df_standardized

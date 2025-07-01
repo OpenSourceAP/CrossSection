@@ -1,0 +1,343 @@
+'# Column Structures': Generated from Stata DTA/CSV files
+
+'# Format': Each dataset has column_order plus exact pandas dtype lists
+
+'# Example Types': int32, int64, float32, float64, datetime64[ns], object
+
+CCMLinkingTable.csv:
+  column_order: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid, lpermno, lpermco, linkdt, linkenddt
+  int64: gvkey, cusip, sic, liid, lpermno, lpermco
+  object: conm, tic, linkprim, linktype, linkdt, linkenddt
+  float64: cik, naics
+
+CCMLinkingTable:
+  column_order: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid, permno, lpermco, timeLinkStart_d, timeLinkEnd_d
+  object: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid
+  int32: permno, lpermco
+  datetime64[ns]: timeLinkStart_d, timeLinkEnd_d
+
+CompustatAnnual:
+  column_order: gvkey, datadate, conm, fyear, tic, cusip, naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che,
+    cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c,
+    dvt, ebit, ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt,
+    ivao, ivncf, ivst, lco, lct, lo, lt, mib, msa, ni, nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c,
+    prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi,
+    txditc, txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga
+  int64: gvkey, fyear, cusip, dvc, dvp, dvt, intan, mib, pstkl, txdb, txdi, txditc
+  object: datadate, conm, tic
+  float64: naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch,
+    dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvpa, dvpd, dvpsx_c, ebit, ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf,
+    fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, invt, ivao, ivncf, ivst, lco, lct, lo, lt, msa, ni, nopi, oancf, ob, oiadp,
+    oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f, prstkc, prstkcc, pstk, pstkrv, re, rect, recta, revt, sale, scstkc,
+    seq, spi, sstk, tstkp, txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga
+
+a_aCompustat:
+  column_order: gvkey, datadate, conm, fyear, tic, cusip, naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che,
+    cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c,
+    dvt, ebit, ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt,
+    ivao, ivncf, ivst, lco, lct, lo, lt, mib, msa, ni, nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c,
+    prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi,
+    txditc, txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga, cnum, dr, dc, xint0, xsga0, xad0, cik, sic,
+    naics, permno, lpermco, time_avail_m
+  int32: gvkey, permno, lpermco
+  datetime64[ns]: datadate, time_avail_m
+  object: conm, tic, cusip, cnum, cik, sic, naics
+  int16: fyear
+  float64: naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch,
+    dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c, dvt, ebit, ebitda, emp, epspi, epspx, fatb, fatl,
+    ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt, ivao, ivncf, ivst, lco, lct, lo, lt, mib, msa, ni,
+    nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv,
+    re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi, txditc, txfo, txfed, txp, txt, wcap, wcapch, xacc,
+    xad, xint, xrd, xpp, xsga
+  float32: dr, dc, xint0, xsga0, xad0
+
+m_aCompustat:
+  column_order: gvkey, datadate, conm, fyear, tic, cusip, naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che,
+    cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis, dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c,
+    dvt, ebit, ebitda, emp, epspi, epspx, fatb, fatl, ffo, fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt,
+    ivao, ivncf, ivst, lco, lct, lo, lt, mib, msa, ni, nopi, oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c,
+    prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi,
+    txditc, txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga, cnum, dr, dc, xint0, xsga0, xad0, cik, sic,
+    naics, permno, lpermco, time_avail_m
+  int32: gvkey, naicsh, permno, lpermco
+  datetime64[ns]: datadate, time_avail_m
+  object: conm, tic, cusip, cnum, cik, sic, naics
+  int16: fyear
+  float64: sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis,
+    dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c, dvt, ebit, ebitda, emp, epspi, epspx, fatb, fatl, ffo,
+    fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt, ivao, ivncf, ivst, lco, lct, lo, lt, mib, msa, ni, nopi,
+    oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect,
+    recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi, txditc, txfo, txfed, txp, txt, wcap, wcapch, xacc, xad,
+    xint, xrd, xpp, xsga
+  float32: dr, dc, xint0, xsga0, xad0
+
+m_QCompustat:
+  column_order: gvkey, datadateq, fyearq, fqtr, datacqtr, datafqtr, acoq, actq, ajexq, apq, atq, ceqq, cheq, cogsq, cshoq,
+    cshprq, dlcq, dlttq, dpq, drcq, drltq, dvpsxq, dvpq, dvy, epspiq, epspxq, fopty, gdwlq, ibq, invtq, intanq, ivaoq, lcoq,
+    lctq, loq, ltq, mibq, niq, oancfy, oiadpq, oibdpq, piq, ppentq, ppegtq, prstkcy, prccq, pstkq, rdq, req, rectq, revtq,
+    saleq, seqq, sstky, txdiq, txditcq, txpq, txtq, xaccq, xintq, xsgaq, xrdq, capxy, time_avail_m, sstkyq, prstkcyq, oancfyq,
+    foptyq
+  int32: gvkey
+  datetime64[ns]: datadateq, rdq, time_avail_m
+  int16: fyearq
+  int8: fqtr
+  object: datacqtr, datafqtr
+  float64: acoq, actq, ajexq, apq, atq, ceqq, cheq, cogsq, cshoq, cshprq, dlcq, dlttq, dpq, drcq, drltq, dvpsxq, dvpq, dvy,
+    epspiq, epspxq, fopty, gdwlq, ibq, invtq, intanq, ivaoq, lcoq, lctq, loq, ltq, mibq, niq, oancfy, oiadpq, oibdpq, piq,
+    ppentq, ppegtq, prstkcy, prccq, pstkq, req, rectq, revtq, saleq, seqq, sstky, txdiq, txditcq, txpq, txtq, xaccq, xintq,
+    xsgaq, xrdq, capxy
+  float32: sstkyq, prstkcyq, oancfyq, foptyq
+
+CompustatPensions:
+  column_order: gvkey, paddml, pbnaa, pbnvv, pbpro, pbpru, pcupsu, pplao, pplau, year
+  int32: gvkey
+  float64: paddml, pbnaa, pbnvv, pbpro, pbpru, pcupsu, pplao, pplau
+  int16: year
+
+CompustatSegments:
+  column_order: gvkey, datadate, stype, sid, sales, srcdate, naicsh, sics1, snms
+  int32: gvkey
+  datetime64[ns]: datadate, srcdate
+  object: stype, snms
+  int16: sid
+  float64: sales, naicsh, sics1
+
+CompustatSegmentDataCustomers:
+  column_order: gvkey, cid, cnms, ctype, gareac, gareat, salecs, sid, stype, datadate
+  int64: gvkey, cid, salecs, sid
+  float64: cnms, gareac, gareat
+  object: ctype, stype, datadate
+
+monthlyShortInterest:
+  column_order: gvkey, time_avail_m, shortint, shortintadj
+  int32: gvkey
+  datetime64[ns]: time_avail_m
+  float64: shortint, shortintadj
+
+CRSPdistributions:
+  column_order: permno, divamt, distcd, facshr, rcrddt, exdt, paydt, cd1, cd2, cd3, cd4
+  int32: permno
+  float64: divamt, facshr
+  object: distcd
+  datetime64[ns]: rcrddt, exdt, paydt
+  float32: cd1, cd2, cd3, cd4
+
+mCRSP:
+  column_order: permno, permco, date, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, siccd, ticker, shrcls,
+    dlstcd, dlret
+  int64: permno, permco
+  object: date
+  float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, siccd, ticker, shrcls, dlstcd, dlret
+
+monthlyCRSP:
+  column_order: permno, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D,
+    time_avail_m, mve_c
+  int32: permno
+  float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, sic2D
+  object: ticker, shrcls
+  datetime64[ns]: time_avail_m
+  float32: mve_c
+
+monthlyCRSPraw:
+  column_order: permno, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D,
+    time_avail_m, mve_c
+  int32: permno
+  float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, sic2D
+  object: ticker, shrcls
+  datetime64[ns]: time_avail_m
+  float32: mve_c
+
+dailyCRSP:
+  column_order: permno, time_d, ret, vol, shrout, prc, cfacpr
+  int32: permno, vol, shrout
+  datetime64[ns]: time_d
+  float64: ret, prc, cfacpr
+
+dailyCRSPprc:
+  column_order: permno, time_d, shrout, prc, cfacpr
+  int32: permno, shrout
+  datetime64[ns]: time_d
+  float64: prc, cfacpr
+
+m_CRSPAcquisitions:
+  column_order: permno, SpinoffCo
+  int32: permno
+  int8: SpinoffCo
+
+IBES_EPS_Unadj:
+  column_order: tickerIBES, statpers, fpi, numest, medest, meanest, stdev, fpedats, time_avail_m
+  object: tickerIBES, fpi
+  datetime64[ns]: statpers, fpedats, time_avail_m
+  int8: numest
+  float64: medest, meanest, stdev
+
+IBES_EPS_Adj:
+  column_order: fpi, tickerIBES, statpers, fpedats, anndats_act, meanest, actual, medest, stdev, numest, prdays, price, shout,
+    time_avail_m
+  object: fpi, tickerIBES
+  datetime64[ns]: statpers, fpedats, anndats_act, prdays, time_avail_m
+  float64: meanest, actual, medest, stdev, price, shout
+  int8: numest
+
+IBES_Recommendations:
+  column_order: tickerIBES, amaskcd, anndats, time_avail_m, ireccd, estimid, ereccd, etext, itext, emaskcd, actdats
+  object: tickerIBES, estimid, ereccd, etext, itext
+  int32: amaskcd, emaskcd
+  datetime64[ns]: anndats, time_avail_m, actdats
+  int8: ireccd
+
+IBES_UnadjustedActuals:
+  column_order: tickerIBES, cusip, oftic, cname, measure, fy0a, curcode, fvyrgro, fvyrsta, usfirm, fy0edats, int0a, int0dats,
+    price, prdays, shoutIBESUnadj, iadiv, curr_price, time_avail_m
+  object: tickerIBES, cusip, oftic, cname, measure, curcode, curr_price
+  float64: fy0a, fvyrgro, fvyrsta, int0a, price, shoutIBESUnadj, iadiv
+  int8: usfirm
+  datetime64[ns]: fy0edats, int0dats, prdays, time_avail_m
+
+dailyFF:
+  column_order: time_d, mktrf, smb, hml, rf, umd
+  datetime64[ns]: time_d
+  float64: mktrf, smb, hml, rf, umd
+
+monthlyFF:
+  column_order: mktrf, smb, hml, rf, umd, time_avail_m
+  float64: mktrf, smb, hml, rf, umd
+  datetime64[ns]: time_avail_m
+
+monthlyMarket:
+  column_order: vwretd, ewretd, usdval, time_avail_m
+  float64: vwretd, ewretd, usdval
+  datetime64[ns]: time_avail_m
+
+monthlyLiquidity:
+  column_order: ps_innov, time_avail_m
+  float64: ps_innov
+  datetime64[ns]: time_avail_m
+
+d_qfactor:
+  column_order: r_f_qfac, r_mkt_qfac, r_me_qfac, r_ia_qfac, r_roe_qfac, time_d
+  float32: r_f_qfac, r_mkt_qfac, r_me_qfac, r_ia_qfac, r_roe_qfac
+  datetime64[ns]: time_d
+
+d_vix:
+  column_order: time_d, vix, dVIX
+  datetime64[ns]: time_d
+  float32: vix, dVIX
+
+GNPdefl:
+  column_order: time_avail_m, gnpdefl
+  datetime64[ns]: time_avail_m
+  float32: gnpdefl
+
+TBill3M:
+  column_order: TbillRate3M, qtr, year
+  float32: TbillRate3M
+  int8: qtr
+  int16: year
+
+brokerLev:
+  column_order: qtr, year, levfac
+  int8: qtr
+  int16: year
+  float32: levfac
+
+m_SP_creditratings:
+  column_order: gvkey, time_avail_m, credrat
+  int32: gvkey
+  datetime64[ns]: time_avail_m
+  int8: credrat
+
+m_CIQ_creditratings:
+  column_order: gvkey, ticker, ratingdate, ratingtime, ratingactionword, currentratingsymbol, entity_id, instrument_id, security_id,
+    source, time_avail_m
+  int32: gvkey
+  object: ticker, ratingactionword, currentratingsymbol, entity_id, instrument_id, security_id
+  datetime64[ns]: ratingdate, ratingtime, time_avail_m
+  int8: source
+
+pin_monthly:
+  column_order: permno, year, a, eb, es, u, d, month, modate, time_avail_m
+  int32: permno
+  int16: year
+  float32: a, eb, es, u, d
+  int8: month
+  datetime64[ns]: modate, time_avail_m
+
+GovIndex:
+  column_order: ticker, G, time_avail_m
+  object: ticker
+  int8: G
+  datetime64[ns]: time_avail_m
+
+BAspreadsCorwin:
+  column_order: permno, BidAskSpread, time_avail_m
+  int32: permno
+  float32: BidAskSpread
+  datetime64[ns]: time_avail_m
+
+TR_13F:
+  column_order: permno, numinstown, dbreadth, instown_perc, maxinstown_perc, numinstblock, time_avail_m
+  int32: permno
+  int16: numinstown
+  float32: dbreadth, instown_perc, maxinstown_perc
+  int8: numinstblock
+  datetime64[ns]: time_avail_m
+
+hf_spread:
+  column_order: permno, time_avail_m, hf_spread
+  int32: permno
+  datetime64[ns]: time_avail_m
+  float32: hf_spread
+
+OptionMetricsVolume:
+  column_order: secid, optvolume, optinterest, time_avail_m
+  int32: secid, optvolume, optinterest
+  datetime64[ns]: time_avail_m
+
+OptionMetricsVolSurf:
+  column_order: secid, days, delta, cp_flag, time_avail_m, date, impl_vol
+  int32: secid
+  int8: days, delta
+  object: cp_flag, date
+  datetime64[ns]: time_avail_m
+  float32: impl_vol
+
+OptionMetricsXZZ:
+  column_order: secid, time_avail_m, skew1
+  int32: secid
+  datetime64[ns]: time_avail_m
+  float32: skew1
+
+OptionMetricsBH:
+  column_order: secid, time_avail_m, cp_flag, mean_imp_vol, mean_day, nobs, ticker
+  int32: secid
+  datetime64[ns]: time_avail_m
+  object: cp_flag, ticker
+  float32: mean_imp_vol, mean_day
+  int16: nobs
+
+IBESCRSPLinkingTable:
+  column_order: tickerIBES, permno
+  object: tickerIBES
+  int32: permno
+
+OPTIONMETRICSCRSPLinkingTable:
+  column_order: secid, permno, om_score
+  int32: secid, permno
+  int8: om_score
+
+PatentDataProcessed:
+  column_order: gvkey, year, npat, ncitscale
+  float64: gvkey, year, npat, ncitscale
+
+InputOutputMomentumProcessed:
+  column_order: gvkey, time_avail_m, retmatchcustomer, portindcustomer, retmatchsupplier, portindsupplier
+  int32: gvkey
+  datetime64[ns]: time_avail_m
+  float64: retmatchcustomer, portindcustomer, retmatchsupplier, portindsupplier
+
+customerMom:
+  column_order: permno, custmom, time_avail_m
+  int32: permno
+  float32: custmom
+  datetime64[ns]: time_avail_m
