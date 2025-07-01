@@ -111,7 +111,7 @@ def standardize_columns(df, dataset_name):
         print(f"{dataset_name}: Error reordering columns: {e}")
         return df
 
-    # Apply data type enforcement from structure
+    # Apply data type enforcement from structure - one column at a time for robustness
     dtype_mappings = {
         'int8': 'int8',
         'int16': 'int16', 
@@ -123,6 +123,7 @@ def standardize_columns(df, dataset_name):
         'object': 'object'
     }
     
+    conversion_count = 0
     for dtype_key, pandas_dtype in dtype_mappings.items():
         if dtype_key in structure:
             # Parse comma-separated column list
@@ -132,14 +133,40 @@ def standardize_columns(df, dataset_name):
             else:
                 dtype_columns = dtype_columns_str
             
-            # Apply dtype to existing columns
+            # Apply dtype to existing columns ONE AT A TIME
             existing_dtype_cols = [col for col in dtype_columns if col in df_standardized.columns]
-            if existing_dtype_cols:
+            for col in existing_dtype_cols:
                 try:
-                    # Apply the exact dtype specified in YAML
-                    df_standardized[existing_dtype_cols] = df_standardized[existing_dtype_cols].astype(pandas_dtype)
-                    print(f"{dataset_name}: Applied {pandas_dtype} to {len(existing_dtype_cols)} columns")
+                    # Smart type conversion based on target type
+                    if pandas_dtype.startswith('int'):
+                        # Handle integer conversion with NaN values
+                        if df_standardized[col].isna().any():
+                            # Use nullable integer types for columns with NaN
+                            nullable_dtype = pandas_dtype.replace('int', 'Int')
+                            df_standardized[col] = pd.to_numeric(df_standardized[col], errors='coerce').astype(nullable_dtype)
+                        else:
+                            # Safe integer conversion
+                            df_standardized[col] = pd.to_numeric(df_standardized[col], errors='coerce').astype(pandas_dtype)
+                    elif pandas_dtype.startswith('float'):
+                        # Robust float conversion
+                        df_standardized[col] = pd.to_numeric(df_standardized[col], errors='coerce').astype(pandas_dtype)
+                    elif pandas_dtype == 'datetime64[ns]':
+                        # Robust datetime conversion
+                        df_standardized[col] = pd.to_datetime(df_standardized[col], errors='coerce')
+                    elif pandas_dtype == 'object':
+                        # Object conversion (strings)
+                        df_standardized[col] = df_standardized[col].astype(str)
+                    else:
+                        # Fallback to direct conversion
+                        df_standardized[col] = df_standardized[col].astype(pandas_dtype)
+                    
+                    conversion_count += 1
+                    
                 except Exception as e:
-                    print(f"{dataset_name}: Warning - Could not apply {pandas_dtype} to {existing_dtype_cols}: {e}")
+                    print(f"{dataset_name}: Warning - Could not convert column '{col}' to {pandas_dtype}: {e}")
+                    # Continue with other columns instead of failing completely
+                    
+    if conversion_count > 0:
+        print(f"{dataset_name}: Successfully converted {conversion_count} columns to target dtypes")
 
     return df_standardized
