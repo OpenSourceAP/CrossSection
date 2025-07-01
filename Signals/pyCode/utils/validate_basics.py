@@ -78,12 +78,20 @@ def validate_single_dataset(dataset_name: str, max_rows: int = -1, output=None) 
             nrows = None if max_rows <= 0 else max_rows
             dta = pd.read_csv(stata_file, nrows=nrows)
         else:
-            print(f"ERROR: Unsupported Stata file format")
+            output.print(f"ERROR: Unsupported Stata file format")
             return
             
-        parq = pd.read_parquet(python_file)
-        if max_rows > 0:
-            parq = parq.head(max_rows)
+        # Load Python file (can be parquet or csv)
+        if python_file.endswith('.parquet'):
+            parq = pd.read_parquet(python_file)
+            if max_rows > 0:
+                parq = parq.head(max_rows)
+        elif python_file.endswith('.csv'):
+            nrows = None if max_rows <= 0 else max_rows
+            parq = pd.read_csv(python_file, nrows=nrows)
+        else:
+            output.print(f"ERROR: Unsupported Python file format")
+            return
         
         # 1. Check column names
         if list(dta.columns) == list(parq.columns):
