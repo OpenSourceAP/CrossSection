@@ -71,10 +71,6 @@ def main():
     # Standardize columns using YAML schema
     vol_data = standardize_columns(vol_data, "OptionMetricsVolume")
     
-    # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
-    if 'time_avail_m' in vol_data.columns:
-        vol_data['time_avail_m'] = vol_data['time_avail_m'].dt.to_timestamp()
-        print("OptionMetricsVolume: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
     
     # Save the data
     output_file = "../pyData/Intermediate/OptionMetricsVolume.parquet"
@@ -93,10 +89,6 @@ def main():
         # Standardize columns to match DTA file
         vol_surf_data = standardize_columns(vol_surf_data, "OptionMetricsVolSurf")
         
-        # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
-        if 'time_avail_m' in vol_surf_data.columns:
-            vol_surf_data['time_avail_m'] = vol_surf_data['time_avail_m'].dt.to_timestamp()
-            print("OptionMetricsVolSurf: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
         
         # Save standardized data
         output_file = "../pyData/Intermediate/OptionMetricsVolSurf.parquet"
@@ -116,10 +108,6 @@ def main():
     # Standardize columns to match DTA file
     xzz_data = standardize_columns(xzz_data, "OptionMetricsXZZ")
     
-    # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
-    if 'time_avail_m' in xzz_data.columns:
-        xzz_data['time_avail_m'] = xzz_data['time_avail_m'].dt.to_timestamp()
-        print("OptionMetricsXZZ: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
     
     # Save standardized data
     output_file = "../pyData/Intermediate/OptionMetricsXZZ.parquet"
@@ -157,10 +145,6 @@ def main():
     # Standardize columns to match DTA file
     bh_data = standardize_columns(bh_data, "OptionMetricsBH")
     
-    # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
-    if 'time_avail_m' in bh_data.columns:
-        bh_data['time_avail_m'] = bh_data['time_avail_m'].dt.to_timestamp()
-        print("OptionMetricsBH: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
     
     # MISSING VALUE FIX: Convert NaN to empty string for ticker column to match Stata format
     if 'ticker' in bh_data.columns:
