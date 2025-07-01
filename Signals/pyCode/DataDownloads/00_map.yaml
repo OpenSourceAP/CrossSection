@@ -279,7 +279,7 @@ m_CIQ_creditratings:
 
 # Other Specialized Data
 IPODates:
-  key1: ticker
+  key1: permno
   stata_file: IPODates.dta
   python_file: IPODates.parquet
   stata_script: ZA_IPODates.do
