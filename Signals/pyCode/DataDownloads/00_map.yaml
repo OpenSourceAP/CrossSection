@@ -271,11 +271,7 @@ m_SP_creditratings:
 
 m_CIQ_creditratings:
   key1: gvkey
-  key2: entity_id
-  key3: instrument_id
-  key4: security_id
-  key5: ratingdate
-  key6: ratingtime
+  key2: ratingdate
   stata_file: m_CIQ_creditratings.dta
   python_file: m_CIQ_creditratings.parquet
   stata_script: X2_CIQCreditRatings.do
