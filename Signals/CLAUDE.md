@@ -71,9 +71,24 @@ The full datasets should match on the following:
 2. Column types (exact match)
 3. Row count (Python can have more rows, but only 0.1% more)
 
+utils/validate_basics.py can be used to check this.
+
 ### Validation by Keys [tbc]
 
 We also check merged datasets. The merged datasets should inner join on the keys in DataDownloads/00_map.yaml. Then we can compare the merged datasets, cell by cell. 
+
+Lets define:
+- Full data rows: number of rows in the Stata data
+- Matched by key rows: number of rows that Stata and Python share the same keys (based on @DataDownloads/00_map.yaml)
+- Perfect rows: rows that match by key and have no deviations
+- Imperfect rows: Full data rows - Perfect rows
+
+Preliminary goals:
+4. Imperfect rows / total rows < 0.1% or...
+5. If Imperfect rows / total rows > 0.1%, have Anderoo appove:
+  - Worst column stats look OK.
+  - Sample of worst rows and columns look OK.
+
 
 ## Python Environment
 - Use `pandas` for data manipulation
