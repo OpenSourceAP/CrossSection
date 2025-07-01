@@ -17,7 +17,7 @@ Arguments:
 
 Output: 
   Prints results to console with ✓/✗ symbols
-  Also saves results to ../Logs/test_dl.md in markdown format
+  Also saves results to ../Logs/testout_dl.md in markdown format
   Creates CSV samples in ../Logs/detail/ for problematic datasets
 
 Usage examples:
@@ -32,107 +32,151 @@ import pandas as pd
 import yaml
 import io
 import sys
-import hashlib
+import gc
 from datetime import datetime
 from pathlib import Path
+import time
+import numpy as np
 
-class OutputCapture:
-    """Capture output for both console and file writing."""
-    def __init__(self):
-        self.content = []
-    
-    def print(self, text=""):
-        """Print to both console and capture for file."""
-        print(text)
-        self.content.append(text)
-    
-    def get_content(self):
-        """Get captured content as string."""
-        return "\n".join(self.content)
+# Hard coded second row cap
+ROW_CAP_FOR_RAM = 5*10**6
 
 
-def simple_hash(s):
-    """Convert string to numeric hash for comparison."""
-    if pd.isna(s):
-        return -1
-    return int(hashlib.sha1(s.encode('utf-8')).hexdigest(), 16) % (10**8)  # truncate to 8 digits
+def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
+    """Compare columns directly without heavy hashing - simpler approach like validate_by_keys."""
+    common_cols = list(set(dta_bykey.columns) & set(parq_bykey.columns))
+    
+    column_differences = {}
+    for col in common_cols:
+        try:
+            s1 = dta_bykey[col]
+            s2 = parq_bykey[col]
+            
+            # Handle different data types like validate_by_keys
+            if s1.dtype == 'object' and s2.dtype == 'object':
+                # String comparison
+                s1 = s1.astype(str).fillna('')
+                s2 = s2.astype(str).fillna('')
+                matches = (s1 == s2)
+            elif pd.api.types.is_numeric_dtype(s1) and pd.api.types.is_numeric_dtype(s2):
+                # Numeric comparison with tolerance
+                matches = np.isclose(s1, s2, rtol=tolerance, atol=tolerance, equal_nan=True)
+            else:
+                # Mixed types - convert to string
+                s1 = s1.astype(str).fillna('')
+                s2 = s2.astype(str).fillna('')
+                matches = (s1 == s2)
+            
+            # Calculate percentage of rows that deviate
+            pct_pos = ((~matches).sum() / len(matches) * 100) if len(matches) > 0 else 0
+            
+            if pct_pos > 0:
+                column_differences[col] = {
+                    'pct_pos_bykey': pct_pos,
+                    'deviating_rows': (~matches).sum()
+                }
+        except Exception as e:
+            column_differences[col] = {'error': str(e)}
+    
+    return column_differences
 
-
-def hash_df(df):
-    """Convert dataframe to all-numeric for comparison by hashing strings and converting dates."""
-    df = df.copy()
+def load_dataset_pair(dataset_name: str, max_rows: int = -1):
+    """Load both Stata and Python datasets for a given dataset name.
     
-    # convert strings to numeric
-    col_string = df.select_dtypes(include='object').columns
-    for col in col_string:
-        df[col] = df[col].apply(simple_hash)
-    
-    # convert datetime to numeric (handle both strings and datetime objects)
-    col_datetime = df.select_dtypes(include=['datetime', 'datetime64']).columns
-    for col in col_datetime:
-        if df[col].dtype.name.startswith('datetime'):
-            df[col] = df[col].astype('int64') // 10**9  # Convert to seconds
-        else:
-            df[col] = pd.to_datetime(df[col], errors='coerce').astype('int64') // 10**9
-    
-    # Round floating point numbers to avoid precision issues
-    col_float = df.select_dtypes(include=['float64', 'float32']).columns
-    for col in col_float:
-        df[col] = df[col].round(6)  # Round to 6 decimal places
-    
-    # convert na to -999
-    df = df.fillna(-999)
-    
-    return df
-
-def val_one_basics(dataset_name: str, max_rows: int = -1, output=None) -> None:
-    """Validate basic properties of a single dataset."""
-    
-    if output is None:
-        output = OutputCapture()
-    
+    Returns:
+        tuple: (dta, parq, key_cols, config) or (None, None, None, None) if error
+    """
     # Load dataset configuration
     with open('DataDownloads/00_map.yaml', 'r', encoding='utf-8') as f:
         dataset_map = yaml.safe_load(f)
     
     if dataset_name not in dataset_map:
-        output.print(f"ERROR: {dataset_name} not found in map")
-        return
+        return None, None, None, None
     
     config = dataset_map[dataset_name]
     stata_file = f"../Data/Intermediate/{config['stata_file']}"
     python_file = f"../pyData/Intermediate/{config['python_file']}"
     
-    output.print(f"\n## {dataset_name}")
-    output.print("")
+    # Get key columns
+    key_cols = []
+    key_num = 1
+    while f'key{key_num}' in config and config.get(f'key{key_num}'):
+        key_cols.append(config[f'key{key_num}'])
+        key_num += 1
     
     try:
-        # Load datasets with row limits
+        # Load Stata dataset
         if stata_file.endswith('.dta'):
             if max_rows > 0:
                 dta = pd.read_stata(stata_file, chunksize=max_rows)
                 dta = next(dta)
             else:
                 dta = pd.read_stata(stata_file)
+            # Apply row cap for RAM management
+            if len(dta) > ROW_CAP_FOR_RAM:
+                if key_cols:
+                    dta = dta.sort_values(by=key_cols)
+                dta = dta.head(ROW_CAP_FOR_RAM)
         elif stata_file.endswith('.csv'):
             nrows = None if max_rows <= 0 else max_rows
             dta = pd.read_csv(stata_file, nrows=nrows)
+            # Apply row cap for RAM management
+            if len(dta) > ROW_CAP_FOR_RAM:
+                if key_cols:
+                    dta = dta.sort_values(by=key_cols)
+                dta = dta.head(ROW_CAP_FOR_RAM)
         else:
-            output.print(f"ERROR: Unsupported Stata file format")
-            return
+            return None, None, None, None
             
-        # Load Python file (can be parquet or csv)
+        # Load Python dataset
         if python_file.endswith('.parquet'):
             parq = pd.read_parquet(python_file)
             if max_rows > 0:
                 parq = parq.head(max_rows)
+            # Apply row cap for RAM management
+            if len(parq) > ROW_CAP_FOR_RAM:
+                if key_cols:
+                    parq = parq.sort_values(by=key_cols)
+                parq = parq.head(ROW_CAP_FOR_RAM)
         elif python_file.endswith('.csv'):
             nrows = None if max_rows <= 0 else max_rows
             parq = pd.read_csv(python_file, nrows=nrows)
+            # Apply row cap for RAM management
+            if len(parq) > ROW_CAP_FOR_RAM:
+                if key_cols:
+                    parq = parq.sort_values(by=key_cols)
+                parq = parq.head(ROW_CAP_FOR_RAM)
         else:
-            output.print(f"ERROR: Unsupported Python file format")
-            return
+            return None, None, None, None
         
+        return dta, parq, key_cols, config
+        
+    except Exception:
+        return None, None, None, None
+
+def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
+    """Validate basic properties of a single dataset.
+    
+    Returns:
+        dict: Structured validation results containing status, validations, details, and error info
+    """
+    
+    # Check if data was loaded successfully
+    if dta is None or parq is None:
+        return {
+            'dataset_name': dataset_name,
+            'status': 'error',
+            'validations': [
+                "**ERROR**: Failed to load datasets",
+                "**ERROR**: Column names comparison failed", 
+                "**ERROR**: Column types comparison failed",
+                "**ERROR**: Row count comparison failed"
+            ],
+            'details': [f"**Error**: Could not load data for {dataset_name}"],
+            'error': f"Could not load data for {dataset_name}"
+        }
+    
+    try:
         # Track validation results for numbered format
         validation_results = []
         details = []
@@ -179,93 +223,73 @@ def val_one_basics(dataset_name: str, max_rows: int = -1, output=None) -> None:
         # Store row info for details section
         row_details = f"**Rows**: Stata={stata_rows:,}, Python={python_rows:,}"
         
-        # Store results for integration with bykeys analysis
-        output._basic_validation_results = validation_results
-        output._basic_details = [row_details] + details
-        
-        # Store for integration with bykeys - don't output here
+        return {
+            'dataset_name': dataset_name,
+            'status': 'success',
+            'validations': validation_results,
+            'details': [row_details] + details,
+            'error': None
+        }
         
     except Exception as e:
-        output.print("1. **ERROR**: Column names comparison failed")
-        output.print("2. **ERROR**: Column types comparison failed")
-        output.print("3. **ERROR**: Row count comparison failed")
-        output.print(f"\n**Details**")
-        output.print(f"- **Error**: {e}")
+        return {
+            'dataset_name': dataset_name,
+            'status': 'error',
+            'validations': [
+                "**ERROR**: Column names comparison failed",
+                "**ERROR**: Column types comparison failed", 
+                "**ERROR**: Row count comparison failed"
+            ],
+            'details': [f"**Error**: {e}"],
+            'error': str(e)
+        }
 
 
-def val_one_bykeys(dataset_name: str, max_rows: int = -1, output=None) -> None:
-    """Validate dataset by keys and compute imperfect rows ratio."""
+def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, key_cols=None, tolerance: float = 1e-12) -> dict:
+    """Validate dataset by keys and compute imperfect rows ratio.
     
-    if output is None:
-        output = OutputCapture()
+    Args:
+        dataset_name: Name of the dataset
+        basic_results: Results from val_one_basics()
+        dta: Stata dataframe
+        parq: Python dataframe
+        key_cols: List of key columns for comparison
+        tolerance: Tolerance for numeric comparisons
+        
+    Returns:
+        dict: Combined validation results with basic + by-keys analysis
+    """
     
-    # Load dataset configuration
-    with open('DataDownloads/00_map.yaml', 'r', encoding='utf-8') as f:
-        dataset_map = yaml.safe_load(f)
+    # Check if data was loaded successfully
+    if dta is None or parq is None:
+        return {
+            'dataset_name': dataset_name,
+            'status': 'error',
+            'validations': basic_results['validations'] + ["**ERROR**: Failed to load datasets"],
+            'details': basic_results['details'] + [f"**Error**: Could not load data for {dataset_name}"],
+            'analysis': None,
+            'worst_columns': [],
+            'sample_file': None,
+            'error': f"Could not load data for {dataset_name}"
+        }
     
-    if dataset_name not in dataset_map:
-        output.print(f"ERROR: {dataset_name} not found in map")
-        return
-    
-    config = dataset_map[dataset_name]
-    stata_file = f"../Data/Intermediate/{config['stata_file']}"
-    python_file = f"../pyData/Intermediate/{config['python_file']}"
-    
-    # Get key columns from yaml
-    key_cols = []
-    key_num = 1
-    while f'key{key_num}' in config and config.get(f'key{key_num}'):
-        key_cols.append(config[f'key{key_num}'])
-        key_num += 1
+    # Default to empty key columns if none provided
+    if key_cols is None:
+        key_cols = []
     
     if not key_cols:
-        # Get basic validation if available, add warning for #4
-        if hasattr(output, '_basic_validation_results'):
-            all_results = output._basic_validation_results[:]
-            all_details = output._basic_details[:]
-        else:
-            all_results = []
-            all_details = []
-        
-        all_results.append("⚠ No key columns found - skipping by-keys analysis")
-        
-        # Output results
-        for i, result in enumerate(all_results, 1):
-            output.print(f"{i}. {result}")
-        
-        if all_details:
-            output.print(f"\n**Details**")
-            for detail in all_details:
-                output.print(f"- {detail}")
-        
-        return
+        return {
+            'dataset_name': dataset_name,
+            'status': 'warning',
+            'validations': basic_results['validations'] + ["⚠ No key columns found - skipping by-keys analysis"],
+            'details': basic_results['details'],
+            'analysis': None,
+            'worst_columns': [],
+            'sample_file': None,
+            'error': None
+        }
     
     try:
-        # Load datasets with row limits
-        if stata_file.endswith('.dta'):
-            if max_rows > 0:
-                dta = pd.read_stata(stata_file, chunksize=max_rows)
-                dta = next(dta)
-            else:
-                dta = pd.read_stata(stata_file)
-        elif stata_file.endswith('.csv'):
-            nrows = None if max_rows <= 0 else max_rows
-            dta = pd.read_csv(stata_file, nrows=nrows)
-        else:
-            output.print(f"ERROR: Unsupported Stata file format")
-            return
-            
-        # Load Python file
-        if python_file.endswith('.parquet'):
-            parq = pd.read_parquet(python_file)
-            if max_rows > 0:
-                parq = parq.head(max_rows)
-        elif python_file.endswith('.csv'):
-            nrows = None if max_rows <= 0 else max_rows
-            parq = pd.read_csv(python_file, nrows=nrows)
-        else:
-            output.print(f"ERROR: Unsupported Python file format")
-            return
         
         # Index by key columns and find common keys
         dta = dta.reset_index(drop=True)
@@ -276,26 +300,16 @@ def val_one_bykeys(dataset_name: str, max_rows: int = -1, output=None) -> None:
         missing_keys_parq = [k for k in key_cols if k not in parq.columns]
         
         if missing_keys_dta or missing_keys_parq:
-            # Get basic validation if available
-            if hasattr(output, '_basic_validation_results'):
-                all_results = output._basic_validation_results[:]
-                all_details = output._basic_details[:]
-            else:
-                all_results = []
-                all_details = []
-            
-            all_results.append(f"⚠ Missing key columns - Stata: {missing_keys_dta}, Python: {missing_keys_parq}")
-            
-            # Output results
-            for i, result in enumerate(all_results, 1):
-                output.print(f"{i}. {result}")
-            
-            if all_details:
-                output.print(f"\n**Details**")
-                for detail in all_details:
-                    output.print(f"- {detail}")
-            
-            return
+            return {
+                'dataset_name': dataset_name,
+                'status': 'warning',
+                'validations': basic_results['validations'] + [f"⚠ Missing key columns - Stata: {missing_keys_dta}, Python: {missing_keys_parq}"],
+                'details': basic_results['details'],
+                'analysis': None,
+                'worst_columns': [],
+                'sample_file': None,
+                'error': None
+            }
         
         # Normalize key column types before indexing
         for col in key_cols:
@@ -317,36 +331,42 @@ def val_one_bykeys(dataset_name: str, max_rows: int = -1, output=None) -> None:
         parq_bykey = parq[mask2].sort_index()
         
         if len(dta_bykey) == 0:
-            # Get basic validation if available
-            if hasattr(output, '_basic_validation_results'):
-                all_results = output._basic_validation_results[:]
-                all_details = output._basic_details[:]
-            else:
-                all_results = []
-                all_details = []
-            
-            all_results.append("⚠ No common keys found")
-            
-            # Output results
-            for i, result in enumerate(all_results, 1):
-                output.print(f"{i}. {result}")
-            
-            if all_details:
-                output.print(f"\n**Details**")
-                for detail in all_details:
-                    output.print(f"- {detail}")
-            
-            return
+            return {
+                'dataset_name': dataset_name,
+                'status': 'warning',
+                'validations': basic_results['validations'] + ["⚠ No common rows found"],
+                'details': basic_results['details'],
+                'analysis': None,
+                'worst_columns': [],
+                'sample_file': None,
+                'error': None
+            }
         
-        # Convert to numeric for comparison
-        dta_numeric = hash_df(dta_bykey)
-        parq_numeric = hash_df(parq_bykey)
+        # Compare columns directly without heavy hashing
+        column_differences = compare_columns_directly(dta_bykey, parq_bykey, tolerance=tolerance)
         
-        # Calculate deviations
-        diff_bykey = (dta_numeric - parq_numeric).abs()
+        # Count imperfect rows (rows with any differences in any column)
+        imperfect_row_indices = set()
+        for col, diff_info in column_differences.items():
+            if 'error' not in diff_info and diff_info.get('deviating_rows', 0) > 0:
+                # Find rows that differ for this column
+                s1 = dta_bykey[col]
+                s2 = parq_bykey[col]
+                
+                if s1.dtype == 'object' and s2.dtype == 'object':
+                    s1 = s1.astype(str).fillna('')
+                    s2 = s2.astype(str).fillna('')
+                    mismatched_indices = s1.index[s1 != s2]
+                elif pd.api.types.is_numeric_dtype(s1) and pd.api.types.is_numeric_dtype(s2):
+                    mismatched_indices = s1.index[~np.isclose(s1, s2, rtol=tolerance, atol=tolerance, equal_nan=True)]
+                else:
+                    s1 = s1.astype(str).fillna('')
+                    s2 = s2.astype(str).fillna('')
+                    mismatched_indices = s1.index[s1 != s2]
+                
+                imperfect_row_indices.update(mismatched_indices)
         
-        # Count imperfect rows (rows with any non-zero difference)
-        dev_rows = diff_bykey.sum(axis=1) > 0
+        dev_rows = pd.Series([idx in imperfect_row_indices for idx in dta_bykey.index])
         
         # Report matching hierarchy
         full_data_rows = len(dta)
@@ -355,64 +375,40 @@ def val_one_bykeys(dataset_name: str, max_rows: int = -1, output=None) -> None:
         imperfect_rows = dev_rows.sum()
         imperfect_ratio = imperfect_rows / full_data_rows if full_data_rows > 0 else 0
         
-        # Get basic validation results if they exist
-        if hasattr(output, '_basic_validation_results'):
-            all_results = output._basic_validation_results[:]
-            all_details = output._basic_details[:]
-        else:
-            # No basic validation was run
-            all_results = []
-            all_details = [f"**Rows**: Stata={full_data_rows:,}, Python={len(parq):,}"]
-        
         # Add imperfect ratio to validation results
         if imperfect_ratio <= 0.001:  # 0.1%
-            all_results.append("✓ Imperfect ratio acceptable (≤ 0.1%)")
+            bykeys_result = "✓ Imperfect ratio acceptable (≤ 0.1%)"
         else:
-            all_results.append("✗ Imperfect ratio high (> 0.1%)")
+            bykeys_result = "✗ Imperfect ratio high (> 0.1%)"
         
-        # Output numbered validation results
-        for i, result in enumerate(all_results, 1):
-            output.print(f"{i}. {result}")
+        # Prepare analysis data
+        analysis = {
+            'full_data_rows': full_data_rows,
+            'matched_by_key_rows': matched_by_key_rows,
+            'perfect_rows': perfect_rows,
+            'imperfect_rows': imperfect_rows,
+            'imperfect_ratio': imperfect_ratio
+        }
         
-        # Output detailed information
-        output.print(f"\n**Details**")
-        for detail in all_details:
-            output.print(f"- {detail}")
-        output.print(f"- **By-Keys Analysis**:")
-        output.print(f"    - Full data rows: {full_data_rows:,}")
-        output.print(f"    - Matched by key rows: {matched_by_key_rows:,}")
-        output.print(f"    - Perfect rows: {perfect_rows:,}")
-        output.print(f"    - Imperfect rows: {imperfect_rows:,}")
-        output.print(f"    - **Imperfect / Total: {imperfect_ratio:.2%}**")
+        # Prepare worst columns if there are deviations
+        worst_columns = []
+        sample_file = None
         
-        # Report worst columns if there are deviations
-        if imperfect_rows > 0:
-            # Calculate average values for mean_col (levels, not deviations)
-            ave_bykey = (dta_numeric + parq_numeric) / 2
-            
-            # Calculate column deviation stats
-            dev_stats_list = []
-            for col in diff_bykey.columns:
-                s = diff_bykey[col]
-                pct_pos = (s > 0).mean() * 100
-                mean_if_pos = s[s > 0].mean() if (s > 0).any() else 0
-                mean_col = ave_bykey[col].mean()
-                
-                dev_stats_list.append({
-                    'col': col,
-                    'pct_pos_bykey': pct_pos,
-                    'mean_if_pos_bykey': mean_if_pos,
-                    'mean_col_bykey': mean_col
-                })
-            
-            dev_stats = pd.DataFrame(dev_stats_list)
-            dev_stats = dev_stats.sort_values(by='pct_pos_bykey', ascending=False)
+        if imperfect_rows > 0 and column_differences:
+            # Sort columns by deviation percentage
+            sorted_cols = sorted(column_differences.items(), 
+                               key=lambda x: x[1].get('pct_pos_bykey', 0), 
+                               reverse=True)
             
             # Show top 4 worst columns
-            worst_4 = dev_stats.head(4)
-            output.print(f"- **4 Worst Columns by Deviation %**:")
-            for _, row in worst_4.iterrows():
-                output.print(f"    - {row['col']}: {row['pct_pos_bykey']:.3f}% deviate (mean dev | pos: {row['mean_if_pos_bykey']:.2f}, mean col: {row['mean_col_bykey']:.2f})")
+            worst_4 = sorted_cols[:4]
+            for col, diff_info in worst_4:
+                if 'error' in diff_info:
+                    worst_columns.append(f"{col}: Error - {diff_info['error']}")
+                else:
+                    pct_dev = diff_info.get('pct_pos_bykey', 0)
+                    dev_rows = diff_info.get('deviating_rows', 0)
+                    worst_columns.append(f"{col}: {pct_dev:.3f}% deviate ({dev_rows} rows)")
             
             # Save CSV sample if imperfect ratio > 0.1%
             if imperfect_ratio > 0.001:
@@ -421,45 +417,227 @@ def val_one_bykeys(dataset_name: str, max_rows: int = -1, output=None) -> None:
                 detail_dir.mkdir(parents=True, exist_ok=True)
                 
                 # Get worst columns and rows for sample
-                col_worst = dev_stats.head(20)['col'].tolist()
-                diff_worst = diff_bykey[col_worst]
-                row_worst_idx = (diff_worst > 0).sum(axis=1).sort_values(ascending=False).head(20).index
+                col_worst = [col for col, _ in sorted_cols[:20]]
+                row_worst_idx = list(imperfect_row_indices)[:20]  # Take first 20 imperfect rows
                 
-                # Create sample with both Stata and Python values
-                dta_sample = dta_bykey.loc[row_worst_idx, col_worst].assign(dsource='Stata').reset_index()
-                parq_sample = parq_bykey.loc[row_worst_idx, col_worst].assign(dsource='Python').reset_index()
-                
-                # Combine and save
-                sample_combined = pd.concat([dta_sample, parq_sample], axis=0).sort_values(key_cols + ['dsource'])
-                
-                csv_file = detail_dir / f"{dataset_name}_sample.csv"
-                sample_combined.to_csv(csv_file, index=False)
-                
-                output.print(f"- **Sample saved**: [CSV Sample](../Logs/detail/{dataset_name}_sample.csv)")
+                if col_worst and row_worst_idx:
+                    # Create sample with both Stata and Python values
+                    dta_sample = dta_bykey.loc[row_worst_idx, col_worst].assign(dsource='Stata').reset_index()
+                    parq_sample = parq_bykey.loc[row_worst_idx, col_worst].assign(dsource='Python').reset_index()
+                    
+                    # Combine and save
+                    sample_combined = pd.concat([dta_sample, parq_sample], axis=0).sort_values(key_cols + ['dsource'])
+                    
+                    csv_file = detail_dir / f"{dataset_name}_sample.csv"
+                    sample_combined.to_csv(csv_file, index=False)
+                    sample_file = f"../Logs/detail/{dataset_name}_sample.csv"
+        
+        return {
+            'dataset_name': dataset_name,
+            'status': 'success',
+            'validations': basic_results['validations'] + [bykeys_result],
+            'details': basic_results['details'],
+            'analysis': analysis,
+            'worst_columns': worst_columns,
+            'sample_file': sample_file,
+            'error': None
+        }
         
     except Exception as e:
-        # Get basic validation if available
-        if hasattr(output, '_basic_validation_results'):
-            all_results = output._basic_validation_results[:]
-            all_details = output._basic_details[:]
-        else:
-            all_results = []
-            all_details = []
-        
-        all_results.append("**ERROR**: By-keys analysis failed")
-        
-        # Output results
-        for i, result in enumerate(all_results, 1):
-            output.print(f"{i}. {result}")
-        
-        output.print(f"\n**Details**")
-        for detail in all_details:
-            output.print(f"- {detail}")
-        output.print(f"- **Error in by-keys analysis**: {e}")
+        return {
+            'dataset_name': dataset_name,
+            'status': 'error',
+            'validations': basic_results['validations'] + ["**ERROR**: By-keys analysis failed"],
+            'details': basic_results['details'] + [f"**Error in by-keys analysis**: {e}"],
+            'analysis': None,
+            'worst_columns': [],
+            'sample_file': None,
+            'error': str(e)
+        }
 
 
-def validate_all_datasets(datasets=None, max_rows=-1):
+def generate_summary(results_list: list) -> str:
+    """Generate summary statistics from validation results.
+    
+    Args:
+        results_list: List of validation result dictionaries
+        
+    Returns:
+        str: Formatted markdown summary section
+    """
+    total_datasets = len(results_list)
+    
+    # Count passes for each validation check
+    col_names_pass = 0
+    col_types_pass = 0
+    row_counts_pass = 0
+    imperfect_ratio_pass = 0
+    
+    # Collect failures by category
+    col_names_fail = []
+    col_types_fail = []
+    row_counts_fail = []
+    high_imperfect = []
+    analysis_issues = []
+    
+    for result in results_list:
+        dataset_name = result['dataset_name']
+        validations = result['validations']
+        
+        # Check each validation result
+        for validation in validations:
+            if "Column names match" in validation and "✓" in validation:
+                col_names_pass += 1
+            elif "Column names" in validation and "✗" in validation:
+                col_names_fail.append(dataset_name)
+                
+            if "Column types match" in validation and "✓" in validation:
+                col_types_pass += 1
+            elif "Column types" in validation and "✗" in validation:
+                col_types_fail.append(dataset_name)
+                
+            if ("Row count" in validation and "✓" in validation) or ("Row counts" in validation and "✓" in validation):
+                row_counts_pass += 1
+            elif ("Row count" in validation and "✗" in validation) or ("Row counts" in validation and "✗" in validation):
+                row_counts_fail.append(dataset_name)
+                
+            if "Imperfect ratio acceptable" in validation and "✓" in validation:
+                imperfect_ratio_pass += 1
+            elif "Imperfect ratio high" in validation and "✗" in validation:
+                # Get the imperfect ratio from analysis
+                if result['analysis'] and 'imperfect_ratio' in result['analysis']:
+                    ratio_pct = result['analysis']['imperfect_ratio'] * 100
+                    high_imperfect.append(f"{dataset_name} ({ratio_pct:.2f}%)")
+                else:
+                    high_imperfect.append(dataset_name)
+            elif ("No common rows" in validation or "Failed to load" in validation or "ERROR" in validation):
+                # Check if this dataset already has an analysis issue recorded
+                existing_issue = next((issue for issue in analysis_issues if dataset_name in issue), None)
+                if not existing_issue:
+                    if "No common rows" in validation:
+                        analysis_issues.append(f"{dataset_name} (no common rows)")
+                    elif "Failed to load" in validation or "ERROR" in validation:
+                        analysis_issues.append(f"{dataset_name} (load error)")
+    
+    # Format summary
+    lines = []
+    lines.append("## Summary")
+    lines.append("")
+    lines.append("**Validation Results**:")
+    lines.append(f"- ✓ Column names match: {col_names_pass}/{total_datasets} datasets")
+    lines.append(f"- ✓ Column types match: {col_types_pass}/{total_datasets} datasets")
+    lines.append(f"- ✓ Row counts acceptable: {row_counts_pass}/{total_datasets} datasets")
+    lines.append(f"- ✓ Imperfect ratio acceptable: {imperfect_ratio_pass}/{total_datasets} datasets")
+    lines.append("")
+    lines.append("**Failed Checks**:")
+    
+    if col_names_fail:
+        lines.append(f"- **Column names differ**: {', '.join(col_names_fail)}")
+    else:
+        lines.append("- **Column names differ**: (none)")
+        
+    if col_types_fail:
+        lines.append(f"- **Column types differ**: {', '.join(col_types_fail)}")
+    else:
+        lines.append("- **Column types differ**: (none)")
+        
+    if row_counts_fail:
+        lines.append(f"- **Row count issues**: {', '.join(row_counts_fail)}")
+    else:
+        lines.append("- **Row count issues**: (none)")
+        
+    if high_imperfect:
+        lines.append(f"- **High imperfect ratio**: {', '.join(high_imperfect)}")
+    else:
+        lines.append("- **High imperfect ratio**: (none)")
+        
+    if analysis_issues:
+        lines.append(f"- **Analysis issues**: {', '.join(analysis_issues)}")
+    else:
+        lines.append("- **Analysis issues**: (none)")
+    
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    
+    return "\n".join(lines)
+
+
+def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float) -> str:
+    """Format validation results to markdown string.
+    
+    Args:
+        results_list: List of validation result dictionaries
+        max_rows: Maximum rows limit used in validation
+        tolerance: Tolerance used for numeric comparisons
+        
+    Returns:
+        str: Formatted markdown content
+    """
+    lines = []
+    
+    # Header
+    lines.append("# Dataset Validation Report")
+    lines.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("")
+    lines.append(f"**Datasets validated**: {len(results_list)}")
+    if max_rows > 0:
+        lines.append(f"**Row limit**: {max_rows:,} rows per dataset")
+    else:
+        lines.append("**Row limit**: unlimited")
+    lines.append("")
+    
+    # Add summary section
+    summary_text = generate_summary(results_list)
+    lines.append(summary_text)
+    
+    # Process each dataset result
+    for result in results_list:
+        dataset_name = result['dataset_name']
+        lines.append(f"## {dataset_name}")
+        lines.append("")
+        
+        # Output numbered validation results
+        for i, validation in enumerate(result['validations'], 1):
+            lines.append(f"{i}. {validation}")
+        
+        # Output detailed information
+        lines.append("")
+        lines.append("**Details**")
+        for detail in result['details']:
+            lines.append(f"- {detail}")
+        
+        # Add by-keys analysis if available
+        if result['analysis']:
+            analysis = result['analysis']
+            lines.append("- **By-Keys Analysis**:")
+            lines.append(f"    - Total Stata rows: {analysis['full_data_rows']:,}")
+            lines.append(f"    - Common rows: {analysis['matched_by_key_rows']:,}")
+            lines.append(f"    - Perfect rows: {analysis['perfect_rows']:,}")
+            lines.append(f"    - Imperfect rows: {analysis['imperfect_rows']:,}")
+            lines.append(f"    - **Imperfect / Total: {analysis['imperfect_ratio']:.2%}**")
+        
+        # Add worst columns if available
+        if result['worst_columns']:
+            lines.append("- **4 Worst Columns by Deviation %**:")
+            for col_info in result['worst_columns']:
+                lines.append(f"    - {col_info}")
+        
+        # Add sample file link if available
+        if result['sample_file']:
+            sample_filename = result['sample_file'].split('/')[-1]
+            lines.append(f"- **Sample saved**: [CSV Sample](../Logs/detail/{sample_filename})")
+        
+        lines.append("")  # Add spacing between datasets
+    
+    return "\n".join(lines)
+
+
+def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12):
     """Validate all or specified datasets and save to markdown file."""
+
+    start_time = time.time()
+
     # Load dataset configuration
     with open('DataDownloads/00_map.yaml', 'r', encoding='utf-8') as f:
         dataset_map = yaml.safe_load(f)
@@ -467,36 +645,42 @@ def validate_all_datasets(datasets=None, max_rows=-1):
     if datasets is None:
         datasets = list(dataset_map.keys())
     
-    # Create output capture
-    output = OutputCapture()
-    
-    # Header
-    output.print("# Dataset Validation Report")
-    output.print(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    output.print("")
-    output.print(f"**Datasets validated**: {len(datasets)}")
-    if max_rows > 0:
-        output.print(f"**Row limit**: {max_rows:,} rows per dataset")
-    else:
-        output.print("**Row limit**: unlimited")
-    output.print("")
+    # Collect validation results
+    all_results = []
     
     # Validate each dataset
     for dataset in datasets:
-        val_one_basics(dataset, max_rows, output)
-        val_one_bykeys(dataset, max_rows, output)
-        output.print("")  # Add spacing between datasets
+        # Load data once for both validation functions
+        dta, parq, key_cols, config = load_dataset_pair(dataset, max_rows)
+        
+        # Run validation functions and collect results
+        basic_result = val_one_basics(dataset, dta, parq)
+        combined_result = val_one_crow(dataset, basic_result, dta, parq, key_cols, tolerance)
+        all_results.append(combined_result)
+        
+        # Force garbage collection after each dataset to free memory
+        gc.collect()
+    
+    # Generate markdown content
+    markdown_content = format_results_to_markdown(all_results, max_rows, tolerance)
+    
+    # Print to console (same as before)
+    print(markdown_content)
     
     # Save to markdown file
     log_dir = Path("../Logs")
     log_dir.mkdir(exist_ok=True)
     
-    output_file = log_dir / "test_dl.md"
+    output_file = log_dir / "testout_dl.md"
     with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(output.get_content())
+        f.write(markdown_content)
     
     print(f"\nResults saved to: {output_file}")
-    return output.get_content()
+
+    end_time = time.time()
+    print(f"Time taken: {(end_time - start_time)/60:.2f} minutes")
+    
+    return markdown_content
 
 
 def main():
@@ -529,6 +713,12 @@ def main():
         type=int,
         default=1000,
         help='Maximum number of rows to load from each dataset (default: 1000, use -1 for all rows)'
+    )
+    parser.add_argument(
+        '--tolerance',
+        type=float,
+        default=1e-12,
+        help='Tolerance for numeric comparisons (default: 1e-12)'
     )
     
     args = parser.parse_args()
@@ -567,7 +757,7 @@ def main():
         datasets_to_validate = None  # Will validate all
     
     # Run validation
-    validate_all_datasets(datasets_to_validate, args.maxrows)
+    validate_all_datasets(datasets_to_validate, args.maxrows, args.tolerance)
 
 
 if __name__ == "__main__":
