@@ -63,6 +63,18 @@ Signals/
 - Output is parquet
   - Not pkl
 
+## Validation Hierarchy
+
+### Basic Validation
+The full datasets should match on the following:
+1. Column names (exact match)
+2. Column types (exact match)
+3. Row count (Python can have more rows, but only 0.1% more)
+
+### Validation by Keys [tbc]
+
+We also check merged datasets. The merged datasets should inner join on the keys in DataDownloads/00_map.yaml. Then we can compare the merged datasets, cell by cell. 
+
 ## Python Environment
 - Use `pandas` for data manipulation
 - Use `pyarrow` for Parquet I/O  
