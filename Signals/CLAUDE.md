@@ -81,12 +81,12 @@ Lets define:
 - Full data rows: number of rows in the Stata data
 - Matched by key rows: number of rows that Stata and Python share the same keys (based on @DataDownloads/00_map.yaml)
 - Perfect rows: rows that match by key and have no deviations
-- Imperfect rows: Full data rows - Perfect rows
+- Imperfect rows: Full data rows minus Perfect rows
 
 Preliminary goals:
-5. Imperfect cells / total cells < 0.1%
-6. Imperfect rows / total rows < 0.1% or...
-7. If Imperfect rows / total rows > 0.1%, have Anderoo appove:
+4. Imperfect cells / total cells < 0.1%
+5. Imperfect rows / total rows < 0.1% or...
+6. If Imperfect rows / total rows > 0.1%, have Anderoo appove:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
 
