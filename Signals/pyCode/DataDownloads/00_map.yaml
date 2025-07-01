@@ -270,8 +270,12 @@ m_SP_creditratings:
   python_script: X_SPCreditRatings.py
 
 m_CIQ_creditratings:
-  key1: gvkey
+  key1: gvkey  
   key2: ratingdate
+  key3: ratingtime
+  key4: security_id
+  key5: instrument_id
+  key6: entity_id
   stata_file: m_CIQ_creditratings.dta
   python_file: m_CIQ_creditratings.parquet
   stata_script: X2_CIQCreditRatings.do

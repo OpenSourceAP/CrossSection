@@ -142,6 +142,13 @@ def main():
     combined_ratings = pd.concat(all_ratings, ignore_index=True)
     print(f"Combined {len(combined_ratings)} total rating records")
     
+    # Convert None/NaN to empty string BEFORE deduplication (to match Stata missing value handling)
+    string_columns = ['ticker', 'ratingactionword', 'currentratingsymbol', 'entity_id', 'instrument_id', 'security_id']
+    for col in string_columns:
+        if col in combined_ratings.columns:
+            combined_ratings[col] = combined_ratings[col].fillna('')
+            combined_ratings[col] = combined_ratings[col].replace('None', '')
+    
     # Drop "Not Rated" actions (like Stata: drop if ratingaction == "Not Rated")
     if 'ratingactionword' in combined_ratings.columns:
         initial_count = len(combined_ratings)
@@ -155,10 +162,11 @@ def main():
     instrument_mask = (combined_ratings['instrument_id'].notna()) & (combined_ratings['instrument_id'] != '')
     combined_ratings.loc[instrument_mask, 'source'] = 2
     
-    # For each gvkey-ratingdate-ratingtime, keep the best source (like Stata's dupcount logic)
+    # For each gvkey-ratingdate, keep the best source (like Stata's dupcount logic)
+    # Note: Stata groups by gvkey ratingdate, NOT including ratingtime
     combined_ratings = combined_ratings.sort_values(['gvkey', 'ratingdate', 'ratingtime', 'source'])
-    combined_ratings = combined_ratings.drop_duplicates(subset=['gvkey', 'ratingdate', 'ratingtime'], keep='first')
-    print(f"After removing time duplicates: {len(combined_ratings)} records")
+    combined_ratings = combined_ratings.drop_duplicates(subset=['gvkey', 'ratingdate'], keep='first')
+    print(f"After removing date duplicates: {len(combined_ratings)} records")
     
     # Add time_avail_m (like Stata's gen time_avail_m = mofd(ratingdate))
     combined_ratings['ratingdate'] = pd.to_datetime(combined_ratings['ratingdate'])
@@ -180,13 +188,6 @@ def main():
     
     # Convert gvkey to numeric (like Stata's destring gvkey)
     combined_ratings['gvkey'] = pd.to_numeric(combined_ratings['gvkey'], errors='coerce')
-    
-    # Convert None/NaN to empty string for string columns (match Stata missing values)
-    string_columns = ['ticker', 'ratingactionword', 'currentratingsymbol', 'entity_id', 'instrument_id', 'security_id']
-    for col in string_columns:
-        if col in combined_ratings.columns:
-            combined_ratings[col] = combined_ratings[col].fillna('')
-            combined_ratings[col] = combined_ratings[col].replace('None', '')
     
     # Save the data
     # Apply column standardization
