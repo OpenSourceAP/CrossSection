@@ -58,14 +58,30 @@ def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
                 s1 = s1.astype(str).fillna('')
                 s2 = s2.astype(str).fillna('')
                 matches = (s1 == s2)
+                # For string columns, set deviation metrics to N/A
+                mean_dev_imperfect = "N/A"
+                mean_col_level = "N/A"
             elif pd.api.types.is_numeric_dtype(s1) and pd.api.types.is_numeric_dtype(s2):
                 # Numeric comparison with tolerance
                 matches = np.isclose(s1, s2, rtol=tolerance, atol=tolerance, equal_nan=True)
+                # Calculate deviation metrics for numeric columns
+                abs_diff = np.abs(s1 - s2)
+                imperfect_mask = ~matches
+                if imperfect_mask.sum() > 0:
+                    mean_dev_imperfect = abs_diff[imperfect_mask].mean()
+                else:
+                    mean_dev_imperfect = 0.0
+                # Calculate mean column level (average of both columns)
+                col_avg = (s1 + s2) / 2
+                mean_col_level = col_avg.mean()
             else:
                 # Mixed types - convert to string
                 s1 = s1.astype(str).fillna('')
                 s2 = s2.astype(str).fillna('')
                 matches = (s1 == s2)
+                # For mixed types, set deviation metrics to N/A
+                mean_dev_imperfect = "N/A"
+                mean_col_level = "N/A"
             
             # Calculate percentage of rows that deviate
             pct_pos = ((~matches).sum() / len(matches) * 100) if len(matches) > 0 else 0
@@ -73,7 +89,9 @@ def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
             if pct_pos > 0:
                 column_differences[col] = {
                     'pct_pos_bykey': pct_pos,
-                    'deviating_rows': (~matches).sum()
+                    'deviating_rows': (~matches).sum(),
+                    'mean_dev_imperfect': mean_dev_imperfect,
+                    'mean_col_level': mean_col_level
                 }
         except Exception as e:
             column_differences[col] = {'error': str(e)}
@@ -446,8 +464,21 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                     worst_columns.append(f"{col}: Error - {diff_info['error']}")
                 else:
                     pct_dev = diff_info.get('pct_pos_bykey', 0)
-                    dev_rows = diff_info.get('deviating_rows', 0)
-                    worst_columns.append(f"{col}: {pct_dev:.3f}% deviate ({dev_rows} rows)")
+                    mean_dev = diff_info.get('mean_dev_imperfect', 'N/A')
+                    mean_col = diff_info.get('mean_col_level', 'N/A')
+                    
+                    # Format mean_dev and mean_col with scientific notation if numeric
+                    if isinstance(mean_dev, (int, float)) and not isinstance(mean_dev, str):
+                        mean_dev_str = f"{mean_dev:.1e}"
+                    else:
+                        mean_dev_str = str(mean_dev)
+                    
+                    if isinstance(mean_col, (int, float)) and not isinstance(mean_col, str):
+                        mean_col_str = f"{mean_col:.1e}"
+                    else:
+                        mean_col_str = str(mean_col)
+                    
+                    worst_columns.append(f"{col}: imperfect rows {pct_dev:.3f}%; mean dev for imperfect {mean_dev_str}; mean col level {mean_col_str}")
             
             # Save CSV sample if imperfect ratio > 0.1%
             if imperfect_ratio > 0.001:
