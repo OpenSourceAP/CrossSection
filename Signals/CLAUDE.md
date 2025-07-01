@@ -73,9 +73,9 @@ The full datasets should match on the following:
 
 utils/validate_basics.py can be used to check this.
 
-### Validation by Keys [tbc]
+### Validation Common Rows
 
-We also check merged datasets. The merged datasets should inner join on the keys in DataDownloads/00_map.yaml. Then we can compare the merged datasets, cell by cell. 
+We also check datasets based the common row subset. The common row subsets are datasets, inner joined on the keys in DataDownloads/00_map.yaml. 
 
 Lets define:
 - Full data rows: number of rows in the Stata data
@@ -84,8 +84,9 @@ Lets define:
 - Imperfect rows: Full data rows - Perfect rows
 
 Preliminary goals:
-4. Imperfect rows / total rows < 0.1% or...
-5. If Imperfect rows / total rows > 0.1%, have Anderoo appove:
+5. Imperfect cells / total cells < 0.1%
+6. Imperfect rows / total rows < 0.1% or...
+7. If Imperfect rows / total rows > 0.1%, have Anderoo appove:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
 
@@ -128,6 +129,11 @@ Preliminary goals:
 - **✅ ALWAYS**: Run `validate_by_keys.py` after every translation
 - **✅ ALWAYS**: Fix shape mismatches before data mismatches
 - **✅ ALWAYS**: Achieve 99%+ row count match with Stata
+
+### 6. **Do Not Add Unrequested Features**
+- **❌ NEVER**: Add command-line options, modes, or features unless explicitly requested
+- **✅ ALWAYS**: Keep code simple and focused on the specific requirements
+- **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
 
 ## Data Processing Standards
 1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations

@@ -6,14 +6,21 @@ This script provides comprehensive validation that checks:
 1. Column names match exactly
 2. Column types match exactly  
 3. Row count (Python can have slightly more rows, up to 0.1% more)
-4. By-keys analysis: Imperfect Rows / Total Rows ratio
-5. Value deviation statistics for worst columns
-6. Sample CSV files for datasets with >0.1% imperfect ratio
+4. By-keys analysis: Imperfect rows / Total rows ratio
+5. By-keys analysis: Imperfect cells / Total cells ratio
+6. Value deviation statistics for worst columns
+7. Sample CSV files for datasets with >0.1% imperfect ratio
+
+Cell Matching Logic:
+- Perfect cell: |stata_value - python_value| ≤ tolerance (default: 1e-12)
+- Imperfect cell: |stata_value - python_value| > tolerance
+- String cells: Exact match required (tolerance not applicable)
 
 Arguments:
   --datasets, -d    Specific datasets to validate (default: all datasets)
   --list, -l        List all available datasets and exit
   --maxrows         Maximum rows to load per dataset (default: 1000)
+  --tolerance       Tolerance for numeric comparisons (default: 1e-12)
 
 Output: 
   Prints results to console with ✓/✗ symbols
@@ -402,6 +409,16 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         # Compare columns directly without heavy hashing
         column_differences = compare_columns_directly(dta_bykey, parq_bykey, tolerance=tolerance)
         
+        # Count imperfect cells (individual cells that have deviations)
+        common_cols = list(set(dta_bykey.columns) & set(parq_bykey.columns))
+        imperfect_cells = 0
+        for col, diff_info in column_differences.items():
+            if 'error' not in diff_info:
+                imperfect_cells += diff_info.get('deviating_rows', 0)
+        
+        total_cells = len(dta_bykey) * len(common_cols) if common_cols else 0
+        imperfect_cells_ratio = imperfect_cells / total_cells if total_cells > 0 else 0
+        
         # Count imperfect rows (rows with any differences in any column)
         imperfect_row_indices = set()
         for col, diff_info in column_differences.items():
@@ -432,11 +449,17 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         imperfect_rows = dev_rows.sum()
         imperfect_ratio = imperfect_rows / full_data_rows if full_data_rows > 0 else 0
         
-        # Add imperfect ratio to validation results
+        # Add imperfect rows ratio to validation results
         if imperfect_ratio <= 0.001:  # 0.1%
-            bykeys_result = "✓ Imperfect ratio acceptable (≤ 0.1%)"
+            bykeys_result = "✓ Imperfect rows acceptable (≤ 0.1%)"
         else:
-            bykeys_result = "✗ Imperfect ratio high (> 0.1%)"
+            bykeys_result = "✗ Imperfect rows high (> 0.1%)"
+        
+        # Add imperfect cells ratio to validation results
+        if imperfect_cells_ratio <= 0.001:  # 0.1%
+            cells_result = "✓ Imperfect cells acceptable (≤ 0.1%)"
+        else:
+            cells_result = "✗ Imperfect cells high (> 0.1%)"
         
         # Prepare analysis data
         analysis = {
@@ -444,7 +467,10 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             'matched_by_key_rows': matched_by_key_rows,
             'perfect_rows': perfect_rows,
             'imperfect_rows': imperfect_rows,
-            'imperfect_ratio': imperfect_ratio
+            'imperfect_ratio': imperfect_ratio,
+            'imperfect_cells': imperfect_cells,
+            'total_cells': total_cells,
+            'imperfect_cells_ratio': imperfect_cells_ratio
         }
         
         # Prepare worst columns if there are deviations
@@ -505,7 +531,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         return {
             'dataset_name': dataset_name,
             'status': 'success',
-            'validations': basic_results['validations'] + [bykeys_result],
+            'validations': basic_results['validations'] + [bykeys_result, cells_result],
             'details': basic_results['details'],
             'analysis': analysis,
             'worst_columns': worst_columns,
@@ -542,12 +568,14 @@ def generate_summary(results_list: list) -> str:
     col_types_pass = 0
     row_counts_pass = 0
     imperfect_ratio_pass = 0
+    imperfect_cells_pass = 0
     
     # Collect failures by category
     col_names_fail = []
     col_types_fail = []
     row_counts_fail = []
     high_imperfect = []
+    high_imperfect_cells = []
     execution_errors = []
     
     for result in results_list:
@@ -585,16 +613,27 @@ def generate_summary(results_list: list) -> str:
             elif ("Row count" in validation and "✗" in validation) or ("Row counts" in validation and "✗" in validation):
                 row_counts_fail.append(dataset_name)
                 
-            if "Imperfect ratio acceptable" in validation and "✓" in validation:
+            if "Imperfect rows acceptable" in validation and "✓" in validation:
                 imperfect_ratio_pass += 1
-            elif "Imperfect ratio high" in validation and "✗" in validation:
+            elif "Imperfect rows high" in validation and "✗" in validation:
                 # Get the imperfect ratio from analysis
                 if result['analysis'] and 'imperfect_ratio' in result['analysis']:
                     ratio_pct = result['analysis']['imperfect_ratio'] * 100
                     high_imperfect.append(f"{dataset_name}: {ratio_pct:.2f}%")
                 else:
                     high_imperfect.append(dataset_name)
-            elif ("No common rows" in validation or "Failed to load" in validation or "ERROR" in validation):
+                    
+            if "Imperfect cells acceptable" in validation and "✓" in validation:
+                imperfect_cells_pass += 1
+            elif "Imperfect cells high" in validation and "✗" in validation:
+                # Get the imperfect cells ratio from analysis
+                if result['analysis'] and 'imperfect_cells_ratio' in result['analysis']:
+                    cells_ratio_pct = result['analysis']['imperfect_cells_ratio'] * 100
+                    high_imperfect_cells.append(f"{dataset_name}: {cells_ratio_pct:.2f}%")
+                else:
+                    high_imperfect_cells.append(dataset_name)
+            
+            if ("No common rows" in validation or "Failed to load" in validation or "ERROR" in validation):
                 # Check if this dataset already has an execution error recorded
                 existing_issue = next((issue for issue in execution_errors if dataset_name in issue), None)
                 if not existing_issue:
@@ -611,7 +650,8 @@ def generate_summary(results_list: list) -> str:
     lines.append(f"- ✓ Column names match: {col_names_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Column types match: {col_types_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Row counts acceptable: {row_counts_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Imperfect ratio acceptable: {imperfect_ratio_pass}/{total_datasets} datasets")
+    lines.append(f"- ✓ Imperfect rows acceptable: {imperfect_ratio_pass}/{total_datasets} datasets")
+    lines.append(f"- ✓ Imperfect cells acceptable: {imperfect_cells_pass}/{total_datasets} datasets")
     lines.append("")
     lines.append("**Failed Checks**:")
     
@@ -642,14 +682,23 @@ def generate_summary(results_list: list) -> str:
     else:
         lines.append("- **Row count issues**: (none)")
         
-    # High imperfect ratio
+    # High imperfect rows
     if high_imperfect:
-        lines.append("- **High imperfect ratio**:")
+        lines.append("- **High imperfect rows**:")
         for dataset_info in high_imperfect:
             linked_dataset_info = wrap_dataset_name_with_link(dataset_info)
             lines.append(f"  - {linked_dataset_info}")
     else:
-        lines.append("- **High imperfect ratio**: (none)")
+        lines.append("- **High imperfect rows**: (none)")
+        
+    # High imperfect cells
+    if high_imperfect_cells:
+        lines.append("- **High imperfect cells**:")
+        for dataset_info in high_imperfect_cells:
+            linked_dataset_info = wrap_dataset_name_with_link(dataset_info)
+            lines.append(f"  - {linked_dataset_info}")
+    else:
+        lines.append("- **High imperfect cells**: (none)")
         
     # Execution errors
     if execution_errors:
@@ -693,6 +742,11 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     lines.append(f"**Tolerance**: {tolerance}")
     lines.append(f"**Execution time**: {execution_time:.2f} minutes")
     lines.append("")
+    lines.append("**Cell Matching Logic**:")
+    lines.append(f"- Perfect cell: |stata_value - python_value| ≤ {tolerance}")
+    lines.append(f"- Imperfect cell: |stata_value - python_value| > {tolerance}")
+    lines.append("- String cells: Exact match required (tolerance not applicable)")
+    lines.append("")
     
     # Add summary section
     summary_text = generate_summary(results_list)
@@ -722,7 +776,11 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
             lines.append(f"    - Common rows: {analysis['matched_by_key_rows']:,}")
             lines.append(f"    - Perfect rows: {analysis['perfect_rows']:,}")
             lines.append(f"    - Imperfect rows: {analysis['imperfect_rows']:,}")
-            lines.append(f"    - **Imperfect / Total: {analysis['imperfect_ratio']:.2%}**")
+            lines.append(f"    - **Imperfect rows / Total rows: {analysis['imperfect_ratio']:.2%}**")
+            if 'imperfect_cells' in analysis:
+                lines.append(f"    - Imperfect cells: {analysis['imperfect_cells']:,}")
+                lines.append(f"    - Total cells: {analysis['total_cells']:,}")
+                lines.append(f"    - **Imperfect cells / Total cells: {analysis['imperfect_cells_ratio']:.2%}**")
         
         # Add worst columns if available
         if result['worst_columns']:
