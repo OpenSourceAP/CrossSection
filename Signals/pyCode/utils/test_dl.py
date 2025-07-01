@@ -552,6 +552,57 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         }
 
 
+def get_failure_priority(result: dict) -> int:
+    """Determine failure priority for sorting datasets by severity.
+    
+    Args:
+        result: Validation result dictionary
+        
+    Returns:
+        int: Priority level (lower number = higher priority/more severe)
+             0 = Execution errors (load failures, no common rows)
+             1 = High imperfect rows/cells (> 0.1%)
+             2 = Column type/name differences
+             3 = All checks passing
+    """
+    validations = result['validations']
+    
+    # Check for execution errors (highest priority)
+    for validation in validations:
+        if ("No common rows" in validation or 
+            "Failed to load" in validation or 
+            "ERROR" in validation):
+            return 0
+    
+    # Check for high imperfect ratios (high priority)
+    for validation in validations:
+        if ("Imperfect rows high" in validation and "✗" in validation) or \
+           ("Imperfect cells high" in validation and "✗" in validation):
+            return 1
+    
+    # Check for column differences (medium priority)
+    for validation in validations:
+        if ("Column names differ" in validation and "✗" in validation) or \
+           ("Column types differ" in validation and "✗" in validation) or \
+           ("Row count" in validation and "✗" in validation):
+            return 2
+    
+    # All checks passing (lowest priority)
+    return 3
+
+
+def sort_results_by_failure_priority(results_list: list) -> list:
+    """Sort validation results by failure priority.
+    
+    Args:
+        results_list: List of validation result dictionaries
+        
+    Returns:
+        list: Sorted results with failed datasets first
+    """
+    return sorted(results_list, key=lambda x: (get_failure_priority(x), x['dataset_name']))
+
+
 def generate_summary(results_list: list) -> str:
     """Generate summary statistics from validation results.
     
@@ -716,11 +767,81 @@ def generate_summary(results_list: list) -> str:
     return "\n".join(lines)
 
 
+def reorder_markdown_by_failure_priority(markdown_content: str) -> str:
+    """Reorder dataset sections in markdown content by failure priority.
+    
+    Args:
+        markdown_content: Original markdown content with datasets in processing order
+        
+    Returns:
+        str: Markdown content with dataset sections reordered (failed datasets first)
+    """
+    lines = markdown_content.split('\n')
+    
+    # Find where dataset sections start (after the summary and separator)
+    dataset_start_idx = None
+    for i, line in enumerate(lines):
+        if line.strip() == '---' and i > 10:  # Summary separator
+            dataset_start_idx = i + 2  # Skip separator and blank line
+            break
+    
+    if dataset_start_idx is None:
+        return markdown_content  # Return original if can't find structure
+    
+    # Split into header/summary part and dataset sections
+    header_lines = lines[:dataset_start_idx]
+    dataset_lines = lines[dataset_start_idx:]
+    
+    # Parse dataset sections
+    dataset_sections = []
+    current_section = []
+    current_dataset_name = None
+    
+    for line in dataset_lines:
+        if line.startswith('## ') and line != '## Summary':
+            # New dataset section found
+            if current_section and current_dataset_name:
+                dataset_sections.append((current_dataset_name, current_section))
+            current_dataset_name = line[3:].strip()  # Remove "## "
+            current_section = [line]
+        else:
+            current_section.append(line)
+    
+    # Add the last section
+    if current_section and current_dataset_name:
+        dataset_sections.append((current_dataset_name, current_section))
+    
+    # Create mock results for sorting (extract priority from section content)
+    mock_results = []
+    for dataset_name, section_lines in dataset_sections:
+        # Find validation results in the section
+        validations = []
+        for line in section_lines:
+            if line.strip() and (line.strip()[0].isdigit() or line.strip().startswith('**ERROR**')):
+                validations.append(line.strip())
+        
+        mock_result = {
+            'dataset_name': dataset_name,
+            'validations': validations
+        }
+        mock_results.append((mock_result, section_lines))
+    
+    # Sort using existing failure priority logic
+    sorted_sections = sorted(mock_results, key=lambda x: (get_failure_priority(x[0]), x[0]['dataset_name']))
+    
+    # Reassemble markdown
+    result_lines = header_lines[:]
+    for _, section_lines in sorted_sections:
+        result_lines.extend(section_lines)
+    
+    return '\n'.join(result_lines)
+
+
 def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float, execution_time: float) -> str:
     """Format validation results to markdown string.
     
     Args:
-        results_list: List of validation result dictionaries
+        results_list: List of validation result dictionaries  
         max_rows: Maximum rows limit used in validation
         tolerance: Tolerance used for numeric comparisons
         execution_time: Execution time in minutes
@@ -752,7 +873,7 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     summary_text = generate_summary(results_list)
     lines.append(summary_text)
     
-    # Process each dataset result
+    # Process each dataset result  
     for result in results_list:
         dataset_name = result['dataset_name']
         lines.append(f"## {dataset_name}")
@@ -823,6 +944,15 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12):
         combined_result = val_one_crow(dataset, basic_result, dta, parq, key_cols, tolerance)
         all_results.append(combined_result)
         
+        # Print immediate feedback for this dataset (streaming output)
+        print(f"\n=== {dataset} ===")
+        for validation in combined_result['validations']:
+            print(validation)
+        if combined_result['details']:
+            for detail in combined_result['details']:
+                print(detail)
+        print("") # blank line after each dataset
+        
         # Force garbage collection after each dataset to free memory
         gc.collect()
     
@@ -830,19 +960,26 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12):
     end_time = time.time()
     execution_time = (end_time - start_time) / 60  # Convert to minutes
     
-    # Generate markdown content
+    # Generate markdown content (will be reordered later for file output)
     markdown_content = format_results_to_markdown(all_results, max_rows, tolerance, execution_time)
     
-    # Print to console (same as before)
-    print(markdown_content)
+    # Console output already streamed above, just show final summary
+    summary_text = generate_summary(all_results)
+    print("\n" + "="*50)
+    print("FINAL SUMMARY")
+    print("="*50)
+    print(summary_text)
     
-    # Save to markdown file
+    # Save to markdown file (with failed datasets first)
     log_dir = Path("../Logs")
     log_dir.mkdir(exist_ok=True)
     
+    # Reorder markdown content for file output (failed datasets first)
+    reordered_markdown = reorder_markdown_by_failure_priority(markdown_content)
+    
     output_file = log_dir / "testout_dl.md"
     with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(markdown_content)
+        f.write(reordered_markdown)
     
     print(f"\nResults saved to: {output_file}")
     print(f"Time taken: {execution_time:.2f} minutes")
@@ -885,7 +1022,7 @@ def main():
         '--tolerance',
         type=float,
         default=1e-12,
-        help='Tolerance for numeric comparisons (default: 1e-12)'
+        help='Tolerance for a "perfect" cell (default: 1e-12)'
     )
     
     args = parser.parse_args()
