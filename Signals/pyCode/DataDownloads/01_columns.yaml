@@ -341,3 +341,8 @@ customerMom:
   int32: permno
   float32: custmom
   datetime64[ns]: time_avail_m
+
+IPODates:
+  column_order: permno, FoundingYear, IPOdate
+  float64: permno, FoundingYear
+  datetime64[ns]: IPOdate
