@@ -80,6 +80,45 @@ def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
     
     return column_differences
 
+def dataset_name_to_anchor(name: str) -> str:
+    """Convert dataset name to markdown anchor format.
+    
+    Args:
+        name: Dataset name (e.g., 'CCMLinkingTable.csv', 'm_QCompustat')
+        
+    Returns:
+        str: Anchor format (e.g., 'ccmlinkingtablecsv', 'mqcompustat')
+    """
+    return name.lower().replace('.', '').replace('_', '').replace(' ', '').replace('-', '')
+
+def wrap_dataset_name_with_link(text: str) -> str:
+    """Wrap dataset name in text with markdown link.
+    
+    Args:
+        text: Text containing dataset name, may have additional info
+              Examples: 'monthlyShortInterest', 'CCMLinkingTable.csv: 0.15%', 
+                       'CCMLinkingTable.csv: (lpermco)', 'CRSPdistributions (no common rows)'
+    
+    Returns:
+        str: Text with dataset name wrapped in markdown link
+    """
+    # Handle different patterns
+    if ': (' in text:  # Pattern like "CCMLinkingTable.csv: (lpermco)"
+        dataset_name, rest = text.split(': (', 1)
+        anchor = dataset_name_to_anchor(dataset_name)
+        return f"[{dataset_name}](#{anchor}): ({rest}"
+    elif ': ' in text:  # Pattern like "CCMLinkingTable.csv: 0.15%"
+        dataset_name, rest = text.split(': ', 1)
+        anchor = dataset_name_to_anchor(dataset_name)
+        return f"[{dataset_name}](#{anchor}): {rest}"
+    elif ' (' in text:  # Pattern like "CRSPdistributions (no common rows)"
+        dataset_name, rest = text.split(' (', 1)
+        anchor = dataset_name_to_anchor(dataset_name)
+        return f"[{dataset_name}](#{anchor}) ({rest}"
+    else:  # Simple dataset name
+        anchor = dataset_name_to_anchor(text)
+        return f"[{text}](#{anchor})"
+
 def load_dataset_pair(dataset_name: str, max_rows: int = -1):
     """Load both Stata and Python datasets for a given dataset name.
     
@@ -478,11 +517,12 @@ def generate_summary(results_list: list) -> str:
     col_types_fail = []
     row_counts_fail = []
     high_imperfect = []
-    analysis_issues = []
+    execution_errors = []
     
     for result in results_list:
         dataset_name = result['dataset_name']
         validations = result['validations']
+        details = result['details']
         
         # Check each validation result
         for validation in validations:
@@ -494,7 +534,20 @@ def generate_summary(results_list: list) -> str:
             if "Column types match" in validation and "✓" in validation:
                 col_types_pass += 1
             elif "Column types" in validation and "✗" in validation:
-                col_types_fail.append(dataset_name)
+                # Extract column type mismatches from details
+                type_mismatches = []
+                for detail in details:
+                    if "Stata=" in detail and "vs Python=" in detail:
+                        # Extract column name from "  - colname: Stata=type vs Python=type"
+                        parts = detail.strip().split(":")
+                        if len(parts) >= 2:
+                            col_name = parts[0].replace("- ", "").strip()
+                            type_mismatches.append(col_name)
+                
+                if type_mismatches:
+                    col_types_fail.append(f"{dataset_name}: ({', '.join(type_mismatches)})")
+                else:
+                    col_types_fail.append(dataset_name)
                 
             if ("Row count" in validation and "✓" in validation) or ("Row counts" in validation and "✓" in validation):
                 row_counts_pass += 1
@@ -507,17 +560,17 @@ def generate_summary(results_list: list) -> str:
                 # Get the imperfect ratio from analysis
                 if result['analysis'] and 'imperfect_ratio' in result['analysis']:
                     ratio_pct = result['analysis']['imperfect_ratio'] * 100
-                    high_imperfect.append(f"{dataset_name} ({ratio_pct:.2f}%)")
+                    high_imperfect.append(f"{dataset_name}: {ratio_pct:.2f}%")
                 else:
                     high_imperfect.append(dataset_name)
             elif ("No common rows" in validation or "Failed to load" in validation or "ERROR" in validation):
-                # Check if this dataset already has an analysis issue recorded
-                existing_issue = next((issue for issue in analysis_issues if dataset_name in issue), None)
+                # Check if this dataset already has an execution error recorded
+                existing_issue = next((issue for issue in execution_errors if dataset_name in issue), None)
                 if not existing_issue:
                     if "No common rows" in validation:
-                        analysis_issues.append(f"{dataset_name} (no common rows)")
+                        execution_errors.append(f"{dataset_name} (no common rows)")
                     elif "Failed to load" in validation or "ERROR" in validation:
-                        analysis_issues.append(f"{dataset_name} (load error)")
+                        execution_errors.append(f"{dataset_name} (load error)")
     
     # Format summary
     lines = []
@@ -531,30 +584,50 @@ def generate_summary(results_list: list) -> str:
     lines.append("")
     lines.append("**Failed Checks**:")
     
+    # Column names differ
     if col_names_fail:
-        lines.append(f"- **Column names differ**: {', '.join(col_names_fail)}")
+        lines.append("- **Column names differ**:")
+        for dataset in col_names_fail:
+            linked_dataset = wrap_dataset_name_with_link(dataset)
+            lines.append(f"  - {linked_dataset}")
     else:
         lines.append("- **Column names differ**: (none)")
         
+    # Column types differ
     if col_types_fail:
-        lines.append(f"- **Column types differ**: {', '.join(col_types_fail)}")
+        lines.append("- **Column types differ**:")
+        for dataset_info in col_types_fail:
+            linked_dataset_info = wrap_dataset_name_with_link(dataset_info)
+            lines.append(f"  - {linked_dataset_info}")
     else:
         lines.append("- **Column types differ**: (none)")
         
+    # Row count issues
     if row_counts_fail:
-        lines.append(f"- **Row count issues**: {', '.join(row_counts_fail)}")
+        lines.append("- **Row count issues**:")
+        for dataset in row_counts_fail:
+            linked_dataset = wrap_dataset_name_with_link(dataset)
+            lines.append(f"  - {linked_dataset}")
     else:
         lines.append("- **Row count issues**: (none)")
         
+    # High imperfect ratio
     if high_imperfect:
-        lines.append(f"- **High imperfect ratio**: {', '.join(high_imperfect)}")
+        lines.append("- **High imperfect ratio**:")
+        for dataset_info in high_imperfect:
+            linked_dataset_info = wrap_dataset_name_with_link(dataset_info)
+            lines.append(f"  - {linked_dataset_info}")
     else:
         lines.append("- **High imperfect ratio**: (none)")
         
-    if analysis_issues:
-        lines.append(f"- **Analysis issues**: {', '.join(analysis_issues)}")
+    # Execution errors
+    if execution_errors:
+        lines.append("- **Execution Errors**:")
+        for error_info in execution_errors:
+            linked_error_info = wrap_dataset_name_with_link(error_info)
+            lines.append(f"  - {linked_error_info}")
     else:
-        lines.append("- **Analysis issues**: (none)")
+        lines.append("- **Execution Errors**: (none)")
     
     lines.append("")
     lines.append("---")
@@ -563,13 +636,14 @@ def generate_summary(results_list: list) -> str:
     return "\n".join(lines)
 
 
-def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float) -> str:
+def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float, execution_time: float) -> str:
     """Format validation results to markdown string.
     
     Args:
         results_list: List of validation result dictionaries
         max_rows: Maximum rows limit used in validation
         tolerance: Tolerance used for numeric comparisons
+        execution_time: Execution time in minutes
         
     Returns:
         str: Formatted markdown content
@@ -585,6 +659,8 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
         lines.append(f"**Row limit**: {max_rows:,} rows per dataset")
     else:
         lines.append("**Row limit**: unlimited")
+    lines.append(f"**Tolerance**: {tolerance}")
+    lines.append(f"**Execution time**: {execution_time:.2f} minutes")
     lines.append("")
     
     # Add summary section
@@ -661,8 +737,12 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12):
         # Force garbage collection after each dataset to free memory
         gc.collect()
     
+    # Calculate execution time
+    end_time = time.time()
+    execution_time = (end_time - start_time) / 60  # Convert to minutes
+    
     # Generate markdown content
-    markdown_content = format_results_to_markdown(all_results, max_rows, tolerance)
+    markdown_content = format_results_to_markdown(all_results, max_rows, tolerance, execution_time)
     
     # Print to console (same as before)
     print(markdown_content)
@@ -676,9 +756,7 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12):
         f.write(markdown_content)
     
     print(f"\nResults saved to: {output_file}")
-
-    end_time = time.time()
-    print(f"Time taken: {(end_time - start_time)/60:.2f} minutes")
+    print(f"Time taken: {execution_time:.2f} minutes")
     
     return markdown_content
 
