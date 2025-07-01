@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -45,6 +46,8 @@ market_data['time_avail_m'] = market_data['date'].dt.to_period('M').dt.to_timest
 market_data = market_data.drop('date', axis=1)
 
 # Save the data
+# Apply column standardization
+market_data = standardize_columns(market_data, 'monthlyMarket')
 market_data.to_parquet("../pyData/Intermediate/monthlyMarket.parquet")
 
 print(f"Monthly Market Returns downloaded with {len(market_data)} records")

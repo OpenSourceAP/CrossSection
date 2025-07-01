@@ -16,6 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -164,6 +165,8 @@ def main():
     # Do NOT drop missing VIX data - Stata keeps all records
 
     # Save the data
+    # Apply column standardization
+    final_data = standardize_columns(final_data, 'd_vix')
     final_data.to_parquet("../pyData/Intermediate/d_vix.parquet")
 
     print(f"VIX data saved with {len(final_data)} records")

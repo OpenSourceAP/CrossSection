@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("🏢 E_CompustatBusinessSegments.py - Business Segment Data", flush=True)
@@ -56,6 +57,8 @@ segments_data['srcdate'] = pd.to_datetime(segments_data['srcdate'])
 # This matches Stata's treatment of missing string values
 segments_data['snms'] = segments_data['snms'].fillna('')
 
+# Apply column standardization
+segments_data = standardize_columns(segments_data, 'CompustatSegments')
 # Save the data
 segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 

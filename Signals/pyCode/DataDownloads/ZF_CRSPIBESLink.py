@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -71,6 +72,8 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
+    # Apply column standardization
+    final_data = standardize_columns(final_data, 'IBESCRSPLinkingTable')
     final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet", index=False)
 
     print(f"IBES-CRSP Linking Table saved with {len(final_data)} records")

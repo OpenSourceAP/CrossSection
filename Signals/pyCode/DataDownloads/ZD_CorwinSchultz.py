@@ -11,6 +11,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 
 def main():
@@ -68,6 +69,8 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
+    # Apply column standardization
+    data = standardize_columns(data, 'BAspreadsCorwin')
     data.to_parquet(output_file, index=False)
     
     print(f"Saved {len(data)} records to {output_file}")

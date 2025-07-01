@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -87,6 +88,8 @@ rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
 rating_data['credrat'] = rating_data['credrat'].astype('int8')
 
 # Save the data
+# Apply column standardization
+rating_data = standardize_columns(rating_data, 'm_SP_creditratings')
 rating_data.to_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
 
 print(f"S&P Credit Ratings data saved with {len(rating_data)} records")

@@ -7,6 +7,9 @@ import numpy as np
 import os
 import logging
 from pathlib import Path
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.column_standardizer_yaml import standardize_columns
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -108,6 +111,8 @@ def main():
     
     # Save to parquet
     output_path = "../pyData/Intermediate/InputOutputMomentumProcessed.parquet"
+    # Apply column standardization
+    final_output = standardize_columns(final_output, 'InputOutputMomentumProcessed')
     final_output.to_parquet(output_path, index=False)
     
     logger.info(f"Successfully saved {len(final_output):,} rows to {output_path}")

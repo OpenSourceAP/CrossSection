@@ -5,6 +5,10 @@ import pandas as pd
 import numpy as np
 import logging
 from pathlib import Path
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.column_standardizer_yaml import standardize_columns
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -330,6 +334,8 @@ def main():
     customerMom = customerMom[['permno', 'custmom', 'time_avail_m']].copy()
     
     output_file = output_path / "customerMom.parquet"
+    # Apply column standardization
+    customerMom = standardize_columns(customerMom, 'customerMom')
     customerMom.to_parquet(output_file, index=False)
     
     logger.info(f"Successfully saved {len(customerMom):,} rows to {output_file}")

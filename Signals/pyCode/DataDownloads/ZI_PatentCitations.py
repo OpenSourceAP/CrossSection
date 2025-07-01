@@ -10,6 +10,9 @@ import os
 import logging
 from io import BytesIO
 from itertools import product
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.column_standardizer_yaml import standardize_columns
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -232,6 +235,8 @@ def main():
     
     # Save to parquet
     output_path = "../pyData/Intermediate/PatentDataProcessed.parquet"
+    # Apply column standardization
+    df_patents = standardize_columns(df_patents, 'PatentDataProcessed')
     df_patents.to_parquet(output_path, index=False)
     
     logger.info(f"Successfully saved {len(df_patents):,} rows to {output_path}")

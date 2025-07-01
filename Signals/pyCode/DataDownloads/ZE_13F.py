@@ -12,6 +12,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 
 def main():
@@ -100,6 +101,8 @@ def main():
     # Save to parquet
     output_file = "../pyData/Intermediate/TR_13F.parquet"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    # Apply column standardization
+    data = standardize_columns(data, 'TR_13F')
     data.to_parquet(output_file, index=False)
     
     print(f"Saved {len(data)} records to {output_file}")

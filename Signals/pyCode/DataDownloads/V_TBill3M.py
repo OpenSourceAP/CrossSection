@@ -6,6 +6,9 @@ import pandas as pd
 import numpy as np
 import requests
 from dotenv import load_dotenv
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -91,6 +94,8 @@ def main():
     print(f"Date range: {date_range_start} to {date_range_end}")
 
     # Stata: save (equivalent)
+    # Apply column standardization
+    final_data = standardize_columns(final_data, 'TBill3M')
     final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet", index=False)
 
     print("3-month T-bill rate data saved successfully")

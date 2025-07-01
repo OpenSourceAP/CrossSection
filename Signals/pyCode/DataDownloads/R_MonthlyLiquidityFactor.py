@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -45,6 +46,8 @@ liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M').dt.to_
 liquidity_data = liquidity_data.drop('date', axis=1)
 
 # Save the data
+# Apply column standardization
+liquidity_data = standardize_columns(liquidity_data, 'monthlyLiquidity')
 liquidity_data.to_parquet("../pyData/Intermediate/monthlyLiquidity.parquet")
 
 print(f"Monthly Liquidity Factor downloaded with {len(liquidity_data)} records")

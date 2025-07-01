@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("📈 O_Daily_Fama-French.py - Daily Fama-French Factors", flush=True)
@@ -47,6 +48,8 @@ ff_daily = ff_daily.rename(columns={'date': 'time_d'})
 ff_daily['time_d'] = pd.to_datetime(ff_daily['time_d'])
 
 # Save the data
+# Apply column standardization
+ff_daily = standardize_columns(ff_daily, 'dailyFF')
 ff_daily.to_parquet("../pyData/Intermediate/dailyFF.parquet")
 
 print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records", flush=True)

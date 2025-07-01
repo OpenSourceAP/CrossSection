@@ -14,6 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -120,6 +121,8 @@ for col in date_columns:
     if col in actuals_data.columns:
         actuals_data[col] = pd.to_datetime(actuals_data[col])
 
+# Apply column standardization
+actuals_data = standardize_columns(actuals_data, 'IBES_UnadjustedActuals')
 # Save the data
 actuals_data.to_parquet("../pyData/Intermediate/IBES_UnadjustedActuals.parquet")
 

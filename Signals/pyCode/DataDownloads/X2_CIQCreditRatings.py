@@ -13,6 +13,7 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -188,6 +189,8 @@ def main():
             combined_ratings[col] = combined_ratings[col].replace('None', '')
     
     # Save the data
+    # Apply column standardization
+    combined_ratings = standardize_columns(combined_ratings, 'm_CIQ_creditratings')
     combined_ratings.to_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet", index=False)
     
     print(f"CIQ Credit Ratings data saved with {len(combined_ratings)} records")

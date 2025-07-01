@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -68,6 +69,8 @@ ibes_adj = ibes_adj.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], keep=
 
 print(f"After keeping last obs per month: {len(ibes_adj)} records")
 
+# Apply column standardization
+ibes_adj = standardize_columns(ibes_adj, 'IBES_EPS_Adj')
 # Save the data
 ibes_adj.to_parquet("../pyData/Intermediate/IBES_EPS_Adj.parquet", index=False)
 

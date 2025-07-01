@@ -17,6 +17,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -71,6 +72,8 @@ columns_order = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd'] +
                 [col for col in rec_data.columns if col not in ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd']]
 rec_data = rec_data[columns_order]
 
+# Apply column standardization
+rec_data = standardize_columns(rec_data, 'IBES_Recommendations')
 # Save the data
 rec_data.to_parquet("../pyData/Intermediate/IBES_Recommendations.parquet", index=False)
 

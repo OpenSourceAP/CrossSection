@@ -16,6 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 # from config import MAX_ROWS_DL # do not use for this script
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -55,6 +56,8 @@ if 'datadate' in customer_data.columns:
     # Convert to Stata date string format: "31may1980"
     customer_data['datadate'] = customer_data['datadate'].dt.strftime('%d%b%Y').str.lower()
 
+# Apply column standardization
+customer_data = standardize_columns(customer_data, 'CompustatSegmentDataCustomers')
 # Save as CSV format to match Stata behavior (used for downstream R processing)
 customer_data.to_csv("../pyData/Intermediate/CompustatSegmentDataCustomers.csv", index=False)
 

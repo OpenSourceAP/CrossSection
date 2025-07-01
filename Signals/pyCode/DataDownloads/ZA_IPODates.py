@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -127,6 +128,8 @@ def main():
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
+    # Apply column standardization
+    ipo_data = standardize_columns(ipo_data, 'IPODates')
     ipo_data.to_parquet("../pyData/Intermediate/IPODates.parquet")
 
     print(f"IPO Dates data saved with {len(ipo_data)} records")

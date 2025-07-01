@@ -13,6 +13,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -98,6 +99,8 @@ def main():
         qfactor_data = qfactor_data.head(MAX_ROWS_DL)
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
+    # Apply column standardization
+    qfactor_data = standardize_columns(qfactor_data, 'd_qfactor')
     # Save the data
     qfactor_data.to_parquet("../pyData/Intermediate/d_qfactor.parquet")
 

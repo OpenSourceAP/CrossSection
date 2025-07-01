@@ -15,6 +15,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -171,6 +172,8 @@ def main():
     # Save to parquet
     output_file = "../pyData/Intermediate/brokerLev.parquet"
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    # Apply column standardization
+    output_data = standardize_columns(output_data, 'brokerLev')
     output_data.to_parquet(output_file, index=False)
     
     print(f"Saved {len(output_data)} records to {output_file}")

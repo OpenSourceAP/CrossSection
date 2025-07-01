@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("📈 B_CompustatAnnual.py - Compustat Annual Fundamentals", flush=True)
@@ -188,6 +189,8 @@ annual_data['time_avail_m'] = (
     annual_data['datadate'].dt.to_period('M') + 6
 ).dt.to_timestamp()
 
+# Apply column standardization for annual version
+annual_data = standardize_columns(annual_data, 'a_aCompustat')
 # Save annual version
 annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
@@ -219,6 +222,8 @@ monthly_data = monthly_data.drop_duplicates(['permno', 'time_avail_m'], keep='la
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
 
+# Apply column standardization for monthly version
+monthly_data = standardize_columns(monthly_data, 'm_aCompustat')
 # Save monthly version
 monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)

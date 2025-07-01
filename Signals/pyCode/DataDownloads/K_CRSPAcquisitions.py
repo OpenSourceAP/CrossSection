@@ -14,6 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
+from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -82,6 +83,8 @@ acq_data = acq_data.drop_duplicates()
 duplicates_removed = initial_count - len(acq_data)
 print(f"Removed {duplicates_removed} duplicate records")
 
+# Apply column standardization
+acq_data = standardize_columns(acq_data, 'm_CRSPAcquisitions')
 # Save the data
 acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet", index=False)
 

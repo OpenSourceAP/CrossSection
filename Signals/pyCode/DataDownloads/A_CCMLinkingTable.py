@@ -17,6 +17,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 # from config import MAX_ROWS_DL # do not use for this script
+from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("🔗 A_CCMLinkingTable.py - CRSP-Compustat Linking Table", flush=True)
@@ -80,10 +81,8 @@ ccm_parquet_data = ccm_parquet_data.rename(columns={
 # Convert NaN to empty strings to match Stata behavior
 ccm_parquet_data['naics'] = ccm_parquet_data['naics'].fillna('')
 ccm_parquet_data['cik'] = ccm_parquet_data['cik'].fillna('')
-# Ensure data type consistency for parquet
-ccm_parquet_data['gvkey'] = ccm_parquet_data['gvkey'].astype(str)
-ccm_parquet_data['naics'] = ccm_parquet_data['naics'].astype(str)
-ccm_parquet_data['cik'] = ccm_parquet_data['cik'].astype(str)
+# Apply column standardization from 01_columns.yaml
+ccm_parquet_data = standardize_columns(ccm_parquet_data, 'CCMLinkingTable')
 ccm_parquet_data.to_parquet(
     "../pyData/Intermediate/CCMLinkingTable.parquet", index=False
 )
