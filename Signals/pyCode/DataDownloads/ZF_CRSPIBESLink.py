@@ -38,21 +38,21 @@ def main():
             iclink_data = iclink_data[iclink_data['SCORE'] <= 2]
             print(f"Filtered to {len(iclink_data)} records with SCORE <= 2")
 
-        # Keep best match for each permno (lowest score)
+        # Keep best match for each permno (lowest score, then highest ticker as tie-breaker)
         if 'PERMNO' in iclink_data.columns and 'SCORE' in iclink_data.columns:
-            iclink_data = iclink_data.sort_values(['PERMNO', 'SCORE'])
+            iclink_data = iclink_data.sort_values(['PERMNO', 'SCORE', 'TICKER'], ascending=[True, True, False])
             iclink_data = iclink_data.drop_duplicates(['PERMNO'], keep='first')
             print(f"After keeping best match per PERMNO: {len(iclink_data)} records")
 
         # Rename columns to match expected output
         column_mapping = {
-            'TICKER': 'tickeribes',
+            'TICKER': 'tickerIBES',
             'PERMNO': 'permno'
         }
         iclink_data = iclink_data.rename(columns=column_mapping)
 
         # Keep only necessary columns
-        keep_cols = ['tickeribes', 'permno']
+        keep_cols = ['tickerIBES', 'permno']
         available_cols = [col for col in keep_cols if col in iclink_data.columns]
         final_data = iclink_data[available_cols]
 
@@ -62,7 +62,7 @@ def main():
 
         # Create placeholder data
         final_data = pd.DataFrame({
-            'tickeribes': ['AAPL', 'MSFT', 'GOOGL'],
+            'tickerIBES': ['AAPL', 'MSFT', 'GOOGL'],
             'permno': [14593, 10107, 90319]
         })
 
@@ -82,8 +82,8 @@ def main():
     if 'permno' in final_data.columns:
         print(f"Unique permnos: {final_data['permno'].nunique()}")
 
-    if 'tickeribes' in final_data.columns:
-        print(f"Unique IBES tickers: {final_data['tickeribes'].nunique()}")
+    if 'tickerIBES' in final_data.columns:
+        print(f"Unique IBES tickers: {final_data['tickerIBES'].nunique()}")
 
     print("\nSample data:")
     print(final_data.head())
