@@ -105,8 +105,7 @@ CompustatSegments:
 CompustatSegmentDataCustomers:
   column_order: gvkey, cid, cnms, ctype, gareac, gareat, salecs, sid, stype, datadate
   int64: gvkey, cid, salecs, sid
-  float64: cnms, gareac, gareat
-  object: ctype, stype, datadate
+  object: cnms, ctype, gareac, gareat, stype, datadate
 
 monthlyShortInterest:
   column_order: gvkey, time_avail_m, shortint, shortintadj

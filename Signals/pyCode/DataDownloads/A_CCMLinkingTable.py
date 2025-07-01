@@ -62,12 +62,8 @@ ccm_csv_data = ccm_data.copy()
 # Convert date columns to Stata string format for CSV
 ccm_csv_data['linkdt'] = ccm_csv_data['linkdt'].dt.strftime('%d%b%Y').str.lower()
 ccm_csv_data['linkenddt'] = ccm_csv_data['linkenddt'].dt.strftime('%d%b%Y').str.lower()
-# Convert lpermno to integer to match Stata type
-ccm_csv_data['lpermno'] = ccm_csv_data['lpermno'].astype('Int64')
-# Convert NaN to empty strings for CSV to match Stata behavior
-ccm_csv_data['naics'] = ccm_csv_data['naics'].fillna('')
-ccm_csv_data['cik'] = ccm_csv_data['cik'].fillna('')
-# Keep original column names for CSV
+# Apply column standardization to ensure consistent data types
+ccm_csv_data = standardize_columns(ccm_csv_data, 'CCMLinkingTable.csv')
 ccm_csv_data.to_csv("../pyData/Intermediate/CCMLinkingTable.csv", index=False)
 
 # Save parquet version with processed column names (for internal use)

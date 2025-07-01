@@ -154,8 +154,8 @@ def standardize_columns(df, dataset_name):
                         # Robust datetime conversion
                         df_standardized[col] = pd.to_datetime(df_standardized[col], errors='coerce')
                     elif pandas_dtype == 'object':
-                        # Object conversion (strings)
-                        df_standardized[col] = df_standardized[col].astype(str)
+                        # Object conversion (strings) - preserve NaN/None as empty strings
+                        df_standardized[col] = df_standardized[col].fillna('').astype(str)
                     else:
                         # Fallback to direct conversion
                         df_standardized[col] = df_standardized[col].astype(pandas_dtype)
