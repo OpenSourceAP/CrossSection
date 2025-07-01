@@ -152,12 +152,14 @@ def main():
             new_row['month'] = month
 
             # Create monthly date (equivalent to gen modate = ym(year, month))
-            modate = pd.Period(year=int(row['year']), month=month, freq='M')
+            # Create datetime64[ns] directly instead of Period to avoid column_standardizer issues
+            modate = pd.Period(year=int(row['year']), month=month, freq='M').to_timestamp()
             new_row['modate'] = modate
 
             # Add 11 months availability lag (equivalent to gen time_avail_m = modate + 11)
-            # Store as Period initially, will convert to datetime64[ns] later (Pattern 1 fix)
-            new_row['time_avail_m'] = modate + 11
+            # Create datetime64[ns] directly
+            time_avail_period = pd.Period(year=int(row['year']), month=month, freq='M') + 11
+            new_row['time_avail_m'] = time_avail_period.to_timestamp()
 
             monthly_data.append(new_row)
 
@@ -177,11 +179,6 @@ def main():
     # Standardize columns to match DTA file
     pin_monthly = standardize_columns(pin_monthly, "pin_monthly")
 
-    # PATTERN 1 FIX: Convert Period columns to datetime64[ns] AFTER column standardization and BEFORE saving
-    for col in ['time_avail_m', 'modate']:
-        if col in pin_monthly.columns and hasattr(pin_monthly[col].dtype, 'freq'):
-            pin_monthly[col] = pin_monthly[col].dt.to_timestamp()
-            print(f"Applied Pattern 1 fix - converted {col} to datetime64[ns]")
 
     # Save the data
     pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet", index=False)

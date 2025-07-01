@@ -29,22 +29,17 @@ def process_options_file(input_file, date_col='time_avail_m', output_name=None):
     if date_col != 'time_avail_m' and date_col in data.columns:
         # Convert date column to datetime and create time_avail_m
         data['time_d'] = pd.to_datetime(data[date_col], format='%Y-%m-%d')
-        # Create period first, then convert to timestamp AFTER column standardization
-        data['time_avail_m'] = data['time_d'].dt.to_period('M')
+        # Create datetime64[ns] directly for time_avail_m (start of month)
+        data['time_avail_m'] = data['time_d'].dt.to_period('M').dt.to_timestamp()
         # Keep the original date column and drop only intermediate columns
         data = data.drop(['time_d'], axis=1)
     elif 'time_avail_m' in data.columns:
-        # time_avail_m already exists, convert to proper period format
-        data['time_avail_m'] = pd.to_datetime(data['time_avail_m']).dt.to_period('M')
+        # time_avail_m already exists, convert to proper datetime format (start of month)
+        data['time_avail_m'] = pd.to_datetime(data['time_avail_m']).dt.to_period('M').dt.to_timestamp()
     
     if output_name:
         # Standardize columns using YAML schema
         data = standardize_columns(data, output_name)
-        
-        # PATTERN 1 FIX: Convert time_avail_m to datetime64[ns] AFTER column standardization and BEFORE saving
-        if 'time_avail_m' in data.columns:
-            data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
-            print(f"{output_name}: Applied Pattern 1 fix - converted time_avail_m to datetime64[ns]")
         
         # Save intermediate file if specified
         output_file = f"../pyData/Intermediate/{output_name}.parquet"
@@ -65,12 +60,11 @@ def main():
     # Fix column names case before processing
     vol_data = vol_data.rename(columns={'optVolume': 'optvolume', 'optInterest': 'optinterest'})
     
-    # Convert time_avail_m to proper format
-    vol_data['time_avail_m'] = pd.to_datetime(vol_data['time_avail_m']).dt.to_period('M')
+    # Convert time_avail_m to proper format - create datetime64[ns] directly (start of month)
+    vol_data['time_avail_m'] = pd.to_datetime(vol_data['time_avail_m']).dt.to_period('M').dt.to_timestamp()
     
     # Standardize columns using YAML schema
     vol_data = standardize_columns(vol_data, "OptionMetricsVolume")
-    
     
     # Save the data
     output_file = "../pyData/Intermediate/OptionMetricsVolume.parquet"
@@ -102,12 +96,11 @@ def main():
     # Fix column names case before processing  
     xzz_data = xzz_data.rename(columns={'Skew1': 'skew1'})
     
-    # Convert time_avail_m to proper format
-    xzz_data['time_avail_m'] = pd.to_datetime(xzz_data['time_avail_m']).dt.to_period('M')
+    # Convert time_avail_m to proper format - create datetime64[ns] directly (start of month)
+    xzz_data['time_avail_m'] = pd.to_datetime(xzz_data['time_avail_m']).dt.to_period('M').dt.to_timestamp()
     
     # Standardize columns to match DTA file
     xzz_data = standardize_columns(xzz_data, "OptionMetricsXZZ")
-    
     
     # Save standardized data
     output_file = "../pyData/Intermediate/OptionMetricsXZZ.parquet"
@@ -127,8 +120,8 @@ def main():
     
     # Convert date column to datetime and create time_avail_m
     bh_data['time_d'] = pd.to_datetime(bh_data['date'], format='%Y-%m-%d')
-    # Create period first, then convert to timestamp AFTER column standardization
-    bh_data['time_avail_m'] = bh_data['time_d'].dt.to_period('M')
+    # Create datetime64[ns] directly for time_avail_m (start of month)
+    bh_data['time_avail_m'] = bh_data['time_d'].dt.to_period('M').dt.to_timestamp()
     
     # Drop intermediate columns
     bh_data = bh_data.drop(['date', 'time_d'], axis=1)
@@ -144,7 +137,6 @@ def main():
 
     # Standardize columns to match DTA file
     bh_data = standardize_columns(bh_data, "OptionMetricsBH")
-    
     
     # MISSING VALUE FIX: Convert NaN to empty string for ticker column to match Stata format
     if 'ticker' in bh_data.columns:
