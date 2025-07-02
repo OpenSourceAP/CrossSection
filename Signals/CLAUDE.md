@@ -63,15 +63,18 @@ Signals/
 - Output is parquet
   - Not pkl
 
-## Validation Hierarchy
+## Validation 
+
+**IMPORTANT**: Validation is done by running `python3 utils/test_dl.py`
+  - Use `--max_rows` to limit the number of rows to test (-1 for all rows)
+  - Use `--datasets` to specify datset(s)
 
 ### Basic Validation
 The full datasets should match on the following:
 1. Column names (exact match)
 2. Column types (exact match)
 3. Row count (Python can have more rows, but only 0.1% more)
-
-utils/validate_basics.py can be used to check this.
+  - Drop rows with missing keys before counting
 
 ### Validation Common Rows
 
@@ -83,10 +86,13 @@ Lets define:
 - Perfect rows: rows that match by key and have no deviations
 - Imperfect rows: Full data rows minus Perfect rows
 
-Preliminary goals:
-4. Imperfect cells / total cells < 0.1%
-5. Imperfect rows / total rows < 0.1% or...
-6. If Imperfect rows / total rows > 0.1%, have Anderoo appove:
+Goals:
+4. Number of common rows (rows with matched keys) match
+  - Number of common rows is within 0.1% of Stata total rows
+  - (this should automatically match if 3. is satisfied)
+5. Imperfect cells / total cells < 0.1%
+6. Imperfect rows / total rows < 0.1% or...
+7. If Imperfect rows / total rows > 0.1%, have User appove:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
 
@@ -126,7 +132,7 @@ Preliminary goals:
 - **Principle**: **EXACT REPLICATION BEATS CLEVER ENGINEERING**
 
 ### 5. **Immediate Validation**
-- **✅ ALWAYS**: Run `validate_by_keys.py` after every translation
+- **✅ ALWAYS**: Run test script after every translation
 - **✅ ALWAYS**: Fix shape mismatches before data mismatches
 - **✅ ALWAYS**: Achieve 99%+ row count match with Stata
 
@@ -147,7 +153,7 @@ Preliminary goals:
 - Log processing times and success/failure status
 - Create error flag system similar to Stata's `01_DownloadDataFlags`
 
-## Paths
+## Paths and Filenames
 
 **IMPORTANT**: All Python commands must be run from the `pyCode/` directory.
 
@@ -167,10 +173,9 @@ python3 01_DownloadData.py
 # Run individual DataDownloads script
 python3 DataDownloads/[SCRIPT_NAME].py
 
-# Validate Python and Stata data are the same
-python3 utils/validate_by_keys.py 
-
 ```
+- check pyCode/DataDownloads/00_map.yaml to see which scripts should be used to download a given dataset
+
 
 ## Python Development Environment
 
@@ -256,28 +261,6 @@ pip install -r requirements.txt
 
 # Unsorted Notes
 
-## Data Processing Notes
-- **Row Count Handling**: Row count mismatch is fine unless explicitly requested to fix. This is because downloads at different times can imply different number of rows.
-
-## Data Validation Workflow
-- use pyCode/utils/validate_by_keys.py to validate datasets
-- check pyCode/DataDownloads/00_map.yaml to see which scripts should be used to download a given dataset
-
-## Clear all Fallbacks with Anderoo
+## Clear all Fallbacks with User
 - The code should follow exactly the Stata logic. Do not improvise fallbacks.
-- If you really wanto do some error handling, due to mising urls, ask Anderoo for permission.
-
-## Memories
-
-### Project Workflow Memories
-- Only mark as complete if the code passes @pyCode/utils/validate_by_keys.py. 
-- always source .venv/bin/activate before starting work
-
-## Workflows
-
-### Fix mismatches in dataset
-Make a plan to fix mismatches in DATASETNAME. 
-Use Logs/validation_detailed.md for info on the mismatches between the Stata and Python outputs. Use 00_Stata_DataDownloadsDoc.md and 01_Python_DataDownloadsDoc.md to see what the datasets look like. Examine the most recent 2 md files in @Journal/ to take on lessons from previous fixes. 
-
-## To Do
-- run validate_by_keys.py with maxrows 1 million
+- If you really wanto do some error handling, due to mising urls, ask User for permission.
