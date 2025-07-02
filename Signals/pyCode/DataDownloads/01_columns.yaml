@@ -277,7 +277,7 @@ BAspreadsCorwin:
 TR_13F:
   column_order: permno, numinstown, dbreadth, instown_perc, maxinstown_perc, numinstblock, time_avail_m
   int32: permno
-  int16: numinstown
+  float64: numinstown
   float32: dbreadth, instown_perc, maxinstown_perc
   int8: numinstblock
   datetime64[ns]: time_avail_m

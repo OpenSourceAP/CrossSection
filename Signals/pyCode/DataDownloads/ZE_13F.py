@@ -37,7 +37,7 @@ def main():
     data = data.dropna(subset=['PERMNO'])
     print(f"After dropping missing PERMNO: {len(data)} records")
     
-    # Convert numeric columns, forcing errors to NaN
+    # Convert numeric columns, forcing errors to NaN (match Stata destring)
     numeric_cols = ['instown_perc', 'maxinstown_perc', 'numinstown']
     for col in numeric_cols:
         data[col] = pd.to_numeric(data[col], errors='coerce')
@@ -47,7 +47,7 @@ def main():
     # Store as period initially, will convert to datetime64[ns] at the end (Pattern 1 fix)
     data['time_avail_m'] = data['time_d'].dt.to_period('M')
     
-    # Drop intermediate columns
+    # Drop intermediate columns (keep time_avail_m for now, will replace it later)
     data = data.drop(['rdate', 'time_d'], axis=1)
     
     # Rename columns to match Stata output (lowercase)
@@ -56,34 +56,48 @@ def main():
         'DBREADTH': 'dbreadth'
     })
     
-    # Ensure optimal data types
+    # Ensure optimal data types (match Stata output)
     data['permno'] = data['permno'].astype('int64')
+    # Fix numinstown type to match Stata (should be float64, not int16)
+    data['numinstown'] = data['numinstown'].astype('float64')
     
     # Stata tsfill equivalent: fill missing months and forward-fill values
     # Convert time_avail_m to datetime for panel operations
     data['time_dt'] = data['time_avail_m'].dt.to_timestamp()
     
-    # Set index for panel data
-    data = data.set_index(['permno', 'time_dt']).sort_index()
+    # Stata tsfill logic: for each permno, fill gaps between min/max dates only
+    tsfill_data = []
+    for permno in data['permno'].unique():
+        permno_data = data[data['permno'] == permno].copy()
+        
+        # Get min/max dates for this permno only
+        min_date = permno_data['time_dt'].min()
+        max_date = permno_data['time_dt'].max()
+        
+        # Create monthly range for this permno only
+        monthly_range = pd.date_range(start=min_date, end=max_date, freq='MS')
+        
+        # Create complete time series for this permno
+        permno_index = pd.MultiIndex.from_product(
+            [[permno], monthly_range],
+            names=['permno', 'time_dt']
+        )
+        
+        # Set index and reindex to fill gaps
+        permno_data = permno_data.set_index(['permno', 'time_dt'])
+        permno_filled = permno_data.reindex(permno_index)
+        
+        # Forward fill missing values (Stata replace logic)
+        permno_filled = permno_filled.ffill()
+        
+        tsfill_data.append(permno_filled)
     
-    # Get all unique permnos and time periods
-    all_permnos = data.index.get_level_values(0).unique()
-    all_times = data.index.get_level_values(1).unique()
+    # Combine all permnos
+    data = pd.concat(tsfill_data).reset_index()
     
-    # Create full panel (all permno-time combinations)
-    full_index = pd.MultiIndex.from_product(
-        [all_permnos, all_times], 
-        names=['permno', 'time_dt']
-    )
-    
-    # Reindex to full panel and forward-fill
-    data = data.reindex(full_index).groupby('permno').ffill()
-    
-    # Reset index and clean up
-    data = data.reset_index()
-    # Keep time_dt as the working datetime column, will rename and convert at the end
-    data = data.drop('time_avail_m', axis=1)  # Remove the period column
-    data = data.rename(columns={'time_dt': 'time_avail_m'})  # Use the datetime column
+    # Clean up - drop old time_avail_m and rename time_dt to time_avail_m
+    data = data.drop(columns=['time_avail_m'])  # Drop the old period column
+    data = data.rename(columns={'time_dt': 'time_avail_m'})
     
     # Drop rows where all value columns are NaN (no data was available to forward-fill)
     value_cols = ['numinstown', 'dbreadth', 'instown_perc', 'maxinstown_perc', 'numinstblock']
@@ -94,9 +108,8 @@ def main():
     # PATTERN 1 FIX: Ensure time_avail_m is datetime64[ns] format BEFORE saving
     if 'time_avail_m' in data.columns:
         # time_avail_m should already be datetime64[ns] from the panel operations
-        if data['time_avail_m'].dtype != 'datetime64[ns]':
-            data['time_avail_m'] = pd.to_datetime(data['time_avail_m'])
-        print("Pattern 1 fix: Verified time_avail_m is datetime64[ns] format")
+        print(f"time_avail_m dtype: {data['time_avail_m'].dtypes}")
+        print("Pattern 1 fix: Verified time_avail_m format")
     
     # Save to parquet
     output_file = "../pyData/Intermediate/TR_13F.parquet"
