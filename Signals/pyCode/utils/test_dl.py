@@ -401,7 +401,7 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         }
 
 
-def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, key_cols=None, tolerance: float = 1e-12, common_rows_threshold: float = 0.999, imperfect_ratio_threshold: float = 0.001) -> dict:
+def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, key_cols=None, tolerance: float = 1e-12, imperfect_ratio_threshold: float = 0.001) -> dict:
     """Validate dataset by keys and compute imperfect rows ratio.
     
     Args:
@@ -411,7 +411,6 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         parq: Python dataframe
         key_cols: List of key columns for comparison
         tolerance: Tolerance for numeric comparisons
-        common_rows_threshold: Minimum ratio for common rows (default: 0.999)
         imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: 0.001)
         
     Returns:
@@ -543,14 +542,13 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         imperfect_rows = dev_rows.sum()
         imperfect_ratio = imperfect_rows / full_data_rows if full_data_rows > 0 else 0
         
-        # Add common rows ratio validation
-        common_rows_ratio = matched_by_key_rows / full_data_rows if full_data_rows > 0 else 0
-        common_rows_pct = common_rows_threshold * 100
-        if common_rows_ratio >= common_rows_threshold:
-            common_rows_result = f"✓ Common rows count acceptable (≥ {common_rows_pct:.1f}%)"
+        # Add Python common rows superset validation 
+        all_stata_in_python = mask1.all()
+        if all_stata_in_python:
+            common_rows_result = "✓ Python common rows are superset of Stata"
         else:
-            common_rows_result = f"✗ Common rows count too low (< {common_rows_pct:.1f}%)"
-            # Generate missing rows report for datasets that fail common rows check
+            common_rows_result = "✗ Python missing some Stata rows" 
+            # Generate missing rows report for datasets that fail superset check
             generate_missing_rows_report(dataset_name, dta, parq, key_cols)
         
         # Add imperfect rows ratio to validation results
@@ -708,12 +706,11 @@ def sort_results_by_failure_priority(results_list: list) -> list:
     return sorted(results_list, key=lambda x: (get_failure_priority(x), x['dataset_name']))
 
 
-def generate_summary(results_list: list, common_rows_threshold: float = 0.999, imperfect_ratio_threshold: float = 0.001) -> str:
+def generate_summary(results_list: list, imperfect_ratio_threshold: float = 0.001) -> str:
     """Generate summary statistics from validation results.
     
     Args:
         results_list: List of validation result dictionaries
-        common_rows_threshold: Minimum ratio for common rows (default: 0.999)
         imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: 0.001)
         
     Returns:
@@ -773,9 +770,9 @@ def generate_summary(results_list: list, common_rows_threshold: float = 0.999, i
             elif ("Row count" in validation and "✗" in validation) or ("Row counts" in validation and "✗" in validation):
                 row_counts_fail.append(dataset_name)
                 
-            if "Common rows acceptable" in validation and "✓" in validation:
+            if "Python common rows are superset of Stata" in validation and "✓" in validation:
                 common_rows_pass += 1
-            elif "Common rows ratio too low" in validation and "✗" in validation:
+            elif "Python missing some Stata rows" in validation and "✗" in validation:
                 common_rows_fail.append(dataset_name)
                 
             if "Imperfect rows acceptable" in validation and "✓" in validation:
@@ -812,14 +809,13 @@ def generate_summary(results_list: list, common_rows_threshold: float = 0.999, i
     lines.append("## Summary")
     lines.append("")
     lines.append("**Validation Thresholds**:")
-    lines.append(f"- Common rows threshold: {common_rows_threshold * 100:.1f}%")
     lines.append(f"- Imperfect ratio threshold: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append("")
     lines.append("**Validation Results**:")
     lines.append(f"- ✓ Column names match: {col_names_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Column types match: {col_types_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Row counts acceptable: {row_counts_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Common rows acceptable: {common_rows_pass}/{total_datasets} datasets")
+    lines.append(f"- ✓ Python common rows are superset: {common_rows_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Imperfect rows acceptable: {imperfect_ratio_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Imperfect cells acceptable: {imperfect_cells_pass}/{total_datasets} datasets")
     lines.append("")
@@ -852,14 +848,14 @@ def generate_summary(results_list: list, common_rows_threshold: float = 0.999, i
     else:
         lines.append("- **Row count issues**: (none)")
         
-    # Common rows issues
+    # Python missing Stata rows
     if common_rows_fail:
-        lines.append("- **Common rows issues**:")
+        lines.append("- **Python missing Stata rows**:")
         for dataset in common_rows_fail:
             linked_dataset = wrap_dataset_name_with_link(dataset)
             lines.append(f"  - {linked_dataset}")
     else:
-        lines.append("- **Common rows issues**: (none)")
+        lines.append("- **Python missing Stata rows**: (none)")
         
     # High imperfect rows
     if high_imperfect:
@@ -965,7 +961,7 @@ def reorder_markdown_by_failure_priority(markdown_content: str) -> str:
     return '\n'.join(result_lines)
 
 
-def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float, execution_time: float, common_rows_threshold: float = 0.999, imperfect_ratio_threshold: float = 0.001) -> str:
+def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float, execution_time: float, imperfect_ratio_threshold: float = 0.001) -> str:
     """Format validation results to markdown string.
     
     Args:
@@ -973,7 +969,6 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
         max_rows: Maximum rows limit used in validation
         tolerance: Tolerance used for numeric comparisons
         execution_time: Execution time in minutes
-        common_rows_threshold: Minimum ratio for common rows (default: 0.999)
         imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: 0.001)
         
     Returns:
@@ -991,7 +986,6 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     else:
         lines.append("**Row limit**: unlimited")
     lines.append(f"**Tolerance**: {tolerance}")
-    lines.append(f"**Common rows threshold**: {common_rows_threshold * 100:.1f}%")
     lines.append(f"**Imperfect ratio threshold**: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append(f"**Execution time**: {execution_time:.2f} minutes")
     lines.append("")
@@ -1002,7 +996,7 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     lines.append("")
     
     # Add summary section
-    summary_text = generate_summary(results_list, common_rows_threshold, imperfect_ratio_threshold)
+    summary_text = generate_summary(results_list, imperfect_ratio_threshold)
     lines.append(summary_text)
     
     # Process each dataset result  
@@ -1051,7 +1045,7 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     return "\n".join(lines)
 
 
-def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12, common_rows_threshold=0.999, imperfect_ratio_threshold=0.001):
+def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12, imperfect_ratio_threshold=0.001):
     """Validate all or specified datasets and save to markdown file."""
 
     start_time = time.time()
@@ -1073,7 +1067,7 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12, common_ro
         
         # Run validation functions and collect results
         basic_result = val_one_basics(dataset, dta, parq)
-        combined_result = val_one_crow(dataset, basic_result, dta, parq, key_cols, tolerance, common_rows_threshold, imperfect_ratio_threshold)
+        combined_result = val_one_crow(dataset, basic_result, dta, parq, key_cols, tolerance, imperfect_ratio_threshold)
         all_results.append(combined_result)
         
         # Print immediate feedback for this dataset (streaming output)
@@ -1093,10 +1087,10 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12, common_ro
     execution_time = (end_time - start_time) / 60  # Convert to minutes
     
     # Generate markdown content (will be reordered later for file output)
-    markdown_content = format_results_to_markdown(all_results, max_rows, tolerance, execution_time, common_rows_threshold, imperfect_ratio_threshold)
+    markdown_content = format_results_to_markdown(all_results, max_rows, tolerance, execution_time, imperfect_ratio_threshold)
     
     # Console output already streamed above, just show final summary
-    summary_text = generate_summary(all_results, common_rows_threshold, imperfect_ratio_threshold)
+    summary_text = generate_summary(all_results, imperfect_ratio_threshold)
     print("\n" + "="*50)
     print("FINAL SUMMARY")
     print("="*50)
@@ -1157,12 +1151,6 @@ def main():
         help='Tolerance for a "perfect" cell (default: 1e-12)'
     )
     parser.add_argument(
-        '--common-rows-threshold',
-        type=float,
-        default=0.999,
-        help='Minimum ratio for common rows acceptance (default: 0.999)'
-    )
-    parser.add_argument(
         '--imperfect-ratio-threshold',
         type=float,
         default=0.001,
@@ -1205,7 +1193,7 @@ def main():
         datasets_to_validate = None  # Will validate all
     
     # Run validation
-    validate_all_datasets(datasets_to_validate, args.maxrows, args.tolerance, args.common_rows_threshold, args.imperfect_ratio_threshold)
+    validate_all_datasets(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold)
 
 
 if __name__ == "__main__":
