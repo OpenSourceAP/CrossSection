@@ -34,23 +34,7 @@ set more off, permanently
 
 
 // Install or update packages
-ssc install tscollap, replace
-ssc install mdesc, replace
-ssc install winsor2, replace
-ssc install freduse, replace
-ssc install fsum, replace
-ssc install egenmore, replace
-ssc install asrol, replace
-ssc install asreg, replace
-ssc install astile, replace
-ssc install _gwtmean, replace
-ssc install fastxtile, replace
-ssc install egenmisc, replace
-ssc install ftools, replace
-ssc install gtools, replace
-ssc install moremata, replace
-ssc install relrank, replace
-ssc install fs, replace
-ssc install filelist, replace
-ssc install rscript, replace
-ssc install sicff, replace
+cap ado uninstall require
+net install require, from("https://raw.githubusercontent.com/sergiocorreia/stata-require/master/src/")
+
+require using "$pathCode/requirements.txt", install
