@@ -70,32 +70,30 @@ Signals/
   - Use `--datasets` to specify datset(s)
 
 ### Basic Validation
-The full datasets should match on the following:
+This simple validation is fast and easy. 
+
+Valid data satisfies:
 1. Column names (exact match)
 2. Column types (exact match)
 3. Row count (Python can have more rows, but only 0.1% more)
   - Drop rows with missing keys before counting
 
-### Validation Common Rows
+### Common Rows Validation
+This validation requires more careful analysis.
 
-We also check datasets based the common row subset. The common row subsets are datasets, inner joined on the keys in DataDownloads/00_map.yaml. 
+Define:
+- Common rows: rows in both Stata and Python data that share the same keys 
+  - Keys are based on @DataDownloads/00_map.yaml
+- Perfect rows: common rows with columns that have no deviations
+- Imperfect rows: common rows that are not perfect rows
 
-Lets define:
-- Full data rows: number of rows in the Stata data
-- Matched by key rows: number of rows that Stata and Python share the same keys (based on @DataDownloads/00_map.yaml)
-- Perfect rows: rows that match by key and have no deviations
-- Imperfect rows: Full data rows minus Perfect rows
-
-Goals:
-4. Number of common rows (rows with matched keys) match
-  - Number of common rows is within 0.1% of Stata total rows
-  - (this should automatically match if 3. is satisfied)
+Valid data satisfies:
+4. Python common rows are a superset of Stata common rows
 5. Imperfect cells / total cells < 0.1%
 6. Imperfect rows / total rows < 0.1% or...
 7. If Imperfect rows / total rows > 0.1%, have User appove:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
-
 
 ## Python Environment
 - Use `pandas` for data manipulation
