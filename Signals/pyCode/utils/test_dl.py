@@ -47,7 +47,7 @@ import time
 import numpy as np
 
 # Hard coded second row cap
-ROW_CAP_FOR_RAM = 5*10**6
+ROW_CAP_FOR_RAM = 10*10**6
 
 
 def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
@@ -427,6 +427,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             'analysis': None,
             'worst_columns': [],
             'sample_file': None,
+            'missing_rows_file': None,
             'error': f"Could not load data for {dataset_name}"
         }
     
@@ -443,6 +444,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             'analysis': None,
             'worst_columns': [],
             'sample_file': None,
+            'missing_rows_file': None,
             'error': None
         }
     
@@ -465,6 +467,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                 'analysis': None,
                 'worst_columns': [],
                 'sample_file': None,
+                'missing_rows_file': None,
                 'error': None
             }
         
@@ -496,6 +499,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                 'analysis': None,
                 'worst_columns': [],
                 'sample_file': None,
+                'missing_rows_file': None,
                 'error': None
             }
         
@@ -544,12 +548,14 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         
         # Add Python common rows superset validation 
         all_stata_in_python = mask1.all()
+        missing_stata_rows = (~mask1).sum()
+        missing_rows_file = None
         if all_stata_in_python:
             common_rows_result = "✓ Python common rows are superset of Stata"
         else:
-            common_rows_result = "✗ Python missing some Stata rows" 
+            common_rows_result = f"✗ Python missing some Stata rows ({missing_stata_rows})"
             # Generate missing rows report for datasets that fail superset check
-            generate_missing_rows_report(dataset_name, dta, parq, key_cols)
+            missing_rows_file = generate_missing_rows_report(dataset_name, dta, parq, key_cols)
         
         # Add imperfect rows ratio to validation results
         imperfect_pct = imperfect_ratio_threshold * 100
@@ -573,7 +579,8 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             'imperfect_ratio': imperfect_ratio,
             'imperfect_cells': imperfect_cells,
             'total_cells': total_cells,
-            'imperfect_cells_ratio': imperfect_cells_ratio
+            'imperfect_cells_ratio': imperfect_cells_ratio,
+            'missing_stata_rows': missing_stata_rows
         }
         
         # Prepare worst columns if there are deviations
@@ -639,6 +646,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             'analysis': analysis,
             'worst_columns': worst_columns,
             'sample_file': sample_file,
+            'missing_rows_file': missing_rows_file,
             'error': None
         }
         
@@ -651,6 +659,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             'analysis': None,
             'worst_columns': [],
             'sample_file': None,
+            'missing_rows_file': None,
             'error': str(e)
         }
 
@@ -773,7 +782,12 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = 0.00
             if "Python common rows are superset of Stata" in validation and "✓" in validation:
                 common_rows_pass += 1
             elif "Python missing some Stata rows" in validation and "✗" in validation:
-                common_rows_fail.append(dataset_name)
+                # Extract missing row count from validation message
+                if result['analysis'] and 'missing_stata_rows' in result['analysis']:
+                    missing_count = result['analysis']['missing_stata_rows']
+                    common_rows_fail.append(f"{dataset_name} ({missing_count})")
+                else:
+                    common_rows_fail.append(dataset_name)
                 
             if "Imperfect rows acceptable" in validation and "✓" in validation:
                 imperfect_ratio_pass += 1
@@ -1039,6 +1053,11 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
         if result['sample_file']:
             sample_filename = result['sample_file'].split('/')[-1]
             lines.append(f"- **Sample saved**: [CSV Sample](../Logs/detail/{sample_filename})")
+        
+        # Add missing rows file link if available
+        if result.get('missing_rows_file'):
+            missing_rows_filename = result['missing_rows_file'].split('/')[-1]
+            lines.append(f"- **Missing rows analysis**: [Missing Rows Report](../Logs/detail/{missing_rows_filename})")
         
         lines.append("")  # Add spacing between datasets
     
