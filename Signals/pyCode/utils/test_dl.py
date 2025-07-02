@@ -26,6 +26,7 @@ Output:
   Prints results to console with ✓/✗ symbols
   Also saves results to ../Logs/testout_dl.md in markdown format
   Creates CSV samples in ../Logs/detail/ for problematic datasets
+  Creates missing rows analysis in ../Logs/detail/ for datasets with low common rows
 
 Usage examples:
   python3 utils/test_dl.py                                   # Validate all datasets
@@ -104,6 +105,97 @@ def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
             column_differences[col] = {'error': str(e)}
     
     return column_differences
+
+
+def generate_missing_rows_report(dataset_name: str, dta, parq, key_cols: list):
+    """Generate detailed markdown report for datasets with missing common rows.
+    
+    Args:
+        dataset_name: Name of the dataset
+        dta: Stata dataframe (already indexed by key_cols)
+        parq: Python dataframe (already indexed by key_cols)  
+        key_cols: List of key column names
+    """
+    try:
+        # Create detail directory
+        detail_dir = Path("../Logs/detail")
+        detail_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Find rows in Stata that are not in Python
+        stata_only_indices = dta.index.difference(parq.index)
+        stata_only_df = dta.loc[stata_only_indices].reset_index() if len(stata_only_indices) > 0 else pd.DataFrame(columns=list(dta.columns) + key_cols)
+        
+        # Find rows in Python that are not in Stata  
+        python_only_indices = parq.index.difference(dta.index)
+        python_only_df = parq.loc[python_only_indices].reset_index() if len(python_only_indices) > 0 else pd.DataFrame(columns=list(parq.columns) + key_cols)
+        
+        # Sort the DataFrames by key columns (if they have any rows)
+        if len(stata_only_df) > 0:
+            stata_only_df = stata_only_df.sort_values(by=key_cols)
+        if len(python_only_df) > 0:
+            python_only_df = python_only_df.sort_values(by=key_cols)
+        
+        # Limit to first MAX_ROWS rows
+        MAX_ROWS = 1000
+        stata_cutoff = len(stata_only_df) > MAX_ROWS
+        python_cutoff = len(python_only_df) > MAX_ROWS
+        
+        stata_only_display = stata_only_df.head(MAX_ROWS)
+        python_only_display = python_only_df.head(MAX_ROWS)
+        
+        # Generate markdown content
+        lines = []
+        lines.append(f"# Missing Rows Analysis: {dataset_name}")
+        lines.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append("")
+        lines.append("## Summary")
+        lines.append(f"- **Total Stata rows**: {len(dta):,}")
+        lines.append(f"- **Total Python rows**: {len(parq):,}")
+        lines.append(f"- **Rows in Stata but not Python**: {len(stata_only_df):,}")
+        lines.append(f"- **Rows in Python but not Stata**: {len(python_only_df):,}")
+        lines.append(f"- **Key columns**: {', '.join(key_cols)}")
+        lines.append("")
+        
+        # Table 1: Rows in Stata that are not in Python
+        lines.append("## Rows in Stata data that are not in Python")
+        lines.append("")
+        if len(stata_only_df) == 0:
+            lines.append("*(No missing rows)*")
+        else:
+            if stata_cutoff:
+                lines.append(f"*Showing first {MAX_ROWS:,} of {len(stata_only_df):,} rows*")
+                lines.append("")
+            
+            # Convert DataFrame to markdown table
+            lines.append(stata_only_display.to_markdown(index=False))
+        
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+        
+        # Table 2: Rows in Python that are not in Stata
+        lines.append("## Rows in Python data that are not in Stata")
+        lines.append("")
+        if len(python_only_df) == 0:
+            lines.append("*(No missing rows)*")
+        else:
+            if python_cutoff:
+                lines.append(f"*Showing first {MAX_ROWS:,} of {len(python_only_df):,} rows*")
+                lines.append("")
+            
+            # Convert DataFrame to markdown table
+            lines.append(python_only_display.to_markdown(index=False))
+        
+        # Save to file
+        report_file = detail_dir / f"{dataset_name}_missing_rows.md"
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(lines))
+        
+        return f"../Logs/detail/{dataset_name}_missing_rows.md"
+    
+    except Exception as e:
+        print(f"Warning: Failed to generate missing rows report for {dataset_name}: {e}")
+        return None
 
 def dataset_name_to_anchor(name: str) -> str:
     """Convert dataset name to markdown anchor format.
@@ -458,6 +550,8 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
             common_rows_result = f"✓ Common rows count acceptable (≥ {common_rows_pct:.1f}%)"
         else:
             common_rows_result = f"✗ Common rows count too low (< {common_rows_pct:.1f}%)"
+            # Generate missing rows report for datasets that fail common rows check
+            generate_missing_rows_report(dataset_name, dta, parq, key_cols)
         
         # Add imperfect rows ratio to validation results
         imperfect_pct = imperfect_ratio_threshold * 100
