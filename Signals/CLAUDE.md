@@ -89,6 +89,8 @@ Define:
 
 Valid data satisfies:
 4. Python common rows are a superset of Stata common rows
+  - The Python data may contain recent observations that are not in the Stata data. 
+  - But the Python data should not be missing any rows that are in the Stata data, since it was downloaded after the Stata data.
 5. Imperfect cells / total cells < 0.1%
 6. Imperfect rows / total rows < 0.1% or...
 7. If Imperfect rows / total rows > 0.1%, have User appove:
