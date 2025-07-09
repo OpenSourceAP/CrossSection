@@ -3,7 +3,7 @@
 ## Project Overview
 This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet format instead of DTA/CSV.
 
-# Project Structure 
+# File Structure 
 
 ## Data Pipeline Structure
 
@@ -33,6 +33,8 @@ Signals/
 ├── Data/                   # Stata data files
 │   ├── Intermediate/       # Processed data from Stata (.dta/.csv)
 │   ├── Prep/              # Preprocessed inputs
+│   ├── Predictors/         # Stata predictor generation
+│   ├── Placebos/          # Stata placebo generation
 │   └── temp/              # Temporary Stata files
 ├── pyCode/                 # Python equivalent code (WORKING DIRECTORY)
 │   ├── .venv/              # Python virtual environment
@@ -43,6 +45,9 @@ Signals/
 |   ├── utils/              # Utility functions and persistent testing scripts
 ├── pyData/                 # Python data files
 │   ├── Intermediate/       # Processed data from Python (.parquet)
+│   ├── Prep/              # Preprocessed inputs
+│   ├── Predictors/         # Python predictor generation
+│   ├── Placebos/          # Python placebo generation
 │   └── temp/              # Temporary Python files
 ├── Logs/                   # Processing logs
 ├── Journal/                # Journaling
@@ -197,6 +202,49 @@ pip install -r requirements.txt
 - **Only one .venv folder**: Located in `pyCode/.venv/`
 - **Always activate before running scripts**: `source .venv/bin/activate`
 - **Install packages in venv**: `pip install package_name`
+
+# Project Extension: SignalMasterTable.py draft
+
+`Signals/Code/SignalMasterTable.do` is not part of the `DataDownloads/` folder. This script is really part of the predictor generation---it is likely to be modified in the predictor debugging process.
+
+But let's make a draft for it in this project because `SignalMasterTable.dta` is much more complicated than the other datasets created in the `Predictors/`.
+
+## Files and descriptions
+
+Stata:
+- `Signals/Code/SignalMasterTable.do` 
+  - Makes `SignalMasterTable.dta`
+- `Signals/Data/Intermediate/SignalMasterTable.dta` 
+  - Indexed by (permno, time_avail_m)
+
+Python:
+- `pyCode/SignalMasterTable.py` tbc
+  - Makes `SignalMasterTable.parquet`
+- `pyData/Intermediate/SignalMasterTable.parquet` 
+  - Indexed by (permno, time_avail_m)
+
+Test script
+- `pyCode/utils/test_signalmaster.py`: tbc
+
+## Requirements
+
+### Simple requirements:
+1. Column names and order match exactly
+2. Column types match exactly
+3. Python indexes are a superset of Stata indexes
+  - All observations in the dta should be in the parquet
+
+### Precision requirements: 
+
+Define:
+- Common rows: rows with indexes that are in both Stata and Python
+- Perfect rows: common rows with columns that have no deviations
+- Imperfect rows: common rows that are not perfect rows
+
+The precision requirements are:
+4. Imperfect cells / total cells < 0.1%
+5. Imperfect rows / total rows < 0.1% or...
+
 
 # Interaction 
 
