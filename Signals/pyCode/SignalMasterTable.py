@@ -68,6 +68,9 @@ def main():
     # rename sic sicCS
     df = df.rename(columns={'sic': 'sicCS'})
     
+    # Standardize sicCS string format to match Stata (handle None -> empty string)
+    df['sicCS'] = df['sicCS'].fillna('')
+    
     # add some auxiliary vars and clean up
     print("Adding auxiliary variables...")
     
@@ -86,6 +89,14 @@ def main():
     df['exchcd'] = df['exchcd'].astype('int8')
     df['shrcd'] = df['shrcd'].astype('int8')
     df['sicCRSP'] = df['sicCRSP'].astype('int16')
+    df['NYSE'] = df['NYSE'].astype('int8')
+    df['bh1m'] = df['bh1m'].astype('float32')
+    
+    # Comprehensive string column cleanup to match Stata format (handle None -> empty string)
+    string_columns = ['ticker', 'sicCS']
+    for col in string_columns:
+        if col in df.columns:
+            df[col] = df[col].fillna('')
     
     print(f"After adding auxiliary vars: {df.shape[0]} rows, {df.shape[1]} columns")
     
@@ -101,6 +112,10 @@ def main():
         
         # Merge on permno (many-to-one)
         df = df.merge(ibes_link, on='permno', how='left')
+        
+        # Standardize IBES ticker string format to match Stata (handle None -> empty string)
+        if 'tickerIBES' in df.columns:
+            df['tickerIBES'] = df['tickerIBES'].fillna('')
         
         print(f"After IBES link merge: {df.shape[0]} rows, {df.shape[1]} columns")
     else:
