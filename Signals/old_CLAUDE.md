@@ -8,23 +8,14 @@ This project aims to translate Stata code in `Code/` to Python equivalents in `p
 ## Data Pipeline Structure
 
 ### Input Sources
-The Predictors scripts process data from:
-  - **SignalMasterTable**: Primary source containing returns, market equity, and identifiers indexed by (permno, time_avail_m)
-  - **DataDownloads** intermediate files: Located in `Data/Intermediate/`
-    - m_aCompustat - Annual Compustat financial statements
-    - m_QCompustat - Quarterly Compustat data
-    - monthlyCRSP - Monthly stock returns and prices
-    - monthlyFF - Fama-French risk factors
-    - monthlyMarket - Market-wide return indices
-    - IBESCRSPLinkingTable - IBES-CRSP linking table
-    - TR_13F - Thomson Reuters 13F holdings data
-    - OptionMetricsVolume - Options volume data
-    - OptionMetricsVolSurf - Options volatility surface data
-    - OptionMetricsXZZ - Xing Zhang Zhao 2010 options data
-    - OptionMetricsBH - Bali-Hovakimian implied volatility data
-    - OPTIONMETRICSCRSPLinkingTable - CRSP-OptionMetrics linking table
-    - BAspreadsCorwin - Corwin-Schultz bid-ask spread estimates
-    - hf_spread - High-frequency bid-ask spread data
+The DataDownloads scripts process data from:
+- **WRDS databases**: Compustat (Annual/Quarterly), CRSP (Monthly/Daily), IBES
+- **External APIs**: FRED (Federal Reserve Economic Data), Fama-French data
+- **Preprocessed files** (optional): Located in `Data/Prep/`
+  - `iclink.csv` - IBES-CRSP linking table
+  - `OptionMetrics.csv` - Options data 
+  - `tr_13f.csv` - Thomson Reuters 13F holdings
+  - `corwin_schultz_spread.csv` - Bid-ask spread estimates
 
 ### Output Structure
 - **Stata Output**: Data saved to `Data/Predictors/` in CSV format
@@ -32,6 +23,7 @@ The Predictors scripts process data from:
 - **File naming**: Maintain same base names but with `.csv` extension
 
 ## Directory Structure
+
 ```
 Signals/
 ├── Code/                    # Original Stata code
@@ -77,6 +69,7 @@ Signals/
   - Not pkl
 
 ## Validation 
+
 **IMPORTANT**: Validation is done by running `python3 utils/test_dl.py`
   - Use `--max_rows` to limit the number of rows to test (-1 for all rows)
   - Use `--datasets` to specify datset(s)
@@ -257,11 +250,11 @@ The precision requirements are:
 
 # Interaction 
 
-- Any time you interact with me, you MUST address me as "Idrees"
+- Any time you interact with me, you MUST address me as "Anderoo"
 
 ## Our relationship
 
-- We're coworkers. When you think of me, think of me as your colleague "Idrees", not as "the user" or "the human"
+- We're coworkers. When you think of me, think of me as your colleague "Anderoo", not as "the user" or "the human"
 - We are a team of people working together. Your success is my success, and my success is yours.
 - I'm smart, but not infallible.
 - You are much better read than I am. I have more experience of the physical world than you do. Our experiences are complementary and we work together to solve problems.
