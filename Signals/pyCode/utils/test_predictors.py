@@ -56,13 +56,24 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     """
     results = {}
     
+    # Initialize all required keys with default values
+    results['stata_obs_count'] = 0
+    results['python_obs_count'] = 0
+    results['common_obs_count'] = 0
+    
+    # Initialize test results
+    cols_match = True
+    is_superset = True
+    precision_ok = True
+    
     # Set index for both dataframes
     try:
         stata_indexed = stata_df.set_index(INDEX_COLS)
         python_indexed = python_df.set_index(INDEX_COLS)
     except KeyError as e:
         print(f"  ✗ Missing index columns: {e}")
-        return False, {'error': f'Missing index columns: {e}'}
+        results['error'] = f'Missing index columns: {e}'
+        return False, results
     
     # 1. Column names and order match exactly
     stata_cols = list(stata_indexed.columns)
@@ -77,7 +88,6 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         print(f"  ✗ Column names mismatch")
         print(f"    Stata:  {stata_cols}")
         print(f"    Python: {python_cols}")
-        return False, results
     else:
         print(f"  ✓ Column names match: {stata_cols}")
     
@@ -96,7 +106,6 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         missing_obs = stata_obs - python_obs
         print(f"  ✗ Python missing {len(missing_obs)} Stata observations")
         results['missing_observations'] = list(missing_obs)[:10]  # Show first 10
-        return False, results
     
     # 3. For common observations, Pth percentile absolute difference < TOL_DIFF
     common_obs = stata_indexed.index.intersection(python_indexed.index)
@@ -104,29 +113,29 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     
     if len(common_obs) == 0:
         print(f"  ✗ No common observations found")
-        return False, results
-    
-    cobs_stata = stata_indexed.loc[common_obs]
-    cobs_python = python_indexed.loc[common_obs]
-    
-    # Calculate absolute differences
-    cobs_diff = abs(cobs_python - cobs_stata)
-    
-    # Get Pth percentile of absolute differences
-    pth_percentile_diff = cobs_diff.abs().quantile(PTH_PERCENTILE).iloc[0]
-    
-    precision_ok = pth_percentile_diff < TOL_DIFF
-    results['pth_percentile_diff'] = pth_percentile_diff
-    results['precision_ok'] = precision_ok
-    
-    if precision_ok:
-        print(f"  ✓ Precision acceptable: {PTH_PERCENTILE*100:.0f}th percentile diff = {pth_percentile_diff:.2e} < {TOL_DIFF:.2e}")
+        precision_ok = False
     else:
-        print(f"  ✗ Precision failed: {PTH_PERCENTILE*100:.0f}th percentile diff = {pth_percentile_diff:.2e} >= {TOL_DIFF:.2e}")
-    
-    # Generate feedback for failed precision
-    if not precision_ok:
-        results['feedback'] = generate_feedback(cobs_stata, cobs_python, cobs_diff, predictor_name)
+        cobs_stata = stata_indexed.loc[common_obs]
+        cobs_python = python_indexed.loc[common_obs]
+        
+        # Calculate absolute differences
+        cobs_diff = abs(cobs_python - cobs_stata)
+        
+        # Get Pth percentile of absolute differences
+        pth_percentile_diff = cobs_diff.abs().quantile(PTH_PERCENTILE).iloc[0]
+        
+        precision_ok = pth_percentile_diff < TOL_DIFF
+        results['pth_percentile_diff'] = pth_percentile_diff
+        results['precision_ok'] = precision_ok
+        
+        if precision_ok:
+            print(f"  ✓ Precision acceptable: {PTH_PERCENTILE*100:.0f}th percentile diff = {pth_percentile_diff:.2e} < {TOL_DIFF:.2e}")
+        else:
+            print(f"  ✗ Precision failed: {PTH_PERCENTILE*100:.0f}th percentile diff = {pth_percentile_diff:.2e} >= {TOL_DIFF:.2e}")
+        
+        # Generate feedback for failed precision
+        if not precision_ok:
+            results['feedback'] = generate_feedback(cobs_stata, cobs_python, cobs_diff, predictor_name)
     
     return cols_match and is_superset and precision_ok, results
 
