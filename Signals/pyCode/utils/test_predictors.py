@@ -97,6 +97,18 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         missing_obs = stata_obs - python_obs
         results['missing_observations'] = list(missing_obs)[:10]  # Show first 10
         results['missing_count'] = len(missing_obs)
+        
+        # Extract sample of missing observations with all columns
+        if len(missing_obs) > 0:
+            # Reset index to access permno/yyyymm as columns
+            stata_reset = stata_df.reset_index()
+            # Create index tuples for filtering
+            missing_tuples = list(missing_obs)
+            # Filter to missing observations and sort
+            missing_sample = stata_reset[
+                stata_reset.set_index(INDEX_COLS).index.isin(missing_tuples)
+            ].sort_values(by=INDEX_COLS).head(10)
+            results['missing_observations_sample'] = missing_sample
     
     # 3. For common observations, Pth percentile absolute difference < TOL_DIFF
     common_obs = stata_indexed.index.intersection(python_indexed.index)
@@ -181,6 +193,12 @@ def output_predictor_results(predictor_name, results, overall_passed):
     else:
         missing_count = results.get('missing_count', 0)
         print(f"  ❌ Test 2 - Superset check: FAILED (Python missing {missing_count} Stata observations)")
+        
+        # Show sample of missing observations
+        if 'missing_observations_sample' in results:
+            print(f"  Sample of missing observations:")
+            sample_df = results['missing_observations_sample']
+            print(f"  {sample_df.to_string(index=False)}")
     
     # Test 3: Precision check
     if results.get('common_obs_count', 0) == 0:
@@ -230,6 +248,12 @@ def output_predictor_results(predictor_name, results, overall_passed):
     # Precision results
     if 'pth_percentile_diff' in results:
         md_lines.append(f"**Pth percentile absolute difference**: {results['pth_percentile_diff']:.2e} (tolerance: {TOL_DIFF:.2e})\n\n")
+    
+    # Feedback for failed superset test
+    if not results.get('test_2_passed', True) and 'missing_observations_sample' in results:
+        md_lines.append("**Missing Observations Sample**:\n")
+        missing_sample = results['missing_observations_sample']
+        md_lines.append(f"```\n{missing_sample.to_string(index=False)}\n```\n\n")
     
     # Feedback for failed precision
     if 'bad_count' in results:
