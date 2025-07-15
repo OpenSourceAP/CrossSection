@@ -21,7 +21,7 @@ Inputs:
     - Python CSV files in ../pyData/Predictors/
 
 Outputs:
-    - Console validation results with ✓/✗ symbols
+    - Console validation results with ✅/❌ symbols
     - Validation log saved to ../Logs/testout_predictors.md
     - Feedback showing worst observations and differences
 """
@@ -71,7 +71,7 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         stata_indexed = stata_df.set_index(INDEX_COLS)
         python_indexed = python_df.set_index(INDEX_COLS)
     except KeyError as e:
-        print(f"  ✗ Missing index columns: {e}")
+        print(f"  ❌ Missing index columns: {e}")
         results['error'] = f'Missing index columns: {e}'
         return False, results
     
@@ -159,44 +159,44 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     # Handle error case
     if 'error' in results:
-        print(f"  ✗ Error: {results['error']}")
+        print(f"  ❌ Error: {results['error']}")
         return [
             f"### {predictor_name}\n",
-            f"**Status**: ✗ FAILED\n",
+            f"**Status**: ❌ FAILED\n",
             f"**Error**: {results['error']}\n",
             "---\n"
         ]
     
     # Test 1: Column names
     if results.get('test_1_passed', False):
-        print(f"  ✓ Test 1 - Column names: PASSED")
+        print(f"  ✅ Test 1 - Column names: PASSED")
     else:
-        print(f"  ✗ Test 1 - Column names: FAILED")
+        print(f"  ❌ Test 1 - Column names: FAILED")
         print(f"    Stata:  {results.get('stata_columns', [])}")
         print(f"    Python: {results.get('python_columns', [])}")
     
     # Test 2: Superset check
     if results.get('test_2_passed', False):
-        print(f"  ✓ Test 2 - Superset check: PASSED (Stata={results.get('stata_obs_count', 0)}, Python={results.get('python_obs_count', 0)})")
+        print(f"  ✅ Test 2 - Superset check: PASSED (Stata={results.get('stata_obs_count', 0)}, Python={results.get('python_obs_count', 0)})")
     else:
         missing_count = results.get('missing_count', 0)
-        print(f"  ✗ Test 2 - Superset check: FAILED (Python missing {missing_count} Stata observations)")
+        print(f"  ❌ Test 2 - Superset check: FAILED (Python missing {missing_count} Stata observations)")
     
     # Test 3: Precision check
     if results.get('common_obs_count', 0) == 0:
-        print(f"  ✗ Test 3 - Precision check: FAILED (No common observations found)")
+        print(f"  ❌ Test 3 - Precision check: FAILED (No common observations found)")
     elif results.get('test_3_passed', False):
         pth_diff = results.get('pth_percentile_diff', 0)
-        print(f"  ✓ Test 3 - Precision check: PASSED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF:.2e})")
+        print(f"  ✅ Test 3 - Precision check: PASSED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF:.2e})")
     else:
         pth_diff = results.get('pth_percentile_diff', 0)
-        print(f"  ✗ Test 3 - Precision check: FAILED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF:.2e})")
+        print(f"  ❌ Test 3 - Precision check: FAILED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF:.2e})")
     
     # Overall result
     if overall_passed:
-        print(f"  ✓ {predictor_name} PASSED")
+        print(f"  ✅ {predictor_name} PASSED")
     else:
-        print(f"  ✗ {predictor_name} FAILED")
+        print(f"  ❌ {predictor_name} FAILED")
         # Print feedback for failed predictors
         if 'bad_count' in results:
             print(f"    Bad observations: {results['bad_count']}/{results['total_count']} ({results['bad_ratio']:.1%})")
@@ -206,15 +206,15 @@ def output_predictor_results(predictor_name, results, overall_passed):
     md_lines.append(f"### {predictor_name}\n\n")
     
     if overall_passed:
-        md_lines.append("**Status**: ✓ PASSED\n\n")
+        md_lines.append("**Status**: ✅ PASSED\n\n")
     else:
-        md_lines.append("**Status**: ✗ FAILED\n\n")
+        md_lines.append("**Status**: ❌ FAILED\n\n")
     
     # Test Results section
     md_lines.append("**Test Results**:\n")
-    test1_status = "✓ PASSED" if results.get('test_1_passed', False) else "✗ FAILED"
-    test2_status = "✓ PASSED" if results.get('test_2_passed', False) else "✗ FAILED"
-    test3_status = "✓ PASSED" if results.get('test_3_passed', False) else "✗ FAILED"
+    test1_status = "✅ PASSED" if results.get('test_1_passed', False) else "❌ FAILED"
+    test2_status = "✅ PASSED" if results.get('test_2_passed', False) else "❌ FAILED"
+    test3_status = "✅ PASSED" if results.get('test_3_passed', False) else "❌ FAILED"
     
     md_lines.append(f"- Test 1 - Column names: {test1_status}\n")
     md_lines.append(f"- Test 2 - Superset check: {test2_status}\n")
@@ -286,7 +286,7 @@ def validate_predictor(predictor_name):
     return passed, results, md_lines
 
 def get_available_predictors():
-    """Get list of available predictor files"""
+    """Get list of available predictor files and missing Python CSVs"""
     stata_dir = Path("../Data/Predictors/")
     python_dir = Path("../pyData/Predictors/")
     
@@ -299,9 +299,11 @@ def get_available_predictors():
     if python_dir.exists():
         python_files = {f.stem for f in python_dir.glob("*.csv")}
     
-    # Return predictors that exist in both or either
-    all_predictors = stata_files.union(python_files)
-    return sorted(list(all_predictors))
+    # Return intersection (available for validation) and missing Python CSVs
+    available_predictors = sorted(list(stata_files.intersection(python_files)))
+    missing_python_csvs = sorted(list(stata_files - python_files))
+    
+    return available_predictors, missing_python_csvs
 
 def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results):
     """Write detailed results to markdown log file"""
@@ -317,26 +319,34 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         
         f.write(f"## Summary\n\n")
         
-        # Create summary table
-        f.write("| Predictor      | Column Names  | Obs Superset  | Precision  |\n")
-        f.write("|----------------|---------------|---------------|------------|\n")
+        # Create summary table with Python CSV column
+        f.write("| Predictor      | Python CSV | Column Names  | Obs Superset  | Precision  |\n")
+        f.write("|----------------|------------|---------------|---------------|------------|\n")
         
         for predictor in test_predictors:
             results = all_results.get(predictor, {})
             
+            # Get Python CSV availability
+            python_csv_available = results.get('python_csv_available', False)
+            csv_status = "✅" if python_csv_available else "❌"
+            
             # Get test results with fallback
-            test1 = results.get('test_1_passed', False)
-            test2 = results.get('test_2_passed', False) 
-            test3 = results.get('test_3_passed', False)
+            test1 = results.get('test_1_passed', None)
+            test2 = results.get('test_2_passed', None) 
+            test3 = results.get('test_3_passed', None)
             
-            # Format symbols (emojis for pass/fail)
-            col1 = "✅" if test1 else "❌"
-            col2 = "✅" if test2 else "❌"
-            col3 = "✅" if test3 else "❌"
+            # Format symbols (emojis for pass/fail, NA for None)
+            col1 = "✅" if test1 == True else ("❌" if test1 == False else "NA")
+            col2 = "✅" if test2 == True else ("❌" if test2 == False else "NA")
+            col3 = "✅" if test3 == True else ("❌" if test3 == False else "NA")
             
-            f.write(f"| {predictor:<14} | {col1:<12} | {col2:<12} | {col3:<9} |\n")
+            f.write(f"| {predictor:<14} | {csv_status:<9} | {col1:<12} | {col2:<12} | {col3:<9} |\n")
         
-        f.write(f"\n**Overall**: {passed_count}/{len(test_predictors)} passed\n\n")
+        # Count available predictors for summary
+        available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
+        
+        f.write(f"\n**Overall**: {passed_count}/{available_count} available predictors passed validation\n")
+        f.write(f"**Python CSVs**: {available_count}/{len(test_predictors)} predictors have Python implementation\n\n")
         
         f.write(f"## Detailed Results\n\n")
         
@@ -353,53 +363,96 @@ def main():
     
     args = parser.parse_args()
     
-    available_predictors = get_available_predictors()
+    available_predictors, missing_python_csvs = get_available_predictors()
     
     if args.list:
-        print("Available predictors:")
+        print("Available predictors (have both Stata and Python CSV):")
         for pred in available_predictors:
+            print(f"  {pred}")
+        print("\nMissing Python CSVs (have Stata but no Python CSV):")
+        for pred in missing_python_csvs:
             print(f"  {pred}")
         return
     
     # Select predictors to test
     if args.predictors:
-        test_predictors = args.predictors
-        # Check if all requested predictors are available
-        missing = set(test_predictors) - set(available_predictors)
-        if missing:
-            print(f"Warning: These predictors not found: {missing}")
+        # Split requested predictors into available and missing
+        requested_set = set(args.predictors)
+        available_to_test = [p for p in available_predictors if p in requested_set]
+        missing_to_include = [p for p in missing_python_csvs if p in requested_set]
+        
+        # Check for completely unknown predictors
+        all_known = set(available_predictors + missing_python_csvs)
+        unknown = requested_set - all_known
+        if unknown:
+            print(f"Warning: These predictors not found in Stata data: {unknown}")
+        
+        test_predictors = available_to_test
+        include_missing = missing_to_include
     else:
         test_predictors = available_predictors
+        include_missing = missing_python_csvs
     
-    if not test_predictors:
+    if not test_predictors and not include_missing:
         print("No predictors to test")
         return
     
-    print(f"Testing {len(test_predictors)} predictors: {test_predictors}")
+    print(f"Validating {len(test_predictors)} predictors: {test_predictors}")
+    if include_missing:
+        print(f"Including {len(include_missing)} missing Python CSVs in summary: {include_missing}")
     
-    # Validate each predictor
+    # Validate each available predictor
     all_md_lines = []
     all_results = {}
     passed_count = 0
     
     for predictor in test_predictors:
         passed, results, md_lines = validate_predictor(predictor)
+        results['python_csv_available'] = True
         all_md_lines.append(md_lines)
         all_results[predictor] = results
         if passed:
             passed_count += 1
     
+    # Add dummy results for missing Python CSVs
+    for predictor in include_missing:
+        print(f"\n=== {predictor} ===")
+        print(f"  ❌ Python CSV missing: ../pyData/Predictors/{predictor}.csv")
+        
+        # Create dummy results for missing Python CSV
+        dummy_results = {
+            'python_csv_available': False,
+            'test_1_passed': None,
+            'test_2_passed': None, 
+            'test_3_passed': None,
+            'error': 'Python CSV file not found'
+        }
+        all_results[predictor] = dummy_results
+        
+        # Create minimal markdown for missing predictors
+        md_lines = [
+            f"### {predictor}\n\n",
+            "**Status**: ❌ MISSING PYTHON CSV\n\n",
+            f"**Error**: Python CSV file not found: ../pyData/Predictors/{predictor}.csv\n\n",
+            "---\n\n"
+        ]
+        all_md_lines.append(md_lines)
+    
+    # Combine all predictors for summary
+    all_predictors = test_predictors + include_missing
+    
     # Write markdown log
-    write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
+    write_markdown_log(all_md_lines, all_predictors, passed_count, all_results)
     
     # Summary
     print(f"\n=== SUMMARY ===")
-    print(f"Tested: {len(test_predictors)}")
-    print(f"Passed: {passed_count}")
-    print(f"Failed: {len(test_predictors) - passed_count}")
+    print(f"Available predictors tested: {len(test_predictors)}")
+    print(f"Missing Python CSVs included: {len(include_missing)}")
+    print(f"Passed validation: {passed_count}")
+    print(f"Failed validation: {len(test_predictors) - passed_count}")
     
     if passed_count == len(test_predictors):
-        print("🎉 ALL TESTS PASSED!")
+        print("🎉 ALL AVAILABLE TESTS PASSED!")
         sys.exit(0)
     else:
         print("❌ SOME TESTS FAILED")
