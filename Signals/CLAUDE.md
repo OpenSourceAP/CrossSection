@@ -234,31 +234,26 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 
 ## Requirements
 
+### Basic requirements
 - Output is csv files in `pyData/Predictors/`
   - No parquet files
+- Output has columns (permno, yyyymm, [predictor_name])
+  - index is (permno, yyyymm), both are integers
+    - index defines an "observation"
+  - [predictor_name] is "Accruals", "BM", etc. This column contains the signal values
 - The logic of each do file in `Code/Predictors/` is replicated precisely, line by line
   - Exception: the `savepredictor.do` has an option to save in a format other than csv. Remove this option.
-- **IMPORTANT**: Validation is done by running `python3 utils/test_predictors.py`
   - Validation checks the Simple and Precision requirements below
-- indexes are (permno, time_avail_m)
-  - Both are integers
 
-### Simple requirements:
+### Precision requirements:
+**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`
+
 1. Column names and order match exactly
-2. Column types match exactly
-3. Python indexes are a superset of Stata indexes
-  - All observations in the dta should be in the parquet
+  - This is trivial if the indexes match
+2. Python observations are a superset of Stata observations
+3. For common observations, Pth percentile absolute difference < TOL_DIFF
+  - common observations are observations that are in both Stata and Python
 
-### Precision requirements: 
-
-Define:
-- Common rows: rows with indexes that are in both Stata and Python
-- Perfect rows: common rows with columns that have no deviations
-- Imperfect rows: common rows that are not perfect rows
-
-The precision requirements are:
-4. Imperfect cells / total cells < 0.1%
-5. Imperfect rows / total rows < 0.1% or...
 
 # Interaction 
 
