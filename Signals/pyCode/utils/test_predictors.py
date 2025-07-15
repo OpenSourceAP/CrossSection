@@ -320,8 +320,8 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"## Summary\n\n")
         
         # Create summary table with Python CSV column
-        f.write("| Predictor      | Python CSV | Column Names  | Obs Superset  | Precision  |\n")
-        f.write("|----------------|------------|---------------|---------------|------------|\n")
+        f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision  |\n")
+        f.write("|---------------------------|------------|----------|-----------|------------|\n")
         
         for predictor in test_predictors:
             results = all_results.get(predictor, {})
@@ -340,7 +340,7 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             col2 = "✅" if test2 == True else ("❌" if test2 == False else "NA")
             col3 = "✅" if test3 == True else ("❌" if test3 == False else "NA")
             
-            f.write(f"| {predictor:<14} | {csv_status:<9} | {col1:<12} | {col2:<12} | {col3:<9} |\n")
+            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<8} | {col3:<9} |\n")
         
         # Count available predictors for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
