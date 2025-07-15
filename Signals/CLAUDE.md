@@ -5,11 +5,13 @@ This project aims to translate Stata code in `Code/` to Python equivalents in `p
 
 # Project Structure
 
-There are three main legs of the project:
+There are four main legs of the project:
 - Download data (`DataDownloads/`)
 - Create signal master table (`SignalMasterTable`)
 - Generate predictors (`Predictors/`)
 - Generate placebos (`Placebos/`)
+
+**IMPORTANT**: work on each leg in isolation. do not run validation scripts from the DownloadData leg when working on the Predictors leg.
 
 The `pyCode/` folder contains the Python equivalents of the Stata code.
 The `pyData/` folder contains the Python data files.
@@ -253,6 +255,8 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 1. Column names and order match exactly
   - This is trivial if the indexes match
 2. Python observations are a superset of Stata observations
+  - All Stata observations should be found in the Python data
+  - Data source differences typically cannot explain a failure in this test
 3. For common observations, Pth percentile absolute difference < TOL_DIFF
   - common observations are observations that are in both Stata and Python
 
