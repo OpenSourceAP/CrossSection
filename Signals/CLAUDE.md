@@ -33,6 +33,8 @@ Signals/
 ├── pyCode/                 # Python equivalent code (WORKING DIRECTORY)
 │   ├── .venv/              # Python virtual environment
 │   ├── DataDownloads/      # Python data download scripts
+│   ├── Predictors/         # Python predictor generation
+│   ├── Placebos/          # Python placebo generation (tbc)
 │   ├── Debug/              # Temporary testing scripts and data
 │   ├── requirements.txt    # Python dependencies
 │   ├── 01_DownloadData.py  # Main download orchestrator
@@ -44,7 +46,8 @@ Signals/
 │   ├── Placebos/          # Python placebo generation
 │   └── temp/              # Temporary Python files
 ├── Logs/                   # Processing logs
-├── Journal/                # Journaling
+├── Journal/                # Claude's Journal
+├── StataDocs/              # Stata syntax and Python translation docs
 ```
 
 ## DataDownloads Script Mapping
