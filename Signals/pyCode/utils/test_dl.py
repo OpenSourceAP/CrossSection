@@ -5,7 +5,7 @@ ABOUTME: Checks column names, types, row counts, and performs by-keys deviation 
 This script provides comprehensive validation that checks:
 1. Column names match exactly
 2. Column types match exactly  
-3. Row count (Python can have slightly more rows, up to 0.1% more)
+3. Row count (Python can have slightly more rows, see MAX_ROW_COUNT_RATIO)
 4. By-keys analysis: Imperfect rows / Total rows ratio
 5. By-keys analysis: Imperfect cells / Total cells ratio
 6. Value deviation statistics for worst columns
@@ -46,8 +46,25 @@ from pathlib import Path
 import time
 import numpy as np
 
-# Hard coded second row cap
-ROW_CAP_FOR_RAM = 10*10**6
+# ================================
+# VALIDATION CONFIGURATION
+# ================================
+
+# Row count validation
+MAX_ROW_COUNT_RATIO = 1.05  # Python can have up to 5% more rows than Stata
+
+# By-keys validation  
+DEFAULT_IMPERFECT_RATIO_THRESHOLD = 0.001  # 0.1% threshold for imperfect rows/cells
+DEFAULT_TOLERANCE = 1e-12  # Numeric comparison tolerance
+
+# Memory management
+ROW_CAP_FOR_RAM = 10_000_000  # Maximum rows to load for RAM management
+
+# Reporting
+CSV_SAMPLE_THRESHOLD = 0.001  # Generate CSV samples when imperfect ratio > 0.1%
+MAX_SAMPLE_ROWS = 1000  # Maximum rows in missing rows reports
+MAX_WORST_COLUMNS = 4  # Number of worst columns to show in reports
+MAX_WORST_ROWS_FOR_SAMPLE = 20  # Maximum rows in CSV samples
 
 
 def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
@@ -136,7 +153,7 @@ def generate_missing_rows_report(dataset_name: str, dta, parq, key_cols: list):
             python_only_df = python_only_df.sort_values(by=key_cols)
         
         # Limit to first MAX_ROWS rows
-        MAX_ROWS = 1000
+        MAX_ROWS = MAX_SAMPLE_ROWS
         stata_cutoff = len(stata_only_df) > MAX_ROWS
         python_cutoff = len(python_only_df) > MAX_ROWS
         
@@ -371,7 +388,7 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         
         if python_rows == stata_rows:
             validation_results.append("✓ Row counts match exactly")
-        elif row_ratio <= 1.001:  # Python can have up to 0.1% more
+        elif row_ratio <= MAX_ROW_COUNT_RATIO:  # Python can have up to 0.1% more
             validation_results.append("✓ Row counts acceptable (Python ≤ 0.1% more)")
         else:
             validation_results.append(f"✗ Row count difference too large (ratio: {row_ratio:.3f})")
@@ -401,7 +418,7 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         }
 
 
-def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, key_cols=None, tolerance: float = 1e-12, imperfect_ratio_threshold: float = 0.001) -> dict:
+def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, key_cols=None, tolerance: float = DEFAULT_TOLERANCE, imperfect_ratio_threshold: float = DEFAULT_IMPERFECT_RATIO_THRESHOLD) -> dict:
     """Validate dataset by keys and compute imperfect rows ratio.
     
     Args:
@@ -411,7 +428,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         parq: Python dataframe
         key_cols: List of key columns for comparison
         tolerance: Tolerance for numeric comparisons
-        imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: 0.001)
+        imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: DEFAULT_IMPERFECT_RATIO_THRESHOLD)
         
     Returns:
         dict: Combined validation results with basic + by-keys analysis
@@ -594,7 +611,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                                reverse=True)
             
             # Show top 4 worst columns
-            worst_4 = sorted_cols[:4]
+            worst_4 = sorted_cols[:MAX_WORST_COLUMNS]
             for col, diff_info in worst_4:
                 if 'error' in diff_info:
                     worst_columns.append(f"{col}: Error - {diff_info['error']}")
@@ -617,14 +634,14 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                     worst_columns.append(f"{col}: imperfect rows {pct_dev:.3f}%; mean dev for imperfect {mean_dev_str}; mean col level {mean_col_str}")
             
             # Save CSV sample if imperfect ratio > 0.1%
-            if imperfect_ratio > 0.001:
+            if imperfect_ratio > CSV_SAMPLE_THRESHOLD:
                 # Create detail directory
                 detail_dir = Path("../Logs/detail")
                 detail_dir.mkdir(parents=True, exist_ok=True)
                 
                 # Get worst columns and rows for sample
                 col_worst = [col for col, _ in sorted_cols[:20]]
-                row_worst_idx = list(imperfect_row_indices)[:20]  # Take first 20 imperfect rows
+                row_worst_idx = list(imperfect_row_indices)[:MAX_WORST_ROWS_FOR_SAMPLE]  # Take first N imperfect rows
                 
                 if col_worst and row_worst_idx:
                     # Create sample with both Stata and Python values
@@ -715,12 +732,12 @@ def sort_results_by_failure_priority(results_list: list) -> list:
     return sorted(results_list, key=lambda x: (get_failure_priority(x), x['dataset_name']))
 
 
-def generate_summary(results_list: list, imperfect_ratio_threshold: float = 0.001) -> str:
+def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFAULT_IMPERFECT_RATIO_THRESHOLD) -> str:
     """Generate summary statistics from validation results.
     
     Args:
         results_list: List of validation result dictionaries
-        imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: 0.001)
+        imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: DEFAULT_IMPERFECT_RATIO_THRESHOLD)
         
     Returns:
         str: Formatted markdown summary section
@@ -975,7 +992,7 @@ def reorder_markdown_by_failure_priority(markdown_content: str) -> str:
     return '\n'.join(result_lines)
 
 
-def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float, execution_time: float, imperfect_ratio_threshold: float = 0.001) -> str:
+def format_results_to_markdown(results_list: list, max_rows: int, tolerance: float, execution_time: float, imperfect_ratio_threshold: float = DEFAULT_IMPERFECT_RATIO_THRESHOLD) -> str:
     """Format validation results to markdown string.
     
     Args:
@@ -983,7 +1000,7 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
         max_rows: Maximum rows limit used in validation
         tolerance: Tolerance used for numeric comparisons
         execution_time: Execution time in minutes
-        imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: 0.001)
+        imperfect_ratio_threshold: Maximum ratio for imperfect rows/cells (default: DEFAULT_IMPERFECT_RATIO_THRESHOLD)
         
     Returns:
         str: Formatted markdown content
@@ -1064,7 +1081,58 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     return "\n".join(lines)
 
 
-def validate_all_datasets(datasets=None, max_rows=-1, tolerance=1e-12, imperfect_ratio_threshold=0.001):
+def display_configuration(datasets, max_rows, tolerance, imperfect_ratio_threshold):
+    """Display current validation configuration to the user."""
+    print("\n" + "="*60)
+    print("DATASET VALIDATION CONFIGURATION")
+    print("="*60)
+    
+    # Display validation thresholds
+    print("Validation Thresholds:")
+    print(f"  • Max row count ratio: {MAX_ROW_COUNT_RATIO:.3f} (Python can have up to {(MAX_ROW_COUNT_RATIO-1)*100:.1f}% more rows)")
+    print(f"  • Imperfect ratio threshold: {imperfect_ratio_threshold:.3f} ({imperfect_ratio_threshold*100:.1f}%)")
+    print(f"  • Numeric tolerance: {tolerance}")
+    print(f"  • CSV sample threshold: {CSV_SAMPLE_THRESHOLD:.3f} ({CSV_SAMPLE_THRESHOLD*100:.1f}%)")
+    
+    # Display memory management
+    print("\nMemory Management:")
+    print(f"  • Row cap for RAM: {ROW_CAP_FOR_RAM:,} rows")
+    print(f"  • Max rows per dataset: {max_rows:,} rows" if max_rows > 0 else "  • Max rows per dataset: unlimited")
+    
+    # Display reporting settings
+    print("\nReporting Settings:")
+    print(f"  • Max sample rows in reports: {MAX_SAMPLE_ROWS:,}")
+    print(f"  • Max worst columns shown: {MAX_WORST_COLUMNS}")
+    print(f"  • Max worst rows in CSV samples: {MAX_WORST_ROWS_FOR_SAMPLE}")
+    
+    # Display dataset selection
+    print("\nDataset Selection:")
+    if datasets is None:
+        print("  • Validating: ALL datasets")
+    else:
+        print(f"  • Validating: {len(datasets)} dataset(s)")
+        for i, dataset in enumerate(datasets[:10], 1):  # Show first 10
+            print(f"    {i}. {dataset}")
+        if len(datasets) > 10:
+            print(f"    ... and {len(datasets) - 10} more")
+    
+    print("="*60)
+
+
+def confirm_execution():
+    """Ask user for confirmation before proceeding with validation."""
+    while True:
+        response = input("\nProceed with validation? (y/n): ").lower().strip()
+        if response in ['y', 'yes']:
+            return True
+        elif response in ['n', 'no']:
+            print("Validation cancelled.")
+            return False
+        else:
+            print("Please enter 'y' for yes or 'n' for no.")
+
+
+def validate_all_datasets(datasets=None, max_rows=-1, tolerance=DEFAULT_TOLERANCE, imperfect_ratio_threshold=DEFAULT_IMPERFECT_RATIO_THRESHOLD):
     """Validate all or specified datasets and save to markdown file."""
 
     start_time = time.time()
@@ -1166,14 +1234,14 @@ def main():
     parser.add_argument(
         '--tolerance',
         type=float,
-        default=1e-12,
-        help='Tolerance for a "perfect" cell (default: 1e-12)'
+        default=DEFAULT_TOLERANCE,
+        help=f'Tolerance for a "perfect" cell (default: {DEFAULT_TOLERANCE})'
     )
     parser.add_argument(
         '--imperfect-ratio-threshold',
         type=float,
-        default=0.001,
-        help='Maximum ratio for imperfect rows/cells acceptance (default: 0.001)'
+        default=DEFAULT_IMPERFECT_RATIO_THRESHOLD,
+        help=f'Maximum ratio for imperfect rows/cells acceptance (default: {DEFAULT_IMPERFECT_RATIO_THRESHOLD})'
     )
     
     args = parser.parse_args()
@@ -1210,6 +1278,11 @@ def main():
         datasets_to_validate = args.datasets
     else:
         datasets_to_validate = None  # Will validate all
+    
+    # Display configuration and ask for confirmation
+    display_configuration(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold)
+    if not confirm_execution():
+        return
     
     # Run validation
     validate_all_datasets(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold)
