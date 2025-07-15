@@ -235,8 +235,10 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 ## Requirements
 
 ### Basic requirements
-- Output is csv files in `pyData/Predictors/`
-  - No parquet files
+- For each do file in `Code/Predictors/`, say `Accruals.do` there is
+  - a corresponding python script `pyCode/Predictors/Accruals.py`
+  - a corresponding csv file `pyData/Predictors/Accruals.csv`
+    - No parquet files
 - Output has columns (permno, yyyymm, [predictor_name])
   - index is (permno, yyyymm), both are integers
     - index defines an "observation"
