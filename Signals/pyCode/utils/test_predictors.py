@@ -84,13 +84,6 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     results['stata_columns'] = stata_cols
     results['python_columns'] = python_cols
     
-    if not cols_match:
-        print(f"  ✗ Column names mismatch")
-        print(f"    Stata:  {stata_cols}")
-        print(f"    Python: {python_cols}")
-    else:
-        print(f"  ✓ Column names match: {stata_cols}")
-    
     # 2. Python observations are superset of Stata observations
     stata_obs = set(stata_indexed.index)
     python_obs = set(python_indexed.index)
@@ -100,19 +93,16 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     results['stata_obs_count'] = len(stata_obs)
     results['python_obs_count'] = len(python_obs)
     
-    if is_superset:
-        print(f"  ✓ Python observations are superset of Stata: Stata={len(stata_obs)}, Python={len(python_obs)}")
-    else:
+    if not is_superset:
         missing_obs = stata_obs - python_obs
-        print(f"  ✗ Python missing {len(missing_obs)} Stata observations")
         results['missing_observations'] = list(missing_obs)[:10]  # Show first 10
+        results['missing_count'] = len(missing_obs)
     
     # 3. For common observations, Pth percentile absolute difference < TOL_DIFF
     common_obs = stata_indexed.index.intersection(python_indexed.index)
     results['common_obs_count'] = len(common_obs)
     
     if len(common_obs) == 0:
-        print(f"  ✗ No common observations found")
         precision_ok = False
     else:
         cobs_stata = stata_indexed.loc[common_obs]
@@ -128,78 +118,172 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         results['pth_percentile_diff'] = pth_percentile_diff
         results['precision_ok'] = precision_ok
         
-        if precision_ok:
-            print(f"  ✓ Precision acceptable: {PTH_PERCENTILE*100:.0f}th percentile diff = {pth_percentile_diff:.2e} < {TOL_DIFF:.2e}")
-        else:
-            print(f"  ✗ Precision failed: {PTH_PERCENTILE*100:.0f}th percentile diff = {pth_percentile_diff:.2e} >= {TOL_DIFF:.2e}")
-        
         # Generate feedback for failed precision
         if not precision_ok:
-            results['feedback'] = generate_feedback(cobs_stata, cobs_python, cobs_diff, predictor_name)
+            # Find observations with differences >= TOL_DIFF
+            bad_idx = cobs_diff[cobs_diff[predictor_name] > TOL_DIFF].index
+            
+            if len(bad_idx) > 0:
+                bad_python = cobs_python.loc[bad_idx].rename(columns={predictor_name: 'python'})
+                bad_stata = cobs_stata.loc[bad_idx].rename(columns={predictor_name: 'stata'})
+                
+                bad_df = bad_python.join(bad_stata, on=INDEX_COLS)
+                bad_df['diff'] = bad_df['python'] - bad_df['stata']
+                
+                # Most recent observations that exceed tolerance
+                recent_bad = bad_df.reset_index().sort_values(by='yyyymm', ascending=False).head(10)
+                results['recent_bad'] = recent_bad
+                
+                # Observations with largest differences
+                largest_diff = bad_df.reset_index().sort_values(by='diff', key=abs, ascending=False).head(10)
+                results['largest_diff'] = largest_diff
+                
+                results['bad_count'] = len(bad_idx)
+                results['total_count'] = len(cobs_diff)
+                results['bad_ratio'] = len(bad_idx) / len(cobs_diff)
+    
+    # Store individual test results
+    results['test_1_passed'] = cols_match
+    results['test_2_passed'] = is_superset
+    results['test_3_passed'] = precision_ok
     
     return cols_match and is_superset and precision_ok, results
 
-def generate_feedback(cobs_stata, cobs_python, cobs_diff, predictor_name):
+def output_predictor_results(predictor_name, results, overall_passed):
     """
-    Generate feedback showing worst observations and differences
+    Output predictor results to both console and return markdown lines
     """
-    feedback = {}
+    # Print to console
+    print(f"\n=== Validating {predictor_name} ===")
+    print(f"  Loaded Stata: {results.get('stata_obs_count', 0)} rows, Python: {results.get('python_obs_count', 0)} rows")
     
-    # Find observations with differences >= TOL_DIFF
-    bad_idx = cobs_diff[cobs_diff[predictor_name] > TOL_DIFF].index
+    # Handle error case
+    if 'error' in results:
+        print(f"  ✗ Error: {results['error']}")
+        return [
+            f"### {predictor_name}\n",
+            f"**Status**: ✗ FAILED\n",
+            f"**Error**: {results['error']}\n",
+            "---\n"
+        ]
     
-    if len(bad_idx) > 0:
-        bad_python = cobs_python.loc[bad_idx].rename(columns={predictor_name: 'python'})
-        bad_stata = cobs_stata.loc[bad_idx].rename(columns={predictor_name: 'stata'})
-        
-        bad_df = bad_python.join(bad_stata, on=INDEX_COLS)
-        bad_df['diff'] = bad_df['python'] - bad_df['stata']
-        
-        # Most recent observations that exceed tolerance
-        recent_bad = bad_df.reset_index().sort_values(by='yyyymm', ascending=False).head(10)
-        feedback['recent_bad'] = recent_bad
-        
-        # Observations with largest differences
-        largest_diff = bad_df.reset_index().sort_values(by='diff', key=abs, ascending=False).head(10)
-        feedback['largest_diff'] = largest_diff
-        
-        feedback['bad_count'] = len(bad_idx)
-        feedback['total_count'] = len(cobs_diff)
-        feedback['bad_ratio'] = len(bad_idx) / len(cobs_diff)
+    # Test 1: Column names
+    if results.get('test_1_passed', False):
+        print(f"  ✓ Test 1 - Column names: PASSED")
+    else:
+        print(f"  ✗ Test 1 - Column names: FAILED")
+        print(f"    Stata:  {results.get('stata_columns', [])}")
+        print(f"    Python: {results.get('python_columns', [])}")
     
-    return feedback
+    # Test 2: Superset check
+    if results.get('test_2_passed', False):
+        print(f"  ✓ Test 2 - Superset check: PASSED (Stata={results.get('stata_obs_count', 0)}, Python={results.get('python_obs_count', 0)})")
+    else:
+        missing_count = results.get('missing_count', 0)
+        print(f"  ✗ Test 2 - Superset check: FAILED (Python missing {missing_count} Stata observations)")
+    
+    # Test 3: Precision check
+    if results.get('common_obs_count', 0) == 0:
+        print(f"  ✗ Test 3 - Precision check: FAILED (No common observations found)")
+    elif results.get('test_3_passed', False):
+        pth_diff = results.get('pth_percentile_diff', 0)
+        print(f"  ✓ Test 3 - Precision check: PASSED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF:.2e})")
+    else:
+        pth_diff = results.get('pth_percentile_diff', 0)
+        print(f"  ✗ Test 3 - Precision check: FAILED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF:.2e})")
+    
+    # Overall result
+    if overall_passed:
+        print(f"  ✓ {predictor_name} PASSED")
+    else:
+        print(f"  ✗ {predictor_name} FAILED")
+        # Print feedback for failed predictors
+        if 'bad_count' in results:
+            print(f"    Bad observations: {results['bad_count']}/{results['total_count']} ({results['bad_ratio']:.1%})")
+    
+    # Generate markdown lines
+    md_lines = []
+    md_lines.append(f"### {predictor_name}\n\n")
+    
+    if overall_passed:
+        md_lines.append("**Status**: ✓ PASSED\n\n")
+    else:
+        md_lines.append("**Status**: ✗ FAILED\n\n")
+    
+    # Test Results section
+    md_lines.append("**Test Results**:\n")
+    test1_status = "✓ PASSED" if results.get('test_1_passed', False) else "✗ FAILED"
+    test2_status = "✓ PASSED" if results.get('test_2_passed', False) else "✗ FAILED"
+    test3_status = "✓ PASSED" if results.get('test_3_passed', False) else "✗ FAILED"
+    
+    md_lines.append(f"- Test 1 - Column names: {test1_status}\n")
+    md_lines.append(f"- Test 2 - Superset check: {test2_status}\n")
+    md_lines.append(f"- Test 3 - Precision check: {test3_status}\n\n")
+    
+    # Basic info
+    md_lines.append(f"**Columns**: {results.get('stata_columns', 'N/A')}\n\n")
+    md_lines.append("**Observations**:\n")
+    md_lines.append(f"- Stata:  {results.get('stata_obs_count', 0):,}\n")
+    md_lines.append(f"- Python: {results.get('python_obs_count', 0):,}\n")
+    md_lines.append(f"- Common: {results.get('common_obs_count', 0):,}\n\n")
+    
+    # Precision results
+    if 'pth_percentile_diff' in results:
+        md_lines.append(f"**Pth percentile absolute difference**: {results['pth_percentile_diff']:.2e} (tolerance: {TOL_DIFF:.2e})\n\n")
+    
+    # Feedback for failed precision
+    if 'bad_count' in results:
+        md_lines.append("**Feedback**:\n")
+        md_lines.append(f"- Num observations with diff >= TOL_DIFF: {results['bad_count']}/{results['total_count']} ({results['bad_ratio']:.3%})\n\n")
+        
+        if 'recent_bad' in results and len(results['recent_bad']) > 0:
+            md_lines.append("**Most Recent Bad Observations**:\n")
+            md_lines.append(f"```\n{results['recent_bad'].to_string()}\n```\n\n")
+        
+        if 'largest_diff' in results and len(results['largest_diff']) > 0:
+            md_lines.append("**Largest Differences**:\n")
+            md_lines.append(f"```\n{results['largest_diff'].to_string()}\n```\n\n")
+    
+    md_lines.append("---\n\n")
+    
+    return md_lines
 
 def validate_predictor(predictor_name):
     """Validate a single predictor against Stata output"""
     
-    print(f"\n=== Validating {predictor_name} ===")
-    
     # Load Stata CSV
     stata_path = Path(f"../Data/Predictors/{predictor_name}.csv")
     if not stata_path.exists():
-        print(f"  ✗ Stata file not found: {stata_path}")
-        return False, {}
+        results = {'error': f'Stata file not found: {stata_path}'}
+        md_lines = output_predictor_results(predictor_name, results, False)
+        return False, results, md_lines
     
     stata_df = load_csv_robust(stata_path)
     if stata_df is None:
-        return False, {}
+        results = {'error': f'Failed to load Stata file: {stata_path}'}
+        md_lines = output_predictor_results(predictor_name, results, False)
+        return False, results, md_lines
     
     # Load Python CSV
     python_path = Path(f"../pyData/Predictors/{predictor_name}.csv") 
     if not python_path.exists():
-        print(f"  ✗ Python file not found: {python_path}")
-        return False, {}
+        results = {'error': f'Python file not found: {python_path}'}
+        md_lines = output_predictor_results(predictor_name, results, False)
+        return False, results, md_lines
     
     python_df = load_csv_robust(python_path)
     if python_df is None:
-        return False, {}
-    
-    print(f"  Loaded Stata: {len(stata_df)} rows, Python: {len(python_df)} rows")
+        results = {'error': f'Failed to load Python file: {python_path}'}
+        md_lines = output_predictor_results(predictor_name, results, False)
+        return False, results, md_lines
     
     # Perform precision validation
     passed, results = validate_precision_requirements(stata_df, python_df, predictor_name)
     
-    return passed, results
+    # Generate unified output
+    md_lines = output_predictor_results(predictor_name, results, passed)
+    
+    return passed, results, md_lines
 
 def get_available_predictors():
     """Get list of available predictor files"""
@@ -219,7 +303,7 @@ def get_available_predictors():
     all_predictors = stata_files.union(python_files)
     return sorted(list(all_predictors))
 
-def write_markdown_log(all_results, test_predictors, passed_count):
+def write_markdown_log(all_md_lines, test_predictors, passed_count):
     """Write detailed results to markdown log file"""
     log_path = Path("../Logs/testout_predictors.md")
     
@@ -238,46 +322,9 @@ def write_markdown_log(all_results, test_predictors, passed_count):
         
         f.write(f"## Detailed Results\n\n")
         
-        for predictor, result in all_results.items():
-            f.write(f"### {predictor}\n\n")
-            
-            if result['passed']:
-                f.write(f"**Status**: ✓ PASSED\n\n")
-            else:
-                f.write(f"**Status**: ✗ FAILED\n\n")
-            
-            details = result['details']
-            
-            if 'error' in details:
-                f.write(f"**Error**: {details['error']}\n\n")
-                continue
-            
-            # Write basic info
-            f.write(f"**Columns**: {details.get('stata_columns', 'N/A')}\n\n")
-            f.write(f"**Observations**:\n")
-            f.write(f"- Stata:  {details['stata_obs_count']:,}\n")
-            f.write(f"- Python: {details['python_obs_count']:,}\n")
-            f.write(f"- Common: {details['common_obs_count']:,}\n\n")
-            
-            # Write precision results
-            if 'pth_percentile_diff' in details:
-                f.write(f"**Pth percentile absolute difference**: {details['pth_percentile_diff']:.2e} (tolerance: {TOL_DIFF:.2e})\n\n")
-            
-            # Write feedback if available
-            if 'feedback' in details:
-                feedback = details['feedback']
-                f.write(f"**Feedback**:\n")
-                f.write(f"- Num observations with diff >= TOL_DIFF: {feedback.get('bad_count', 0)}/{feedback.get('total_count', 0)} ({feedback.get('bad_ratio', 0):.3%})\n\n")
-                
-                if 'recent_bad' in feedback and len(feedback['recent_bad']) > 0:
-                    f.write(f"**Most Recent Bad Observations**:\n")
-                    f.write(f"```\n{feedback['recent_bad'].to_string()}\n```\n\n")
-                
-                if 'largest_diff' in feedback and len(feedback['largest_diff']) > 0:
-                    f.write(f"**Largest Differences**:\n")
-                    f.write(f"```\n{feedback['largest_diff'].to_string()}\n```\n\n")
-            
-            f.write("---\n\n")
+        # Write all the pre-formatted markdown lines
+        for lines in all_md_lines:
+            f.writelines(lines)
     
     print(f"\nDetailed results written to: {log_path}")
 
@@ -313,24 +360,17 @@ def main():
     print(f"Testing {len(test_predictors)} predictors: {test_predictors}")
     
     # Validate each predictor
-    all_results = {}
+    all_md_lines = []
     passed_count = 0
     
     for predictor in test_predictors:
-        passed, results = validate_predictor(predictor)
-        all_results[predictor] = {'passed': passed, 'details': results}
+        passed, _, md_lines = validate_predictor(predictor)
+        all_md_lines.append(md_lines)
         if passed:
             passed_count += 1
-            print(f"  ✓ {predictor} PASSED")
-        else:
-            print(f"  ✗ {predictor} FAILED")
-            # Print feedback for failed predictors
-            if 'feedback' in results and isinstance(results['feedback'], dict):
-                feedback = results['feedback']
-                print(f"    Bad observations: {feedback.get('bad_count', 0)}/{feedback.get('total_count', 0)} ({feedback.get('bad_ratio', 0):.1%})")
     
     # Write markdown log
-    write_markdown_log(all_results, test_predictors, passed_count)
+    write_markdown_log(all_md_lines, test_predictors, passed_count)
     
     # Summary
     print(f"\n=== SUMMARY ===")
