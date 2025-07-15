@@ -109,8 +109,16 @@ def main():
         print(f"ERROR in data downloads: {e}")
         sys.exit(1)
 
-    # TODO: Create predictors (equivalent to do "$pathCode/02_CreatePredictors.do")
-    # print("\n2. Creating predictors...")
+    # Create predictors (equivalent to do "$pathCode/02_CreatePredictors.do")
+    print("\n2. Creating predictors...")
+    try:
+        # Use subprocess.run without capture_output for real-time streaming
+        result = subprocess.run([sys.executable, "-u", "02_CreatePredictors.py"],
+                              check=True)
+        print("✓ Predictor creation completed")
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR in predictor creation: {e}")
+        sys.exit(1)
 
     # TODO: Create placebos (equivalent to do "$pathCode/03_CreatePlacebos.do")
     # print("\n3. Creating placebos...")
