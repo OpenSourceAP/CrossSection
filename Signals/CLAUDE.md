@@ -234,24 +234,31 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 
 ## Requirements
 
-### Basic Requirements
 - Output is csv files in `pyData/Predictors/`
   - No parquet files
 - The logic of each do file in `Code/Predictors/` is replicated precisely, line by line
   - Exception: the `savepredictor.do` has an option to save in a format other than csv. Remove this option.
+- **IMPORTANT**: Validation is done by running `python3 utils/test_predictors.py`
+  - Validation checks the Simple and Precision requirements below
+- indexes are (permno, time_avail_m)
+  - Both are integers
 
-### Detailed Requirements (Validation)
+### Simple requirements:
+1. Column names and order match exactly
+2. Column types match exactly
+3. Python indexes are a superset of Stata indexes
+  - All observations in the dta should be in the parquet
 
-**IMPORTANT**: Validation is done by running `python3 utils/test_predictors.py`
+### Precision requirements: 
 
-#### Basic Validation
-This simple validation is fast and easy. 
+Define:
+- Common rows: rows with indexes that are in both Stata and Python
+- Perfect rows: common rows with columns that have no deviations
+- Imperfect rows: common rows that are not perfect rows
 
-Valid data satisfies:
-1. Column names (exact match)
-2. Column types (exact match)
-3. Row count (Python can have more rows, but only 0.1% more)
-  - Drop rows with missing keys before counting
+The precision requirements are:
+4. Imperfect cells / total cells < 0.1%
+5. Imperfect rows / total rows < 0.1% or...
 
 # Interaction 
 
