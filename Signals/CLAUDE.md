@@ -1,28 +1,20 @@
 # CrossSection Signals - Python Translation Project
 
 ## Project Overview
-This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet format instead of DTA/CSV.
+This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet/CSV format instead of DTA/CSV.
 
-# File Structure 
+# Project Structure
 
-## Data Pipeline Structure
+There are three main legs of the project:
+- Download data (`DataDownloads/`)
+- Create signal master table (`SignalMasterTable`)
+- Generate predictors (`Predictors/`)
+- Generate placebos (`Placebos/`)
 
-### Input Sources
-The DataDownloads scripts process data from:
-- **WRDS databases**: Compustat (Annual/Quarterly), CRSP (Monthly/Daily), IBES
-- **External APIs**: FRED (Federal Reserve Economic Data), Fama-French data
-- **Preprocessed files** (optional): Located in `Data/Prep/`
-  - `iclink.csv` - IBES-CRSP linking table
-  - `OptionMetrics.csv` - Options data 
-  - `tr_13f.csv` - Thomson Reuters 13F holdings
-  - `corwin_schultz_spread.csv` - Bid-ask spread estimates
+The `pyCode/` folder contains the Python equivalents of the Stata code.
+The `pyData/` folder contains the Python data files.
 
-### Output Structure
-- **Stata Output**: Data saved to `Data/Intermediate/` in DTA/CSV format
-- **Python Output**: Data saved to `pyData/Intermediate/` in Parquet format
-- **File naming**: Maintain same base names but with `.parquet` extension
-
-## Directory Structure
+## Files
 
 ```
 Signals/
@@ -55,10 +47,11 @@ Signals/
 
 ## DataDownloads Script Mapping
 
+The DataDownloads leg is complicated. yaml files can help you get around
 - DataDownloads/00_map.yaml
 - DataDownloads/column_schemas.yaml
 
-# Requirements
+# DataDownloads Leg
 
 ## Basic Requirements
 - Python code should follow the stata counterpart as closely as possible
@@ -101,14 +94,6 @@ Valid data satisfies:
 7. If Imperfect rows / total rows > 0.1%, have User appove:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
-
-## Python Environment
-- Use `pandas` for data manipulation
-- Use `pyarrow` for Parquet I/O  
-- Use `wrds` library for database connections
-- Use `pandas_datareader` for external data APIs
-- Follow PEP 8 style guidelines
-
 
 ## Translation Philosophy (CRITICAL)
 **LEARNED FROM COMPUSTAT ANNUAL SHAPE MISMATCH FIX (2025-06-30)**
@@ -203,13 +188,9 @@ pip install -r requirements.txt
 - **Always activate before running scripts**: `source .venv/bin/activate`
 - **Install packages in venv**: `pip install package_name`
 
-# Project Extension: SignalMasterTable.py draft
+# SignalMasterTable Leg
 
-`Signals/Code/SignalMasterTable.do` is not part of the `DataDownloads/` folder. This script is really part of the predictor generation---it is likely to be modified in the predictor debugging process.
-
-But let's make a draft for it in this project because `SignalMasterTable.dta` is much more complicated than the other datasets created in the `Predictors/`.
-
-**Important**: this project extension is not described by 00_map.yaml or 01_columns.yaml.
+`Signals/Code/SignalMasterTable.do` is run in `02_CreatePredictors.do` and `03_CreatePlacebos.do`. But we should think about it as its own leg of the project. 
 
 ## Files and descriptions
 
@@ -246,6 +227,21 @@ Define:
 The precision requirements are:
 4. Imperfect cells / total cells < 0.1%
 5. Imperfect rows / total rows < 0.1% or...
+
+# Predictors Leg
+
+## Validation 
+
+**IMPORTANT**: Validation is done by running `python3 utils/test_predictors.py`
+
+### Basic Validation
+This simple validation is fast and easy. 
+
+Valid data satisfies:
+1. Column names (exact match)
+2. Column types (exact match)
+3. Row count (Python can have more rows, but only 0.1% more)
+  - Drop rows with missing keys before counting
 
 
 # Interaction 
