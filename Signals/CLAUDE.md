@@ -230,11 +230,21 @@ The precision requirements are:
 
 # Predictors Leg
 
-## Validation 
+Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/Predictors/`, in alphabetical order.
+
+## Requirements
+
+### Basic Requirements
+- Output is csv files in `pyData/Predictors/`
+  - No parquet files
+- The logic of each do file in `Code/Predictors/` is replicated precisely, line by line
+  - Exception: the `savepredictor.do` has an option to save in a format other than csv. Remove this option.
+
+### Detailed Requirements (Validation)
 
 **IMPORTANT**: Validation is done by running `python3 utils/test_predictors.py`
 
-### Basic Validation
+#### Basic Validation
 This simple validation is fast and easy. 
 
 Valid data satisfies:
@@ -242,7 +252,6 @@ Valid data satisfies:
 2. Column types (exact match)
 3. Row count (Python can have more rows, but only 0.1% more)
   - Drop rows with missing keys before counting
-
 
 # Interaction 
 
