@@ -303,7 +303,7 @@ def get_available_predictors():
     all_predictors = stata_files.union(python_files)
     return sorted(list(all_predictors))
 
-def write_markdown_log(all_md_lines, test_predictors, passed_count):
+def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results):
     """Write detailed results to markdown log file"""
     log_path = Path("../Logs/testout_predictors.md")
     
@@ -316,9 +316,27 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count):
         f.write(f"- INDEX_COLS: {INDEX_COLS}\n\n")
         
         f.write(f"## Summary\n\n")
-        f.write(f"- **Tested**: {len(test_predictors)}\n")
-        f.write(f"- **Passed**: {passed_count}\n")
-        f.write(f"- **Failed**: {len(test_predictors) - passed_count}\n\n")
+        
+        # Create summary table
+        f.write("| Predictor      | Column Names  | Obs Superset  | Precision  |\n")
+        f.write("|----------------|---------------|---------------|------------|\n")
+        
+        for predictor in test_predictors:
+            results = all_results.get(predictor, {})
+            
+            # Get test results with fallback
+            test1 = results.get('test_1_passed', False)
+            test2 = results.get('test_2_passed', False) 
+            test3 = results.get('test_3_passed', False)
+            
+            # Format symbols (emojis for pass/fail)
+            col1 = "✅" if test1 else "❌"
+            col2 = "✅" if test2 else "❌"
+            col3 = "✅" if test3 else "❌"
+            
+            f.write(f"| {predictor:<14} | {col1:<12} | {col2:<12} | {col3:<9} |\n")
+        
+        f.write(f"\n**Overall**: {passed_count}/{len(test_predictors)} passed\n\n")
         
         f.write(f"## Detailed Results\n\n")
         
@@ -361,16 +379,18 @@ def main():
     
     # Validate each predictor
     all_md_lines = []
+    all_results = {}
     passed_count = 0
     
     for predictor in test_predictors:
-        passed, _, md_lines = validate_predictor(predictor)
+        passed, results, md_lines = validate_predictor(predictor)
         all_md_lines.append(md_lines)
+        all_results[predictor] = results
         if passed:
             passed_count += 1
     
     # Write markdown log
-    write_markdown_log(all_md_lines, test_predictors, passed_count)
+    write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
     
     # Summary
     print(f"\n=== SUMMARY ===")

@@ -246,7 +246,7 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
   - Validation checks the Simple and Precision requirements below
 
 ### Precision requirements:
-**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`
+**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`. This script outputs `Logs/testout_predictors.md`
 
 1. Column names and order match exactly
   - This is trivial if the indexes match
