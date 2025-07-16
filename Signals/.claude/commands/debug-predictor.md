@@ -8,6 +8,8 @@ allowed-tools:
   # Create debug scipts
   - Write(Debug/*.py)
   - Edit(Debug/*.py)
+  # Edit the py script
+  - Edit(pyCode/Predictors/*.py)
 examples: 
   - `/debug-predictor AccrualsBM`
 ---
@@ -21,11 +23,11 @@ examples:
 
 # Task  
 Let's debug @pyCode/Predictors/$ARGUMENTS.py. The tests above fail.  
+- Select a specific observation that is causing the test to fail and bisect
+    - Read the bisection strategy in Journal/2025-07-16_AnalystRevision_bisection_debugging.md
+    - Look for the line of the py script that is causing this observation to be problematic
+- Study recent entries in Journal/ for previous debugging lessons
+- Think about the plan before writing code
 
-1. Summarise the failures and isolate the first breaking assertion.  
-2. List hypotheses for root causes (data mismatch, index alignment, logic divergence, I/O issues, etc.).  
-3. For each hypothesis, propose one quick check (diff, assert, or print).  
-4. Emit small debug helpers or one‑off scripts as needed (shell or Python).  
-5. Return an ordered action plan with estimated effort per step.
-
-think about the plan.
+# Error Handling
+- If **$ARGUMENTS** is not a valid predictor, check with the user on the name of the predictor
