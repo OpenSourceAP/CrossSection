@@ -17,7 +17,7 @@ Inputs:
 
 Outputs:
     - Beta.csv: CSV file with columns [permno, yyyymm, Beta]
-    - Beta = CAMP beta from 60-month rolling regression (minimum 20 observations)
+    - Beta = CAPM beta from 60-month rolling regression (minimum 20 observations)
     - Uses asreg equivalent: retrf = alpha + beta * ewmktrf + epsilon
 """
 
@@ -171,7 +171,7 @@ def main():
     # gen ewmktrf = ewretd - rf
     df['ewmktrf'] = df['ewretd'] - df['rf']
     
-    # Calculate rolling CAMP beta
+    # Calculate rolling CAPM beta
     print("Calculating rolling CAPM beta (60-month window, min 20 observations)...")
     
     # Equivalent to:
