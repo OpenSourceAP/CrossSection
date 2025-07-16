@@ -17,30 +17,30 @@ signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parque
 signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
 
 # Merge 1:1 permno time_avail_m, keep using match
-df = pd.merge(m_compustat, signal_master, on=['permno', 'time_avail_m'], how='inner')
+df = pd.merge(m_compustat, signal_master, on=['permno', 'time_avail_m'], how='right')
 
 # find the market equity that matches datadate (based on 6 month lag)
 # (see "Company Data" section)
 
-# Sort by permno and time_avail_m for proper lagging
+# Sort by permno and time_avail_m for proper lagging (equivalent to xtset)
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 6-month lag of mve_c
+# Create 6-month lag using .shift() (equivalent to gen me_datadate = l6.mve_c)
 df['me_datadate'] = df.groupby('permno')['mve_c'].shift(6)
+df['l6_time_avail_m'] = df.groupby('permno')['time_avail_m'].shift(6)
 
-# Replace me_datadate with missing if l6.time_avail_m != mofd(datadate)
-# First create the 6-month lagged time_avail_m
-df['time_avail_m_lag6'] = df.groupby('permno')['time_avail_m'].shift(6)
-
-# Convert both to Period('M') format for comparison (equivalent to Stata's monthly dates)
-df['time_avail_m_lag6_period'] = pd.to_datetime(df['time_avail_m_lag6']).dt.to_period('M')
+# Convert to Period('M') format for comparison (equivalent to mofd() function)
+df['l6_time_avail_m_period'] = pd.to_datetime(df['l6_time_avail_m']).dt.to_period('M')
 df['datadate_period'] = pd.to_datetime(df['datadate']).dt.to_period('M')
 
-# Replace me_datadate with NaN if lagged time doesn't match datadate month
-df.loc[df['time_avail_m_lag6_period'] != df['datadate_period'], 'me_datadate'] = np.nan
+# Replace me_datadate with NaN if l6.time_avail_m != mofd(datadate)
+df.loc[df['l6_time_avail_m_period'] != df['datadate_period'], 'me_datadate'] = np.nan
 
-# Forward fill me_datadate within each permno (only fill NaN values)
+# Forward fill me_datadate within each permno (equivalent to bys permno (time_avail_m): replace me_datadate = me_datadate[_n-1])
 df['me_datadate'] = df.groupby('permno')['me_datadate'].ffill()
+
+# Cleanup intermediate columns
+df = df.drop(['l6_time_avail_m', 'l6_time_avail_m_period', 'datadate_period'], axis=1)
 
 # SIGNAL CONSTRUCTION
 # Stattman 1980 does not actually take logs but does everything nonparametrically anyway
