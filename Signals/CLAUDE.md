@@ -50,13 +50,56 @@ Signals/
 ├── StataDocs/              # Stata syntax and Python translation docs
 ```
 
+# Translation Philosophy (CRITICAL)
+
+## 1. **Line-by-Line Translation**
+- **❌ NEVER**: Add functions, abstractions, or "improvements" during translation
+- **✅ ALWAYS**: Translate Stata code line-by-line, preserving exact order
+- **✅ ALWAYS**: Use linear, procedural structure matching Stata
+- **Lesson**: Overengineering caused 40% data loss in CompustatAnnual
+
+## 2. **Execution Order is Critical**
+- **❌ NEVER**: Change the timing of data saves or processing steps
+- **✅ ALWAYS**: Match exact execution order from Stata script
+- **Example**: Stata saves CSV immediately after download, Python must do same
+- **Lesson**: Wrong save timing caused major shape mismatches
+
+## 3. **Missing Data Handling**
+- **Stata**: Missing dates often mean "infinity" or "still active" → TRUE
+- **Python**: `datadate <= NaT` → FALSE  
+- **✅ ALWAYS**: Use explicit null handling: `(condition) | column.isna()`
+- **Lesson**: Missing data logic differences lost 19% of records
+
+## 4. **Simplicity Over Cleverness**  
+- **❌ NEVER**: Add complex dtype handling, YAML standardization, helper functions
+- **✅ ALWAYS**: Keep code simple, direct, and readable
+- **Principle**: **EXACT REPLICATION BEATS CLEVER ENGINEERING**
+
+## 5. **Immediate Validation**
+- **✅ ALWAYS**: Run test script after every translation
+- **✅ ALWAYS**: Fix shape mismatches before data mismatches
+- **✅ ALWAYS**: Achieve 99%+ row count match with Stata
+
+## 6. **Do Not Add Unrequested Features**
+- **❌ NEVER**: Add command-line options, modes, or features unless explicitly requested
+- **✅ ALWAYS**: Keep code simple and focused on the specific requirements
+- **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
+
+## 7. **Do Not Speculate That the Test Failed Because of Real Data Differences**
+- **❌ NEVER**: Stop debugging because of "data availability issues," "historical data differences," or "real data differences"
+- **✅ ALWAYS**: Keep checking the logic for what is causing the test to fail
+- **✅ ALWAYS**: Use bisection strategy (Journal/2025-07-16_AnalystRevision_bisection_debugging.md) before giving up.
+- **✅ ALWAYS**: Check with the user before giving up.
+
+
+# DataDownloads Leg
+
 ## DataDownloads Script Mapping
 
 The DataDownloads leg is complicated. yaml files can help you get around
 - DataDownloads/00_map.yaml
 - DataDownloads/column_schemas.yaml
 
-# DataDownloads Leg
 
 ## Basic Requirements
 - Python code should follow the stata counterpart as closely as possible
@@ -99,42 +142,6 @@ Valid data satisfies:
 7. If Imperfect rows / total rows > 0.1%, have User appove:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
-
-## Translation Philosophy (CRITICAL)
-**LEARNED FROM COMPUSTAT ANNUAL SHAPE MISMATCH FIX (2025-06-30)**
-
-### 1. **Line-by-Line Translation**
-- **❌ NEVER**: Add functions, abstractions, or "improvements" during translation
-- **✅ ALWAYS**: Translate Stata code line-by-line, preserving exact order
-- **✅ ALWAYS**: Use linear, procedural structure matching Stata
-- **Lesson**: Overengineering caused 40% data loss in CompustatAnnual
-
-### 2. **Execution Order is Critical**
-- **❌ NEVER**: Change the timing of data saves or processing steps
-- **✅ ALWAYS**: Match exact execution order from Stata script
-- **Example**: Stata saves CSV immediately after download, Python must do same
-- **Lesson**: Wrong save timing caused major shape mismatches
-
-### 3. **Missing Data Handling**
-- **Stata**: Missing dates often mean "infinity" or "still active" → TRUE
-- **Python**: `datadate <= NaT` → FALSE  
-- **✅ ALWAYS**: Use explicit null handling: `(condition) | column.isna()`
-- **Lesson**: Missing data logic differences lost 19% of records
-
-### 4. **Simplicity Over Cleverness**  
-- **❌ NEVER**: Add complex dtype handling, YAML standardization, helper functions
-- **✅ ALWAYS**: Keep code simple, direct, and readable
-- **Principle**: **EXACT REPLICATION BEATS CLEVER ENGINEERING**
-
-### 5. **Immediate Validation**
-- **✅ ALWAYS**: Run test script after every translation
-- **✅ ALWAYS**: Fix shape mismatches before data mismatches
-- **✅ ALWAYS**: Achieve 99%+ row count match with Stata
-
-### 6. **Do Not Add Unrequested Features**
-- **❌ NEVER**: Add command-line options, modes, or features unless explicitly requested
-- **✅ ALWAYS**: Keep code simple and focused on the specific requirements
-- **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
 
 ## Data Processing Standards
 1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations
@@ -260,6 +267,14 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 2. Python observations are a superset of Stata observations
   - All Stata observations should be found in the Python data
   - Data source differences typically cannot explain a failure in this test
+  - ***IMPORTANT: data availability issues and historical data differences rarely explain a failure in this test***
+      - Check Logs/testout_dl.md shows that data availability issues happen only in:
+        - **Python missing Stata rows**:
+          - [CompustatAnnual](#compustatannual) (3)
+          - [CRSPdistributions](#crspdistributions) (1163)
+          - [m_CIQ_creditratings](#mciqcreditratings) (228480)
+          - [InputOutputMomentumProcessed](#inputoutputmomentumprocessed) (12)
+          - [customerMom](#customermom) (138)      
 3. For common observations, Pth percentile absolute difference < TOL_DIFF
   - common observations are observations that are in both Stata and Python
 
@@ -323,14 +338,16 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 - Refactor code to improve design while keeping tests green
 - Repeat the cycle for each new feature or bugfix
 
-# Journaling
+# Journaling and StataDocs
 
 - Keep track of lessons learned in @Journal/
 - But do not commit @Journal/ to the repo. 
   - These notes may be messy. 
+- Use StataDocs/ and update them to understand that weird language no real developers use.
+  - Do not commit StataDocs/ to the repo, these will be messy
 
 # Unsorted Notes
 
 ## Clear all Fallbacks with User
 - The code should follow exactly the Stata logic. Do not improvise fallbacks.
-- If you really wanto do some error handling, due to mising urls, ask User for permission.
+- If you really want to do some error handling, due to mising urls, ask User for permission.
