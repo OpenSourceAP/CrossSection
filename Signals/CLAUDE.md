@@ -167,7 +167,7 @@ Valid data satisfies:
 
 ```bash
 # Navigate to working directory
-cd /Users/chen1678/Dropbox/oap-ac/CrossSection/Signals/pyCode/
+cd /Users/idrees/Desktop/CrossSection/Signals/pyCode/
 
 # Activate virtual environment (required for all operations)
 source .venv/bin/activate

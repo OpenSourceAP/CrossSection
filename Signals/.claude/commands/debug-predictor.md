@@ -2,7 +2,7 @@
 description: Debug a predictor that is failing validation
 allowed-tools: 
   # Run the validation script inside its venv
-  - Bash(cd /Users/chen1678/Dropbox/oap-ac/CrossSection/Signals/pyCode && source .venv/bin/activate && python3 utils/test_predictors.py --predictors *)
+  - Bash(cd /Users/idrees/Desktop/CrossSection/Signals/pyCode && source .venv/bin/activate && python3 utils/test_predictors.py --predictors *)
   # Quick file‑existence check for guard clause
   - Bash(test -f Code/Predictors/*)
   # Create debug scipts
@@ -17,7 +17,7 @@ examples:
 # Context  
 
 - Latest test output for **$ARGUMENTS**:  
-  !`cd /Users/chen1678/Dropbox/oap-ac/CrossSection/Signals/pyCode && \
+  !`cd /Users/idrees/Desktop/CrossSection/Signals/pyCode && \
     source .venv/bin/activate && \
     python3 utils/test_predictors.py --predictors $ARGUMENTS`
 
