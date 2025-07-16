@@ -50,7 +50,7 @@ Signals/
 ├── StataDocs/              # Stata syntax and Python translation docs
 ```
 
-# Translation Philosophy (CRITICAL)
+# Translation Philosophy
 
 ## 1. **Line-by-Line Translation**
 - **❌ NEVER**: Add functions, abstractions, or "improvements" during translation
@@ -85,11 +85,17 @@ Signals/
 - **✅ ALWAYS**: Keep code simple and focused on the specific requirements
 - **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
 
-## 7. **Do Not Speculate That the Test Failed Because of Real Data Differences**
+# Debugging Philosophy
+
+## 1. **Do Not Speculate That the Test Failed Because of Real Data Differences**
 - **❌ NEVER**: Stop debugging because of "data availability issues," "historical data differences," or "real data differences"
 - **✅ ALWAYS**: Keep checking the logic for what is causing the test to fail
 - **✅ ALWAYS**: Use bisection strategy (Journal/2025-07-16_AnalystRevision_bisection_debugging.md) before giving up.
 - **✅ ALWAYS**: Check with the user before giving up.
+
+## 2. **Debug by Understanding Problematic Observations**
+- **✅ ALWAYS**: Focus on a specific permno-yyyymm observation that is causing the test to fail. Understand what step of the code is causing this specific observation to be problematic.
+- **❌ NEVER**: Debug my modifying code without understanding why the modification may affect a specific problematic observation.
 
 
 # DataDownloads Leg
