@@ -235,7 +235,14 @@ def output_predictor_results(predictor_name, results, overall_passed):
     test3_status = "✅ PASSED" if results.get('test_3_passed', False) else "❌ FAILED"
     
     md_lines.append(f"- Test 1 - Column names: {test1_status}\n")
-    md_lines.append(f"- Test 2 - Superset check: {test2_status}\n")
+    
+    # Add missing count information for Test 2
+    if results.get('test_2_passed', False):
+        md_lines.append(f"- Test 2 - Superset check: {test2_status}\n")
+    else:
+        missing_count = results.get('missing_count', 0)
+        md_lines.append(f"- Test 2 - Superset check: {test2_status} (Python missing {missing_count} Stata observations)\n")
+    
     md_lines.append(f"- Test 3 - Precision check: {test3_status}\n\n")
     
     # Basic info
