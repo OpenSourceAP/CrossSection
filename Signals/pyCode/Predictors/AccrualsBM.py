@@ -31,30 +31,20 @@ from savepredictor import save_predictor
 
 def fastxtile(series, n_quantiles=5):
     """
-    Python equivalent of Stata's fastxtile function
+    Python equivalent of Stata's fastxtile function using pd.qcut
     Returns quantile ranks (1 to n_quantiles) for a series
+    Following StataDocs/fastxtile.md recommendations
     """
-    # Handle missing values and edge cases
-    if len(series.dropna()) < n_quantiles:
+    try:
+        # Handle -inf values by replacing them with NaN before quantile calculation
+        # This matches Stata's behavior where extreme values are excluded from quantile calculation
+        series_clean = series.replace([np.inf, -np.inf], np.nan)
+        
+        # Use pd.qcut with duplicates='drop' as recommended in StataDocs
+        return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
+    except Exception:
+        # Fallback for edge cases (all NaN, insufficient data, etc.)
         return pd.Series(np.nan, index=series.index)
-    
-    # Use rank-based approach that's more robust
-    ranks = series.rank(method='average', na_option='keep')
-    non_na_count = series.notna().sum()
-    
-    if non_na_count == 0:
-        return pd.Series(np.nan, index=series.index)
-    
-    # Calculate quantile boundaries
-    quantiles = np.linspace(0, non_na_count, n_quantiles + 1)
-    
-    # Assign quantile groups
-    result = pd.Series(np.nan, index=series.index)
-    for i in range(n_quantiles):
-        mask = (ranks > quantiles[i]) & (ranks <= quantiles[i + 1])
-        result[mask] = i + 1
-    
-    return result
 
 
 def main():
@@ -104,8 +94,8 @@ def main():
     # Keep only required columns from SignalMasterTable
     signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
     
-    # Merge (equivalent to keep(using match) - inner join)
-    df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='inner')
+    # Merge (equivalent to keep(using match) - right join to keep all SignalMasterTable obs)
+    df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
     
     print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
     
