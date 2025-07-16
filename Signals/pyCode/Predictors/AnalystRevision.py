@@ -98,8 +98,17 @@ def main():
     # Create 1-month lag using simple shift (Method 1 from StataDocs)
     df['l_meanest'] = df.groupby('permno')['meanest'].shift(1)
     
-    # Calculate AnalystRevision
-    df['AnalystRevision'] = df['meanest'] / df['l_meanest']
+    # Calculate AnalystRevision with Stata-like missing value handling
+    # Note: Stata appears to treat missing/missing as 1.0 (no change)
+    df['AnalystRevision'] = np.where(
+        df['l_meanest'] == 0,
+        np.nan,  # Division by zero = missing
+        np.where(
+            df['meanest'].isna() & df['l_meanest'].isna(),
+            1.0,  # missing/missing = 1.0 (no change)
+            df['meanest'] / df['l_meanest']
+        )
+    )
     
     print(f"Calculated AnalystRevision for {df['AnalystRevision'].notna().sum()} observations")
     
