@@ -1,21 +1,21 @@
-# ABOUTME: AdExp.py - calculates AdExp predictor using advertising expenses scaled by market value
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/AdExp.do
+# ABOUTME: CF.py - calculates CF predictor using cash flow scaled by market value
+# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/CF.do
 
 """
-AdExp.py
+CF.py
 
 Usage:
     cd pyCode/
     source .venv/bin/activate
-    python3 Predictors/AdExp.py
+    python3 Predictors/CF.py
 
 Inputs:
-    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, xad]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ib, dp]
     - SignalMasterTable.parquet: Monthly master table with mve_c
 
 Outputs:
-    - AdExp.csv: CSV file with columns [permno, yyyymm, AdExp]
-    - AdExp = xad/mve_c, set to missing if xad <= 0 (following Table VII)
+    - CF.csv: CSV file with columns [permno, yyyymm, CF]
+    - CF = (ib + dp)/mve_c (Cash flow to market value ratio)
 """
 
 import pandas as pd
@@ -31,16 +31,16 @@ from savepredictor import save_predictor
 
 def main():
     """
-    AdExp
-    Advertising Expenses scaled by market value
+    CF
+    Cash flow to market value ratio
     """
     
-    print("Starting AdExp.py...")
+    print("Starting CF.py...")
     
     # DATA LOAD
     print("Loading m_aCompustat data...")
     
-    # Load m_aCompustat - equivalent to Stata: use permno time_avail_m xad using "$pathDataIntermediate/m_aCompustat", clear
+    # Load m_aCompustat - equivalent to Stata: use gvkey permno time_avail_m ib dp using "$pathDataIntermediate/m_aCompustat", clear
     m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
     if not m_aCompustat_path.exists():
         raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -48,7 +48,7 @@ def main():
     df = pd.read_parquet(m_aCompustat_path)
     
     # Keep only the columns we need
-    required_cols = ['permno', 'time_avail_m', 'xad']
+    required_cols = ['gvkey', 'permno', 'time_avail_m', 'ib', 'dp']
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
         raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
@@ -56,6 +56,11 @@ def main():
     df = df[required_cols].copy()
     
     print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
+    
+    # bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+    print("Deduplicating by permno time_avail_m...")
+    df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
+    print(f"After deduplication: {df.shape[0]} rows")
     
     # merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(mve_c)
     print("Merging with SignalMasterTable...")
@@ -78,20 +83,17 @@ def main():
     
     # SIGNAL CONSTRUCTION
     
-    # gen AdExp = xad/mve_c
-    print("Calculating AdExp...")
-    df['AdExp'] = df['xad'] / df['mve_c']
+    # gen CF = (ib + dp)/mve_c
+    print("Calculating CF...")
+    df['CF'] = (df['ib'] + df['dp']) / df['mve_c']
     
-    # replace AdExp = . if xad <= 0 // Following Table VII
-    df.loc[df['xad'] <= 0, 'AdExp'] = np.nan
-    
-    print(f"Calculated AdExp for {df['AdExp'].notna().sum()} observations")
+    print(f"Calculated CF for {df['CF'].notna().sum()} observations")
     
     # SAVE
-    # do "$pathCode/savepredictor" AdExp
-    save_predictor(df, 'AdExp')
+    # do "$pathCode/savepredictor" CF
+    save_predictor(df, 'CF')
     
-    print("AdExp.py completed successfully")
+    print("CF.py completed successfully")
 
 
 if __name__ == "__main__":
