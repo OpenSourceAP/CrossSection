@@ -68,8 +68,17 @@ def main():
     # Create 12-month lag using simple shift (Method 1 from StataDocs)
     df['l12_at'] = df.groupby('permno')['at'].shift(12)
     
-    # Calculate AssetGrowth
-    df['AssetGrowth'] = (df['at'] - df['l12_at']) / df['l12_at']
+    # Calculate AssetGrowth with domain-aware missing value handling
+    # Following missing/missing = 1.0 pattern from Journal/2025-07-16_missing_missing_equals_one_pattern.md
+    df['AssetGrowth'] = np.where(
+        df['l12_at'] == 0,
+        np.nan,  # Division by zero = missing
+        np.where(
+            df['at'].isna() & df['l12_at'].isna(),
+            1.0,  # missing/missing = 1.0 (no change)
+            (df['at'] - df['l12_at']) / df['l12_at']
+        )
+    )
     
     print(f"Calculated AssetGrowth for {df['AssetGrowth'].notna().sum()} observations")
     

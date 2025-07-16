@@ -85,7 +85,21 @@ def main():
     
     # gen CF = (ib + dp)/mve_c
     print("Calculating CF...")
-    df['CF'] = (df['ib'] + df['dp']) / df['mve_c']
+    
+    # Calculate cash flow (ib + dp)
+    df['cash_flow'] = df['ib'] + df['dp']
+    
+    # Calculate CF with domain-aware missing value handling
+    # Following missing/missing = 1.0 pattern for division operations
+    df['CF'] = np.where(
+        df['mve_c'] == 0,
+        np.nan,  # Division by zero = missing
+        np.where(
+            df['cash_flow'].isna() & df['mve_c'].isna(),
+            1.0,  # missing/missing = 1.0 (no change)
+            df['cash_flow'] / df['mve_c']
+        )
+    )
     
     print(f"Calculated CF for {df['CF'].notna().sum()} observations")
     

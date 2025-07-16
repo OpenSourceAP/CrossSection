@@ -84,7 +84,21 @@ def main():
     
     # gen BookLeverage = at/(tempSE + txditc - tempPS)
     print("Calculating BookLeverage...")
-    df['BookLeverage'] = df['at'] / (df['tempSE'] + df['txditc'] - df['tempPS'])
+    
+    # Calculate book equity (denominator)
+    df['book_equity'] = df['tempSE'] + df['txditc'] - df['tempPS']
+    
+    # Calculate book leverage with domain-aware missing value handling
+    # Following missing/missing = 1.0 pattern for division operations
+    df['BookLeverage'] = np.where(
+        df['book_equity'] == 0,
+        np.nan,  # Division by zero = missing
+        np.where(
+            df['at'].isna() & df['book_equity'].isna(),
+            1.0,  # missing/missing = 1.0 (no change)
+            df['at'] / df['book_equity']
+        )
+    )
     
     print(f"Calculated BookLeverage for {df['BookLeverage'].notna().sum()} observations")
     
