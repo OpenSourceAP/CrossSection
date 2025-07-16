@@ -241,8 +241,9 @@ monthly_compustat_pd = monthly_compustat.to_pandas()
 monthly_compustat_pd = standardize_columns(monthly_compustat_pd, "m_QCompustat")
 
 # Save the data in both pickle and parquet formats
-monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False)
-monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet", index=False)
+# Use timestamp format that preserves nanosecond precision to match Stata
+monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False, use_deprecated_int96_timestamps=True)
+monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet", index=False, use_deprecated_int96_timestamps=True)
 
 print(
     f"Compustat Quarterly data saved with "
