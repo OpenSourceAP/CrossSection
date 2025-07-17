@@ -12,7 +12,7 @@ all DataDownloads scripts. It is version controlled and not private.
 MAX_ROWS_DL = -1
 
 # Timeout for individual DataDownloads scripts (in minutes)
-# 10 = 10 minutes (default for production, handles large downloads like ZB_PIN.py)
+# 60 = 60 minutes (default for production, handles large downloads like J_CRSPdaily.py)
 # 0.5 = 30 seconds (for quick testing, may cause timeouts on large downloads)
 # Used by 01_DownloadData.py orchestrator script
-SCRIPT_TIMEOUT_MINUTES = 15
+SCRIPT_TIMEOUT_MINUTES = 60
