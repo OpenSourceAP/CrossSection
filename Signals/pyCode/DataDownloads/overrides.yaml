@@ -19,7 +19,6 @@
 #   - imperfect_cells: High imperfect cells ratio
 #   - column_names: Column names don't match
 #   - column_types: Column types don't match
-#   - row_count: Row count issues
 #
 # Supported checks for Predictors (test_predictors.py):
 #   - superset_check: Python observations not superset of Stata

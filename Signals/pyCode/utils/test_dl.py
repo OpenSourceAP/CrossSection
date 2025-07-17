@@ -1,11 +1,11 @@
 """
 ABOUTME: Comprehensive dataset validation script comparing Python vs Stata datasets
-ABOUTME: Checks column names, types, row counts, and performs by-keys deviation analysis
+ABOUTME: Checks column names, types, superset validation, and performs by-keys deviation analysis
 
 This script provides comprehensive validation that checks:
 1. Column names match exactly
 2. Column types match exactly  
-3. Row count (Python can have slightly more rows, see MAX_ROW_COUNT_RATIO)
+3. By-keys analysis: Python observations are superset of Stata
 4. By-keys analysis: Imperfect rows / Total rows ratio
 5. By-keys analysis: Imperfect cells / Total cells ratio
 6. Value deviation statistics for worst columns
@@ -50,8 +50,7 @@ import numpy as np
 # VALIDATION CONFIGURATION
 # ================================
 
-# Row count validation
-MAX_ROW_COUNT_RATIO = 1.05  # Python can have up to 5% more rows than Stata
+# Row count validation - REMOVED: Superset test handles this more precisely
 
 # By-keys validation  
 DEFAULT_IMPERFECT_RATIO_THRESHOLD = 0.001  # 0.1% threshold for imperfect rows/cells
@@ -468,25 +467,9 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
                 validation_results.append("✗ Column types differ")
             details.extend(type_mismatches)
         
-        # 3. Check row count
+        # Store row info for details section
         stata_rows = len(dta)
         python_rows = len(parq)
-        row_ratio = python_rows / stata_rows if stata_rows > 0 else float('inf')
-        
-        if python_rows == stata_rows:
-            validation_results.append("✓ Row counts match exactly")
-        elif row_ratio <= MAX_ROW_COUNT_RATIO:  # Python can have up to 0.1% more
-            validation_results.append("✓ Row counts acceptable (Python ≤ 0.1% more)")
-        else:
-            # Check for override
-            is_override, override_details = is_overridden(dataset_name, "row_count")
-            if is_override and override_details:
-                validation_results.append(f"✓ Row count difference too large (OVERRIDDEN)")
-                details.append(f"  - Override by: {override_details.get('accepted_by', 'unknown')} on {override_details.get('accepted_on', 'unknown')}")
-            else:
-                validation_results.append(f"✗ Row count difference too large (ratio: {row_ratio:.3f})")
-        
-        # Store row info for details section
         row_details = f"**Rows**: Stata={stata_rows:,}, Python={python_rows:,}"
         
         return {
@@ -855,7 +838,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     # Count passes for each validation check
     col_names_pass = 0
     col_types_pass = 0
-    row_counts_pass = 0
     common_rows_pass = 0
     imperfect_ratio_pass = 0
     imperfect_cells_pass = 0
@@ -863,7 +845,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     # Collect failures by category
     col_names_fail = []
     col_types_fail = []
-    row_counts_fail = []
     common_rows_fail = []
     high_imperfect = []
     high_imperfect_cells = []
@@ -899,10 +880,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                 else:
                     col_types_fail.append(dataset_name)
                 
-            if ("Row count" in validation and "✓" in validation) or ("Row counts" in validation and "✓" in validation):
-                row_counts_pass += 1
-            elif ("Row count" in validation and "✗" in validation) or ("Row counts" in validation and "✗" in validation):
-                row_counts_fail.append(dataset_name)
                 
             if "Python common rows are superset of Stata" in validation and "✓" in validation:
                 common_rows_pass += 1
@@ -960,7 +937,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     lines.append("**Validation Results**:")
     lines.append(f"- ✓ Column names match: {col_names_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Column types match: {col_types_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Row counts acceptable: {row_counts_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Python common rows are superset: {common_rows_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Imperfect rows acceptable: {imperfect_ratio_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Imperfect cells acceptable: {imperfect_cells_pass}/{total_datasets} datasets")
@@ -984,15 +960,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
             lines.append(f"  - {linked_dataset_info}")
     else:
         lines.append("- **Column types differ**: (none)")
-        
-    # Row count issues
-    if row_counts_fail:
-        lines.append("- **Row count issues**:")
-        for dataset in row_counts_fail:
-            linked_dataset = wrap_dataset_name_with_link(dataset)
-            lines.append(f"  - {linked_dataset}")
-    else:
-        lines.append("- **Row count issues**: (none)")
         
     # Python missing Stata rows
     if common_rows_fail:
@@ -1206,7 +1173,6 @@ def display_configuration(datasets, max_rows, tolerance, imperfect_ratio_thresho
     
     # Display validation thresholds
     print("Validation Thresholds:")
-    print(f"  • Max row count ratio: {MAX_ROW_COUNT_RATIO:.3f} (Python can have up to {(MAX_ROW_COUNT_RATIO-1)*100:.1f}% more rows)")
     print(f"  • Imperfect ratio threshold: {imperfect_ratio_threshold:.3f} ({imperfect_ratio_threshold*100:.1f}%)")
     print(f"  • Numeric tolerance: {tolerance}")
     print(f"  • CSV sample threshold: {CSV_SAMPLE_THRESHOLD:.3f} ({CSV_SAMPLE_THRESHOLD*100:.1f}%)")

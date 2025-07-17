@@ -70,7 +70,7 @@ import getpass
 OVERRIDES_FILE = "DataDownloads/overrides.yaml"
 VALID_DL_CHECKS = [
     "missing_rows", "imperfect_rows", "imperfect_cells", 
-    "column_names", "column_types", "row_count"
+    "column_names", "column_types"
 ]
 VALID_PREDICTOR_CHECKS = [
     "superset_check", "precision_check", "column_names"
