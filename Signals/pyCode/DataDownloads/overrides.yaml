@@ -49,7 +49,4 @@ CompustatAnnual:
     reviewed_on: 2025-07-17
     reviewed_by: ac
     details: |
-      Only 4 Stata observations are missing from Python data out of 516,269 total rows (0.0008%).
-      This minimal difference is acceptable given database access limitations and timing differences
-      between Stata and Python data downloads. The missing rows represent <0.001% of the dataset
-      and do not materially impact data quality or analysis integrity.
+      The 4 missing rows are now gone from Compustat. The missing rows are for gvkeys 022371, 029251, 036153, 038001, with datadates that are one year before the first available datadate in the updated Compustat data. They're also almost entirely missing accounting numbers. Seems like Compustat cleaned it up.
