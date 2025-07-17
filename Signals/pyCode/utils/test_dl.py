@@ -857,12 +857,14 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
         
         # Check each validation result
         for validation in validations:
-            if "Column names match" in validation and "✓" in validation:
+            if ("Column names match" in validation and "✓" in validation) or \
+               ("Column names differ" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 col_names_pass += 1
             elif "Column names" in validation and "✗" in validation:
                 col_names_fail.append(dataset_name)
                 
-            if "Column types match" in validation and "✓" in validation:
+            if ("Column types match" in validation and "✓" in validation) or \
+               ("Column types differ" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 col_types_pass += 1
             elif "Column types" in validation and "✗" in validation:
                 # Extract column type mismatches from details
@@ -881,7 +883,8 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                     col_types_fail.append(dataset_name)
                 
                 
-            if "Python common rows are superset of Stata" in validation and "✓" in validation:
+            if ("Python common rows are superset of Stata" in validation and "✓" in validation) or \
+               ("Python missing some Stata rows" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 common_rows_pass += 1
             elif "Python missing some Stata rows" in validation and "✗" in validation:
                 # Extract missing row count from validation message
@@ -898,7 +901,8 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                 else:
                     common_rows_fail.append(f"{dataset_name} (OVERRIDDEN)")
                 
-            if "Imperfect rows acceptable" in validation and "✓" in validation:
+            if ("Imperfect rows acceptable" in validation and "✓" in validation) or \
+               ("Imperfect rows high" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 imperfect_ratio_pass += 1
             elif "Imperfect rows high" in validation and "✗" in validation:
                 # Get the imperfect ratio from analysis
@@ -908,7 +912,8 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                 else:
                     high_imperfect.append(dataset_name)
                     
-            if "Imperfect cells acceptable" in validation and "✓" in validation:
+            if ("Imperfect cells acceptable" in validation and "✓" in validation) or \
+               ("Imperfect cells high" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 imperfect_cells_pass += 1
             elif "Imperfect cells high" in validation and "✗" in validation:
                 # Get the imperfect cells ratio from analysis
