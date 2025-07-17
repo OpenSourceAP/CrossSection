@@ -66,6 +66,80 @@ MAX_SAMPLE_ROWS = 1000  # Maximum rows in missing rows reports
 MAX_WORST_COLUMNS = 4  # Number of worst columns to show in reports
 MAX_WORST_ROWS_FOR_SAMPLE = 20  # Maximum rows in CSV samples
 
+# ================================
+# OVERRIDE SYSTEM
+# ================================
+
+def load_overrides():
+    """Load validation overrides from DataDownloads/overrides.yaml"""
+    overrides_path = Path("DataDownloads/overrides.yaml")
+    if not overrides_path.exists():
+        return {}
+    
+    try:
+        with open(overrides_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            if not content.strip():
+                return {}
+            return yaml.safe_load(content) or {}
+    except Exception as e:
+        print(f"Warning: Failed to load overrides: {e}")
+        return {}
+
+def parse_ratio(ratio_str):
+    """Parse ratio string like '30%' or '0.30' to float"""
+    if isinstance(ratio_str, str) and ratio_str.endswith('%'):
+        return float(ratio_str[:-1]) / 100
+    return float(ratio_str)
+
+def is_overridden(dataset_name, check_name, metric_value=None):
+    """
+    Check if a validation failure is overridden or explicitly rejected
+    
+    Args:
+        dataset_name: Name of the dataset
+        check_name: Name of the validation check
+        metric_value: Optional metric value for ratio-based overrides
+        
+    Returns:
+        tuple: (is_overridden: bool, override_details: dict or None)
+    """
+    overrides = load_overrides()
+    
+    if dataset_name not in overrides:
+        return False, None
+    
+    dataset_overrides = overrides[dataset_name]
+    if not isinstance(dataset_overrides, list):
+        return False, None
+    
+    for override in dataset_overrides:
+        if override.get('check') == check_name:
+            status = override.get('status', 'accepted')  # Default to accepted for backward compatibility
+            
+            # If explicitly rejected, always return False (not overridden)
+            if status == 'rejected':
+                return False, override
+            
+            # If accepted, check thresholds
+            if status == 'accepted':
+                # Check if custom threshold applies
+                if 'max_ratio_allowed' in override and metric_value is not None:
+                    try:
+                        threshold = parse_ratio(override['max_ratio_allowed'])
+                        if metric_value <= threshold:
+                            return True, override
+                        else:
+                            return False, None
+                    except (ValueError, TypeError):
+                        # Invalid threshold format, treat as binary override
+                        return True, override
+                else:
+                    # Binary override - always applies
+                    return True, override
+    
+    return False, None
+
 
 def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
     """Compare columns directly without heavy hashing - simpler approach like validate_by_keys."""
@@ -358,7 +432,14 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         if list(dta.columns) == list(parq.columns):
             validation_results.append("✓ Column names match")
         else:
-            validation_results.append("✗ Column names differ")
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "column_names")
+            if is_override and override_details:
+                validation_results.append("✓ Column names differ (OVERRIDDEN)")
+                details.append(f"  - Override by: {override_details.get('accepted_by', 'unknown')} on {override_details.get('accepted_on', 'unknown')}")
+            else:
+                validation_results.append("✗ Column names differ")
+            
             dta_only = set(dta.columns) - set(parq.columns)
             parq_only = set(parq.columns) - set(dta.columns)
             if dta_only:
@@ -378,7 +459,13 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         if type_match:
             validation_results.append("✓ Column types match")
         else:
-            validation_results.append("✗ Column types differ")
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "column_types")
+            if is_override and override_details:
+                validation_results.append("✓ Column types differ (OVERRIDDEN)")
+                details.append(f"  - Override by: {override_details.get('accepted_by', 'unknown')} on {override_details.get('accepted_on', 'unknown')}")
+            else:
+                validation_results.append("✗ Column types differ")
             details.extend(type_mismatches)
         
         # 3. Check row count
@@ -391,7 +478,13 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         elif row_ratio <= MAX_ROW_COUNT_RATIO:  # Python can have up to 0.1% more
             validation_results.append("✓ Row counts acceptable (Python ≤ 0.1% more)")
         else:
-            validation_results.append(f"✗ Row count difference too large (ratio: {row_ratio:.3f})")
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "row_count")
+            if is_override and override_details:
+                validation_results.append(f"✓ Row count difference too large (OVERRIDDEN)")
+                details.append(f"  - Override by: {override_details.get('accepted_by', 'unknown')} on {override_details.get('accepted_on', 'unknown')}")
+            else:
+                validation_results.append(f"✗ Row count difference too large (ratio: {row_ratio:.3f})")
         
         # Store row info for details section
         row_details = f"**Rows**: Stata={stata_rows:,}, Python={python_rows:,}"
@@ -570,7 +663,12 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         if all_stata_in_python:
             common_rows_result = "✓ Python common rows are superset of Stata"
         else:
-            common_rows_result = f"✗ Python missing some Stata rows ({missing_stata_rows})"
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "missing_rows")
+            if is_override and override_details:
+                common_rows_result = f"✓ Python missing some Stata rows ({missing_stata_rows}) (OVERRIDDEN)"
+            else:
+                common_rows_result = f"✗ Python missing some Stata rows ({missing_stata_rows})"
             # Generate missing rows report for datasets that fail superset check
             missing_rows_file = generate_missing_rows_report(dataset_name, dta, parq, key_cols)
         
@@ -579,13 +677,23 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         if imperfect_ratio <= imperfect_ratio_threshold:
             bykeys_result = f"✓ Imperfect rows acceptable (≤ {imperfect_pct:.1f}%)"
         else:
-            bykeys_result = f"✗ Imperfect rows high (> {imperfect_pct:.1f}%)"
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "imperfect_rows", imperfect_ratio)
+            if is_override and override_details:
+                bykeys_result = f"✓ Imperfect rows high (OVERRIDDEN)"
+            else:
+                bykeys_result = f"✗ Imperfect rows high (> {imperfect_pct:.1f}%)"
         
         # Add imperfect cells ratio to validation results
         if imperfect_cells_ratio <= imperfect_ratio_threshold:
             cells_result = f"✓ Imperfect cells acceptable (≤ {imperfect_pct:.1f}%)"
         else:
-            cells_result = f"✗ Imperfect cells high (> {imperfect_pct:.1f}%)"
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "imperfect_cells", imperfect_cells_ratio)
+            if is_override and override_details:
+                cells_result = f"✓ Imperfect cells high (OVERRIDDEN)"
+            else:
+                cells_result = f"✗ Imperfect cells high (> {imperfect_pct:.1f}%)"
         
         # Prepare analysis data
         analysis = {
@@ -805,6 +913,13 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                     common_rows_fail.append(f"{dataset_name} ({missing_count})")
                 else:
                     common_rows_fail.append(dataset_name)
+            elif "Python missing some Stata rows" in validation and "OVERRIDDEN" in validation:
+                # Extract missing row count from validation message for overridden cases
+                if result['analysis'] and 'missing_stata_rows' in result['analysis']:
+                    missing_count = result['analysis']['missing_stata_rows']
+                    common_rows_fail.append(f"{dataset_name} ({missing_count}) (OVERRIDDEN)")
+                else:
+                    common_rows_fail.append(f"{dataset_name} (OVERRIDDEN)")
                 
             if "Imperfect rows acceptable" in validation and "✓" in validation:
                 imperfect_ratio_pass += 1
@@ -1019,6 +1134,8 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     lines.append(f"**Tolerance**: {tolerance}")
     lines.append(f"**Imperfect ratio threshold**: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append(f"**Execution time**: {execution_time:.2f} minutes")
+    lines.append("")
+    lines.append("**Validation Overrides**: [DataDownloads/overrides.yaml](DataDownloads/overrides.yaml)")
     lines.append("")
     lines.append("**Cell Matching Logic**:")
     lines.append(f"- Perfect cell: |stata_value - python_value| ≤ {tolerance}")

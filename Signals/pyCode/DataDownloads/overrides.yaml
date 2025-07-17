@@ -1,0 +1,56 @@
+# Manual Overrides for Validation Failures
+# 
+# This file allows manual approval of validation failures with auditable paper trails.
+# Each override should include justification and reviewer information.
+#
+# Structure:
+#   dataset_name:
+#     - check: [check_name]              # Required: name of the validation check
+#       status: accepted|rejected          # Required: approval decision
+#       reviewed_on: YYYY-MM-DD          # Required: date of review  
+#       reviewed_by: [reviewer_id]       # Required: who reviewed this
+#       details: |                       # Required: justification
+#         Multi-line explanation of the decision
+#       max_ratio_allowed: X.XX%         # Optional: custom threshold for accepted ratio checks
+#
+# Supported checks for DataDownloads (test_dl.py):
+#   - missing_rows: Python missing some Stata rows
+#   - imperfect_rows: High imperfect rows ratio
+#   - imperfect_cells: High imperfect cells ratio
+#   - column_names: Column names don't match
+#   - column_types: Column types don't match
+#   - row_count: Row count issues
+#
+# Supported checks for Predictors (test_predictors.py):
+#   - superset_check: Python observations not superset of Stata
+#   - precision_check: Pth percentile absolute difference too high
+#   - column_names: Column names don't match
+
+# Example entries (remove these when adding real overrides):
+#
+# ExampleDataset:
+#   - check: missing_rows
+#     status: accepted
+#     reviewed_on: 2025-07-16
+#     reviewed_by: reviewer_id
+#     details: |
+#       Explanation of why this failure is acceptable
+#
+#   - check: imperfect_rows
+#     status: rejected
+#     reviewed_on: 2025-07-16
+#     reviewed_by: reviewer_id
+#     details: |
+#       This failure indicates a real data quality issue that needs to be fixed.
+#       The validation failure should remain until the underlying problem is resolved.
+
+CompustatAnnual:
+  - check: missing_rows
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      Only 4 Stata observations are missing from Python data out of 516,269 total rows (0.0008%).
+      This minimal difference is acceptable given database access limitations and timing differences
+      between Stata and Python data downloads. The missing rows represent <0.001% of the dataset
+      and do not materially impact data quality or analysis integrity.
