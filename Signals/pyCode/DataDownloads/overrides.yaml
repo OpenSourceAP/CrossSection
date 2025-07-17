@@ -50,3 +50,37 @@ CompustatAnnual:
     reviewed_by: ac
     details: |
       The 4 missing rows are now gone from Compustat. The missing rows are for gvkeys 022371, 029251, 036153, 038001, with datadates that are one year before the first available datadate in the updated Compustat data. They're also almost entirely missing accounting numbers. Seems like Compustat cleaned it up.
+  - check: imperfect_rows
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      The deviations seem to be all real changes in the data, with the python data more up to date. Imperfect rows for accounting numbers are rare: ebitda has 0.018% imperfect. Still, the revisions are surprising given that only a few weeks went by between the Stata and Python data pulls, and some revisions are notable. 
+      
+      For example, ajex (adjustment factor to deal with splits for per share variables) for Interactive Brokers (gvkey 176701) went from 1.0 to 4.0 for for many observations. This ajex revisions may be an artifact of share adjustment methods, which may backfill to adjust for the current shares outstanding. 
+
+      Revisions for ebitda are concentrated in recent data, typically 2024 Q4 or 2025 Q1. Still, it's interesting to see the revisions can be non-negligible. Sony (gvkey 009818) had 2025 Q1 ebitda revised up 13% during the few weeks that went by between the Stata and Python data pulls. 
+
+      This is TMI, but I just want to be thorough before accepting.
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      See imperfect_rows details
+
+a_aCompustat:
+  - check: imperfect_rows
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      See CompustatAnnual imperfect_rows details.
+
+m_aCompustat:
+  - check: imperfect_rows
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      See CompustatAnnual imperfect_rows details.      
