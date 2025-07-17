@@ -19,7 +19,7 @@ Cell Matching Logic:
 Arguments:
   --datasets, -d    Specific datasets to validate (default: all datasets)
   --list, -l        List all available datasets and exit
-  --maxrows         Maximum rows to load per dataset (default: 1000)
+  --maxrows         Maximum rows to load per dataset (default: -1, use -1 for all rows, use 1000 for testing)
   --tolerance       Tolerance for numeric comparisons (default: 1e-12)
 
 Output: 
@@ -62,7 +62,7 @@ ROW_CAP_FOR_RAM = 10_000_000  # Maximum rows to load for RAM management
 # Reporting
 CSV_SAMPLE_THRESHOLD = 0.001  # Generate CSV samples when imperfect ratio > 0.1%
 MAX_SAMPLE_ROWS = 1000  # Maximum rows in missing rows reports
-MAX_WORST_COLUMNS = 4  # Number of worst columns to show in reports
+MAX_WORST_COLUMNS = 20  # Number of worst columns to show in reports
 MAX_WORST_ROWS_FOR_SAMPLE = 20  # Maximum rows in CSV samples
 
 # ================================
@@ -701,9 +701,9 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                                key=lambda x: x[1].get('pct_pos_bykey', 0), 
                                reverse=True)
             
-            # Show top 4 worst columns
-            worst_4 = sorted_cols[:MAX_WORST_COLUMNS]
-            for col, diff_info in worst_4:
+            # Show worst columns
+            worst_n_columns = sorted_cols[:MAX_WORST_COLUMNS]
+            for col, diff_info in worst_n_columns:
                 if 'error' in diff_info:
                     worst_columns.append(f"{col}: Error - {diff_info['error']}")
                 else:
@@ -1316,8 +1316,8 @@ def main():
     parser.add_argument(
         '--maxrows',
         type=int,
-        default=1000,
-        help='Maximum number of rows to load from each dataset (default: 1000, use -1 for all rows)'
+        default=-1,
+        help='Maximum number of rows to load from each dataset (default: -1, use -1 for all rows, use 1000 for testing)'
     )
     parser.add_argument(
         '--tolerance',
