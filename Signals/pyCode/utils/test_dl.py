@@ -935,6 +935,7 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     lines.append(f"- Imperfect ratio threshold: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append("")
     lines.append("**Validation Results**:")
+    lines.append("**Validation Results** (includes overrides):")
     lines.append(f"- ✓ Column names match: {col_names_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Column types match: {col_types_pass}/{total_datasets} datasets")
     lines.append(f"- ✓ Python common rows are superset: {common_rows_pass}/{total_datasets} datasets")
