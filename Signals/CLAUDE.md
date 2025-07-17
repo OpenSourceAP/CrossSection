@@ -149,6 +149,109 @@ Valid data satisfies:
   - Worst column stats look OK.
   - Sample of worst rows and columns look OK.
 
+## Validation Override System
+
+The validation override system allows manual approval of validation failures with auditable paper trails. This is useful when validation failures are acceptable due to known data differences, precision issues, or other documented reasons.
+
+### Override Configuration
+
+Overrides are stored in `DataDownloads/overrides.yaml` with the following structure:
+
+```yaml
+dataset_name:
+  - check: [check_name]              # Required: name of the validation check
+    status: accepted|rejected          # Required: approval decision
+    reviewed_on: YYYY-MM-DD          # Required: date of review  
+    reviewed_by: [reviewer_id]       # Required: who reviewed this
+    details: |                       # Required: justification
+      Multi-line explanation of the decision
+    max_ratio_allowed: X.XX%         # Optional: custom threshold for accepted ratio checks
+```
+
+### Supported Checks
+
+**DataDownloads (test_dl.py)**:
+- `missing_rows`: Python missing some Stata rows
+- `imperfect_rows`: High imperfect rows ratio
+- `imperfect_cells`: High imperfect cells ratio
+- `column_names`: Column names don't match
+- `column_types`: Column types don't match
+- `row_count`: Row count issues
+
+**Predictors (test_predictors.py)**:
+- `superset_check`: Python observations not superset of Stata
+- `precision_check`: Pth percentile absolute difference too high
+- `column_names`: Column names don't match
+
+### Override Management
+
+Use the `approve_failure.py` tool to manage overrides:
+
+```bash
+# Add a new override approval
+python3 utils/approve_failure.py add --dataset CompustatAnnual --check missing_rows
+
+# List all current overrides
+python3 utils/approve_failure.py list
+
+# Validate overrides.yaml format
+python3 utils/approve_failure.py validate
+
+# Remove an existing override
+python3 utils/approve_failure.py remove --dataset CompustatAnnual --check missing_rows
+```
+
+### Override Types
+
+1. **Accepted Override**: Failure is acceptable
+   ```yaml
+   CompustatAnnual:
+     - check: missing_rows
+       status: accepted
+       reviewed_on: 2025-07-16
+       reviewed_by: ac
+       details: Database access limitations cause expected missing rows
+   ```
+
+2. **Rejected Override**: Failure indicates real issue that needs fixing
+   ```yaml
+   SomeDataset:
+     - check: imperfect_rows
+       status: rejected
+       reviewed_on: 2025-07-16
+       reviewed_by: ac
+       details: |
+         High imperfect row ratio indicates data quality issue.
+         This validation should continue to fail until underlying problem is resolved.
+   ```
+
+3. **Threshold Override**: Custom threshold for accepted ratio-based checks
+   ```yaml
+   GNPdefl:
+     - check: imperfect_rows
+       status: accepted
+       max_ratio_allowed: 30%
+       reviewed_on: 2025-07-16
+       reviewed_by: ac
+       details: Precision differences in 6th decimal place are acceptable
+   ```
+
+### Validation Behavior
+
+When validation scripts encounter failures:
+1. Check if override exists for dataset and check combination
+2. For threshold overrides, verify metric is within allowed range
+3. If overridden, mark test as PASSED with override notation
+4. Include override information in reports and logs
+
+### Best Practices
+
+1. **Always provide detailed justification** in the `details` field
+2. **Use threshold overrides** for precision/ratio issues when possible
+3. **Regular review** of overrides to detect obsolete entries
+4. **Peer review** of override additions through Git workflow
+5. **Document data differences** rather than assuming they're acceptable
+
 ## Data Processing Standards
 1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations
 2. **Preserve column names**: Keep original variable names from Stata
