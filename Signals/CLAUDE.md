@@ -328,6 +328,7 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 - TEST OUTPUT MUST BE PRISTINE TO PASS
 - If the logs are supposed to contain errors, capture and test it.
 - NO EXCEPTIONS POLICY: Under no circumstances should you mark any test type as "not applicable". Every project, regardless of size or complexity, MUST have unit tests, integration tests, AND end-to-end tests. If you believe a test type doesn't apply, you need the human to say exactly "I AUTHORIZE YOU TO SKIP WRITING TESTS THIS TIME"
+- Ignore any Debug/ folder, that is not for you to read or write to unless explicitly noted.
 
 ## We practice TDD. That means:
 
