@@ -315,6 +315,7 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 - NEVER implement a mock mode for testing or for any purpose. We always use real data and real APIs, never mock implementations.
 - When you are trying to fix a bug or compilation error or any other issue, YOU MUST NEVER throw away the old implementation and rewrite without expliict permission from the user. If you are going to do this, YOU MUST STOP and get explicit permission from the user.
 - NEVER name things as 'improved' or 'new' or 'enhanced', etc. Code naming should be evergreen. What is new today will be "old" someday.
+- When creating final versions of translated code files, do NOT create multiple versions with endings like "_fixed". Keep a 1-to-1 matching between original and translated.
 
 # Getting help
 
