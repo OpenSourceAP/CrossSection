@@ -38,8 +38,15 @@ df = pd.merge(signal_master, compustat[['permno', 'time_avail_m', 'ib']],
 # Sort for proper lagging
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 6-month lagged mve_c
-df['mve_c_lag6'] = df.groupby('permno')['mve_c'].shift(6)
+# Create 6-month lagged mve_c using calendar-based approach (not position-based)
+# This replicates Stata's l6.mve_c which looks back exactly 6 months in calendar time
+df['time_lag6'] = df['time_avail_m'] - pd.DateOffset(months=6)
+
+# Self-merge to get 6-month lagged values
+df_lag = df[['permno', 'time_avail_m', 'mve_c']].copy()
+df_lag.columns = ['permno', 'time_lag6', 'mve_c_lag6']
+
+df = pd.merge(df, df_lag, on=['permno', 'time_lag6'], how='left')
 
 # Calculate EP with 6-month lagged market value
 df['EP'] = df['ib'] / df['mve_c_lag6']
