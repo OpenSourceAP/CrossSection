@@ -16,6 +16,7 @@ Portfolios/Data/*
 Signals/Data/*
 Signals/Logs/*
 Signals/pyData/*
+Signals/pyCode/Claude_Debug/*
 
 *.html
 

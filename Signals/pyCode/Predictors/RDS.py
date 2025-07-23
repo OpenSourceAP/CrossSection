@@ -37,8 +37,11 @@ df = compustat_df.merge(pensions_df, on=['gvkey', 'year'], how='left')
 # Sort data for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Replace missing recta with 0
+# Replace missing recta with 0 (matching Stata line 9: replace recta = 0 if recta == .)
 df['recta'] = df['recta'].fillna(0)
+
+# Also handle missing msa as 0 to match Stata behavior for edge cases
+df['msa'] = df['msa'].fillna(0)
 
 # Create 12-month lags using time-based approach
 df['time_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)

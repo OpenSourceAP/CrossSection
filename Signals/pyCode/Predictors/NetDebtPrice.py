@@ -19,6 +19,10 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.stata_fastxtile import fastxtile_by_group
 
 # DATA LOAD
 # Load m_aCompustat data
@@ -50,9 +54,8 @@ df.loc[(df['at'].isna()) | (df['ib'].isna()) | (df['csho'].isna()) | (df['ceq'].
 df['BM'] = np.log(df['ceq'] / df['mve_c'])
 # Handle infinite values in BM
 df['BM_clean'] = df['BM'].replace([np.inf, -np.inf], np.nan)
-df['tempsort'] = df.groupby('time_avail_m')['BM_clean'].transform(
-    lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1
-)
+# Use Stata-equivalent fastxtile for BM quintiles
+df['tempsort'] = fastxtile_by_group(df, 'BM_clean', 'time_avail_m', n=5)
 # Exclude bottom 2 quintiles (keep only quintiles 3, 4, 5)
 df.loc[df['tempsort'] <= 2, 'NetDebtPrice'] = np.nan
 
