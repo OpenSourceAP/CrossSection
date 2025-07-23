@@ -97,6 +97,15 @@ Signals/
 - **✅ ALWAYS**: Focus on a specific permno-yyyymm observation that is causing the test to fail. Understand what step of the code is causing this specific observation to be problematic.
 - **❌ NEVER**: Debug my modifying code without understanding why the modification may affect a specific problematic observation.
 
+## 3. **Never Speculate About Data Differences**
+- **❌ WRONG**: "This must be due to data availability issues or historical differences"
+- **✅ RIGHT**: Keep investigating the exact logic causing specific observations to fail
+
+## 4. **Understand Stata's Exact Behavior First**
+- **❌ WRONG**: Assume Python pandas methods match Stata operators
+- **✅ RIGHT**: Research StataDocs and trace Stata's exact processing logic
+- **Key Discovery**: Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
+
 
 # DataDownloads Leg
 
@@ -316,6 +325,7 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 - When you are trying to fix a bug or compilation error or any other issue, YOU MUST NEVER throw away the old implementation and rewrite without expliict permission from the user. If you are going to do this, YOU MUST STOP and get explicit permission from the user.
 - NEVER name things as 'improved' or 'new' or 'enhanced', etc. Code naming should be evergreen. What is new today will be "old" someday.
 - When creating final versions of translated code files, do NOT create multiple versions with endings like "_fixed". Keep a 1-to-1 matching between original and translated.
+- When debugging, if you create code to debug, place it in ClaudeDebug/ and no where else.
 
 # Getting help
 
