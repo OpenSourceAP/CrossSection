@@ -326,6 +326,7 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 - NEVER name things as 'improved' or 'new' or 'enhanced', etc. Code naming should be evergreen. What is new today will be "old" someday.
 - When creating final versions of translated code files, do NOT create multiple versions with endings like "_fixed". Keep a 1-to-1 matching between original and translated.
 - When debugging, if you create code to debug, place it in ClaudeDebug/ and no where else.
+- NEVER create "placeholder" data when you are struggling to debug code. If you are instructed to debug code and are having a hard time, let me know and keep trying. Creating "placeholder" data is unacceptable.
 
 # Getting help
 
