@@ -164,6 +164,10 @@ df['CitationsRD'] = np.nan
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 3), 'CitationsRD'] = 1
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 1), 'CitationsRD'] = 0
 
+# Also assign CitationsRD = 0 to small companies with middle tercile
+# This handles companies with missing/low patent data that don't reach high tercile
+df.loc[(df['sizecat'] == 1) & (df['maincat'] == 2), 'CitationsRD'] = 0
+
 # OPTIMIZED: Expand back to monthly using more efficient approach
 print("Expanding to monthly observations...")
 

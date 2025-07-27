@@ -29,7 +29,7 @@ def trace_specific_missing():
     
     # Step 2: Check patent data
     print("\\nStep 2: Patent data")
-    patents = pd.read_parquet('../pyData/Intermediate/patentsAnnual.parquet')
+    patents = pd.read_parquet('../pyData/Intermediate/PatentDataProcessed.parquet')
     patents_permno = patents[patents['permno'] == target_permno].copy()
     
     if len(patents_permno) > 0:
