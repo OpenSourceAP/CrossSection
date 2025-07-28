@@ -91,9 +91,38 @@ def main():
     # Step 4: Compute book equity
     df['tempBE'] = df['tempSE'] + df['txditc'] - df['tempPS']
     
-    # Create lags for tempDecME
-    df['l12_tempDecME'] = df.groupby('permno')['tempDecME'].shift(12)
-    df['l17_tempDecME'] = df.groupby('permno')['tempDecME'].shift(17)
+    # Create calendar-based lags for tempDecME (to match Stata l12/l17 behavior)
+    # Stata's l12.var looks for value from 12 months ago in calendar time, not 12 positions back
+    
+    # Create lag dates for each observation
+    df['lag12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
+    df['lag17_date'] = df['time_avail_m'] - pd.DateOffset(months=17)
+    
+    # Create a lookup table for tempDecME values by permno and date
+    lookup_df = df[['permno', 'time_avail_m', 'tempDecME']].copy()
+    
+    # Merge for 12-month lag
+    lag12_merge = df[['permno', 'lag12_date']].merge(
+        lookup_df, 
+        left_on=['permno', 'lag12_date'], 
+        right_on=['permno', 'time_avail_m'], 
+        how='left',
+        suffixes=('', '_lag12')
+    )
+    df['l12_tempDecME'] = lag12_merge['tempDecME']
+    
+    # Merge for 17-month lag
+    lag17_merge = df[['permno', 'lag17_date']].merge(
+        lookup_df,
+        left_on=['permno', 'lag17_date'],
+        right_on=['permno', 'time_avail_m'],
+        how='left', 
+        suffixes=('', '_lag17')
+    )
+    df['l17_tempDecME'] = lag17_merge['tempDecME']
+    
+    # Clean up temporary columns
+    df = df.drop(columns=['lag12_date', 'lag17_date'])
     
     # Calculate BMdec based on month with domain-aware missing value handling
     # Following missing/missing = 1.0 pattern for division operations

@@ -106,6 +106,11 @@ Signals/
 - **✅ RIGHT**: Research StataDocs and trace Stata's exact processing logic
 - **Key Discovery**: Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
 
+## 5. **Never Assume Convenient Data Patterns**
+- **❌ WRONG**: "The issue must be missing data because my logic expects perfect monthly coverage"
+- **✅ RIGHT**: Investigate what the code actually does with irregular time series data, don't assume `1 obs = 1 month`
+
+
 
 # DataDownloads Leg
 
