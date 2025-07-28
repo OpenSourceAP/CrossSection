@@ -20,19 +20,34 @@ comp = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
 comp = comp[['permno', 'time_avail_m', 'at', 'ceq', 'dltt', 'capx', 'sale', 'xrd', 'xad', 'ppent', 'ebitda']].copy()
 df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 
+# Create time_avail (numeric months since 1960-01) to match Stata logic
+stata_base = pd.to_datetime('1960-01-01')
+df['time_avail'] = ((df['time_avail_m'].dt.year - stata_base.year) * 12 + 
+                    (df['time_avail_m'].dt.month - stata_base.month))
+
 # SIGNAL CONSTRUCTION
 # Replace missing xad with 0
 df['xad'] = df['xad'].fillna(0)
 
-# Create variables
+# Create variables - handle infinite values like Stata (set to NaN)
 df['YtempBM'] = np.log(df['mve_c'])
+df['YtempBM'] = df['YtempBM'].replace([np.inf, -np.inf], np.nan)
+
 df['tempBook'] = np.log(df['ceq'])
-df['tempLTDebt'] = df['dltt'] / df['at']
-df['tempCapx'] = df['capx'] / df['sale']
-df['tempRD'] = df['xrd'] / df['sale']
-df['tempAdv'] = df['xad'] / df['sale']
-df['tempPPE'] = df['ppent'] / df['at']
-df['tempEBIT'] = df['ebitda'] / df['at']
+df['tempBook'] = df['tempBook'].replace([np.inf, -np.inf], np.nan)
+
+# Handle division by zero - set to NaN when denominator is 0 or missing
+df['tempLTDebt'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['dltt'] / df['at'])
+
+df['tempCapx'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['capx'] / df['sale'])
+
+df['tempRD'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['xrd'] / df['sale'])
+
+df['tempAdv'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['xad'] / df['sale'])
+
+df['tempPPE'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ppent'] / df['at'])
+
+df['tempEBIT'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ebitda'] / df['at'])
 
 # Create simplified FF48 industry classification
 def get_ff48(sic):
@@ -92,13 +107,19 @@ reg_vars = ['tempBook', 'tempLTDebt', 'tempCapx', 'tempRD', 'tempAdv', 'tempPPE'
 df['logmefit_NS'] = np.nan
 df = df.sort_values(['permno', 'time_avail_m'])
 
-unique_times = sorted(df['time_avail_m'].unique())
-for time_t in unique_times:
-    # Define 5-year rolling window
-    start_time = time_t - pd.DateOffset(months=60)
+# Only process time periods where we have actual data (skip early periods with no data)
+unique_times = sorted(df['time_avail'].unique())
+# Filter to only process periods with sufficient history (after month 60 from start)
+min_process_time = df['time_avail'].min() + 60
+unique_times = [t for t in unique_times if t >= min_process_time]
+print(f"Processing {len(unique_times)} time periods (skipping first 60 months)...")
+
+for i, time_t in enumerate(unique_times):
+    # Use Stata logic: time_avail <= t & time_avail_m > t - 60
+    # This means: include data up to current period AND only recent data (5-year window)
     
-    # Get training data
-    train_data = df[(df['time_avail_m'] > start_time) & (df['time_avail_m'] <= time_t)].copy()
+    # Get training data using exact Stata condition
+    train_data = df[(df['time_avail'] <= time_t) & (df['time_avail'] > time_t - 60)].copy()
     
     if len(train_data) < 50:  # Need minimum observations
         continue
@@ -123,8 +144,8 @@ for time_t in unique_times:
         reg = LinearRegression()
         reg.fit(X, y)
         
-        # Predict for current time period
-        current_data = df[df['time_avail_m'] == time_t].copy()
+        # Predict for current time period (time_avail == t)
+        current_data = df[df['time_avail'] == time_t].copy()
         current_data = current_data.dropna(subset=reg_vars)
         
         if len(current_data) == 0:
@@ -145,21 +166,37 @@ for time_t in unique_times:
         predictions = reg.predict(X_pred)
         
         # Store predictions
-        df.loc[df['time_avail_m'] == time_t, 'logmefit_NS'] = predictions
+        mask = (df['time_avail'] == time_t) & (df.index.isin(current_data.index))
+        df.loc[mask, 'logmefit_NS'] = predictions
         
-    except:
+        if i % 120 == 0:  # Print progress every 120 periods (10 years)
+            # Convert time_avail back to date for display
+            display_date = stata_base + pd.DateOffset(months=time_t)
+            print(f"Processed {i+1}/{len(unique_times)} periods, stored {len(predictions)} predictions for {display_date.strftime('%Y-%m')}")
+        
+    except Exception as e:
+        if i % 120 == 0:
+            display_date = stata_base + pd.DateOffset(months=time_t)
+            print(f"Failed period {display_date.strftime('%Y-%m')}: {e}")
         continue
 
 # Calculate Frontier
+total_predictions = df['logmefit_NS'].notna().sum()
+print(f"Total predictions generated: {total_predictions}")
+
 df['Frontier'] = df['YtempBM'] - df['logmefit_NS']
 df['Frontier'] = -1 * df['Frontier']
 
 # Apply filters
+print(f"Before ceq filter: {len(df)}")
 df = df[(~df['ceq'].isna()) & (df['ceq'] > 0)].copy()
+print(f"After ceq filter: {len(df)}")
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'Frontier']].copy()
+print(f"Before dropping NaN Frontier: {len(df_final)}")
 df_final = df_final.dropna(subset=['Frontier'])
+print(f"Final output: {len(df_final)} observations")
 
 # Convert time_avail_m to yyyymm format like other predictors
 df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month

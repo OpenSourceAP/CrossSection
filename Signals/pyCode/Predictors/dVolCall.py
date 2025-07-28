@@ -19,6 +19,12 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+import os
+
+# Add utils directory to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from savepredictor import save_predictor
 
 # DATA LOAD
 # Clean OptionMetrics data
@@ -49,15 +55,8 @@ signal_df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet",
                            columns=['permno', 'time_avail_m', 'secid'])
 df = signal_df.merge(temp_df, on=['secid', 'time_avail_m'], how='left')
 
-# Keep only observations with dVolCall data
-df = df.dropna(subset=['dVolCall'])
-
-# Convert time_avail_m to yyyymm
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
-
-# Keep required columns and order
-df = df[['permno', 'yyyymm', 'dVolCall']].copy()
+# Keep required columns 
+df = df[['permno', 'time_avail_m', 'dVolCall']].copy()
 
 # SAVE
-df.to_csv("../pyData/Predictors/dVolCall.csv", index=False)
-print(f"dVolCall: Saved {len(df):,} observations")
+save_predictor(df, 'dVolCall')

@@ -34,24 +34,38 @@ df['fopt'] = df['fopt'].fillna(df['oancf'])
 # Calculate 12-month lag of ib
 df['ib_lag12'] = df.groupby('permno')['ib'].shift(12)
 
-# O-Score calculation
-df['OScore'] = (-1.32 - 0.407 * np.log(df['at'] / df['gnpdefl']) + 
-                6.03 * (df['lt'] / df['at']) - 
-                1.43 * ((df['act'] - df['lct']) / df['at']) + 
-                0.076 * (df['lct'] / df['act']) - 
+# O-Score calculation with proper handling of infinite values
+# Handle division by zero and log of negative values like Stata
+def safe_divide(a, b):
+    return np.where((b == 0) | b.isna(), np.nan, a / b)
+
+def safe_log(x):
+    return np.where((x <= 0) | x.isna(), np.nan, np.log(x))
+
+df['OScore'] = (-1.32 - 0.407 * safe_log(df['at'] / df['gnpdefl']) + 
+                6.03 * safe_divide(df['lt'], df['at']) - 
+                1.43 * safe_divide((df['act'] - df['lct']), df['at']) + 
+                0.076 * safe_divide(df['lct'], df['act']) - 
                 1.72 * (df['lt'] > df['at']).astype(int) - 
-                2.37 * (df['ib'] / df['at']) - 
-                1.83 * (df['fopt'] / df['lt']) + 
+                2.37 * safe_divide(df['ib'], df['at']) - 
+                1.83 * safe_divide(df['fopt'], df['lt']) + 
                 0.285 * ((df['ib'] + df['ib_lag12']) < 0).astype(int) - 
-                0.521 * ((df['ib'] - df['ib_lag12']) / (np.abs(df['ib']) + np.abs(df['ib_lag12']))))
+                0.521 * safe_divide((df['ib'] - df['ib_lag12']), (np.abs(df['ib']) + np.abs(df['ib_lag12']))))
 
 # Convert sic to numeric and apply industry filters
 df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 df.loc[((df['sic'] > 3999) & (df['sic'] < 5000)) | (df['sic'] > 5999), 'OScore'] = np.nan
 
 # Create deciles and form long-short following Table 5
-df['tempsort'] = df.groupby('time_avail_m')['OScore'].transform(
-    lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+def safe_qcut(x):
+    try:
+        if len(x.dropna()) < 10:  # Need at least 10 observations for deciles
+            return pd.Series(np.nan, index=x.index)
+        return pd.qcut(x, q=10, labels=False, duplicates='drop') + 1
+    except:
+        return pd.Series(np.nan, index=x.index)
+
+df['tempsort'] = df.groupby('time_avail_m')['OScore'].transform(safe_qcut)
 
 # Reset OScore and create binary signal
 df['OScore'] = np.nan

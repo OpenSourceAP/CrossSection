@@ -7,6 +7,12 @@
 
 import pandas as pd
 import numpy as np
+import sys
+import os
+
+# Add utils directory to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from savepredictor import save_predictor
 
 # Clean OptionMetrics data
 options = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolSurf.parquet')
@@ -46,24 +52,8 @@ df = df[['permno', 'time_avail_m', 'secid']].copy()
 
 df = df.merge(temp_data, on=['secid', 'time_avail_m'], how='left')
 
-# Keep only observations with non-missing dCPVolSpread
-df_final = df[df['dCPVolSpread'].notna()].copy()
-
 # Keep only necessary columns for output
-df_final = df_final[['permno', 'time_avail_m', 'dCPVolSpread']].copy()
-
-# Convert time_avail_m to yyyymm format like other predictors
-df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
-
-# Convert to integers for consistency with other predictors
-df_final['permno'] = df_final['permno'].astype('int64')
-df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
-
-# Keep only required columns and set index
-df_final = df_final[['permno', 'yyyymm', 'dCPVolSpread']].copy()
-df_final = df_final.set_index(['permno', 'yyyymm'])
+df_final = df[['permno', 'time_avail_m', 'dCPVolSpread']].copy()
 
 # SAVE
-df_final.to_csv('../pyData/Predictors/dCPVolSpread.csv')
-
-print("dCPVolSpread predictor saved successfully")
+save_predictor(df_final, 'dCPVolSpread')

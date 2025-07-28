@@ -20,7 +20,7 @@ df = df[['permno', 'time_avail_m', 'sale']].copy()
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 smt = smt[['permno', 'time_avail_m', 'sicCRSP', 'shrcd']].copy()
 
-df = df.merge(smt, on=['permno', 'time_avail_m'], how='inner')
+df = df.merge(smt, on=['permno', 'time_avail_m'], how='right')
 
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
@@ -30,13 +30,13 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['tempSIC'] = df['sicCRSP'].astype(str)
 df['sic3D'] = df['tempSIC'].str[:4]
 
-# Calculate industry sales by SIC and month
+# Calculate industry sales by SIC and month (only for non-missing sales)
 df['indsale'] = df.groupby(['sic3D', 'time_avail_m'])['sale'].transform('sum')
 
-# Calculate firm's market share squared
+# Calculate firm's market share squared (will be NaN if sale is missing)
 df['temp'] = (df['sale'] / df['indsale']) ** 2
 
-# Calculate Herfindahl index by industry-month
+# Calculate Herfindahl index by industry-month (sum excludes NaN values automatically)
 df['tempHerf'] = df.groupby(['sic3D', 'time_avail_m'])['temp'].transform('sum')
 
 # Take 3-year moving average using asrol

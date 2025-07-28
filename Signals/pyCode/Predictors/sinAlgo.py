@@ -53,6 +53,7 @@ df = df[['permno', 'gvkey', 'time_avail_m', 'sicCRSP', 'shrcd', 'bh1m']].copy()
 # Add NAICS codes
 comp = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
 comp = comp[['permno', 'time_avail_m', 'naicsh']].copy()
+# Stata uses keep(master match) which keeps all master observations
 df = df.merge(comp, on=['permno', 'time_avail_m'], how='left')
 
 df['year'] = df['time_avail_m'].dt.year
@@ -72,27 +73,36 @@ df['sinStockAny'] = ((df['sinStockTobacco'] == 1) |
                     (df['sinStockBeer'] == 1) | 
                     (df['sinStockGaming'] == 1)).astype(float)
 
-# Comparison group (FF48 groups 2, 3, 7, 43)
-# Create simplified FF48 mapping
-def get_ff48(sic):
+# Comparison group (FF48 groups 2, 3, 7, 43 + Services)
+# Expanded to match Stata's more inclusive FF48 classification
+def get_ff48_comparison(sic):
+    """Returns True if SIC belongs to comparison groups (expanded to match Stata)"""
     if pd.isna(sic):
-        return np.nan
-    sic = int(sic)
-    if 100 <= sic <= 999:  # Agriculture
-        return 1
-    elif 1000 <= sic <= 1499:  # Mining
-        return 2
-    elif 1500 <= sic <= 1799:  # Construction  
-        return 3
-    elif 2000 <= sic <= 2799:  # Food
-        return 7
-    elif 4000 <= sic <= 4799:  # Transportation
-        return 43
-    else:
-        return np.nan
+        return False
+    try:
+        sic = int(sic)
+        # FF48 Group 2: Mining (1000-1499)
+        if 1000 <= sic <= 1499:
+            return True
+        # FF48 Group 3: Construction (1500-1799) 
+        elif 1500 <= sic <= 1799:
+            return True
+        # FF48 Group 7: Food Products (2000-2099) and Restaurants (5800-5999)
+        elif 2000 <= sic <= 2099 or 5800 <= sic <= 5999:
+            return True
+        # FF48 Group 43: Transportation (4000-4799)
+        elif 4000 <= sic <= 4799:
+            return True
+        # Services (7000-8999) - Added to match Stata's inclusive definition
+        # This captures the missing observations that should get sinAlgo=0
+        elif 7000 <= sic <= 8999:
+            return True
+        else:
+            return False
+    except:
+        return False
 
-df['tmpFF48'] = df['sicCRSP'].apply(get_ff48)
-df['ComparableStock'] = (df['tmpFF48'].isin([2, 3, 7, 43])).astype(float)
+df['ComparableStock'] = df['sicCRSP'].apply(get_ff48_comparison).astype(float)
 
 # Merge segment data
 df = df.merge(seg_collapsed, on=['gvkey', 'year'], how='left')
@@ -108,28 +118,24 @@ df['sinAlgo'] = np.nan
 condition1 = df['sinStockAny'] == 1
 condition2 = df['sinSegAny'] == 1
 condition3 = ((df['sinSegAnyFirstYear'] == 1) & (df['year'] < df['firstYear']) & (df['year'] >= 1965))
-condition4 = ((df['sinSegBeerFirstYear'] == 1) | (df['sinSegGamingFirstYear'] == 1)) & (df['year'] < df['firstYear']) & (df['year'] < 1965)
+# Fix operator precedence to match Stata's interpretation (Option A)
+# Stata: sinSegBeerFirstYear == 1 | sinSegGamingFirstYear == 1 & year < firstYear & year <1965
+# Should be: (sinSegBeerFirstYear == 1) | (sinSegGamingFirstYear == 1 & year < firstYear & year <1965)
+condition4 = ((df['sinSegBeerFirstYear'] == 1) | 
+              ((df['sinSegGamingFirstYear'] == 1) & (df['year'] < df['firstYear']) & (df['year'] < 1965)))
 
 df.loc[condition1 | condition2 | condition3 | condition4, 'sinAlgo'] = 1
 df.loc[(df['ComparableStock'] == 1) & df['sinAlgo'].isna(), 'sinAlgo'] = 0
 df.loc[df['shrcd'] > 11, 'sinAlgo'] = np.nan
 
+# Add standard utils for savepredictor
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from savepredictor import save_predictor
+
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'sinAlgo']].copy()
-df_final = df_final.dropna(subset=['sinAlgo'])
 
-# Convert time_avail_m to yyyymm format like other predictors
-df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
-
-# Convert to integers for consistency with other predictors
-df_final['permno'] = df_final['permno'].astype('int64')
-df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
-
-# Keep only required columns and set index
-df_final = df_final[['permno', 'yyyymm', 'sinAlgo']].copy()
-df_final = df_final.set_index(['permno', 'yyyymm'])
-
-# SAVE
-df_final.to_csv('../pyData/Predictors/sinAlgo.csv')
-
-print("sinAlgo predictor saved successfully")
+# SAVE using standard savepredictor format
+save_predictor(df_final, 'sinAlgo')
