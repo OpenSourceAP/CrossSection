@@ -45,18 +45,43 @@ patent = patent[['gvkey', 'year', 'ncitscale']].copy()
 df = df.merge(patent, on=['gvkey', 'year'], how='left')
 print(f"After patent merge: {df.shape}")
 
-# Set panel structure and create 6-month lag of ncitscale
-print("Creating lags...")
+# Set panel structure and create calendar-based lags (to match Stata l6/l24 behavior)
+print("Creating calendar-based lags...")
 df = df.sort_values(['permno', 'time_avail_m'])
-df['temp'] = df.groupby('permno')['ncitscale'].shift(6)  # l6.ncitscale
-df['temp'] = df['temp'].fillna(0)
-df['ncitscale'] = df['temp']
-df = df.drop(columns=['temp'])
 
-# SIGNAL CONSTRUCTION  
-# Create 24-month lag of xrd BEFORE filtering (important!)
-df['xrd_lag'] = df.groupby('permno')['xrd'].shift(24)  # l24.xrd
-df['xrd_lag'] = df['xrd_lag'].fillna(0)
+# Create calendar-based lags matching Stata's lag operator behavior
+# Stata's l6.var looks for value from 6 months ago in calendar time, not 6 positions back
+
+# Create lag dates for each observation
+df['lag6_date'] = df['time_avail_m'] - pd.DateOffset(months=6)
+df['lag24_date'] = df['time_avail_m'] - pd.DateOffset(months=24)
+
+# Create a lookup table for lag values by permno and date
+lookup_df = df[['permno', 'time_avail_m', 'ncitscale', 'xrd']].copy()
+
+# Merge for 6-month lag of ncitscale
+lag6_merge = df[['permno', 'lag6_date']].merge(
+    lookup_df[['permno', 'time_avail_m', 'ncitscale']], 
+    left_on=['permno', 'lag6_date'],
+    right_on=['permno', 'time_avail_m'],
+    how='left',
+    suffixes=('', '_lag6')
+)
+df['temp'] = lag6_merge['ncitscale'].fillna(0)
+df['ncitscale'] = df['temp']
+
+# Merge for 24-month lag of xrd
+lag24_merge = df[['permno', 'lag24_date']].merge(
+    lookup_df[['permno', 'time_avail_m', 'xrd']],
+    left_on=['permno', 'lag24_date'],
+    right_on=['permno', 'time_avail_m'],
+    how='left',
+    suffixes=('', '_lag24')
+)
+df['xrd_lag'] = lag24_merge['xrd'].fillna(0)
+
+# Clean up temporary columns
+df = df.drop(columns=['temp', 'lag6_date', 'lag24_date'])
 print(f"After creating lags: {df.shape}")
 
 # Form portfolios only in June AFTER creating lags
@@ -65,22 +90,36 @@ df = df[df['time_avail_m'] >= '1975-01']  # >= ym(1975,1)
 df = df[df['time_avail_m'].dt.month == 6]  # month(dofm(time_avail_m)) == 6 (June)
 print(f"After June filter: {df.shape}")
 
-# OPTIMIZED: Use even more efficient rolling sum calculation
-# Pre-sort once and use transform for better performance
-print("Creating optimized rolling sums...")
+# Calendar-based rolling sums to match Stata's asrol behavior exactly
+# Stata: asrol xrd_lag, window(time_avail_m 48) stat(sum) 
+# This sums all observations within 48 calendar months, not 4 positions
+print("Creating calendar-based rolling sums...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Use pandas transform with 4-year rolling window
-# 48 months on monthly data = 4 years on June-only data
-print("  Computing 4-year rolling XRD sums...")
-df['sum_xrd'] = df.groupby('permno')['xrd_lag'].transform(
-    lambda x: x.rolling(window=4, min_periods=1).sum()
-)
+def calendar_asrol_sum(group, var_col):
+    """Replicate Stata's asrol with 48-month calendar window"""
+    result = []
+    for idx, row in group.iterrows():
+        current_date = row['time_avail_m']
+        # 48-month lookback window (inclusive of current month)
+        start_date = current_date - pd.DateOffset(months=47)
+        
+        # Find all observations within the 48-month calendar window
+        window_mask = (group['time_avail_m'] >= start_date) & (group['time_avail_m'] <= current_date)
+        window_sum = group.loc[window_mask, var_col].sum()
+        result.append(window_sum)
+    
+    return pd.Series(result, index=group.index)
 
-print("  Computing 4-year rolling citation sums...")  
-df['sum_ncit'] = df.groupby('permno')['ncitscale'].transform(
-    lambda x: x.rolling(window=4, min_periods=1).sum()
-)
+print("  Computing 48-month calendar rolling XRD sums...")
+df['sum_xrd'] = df.groupby('permno').apply(
+    lambda x: calendar_asrol_sum(x, 'xrd_lag')
+).reset_index(level=0, drop=True)
+
+print("  Computing 48-month calendar rolling citation sums...")  
+df['sum_ncit'] = df.groupby('permno').apply(
+    lambda x: calendar_asrol_sum(x, 'ncitscale')
+).reset_index(level=0, drop=True)
 
 # Create temporary CitationsRD signal
 df['tempCitationsRD'] = np.where(df['sum_xrd'] > 0, df['sum_ncit'] / df['sum_xrd'], np.nan)
@@ -93,8 +132,8 @@ df = df.groupby('gvkey').apply(lambda x: x.iloc[2:]).reset_index(drop=True)
 # Drop financial firms
 df = df[~((df['sicCRSP'] >= 6000) & (df['sicCRSP'] <= 6999))]
 
-# Drop if ceq < 0
-df = df[df['ceq'] >= 0]
+# Drop if ceq < 0 (match Stata exactly: keeps NaN values)
+df = df[~(df['ceq'] < 0)]
 
 # Double independent sort
 # Size categories using astile logic: equal-sized groups based on NYSE breakpoints
