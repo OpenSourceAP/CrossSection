@@ -31,7 +31,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Replace missing fopt with oancf
 df['fopt'] = df['fopt'].fillna(df['oancf'])
 
-# Calculate 12-month lag of ib using calendar-based approach (like Stata l12.)
+# Calculate 12-month lag of ib using calendar-based approach
 df['time_avail_m_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)
 df_lag = df[['permno', 'time_avail_m', 'ib']].copy()
 df_lag = df_lag.rename(columns={'time_avail_m': 'time_avail_m_lag12', 'ib': 'ib_lag12'})
