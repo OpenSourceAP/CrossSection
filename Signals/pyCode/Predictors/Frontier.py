@@ -192,13 +192,13 @@ for i, current_date in enumerate(unique_dates):
     train_data = df[(df['time_avail'] <= current_time_avail) & 
                    (df['time_avail'] > months_back_60)].copy()
     
-    if len(train_data) < 50:  # Need minimum observations
+    if len(train_data) < 3:  # Match Stata's very minimal threshold
         continue
         
     # Prepare training data
     train_data = train_data.dropna(subset=['YtempBM'] + reg_vars)
     
-    if len(train_data) < 30:
+    if len(train_data) < 3:  # Allow very small samples like Stata (minimum for regression)
         continue
     
     # Create industry dummies
