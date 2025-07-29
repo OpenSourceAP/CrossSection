@@ -7,20 +7,19 @@
 
 import pandas as pd
 import numpy as np
-import sys
-import os
-
-# Add the parent directory to sys.path to import utils
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.data_utils import asrol
 
 # DATA LOAD
-df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
-df = df[['gvkey', 'permno', 'time_avail_m', 'ib', 'dp']].copy()
-
-# Merge with SignalMasterTable
+# Start with SignalMasterTable like Stata's "using" dataset
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-df = df.merge(smt[['permno', 'time_avail_m', 'mve_c']], on=['permno', 'time_avail_m'], how='inner')
+df = smt[['permno', 'time_avail_m', 'mve_c']].copy()
+
+# Merge with m_aCompustat data (left join to keep all SignalMasterTable observations)
+compustat = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
+compustat = compustat[['permno', 'time_avail_m', 'ib', 'dp']].copy()
+df = df.merge(compustat, on=['permno', 'time_avail_m'], how='left')
+
+# Note: This replicates Stata's "merge 1:1 permno time_avail_m using SignalMasterTable, keep(using match)"
+# We keep all SignalMasterTable observations, with ib/dp missing for observations not in m_aCompustat
 
 # Sort for rolling operations
 df = df.sort_values(['permno', 'time_avail_m'])
@@ -29,8 +28,43 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Create temporary cash flow measure
 df['tempCF'] = (df['ib'] + df['dp']) / df['mve_c']
 
-# Calculate rolling standard deviation over 60 months (minimum 24)
-df = asrol(df, 'permno', 'time_avail_m', 'tempCF', 60, stat='std', new_col_name='sigma', min_periods=24)
+# Calculate rolling standard deviation like Stata's asrol
+print(f"Calculating rolling statistics for {df['permno'].nunique()} firms...")
+
+# Sort data for rolling operations
+df = df.sort_values(['permno', 'time_avail_m'])
+
+def compute_rolling_std_asrol(group):
+    """
+    Replicate Stata's asrol behavior exactly but efficiently:
+    - For EVERY observation, calculate rolling std using 60-month calendar window
+    - Use all valid tempCF values within the window
+    - Minimum 24 valid observations required
+    """
+    group = group.copy().sort_values('time_avail_m')
+    group['sigma'] = np.nan
+    
+    # Use pandas rolling with time-based window for efficiency
+    group = group.set_index('time_avail_m')
+    
+    # Apply rolling standard deviation with 60-month window and min 24 periods
+    group['sigma'] = group['tempCF'].rolling(
+        window='1826D',  # 60 months ≈ 5 years = 1826 days
+        min_periods=24
+    ).std()
+    
+    return group.reset_index()
+
+# Apply to each permno group
+rolling_results = []
+for permno, group in df.groupby('permno'):
+    result = compute_rolling_std_asrol(group)
+    rolling_results.append(result)
+
+# Combine results
+df = pd.concat(rolling_results, ignore_index=True)
+
+print("Rolling statistics calculation completed")
 
 # VarCF = sigma^2
 df['VarCF'] = df['sigma'] ** 2
