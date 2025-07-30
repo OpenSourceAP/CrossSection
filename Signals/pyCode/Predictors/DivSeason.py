@@ -45,15 +45,9 @@ df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Fill missing cd3 with previous value (equivalent to Stata's l1.cd3 logic)
-# But don't forward-fill special dividend codes (cd3 >= 6) as they should only apply to specific months
-df['cd3_original'] = df['cd3'].copy()  # Keep original cd3 values
-df['cd3_for_fill'] = df['cd3'].copy()
-df.loc[df['cd3'] >= 6, 'cd3_for_fill'] = np.nan  # Clear special dividend codes for forward-fill
-df['cd3'] = df.groupby('permno')['cd3_for_fill'].fillna(method='ffill')
-
-# Restore original cd3 values for months that actually had special dividends
-df['cd3'] = df['cd3_original'].fillna(df['cd3'])
-df = df.drop(columns=['cd3_original', 'cd3_for_fill'])  # Clean up temporary columns
+# Stata: replace cd3 = l1.cd3 if cd3 == .
+# This should ONLY fill missing values, not override existing values
+df['cd3'] = df.groupby('permno')['cd3'].fillna(method='ffill')
 
 # Replace missing dividend amounts with 0
 df['divamt'] = df['divamt'].fillna(0)

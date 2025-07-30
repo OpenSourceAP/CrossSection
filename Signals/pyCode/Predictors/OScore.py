@@ -76,6 +76,7 @@ df['OScore'] = np.nan
 df.loc[df['tempsort'] == 10, 'OScore'] = 1
 df.loc[(df['tempsort'] >= 1) & (df['tempsort'] <= 7), 'OScore'] = 0
 
+
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'OScore']].copy()
 df_final = df_final.dropna(subset=['OScore'])
