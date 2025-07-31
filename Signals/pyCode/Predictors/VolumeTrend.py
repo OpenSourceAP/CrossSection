@@ -7,7 +7,6 @@
 
 import pandas as pd
 import numpy as np
-from numba import jit
 
 print("Loading and processing VolumeTrend...")
 
@@ -15,16 +14,15 @@ print("Loading and processing VolumeTrend...")
 df = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet')
 df = df[['permno', 'time_avail_m', 'vol']].copy()
 
-# SIGNAL CONSTRUCTION - Vectorized implementation matching Stata asreg exactly
-@jit(nopython=True)
-def rolling_regression_numba(time_vals, vol_vals, window_size=60, min_periods=30):
+# SIGNAL CONSTRUCTION - Implementation matching Stata asreg exactly
+def rolling_regression_pandas(time_vals, vol_vals, window_size=60, min_periods=30):
     """Fast rolling regression using numba - matches Stata asreg vol time_avail_m"""
     n = len(time_vals)
     betas = np.full(n, np.nan)
     means = np.full(n, np.nan)
     
-    for i in range(window_size-1, n):
-        # Get window indices (last 60 observations)
+    for i in range(min_periods-1, n):  # Start from min_periods (30), not window_size (60)
+        # Get window indices (last 60 observations or all available if fewer)
         start_idx = max(0, i - window_size + 1)
         end_idx = i + 1
         
@@ -68,8 +66,8 @@ def calculate_volume_trend_vectorized(group):
     time_vals = group['time_numeric'].values.astype(np.float64)
     vol_vals = group['vol'].values.astype(np.float64)
     
-    # Use numba-optimized rolling regression
-    betas, means = rolling_regression_numba(time_vals, vol_vals, window_size=60, min_periods=30)
+    # Use rolling regression
+    betas, means = rolling_regression_pandas(time_vals, vol_vals, window_size=60, min_periods=30)
     
     # Store results (matching Stata variable names)
     group['betaVolTrend'] = betas  # rename _b_time betaVolTrend
