@@ -20,12 +20,12 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['ret'] = df['ret'].fillna(0)
 
 # Calculate lags for months 13-18
-df['ret_lag13'] = df.groupby('permno')['ret'].shift(13)
-df['ret_lag14'] = df.groupby('permno')['ret'].shift(14)
-df['ret_lag15'] = df.groupby('permno')['ret'].shift(15)
-df['ret_lag16'] = df.groupby('permno')['ret'].shift(16)
-df['ret_lag17'] = df.groupby('permno')['ret'].shift(17)
-df['ret_lag18'] = df.groupby('permno')['ret'].shift(18)
+df['ret_lag13'] = df.groupby('permno')['ret'].shift(13).fillna(0)
+df['ret_lag14'] = df.groupby('permno')['ret'].shift(14).fillna(0)
+df['ret_lag15'] = df.groupby('permno')['ret'].shift(15).fillna(0)
+df['ret_lag16'] = df.groupby('permno')['ret'].shift(16).fillna(0)
+df['ret_lag17'] = df.groupby('permno')['ret'].shift(17).fillna(0)
+df['ret_lag18'] = df.groupby('permno')['ret'].shift(18).fillna(0)
 
 # Calculate momentum-reversal (geometric return over months 13-18)
 df['MRreversal'] = ((1 + df['ret_lag13']) * 

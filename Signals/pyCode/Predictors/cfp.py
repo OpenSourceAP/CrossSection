@@ -66,10 +66,15 @@ def main():
     # Sort by permno and time_avail_m (equivalent to xtset permno time_avail_m)
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Create 12-month lags for accrual calculation
+    # Create 12-month lags for accrual calculation (calendar-based, not position-based)
     lag_cols = ['act', 'che', 'lct', 'dlc', 'txp']
     for col in lag_cols:
-        df[f'l12_{col}'] = df.groupby('permno')[col].shift(12)
+        # Create 12-month lag using calendar months, not position-based shift
+        df[f'lag_time'] = df['time_avail_m'] - pd.DateOffset(months=12)
+        lag_data = df[['permno', 'time_avail_m', col]].copy()
+        lag_data = lag_data.rename(columns={'time_avail_m': 'lag_time', col: f'l12_{col}'})
+        df = pd.merge(df, lag_data, on=['permno', 'lag_time'], how='left')
+        df = df.drop('lag_time', axis=1)
     
     # Calculate accrual_level
     # accrual_level = (act-l12.act - (che-l12.che)) - ((lct-l12.lct)-(dlc-l12.dlc)-(txp-l12.txp)-dp)
