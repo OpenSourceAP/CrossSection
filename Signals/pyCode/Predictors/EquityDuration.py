@@ -93,8 +93,11 @@ df_monthly = df_expanded.groupby(['gvkey', 'time_avail_m']).tail(1)
 
 # bysort permno time_avail_m: keep if _n == 1
 # Keep first observation for each permno-time combination (handles duplicates)
-# Match Stata's sorting behavior more precisely by including gvkey in sort order
-df_monthly = df_monthly.sort_values(['permno', 'time_avail_m', 'gvkey', 'datadate']).groupby(['permno', 'time_avail_m']).head(1)
+# Stata prioritizes observations with valid EquityDuration in tie-breaking
+# Create a temporary column for sorting (NaN last = False first)
+df_monthly['temp_na_sort'] = df_monthly['EquityDuration'].isna()
+df_monthly = df_monthly.sort_values(['permno', 'time_avail_m', 'temp_na_sort', 'gvkey', 'datadate']).groupby(['permno', 'time_avail_m']).head(1)
+df_monthly = df_monthly.drop('temp_na_sort', axis=1)
 
 # Clean up temporary columns
 df_monthly = df_monthly.drop(['expansion_n', 'tempTime'], axis=1)
