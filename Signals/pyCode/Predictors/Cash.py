@@ -84,7 +84,15 @@ def main():
     # Merge quarterly data with SignalMasterTable
     print("Merging with SignalMasterTable...")
     df = pd.merge(signal_master, expanded_df[['gvkey', 'time_avail_m', 'atq', 'cheq', 'rdq']], 
-                  on=['gvkey', 'time_avail_m'], how='inner')
+                  on=['gvkey', 'time_avail_m'], how='left')
+    
+    # Forward fill missing quarterly data within each gvkey (to match Stata's gap-bridging behavior)
+    print("Forward filling quarterly data across gaps...")
+    df = df.sort_values(['gvkey', 'time_avail_m'])
+    df[['atq', 'cheq', 'rdq']] = df.groupby('gvkey')[['atq', 'cheq', 'rdq']].ffill()
+    
+    # Keep only rows where quarterly data is available (after forward fill)
+    df = df.dropna(subset=['atq', 'cheq'])
     
     print(f"After merge: {len(df):,} observations")
     
