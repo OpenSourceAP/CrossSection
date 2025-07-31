@@ -7,7 +7,7 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from numba import jit
 
 print("Loading and processing VolumeTrend...")
 
@@ -15,42 +15,71 @@ print("Loading and processing VolumeTrend...")
 df = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet')
 df = df[['permno', 'time_avail_m', 'vol']].copy()
 
-# SIGNAL CONSTRUCTION - Simplified rolling regression
-def calculate_volume_trend(group, window=60, min_periods=30):
-    """Simplified volume trend calculation"""
-    group = group.sort_values('time_avail_m').reset_index(drop=True)
-    group['betaVolTrend'] = np.nan
-    group['meanX'] = np.nan
+# SIGNAL CONSTRUCTION - Vectorized implementation matching Stata asreg exactly
+@jit(nopython=True)
+def rolling_regression_numba(time_vals, vol_vals, window_size=60, min_periods=30):
+    """Fast rolling regression using numba - matches Stata asreg vol time_avail_m"""
+    n = len(time_vals)
+    betas = np.full(n, np.nan)
+    means = np.full(n, np.nan)
     
-    if len(group) >= min_periods:
-        # Use last available window or all data
-        n_obs = min(window, len(group))
-        recent_data = group.tail(n_obs)
-        vol_clean = recent_data['vol'].dropna()
+    for i in range(window_size-1, n):
+        # Get window indices (last 60 observations)
+        start_idx = max(0, i - window_size + 1)
+        end_idx = i + 1
         
-        if len(vol_clean) >= min_periods:
-            # Simple linear trend: regress volume on time index
-            time_index = np.arange(len(vol_clean)).reshape(-1, 1)
-            vol_values = vol_clean.values
+        # Extract window data
+        window_time = time_vals[start_idx:end_idx]
+        window_vol = vol_vals[start_idx:end_idx]
+        
+        # Remove NaN values (like Stata automatically does)
+        valid_mask = ~(np.isnan(window_time) | np.isnan(window_vol))
+        if np.sum(valid_mask) < min_periods:
+            continue
             
-            try:
-                reg = LinearRegression()
-                reg.fit(time_index, vol_values)
-                beta_trend = reg.coef_[0]
-                mean_vol = np.mean(vol_values)
-                
-                # Apply to all observations in the group (simplified)
-                group['betaVolTrend'] = beta_trend
-                group['meanX'] = mean_vol
-            except:
-                pass
+        clean_time = window_time[valid_mask]
+        clean_vol = window_vol[valid_mask]
+        
+        # Manual OLS calculation (much faster than sklearn)
+        # Regression: vol = alpha + beta * time
+        time_mean = np.mean(clean_time)
+        vol_mean = np.mean(clean_vol)
+        
+        # Calculate beta: (sum((x-x_mean)*(y-y_mean))) / (sum((x-x_mean)^2))
+        numerator = np.sum((clean_time - time_mean) * (clean_vol - vol_mean))
+        denominator = np.sum((clean_time - time_mean) ** 2)
+        
+        if denominator > 0:
+            beta = numerator / denominator  # This is _b_time_avail_m from Stata
+            betas[i] = beta
+            means[i] = vol_mean  # Rolling mean like asrol vol, stat(mean)
+    
+    return betas, means
+
+def calculate_volume_trend_vectorized(group):
+    """Vectorized volume trend calculation matching Stata exactly"""
+    group = group.sort_values('time_avail_m').copy()
+    
+    # Convert time_avail_m to numeric form (like Stata uses in regression)
+    reference_date = pd.Timestamp('1960-01-01')
+    group['time_numeric'] = ((group['time_avail_m'] - reference_date).dt.days / 30.44).round()
+    
+    # Extract arrays for numba processing
+    time_vals = group['time_numeric'].values.astype(np.float64)
+    vol_vals = group['vol'].values.astype(np.float64)
+    
+    # Use numba-optimized rolling regression
+    betas, means = rolling_regression_numba(time_vals, vol_vals, window_size=60, min_periods=30)
+    
+    # Store results (matching Stata variable names)
+    group['betaVolTrend'] = betas  # rename _b_time betaVolTrend
+    group['meanX'] = means  # asrol vol, gen(meanX) stat(mean)
     
     return group
 
 # Apply to each permno
-df = df.groupby('permno').apply(
-    lambda x: calculate_volume_trend(x, window=60, min_periods=30)
-).reset_index(drop=True)
+print("Calculating rolling regressions by permno...")
+df = df.groupby('permno', group_keys=False).apply(calculate_volume_trend_vectorized)
 
 # Calculate VolumeTrend
 df['VolumeTrend'] = df['betaVolTrend'] / df['meanX']

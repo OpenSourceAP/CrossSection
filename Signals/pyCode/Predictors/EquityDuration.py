@@ -59,24 +59,28 @@ df['tempME'] = df['prcc_f'] * df['csho']
 df['EquityDuration'] = (df['MD_Part1'] / df['tempME'] + 
                         (10 + (1 + cost_equity) / cost_equity) * (1 - df['PV_Part1'] / df['tempME']))
 
-# Simplified monthly expansion - just take annual values and replicate them monthly
-# This is a simplification compared to Stata's full expansion logic
-monthly_data = []
-for _, row in df.iterrows():
-    base_month = row['time_avail_m']
-    for month_offset in range(12):
-        new_row = {
-            'permno': row['permno'],
-            'time_avail_m': base_month + pd.DateOffset(months=month_offset),
-            'EquityDuration': row['EquityDuration'],
-            'datadate': row['datadate']
-        }
-        monthly_data.append(new_row)
+# Monthly expansion - optimized version matching Stata logic
+# expand temp (where temp = 12) - create 12 copies of each row
+print("Expanding to monthly observations...")
+df_expanded = pd.concat([df] * 12, ignore_index=True)
+df_expanded['expansion_n'] = np.tile(np.arange(1, 13), len(df))
 
-df_monthly = pd.DataFrame(monthly_data)
+# bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
+df_expanded['tempTime'] = df_expanded['time_avail_m']  # Store original time_avail_m
+df_expanded['time_avail_m'] = df_expanded['time_avail_m'] + pd.to_timedelta((df_expanded['expansion_n'] - 1) * 30.44, unit='D')
+df_expanded['time_avail_m'] = df_expanded['time_avail_m'].dt.to_period('M').dt.to_timestamp()  # Round to month start
 
-# Keep latest datadate for each permno-time combination
-df_monthly = df_monthly.sort_values(['permno', 'time_avail_m', 'datadate']).groupby(['permno', 'time_avail_m']).tail(1)
+# bysort gvkey time_avail_m (datadate): keep if _n == _N
+# Keep latest datadate for each gvkey-time combination
+df_expanded = df_expanded.sort_values(['gvkey', 'time_avail_m', 'datadate'])
+df_monthly = df_expanded.groupby(['gvkey', 'time_avail_m']).tail(1)
+
+# bysort permno time_avail_m: keep if _n == 1
+# Keep first observation for each permno-time combination (handles duplicates)
+df_monthly = df_monthly.sort_values(['permno', 'time_avail_m']).groupby(['permno', 'time_avail_m']).head(1)
+
+# Clean up temporary columns
+df_monthly = df_monthly.drop(['expansion_n', 'tempTime'], axis=1)
 
 # Convert to output format
 df_monthly['yyyymm'] = df_monthly['time_avail_m'].dt.year * 100 + df_monthly['time_avail_m'].dt.month
