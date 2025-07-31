@@ -53,9 +53,25 @@ def main():
     # Sort by gvkey and time_avail_m (equivalent to xtset gvkey time_avail_m)
     df = df.sort_values(['gvkey', 'time_avail_m'])
     
-    # Create 12-month lags
-    df['l12_txtq'] = df.groupby('gvkey')['txtq'].shift(12)
-    df['l12_at'] = df.groupby('gvkey')['at'].shift(12)
+    # Create 12-month lags using calendar-based method (not position-based shift)
+    # Create lag time column
+    df['lag_time'] = df['time_avail_m'] - pd.DateOffset(months=12)
+    
+    # Create lag data for txtq
+    txtq_lag_data = df[['gvkey', 'time_avail_m', 'txtq']].copy()
+    txtq_lag_data = txtq_lag_data.rename(columns={'time_avail_m': 'lag_time', 'txtq': 'l12_txtq'})
+    df = pd.merge(df, txtq_lag_data, on=['gvkey', 'lag_time'], how='left')
+    
+    # Create lag data for at
+    at_lag_data = df[['gvkey', 'time_avail_m', 'at']].copy()
+    at_lag_data = at_lag_data.rename(columns={'time_avail_m': 'lag_time', 'at': 'l12_at'})
+    df = pd.merge(df, at_lag_data, on=['gvkey', 'lag_time'], how='left')
+    
+    # Sort data
+    df = df.sort_values(['gvkey', 'time_avail_m'])
+    
+    # Clean up
+    df = df.drop('lag_time', axis=1)
     
     # Calculate change in taxes
     df['tax_change'] = df['txtq'] - df['l12_txtq']
