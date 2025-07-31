@@ -112,6 +112,7 @@ Signals/
 
 ## 5. **Never Make Up Data To Resolve Missing Rows**
 - **❌ WRONG**: "There are missing rows in this predictor's output, so let me create placeholder data"
+- **❌ WRONG**: "If I hardcode rows that match stata's output, I'll have resolved the missing rows issue."
 - **✅ RIGHT**: Investigate why those rows are missing to decipher the issue in the translation.
 
 
