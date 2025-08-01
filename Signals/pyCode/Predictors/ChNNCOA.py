@@ -1,79 +1,59 @@
-# ABOUTME: ChNNCOA predictor - calculates change in net noncurrent operating assets
-# ABOUTME: Run: python3 pyCode/Predictors/ChNNCOA.py
+# ABOUTME: ChNNCOA.py - calculates change in net noncurrent operating assets predictor
+# ABOUTME: Line-by-line translation of ChNNCOA.do following CLAUDE.md translation philosophy
 
 """
-ChNNCOA Predictor
+ChNNCOA.py
 
-Change in net noncurrent operating assets calculation.
+Usage:
+    cd pyCode/
+    source .venv/bin/activate
+    python3 Predictors/ChNNCOA.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, at, act, ivao, lt, dlc, dltt)
+    - ../pyData/Intermediate/m_aCompustat.parquet (columns: gvkey, permno, time_avail_m, at, act, ivao, lt, dlc, dltt)
 
 Outputs:
-- ChNNCOA.csv (permno, yyyymm, ChNNCOA)
-
-This predictor calculates:
-1. Net noncurrent operating assets: ((at - act - ivao) - (lt - dlc - dltt)) / at
-2. Change over 12 months: current_ratio - l12.current_ratio
+    - ../pyData/Predictors/ChNNCOA.csv (columns: permno, yyyymm, ChNNCOA)
 """
 
 import pandas as pd
 import numpy as np
-import sys
-import os
+from pathlib import Path
 
-# Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+# DATA LOAD
+# use gvkey permno time_avail_m at act ivao lt dlc dltt using "$pathDataIntermediate/m_aCompustat", clear
+df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
+                     columns=['gvkey', 'permno', 'time_avail_m', 'at', 'act', 'ivao', 'lt', 'dlc', 'dltt'])
 
-def main():
-    print("Starting ChNNCOA predictor...")
-    
-    # DATA LOAD
-    print("Loading m_aCompustat data...")
-    df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
-                        columns=['gvkey', 'permno', 'time_avail_m', 'at', 'act', 'ivao', 'lt', 'dlc', 'dltt'])
-    
-    print(f"Loaded {len(df):,} Compustat observations")
-    
-    # SIGNAL CONSTRUCTION
-    print("Constructing ChNNCOA signal...")
-    
-    # Deduplicate by permno time_avail_m
-    df = df.drop_duplicates(['permno', 'time_avail_m'], keep='first')
-    print(f"After deduplication: {len(df):,} observations")
-    
-    # Sort by permno and time_avail_m
-    df = df.sort_values(['permno', 'time_avail_m'])
-    
-    # Calculate net noncurrent operating assets ratio
-    # temp = ((at - act - ivao) - (lt - dlc - dltt)) / at
-    df['temp'] = np.where(
-        df['at'] == 0,
-        np.nan,
-        np.where(
-            ((df['at'] - df['act'] - df['ivao']) - (df['lt'] - df['dlc'] - df['dltt'])).isna() & df['at'].isna(),
-            1.0,
-            ((df['at'] - df['act'] - df['ivao']) - (df['lt'] - df['dlc'] - df['dltt'])) / df['at']
-        )
-    )
-    
-    # Create 12-month lag
-    df['l12_temp'] = df.groupby('permno')['temp'].shift(12)
-    
-    # Calculate change over 12 months
-    df['ChNNCOA'] = df['temp'] - df['l12_temp']
-    
-    print(f"Generated ChNNCOA values for {df['ChNNCOA'].notna().sum():,} observations")
-    
-    # Clean up temporary columns
-    df = df.drop(columns=['temp', 'l12_temp'])
-    
-    # SAVE
-    print("Saving predictor...")
-    save_predictor(df, 'ChNNCOA')
-    
-    print("ChNNCOA predictor completed successfully!")
+# SIGNAL CONSTRUCTION
+# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first').copy()
 
-if __name__ == "__main__":
-    main()
+# xtset permno time_avail_m
+df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
+
+# gen temp = ( (at - act - ivao)  - (lt - dlc - dltt) )/at
+df['temp'] = ((df['at'] - df['act'] - df['ivao']) - (df['lt'] - df['dlc'] - df['dltt'])) / df['at']
+
+# gen ChNNCOA = temp - l12.temp
+df['temp_l12'] = df.groupby('permno')['temp'].shift(12)
+df['ChNNCOA'] = df['temp'] - df['temp_l12']
+
+# drop temp*
+df = df.drop(columns=['temp', 'temp_l12'])
+
+# Keep only needed columns and non-missing values
+result = df[['permno', 'time_avail_m', 'ChNNCOA']].copy()
+result = result.dropna(subset=['ChNNCOA']).copy()
+
+# Convert time_avail_m to yyyymm
+result['yyyymm'] = result['time_avail_m'].dt.year * 100 + result['time_avail_m'].dt.month
+
+# Prepare final output
+final_result = result[['permno', 'yyyymm', 'ChNNCOA']].copy()
+
+# SAVE
+Path('../pyData/Predictors').mkdir(parents=True, exist_ok=True)
+final_result.to_csv('../pyData/Predictors/ChNNCOA.csv', index=False)
+
+print(f"ChNNCOA predictor saved: {len(final_result)} observations")

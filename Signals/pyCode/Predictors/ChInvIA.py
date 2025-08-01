@@ -1,117 +1,104 @@
-# ABOUTME: ChInvIA predictor - calculates change in capital investment (industry adjusted)
-# ABOUTME: Run: python3 pyCode/Predictors/ChInvIA.py
+# ABOUTME: ChInvIA.py - calculates change in capital investment (industry adjusted) predictor
+# ABOUTME: Line-by-line translation of ChInvIA.do following CLAUDE.md translation philosophy
 
 """
-ChInvIA Predictor
+ChInvIA.py
 
-Change in capital investment (industry adjusted) calculation.
+Usage:
+    cd pyCode/
+    source .venv/bin/activate
+    python3 Predictors/ChInvIA.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, capx, ppent, at)
-- SignalMasterTable.parquet (permno, time_avail_m, sicCRSP)
+    - ../pyData/Intermediate/m_aCompustat.parquet (columns: gvkey, permno, time_avail_m, capx, ppent, at)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (columns: permno, time_avail_m, sicCRSP)
 
 Outputs:
-- ChInvIA.csv (permno, yyyymm, ChInvIA)
-
-This predictor calculates industry-adjusted change in capital investment
-using percentage change in capx adjusted for industry average.
+    - ../pyData/Predictors/ChInvIA.csv (columns: permno, yyyymm, ChInvIA)
 """
 
 import pandas as pd
 import numpy as np
-import sys
-import os
+from pathlib import Path
 
-# Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+# DATA LOAD
+# use gvkey permno time_avail_m capx ppent at using "$pathDataIntermediate/m_aCompustat", clear
+df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
+                     columns=['gvkey', 'permno', 'time_avail_m', 'capx', 'ppent', 'at'])
 
-def main():
-    print("Starting ChInvIA predictor...")
-    
-    # DATA LOAD
-    print("Loading m_aCompustat data...")
-    compustat_df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
-                                 columns=['gvkey', 'permno', 'time_avail_m', 'capx', 'ppent', 'at'])
-    
-    print(f"Loaded {len(compustat_df):,} Compustat observations")
-    
-    print("Loading SignalMasterTable...")
-    signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
-                                   columns=['permno', 'time_avail_m', 'sicCRSP'])
-    
-    print(f"Loaded {len(signal_master):,} SignalMasterTable observations")
-    
-    # Merge data
-    print("Merging data...")
-    df = pd.merge(signal_master, compustat_df, on=['permno', 'time_avail_m'], how='inner')
-    
-    print(f"After merge: {len(df):,} observations")
-    
-    # SIGNAL CONSTRUCTION
-    print("Constructing ChInvIA signal...")
-    
-    # Sort by permno and time_avail_m
-    df = df.sort_values(['permno', 'time_avail_m'])
-    
-    # Create SIC 2-digit code
-    df['sicCRSP_str'] = df['sicCRSP'].astype(str)
-    df['sic2D'] = df['sicCRSP_str'].str[:2]
-    
-    # Create lags
-    df['l12_ppent'] = df.groupby('permno')['ppent'].shift(12)
-    df['l12_capx'] = df.groupby('permno')['capx'].shift(12)
-    df['l24_capx'] = df.groupby('permno')['capx'].shift(24)
-    
-    # Replace missing capx with ppent - l12.ppent
-    df['capx'] = df['capx'].fillna(df['ppent'] - df['l12_ppent'])
-    
-    # Calculate percentage change in capx with fallback logic
-    # pchcapx = (capx - 0.5*(l12.capx + l24.capx)) / (0.5*(l12.capx + l24.capx))
-    df['avg_lag_capx'] = 0.5 * (df['l12_capx'] + df['l24_capx'])
-    
-    # Apply missing/missing = 1.0 pattern for main calculation
-    # When numerator is missing AND denominator is missing, result is 1.0
-    # When denominator is 0 (not missing), result is missing
-    df['pchcapx'] = np.where(
-        df['avg_lag_capx'] == 0,
-        np.nan,
-        np.where(
-            (df['capx'] - df['avg_lag_capx']).isna() & df['avg_lag_capx'].isna(),
-            1.0,
-            (df['capx'] - df['avg_lag_capx']) / df['avg_lag_capx']
-        )
-    )
-    
-    # Fallback calculation: pchcapx = (capx-l12.capx)/l12.capx if missing
-    fallback_mask = df['pchcapx'].isna()
-    df.loc[fallback_mask, 'pchcapx'] = np.where(
-        df.loc[fallback_mask, 'l12_capx'] == 0,
-        np.nan,
-        np.where(
-            (df.loc[fallback_mask, 'capx'] - df.loc[fallback_mask, 'l12_capx']).isna() & df.loc[fallback_mask, 'l12_capx'].isna(),
-            1.0,
-            (df.loc[fallback_mask, 'capx'] - df.loc[fallback_mask, 'l12_capx']) / df.loc[fallback_mask, 'l12_capx']
-        )
-    )
-    
-    # Calculate industry average pchcapx by sic2D and time_avail_m
-    df['industry_avg_pchcapx'] = df.groupby(['sic2D', 'time_avail_m'])['pchcapx'].transform('mean')
-    
-    # Calculate industry-adjusted change: ChInvIA = pchcapx - industry_avg
-    df['ChInvIA'] = df['pchcapx'] - df['industry_avg_pchcapx']
-    
-    print(f"Generated ChInvIA values for {df['ChInvIA'].notna().sum():,} observations")
-    
-    # Clean up temporary columns
-    df = df.drop(columns=['sicCRSP_str', 'sic2D', 'l12_ppent', 'l12_capx', 'l24_capx', 
-                         'avg_lag_capx', 'pchcapx', 'industry_avg_pchcapx'])
-    
-    # SAVE
-    print("Saving predictor...")
-    save_predictor(df, 'ChInvIA')
-    
-    print("ChInvIA predictor completed successfully!")
+# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(sicCRSP)
+signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
+                               columns=['permno', 'time_avail_m', 'sicCRSP'])
+df = pd.merge(signal_master, df, on=['permno', 'time_avail_m'], how='inner')
 
-if __name__ == "__main__":
-    main()
+# SIGNAL CONSTRUCTION
+# xtset permno time_avail_m
+df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
+
+# tostring sicCRSP, replace
+df['sicCRSP'] = df['sicCRSP'].astype(str)
+
+# gen sic2D = substr(sicCRSP,1,2)
+df['sic2D'] = df['sicCRSP'].str[:2]
+
+# replace capx = ppent - l12.ppent if capx ==.
+# Use calendar-based lag (12 months back) instead of positional lag
+df['ppent_l12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
+ppent_lag = df[['permno', 'time_avail_m', 'ppent']].rename(columns={'time_avail_m': 'ppent_l12_date', 'ppent': 'ppent_l12'})
+df = df.merge(ppent_lag, on=['permno', 'ppent_l12_date'], how='left')
+df = df.drop(columns=['ppent_l12_date'])
+
+df['capx'] = df['capx'].fillna(df['ppent'] - df['ppent_l12'])
+
+# gen pchcapx = (capx- .5*(l12.capx + l24.capx))/(.5*(l12.capx + l24.capx))
+# Use calendar-based lags for capx
+df['capx_l12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
+capx_lag12 = df[['permno', 'time_avail_m', 'capx']].rename(columns={'time_avail_m': 'capx_l12_date', 'capx': 'capx_l12'})
+df = df.merge(capx_lag12, on=['permno', 'capx_l12_date'], how='left')
+df = df.drop(columns=['capx_l12_date'])
+
+df['capx_l24_date'] = df['time_avail_m'] - pd.DateOffset(months=24)
+capx_lag24 = df[['permno', 'time_avail_m', 'capx']].rename(columns={'time_avail_m': 'capx_l24_date', 'capx': 'capx_l24'})
+df = df.merge(capx_lag24, on=['permno', 'capx_l24_date'], how='left')
+df = df.drop(columns=['capx_l24_date'])
+df['avg_lag_capx'] = 0.5 * (df['capx_l12'] + df['capx_l24'])
+
+# Handle division by zero - in Stata, division by zero results in missing
+df['pchcapx'] = np.where(
+    df['avg_lag_capx'] == 0,
+    np.nan,
+    (df['capx'] - df['avg_lag_capx']) / df['avg_lag_capx']
+)
+
+# replace pchcapx = (capx-l12.capx)/l12.capx if mi(pchcapx)
+mask_missing = df['pchcapx'].isna()
+df.loc[mask_missing, 'pchcapx'] = np.where(
+    df.loc[mask_missing, 'capx_l12'] == 0,
+    np.nan,
+    (df.loc[mask_missing, 'capx'] - df.loc[mask_missing, 'capx_l12']) / df.loc[mask_missing, 'capx_l12']
+)
+
+# egen temp = mean(pchcapx), by(sic2D time_avail_m)
+df['temp'] = df.groupby(['sic2D', 'time_avail_m'])['pchcapx'].transform('mean')
+
+# gen ChInvIA = pchcapx - temp
+df['ChInvIA'] = df['pchcapx'] - df['temp']
+
+# drop temp
+df = df.drop(columns=['temp'])
+
+# Keep only needed columns and non-missing values
+result = df[['permno', 'time_avail_m', 'ChInvIA']].copy()
+result = result.dropna(subset=['ChInvIA']).copy()
+
+# Convert time_avail_m to yyyymm
+result['yyyymm'] = result['time_avail_m'].dt.year * 100 + result['time_avail_m'].dt.month
+
+# Prepare final output
+final_result = result[['permno', 'yyyymm', 'ChInvIA']].copy()
+
+# SAVE
+Path('../pyData/Predictors').mkdir(parents=True, exist_ok=True)
+final_result.to_csv('../pyData/Predictors/ChInvIA.csv', index=False)
+
+print(f"ChInvIA predictor saved: {len(final_result)} observations")

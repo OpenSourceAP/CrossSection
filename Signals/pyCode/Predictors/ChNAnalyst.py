@@ -1,142 +1,112 @@
-# ABOUTME: ChNAnalyst predictor - calculates decline in analyst coverage
-# ABOUTME: Run: python3 pyCode/Predictors/ChNAnalyst.py
+# ABOUTME: ChNAnalyst.py - calculates decline in analyst coverage predictor
+# ABOUTME: Line-by-line translation of ChNAnalyst.do following CLAUDE.md translation philosophy
 
 """
-ChNAnalyst Predictor
+ChNAnalyst.py
 
-Change in number of analysts following company.
+Usage:
+    cd pyCode/
+    source .venv/bin/activate
+    python3 Predictors/ChNAnalyst.py
 
 Inputs:
-- IBES_EPS_Unadj.parquet (tickerIBES, time_avail_m, numest, statpers, fpedats)
-- SignalMasterTable.parquet (permno, time_avail_m, tickerIBES, mve_c)
+    - ../pyData/Intermediate/IBES_EPS_Unadj.parquet
+    - ../pyData/Intermediate/SignalMasterTable.parquet
 
 Outputs:
-- ChNAnalyst.csv (permno, yyyymm, ChNAnalyst)
-
-This predictor calculates:
-1. Decline in analyst coverage (numest < l3.numest)
-2. Only works in small firms (bottom 2 quintiles by market cap)
-3. Excludes July-September 1987 observations
+    - ../pyData/Predictors/ChNAnalyst.csv (columns: permno, yyyymm, ChNAnalyst)
 """
 
 import pandas as pd
 import numpy as np
-import sys
-import os
+from pathlib import Path
 
-# Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+# Prep IBES data
+# use "$pathDataIntermediate/IBES_EPS_Unadj", replace
+ibes_df = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
 
+# keep if fpi == "1" 
+ibes_df = ibes_df[ibes_df['fpi'] == "1"].copy()
+
+# gen tmp = 1 if fpedats != . & fpedats > statpers + 30
+ibes_df['tmp'] = np.where(
+    ibes_df['fpedats'].notna() & (ibes_df['fpedats'] > ibes_df['statpers'] + pd.Timedelta(days=30)),
+    1, 
+    np.nan
+)
+
+# bys tickerIBES: replace meanest = meanest[_n-1] if mi(tmp) & fpedats == fpedats[_n-1]
+ibes_df = ibes_df.sort_values(['tickerIBES', 'time_avail_m'])
+ibes_df['meanest_lag1'] = ibes_df.groupby('tickerIBES')['meanest'].shift(1)
+ibes_df['fpedats_lag1'] = ibes_df.groupby('tickerIBES')['fpedats'].shift(1)
+
+mask_replace = ibes_df['tmp'].isna() & (ibes_df['fpedats'] == ibes_df['fpedats_lag1'])
+ibes_df.loc[mask_replace, 'meanest'] = ibes_df.loc[mask_replace, 'meanest_lag1']
+
+# drop tmp
+ibes_df = ibes_df.drop(columns=['tmp', 'meanest_lag1', 'fpedats_lag1'])
+
+# keep tickerIBES time_avail_m numest statpers fpedats
+temp_ibes = ibes_df[['tickerIBES', 'time_avail_m', 'numest', 'statpers', 'fpedats']].copy()
+
+# DATA LOAD
+# use permno time_avail_m tickerIBES mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
+                     columns=['permno', 'time_avail_m', 'tickerIBES', 'mve_c'])
+
+# merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate 
+df = pd.merge(df, temp_ibes, on=['tickerIBES', 'time_avail_m'], how='left')
+
+# SIGNAL CONSTRUCTION
+# xtset permno time_avail_m
+df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
+
+# gen ChNAnalyst = 1 if numest < l3.numest & !mi(l3.numest)
+# Use calendar-based lag (3 months back) instead of positional lag
+df['numest_l3_date'] = df['time_avail_m'] - pd.DateOffset(months=3)
+numest_lag = df[['permno', 'time_avail_m', 'numest']].rename(columns={'time_avail_m': 'numest_l3_date', 'numest': 'numest_l3'})
+df = df.merge(numest_lag, on=['permno', 'numest_l3_date'], how='left')
+df = df.drop(columns=['numest_l3_date'])
+df['ChNAnalyst'] = np.nan
+
+mask_decline = (df['numest'] < df['numest_l3']) & df['numest_l3'].notna()
+df.loc[mask_decline, 'ChNAnalyst'] = 1
+
+# replace ChNAnalyst = 0 if numest >= l3.numest & !mi(numest)
+mask_no_decline = (df['numest'] >= df['numest_l3']) & df['numest'].notna()
+df.loc[mask_no_decline, 'ChNAnalyst'] = 0
+
+# replace ChNAnalyst = . if time_avail_m >= ym(1987,7) & time_avail_m <= ym(1987,9) 
+# In Stata, ym(1987,7) = 198707, ym(1987,9) = 198709
+mask_1987 = (df['time_avail_m'] >= pd.Timestamp('1987-07-01')) & (df['time_avail_m'] <= pd.Timestamp('1987-09-01'))
+df.loc[mask_1987, 'ChNAnalyst'] = np.nan
+
+# only works in small firms (OP tab 2)
+# egen temp = fastxtile(mve_c), n(5)
 def fastxtile(series, n_quantiles=5):
-    """
-    Python equivalent of Stata's fastxtile function using pd.qcut
-    """
     try:
-        # Handle -inf values by replacing them with NaN before quantile calculation
         series_clean = series.replace([np.inf, -np.inf], np.nan)
         return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
     except Exception:
         return pd.Series(np.nan, index=series.index)
 
-def main():
-    print("Starting ChNAnalyst predictor...")
-    
-    # Prep IBES data
-    print("Loading IBES data...")
-    ibes_df = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
-    
-    # Keep only FPI == "1" (equivalent to keep if fpi == "1")
-    ibes_df = ibes_df[ibes_df['fpi'] == "1"]
-    
-    # Set to last non-missing forecast in period that trade happens
-    # gen tmp = 1 if fpedats != . & fpedats > statpers + 30
-    # bys tickerIBES: replace meanest = meanest[_n-1] if mi(tmp) & fpedats == fpedats[_n-1]
-    ibes_df = ibes_df.sort_values(['tickerIBES', 'time_avail_m'])
-    ibes_df['tmp'] = np.where(
-        ibes_df['fpedats'].notna() & (ibes_df['fpedats'] > ibes_df['statpers'] + pd.Timedelta(days=30)),
-        1, 
-        np.nan
-    )
-    
-    # Create lag of meanest by tickerIBES
-    ibes_df['l_meanest'] = ibes_df.groupby('tickerIBES')['meanest'].shift(1)
-    ibes_df['l_fpedats'] = ibes_df.groupby('tickerIBES')['fpedats'].shift(1)
-    
-    # Replace meanest with lagged value when tmp is missing and fpedats equals lagged fpedats
-    mask = ibes_df['tmp'].isna() & (ibes_df['fpedats'] == ibes_df['l_fpedats'])
-    ibes_df.loc[mask, 'meanest'] = ibes_df.loc[mask, 'l_meanest']
-    
-    # Keep required columns
-    ibes_df = ibes_df[['tickerIBES', 'time_avail_m', 'numest', 'statpers', 'fpedats']].copy()
-    
-    print(f"Loaded {len(ibes_df):,} IBES observations")
-    
-    # DATA LOAD
-    print("Loading SignalMasterTable...")
-    signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
-                                   columns=['permno', 'time_avail_m', 'tickerIBES', 'mve_c'])
-    
-    print(f"Loaded {len(signal_master):,} SignalMasterTable observations")
-    
-    # Merge data
-    print("Merging data...")
-    df = pd.merge(signal_master, ibes_df, on=['tickerIBES', 'time_avail_m'], how='left')
-    
-    print(f"After merging: {len(df):,} observations")
-    
-    # SIGNAL CONSTRUCTION
-    print("Constructing ChNAnalyst signal...")
-    
-    # Sort by permno and time_avail_m
-    df = df.sort_values(['permno', 'time_avail_m'])
-    
-    # Create 3-month lag of numest
-    df['l3_numest'] = df.groupby('permno')['numest'].shift(3)
-    
-    # Generate ChNAnalyst signal
-    # ChNAnalyst = 1 if numest < l3.numest & !mi(l3.numest)
-    # ChNAnalyst = 0 if numest >= l3.numest & !mi(numest)
-    df['ChNAnalyst'] = np.nan
-    
-    # Set to 1 if numest < l3.numest and l3.numest is not missing
-    df.loc[
-        (df['numest'] < df['l3_numest']) & df['l3_numest'].notna(), 
-        'ChNAnalyst'
-    ] = 1
-    
-    # Set to 0 if numest >= l3.numest and numest is not missing
-    df.loc[
-        (df['numest'] >= df['l3_numest']) & df['numest'].notna(), 
-        'ChNAnalyst'
-    ] = 0
-    
-    # Exclude July-September 1987 observations
-    # replace ChNAnalyst = . if time_avail_m >= ym(1987,7) & time_avail_m <= ym(1987,9)
-    july_1987 = pd.Timestamp('1987-07-01')
-    sep_1987 = pd.Timestamp('1987-09-01')
-    df.loc[
-        (df['time_avail_m'] >= july_1987) & (df['time_avail_m'] <= sep_1987), 
-        'ChNAnalyst'
-    ] = np.nan
-    
-    # Only works in small firms (bottom 2 quintiles by market cap)
-    # egen temp = fastxtile(mve_c), n(5)
-    # keep if temp <= 2
-    df['temp'] = fastxtile(df['mve_c'], n_quantiles=5)
-    df = df[df['temp'] <= 2]
-    
-    print(f"After filtering for small firms: {len(df):,} observations")
-    print(f"Generated ChNAnalyst values for {df['ChNAnalyst'].notna().sum():,} observations")
-    
-    # Clean up temporary columns
-    df = df.drop(columns=['l3_numest', 'temp'])
-    
-    # SAVE
-    print("Saving predictor...")
-    save_predictor(df, 'ChNAnalyst')
-    
-    print("ChNAnalyst predictor completed successfully!")
+df['temp'] = fastxtile(df['mve_c'], n_quantiles=5)
 
-if __name__ == "__main__":
-    main()
+# keep if temp <= 2
+df = df[df['temp'] <= 2].copy()
+
+# Keep only needed columns and non-missing values
+result = df[['permno', 'time_avail_m', 'ChNAnalyst']].copy()
+result = result.dropna(subset=['ChNAnalyst']).copy()
+
+# Convert time_avail_m to yyyymm
+result['yyyymm'] = result['time_avail_m'].dt.year * 100 + result['time_avail_m'].dt.month
+
+# Prepare final output
+final_result = result[['permno', 'yyyymm', 'ChNAnalyst']].copy()
+
+# SAVE
+Path('../pyData/Predictors').mkdir(parents=True, exist_ok=True)
+final_result.to_csv('../pyData/Predictors/ChNAnalyst.csv', index=False)
+
+print(f"ChNAnalyst predictor saved: {len(final_result)} observations")
