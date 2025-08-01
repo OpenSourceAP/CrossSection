@@ -63,10 +63,20 @@ def main():
     # Sort by permno and time_avail_m for lag calculations
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Create 12-month lags for working capital components
+    # Create 12-month lags using calendar-based method (not position-based shift)
+    # This matches Stata's l12. behavior which uses calendar-based lags
+    df['lag_time'] = df['time_avail_m'] - pd.DateOffset(months=12)
+    
     lag_vars = ['rect', 'invt', 'xpp', 'drc', 'drlt', 'ap', 'xacc']
+    
     for var in lag_vars:
-        df[f'l12_{var}'] = df.groupby('permno')[var].shift(12)
+        # Create lag data for this variable
+        var_lag_data = df[['permno', 'time_avail_m', var]].copy()
+        var_lag_data = var_lag_data.rename(columns={'time_avail_m': 'lag_time', var: f'l12_{var}'})
+        df = pd.merge(df, var_lag_data, on=['permno', 'lag_time'], how='left')
+    
+    # Clean up temporary lag_time column
+    df = df.drop('lag_time', axis=1)
     
     # Calculate CBOperProf following the complex formula
     # CBOperProf = (revt - cogs - (xsga - xrd)) - 
@@ -81,16 +91,7 @@ def main():
     )
     
     # Scale by total assets (equivalent to replace CBOperProf = CBOperProf/at)
-    # Apply domain-aware missing value handling for division
-    df['CBOperProf'] = np.where(
-        df['at'] == 0,
-        np.nan,  # Division by zero = missing
-        np.where(
-            df['CBOperProf'].isna() & df['at'].isna(),
-            1.0,  # missing/missing = 1.0 (no change)
-            df['CBOperProf'] / df['at']
-        )
-    )
+    df['CBOperProf'] = df['CBOperProf'] / df['at']
     
     # Calculate BM for filtering (equivalent to gen BM = log(ceq/mve_c))
     df['BM'] = np.log(df['ceq'] / df['mve_c'])

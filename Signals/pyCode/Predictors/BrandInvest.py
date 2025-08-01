@@ -106,29 +106,12 @@ def main():
     df.loc[df['FirstNMyear'].isna() | (df['fyear'] < df['FirstNMyear']), 'BrandCapital'] = np.nan
     df.loc[df['xad'].isna(), 'BrandCapital'] = np.nan
     
-    # Scale BrandCapital by total assets with domain-aware missing handling
-    df['BrandCapital'] = np.where(
-        df['at'] == 0,
-        np.nan,
-        np.where(
-            df['BrandCapital'].isna() & df['at'].isna(),
-            1.0,
-            df['BrandCapital'] / df['at']
-        )
-    )
+    # Scale BrandCapital by total assets (replace BrandCapital = BrandCapital/at)
+    df['BrandCapital'] = df['BrandCapital'] / df['at']
     
     # Calculate BrandInvest = xad0/l.BrandCapital
     df['l_BrandCapital'] = df.groupby('gvkey')['BrandCapital'].shift(1)
-    
-    df['BrandInvest'] = np.where(
-        df['l_BrandCapital'] == 0,
-        np.nan,
-        np.where(
-            df['xad0'].isna() & df['l_BrandCapital'].isna(),
-            1.0,
-            df['xad0'] / df['l_BrandCapital']
-        )
-    )
+    df['BrandInvest'] = df['xad0'] / df['l_BrandCapital']
     
     # Filter by industry (exclude utilities and financials)
     print("Applying industry filters...")
