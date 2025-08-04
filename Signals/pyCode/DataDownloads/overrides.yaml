@@ -64,3 +64,65 @@ InputOutputMomentumProcessed:
     reviewed_by: ac
     details: |
       only 12 missing rows out of millions
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Deviations are small given that the variables come from stock returns. Typical deviations is 0.001%. Not visible in Excel. Also deviations only occur in about 5% of cells.
+
+dailyFF:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      I checked a few obs on Ken French's website and the Python data matches perfectly. So the Stata data is out-of-date. Definitely strange that the data can be updated so quickly. But the precision we're currently asking for is too high. French only reports percent returns to two decimal places (which is quite reasonable). So our mean deviation is 0.001%, matching this rounding. UMD has the most common deviations, which makes sense given the noise in past return signals.
+
+monthlyFF:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      This one is just like dailyFF. I checked a few obs on Ken French's website and the Python data matches perfectly. So the Stata data is out-of-date. French only reports percent returns to two decimal places, and the mean dev of around 0.003% matches pretty closely. 
+
+d_qfactor:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      The imperfect cells rate is high, but the mean dev is basically machine precision, approx 1e-10. There are literally no data revisions here, since both Python and Stata are downloading an old 2019 csv file. So it's mildly interesting that either Python or Stata is doing some rounding (probably Python). Not interesting enough to dig further. This data is only used in placebos, so need to update the 2019 csv file.
+      
+V_TBill3M:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      The deviations are due to Stata's rounding. The raw Tbill rate from FRED has two significant digits. Apparently, Stata's aggregate(q, avg) will then round to two significant digits. Python's resample('QE').mean() does not round, and it's not obvious why one should round. I could not find documentation of Stata's aggregate(q, avg) rounding. Another reason to move to Python.
+
+IBESCRSPLinkingTable:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Deviations are due to random tie breaking when de-duplicating in the Stata code. The Python code does a more systematic tie-breaking, but neither is ideal. The deviations occur for only 0.25% of permnos, and this script is in line for an overhaul, and so it's not worth digging into further. See Github issue https://github.com/OpenSourceAP/CrossSection/issues/150. 
+
+OPTIONMETRICSCRSPLinkingTable:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Deviations are due to random tie breaking when de-duplicating in the Stata code. The Python code does a more systematic tie-breaking, but neither is ideal. The deviations occur for only 0.30% of permnos, and this script is in line for an overhaul, and so it's not worth digging into further. See Github issue https://github.com/OpenSourceAP/CrossSection/issues/172.
+
+brokerLev:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Mean deviation is 3e-8, which can easily be due to rounding and the seasonal adjustment calculations.
