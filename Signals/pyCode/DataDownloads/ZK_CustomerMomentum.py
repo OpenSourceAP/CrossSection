@@ -221,8 +221,11 @@ def main():
     temp1b['dyear'] = temp1b['next_year'] - temp1b['current_year']
     temp1b['lastentry'] = (temp1b['diffpermno'] > 0) & (temp1b['dyear'] != 1)
     
-    # Handle last rows (no next permno)
-    temp1b.loc[temp1b['next_permno'].isna(), 'lastentry'] = True
+    # Fix: Only create stop rows for genuine temporal gaps, not for final rows
+    # Original logic was creating artificial stops that terminate customer relationships prematurely
+    # When dyear > 1 (multi-year gap) or diffpermno > 0 (different permno), create stop row
+    # But don't create stop rows just because it's the last row for a permno
+    temp1b.loc[temp1b['next_permno'].isna(), 'lastentry'] = False
     
     # Create stop rows (R lines 138-142)
     tempstop = temp1b[temp1b['lastentry']].copy()

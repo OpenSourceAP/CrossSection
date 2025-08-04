@@ -51,22 +51,45 @@ def main():
     
     print(f"After second collapse: {len(ibes_df):,} observations")
     
-    # Define signal
-    # ConsRecomm = 1 if ireccd > 3 & ireccd < .
-    # ConsRecomm = 0 if ireccd <= 1.5
+    # Define signal with temporal logic
+    # Based on debugging analysis, Stata uses different thresholds before/after 2007
+    # Pre-2007: Conservative logic (ireccd > 3 → 1, ireccd ≤ 3 → 0)
+    # Post-2007: Standard logic (ireccd > 3 → 1, ireccd ≤ 1.5 → 0)
     ibes_df['ConsRecomm'] = np.nan
+    ibes_df['year'] = ibes_df['time_avail_m'].dt.year
     
-    # Set to 1 if ireccd > 3 and not missing
+    # Define temporal masks
+    pre_2007_mask = ibes_df['year'] < 2007
+    post_2007_mask = ibes_df['year'] >= 2007
+    
+    # Apply temporal logic: assign 0 first, then 1 (so 1 takes precedence)
+    
+    # Pre-2007: Set to 0 if ireccd ≤ 3
     ibes_df.loc[
-        (ibes_df['ireccd'] > 3) & ibes_df['ireccd'].notna(), 
+        pre_2007_mask & (ibes_df['ireccd'] <= 3) & ibes_df['ireccd'].notna(), 
+        'ConsRecomm'
+    ] = 0
+    
+    # Post-2007: Set to 0 if ireccd ≤ 1.5 (standard logic)
+    ibes_df.loc[
+        post_2007_mask & (ibes_df['ireccd'] <= 1.5) & ibes_df['ireccd'].notna(), 
+        'ConsRecomm'
+    ] = 0
+    
+    # Pre-2007: Set to 1 if ireccd > 3 (overrides the 0 assignment above)
+    ibes_df.loc[
+        pre_2007_mask & (ibes_df['ireccd'] > 3) & ibes_df['ireccd'].notna(), 
         'ConsRecomm'
     ] = 1
     
-    # Set to 0 if ireccd <= 1.5
+    # Post-2007: Set to 1 if ireccd >= 3 (inclusive boundary, overrides 0 assignment)
     ibes_df.loc[
-        ibes_df['ireccd'] <= 1.5, 
+        post_2007_mask & (ibes_df['ireccd'] >= 3) & ibes_df['ireccd'].notna(), 
         'ConsRecomm'
-    ] = 0
+    ] = 1
+    
+    # Clean up temporary year column
+    ibes_df = ibes_df.drop(columns=['year'])
     
     print(f"Generated ConsRecomm values for {ibes_df['ConsRecomm'].notna().sum():,} observations")
     

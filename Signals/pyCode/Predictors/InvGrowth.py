@@ -56,8 +56,9 @@ df = df[~df['sic_str'].str.startswith('6')].copy()
 print(f"After SIC filter (dropped SIC 4xxx and 6xxx): {len(df):,} observations (dropped {before_sic - len(df):,})")
 
 # drop if at <= 0 | ppent <= 0
+# Note: Stata allows missing ppent values, only filters ppent <= 0
 before_at_ppent = len(df)
-df = df[(df['at'] > 0) & (df['ppent'] > 0)].copy()
+df = df[(df['at'] > 0) & ((df['ppent'] > 0) | df['ppent'].isna())].copy()
 print(f"After AT/PPENT filter: {len(df):,} observations (dropped {before_at_ppent - len(df):,})")
 
 # SIGNAL CONSTRUCTION
@@ -75,9 +76,22 @@ print("Calculating 12-month lag for inventory growth...")
 # Sort by permno and time_avail_m for lag calculation
 df = df.sort_values(['permno', 'time_avail_m']).copy()
 
-# Create 12-month lag using pandas groupby and shift
-# Stata's l12.invt means 12 periods back, so we use shift(12)
-df['invt_lag12'] = df.groupby('permno')['invt'].shift(12)
+# Create 12-month lag using calendar-based logic (like Stata's l12.invt)  
+# Stata's l12.invt means 12 months back in calendar time, not 12 positions back
+print("Implementing efficient calendar-based 12-month lag...")
+
+# Create lag target date for each observation
+df['lag_target_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create a dataset for merging lag values
+lag_df = df[['permno', 'time_avail_m', 'invt']].copy()
+lag_df = lag_df.rename(columns={'time_avail_m': 'lag_target_date', 'invt': 'invt_lag12'})
+
+# Merge to get calendar-based lag values
+df = pd.merge(df, lag_df, on=['permno', 'lag_target_date'], how='left')
+
+# Clean up temporary columns
+df = df.drop(columns=['lag_target_date'])
 
 # gen InvGrowth = invt/l12.invt - 1
 df['InvGrowth'] = df['invt'] / df['invt_lag12'] - 1
