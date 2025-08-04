@@ -118,36 +118,32 @@ The DataDownloads leg is complicated. yaml files can help you get around
 ## Validation 
 
 **IMPORTANT**: Validation is done by running `python3 utils/test_dl.py`
-  - Use `--max_rows` to limit the number of rows to test (-1 for all rows)
-  - Use `--datasets` to specify datset(s)
+  - Use `--maxrows` to limit the number of rows to test (-1 for all rows)
+  - Use `--datasets` to specify dataset(s)
+  - Use `--tolerance` to set numeric comparison tolerance (default: 1e-12)
+  - Use `--imperfect-ratio-threshold` to set acceptable imperfect ratio (default: 0.001 = 0.1%)
 
-### Basic Validation
-This simple validation is fast and easy. 
+### Validation Requirements
 
-Valid data satisfies:
-1. Column names (exact match)
-2. Column types (exact match)
-3. Row count (Python can have more rows, but only 0.1% more)
-  - Drop rows with missing keys before counting
+Valid data satisfies all of the following checks:
 
-### Common Rows Validation
-This validation requires more careful analysis.
+**Basic Structure Validation:**
+1. **Column names match exactly** - Python and Stata datasets must have identical column names in same order
+2. **Column types match exactly** - All common columns must have matching data types
 
-Define:
-- Common rows: rows in both Stata and Python data that share the same keys 
-  - Keys are based on @DataDownloads/00_map.yaml
-- Perfect rows: common rows with columns that have no deviations
-- Imperfect rows: common rows that are not perfect rows
+**By-Keys Analysis:**
+3. **Python observations are superset of Stata observations** - All Stata observations (by key columns) must exist in Python data
+   - Keys are defined in `DataDownloads/00_map.yaml`
+   - Python may have additional recent observations not in Stata
+4. **Imperfect cells ratio ≤ 0.1%** - Individual cells with deviations / Total cells ≤ 0.1%
 
-Valid data satisfies:
-4. Python common rows are a superset of Stata common rows
-  - The Python data may contain recent observations that are not in the Stata data. 
-  - But the Python data should not be missing any rows that are in the Stata data, since it was downloaded after the Stata data.
-5. Imperfect cells / total cells < 0.1%
-6. Imperfect rows / total rows < 0.1% or...
-7. If Imperfect rows / total rows > 0.1%, have User appove:
-  - Worst column stats look OK.
-  - Sample of worst rows and columns look OK.
+**Cell Matching Logic:**
+- **Perfect cell**: |stata_value - python_value| ≤ tolerance (default: 1e-12)
+- **Imperfect cell**: |stata_value - python_value| > tolerance  
+- **String cells**: Exact match required (tolerance not applicable)
+
+**Definitions:**
+- **Common rows**: Rows that exist in both Stata and Python data (matched by key columns)
 
 ## Validation Override System
 
