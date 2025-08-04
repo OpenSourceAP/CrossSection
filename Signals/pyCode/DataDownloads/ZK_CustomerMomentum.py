@@ -211,6 +211,7 @@ def main():
     logger.info(f"Wide format data: {len(temp1):,} rows, {len(customer_cols)} customer columns")
     
     # Create stop rows to avoid stale data (R lines 131-145)
+    # This ensures that stale data (more than 12 months after data is available) is not used.
     temp1b = temp1.sort_values(['permno', 'datadate']).copy()
     temp1b['next_permno'] = temp1b['permno'].shift(-1)
     temp1b['next_year'] = temp1b['datadate'].shift(-1).dt.year

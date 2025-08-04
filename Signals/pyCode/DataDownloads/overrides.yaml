@@ -126,3 +126,12 @@ brokerLev:
     reviewed_by: ac
     details: |
       Mean deviation is 3e-8, which can easily be due to rounding and the seasonal adjustment calculations.
+
+
+customerMom:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Seems to be a bug in the Stata code. The Stata data has custmom signals for permno 93436 (TSLA, gvkey 184996) for 2013 to present. But the underlying Compustat customer segment data goes only until 2011. As is standard, ZK_CustomerSegments.R assumes that signals are stale after one year of being available, so it's proper that the Python data has no signals for 2013 to present.
