@@ -25,6 +25,7 @@ def main():
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
     # URL for Q-factor data
+    # ac: there's more recent data available, but this data is only used in placebos anyway, it was invented by HXZ 2020 (see ZZ2_IdioVolQF_ReturnSkewQF)
     webloc = "http://global-q.org/uploads/1/2/2/6/122679606/q5_factors_daily_2019.csv"
 
     try:
@@ -93,11 +94,6 @@ def main():
     factor_cols = [col for col in qfactor_data.columns if col.startswith('r_')]
     for col in factor_cols:
         qfactor_data[col] = qfactor_data[col] / 100
-
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        qfactor_data = qfactor_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Apply column standardization
     qfactor_data = standardize_columns(qfactor_data, 'd_qfactor')
