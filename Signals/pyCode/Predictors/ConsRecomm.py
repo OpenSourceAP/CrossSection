@@ -77,8 +77,10 @@ def main():
     
     print(f"Loaded {len(signal_master):,} SignalMasterTable observations")
     
-    # Merge with SignalMasterTable
+    # Merge with SignalMasterTable (Stata uses 1:m merge)
     print("Merging data...")
+    # The Stata merge is: merge 1:m tickerIBES time_avail_m using SignalMasterTable
+    # This means one IBES record can match multiple permnos
     df = pd.merge(ibes_df, signal_master, on=['tickerIBES', 'time_avail_m'], how='inner')
     
     print(f"After merging: {len(df):,} observations")
