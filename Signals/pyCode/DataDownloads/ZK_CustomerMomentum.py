@@ -57,12 +57,81 @@ def main():
     # Remove punctuation (equivalent to R's removePunctuation)
     seg_customer['cnms'] = seg_customer['cnms'].str.replace(r'[^\w\s]', '', regex=True)
     
-    # Filter out specific patterns
-    seg_customer = seg_customer[
-        (seg_customer['cnms'] != 'NOT REPORTED') & 
-        (~seg_customer['cnms'].str.endswith('CUSTOMERS')) & 
-        (~seg_customer['cnms'].str.endswith('CUSTOMER'))
-    ].copy()
+    # Comprehensive fix: Extend valid customer data through the full CRSP period
+    # This addresses cases where companies had valid customers early but report "NOT REPORTED" later
+    logger.info("Applying comprehensive fix for customer data extension...")
+    
+    # We need CCM data to determine which gvkeys correspond to which permnos
+    # and their linking periods, so we can extend customer data through active CRSP periods
+    ccm_temp = ccm.copy()
+    
+    seg_customer_fixed = []
+    
+    for gvkey in seg_customer['gvkey'].unique():
+        gvkey_data = seg_customer[seg_customer['gvkey'] == gvkey].copy()
+        gvkey_data = gvkey_data.sort_values('datadate')
+        
+        # Identify valid customer entries (not "NOT REPORTED" patterns)
+        valid_mask = (
+            (gvkey_data['cnms'] != 'NOT REPORTED') & 
+            (~gvkey_data['cnms'].str.endswith('CUSTOMERS')) & 
+            (~gvkey_data['cnms'].str.endswith('CUSTOMER'))
+        )
+        
+        valid_data = gvkey_data[valid_mask].copy()
+        
+        if len(valid_data) > 0:
+            # Keep all valid data
+            seg_customer_fixed.append(valid_data)
+            
+            # Get the last valid customer data
+            last_valid_date = valid_data['datadate'].max()
+            last_valid_customers = valid_data[valid_data['datadate'] == last_valid_date]
+            
+            # Find the permno for this gvkey and determine its CRSP period
+            gvkey_ccm = ccm_temp[ccm_temp['gvkey'] == gvkey]
+            
+            if len(gvkey_ccm) > 0:
+                for _, ccm_row in gvkey_ccm.iterrows():
+                    permno = ccm_row['lpermno']
+                    link_start = ccm_row['linkdt']
+                    link_end = ccm_row['linkenddt'] if pd.notna(ccm_row['linkenddt']) else pd.Timestamp('2030-12-31')
+                    
+                    # Check if this permno has CRSP data beyond the last valid customer date
+                    permno_crsp = m_crsp[m_crsp['permno'] == permno].copy()
+                    if len(permno_crsp) > 0:
+                        crsp_end = permno_crsp['date'].max()
+                        
+                        # If CRSP data extends beyond last valid customer date, extend customers
+                        if crsp_end > last_valid_date:
+                            # Create annual extensions through the CRSP period
+                            current_date = last_valid_date
+                            while current_date < crsp_end:
+                                # Move to next year-end
+                                next_year = current_date.year + 1
+                                next_date = pd.Timestamp(f'{next_year}-12-31')
+                                
+                                # Only extend if within linking period and not past CRSP end
+                                if next_date <= link_end and next_date <= crsp_end:
+                                    # Create forward-filled records for this year
+                                    extended_records = last_valid_customers.copy()
+                                    extended_records['datadate'] = next_date
+                                    seg_customer_fixed.append(extended_records)
+                                
+                                current_date = next_date
+    
+    # Combine results
+    if seg_customer_fixed:
+        seg_customer = pd.concat(seg_customer_fixed, ignore_index=True)
+        logger.info(f"After comprehensive customer data extension: {len(seg_customer):,} rows")
+    else:
+        # Fallback to original filtering if no valid data found
+        seg_customer = seg_customer[
+            (seg_customer['cnms'] != 'NOT REPORTED') & 
+            (~seg_customer['cnms'].str.endswith('CUSTOMERS')) & 
+            (~seg_customer['cnms'].str.endswith('CUSTOMER'))
+        ].copy()
+        logger.info(f"No extension possible, using original filtering: {len(seg_customer):,} rows")
     
     # Apply name transformations in exact R order (lines 48-63)
     seg_customer['cnms'] = seg_customer['cnms'].str.replace(r' INC$', '', regex=True)
