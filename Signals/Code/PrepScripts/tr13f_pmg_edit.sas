@@ -10,7 +10,7 @@ for some reason, I had to manually load the wrds macros and libraries this year 
 * paths;
 %include '/wrds/lib/utility/wrdslib.sas' ;
 options sasautos=('/wrds/wrdsmacros/', SASAUTOS) MAUTOSOURCE;
-%let path_dl_me = ~/data_prep/;
+%let path_dl_me = ./data_for_dl/;
 
 
 /* ********************************************************************************* */

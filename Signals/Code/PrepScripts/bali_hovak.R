@@ -144,6 +144,6 @@ bh_imp_vol = do.call(rbind,bh_many) %>%
 
 # finally write to csv!
 data.table::fwrite(bh_imp_vol,
-                   "~/data_prep/bali_hovak_imp_vol.csv"
+                   "./data_for_dl/bali_hovak_imp_vol.csv"
 )
 

@@ -17,7 +17,7 @@ proc datasets library=work kill;run; quit;
 %let yyyy = %sysget(yyyy); * get year from command line;
 %let exchprefix = %sysget(exchprefix); * get nyam or nasd from command line;
 libname issm '/wrds/issm/sasdata'; * issm data location on wrds;
-libname output '~/temp_output/'; * output path;
+libname output './temp_output/'; * output path;
 
 
 
