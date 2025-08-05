@@ -11,18 +11,28 @@
 *.o*
 *.Rout
 
-deleteme*
-
 Results/
 Portfolios/Data/*
 Signals/Data/*
+Signals/Logs/*
+Signals/pyData/*
 
 *.html
 
-.gitignore
+# Credentials
+.env
 
-# macOS finder
+# Mac
 .DS_Store
 
-# credentials
-.env
+# Python
+.venv
+__pycache__/
+
+# Testing and archive
+deleteme*
+Signals/pyCode/Debug/
+Signals/zzz-archive/*
+Signals/Journal/*
+Signals/StataDocs/*
+.claude/
