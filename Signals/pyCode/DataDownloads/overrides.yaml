@@ -95,7 +95,7 @@ d_qfactor:
     details: |
       The imperfect cells rate is high, but the mean dev is basically machine precision, approx 1e-10. There are literally no data revisions here, since both Python and Stata are downloading an old 2019 csv file. So it's mildly interesting that either Python or Stata is doing some rounding (probably Python). Not interesting enough to dig further. This data is only used in placebos, so need to update the 2019 csv file.
       
-V_TBill3M:
+TBill3M:
   - check: imperfect_cells
     status: accepted
     reviewed_on: 2025-08-04
@@ -129,9 +129,19 @@ brokerLev:
 
 
 customerMom:
-  - check: imperfect_cells
+  - check: missing_rows
     status: accepted
     reviewed_on: 2025-08-04
     reviewed_by: ac
     details: |
       Seems to be a bug in the Stata code. The Stata data has custmom signals for permno 93436 (TSLA, gvkey 184996) for 2013 to present. But the underlying Compustat customer segment data goes only until 2011. As is standard, ZK_CustomerSegments.R assumes that signals are stale after one year of being available, so it's proper that the Python data has no signals for 2013 to present.
+
+GNPdefl:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-05
+    reviewed_by: ac
+    details: |
+      Deviations are due to rounding. Seems like Python rounds off the 8th digit (or so).
+      
+      
