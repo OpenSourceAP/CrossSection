@@ -47,7 +47,7 @@ Signals/
 │   └── temp/              # Temporary Python files
 ├── Logs/                   # Processing logs
 ├── Journal/                # Claude's Journal
-├── StataDocs/              # Stata syntax and Python translation docs
+├── DocsForClaude/          # Claude's Docs
 ```
 
 # Translation Philosophy
