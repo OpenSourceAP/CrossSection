@@ -20,6 +20,7 @@ Outputs:
 """
 
 import pandas as pd
+import polars as pl
 from pathlib import Path
 
 
@@ -37,17 +38,19 @@ def save_predictor(df, predictor_name, output_dir="../pyData/Predictors"):
     print(f"saving {predictor_name}")
     
     # Create a copy to avoid modifying original data (equivalent to preserve/restore)
-    df_save = df.copy()
+    df_save = df.clone()
     
     # Clean up - drop if predictor value is missing (equivalent to: drop if `1' == .)
-    df_save = df_save.dropna(subset=[predictor_name])
+    df_save = df_save.filter(pl.col(predictor_name).is_not_null())
     
     # Convert time_avail_m to yyyymm format (replicating Stata date conversion)
     # gen yyyymm = year(dofm(time_avail_m))*100 + month(dofm(time_avail_m))
-    df_save['yyyymm'] = df_save['time_avail_m'].dt.year * 100 + df_save['time_avail_m'].dt.month
+    df_save = df_save.with_columns(
+        (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("yyyymm")
+    )
     
     # Keep only required columns and set order: permno yyyymm predictor_name
-    df_save = df_save[['permno', 'yyyymm', predictor_name]].copy()
+    df_save = df_save.select(['permno', 'yyyymm', predictor_name])
     
     # Create output directory if it doesn't exist
     output_path = Path(output_dir)
@@ -55,6 +58,6 @@ def save_predictor(df, predictor_name, output_dir="../pyData/Predictors"):
     
     # Save as CSV (main output format per updated requirements)
     output_file = output_path / f"{predictor_name}.csv"
-    df_save.to_csv(output_file, index=False)
+    df_save.write_csv(output_file)
     
     print(f"Saved {len(df_save)} rows to {output_file}")

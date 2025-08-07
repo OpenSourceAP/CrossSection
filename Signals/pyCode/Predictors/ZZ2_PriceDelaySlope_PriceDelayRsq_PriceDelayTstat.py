@@ -66,75 +66,104 @@ df = df.with_columns(
     ).dt.truncate("1mo").alias("time_avail_m")
 )
 
-print("🏃 Running rolling regressions...")
+print("🏃 Running regressions by group...")
 
 # Sort for regressions
 df = df.sort(["time_avail_m", "permno", "time_d"])
 
-print("  Filtering groups with minimum 26 observations...")
+print("  Filtering groups with minimum 26 observations and data quality checks...")
 
-# Filter groups with minimum 26 observations (as required by min(26) in Stata)
-df = df.with_columns(
-    pl.col("ret").count().over(["time_avail_m", "permno"]).alias("group_count")
+# Count observations per group and check data quality
+group_stats = df.group_by(["time_avail_m", "permno"]).agg([
+    pl.len().alias("group_count"),
+    pl.col("ret").var().alias("ret_var"),
+    pl.col("mktrf").var().alias("mktrf_var"),
+    pl.col("ret").count().alias("ret_non_null"),
+    pl.col("mktrf").count().alias("mktrf_non_null")
+])
+
+# Filter to groups that meet all quality criteria:
+# 1. >= 26 observations
+# 2. Non-zero variance in both ret and mktrf
+# 3. Sufficient non-null observations after dropna
+valid_groups = group_stats.filter(
+    (pl.col("group_count") >= 26) &
+    (pl.col("ret_var") > 0) &
+    (pl.col("mktrf_var") > 0) &
+    (pl.col("ret_non_null") >= 26) &
+    (pl.col("mktrf_non_null") >= 26) &
+    (pl.col("ret_var").is_not_null()) &
+    (pl.col("mktrf_var").is_not_null())
 )
 
-df = df.filter(pl.col("group_count") >= 26)
-print(f"After filtering for minimum observations: {len(df):,} observations")
+print(f"Groups before quality filtering: {len(group_stats):,}")
+print(f"Groups after quality filtering: {len(valid_groups):,}")
+print(f"  Filtered out {len(group_stats) - len(valid_groups):,} groups with data quality issues")
 
-print("  Running restricted regressions (market only)...")
+# Ready for full dataset processing
+print("🚀 Processing all valid groups")
 
-# Restricted (lag slopes = 0)
-# by time_avail_m permno: asreg ret mktrf, min(26)
-# This runs separate regressions for each permno-time_avail_m group
-df_restricted = df.with_columns(
-    pl.col("ret")
-    .least_squares.ols(
-        "mktrf",
-        mode="statistics",  # Get statistics including R-squared
-        add_intercept=True,
-        null_policy="drop"
-    )
-    .over(["time_avail_m", "permno"])
-    .alias("_stats_restricted")
-)
+# Keep only data for valid groups
+df = df.join(valid_groups.select(["time_avail_m", "permno"]), 
+             on=["time_avail_m", "permno"], 
+             how="inner")
+print(f"After filtering for minimum observations and data quality: {len(df):,} observations")
 
-print("  Running unrestricted regressions (market + lags)...")
+print("  Running regressions (one per group)...")
 
-# Unrestricted
-# by time_avail_m permno: asreg ret mktrf mktLag*, min(26) se
+# Group by time_avail_m and permno, then run ONE regression per group
 lag_features = [f"mktLag{n}" for n in range(1, nlag + 1)]
 
-df_unrestricted = df_restricted.with_columns(
-    pl.col("ret")
-    .least_squares.ols(
-        "mktrf", *lag_features,
-        mode="coefficients",
-        add_intercept=True,
-        null_policy="drop"
+# Run restricted regression for each group using SVD for numerical stability
+print(f"  Running restricted regressions on {len(valid_groups):,} groups...")
+restricted_results = (
+    df.group_by(["time_avail_m", "permno"], maintain_order=True)
+    .agg(
+        pl.col("ret").least_squares.ols(
+            "mktrf",
+            mode="statistics",
+            add_intercept=True,
+            null_policy="drop",
+            solve_method="svd"
+        ).alias("_stats_restricted")
     )
-    .over(["time_avail_m", "permno"])
-    .alias("_b_coeffs")
 )
 
-# Also get R-squared for unrestricted model
-df_unrestricted = df_unrestricted.with_columns(
-    pl.col("ret")
-    .least_squares.ols(
-        "mktrf", *lag_features,
-        mode="statistics",
-        add_intercept=True,
-        null_policy="drop"
-    )
-    .over(["time_avail_m", "permno"])
-    .alias("_stats_unrestricted")
+print(f"  Running unrestricted regressions on {len(valid_groups):,} groups...")
+# Run unrestricted regression for each group using SVD for numerical stability
+unrestricted_results = (
+    df.group_by(["time_avail_m", "permno"], maintain_order=True)
+    .agg([
+        pl.col("ret").least_squares.ols(
+            "mktrf", *lag_features,
+            mode="coefficients",
+            add_intercept=True,
+            null_policy="drop",
+            solve_method="svd"
+        ).alias("_b_coeffs"),
+        pl.col("ret").least_squares.ols(
+            "mktrf", *lag_features,
+            mode="statistics",
+            add_intercept=True,
+            null_policy="drop",
+            solve_method="svd"
+        ).alias("_stats_unrestricted")
+    ])
+)
+
+# Combine results
+df_results = restricted_results.join(
+    unrestricted_results,
+    on=["time_avail_m", "permno"],
+    how="inner"
 )
 
 print("📊 Extracting coefficients and R-squared values...")
 
-# Extract R-squared from statistics structures
-df_unrestricted = df_unrestricted.with_columns([
-    pl.col("_stats_restricted").struct.field("r_squared").alias("R2Restricted"),
-    pl.col("_stats_unrestricted").struct.field("r_squared").alias("_R2")
+# Extract R-squared from statistics structures (field name is 'r2', not 'r_squared')
+df_results = df_results.with_columns([
+    pl.col("_stats_restricted").struct.field("r2").alias("R2Restricted"),
+    pl.col("_stats_unrestricted").struct.field("r2").alias("_R2")
 ])
 
 # Extract coefficients
@@ -144,28 +173,37 @@ for n in range(1, nlag + 1):
         pl.col("_b_coeffs").struct.field(f"mktLag{n}").alias(f"_b_mktLag{n}")
     )
 
-df_unrestricted = df_unrestricted.with_columns(coeff_extracts)
+df_results = df_results.with_columns(coeff_extracts)
 
-# For simplicity, we'll approximate t-statistics using coefficients directly
-# In practice, you'd need the standard errors from the regression
-# Since polars-ols doesn't return SEs easily, we'll use coefficient magnitude as proxy
+# Extract t-statistics from the unrestricted statistics
+# The t_values field contains a list of t-statistics for each coefficient
+# Order: [mktrf, mktLag1, mktLag2, mktLag3, mktLag4, const]
 for n in range(1, nlag + 1):
-    df_unrestricted = df_unrestricted.with_columns(
-        pl.col(f"_b_mktLag{n}").alias(f"_t_mktLag{n}")  # Approximation
+    df_results = df_results.with_columns(
+        pl.col("_stats_unrestricted").struct.field("t_values").list.get(n).alias(f"_t_mktLag{n}")
     )
 
-print("📅 Collapsing to monthly and keeping June observations...")
+print("📅 Filtering for valid results and June endpoints...")
 
-# Collapse to monthly 
-# drop if _R2 == .
-# keep if month(time_d) == 6 // drop if last obs is not June
-df_monthly = df_unrestricted.filter(
-    (pl.col("_R2").is_not_null()) &
-    (pl.col("time_d").dt.month() == 6)
+# Need to get the last observation date for each group to check if it's June
+# Join back with original data to get time_d info
+last_dates = (
+    df.group_by(["time_avail_m", "permno"], maintain_order=True)
+    .agg(pl.col("time_d").last().alias("last_time_d"))
 )
 
-# bys permno time_avail_m: keep if _n == 1
-df_monthly = df_monthly.group_by(["permno", "time_avail_m"], maintain_order=True).first()
+df_results = df_results.join(
+    last_dates,
+    on=["time_avail_m", "permno"],
+    how="left"
+)
+
+# drop if _R2 == .
+# keep if month(time_d) == 6 // drop if last obs is not June
+df_monthly = df_results.filter(
+    (pl.col("_R2").is_not_null()) &
+    (pl.col("last_time_d").dt.month() == 6)
+)
 
 print(f"Monthly data after filtering: {len(df_monthly):,} observations")
 
