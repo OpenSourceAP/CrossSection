@@ -382,8 +382,8 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"## Summary\n\n")
         
         # Create summary table with Python CSV column
-        f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision1 | Precision2 |\n")
-        f.write("|---------------------------|------------|----------|-----------|------------|------------|\n")
+        f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |\n")
+        f.write("|---------------------------|------------|----------|-----------|--------------|-------------------------|\n")
         
         for predictor in test_predictors:
             results = all_results.get(predictor, {})
@@ -416,10 +416,26 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             else:
                 col2 = "NA"
             
-            col3 = "✅" if test3 == True else ("❌" if test3 == False else "NA")
-            col4 = "✅" if test4 == True else ("❌" if test4 == False else "NA")
+            # Format precision1 column with percentage information
+            if test3 == True:
+                bad_pct = results.get('bad_obs_percentage', 0)
+                col3 = f"✅ ({bad_pct:.2f}%)"
+            elif test3 == False:
+                bad_pct = results.get('bad_obs_percentage', 0)
+                col3 = f"❌ ({bad_pct:.2f}%)"
+            else:
+                col3 = "NA"
+            # Format precision2 column with diff value information  
+            if test4 == True:
+                pth_diff = results.get('pth_percentile_diff', 0)
+                col4 = f"✅ (100th diff {pth_diff:.1E})"
+            elif test4 == False:
+                pth_diff = results.get('pth_percentile_diff', 0)
+                col4 = f"❌ (100th diff {pth_diff:.1E})"
+            else:
+                col4 = "NA"
             
-            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<9} | {col4:<9} |\n")
+            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<23} |\n")
         
         # Count available predictors for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
