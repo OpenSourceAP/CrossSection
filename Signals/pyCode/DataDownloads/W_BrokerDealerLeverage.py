@@ -149,7 +149,7 @@ def main():
         first_idx = qtr_indices[0]
         data.loc[first_idx, 'levfac'] = data.loc[first_idx, 'levfacnsa']
         
-        # Special case for Q1 1969
+        # Special case for Q1 1969: here the seasonal adjustment is not defined, so we keep the original value
         if qtr == 1:
             q1_1969_mask = (data['year'] == 1969) & (data['qtr'] == 1)
             if q1_1969_mask.any():
@@ -163,11 +163,6 @@ def main():
     # Keep all observations including missing levfac (matching Stata behavior)
     
     print(f"Processed {len(output_data)} quarterly observations")
-    
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        output_data = output_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save to parquet
     output_file = "../pyData/Intermediate/brokerLev.parquet"

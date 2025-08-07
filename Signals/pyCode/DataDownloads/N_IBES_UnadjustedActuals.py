@@ -63,37 +63,34 @@ print(f"After removing within-month duplicates: {len(actuals_data)} records")
 # Fill time series gaps (equivalent to xtset id time_av; tsfill)
 print("Filling time series gaps...")
 
-# Get unique tickers
-tickers = actuals_data['ticker'].unique()
-filled_data = []
+def fill_ticker_gaps(group):
+    """Fill time series gaps for a single ticker group"""
+    group = group.sort_values('time_avail_m')
+    
+    if len(group) <= 1:
+        return group
+    
+    # Create full time range for this ticker using datetime to avoid period conversion
+    min_time = group['time_avail_m'].min()
+    max_time = group['time_avail_m'].max()
+    full_time_range = pd.date_range(start=min_time, end=max_time, freq='MS')
+    
+    # Reindex to fill gaps
+    group = group.set_index('time_avail_m').reindex(full_time_range)
+    group.index.name = 'time_avail_m'
+    group = group.reset_index()
+    
+    # Forward fill specified variables (equivalent to Stata's replace logic)
+    fill_vars = ['int0a', 'fy0a', 'shoutIBESUnadj', 'ticker']
+    for var in fill_vars:
+        if var in group.columns:
+            group[var] = group[var].ffill()
+    
+    return group
 
-for ticker in tickers:
-    ticker_data = actuals_data[actuals_data['ticker'] == ticker].copy()
-    ticker_data = ticker_data.sort_values('time_avail_m')
-
-    if len(ticker_data) > 1:
-        # Create full time range for this ticker using datetime to avoid period conversion
-        min_time = ticker_data['time_avail_m'].min()
-        max_time = ticker_data['time_avail_m'].max()
-        full_time_range = pd.date_range(start=min_time, end=max_time, freq='MS')
-
-        # Reindex to fill gaps
-        ticker_data = ticker_data.set_index('time_avail_m').reindex(full_time_range)
-        ticker_data.index.name = 'time_avail_m'
-        ticker_data = ticker_data.reset_index()
-
-        # Forward fill specified variables (equivalent to Stata's replace logic)
-        fill_vars = ['int0a', 'fy0a', 'shoutIBESUnadj', 'ticker']
-        for var in fill_vars:
-            if var in ticker_data.columns:
-                ticker_data[var] = ticker_data[var].ffill()
-
-    filled_data.append(ticker_data)
-
-# Combine all tickers
-if filled_data:
-    actuals_data = pd.concat(filled_data, ignore_index=True)
-    print(f"After filling time series gaps: {len(actuals_data)} records")
+# Apply the function to each ticker group
+actuals_data = actuals_data.groupby('ticker').apply(fill_ticker_gaps).reset_index(drop=True)
+print(f"After filling time series gaps: {len(actuals_data)} records")
 
 # Drop statpers (we have time_avail_m now)
 if 'statpers' in actuals_data.columns:

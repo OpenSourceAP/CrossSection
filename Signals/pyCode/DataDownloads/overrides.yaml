@@ -1,0 +1,147 @@
+# Manual Overrides for Validation Failures
+# 
+# This file allows manual approval of validation failures with auditable paper trails.
+# Each override should include justification and reviewer information.
+#
+# Structure:
+#   dataset_name:
+#     - check: [check_name]              # Required: name of the validation check
+#       status: accepted|rejected          # Required: approval decision
+#       reviewed_on: YYYY-MM-DD          # Required: date of review  
+#       reviewed_by: [reviewer_id]       # Required: who reviewed this
+#       details: |                       # Required: justification
+#         Multi-line explanation of the decision
+#       max_ratio_allowed: X.XX%         # Optional: custom threshold for accepted ratio checks
+#
+# Supported checks for DataDownloads (test_dl.py):
+#   - missing_rows: Python missing some Stata rows
+#   - imperfect_cells: High imperfect cells ratio
+#   - column_names: Column names don't match
+#   - column_types: Column types don't match
+#
+# Supported checks for Predictors (test_predictors.py):
+#   - superset_check: Python observations not superset of Stata
+#   - precision_check: Pth percentile absolute difference too high
+#   - column_names: Column names don't match
+
+# Example entries (remove these when adding real overrides):
+#
+# ExampleDataset:
+#   - check: missing_rows
+#     status: accepted
+#     reviewed_on: 2025-07-16
+#     reviewed_by: reviewer_id
+#     details: |
+#       Explanation of why this failure is acceptable
+#
+#   - check: imperfect_cells
+#     status: rejected
+#     reviewed_on: 2025-07-16
+#     reviewed_by: reviewer_id
+#     details: |
+#       This failure indicates a real data quality issue that needs to be fixed.
+#       The validation failure should remain until the underlying problem is resolved.
+
+CompustatAnnual:
+  - check: missing_rows
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      The 4 missing rows are now gone from Compustat. The missing rows are for gvkeys 022371, 029251, 036153, 038001, with datadates that are one year before the first available datadate in the updated Compustat data. They're also almost entirely missing accounting numbers. Seems like Compustat cleaned it up.
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-07-17
+    reviewed_by: ac
+    details: |
+      See CompustatAnnual imperfect_cells details
+
+
+InputOutputMomentumProcessed:
+  - check: missing_rows
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      only 12 missing rows out of millions
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Deviations are small given that the variables come from stock returns. Typical deviations is 0.001%. Not visible in Excel. Also deviations only occur in about 5% of cells.
+
+dailyFF:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      I checked a few obs on Ken French's website and the Python data matches perfectly. So the Stata data is out-of-date. Definitely strange that the data can be updated so quickly. But the precision we're currently asking for is too high. French only reports percent returns to two decimal places (which is quite reasonable). So our mean deviation is 0.001%, matching this rounding. UMD has the most common deviations, which makes sense given the noise in past return signals.
+
+monthlyFF:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      This one is just like dailyFF. I checked a few obs on Ken French's website and the Python data matches perfectly. So the Stata data is out-of-date. French only reports percent returns to two decimal places, and the mean dev of around 0.003% matches pretty closely. 
+
+d_qfactor:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      The imperfect cells rate is high, but the mean dev is basically machine precision, approx 1e-10. There are literally no data revisions here, since both Python and Stata are downloading an old 2019 csv file. So it's mildly interesting that either Python or Stata is doing some rounding (probably Python). Not interesting enough to dig further. This data is only used in placebos, so need to update the 2019 csv file.
+      
+TBill3M:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      The deviations are due to Stata's rounding. The raw Tbill rate from FRED has two significant digits. Apparently, Stata's aggregate(q, avg) will then round to two significant digits. Python's resample('QE').mean() does not round, and it's not obvious why one should round. I could not find documentation of Stata's aggregate(q, avg) rounding. Another reason to move to Python.
+
+IBESCRSPLinkingTable:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Deviations are due to random tie breaking when de-duplicating in the Stata code. The Python code does a more systematic tie-breaking, but neither is ideal. The deviations occur for only 0.25% of permnos, and this script is in line for an overhaul, and so it's not worth digging into further. See Github issue https://github.com/OpenSourceAP/CrossSection/issues/150. 
+
+OPTIONMETRICSCRSPLinkingTable:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Deviations are due to random tie breaking when de-duplicating in the Stata code. The Python code does a more systematic tie-breaking, but neither is ideal. The deviations occur for only 0.30% of permnos, and this script is in line for an overhaul, and so it's not worth digging into further. See Github issue https://github.com/OpenSourceAP/CrossSection/issues/172.
+
+brokerLev:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Mean deviation is 3e-8, which can easily be due to rounding and the seasonal adjustment calculations.
+
+
+customerMom:
+  - check: missing_rows
+    status: accepted
+    reviewed_on: 2025-08-04
+    reviewed_by: ac
+    details: |
+      Seems to be a bug in the Stata code. The Stata data has custmom signals for permno 93436 (TSLA, gvkey 184996) for 2013 to present. But the underlying Compustat customer segment data goes only until 2011. As is standard, ZK_CustomerSegments.R assumes that signals are stale after one year of being available, so it's proper that the Python data has no signals for 2013 to present.
+
+GNPdefl:
+  - check: imperfect_cells
+    status: accepted
+    reviewed_on: 2025-08-05
+    reviewed_by: ac
+    details: |
+      Deviations are due to rounding. Seems like Python rounds off the 8th digit (or so).
+      
+      

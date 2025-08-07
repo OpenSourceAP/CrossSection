@@ -211,6 +211,7 @@ def main():
     logger.info(f"Wide format data: {len(temp1):,} rows, {len(customer_cols)} customer columns")
     
     # Create stop rows to avoid stale data (R lines 131-145)
+    # This ensures that stale data (more than 12 months after data is available) is not used.
     temp1b = temp1.sort_values(['permno', 'datadate']).copy()
     temp1b['next_permno'] = temp1b['permno'].shift(-1)
     temp1b['next_year'] = temp1b['datadate'].shift(-1).dt.year
@@ -221,11 +222,8 @@ def main():
     temp1b['dyear'] = temp1b['next_year'] - temp1b['current_year']
     temp1b['lastentry'] = (temp1b['diffpermno'] > 0) & (temp1b['dyear'] != 1)
     
-    # Fix: Only create stop rows for genuine temporal gaps, not for final rows
-    # Original logic was creating artificial stops that terminate customer relationships prematurely
-    # When dyear > 1 (multi-year gap) or diffpermno > 0 (different permno), create stop row
-    # But don't create stop rows just because it's the last row for a permno
-    temp1b.loc[temp1b['next_permno'].isna(), 'lastentry'] = False
+    # Handle last rows (no next permno)
+    temp1b.loc[temp1b['next_permno'].isna(), 'lastentry'] = True
     
     # Create stop rows (R lines 138-142)
     tempstop = temp1b[temp1b['lastentry']].copy()
