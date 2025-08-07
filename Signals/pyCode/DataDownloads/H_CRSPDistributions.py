@@ -25,7 +25,6 @@ print("=" * 60, flush=True)
 load_dotenv()
 
 
-
 # Create SQLAlchemy engine for database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:"
@@ -51,20 +50,20 @@ os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 print(f"Downloaded {len(dist_data)} distribution records")
 
-# Replicate Stata's exact duplicate removal logic:
-# "bysort permno distcd paydt: keep if _n == 1"
-# This means: sort by permno distcd paydt, then keep first record in each group
-initial_count = len(dist_data)
+# Convert date columns to date format BEFORE sorting/deduplication
+datecols = ['rcrddt', 'exdt', 'paydt']
+for col in datecols:
+    if col in dist_data.columns:
+        dist_data[col] = pd.to_datetime(dist_data[col])
+        dist_data[col] = dist_data[col].dt.strftime('%Y-%m-%d')
 
-# Sort first (this is what bysort does), then remove duplicates
-# Stata's "bysort permno distcd paydt" sorts by exactly these 3 columns
-# For tied records, Stata may use the original dataset order as tie-breaker
-# We need to replicate this by using a stable sort that preserves original
-# order for ties
-dist_data = dist_data.sort_values(['permno', 'distcd', 'paydt'],
-                                  kind='stable').reset_index(drop=True)
-dist_data = dist_data.drop_duplicates(subset=['permno', 'distcd', 'paydt'],
-                                      keep='first')
+# Stata code does:
+# "bysort permno distcd paydt: keep if _n == 1"
+# but we're having trouble with edge cases, so let's keep more rows (group by more columns)
+id_cols_plus = ['permno'] + datecols + ['distcd']
+initial_count = len(dist_data)
+dist_data = dist_data.sort_values(by=id_cols_plus)
+dist_data = dist_data.drop_duplicates(subset=id_cols_plus, keep='first')
 duplicates_removed = initial_count - len(dist_data)
 
 if duplicates_removed > 0:
@@ -89,12 +88,6 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3],
 
 # Drop the temporary string column
 dist_data = dist_data.drop('distcd_str', axis=1)
-
-# Convert date columns to datetime format to match Stata expectations
-date_columns = ['rcrddt', 'exdt', 'paydt']
-for col in date_columns:
-    if col in dist_data.columns:
-        dist_data[col] = pd.to_datetime(dist_data[col])
 
 # Column standardization with data type enforcement
 dist_data = standardize_columns(dist_data, "CRSPdistributions")

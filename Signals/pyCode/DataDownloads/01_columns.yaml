@@ -59,11 +59,11 @@ m_aCompustat:
     prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect, recta, revt, sale, scstkc, seq, spi, sstk, tstkp, txdb, txdi,
     txditc, txfo, txfed, txp, txt, wcap, wcapch, xacc, xad, xint, xrd, xpp, xsga, cnum, dr, dc, xint0, xsga0, xad0, cik, sic,
     naics, permno, lpermco, time_avail_m
-  int32: gvkey, naicsh, permno, lpermco
+  int32: gvkey, permno, lpermco
   datetime64[ns]: datadate, time_avail_m
   object: conm, tic, cusip, cnum, cik, sic, naics
   int16: fyear
-  float64: sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis,
+  float64: naicsh, sich, aco, act, ajex, am, ao, ap, at, capx, ceq, ceqt, che, cogs, csho, cshrc, dcpstk, dcvt, dlc, dlcch, dltis,
     dltr, dltt, dm, dp, drc, drlt, dv, dvc, dvp, dvpa, dvpd, dvpsx_c, dvt, ebit, ebitda, emp, epspi, epspx, fatb, fatl, ffo,
     fincf, fopt, gdwl, gdwlia, gdwlip, gwo, ib, ibcom, intan, invt, ivao, ivncf, ivst, lco, lct, lo, lt, mib, msa, ni, nopi,
     oancf, ob, oiadp, oibdp, pi, ppenb, ppegt, ppenls, ppent, prcc_c, prcc_f, prstkc, prstkcc, pstk, pstkl, pstkrv, re, rect,
@@ -80,9 +80,8 @@ m_QCompustat:
   int32: gvkey
   datetime64[ns]: datadateq, rdq, time_avail_m
   int16: fyearq
-  int8: fqtr
   object: datacqtr, datafqtr
-  float64: acoq, actq, ajexq, apq, atq, ceqq, cheq, cogsq, cshoq, cshprq, dlcq, dlttq, dpq, drcq, drltq, dvpsxq, dvpq, dvy,
+  float64: fqtr, acoq, actq, ajexq, apq, atq, ceqq, cheq, cogsq, cshoq, cshprq, dlcq, dlttq, dpq, drcq, drltq, dvpsxq, dvpq, dvy,
     epspiq, epspxq, fopty, gdwlq, ibq, invtq, intanq, ivaoq, lcoq, lctq, loq, ltq, mibq, niq, oancfy, oiadpq, oibdpq, piq,
     ppentq, ppegtq, prstkcy, prccq, pstkq, req, rectq, revtq, saleq, seqq, sstky, txdiq, txditcq, txpq, txtq, xaccq, xintq,
     xsgaq, xrdq, capxy
@@ -148,15 +147,15 @@ monthlyCRSPraw:
 
 dailyCRSP:
   column_order: permno, time_d, ret, vol, shrout, prc, cfacpr
-  int32: permno, vol, shrout
+  int32: permno
   datetime64[ns]: time_d
-  float64: ret, prc, cfacpr
+  float64: ret, vol, shrout, prc, cfacpr
 
 dailyCRSPprc:
   column_order: permno, time_d, shrout, prc, cfacpr
-  int32: permno, shrout
+  int32: permno
   datetime64[ns]: time_d
-  float64: prc, cfacpr
+  float64: shrout, prc, cfacpr
 
 m_CRSPAcquisitions:
   column_order: permno, SpinoffCo
@@ -189,8 +188,7 @@ IBES_UnadjustedActuals:
   column_order: tickerIBES, cusip, oftic, cname, measure, fy0a, curcode, fvyrgro, fvyrsta, usfirm, fy0edats, int0a, int0dats,
     price, prdays, shoutIBESUnadj, iadiv, curr_price, time_avail_m
   object: tickerIBES, cusip, oftic, cname, measure, curcode, curr_price
-  float64: fy0a, fvyrgro, fvyrsta, int0a, price, shoutIBESUnadj, iadiv
-  int8: usfirm
+  float64: fy0a, fvyrgro, fvyrsta, usfirm, int0a, price, shoutIBESUnadj, iadiv
   datetime64[ns]: fy0edats, int0dats, prdays, time_avail_m
 
 dailyFF:
