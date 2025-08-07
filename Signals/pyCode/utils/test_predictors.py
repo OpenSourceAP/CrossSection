@@ -368,10 +368,25 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             
             # Format symbols (emojis for pass/fail, NA for None)
             col1 = "✅" if test1 == True else ("❌" if test1 == False else "NA")
-            col2 = "✅" if test2 == True else ("❌" if test2 == False else "NA")
+            
+            # Format superset column with failure percentage
+            if test2 == True:
+                col2 = "✅"
+            elif test2 == False:
+                # Include failure percentage when superset test fails
+                missing_count = results.get('missing_count', 0)
+                stata_obs_count = results.get('stata_obs_count', 0)
+                if stata_obs_count > 0:
+                    failure_pct = (missing_count / stata_obs_count) * 100
+                    col2 = f"❌ ({failure_pct:.2f}%)"
+                else:
+                    col2 = "❌"
+            else:
+                col2 = "NA"
+            
             col3 = "✅" if test3 == True else ("❌" if test3 == False else "NA")
             
-            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<8} | {col3:<9} |\n")
+            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<9} |\n")
         
         # Count available predictors for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
