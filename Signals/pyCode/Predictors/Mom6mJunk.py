@@ -34,23 +34,31 @@ import os
 os.chdir('/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode')
 
 # Clean CIQ ratings
-df_ciq = pd.read_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet")
-
-# Convert ratingdate to time_avail_m (year-month format to match SignalMasterTable)
-df_ciq['ratingdate'] = pd.to_datetime(df_ciq['ratingdate'])
-# Create time_avail_m as first day of month to match SignalMasterTable format
-df_ciq['time_avail_m'] = df_ciq['ratingdate'].dt.to_period('M').dt.to_timestamp()
-
-# Use existing numerical rating (currentratingnum is already 0-22)
-# Note: The original Stata code remapped D=1, C=2, etc. but the Python download
-# script uses D=1, C=2, etc. so we can use currentratingnum directly
-df_ciq['credratciq'] = df_ciq['currentratingnum']
+df_ciq_raw = pd.read_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet",
+                             columns=['gvkey', 'ratingdate', 'currentratingnum'])
 
 # Convert gvkey to numeric to match SignalMasterTable
-df_ciq['gvkey'] = pd.to_numeric(df_ciq['gvkey'], errors='coerce')
+df_ciq_raw['gvkey'] = pd.to_numeric(df_ciq_raw['gvkey'], errors='coerce')
 
-# Keep only needed columns
-temp_ciq_rat = df_ciq[['gvkey', 'time_avail_m', 'credratciq']].copy()
+# Expand each rating to be valid for 12 months after ratingdate
+from dateutil.relativedelta import relativedelta
+expanded_ciq_records = []
+
+for _, row in df_ciq_raw.iterrows():
+    if pd.notna(row['gvkey']) and pd.notna(row['currentratingnum']):
+        base_date = pd.to_datetime(row['ratingdate'])
+        for months_offset in range(12):
+            time_avail_m = (base_date + relativedelta(months=months_offset)).replace(day=1)
+            expanded_ciq_records.append({
+                'gvkey': row['gvkey'],
+                'time_avail_m': time_avail_m,
+                'credratciq': row['currentratingnum']
+            })
+
+temp_ciq_rat = pd.DataFrame(expanded_ciq_records)
+
+# Handle duplicates within month by taking the mean rating
+temp_ciq_rat = temp_ciq_rat.groupby(['gvkey', 'time_avail_m'])['credratciq'].mean().reset_index()
 
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -64,12 +72,10 @@ df = pd.merge(df, df_sp, on=['gvkey', 'time_avail_m'], how='left')
 # Merge with CIQ ratings
 df = pd.merge(df, temp_ciq_rat, on=['gvkey', 'time_avail_m'], how='left')
 
-# Fill missing credratciq with most recent
 # Sort by permno and time_avail_m
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Forward fill credratciq within each permno
-df['credratciq'] = df.groupby('permno')['credratciq'].ffill()
+# No need to forward fill since ratings are already expanded for 12 months
 
 # Coalesce credit ratings - use CIQ if available, otherwise SP
 df.loc[df['credrat'].isna(), 'credrat'] = df.loc[df['credrat'].isna(), 'credratciq']

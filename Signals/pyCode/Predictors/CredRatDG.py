@@ -63,16 +63,31 @@ def main():
     
     # Process CIQ SP ratings data
     print("Loading m_CIQ_creditratings data...")
-    ciq_df = pd.read_parquet('../pyData/Intermediate/m_CIQ_creditratings.parquet', 
-                            columns=['gvkey', 'time_avail_m', 'ratingactionword'])
+    ciq_raw = pd.read_parquet('../pyData/Intermediate/m_CIQ_creditratings.parquet', 
+                             columns=['gvkey', 'ratingdate', 'anydowngrade'])
     
-    print(f"Loaded {len(ciq_df):,} CIQ ratings observations")
+    print(f"Loaded {len(ciq_raw):,} CIQ ratings observations")
     
     # Keep only downgrades and non-missing gvkey
-    ciq_df = ciq_df[ciq_df['gvkey'].notna() & (ciq_df['ratingactionword'] == "Downgrade")]
+    ciq_raw = ciq_raw[ciq_raw['gvkey'].notna() & (ciq_raw['anydowngrade'] == 1)]
     
-    # Generate downgrade signal
-    ciq_df['ciq_dg'] = 1
+    print(f"Filtered to {len(ciq_raw):,} CIQ downgrade observations")
+    
+    # Expand each rating to be valid for 12 months after ratingdate
+    from dateutil.relativedelta import relativedelta
+    expanded_records = []
+    
+    for _, row in ciq_raw.iterrows():
+        base_date = pd.to_datetime(row['ratingdate'])
+        for months_offset in range(12):
+            time_avail_m = (base_date + relativedelta(months=months_offset)).replace(day=1)
+            expanded_records.append({
+                'gvkey': float(row['gvkey']),  # Ensure gvkey is float to match SignalMasterTable
+                'time_avail_m': time_avail_m,
+                'ciq_dg': 1
+            })
+    
+    ciq_df = pd.DataFrame(expanded_records)
     
     # Handle duplicates within month by looking for any downgrades
     ciq_df = ciq_df.groupby(['gvkey', 'time_avail_m'])['ciq_dg'].max().reset_index()
