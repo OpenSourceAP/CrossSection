@@ -285,11 +285,11 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
   - Validation checks the Simple and Precision requirements below
 
 ### Precision requirements:
-**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`. This script outputs `Logs/testout_predictors.md`
+**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`. This script outputs `Logs/testout_predictors.md`. Here, 'common observations' are observations that are in both Stata and Python.
 
-1. Column names and order match exactly
+1. Columns: Column names and order match exactly
   - This is trivial if the indexes match
-2. Python observations are a superset of Stata observations
+2. Superset: Python observations are a superset of Stata observations
   - All Stata observations should be found in the Python data
   - Data source differences typically cannot explain a failure in this test
   - ***IMPORTANT: data availability issues and historical data differences rarely explain a failure in this test***
@@ -300,8 +300,8 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
           - [m_CIQ_creditratings](#mciqcreditratings) (228480)
           - [InputOutputMomentumProcessed](#inputoutputmomentumprocessed) (12)
           - [customerMom](#customermom) (138)      
-3. For common observations, Pth percentile absolute difference < TOL_DIFF
-  - common observations are observations that are in both Stata and Python
+3. Precision1: For common observations, the percentage for which diff >= TOL_DIFF_1 is less than TOL_OBS_1.
+4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
 
 
 # Interaction 

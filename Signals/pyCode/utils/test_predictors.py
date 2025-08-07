@@ -10,10 +10,11 @@ Usage:
     python3 utils/test_predictors.py                    # Test all predictors
     python3 utils/test_predictors.py --predictors Accruals  # Test specific predictor
 
-Precision Validation (per CLAUDE.md:251-255):
-1. Column names and order match exactly
-2. Python observations are a superset of Stata observations
-3. For common observations, Pth percentile absolute difference < TOL_DIFF
+Precision Validation (per CLAUDE.md:290-304):
+1. Columns: Column names and order match exactly
+2. Superset: Python observations are a superset of Stata observations
+3. Precision1: For common observations, percentage with diff >= TOL_DIFF_1 < TOL_OBS_1
+4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
    - common observations are observations that are in both Stata and Python
 
 Inputs:
@@ -37,7 +38,9 @@ import sys
 # ================================
 
 PTH_PERCENTILE = 1.00  # 100th percentile (maximum)
-TOL_DIFF = 1e-6  # Tolerance for absolute differences
+TOL_DIFF_1 = 1e-4  # Threshold for identifying imperfect observations (Precision1)
+TOL_OBS_1 = 0.1  # Max allowed percentage of imperfect observations (units: percent)
+TOL_DIFF_2 = 1e-6  # Tolerance for Pth percentile absolute difference (Precision2)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
 def load_csv_robust(file_path):
@@ -64,7 +67,6 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     # Initialize test results
     cols_match = True
     is_superset = True
-    precision_ok = True
     
     # Set index for both dataframes
     try:
@@ -110,12 +112,16 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
             ].sort_values(by=INDEX_COLS).head(10)
             results['missing_observations_sample'] = missing_sample
     
-    # 3. For common observations, Pth percentile absolute difference < TOL_DIFF
+    # 3. Precision1: For common observations, percentage with diff >= TOL_DIFF_1 < TOL_OBS_1
     common_obs = stata_indexed.index.intersection(python_indexed.index)
     results['common_obs_count'] = len(common_obs)
     
+    precision1_ok = True
+    precision2_ok = True
+    
     if len(common_obs) == 0:
-        precision_ok = False
+        precision1_ok = False
+        precision2_ok = False
     else:
         cobs_stata = stata_indexed.loc[common_obs]
         cobs_python = python_indexed.loc[common_obs]
@@ -123,17 +129,28 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         # Calculate absolute differences
         cobs_diff = abs(cobs_python - cobs_stata)
         
-        # Get Pth percentile of absolute differences
+        # Test 3: Precision1 - percentage of observations with diff >= TOL_DIFF_1
+        bad_obs_count = (cobs_diff[predictor_name] >= TOL_DIFF_1).sum()
+        total_obs_count = len(cobs_diff)
+        bad_obs_percentage = (bad_obs_count / total_obs_count) * 100
+        
+        precision1_ok = bad_obs_percentage < TOL_OBS_1
+        results['precision1_ok'] = precision1_ok
+        results['bad_obs_count'] = bad_obs_count
+        results['total_obs_count'] = total_obs_count
+        results['bad_obs_percentage'] = bad_obs_percentage
+        
+        # Test 4: Precision2 - Pth percentile absolute difference < TOL_DIFF_2
         pth_percentile_diff = cobs_diff.abs().quantile(PTH_PERCENTILE).iloc[0]
         
-        precision_ok = pth_percentile_diff < TOL_DIFF
+        precision2_ok = pth_percentile_diff < TOL_DIFF_2
         results['pth_percentile_diff'] = pth_percentile_diff
-        results['precision_ok'] = precision_ok
+        results['precision2_ok'] = precision2_ok
         
-        # Generate feedback for failed precision
-        if not precision_ok:
-            # Find observations with differences >= TOL_DIFF
-            bad_idx = cobs_diff[cobs_diff[predictor_name] > TOL_DIFF].index
+        # Generate feedback for failed precision tests
+        if not precision1_ok or not precision2_ok:
+            # Find observations with differences >= TOL_DIFF_1 for detailed feedback
+            bad_idx = cobs_diff[cobs_diff[predictor_name] >= TOL_DIFF_1].index
             
             if len(bad_idx) > 0:
                 bad_python = cobs_python.loc[bad_idx].rename(columns={predictor_name: 'python'})
@@ -149,17 +166,14 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
                 # Observations with largest differences
                 largest_diff = bad_df.reset_index().sort_values(by='diff', key=abs, ascending=False).head(10)
                 results['largest_diff'] = largest_diff
-                
-                results['bad_count'] = len(bad_idx)
-                results['total_count'] = len(cobs_diff)
-                results['bad_ratio'] = len(bad_idx) / len(cobs_diff)
     
     # Store individual test results
     results['test_1_passed'] = cols_match
     results['test_2_passed'] = is_superset
-    results['test_3_passed'] = precision_ok
+    results['test_3_passed'] = precision1_ok
+    results['test_4_passed'] = precision2_ok
     
-    return cols_match and is_superset and precision_ok, results
+    return cols_match and is_superset and precision1_ok and precision2_ok, results
 
 def output_predictor_results(predictor_name, results, overall_passed):
     """
@@ -200,15 +214,25 @@ def output_predictor_results(predictor_name, results, overall_passed):
             sample_df = results['missing_observations_sample']
             print(f"  {sample_df.to_string(index=False)}")
     
-    # Test 3: Precision check
+    # Test 3: Precision1 check
     if results.get('common_obs_count', 0) == 0:
-        print(f"  ❌ Test 3 - Precision check: FAILED (No common observations found)")
+        print(f"  ❌ Test 3 - Precision1 check: FAILED (No common observations found)")
     elif results.get('test_3_passed', False):
+        bad_pct = results.get('bad_obs_percentage', 0)
+        print(f"  ✅ Test 3 - Precision1 check: PASSED ({bad_pct:.3f}% obs with diff >= {TOL_DIFF_1:.2e} < {TOL_OBS_1}%)")
+    else:
+        bad_pct = results.get('bad_obs_percentage', 0)
+        print(f"  ❌ Test 3 - Precision1 check: FAILED ({bad_pct:.3f}% obs with diff >= {TOL_DIFF_1:.2e} >= {TOL_OBS_1}%)")
+    
+    # Test 4: Precision2 check
+    if results.get('common_obs_count', 0) == 0:
+        print(f"  ❌ Test 4 - Precision2 check: FAILED (No common observations found)")
+    elif results.get('test_4_passed', False):
         pth_diff = results.get('pth_percentile_diff', 0)
-        print(f"  ✅ Test 3 - Precision check: PASSED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF:.2e})")
+        print(f"  ✅ Test 4 - Precision2 check: PASSED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF_2:.2e})")
     else:
         pth_diff = results.get('pth_percentile_diff', 0)
-        print(f"  ❌ Test 3 - Precision check: FAILED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF:.2e})")
+        print(f"  ❌ Test 4 - Precision2 check: FAILED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF_2:.2e})")
     
     # Overall result
     if overall_passed:
@@ -216,8 +240,8 @@ def output_predictor_results(predictor_name, results, overall_passed):
     else:
         print(f"  ❌ {predictor_name} FAILED")
         # Print feedback for failed predictors
-        if 'bad_count' in results:
-            print(f"    Bad observations: {results['bad_count']}/{results['total_count']} ({results['bad_ratio']:.1%})")
+        if 'bad_obs_count' in results:
+            print(f"    Bad observations: {results['bad_obs_count']}/{results['total_obs_count']} ({results['bad_obs_percentage']:.3f}%)")
     
     # Generate markdown lines
     md_lines = []
@@ -233,6 +257,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
     test1_status = "✅ PASSED" if results.get('test_1_passed', False) else "❌ FAILED"
     test2_status = "✅ PASSED" if results.get('test_2_passed', False) else "❌ FAILED"
     test3_status = "✅ PASSED" if results.get('test_3_passed', False) else "❌ FAILED"
+    test4_status = "✅ PASSED" if results.get('test_4_passed', False) else "❌ FAILED"
     
     md_lines.append(f"- Test 1 - Column names: {test1_status}\n")
     
@@ -243,7 +268,8 @@ def output_predictor_results(predictor_name, results, overall_passed):
         missing_count = results.get('missing_count', 0)
         md_lines.append(f"- Test 2 - Superset check: {test2_status} (Python missing {missing_count} Stata observations)\n")
     
-    md_lines.append(f"- Test 3 - Precision check: {test3_status}\n\n")
+    md_lines.append(f"- Test 3 - Precision1 check: {test3_status}\n")
+    md_lines.append(f"- Test 4 - Precision2 check: {test4_status}\n\n")
     
     # Basic info
     md_lines.append(f"**Columns**: {results.get('stata_columns', 'N/A')}\n\n")
@@ -253,8 +279,11 @@ def output_predictor_results(predictor_name, results, overall_passed):
     md_lines.append(f"- Common: {results.get('common_obs_count', 0):,}\n\n")
     
     # Precision results
+    if 'bad_obs_percentage' in results:
+        md_lines.append(f"**Precision1**: {results['bad_obs_percentage']:.3f}% obs with diff >= {TOL_DIFF_1:.2e} (tolerance: < {TOL_OBS_1}%)\n\n")
+    
     if 'pth_percentile_diff' in results:
-        md_lines.append(f"**Pth percentile absolute difference**: {results['pth_percentile_diff']:.2e} (tolerance: {TOL_DIFF:.2e})\n\n")
+        md_lines.append(f"**Precision2**: {PTH_PERCENTILE*100:.0f}th percentile diff = {results['pth_percentile_diff']:.2e} (tolerance: < {TOL_DIFF_2:.2e})\n\n")
     
     # Feedback for failed superset test
     if not results.get('test_2_passed', True) and 'missing_observations_sample' in results:
@@ -263,9 +292,9 @@ def output_predictor_results(predictor_name, results, overall_passed):
         md_lines.append(f"```\n{missing_sample.to_string(index=False)}\n```\n\n")
     
     # Feedback for failed precision
-    if 'bad_count' in results:
+    if 'bad_obs_count' in results:
         md_lines.append("**Feedback**:\n")
-        md_lines.append(f"- Num observations with diff >= TOL_DIFF: {results['bad_count']}/{results['total_count']} ({results['bad_ratio']:.3%})\n\n")
+        md_lines.append(f"- Num observations with diff >= TOL_DIFF_1: {results['bad_obs_count']}/{results['total_obs_count']} ({results['bad_obs_percentage']:.3f}%)\n\n")
         
         if 'recent_bad' in results and len(results['recent_bad']) > 0:
             md_lines.append("**Most Recent Bad Observations**:\n")
@@ -345,14 +374,16 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         f.write(f"**Configuration**:\n")
         f.write(f"- PTH_PERCENTILE: {PTH_PERCENTILE}\n")
-        f.write(f"- TOL_DIFF: {TOL_DIFF}\n")
+        f.write(f"- TOL_DIFF_1: {TOL_DIFF_1}\n")
+        f.write(f"- TOL_OBS_1: {TOL_OBS_1}%\n")
+        f.write(f"- TOL_DIFF_2: {TOL_DIFF_2}\n")
         f.write(f"- INDEX_COLS: {INDEX_COLS}\n\n")
         
         f.write(f"## Summary\n\n")
         
         # Create summary table with Python CSV column
-        f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision  |\n")
-        f.write("|---------------------------|------------|----------|-----------|------------|\n")
+        f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision1 | Precision2 |\n")
+        f.write("|---------------------------|------------|----------|-----------|------------|------------|\n")
         
         for predictor in test_predictors:
             results = all_results.get(predictor, {})
@@ -365,6 +396,7 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             test1 = results.get('test_1_passed', None)
             test2 = results.get('test_2_passed', None) 
             test3 = results.get('test_3_passed', None)
+            test4 = results.get('test_4_passed', None)
             
             # Format symbols (emojis for pass/fail, NA for None)
             col1 = "✅" if test1 == True else ("❌" if test1 == False else "NA")
@@ -385,8 +417,9 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
                 col2 = "NA"
             
             col3 = "✅" if test3 == True else ("❌" if test3 == False else "NA")
+            col4 = "✅" if test4 == True else ("❌" if test4 == False else "NA")
             
-            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<9} |\n")
+            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<9} | {col4:<9} |\n")
         
         # Count available predictors for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
@@ -471,6 +504,7 @@ def main():
             'test_1_passed': None,
             'test_2_passed': None, 
             'test_3_passed': None,
+            'test_4_passed': None,
             'error': 'Python CSV file not found'
         }
         all_results[predictor] = dummy_results
