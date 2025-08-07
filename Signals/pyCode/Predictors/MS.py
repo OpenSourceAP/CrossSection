@@ -154,6 +154,7 @@ df = df.with_columns([
 print("📈 Computing quarterly aggregations...")
 
 # Aggregate quarterly data using 12-month rolling means and annualize (*4)
+# Stata: min(12) requires full 12-month window
 df = df.with_columns([
     # 12-month rolling mean of quarterly net income, annualized
     pl.col("niq").rolling_mean(window_size=12, min_samples=12).over("permno").mul(4).alias("niqsum"),
@@ -204,6 +205,7 @@ df = df.with_columns([
 ])
 
 # Now calculate rolling standard deviations
+# Stata: min(18) requires 18 observations minimum for 48-month window
 df = df.with_columns([
     pl.col("roaq").rolling_std(window_size=48, min_samples=18).over("permno").alias("niVol"),
     pl.col("sg").rolling_std(window_size=48, min_samples=18).over("permno").alias("revVol")
@@ -221,23 +223,25 @@ for col in median_cols:
 print("🎯 Creating binary indicators...")
 
 # Create the 8 binary Mohanram G-score components
+# Following Stata logic: gen m_x = 0, replace m_x = 1 if condition
+# This means null conditions should default to 0, not null
 df = df.with_columns([
-    # M1: ROA > industry median
-    (pl.col("roa") > pl.col("md_roa")).cast(pl.Int32).alias("m1"),
-    # M2: CF-ROA > industry median  
-    (pl.col("cfroa") > pl.col("md_cfroa")).cast(pl.Int32).alias("m2"),
-    # M3: Operating cash flow > net income (quality)
-    (pl.col("oancfqsum") > pl.col("niqsum")).cast(pl.Int32).alias("m3"),
-    # M4: Earnings volatility < industry median (lower is better)
-    (pl.col("niVol") < pl.col("md_niVol")).cast(pl.Int32).alias("m4"),
-    # M5: Revenue volatility < industry median (lower is better)  
-    (pl.col("revVol") < pl.col("md_revVol")).cast(pl.Int32).alias("m5"),
-    # M6: R&D intensity > industry median
-    (pl.col("xrdint") > pl.col("md_xrdint")).cast(pl.Int32).alias("m6"),
-    # M7: Capex intensity > industry median
-    (pl.col("capxint") > pl.col("md_capxint")).cast(pl.Int32).alias("m7"),
-    # M8: Advertising intensity > industry median
-    (pl.col("xadint") > pl.col("md_xadint")).cast(pl.Int32).alias("m8")
+    # M1: ROA > industry median (null -> 0)
+    pl.when(pl.col("roa") > pl.col("md_roa")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
+    # M2: CF-ROA > industry median (null -> 0)
+    pl.when(pl.col("cfroa") > pl.col("md_cfroa")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
+    # M3: Operating cash flow > net income (null -> 0)
+    pl.when(pl.col("oancfqsum") > pl.col("niqsum")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
+    # M4: Earnings volatility < industry median (null -> 0)
+    pl.when(pl.col("niVol") < pl.col("md_niVol")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
+    # M5: Revenue volatility < industry median (null -> 0)
+    pl.when(pl.col("revVol") < pl.col("md_revVol")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
+    # M6: R&D intensity > industry median (null -> 0)
+    pl.when(pl.col("xrdint") > pl.col("md_xrdint")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
+    # M7: Capex intensity > industry median (null -> 0)
+    pl.when(pl.col("capxint") > pl.col("md_capxint")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
+    # M8: Advertising intensity > industry median (null -> 0)
+    pl.when(pl.col("xadint") > pl.col("md_xadint")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
 ])
 
 # Sum the 8 components to get tempMS
