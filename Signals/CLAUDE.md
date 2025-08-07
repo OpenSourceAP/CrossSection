@@ -110,7 +110,7 @@ Signals/
 - **❌ WRONG**: "The issue must be missing data because my logic expects perfect monthly coverage"
 - **✅ RIGHT**: Investigate what the code actually does with irregular time series data, don't assume `1 obs = 1 month`
 
-## 5. **Never Make Up Data To Resolve Missing Rows**
+## 6. **Never Make Up Data To Resolve Missing Rows**
 - **❌ WRONG**: "There are missing rows in this predictor's output, so let me create placeholder data"
 - **❌ WRONG**: "If I hardcode rows that match stata's output, I'll have resolved the missing rows issue."
 - **✅ RIGHT**: Investigate why those rows are missing to decipher the issue in the translation.
