@@ -75,9 +75,16 @@ df = pd.merge(df, temp_ciq_rat, on=['gvkey', 'time_avail_m'], how='left')
 # Sort by permno and time_avail_m
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# No need to forward fill since ratings are already expanded for 12 months
+# CRITICAL: Implement Stata's tsfill + forward fill logic
+# Stata tsfill creates complete balanced panel, then forward fills ratings within permno groups
+# This is essential for filling gaps in credit rating data
 
-# Coalesce credit ratings - use CIQ if available, otherwise SP
+# Forward fill BOTH SP ratings (credrat) and CIQ ratings (credratciq) within permno groups
+# This replicates the effect of Stata's tsfill creating missing periods + forward fill
+df['credrat'] = df.groupby('permno')['credrat'].ffill()
+df['credratciq'] = df.groupby('permno')['credratciq'].ffill()
+
+# Coalesce credit ratings - use CIQ if available, otherwise SP  
 df.loc[df['credrat'].isna(), 'credrat'] = df.loc[df['credrat'].isna(), 'credratciq']
 
 # SIGNAL CONSTRUCTION

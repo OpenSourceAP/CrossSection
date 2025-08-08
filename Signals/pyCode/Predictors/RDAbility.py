@@ -124,8 +124,16 @@ df = df.with_columns(
 )
 
 # egen tempRDQuant = fastxtile(tempRD), n(3) by(time_avail_m)
+# Handle infinite values like Stata's fastxtile: exclude them from ranking
 df = df.with_columns(
-    pl.col("tempRD")
+    pl.when(pl.col("tempRD").is_infinite())
+    .then(None)
+    .otherwise(pl.col("tempRD"))
+    .alias("tempRD_clean")
+)
+
+df = df.with_columns(
+    pl.col("tempRD_clean")
     .rank(method="ordinal")
     .over("time_avail_m")
     .alias("temp_rank")
@@ -163,18 +171,15 @@ print("📅 Expanding to monthly observations...")
 # expand temp
 # This means each annual observation becomes 12 monthly observations
 df_monthly = []
-for _ in range(12):
-    df_monthly.append(df.clone())
+for i in range(12):
+    df_copy = df.clone()
+    df_copy = df_copy.with_columns(pl.lit(i).alias("month_offset"))
+    df_monthly.append(df_copy)
 
 df_expanded = pl.concat(df_monthly)
 
 # bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
 # This adds 0, 1, 2, ..., 11 months to time_avail_m for the 12 copies
-df_expanded = df_expanded.with_row_index("row_id")
-df_expanded = df_expanded.with_columns(
-    (pl.col("row_id") % 12).alias("month_offset")
-)
-
 # Add month_offset to time_avail_m
 df_expanded = df_expanded.with_columns(
     pl.col("time_avail_m").dt.offset_by(pl.concat_str(pl.col("month_offset"), pl.lit("mo"))).alias("time_avail_m")
@@ -189,7 +194,7 @@ df_expanded = df_expanded.sort(["permno", "time_avail_m"])
 df_expanded = df_expanded.group_by(["permno", "time_avail_m"], maintain_order=True).first()
 
 # Clean up columns
-df_expanded = df_expanded.drop(["row_id", "month_offset"])
+df_expanded = df_expanded.drop(["month_offset", "tempRDQuant", "temp_rank", "tempRD_clean", "tempRD"])
 
 # Select final data
 result = df_expanded.select(["permno", "time_avail_m", "RDAbility"])

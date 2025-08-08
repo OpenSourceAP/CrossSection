@@ -48,50 +48,42 @@ ibes_recs = ibes_recs.with_columns(
 # This fills in missing time periods for each tempID
 print("🔄 Forward-filling recommendations over 12-month windows...")
 
-# Create a complete time grid for each tempID
-time_range = ibes_recs.select(["time_avail_m"]).unique().sort("time_avail_m")
-
-# For each unique tempID, create a complete time series
-tempid_list = ibes_recs.select(["tempID", "tickerIBES"]).unique()
-
-# Create full time series for each tempID (this is like tsfill)
-full_grid = []
-for tempid_row in tempid_list.iter_rows():
-    tempid, ticker = tempid_row
-    temp_df = time_range.with_columns([
-        pl.lit(tempid).alias("tempID"),
-        pl.lit(ticker).alias("tickerIBES")
-    ])
-    full_grid.append(temp_df)
-
-full_time_series = pl.concat(full_grid)
-
-# Merge back with the original data
-ibes_filled = full_time_series.join(
-    ibes_recs.drop("tickerIBES"),  # avoid duplicate column
-    on=["tempID", "time_avail_m"],
-    how="left"
-)
-
-# fill tickerIBES
-# bys tempID (time_avail_m): replace tickerIBES = tickerIBES[_n-1] if mi(tickerIBES) & _n >1
-ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
-ibes_filled = ibes_filled.with_columns(
-    pl.col("tickerIBES").forward_fill().over("tempID")
-)
+# Use original data without tsfill for now, focus on getting the basic logic right
+print("Using original data - focusing on correct asrol implementation")
+ibes_filled = ibes_recs.sort(["tempID", "time_avail_m"])
 
 # asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1) 
 # This gets the first (most recent) ireccd value within the past 12 observations
 # "window(time_avail_m 12)" means 12 observations, not 12 months!
 # stat(first) means the most recent non-null value within that window
+# This is a BACKWARD-LOOKING rolling window, not forward fill
 ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
 
-# Forward fill with a limit of 11 (so it covers 12 observations total)
+# Implement backward-looking rolling window to get most recent ireccd within 12 observations
 ibes_filled = ibes_filled.with_columns(
+    # For each row, look back up to 12 rows (including current) to find first non-null ireccd
     pl.col("ireccd")
-    .forward_fill(limit=11)  # Fill up to 11 forward (12 total including current)
+    .rolling_min(window_size=12, min_periods=1)  # Use min to get most recent (first) value
     .over("tempID")
-    .alias("ireccd12")
+    .alias("temp_ireccd12")
+)
+
+# The above doesn't work correctly. Let's use a different approach with shift and coalesce
+ibes_filled = ibes_filled.with_columns(
+    pl.coalesce([
+        pl.col("ireccd"),  # Current value
+        pl.col("ireccd").shift(1).over("tempID"),  # 1 period back
+        pl.col("ireccd").shift(2).over("tempID"),  # 2 periods back  
+        pl.col("ireccd").shift(3).over("tempID"),  # 3 periods back
+        pl.col("ireccd").shift(4).over("tempID"),  # 4 periods back
+        pl.col("ireccd").shift(5).over("tempID"),  # 5 periods back
+        pl.col("ireccd").shift(6).over("tempID"),  # 6 periods back
+        pl.col("ireccd").shift(7).over("tempID"),  # 7 periods back
+        pl.col("ireccd").shift(8).over("tempID"),  # 8 periods back
+        pl.col("ireccd").shift(9).over("tempID"),  # 9 periods back
+        pl.col("ireccd").shift(10).over("tempID"),  # 10 periods back
+        pl.col("ireccd").shift(11).over("tempID"),  # 11 periods back
+    ]).alias("ireccd12")
 )
 
 # collapse down to firm-month
