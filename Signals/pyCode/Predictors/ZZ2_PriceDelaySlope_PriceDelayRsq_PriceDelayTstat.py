@@ -49,6 +49,8 @@ df = df.with_columns(
 
 print(f"After merging and adjusting returns: {len(df):,} observations")
 
+# Full dataset processing (test filter removed)
+
 print("📅 Setting up time variables for June regressions...")
 
 # Set up for Regressions in each June
@@ -268,17 +270,34 @@ df_monthly = df_monthly.with_columns(
 
 print("📅 Forward-filling to monthly frequency...")
 
-# Fill to monthly
-# Create complete time series for each permno
+# Fill to monthly - Replicate Stata's xtset + tsfill + forward-fill behavior
 price_delay_cols = ["PriceDelaySlope", "PriceDelayRsq", "PriceDelayTstat"]
-df_monthly = df_monthly.select(["permno", "time_avail_m"] + price_delay_cols)
+df_calc_values = df_monthly.select(["permno", "time_avail_m"] + price_delay_cols)
 
-# Forward fill within each permno
+print("  Loading SignalMasterTable for complete monthly grid...")
+# Load SignalMasterTable to get complete (permno, time_avail_m) panel structure
+signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
+monthly_grid = signal_master.select(["permno", "time_avail_m"]).unique()
+
+print(f"  Complete monthly grid: {len(monthly_grid):,} observations")
+print(f"  Calculated values: {len(df_calc_values):,} observations")
+
+# Left-join calculated values onto complete monthly grid (like Stata's tsfill)
+# Ensure datetime precision matches between both sides
+df_calc_values = df_calc_values.with_columns(
+    pl.col("time_avail_m").cast(pl.Datetime("ns"))
+)
+df_monthly = monthly_grid.join(df_calc_values, on=["permno", "time_avail_m"], how="left")
+
+print("  Forward-filling missing values within each permno...")
+# Forward-fill missing values within each permno (like Stata's forward-fill)
 df_monthly = df_monthly.sort(["permno", "time_avail_m"])
 for col in price_delay_cols:
     df_monthly = df_monthly.with_columns(
         pl.col(col).forward_fill().over("permno")
     )
+
+print(f"  After forward-filling: {len(df_monthly):,} observations")
 
 print("💾 Saving price delay predictors...")
 
