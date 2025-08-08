@@ -429,7 +429,50 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |\n")
         f.write("|---------------------------|------------|----------|-----------|--------------|-------------------------|\n")
         
-        for predictor in test_predictors:
+        # Sort predictors by test results - worst to best
+        def sort_key(predictor):
+            results = all_results.get(predictor, {})
+            
+            # Python CSV: False (missing) sorts before True (available)
+            python_csv_available = results.get('python_csv_available', False)
+            
+            # Columns: False (failed) sorts before True (passed), None last
+            test1 = results.get('test_1_passed', None)
+            columns_sort = 0 if test1 == False else (1 if test1 == True else 2)
+            
+            # Superset: Higher failure percentages sort first
+            test2 = results.get('test_2_passed', None)
+            if test2 == False:
+                missing_count = results.get('missing_count', 0)
+                stata_obs_count = results.get('stata_obs_count', 0)
+                if stata_obs_count > 0:
+                    superset_sort = (missing_count / stata_obs_count) * 100
+                else:
+                    superset_sort = 100  # Treat as worst case
+            elif test2 == True:
+                superset_sort = -1  # Passed tests sort last
+            else:
+                superset_sort = 999  # NA sorts at end
+            
+            # Precision1: Higher bad observation percentages sort first
+            test3 = results.get('test_3_passed', None)
+            if test3 is not None:
+                precision1_sort = results.get('bad_obs_percentage', 0)
+            else:
+                precision1_sort = 999  # NA sorts at end
+            
+            # Precision2: Higher percentile differences sort first
+            test4 = results.get('test_4_passed', None)
+            if test4 is not None:
+                precision2_sort = results.get('pth_percentile_diff', 0)
+            else:
+                precision2_sort = 999  # NA sorts at end
+            
+            return (not python_csv_available, columns_sort, -superset_sort, -precision1_sort, -precision2_sort)
+        
+        sorted_predictors = sorted(test_predictors, key=sort_key)
+        
+        for predictor in sorted_predictors:
             results = all_results.get(predictor, {})
             
             # Get Python CSV availability
