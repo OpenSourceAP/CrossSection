@@ -1,12 +1,19 @@
 # ABOUTME: Price delay predictors using daily return regressions with market lags
 # ABOUTME: Usage: python3 ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py (run from pyCode/ directory)
+# ABOUTME: Options: --test-permnos N (run on first N permnos for testing)
 
 import polars as pl
 import polars_ols  # registers .least_squares namespace
 import sys
 import os
+import argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Generate price delay predictors using daily data regressions')
+parser.add_argument('--test-permnos', type=int, help='Run on first N permnos for testing (default: all permnos)')
+args = parser.parse_args()
 
 print("=" * 80)
 print("🏗️  ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py")
@@ -49,21 +56,37 @@ df = df.with_columns(
 
 print(f"After merging and adjusting returns: {len(df):,} observations")
 
-# Full dataset processing (test filter removed)
+# Optional permno filtering for testing
+if args.test_permnos:
+    print(f"\n🧪 TESTING MODE: Filtering to first {args.test_permnos} permnos...")
+    # Get first N permnos deterministically
+    unique_permnos = df.select("permno").unique().sort("permno").head(args.test_permnos)
+    test_permno_list = unique_permnos.to_series().to_list()
+    print(f"   Testing permnos: {test_permno_list[0]} to {test_permno_list[-1]} ({len(test_permno_list)} permnos)")
+    
+    # Filter data to test permnos only
+    df = df.filter(pl.col("permno").is_in(test_permno_list))
+    print(f"   After filtering to test permnos: {len(df):,} observations")
+else:
+    print("\n📊 FULL DATASET MODE: Processing all permnos")
 
 print("📅 Setting up time variables for June regressions...")
 
 # Set up for Regressions in each June
 # time_avail_m is the most next June after the obs
+# Stata logic: time_avail_m = mofd(mdy(6,30,year(dofm(time_m+6))))
 df = df.with_columns([
     pl.col("time_d").dt.truncate("1mo").alias("time_m")
 ])
 
-# Generate next June date
+# Add 6 months to time_m, then extract the year, then create June of that year
+df = df.with_columns(
+    pl.col("time_m").dt.offset_by("6mo").alias("time_m_plus_6")
+)
+
 df = df.with_columns(
     pl.datetime(
-        pl.col("time_m").dt.year() + 
-        pl.when(pl.col("time_m").dt.month() <= 6).then(0).otherwise(1),
+        pl.col("time_m_plus_6").dt.year(),
         6, 30
     ).dt.truncate("1mo").alias("time_avail_m")
 )
@@ -271,33 +294,85 @@ df_monthly = df_monthly.with_columns(
 print("📅 Forward-filling to monthly frequency...")
 
 # Fill to monthly - Replicate Stata's xtset + tsfill + forward-fill behavior
+# This is different from using SignalMasterTable - we create complete time series per permno
 price_delay_cols = ["PriceDelaySlope", "PriceDelayRsq", "PriceDelayTstat"]
 df_calc_values = df_monthly.select(["permno", "time_avail_m"] + price_delay_cols)
 
-print("  Loading SignalMasterTable for complete monthly grid...")
-# Load SignalMasterTable to get complete (permno, time_avail_m) panel structure
-signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-monthly_grid = signal_master.select(["permno", "time_avail_m"]).unique()
-
-print(f"  Complete monthly grid: {len(monthly_grid):,} observations")
 print(f"  Calculated values: {len(df_calc_values):,} observations")
 
-# Left-join calculated values onto complete monthly grid (like Stata's tsfill)
-# Ensure datetime precision matches between both sides
-df_calc_values = df_calc_values.with_columns(
-    pl.col("time_avail_m").cast(pl.Datetime("ns"))
-)
-df_monthly = monthly_grid.join(df_calc_values, on=["permno", "time_avail_m"], how="left")
+# Replicate Stata's tsfill: create missing time periods within each permno's range
+print("  Creating complete time series per permno (like Stata's tsfill)...")
 
-print("  Forward-filling missing values within each permno...")
-# Forward-fill missing values within each permno (like Stata's forward-fill)
-df_monthly = df_monthly.sort(["permno", "time_avail_m"])
-for col in price_delay_cols:
-    df_monthly = df_monthly.with_columns(
-        pl.col(col).forward_fill().over("permno")
+# Get min/max time_avail_m for each permno
+permno_ranges = df_calc_values.group_by("permno").agg([
+    pl.col("time_avail_m").min().alias("min_time"),
+    pl.col("time_avail_m").max().alias("max_time")
+])
+
+print(f"  Processing {len(permno_ranges)} permnos...")
+
+# Use polars date_range for each permno - more reliable approach
+expanded_data = []
+
+# Process in smaller batches for memory efficiency
+batch_size = 100
+total_permnos = len(permno_ranges)
+
+for batch_start in range(0, total_permnos, batch_size):
+    batch_end = min(batch_start + batch_size, total_permnos)
+    batch_ranges = permno_ranges.slice(batch_start, batch_end - batch_start)
+    
+    if batch_start % 1000 == 0:  # Progress indicator
+        print(f"    Processing batch {batch_start//batch_size + 1}/{(total_permnos-1)//batch_size + 1}...")
+    
+    for row in batch_ranges.iter_rows(named=True):
+        permno = row["permno"]
+        min_time = row["min_time"]  
+        max_time = row["max_time"]
+        
+        try:
+            # Create monthly date range for this permno
+            time_range = pl.date_range(
+                min_time, max_time, interval="1mo", eager=True
+            )
+            
+            batch_data = pl.DataFrame({
+                "permno": [permno] * len(time_range),
+                "time_avail_m": time_range
+            })
+            expanded_data.append(batch_data)
+            
+        except Exception as e:
+            print(f"    Warning: Could not create range for permno {permno}: {e}")
+
+# Combine all batches
+if expanded_data:
+    complete_grid = pl.concat(expanded_data)
+    print(f"  Complete grid after tsfill: {len(complete_grid):,} observations")
+
+    # Ensure matching datetime types for join
+    complete_grid = complete_grid.with_columns(
+        pl.col("time_avail_m").cast(pl.Datetime("us"))
+    )
+    df_calc_values = df_calc_values.with_columns(
+        pl.col("time_avail_m").cast(pl.Datetime("us"))
     )
 
-print(f"  After forward-filling: {len(df_monthly):,} observations")
+    # Join calculated values onto complete grid
+    df_monthly = complete_grid.join(df_calc_values, on=["permno", "time_avail_m"], how="left")
+
+    print("  Forward-filling missing values within each permno...")
+    # Forward-fill missing values within each permno (like Stata's forward-fill)
+    df_monthly = df_monthly.sort(["permno", "time_avail_m"])
+    for col in price_delay_cols:
+        df_monthly = df_monthly.with_columns(
+            pl.col(col).forward_fill().over("permno")
+        )
+
+    print(f"  After forward-filling: {len(df_monthly):,} observations")
+else:
+    print("  ⚠️  No valid permno ranges found")
+    df_monthly = df_calc_values
 
 print("💾 Saving price delay predictors...")
 
