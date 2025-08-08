@@ -90,8 +90,11 @@ df = df.filter(pl.col("time_avail_m").dt.month() == 6)
 print(f"After filtering to June observations: {len(df):,} observations")
 
 # Merge with IBES data
+# merge m:1 tickerIBES time_avail_m using "$pathtemp/tempFROE", keep(match) nogenerate
 df = df.join(froe1, on=["tickerIBES", "time_avail_m"], how="left")
+# merge m:1 tickerIBES time_avail_m using "$pathtemp/tempFROE2", keep(master match) nogenerate
 df = df.join(froe2, on=["tickerIBES", "time_avail_m"], how="left")
+# merge m:1 tickerIBES time_avail_m using "$pathtemp/tempLTG", keep(master match) nogenerate
 df = df.join(ltg, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging IBES data: {len(df):,} observations")
@@ -104,13 +107,16 @@ df = df.sort(["permno", "time_avail_m"])
 
 # gen ceq_ave = (ceq + l12.ceq)/2
 # bys permno (time_avail_m): replace ceq_ave = ceq if _n <= 1 // seems important
+# NOTE: Since we've filtered to June observations only, l12.ceq means previous June (1 year back = 1 position back)
 df = df.with_columns([
-    pl.col("ceq").shift(12).over("permno").alias("l12_ceq"),
+    pl.col("ceq").shift(1).over("permno").alias("l12_ceq"),  # Changed from shift(12) to shift(1)
     pl.int_range(pl.len()).over("permno").alias("row_num")
 ])
 
 df = df.with_columns(
     pl.when(pl.col("row_num") == 0)
+    .then(pl.col("ceq"))
+    .when(pl.col("l12_ceq").is_null())  # If previous year's ceq is missing, use current year only
     .then(pl.col("ceq"))
     .otherwise((pl.col("ceq") + pl.col("l12_ceq")) / 2)
     .alias("ceq_ave")
@@ -196,7 +202,9 @@ print("🔍 Applying data screens...")
 # drop if feps2 == . | feps1 == . // p 290
 df = df.filter(
     (pl.col("ceq") > 0) & (pl.col("ceq").is_not_null()) &
-    (pl.col("ROE").abs() <= 1) & (pl.col("FROE1").abs() <= 1) & (pl.col("k") <= 1) &
+    ((pl.col("ROE").abs() <= 1) | pl.col("ROE").is_null()) & 
+    ((pl.col("FROE1").abs() <= 1) | pl.col("FROE1").is_null()) & 
+    ((pl.col("k") <= 1) | pl.col("k").is_null()) &
     (pl.col("datadate").dt.month() >= 6) &
     (pl.col("feps1").is_not_null()) & (pl.col("feps2").is_not_null())
 )
@@ -256,7 +264,7 @@ print("🔮 Computing predicted forecast error...")
 # Predicted FE
 # gen FErr = l12.FROE1 - ROE // almost works!
 df = df.with_columns(
-    (pl.col("FROE1").shift(12).over("permno") - pl.col("ROE")).alias("FErr")
+    (pl.col("FROE1").shift(1).over("permno") - pl.col("ROE")).alias("FErr")  # Changed from shift(12) to shift(1)
 )
 
 # winsor2 FErr, replace cuts(1 99) trim by(time_avail_m)
@@ -286,7 +294,7 @@ for var in variables:
 # Lag for forecasting and run reg
 for var in variables:
     df = df.with_columns(
-        pl.col(f"rank{var}").shift(12).over("permno").alias(f"lag{var}")
+        pl.col(f"rank{var}").shift(1).over("permno").alias(f"lag{var}")  # Changed from shift(12) to shift(1)
     )
 
 # asreg FErr lag*, by(time_avail_m)
@@ -326,23 +334,21 @@ print("📅 Expanding to monthly observations...")
 
 # EXPAND TO MONTHLY
 # Signal relevant for one year
+# Replicate Stata: gen temp = 12; expand temp; bysort permno tempTime: replace time_avail_m = time_avail_m + _n - 1
+df_expanded = df_with_predictions.with_columns(
+    pl.col("time_avail_m").alias("tempTime")  # Keep original time for grouping
+)
+
+# Create 12 copies of each observation with month offsets 0-11
 df_monthly = []
-for _ in range(12):
-    df_monthly.append(df_with_predictions.clone())
+for month_offset in range(12):
+    df_copy = df_expanded.with_columns(
+        pl.col("tempTime").dt.offset_by(f"{month_offset}mo").alias("time_avail_m")
+    )
+    df_monthly.append(df_copy)
 
 df_expanded = pl.concat(df_monthly)
-
-# Monthly expansion logic
-df_expanded = df_expanded.with_row_index("row_id")
-df_expanded = df_expanded.with_columns(
-    (pl.col("row_id") % 12).alias("month_offset")
-)
-
-df_expanded = df_expanded.with_columns(
-    pl.col("time_avail_m").dt.offset_by(pl.concat_str(pl.col("month_offset"), pl.lit("mo"))).alias("time_avail_m")
-)
-
-df_expanded = df_expanded.drop(["row_id", "month_offset"])
+df_expanded = df_expanded.drop(["tempTime"])
 
 print("💾 Saving predictors...")
 

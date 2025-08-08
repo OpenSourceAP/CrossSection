@@ -179,18 +179,14 @@ print("📅 Expanding to monthly observations...")
 # gen temp = 12
 # expand temp
 df_monthly = []
-for _ in range(12):
-    df_monthly.append(df_with_residuals.clone())
+for i in range(12):
+    df_copy = df_with_residuals.clone()
+    df_copy = df_copy.with_columns(pl.lit(i).alias("month_offset"))
+    df_monthly.append(df_copy)
 
 df_expanded = pl.concat(df_monthly)
 
-# bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
-df_expanded = df_expanded.with_row_index("row_id")
-df_expanded = df_expanded.with_columns(
-    (pl.col("row_id") % 12).alias("month_offset")
-)
-
-# Add month_offset to time_avail_m
+# Add month_offset to time_avail_m (equivalent to: bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1)
 df_expanded = df_expanded.with_columns(
     pl.col("time_avail_m").dt.offset_by(pl.concat_str(pl.col("month_offset"), pl.lit("mo"))).alias("time_avail_m")
 )
@@ -204,7 +200,7 @@ df_expanded = df_expanded.sort(["permno", "time_avail_m", "datadate"])
 df_expanded = df_expanded.group_by(["permno", "time_avail_m"], maintain_order=True).last()
 
 # Clean up columns
-df_expanded = df_expanded.drop(["row_id", "month_offset"])
+df_expanded = df_expanded.drop(["month_offset"])
 
 # Select and save AbnormalAccruals
 result_aa = df_expanded.select(["permno", "time_avail_m", "AbnormalAccruals"])

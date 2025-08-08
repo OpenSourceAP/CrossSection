@@ -43,7 +43,8 @@ print("Merging with crosswalk...")
 df = df.merge(tempCW, on='permno', how='left')
 
 # Use only if data date is within the validity period of the link
-temp = (df['timeLinkStart_d'] <= df['time_d']) & (df['time_d'] <= df['timeLinkEnd_d'])
+# Note: missing timeLinkEnd_d (NaT) means link is still active (Stata behavior)
+temp = (df['timeLinkStart_d'] <= df['time_d']) & ((df['time_d'] <= df['timeLinkEnd_d']) | df['timeLinkEnd_d'].isna())
 print(f"Observations within link validity period: {temp.sum()} out of {len(df)}")
 df = df[temp == True]
 df = df.drop(columns=['timeLinkStart_d', 'timeLinkEnd_d'])

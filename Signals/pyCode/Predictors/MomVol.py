@@ -21,6 +21,9 @@ df = df.join(
     how="inner"
 )
 
+# Sort by permno and time_avail_m (critical for proper lag operations)
+df = df.sort(["permno", "time_avail_m"])
+
 # Signal construction
 df = df.with_columns([
     # Clean volume (set negative to null)
@@ -32,25 +35,24 @@ df = df.with_columns([
     pl.col("ret").fill_null(0)
 ])
 
-# Calculate 6-month momentum (compound returns over 6 months)
+# Calculate 6-month momentum using calendar-based lags (like Stata l.ret, l2.ret, etc.)
 df = df.with_columns([
-    ((1 + pl.col("ret").shift(1).over("permno")) *
-     (1 + pl.col("ret").shift(2).over("permno")) *
-     (1 + pl.col("ret").shift(3).over("permno")) *
-     (1 + pl.col("ret").shift(4).over("permno")) *
-     (1 + pl.col("ret").shift(5).over("permno")) - 1).alias("Mom6m")
+    pl.col("ret").shift(1).over("permno").alias("l1_ret"),
+    pl.col("ret").shift(2).over("permno").alias("l2_ret"),
+    pl.col("ret").shift(3).over("permno").alias("l3_ret"),
+    pl.col("ret").shift(4).over("permno").alias("l4_ret"),
+    pl.col("ret").shift(5).over("permno").alias("l5_ret")
 ])
 
-# Create momentum deciles (10 portfolios)
 df = df.with_columns([
-    pl.col("Mom6m")
-    .qcut(10, allow_duplicates=True)
-    .over("time_avail_m")
-    .cast(pl.Int32)
-    .alias("catMom")
+    ((1 + pl.col("l1_ret")) *
+     (1 + pl.col("l2_ret")) *
+     (1 + pl.col("l3_ret")) *
+     (1 + pl.col("l4_ret")) *
+     (1 + pl.col("l5_ret")) - 1).alias("Mom6m")
 ])
 
-# Calculate 6-month average volume
+# Calculate 6-month rolling mean volume (like Stata asrol)
 df = df.with_columns([
     pl.col("vol")
     .rolling_mean(window_size=6, min_samples=5)
@@ -58,24 +60,40 @@ df = df.with_columns([
     .alias("temp")
 ])
 
-# Create volume terciles (3 portfolios)
-df = df.with_columns([
-    pl.col("temp")
-    .qcut(3, allow_duplicates=True)
-    .over("time_avail_m")
-    .cast(pl.Int32)
-    .alias("catVol")
-])
+# Convert to pandas for proper quantile operations (fastxtile equivalent)
+import pandas as pd
+import numpy as np
+
+df_pd = df.to_pandas()
+
+# Create momentum deciles within each time_avail_m (like fastxtile)
+def fastxtile(series, n_quantiles):
+    """Equivalent to Stata's fastxtile"""
+    try:
+        # Handle infinite values
+        series_clean = series.replace([np.inf, -np.inf], np.nan)
+        if series_clean.notna().sum() < n_quantiles:
+            return pd.Series(np.nan, index=series.index)
+        return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
+    except:
+        return pd.Series(np.nan, index=series.index)
+
+df_pd['catMom'] = df_pd.groupby('time_avail_m')['Mom6m'].transform(lambda x: fastxtile(x, 10))
+df_pd['catVol'] = df_pd.groupby('time_avail_m')['temp'].transform(lambda x: fastxtile(x, 3))
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 # MomVol = momentum decile only for high volume stocks (tercile 3)
 df = df.with_columns([
-    pl.when(pl.col("catVol") == 2)  # 0-indexed, so tercile 3 is index 2
-    .then(pl.col("catMom") + 1)  # Convert to 1-based
+    pl.when(pl.col("catVol") == 3)  # tercile 3 (fastxtile returns 1-based)
+    .then(pl.col("catMom"))  # catMom is already 1-based from fastxtile
     .otherwise(None)
     .alias("MomVol")
 ])
 
-# Filter: set to missing if less than 24 observations per permno
+# Filter: set to missing if observation number < 24 (like Stata _n < 24)
+# Add observation number within each permno group
 df = df.with_columns([
     pl.int_range(pl.len()).over("permno").alias("obs_num")
 ])
@@ -86,6 +104,9 @@ df = df.with_columns([
     .otherwise(pl.col("MomVol"))
     .alias("MomVol")
 ])
+
+# Drop temporary columns
+df = df.drop(["l1_ret", "l2_ret", "l3_ret", "l4_ret", "l5_ret", "obs_num", "temp"])
 
 # Select final data
 result = df.select(["permno", "time_avail_m", "MomVol"])
