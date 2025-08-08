@@ -19,8 +19,10 @@ examples:
     - Pick a specific observation from the "missing observations sample" in test output
         - Example: `permno=11406, yyyymm=199009` 
         - Focus on ONE observation for clarity
-    - Find the exact line of code where the observation goes missing
-    - Identify suspect python commands
+    - Diagnose the problem
+        - Write a debug script in `Debug/` that focuses on the year where the observation goes missing, to make the debugging faster and cleaner.
+        - Find the exact line of code where the observation goes missing
+        - Identify suspect python commands
 - Compare the problematic python commands with the corresponding stata 
     - Compare with the Stata counterpart to the python predictor creation script
         - e.g. compare `code/Predictors/AccrualsBM.do` with `pyCode/Predictors/AccrualsBM.`        
