@@ -70,7 +70,7 @@ df['EquityDuration'] = (df['MD_Part1'] / df['tempME'] +
 # expand temp (where temp = 12) - create 12 copies of each row
 print("Expanding to monthly observations...")
 df_expanded = pd.concat([df] * 12, ignore_index=True)
-df_expanded['expansion_n'] = np.tile(np.arange(1, 13), len(df))
+df_expanded['expansion_n'] = np.repeat(np.arange(1, 13), len(df))
 
 # bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
 df_expanded['tempTime'] = df_expanded['time_avail_m']  # Store original time_avail_m
