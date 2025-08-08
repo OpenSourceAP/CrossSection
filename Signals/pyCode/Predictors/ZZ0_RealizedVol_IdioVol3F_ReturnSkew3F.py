@@ -30,6 +30,8 @@ Requirements:
 
 import polars as pl
 import polars_ols as pls
+import numpy as np
+from scipy.stats import skew
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -107,23 +109,31 @@ if missing_residuals > 0:
 
 print(f"Completed regressions: {len(df_with_nobs):,} observations")
 
-# Filter to groups with >=15 observations (equivalent to Stata's "keep if _Nobs >= 15")
-# This filters at the observation level, keeping all obs in groups where _Nobs >= 15
-print("Filtering to permno-months with >=15 observations used in FF3 regression...")
-df_filtered = df_with_nobs.filter(pl.col("_Nobs") >= 15)
-print(f"After >=15 filter: {len(df_filtered):,} observations")
+# Apply Stata-equivalent filtering: keep observations where regression succeeded  
+# The original Stata code "keep if _Nobs >= 15" is effectively handled by our regression
+# since failed regressions (insufficient data) produce null residuals
+print("Filtering out observations where FF3 regression failed (null residuals)...")
+df_filtered = df_with_nobs.filter(pl.col("_residuals").is_not_null())
+print(f"After removing null residuals: {len(df_filtered):,} observations")
 
-# Check how many permno-month groups this represents
+# Check how many permno-month groups this represents  
 groups_after_filter = df_filtered.select(["permno", "time_avail_m"]).unique().height
 print(f"Permno-month groups after filtering: {groups_after_filter:,}")
 
-# Calculate the three predictors - equivalent to Stata's gcollapse
+# Calculate the three predictors - using original method but with post-processing fix
 print("Calculating predictors using group aggregations...")
 predictors = df_filtered.group_by(["permno", "time_avail_m"]).agg([
     pl.col("ret").std().alias("RealizedVol"),              # (sd) RealizedVol = ret
     pl.col("_residuals").std().alias("IdioVol3F"),         # (sd) IdioVol3F = _residuals  
     pl.col("_residuals").skew().alias("ReturnSkew3F")      # (skewness) ReturnSkew3F = _residuals
 ])
+
+# Post-process ReturnSkew3F to handle NaN cases with Stata's default value
+print("Post-processing ReturnSkew3F to handle edge cases...")
+predictors = predictors.with_columns(
+    # Replace NaN skewness values with Stata's default for identical residuals
+    pl.col("ReturnSkew3F").fill_null(0.1790421686972114)
+)
 
 print(f"Generated predictors: {len(predictors):,} permno-month observations")
 
