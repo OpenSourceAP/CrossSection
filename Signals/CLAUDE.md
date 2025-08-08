@@ -48,6 +48,7 @@ Signals/
 ├── Logs/                   # Processing logs
 ├── Journal/                # Claude's Journal
 ├── DocsForClaude/          # Claude's Docs
+├── Debug/                  # Debugging scripts
 ```
 
 # Translation Philosophy
