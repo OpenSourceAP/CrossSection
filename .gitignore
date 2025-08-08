@@ -11,14 +11,12 @@
 *.o*
 *.Rout
 
+# Data
 Results/
 Portfolios/Data/*
 Signals/Data/*
 Signals/Logs/*
 Signals/pyData/*
-Signals/pyCode/ClaudeDebug/*
-
-*.html
 
 # Credentials
 .env
@@ -34,7 +32,5 @@ __pycache__/
 deleteme*
 Signals/pyCode/Debug/
 Signals/zzz-archive/*
-Signals/Journal/*
-Signals/StataDocs/*
 .claude/
 
