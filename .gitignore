@@ -15,7 +15,6 @@
 Results/
 Portfolios/Data/*
 Signals/Data/*
-Signals/Logs/*
 Signals/pyData/*
 
 # Credentials
