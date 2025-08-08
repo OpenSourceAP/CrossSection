@@ -4,6 +4,8 @@ description: Debug failures of the superset test for a given predictor.
 allowed-tools:
   # TBC: allow only the predictor in $ARGUMENTS to be edited
   - Edit(Predictors/*.py)
+  - Write(../Debug/*.py)
+  - Edit(../Debug/*.py)
 examples:
   - `/debug-superset AccrualsBM`
 ---
@@ -36,7 +38,7 @@ examples:
     - Think about the plan before writing code
     - Do not assume the code you have written is correct. 
     - Do not hardcode data or use placeholders.
-    - Write debugging code in `Debug/` 
+    - Write debugging code in `../Debug/` 
 
 # Document the Fix
 - Document the lessons learned with an md file in `../Journal/    `
