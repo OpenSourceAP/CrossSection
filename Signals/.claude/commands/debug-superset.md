@@ -4,8 +4,6 @@ description: Debug failures of the superset test for a given predictor.
 allowed-tools:
   # TBC: allow only the predictor in $ARGUMENTS to be edited
   - Edit(Predictors/*.py)
-  - Edit(../Debug/*.py)
-  - Edit(../Journal/*.md)
 examples:
   - `/debug-superset AccrualsBM`
 ---
@@ -19,10 +17,10 @@ examples:
     - Pick a specific observation from the "missing observations sample" in test output
         - Example: `permno=11406, yyyymm=199009` 
         - Focus on ONE observation for clarity
-    - Diagnose the problem
+    - Find the bad line
         - Write a debug script in `Debug/` that focuses on the year where the observation goes missing, to make the debugging faster and cleaner.
         - Find the exact line of code where the observation goes missing
-        - Identify suspect python commands
+    - Identify suspect python commands based on the bad line
 - Compare the problematic python commands with the corresponding stata 
     - Compare with the Stata counterpart to the python predictor creation script
         - e.g. compare `code/Predictors/AccrualsBM.do` with `pyCode/Predictors/AccrualsBM.`        
