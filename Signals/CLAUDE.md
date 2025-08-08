@@ -91,7 +91,7 @@ Signals/
 ## 1. **Do Not Speculate That the Test Failed Because of Real Data Differences**
 - **❌ NEVER**: Stop debugging because of "data availability issues," "historical data differences," or "real data differences"
 - **✅ ALWAYS**: Keep checking the logic for what is causing the test to fail
-- **✅ ALWAYS**: Use bisection strategy (Journal/2025-07-16_AnalystRevision_bisection_debugging.md) before giving up.
+- **✅ ALWAYS**: For missing observations, use bisection strategy (Journal/2025-07-16_AnalystRevision_bisection_debugging.md) before giving up.
 - **✅ ALWAYS**: Check with the user before giving up.
 
 ## 2. **Debug by Understanding Problematic Observations**
