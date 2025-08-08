@@ -18,6 +18,13 @@ print("📊 Loading IBES Recommendations data...")
 # use tickerIBES amaskcd anndats time_avail_m ireccd using "$pathDataIntermediate/IBES_Recommendations", clear
 ibes_recs = pl.read_parquet("../pyData/Intermediate/IBES_Recommendations.parquet")
 ibes_recs = ibes_recs.select(["tickerIBES", "amaskcd", "anndats", "time_avail_m", "ireccd"])
+
+# Convert time_avail_m to integer if it's datetime
+if ibes_recs['time_avail_m'].dtype == pl.Datetime:
+    ibes_recs = ibes_recs.with_columns(
+        (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("time_avail_m")
+    )
+
 print(f"Loaded IBES Recommendations: {len(ibes_recs):,} observations")
 
 # bys tickerIBES amaskcd time_avail_m (anndats): keep if _n==_N  // Drop if more than one recommendation per month
@@ -74,14 +81,15 @@ ibes_filled = ibes_filled.with_columns(
 )
 
 # asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1) 
-# This gets the first (most recent) ireccd value within the past 12 months
-# In a rolling window, "first" means the most recent non-null value
+# This gets the first (most recent) ireccd value within the past 12 observations
+# "window(time_avail_m 12)" means 12 observations, not 12 months!
+# stat(first) means the most recent non-null value within that window
 ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
 
-# Use forward fill within a 12-month rolling window
+# Forward fill with a limit of 11 (so it covers 12 observations total)
 ibes_filled = ibes_filled.with_columns(
     pl.col("ireccd")
-    .forward_fill()
+    .forward_fill(limit=11)  # Fill up to 11 forward (12 total including current)
     .over("tempID")
     .alias("ireccd12")
 )
@@ -102,6 +110,13 @@ print("📊 Loading SignalMasterTable, CRSP, and Short Interest data...")
 # use permno gvkey tickerIBES time_avail_m bh1m using "$pathDataIntermediate/SignalMasterTable", clear
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 signal_master = signal_master.select(["permno", "gvkey", "tickerIBES", "time_avail_m"])
+
+# Convert time_avail_m to integer if it's datetime
+if signal_master['time_avail_m'].dtype == pl.Datetime:
+    signal_master = signal_master.with_columns(
+        (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("time_avail_m")
+    )
+
 signal_master = signal_master.filter(pl.col("gvkey").is_not_null() & pl.col("tickerIBES").is_not_null())
 print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
 
@@ -109,12 +124,24 @@ print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
 crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 crsp = crsp.select(["permno", "time_avail_m", "shrout"])
 
+# Convert time_avail_m to integer if it's datetime
+if crsp['time_avail_m'].dtype == pl.Datetime:
+    crsp = crsp.with_columns(
+        (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("time_avail_m")
+    )
+
 df = signal_master.join(crsp, on=["permno", "time_avail_m"], how="inner")
 print(f"After merging with CRSP: {len(df):,} observations")
 
 # merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/monthlyShortInterest", keep(match) nogenerate keepusing(shortint)
 short_interest = pl.read_parquet("../pyData/Intermediate/monthlyShortInterest.parquet")
 short_interest = short_interest.select(["gvkey", "time_avail_m", "shortint"])
+
+# Convert time_avail_m to integer if it's datetime
+if short_interest['time_avail_m'].dtype == pl.Datetime:
+    short_interest = short_interest.with_columns(
+        (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("time_avail_m")
+    )
 
 # Cast gvkey to match data types
 short_interest = short_interest.with_columns(pl.col("gvkey").cast(pl.Float64))

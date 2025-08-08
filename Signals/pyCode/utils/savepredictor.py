@@ -48,9 +48,16 @@ def save_predictor(df, predictor_name, output_dir="../pyData/Predictors"):
     
     # Convert time_avail_m to yyyymm format (replicating Stata date conversion)
     # gen yyyymm = year(dofm(time_avail_m))*100 + month(dofm(time_avail_m))
-    df_save = df_save.with_columns(
-        (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("yyyymm")
-    )
+    # Check if time_avail_m is datetime or integer
+    if df_save['time_avail_m'].dtype == pl.Datetime:
+        df_save = df_save.with_columns(
+            (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("yyyymm")
+        )
+    else:
+        # Already in yyyymm integer format, just rename
+        df_save = df_save.with_columns(
+            pl.col("time_avail_m").alias("yyyymm")
+        )
     
     # Keep only required columns and set order: permno yyyymm predictor_name
     df_save = df_save.select(['permno', 'yyyymm', predictor_name])

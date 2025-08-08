@@ -4,26 +4,37 @@ description: Debug failures of the superset test for a given predictor.
 allowed-tools:
   # TBC: allow only the predictor in $ARGUMENTS to be edited
   - Edit(Predictors/*.py)
+  - Edit(../Debug/*.py)
+  - Edit(../Journal/*.md)
 examples:
   - `/debug-superset AccrualsBM`
 ---
 
 # Set the Context
-- First orient yourself and set up the environment
-    - `cd pyCode` (if not already there)
-    - `source .venv/bin/activate` (if not already activated)
 - Run the test
     - `python3 utils/test_predictors.py --predictors $ARGUMENTS`
 
-# Debug Task
-- Debug the superset test problems for $ARGUMENTS
-    - Check DocsForClaude/debugging-philosophy.md for debugging strategy
-    - Check DocsForClaude/stata_*.md to understand Stata's exact behavior. Use context7 to understand the python version. 
-    - Study recent entries in Journal/ for relevant debugging lessons
+# Debug: fix the superset test problems for $ARGUMENTS
+- Find the exact python commands that are causing the problem
+    - Pick a specific observation from the "missing observations sample" in test output
+        - Example: `permno=11406, yyyymm=199009` 
+        - Focus on ONE observation for clarity
+    - Find the exact line of code where the observation goes missing
+    - Identify suspect python commands
+- Compare the problematic python commands with the corresponding stata 
+    - Compare with the Stata counterpart to the python predictor creation script
+        - e.g. compare `code/Predictors/AccrualsBM.do` with `pyCode/Predictors/AccrualsBM.`        
+    - Search for relevant documentation in `../DocsForClaude/stata_*.md`
+    - Search for relevant Journal entries in `../Journal/`
+    - If no relevant documentation on the stata command, search the web for info 
+    - Check context7 to understand the python version
+- Improve the predictor py script there is a significant improvement in the superset test   
+    -  You do not need to fix all the problems. Take one step at a time.
+- General strategy
     - Think about the plan before writing code
     - Do not assume the code you have written is correct. 
     - Do not hardcode data or use placeholders.
-    - Write code in `Debug/` to trace exactly where the problematic observations go missing.
+    - Write debugging code in `Debug/` 
 
 # Document the Fix
 - Document the lessons learned with an md file in `../Journal/    `
