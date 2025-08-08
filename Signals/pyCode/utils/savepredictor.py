@@ -37,8 +37,11 @@ def save_predictor(df, predictor_name, output_dir="../pyData/Predictors"):
     
     print(f"saving {predictor_name}")
     
-    # Create a copy to avoid modifying original data (equivalent to preserve/restore)
-    df_save = df.clone()
+    # Convert to polars if pandas DataFrame is passed
+    if isinstance(df, pd.DataFrame):
+        df_save = pl.from_pandas(df)
+    else:
+        df_save = df.clone()
     
     # Clean up - drop if predictor value is missing (equivalent to: drop if `1' == .)
     df_save = df_save.filter(pl.col(predictor_name).is_not_null())
