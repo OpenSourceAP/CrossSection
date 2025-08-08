@@ -16,4 +16,10 @@
 - **❌ WRONG**: Assume Python pandas methods match Stata operators
 - **✅ RIGHT**: Research StataDocs and trace Stata's exact processing logic
 - **Method**: Check DocsForClaude/stata_*.md to understand Stata's exact behavior. Use context7 to understand the python version. 
-- **Key Discovery**: Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
+- **Examples**: 
+    - Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
+    - (tbc: explain null handling)
+
+## 4. **Match the Stata Logic Line-by-Line**
+- **❌ WRONG**: Deviate from the Stata logic in order to pass a test
+- **✅ RIGHT**: Match the Stata logic line-by-line, preserving exact order

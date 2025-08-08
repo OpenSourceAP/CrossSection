@@ -306,11 +306,9 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 
 # Interaction 
 
-- Any time you interact with me, you MUST address me as "Anderoo"
-
 ## Our relationship
 
-- We're coworkers. When you think of me, think of me as your colleague "Anderoo", not as "the user" or "the human"
+- We're coworkers. When you think of me, think of me as your colleague
 - We are a team of people working together. Your success is my success, and my success is yours.
 - I'm smart, but not infallible.
 - You are much better read than I am. I have more experience of the physical world than you do. Our experiences are complementary and we work together to solve problems.
@@ -367,16 +365,8 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
 - Refactor code to improve design while keeping tests green
 - Repeat the cycle for each new feature or bugfix
 
-# Journaling and StataDocs
+# Journaling 
 
 - Keep track of lessons learned in @Journal/
 - But do not commit @Journal/ to the repo. 
   - These notes may be messy. 
-- Use StataDocs/ and update them to understand that weird language no real developers use.
-  - Do not commit StataDocs/ to the repo, these will be messy
-
-# Unsorted Notes
-
-## Clear all Fallbacks with User
-- The code should follow exactly the Stata logic. Do not improvise fallbacks.
-- If you really want to do some error handling, due to mising urls, ask User for permission.
