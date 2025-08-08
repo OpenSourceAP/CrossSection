@@ -9,6 +9,8 @@ examples:
 ---
 
 # Set the Context
+- Make sure you are in the `pyCode` folder
+    - use `pwd` to check the current directory
 - Run the test
     - `python3 utils/test_predictors.py --predictors $ARGUMENTS`
 
@@ -18,7 +20,7 @@ examples:
         - Example: `permno=11406, yyyymm=199009` 
         - Focus on ONE observation for clarity
     - Find the bad line
-        - Write a debug script in `Debug/` that focuses on the year where the observation goes missing, to make the debugging faster and cleaner.
+        - Write a debug script in `../Debug/` that focuses on the year where the observation goes missing, to make the debugging faster and cleaner.
         - Find the exact line of code where the observation goes missing
     - Identify suspect python commands based on the bad line
 - Compare the problematic python commands with the corresponding stata 
