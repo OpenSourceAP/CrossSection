@@ -75,8 +75,20 @@ df['ret'] = df['ret'].fillna(0)
 print("Calculating cumulative returns...")
 df['tempCumRet'] = df.groupby('permno')['ret'].transform(lambda x: np.exp(np.log(1 + x).cumsum()))
 
-# Calculate 60-month return change
-df['tempCumRet_lag60'] = df.groupby('permno')['tempCumRet'].shift(60)
+# Calculate 60-month return change using efficient calendar-based lag (matches Stata l60.)
+print("Calculating 60-month calendar-based lag for cumulative returns...")
+
+# Create target date column
+df['target_date'] = df['time_avail_m'] - pd.DateOffset(months=60)
+
+# Create lag lookup table
+lag_lookup = df[['permno', 'time_avail_m', 'tempCumRet']].copy()
+lag_lookup.columns = ['permno', 'target_date', 'tempCumRet_lag60']
+
+# Merge to get calendar-based lags
+df = df.merge(lag_lookup, on=['permno', 'target_date'], how='left')
+df.drop('target_date', axis=1, inplace=True)
+
 df['tempRet60'] = (df['tempCumRet'] - df['tempCumRet_lag60']) / df['tempCumRet_lag60']
 
 # Winsorize tempRet60 at 1% and 99% percentiles using trim (remove observations)
@@ -94,8 +106,19 @@ temp_vars = ['tempAccBM', 'tempAccSP', 'tempAccCFP', 'tempAccEP']
 for v in temp_vars:
     print(f"Processing {v}...")
     
-    # Calculate 60-month lag of the variable
-    df[f'{v}_lag60'] = df.groupby('permno')[v].shift(60)
+    # Calculate 60-month calendar-based lag of the variable using efficient merge (matches Stata l60.)
+    print(f"  Calculating 60-month calendar-based lag for {v}...")
+    
+    # Create target dates for lag lookup
+    df['target_date'] = df['time_avail_m'] - pd.DateOffset(months=60)
+    
+    # Create lag lookup table for this variable
+    var_lag_lookup = df[['permno', 'time_avail_m', v]].copy()
+    var_lag_lookup.columns = ['permno', 'target_date', f'{v}_lag60']
+    
+    # Merge to get calendar-based lags
+    df = df.merge(var_lag_lookup, on=['permno', 'target_date'], how='left')
+    df.drop('target_date', axis=1, inplace=True)
     
     # Generate the return-adjusted measure
     df[f'{v}Ret'] = df[v] - df[f'{v}_lag60'] + df['tempRet60']
