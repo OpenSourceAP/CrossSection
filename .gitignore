@@ -29,7 +29,8 @@ __pycache__/
 
 # Testing and archive
 deleteme*
-Signals/pyCode/Debug/
+Signals/Debug/*
+Signals/pyCode/Debug/*
 Signals/zzz-archive/*
 
 
