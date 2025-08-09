@@ -1,5 +1,6 @@
 # ABOUTME: Idiosyncratic risk predictor using RMSE from 252-day rolling CAPM regression
 # ABOUTME: Usage: python3 IdioVolAHT.py (run from pyCode/ directory)
+# takes 20 minutes or so
 
 import polars as pl
 import polars_ols  # Enable polars-ols functionality
