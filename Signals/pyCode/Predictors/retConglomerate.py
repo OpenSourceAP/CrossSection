@@ -96,14 +96,28 @@ def main():
     # tab tempNInd
     print(f"Industry count distribution:\n{segments_agg['tempNInd'].value_counts().head()}")
     
-    # gen Conglomerate = 0 if tempNInd == 1 & tempCSSegmentShare > .8
-    # replace Conglomerate = 1 if tempNInd > 1 & tempCSSegmentShare > .8
-    segments_agg['Conglomerate'] = np.where(
-        (segments_agg['tempNInd'] == 1) & (segments_agg['tempCSSegmentShare'] > 0.8), 0,
-        np.where((segments_agg['tempNInd'] > 1) & (segments_agg['tempCSSegmentShare'] > 0.8), 1, np.nan)
-    )
+    # Fix: Classification should be at firm level, not segment level
+    # First, determine firm-level conglomerate status
+    # A firm is conglomerate if tempNInd > 1 AND has at least one segment with tempCSSegmentShare > 0.8
+    # A firm is stand-alone if tempNInd == 1 AND the segment has tempCSSegmentShare > 0.8
     
-    # drop if mi(Conglomerate)
+    # Create firm-level classification
+    firm_classification = segments_agg.groupby(['gvkey', 'datadate']).apply(
+        lambda x: 1 if (x['tempNInd'].iloc[0] > 1 and (x['tempCSSegmentShare'] > 0.8).any()) 
+                 else (0 if (x['tempNInd'].iloc[0] == 1 and (x['tempCSSegmentShare'] > 0.8).any()) 
+                      else np.nan)
+    ).reset_index(name='firm_conglomerate')
+    
+    # Merge firm classification back to all segments
+    segments_agg = pd.merge(segments_agg, firm_classification, on=['gvkey', 'datadate'], how='left')
+    
+    # Apply firm-level classification to all segments of the firm
+    segments_agg['Conglomerate'] = segments_agg['firm_conglomerate']
+    
+    # Clean up temporary column
+    segments_agg = segments_agg.drop('firm_conglomerate', axis=1)
+    
+    # drop if mi(Conglomerate) - this drops firms that don't meet either criterion
     segments_agg = segments_agg.dropna(subset=['Conglomerate'])
     
     # tab Conglomerate
