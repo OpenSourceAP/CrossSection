@@ -4,7 +4,10 @@
 """
 CompEquIss Predictor
 
-Composite equity issuance calculation.
+Line-by-line translation of CompEquIss.do
+
+Run from pyCode/ directory:
+python3 Predictors/CompEquIss.py
 
 Inputs:
 - SignalMasterTable.parquet (permno, time_avail_m, ret, mve_c)
@@ -12,10 +15,12 @@ Inputs:
 Outputs:
 - CompEquIss.csv (permno, yyyymm, CompEquIss)
 
-This predictor calculates:
-1. Cumulative index starting at 1, compounded with returns
-2. Buy-and-hold return over 60 months
-3. Composite equity issuance = log(mve_c/l60.mve_c) - buy_and_hold_return
+Stata code translated:
+1. use permno time_avail_m ret mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+2. bys permno (time_avail): gen tempIdx = 1 if _n == 1
+3. bys permno (time_avail): replace tempIdx = (1 + ret)*l.tempIdx if _n > 1
+4. gen tempBH = (tempIdx - l60.tempIdx)/l60.tempIdx
+5. gen CompEquIss = log(mve_c/l60.mve_c) - tempBH
 """
 
 import pandas as pd
@@ -31,6 +36,7 @@ def main():
     print("Starting CompEquIss predictor...")
     
     # DATA LOAD
+    # Stata: use permno time_avail_m ret mve_c using "$pathDataIntermediate/SignalMasterTable", clear
     print("Loading SignalMasterTable...")
     df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
                         columns=['permno', 'time_avail_m', 'ret', 'mve_c'])
@@ -40,59 +46,25 @@ def main():
     # SIGNAL CONSTRUCTION
     print("Constructing CompEquIss signal...")
     
-    # Sort by permno and time_avail_m
-    df = df.sort_values(['permno', 'time_avail_m'])
+    # Data is already sorted by permno, time_avail_m (verified in debug script)
     
-    # Create cumulative index starting at 1, compounded with returns
-    # tempIdx = 1 if _n == 1
-    # tempIdx = (1 + ret) * l.tempIdx if _n > 1
-    df['tempIdx'] = np.nan
-    df.loc[df.groupby('permno').cumcount() == 0, 'tempIdx'] = 1
+    # Stata: bys permno (time_avail): gen tempIdx = 1 if _n == 1
+    # Stata: bys permno (time_avail): replace tempIdx = (1 + ret)*l.tempIdx if _n > 1
+    # This creates a cumulative return index starting at 1 for each permno
+    df['tempIdx'] = df.groupby('permno')['ret'].transform(lambda x: (1 + x).cumprod())
     
-    # Create lagged tempIdx
-    df['l_tempIdx'] = df.groupby('permno')['tempIdx'].shift(1)
-    
-    # Calculate tempIdx for subsequent observations
-    mask = df.groupby('permno').cumcount() > 0
-    df.loc[mask, 'tempIdx'] = (1 + df.loc[mask, 'ret']) * df.loc[mask, 'l_tempIdx']
-    
-    # Forward fill tempIdx within each permno
-    df['tempIdx'] = df.groupby('permno')['tempIdx'].ffill()
-    
-    # Create 60-month lags
+    # Stata: gen tempBH = (tempIdx - l60.tempIdx)/l60.tempIdx
     df['l60_tempIdx'] = df.groupby('permno')['tempIdx'].shift(60)
+    df['tempBH'] = (df['tempIdx'] - df['l60_tempIdx']) / df['l60_tempIdx']
+    
+    # Stata: gen CompEquIss = log(mve_c/l60.mve_c) - tempBH
     df['l60_mve_c'] = df.groupby('permno')['mve_c'].shift(60)
-    
-    # Calculate buy-and-hold return over 60 months
-    # tempBH = (tempIdx - l60.tempIdx) / l60.tempIdx
-    df['tempBH'] = np.where(
-        df['l60_tempIdx'] == 0,
-        np.nan,
-        np.where(
-            (df['tempIdx'] - df['l60_tempIdx']).isna() & df['l60_tempIdx'].isna(),
-            1.0,
-            (df['tempIdx'] - df['l60_tempIdx']) / df['l60_tempIdx']
-        )
-    )
-    
-    # Calculate composite equity issuance
-    # CompEquIss = log(mve_c/l60.mve_c) - tempBH
-    df['log_mve_ratio'] = np.where(
-        df['l60_mve_c'] == 0,
-        np.nan,
-        np.where(
-            (df['mve_c'] / df['l60_mve_c']).isna() & df['l60_mve_c'].isna(),
-            1.0,
-            np.log(df['mve_c'] / df['l60_mve_c'])
-        )
-    )
-    
-    df['CompEquIss'] = df['log_mve_ratio'] - df['tempBH']
+    df['CompEquIss'] = np.log(df['mve_c'] / df['l60_mve_c']) - df['tempBH']
     
     print(f"Generated CompEquIss values for {df['CompEquIss'].notna().sum():,} observations")
     
     # Clean up temporary columns
-    df = df.drop(columns=['tempIdx', 'l_tempIdx', 'l60_tempIdx', 'l60_mve_c', 'tempBH', 'log_mve_ratio'])
+    df = df.drop(columns=['tempIdx', 'l60_tempIdx', 'tempBH', 'l60_mve_c'])
     
     # SAVE
     print("Saving predictor...")
