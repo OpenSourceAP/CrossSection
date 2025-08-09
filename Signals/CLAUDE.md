@@ -86,6 +86,10 @@ Signals/
 - **✅ ALWAYS**: Keep code simple and focused on the specific requirements
 - **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
 
+## **Write Test py Scripts**
+- **WRONG**: Run a long Bash command that to generate test output.
+- **RIGHT**: Write a py script in `Debug/` that generates test output.
+
 # Debugging Philosophy
 
 ## **Do Not Speculate That the Test Failed Because of Real Data Differences**
@@ -273,6 +277,16 @@ The precision requirements are:
 
 Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/Predictors/`, in alphabetical order.
 
+## Variable Handling Rules for Predictors/
+
+How to interpret various variable types found in pyData/Intermediate/
+
+### Dates
+- time_avail_m  
+    - Convert to Period dtype with monthly frequency (M)
+- datadate
+    - Convert to Period dtype with monthly frequency (M)
+
 ## Requirements
 
 ### Basic requirements
@@ -304,7 +318,7 @@ Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/P
           - [m_CIQ_creditratings](#mciqcreditratings) (228480)
           - [InputOutputMomentumProcessed](#inputoutputmomentumprocessed) (12)
           - [customerMom](#customermom) (138)      
-3. Precision1: For common observations, the percentage for which diff >= TOL_DIFF_1 is less than TOL_OBS_1.
+3. Precision1: For common observations, the percentage for which std_diff >= TOL_DIFF_1 is less than TOL_OBS_1. std_diff is the difference between the python and stata values, divided by the standard deviation of all stata values.
 4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
 
 
