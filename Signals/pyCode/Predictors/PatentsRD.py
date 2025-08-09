@@ -59,13 +59,13 @@ df['comp3'] = 0
 df['comp4'] = 0
 df['comp5'] = 0
 
-# Create lagged R&D components
+# Create lagged R&D components (June-only data: shift by years, not months)
 grouped = df.groupby('permno')['xrd']
-comp1_lag = grouped.shift(24)
-comp2_lag = 0.8 * grouped.shift(36)
-comp3_lag = 0.6 * grouped.shift(48)
-comp4_lag = 0.4 * grouped.shift(60)
-comp5_lag = 0.2 * grouped.shift(72)
+comp1_lag = grouped.shift(2)  # 2 years back (was shift(24) - WRONG!)
+comp2_lag = 0.8 * grouped.shift(3)  # 3 years back (was shift(36) - WRONG!)
+comp3_lag = 0.6 * grouped.shift(4)  # 4 years back (was shift(48) - WRONG!)
+comp4_lag = 0.4 * grouped.shift(5)  # 5 years back (was shift(60) - WRONG!)
+comp5_lag = 0.2 * grouped.shift(6)  # 6 years back (was shift(72) - WRONG!)
 
 df['comp1'] = np.where(comp1_lag.notna(), comp1_lag, 0.0)
 df['comp2'] = np.where(comp2_lag.notna(), comp2_lag, 0.0)
