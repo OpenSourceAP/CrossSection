@@ -4,17 +4,21 @@ description: Debug failures of the Precision1 test for a given predictor.
 allowed-tools:
   # TBC: allow only the predictor in $ARGUMENTS to be edited
   - Edit(Predictors/*.py)
-  - Write(../Debug/*.py)
-  - Edit(../Debug/*.py)
+  - Write(Debug/*.py)
+  - Edit(Debug/*.py)
+  - Bash(touch:*)
 examples:
   - `/debug-prec1 AccrualsBM`
 ---
 
 # Set the Context
-- Make sure you are in the `pyCode` folder
+- Make sure you are in the `Signals/` folder
     - use `pwd` to check the current directory
+    - always return to the `Signals/` folder after each command
 - Run the test
-    - `python3 utils/test_predictors.py --predictors $ARGUMENTS`
+    - `cd pyCode && python3 utils/test_predictors.py --predictors $ARGUMENTS && cd ..`
+- Make sure you can write to `Debug/`
+    - `touch Debug/test.py`
 
 # Debug: fix the Precision1 test problems for $ARGUMENTS
 - Find the exact python commands that are causing the problem
@@ -29,8 +33,8 @@ examples:
 - Compare the problematic python commands with the corresponding stata 
     - Compare with the Stata counterpart to the python predictor creation script
         - e.g. compare `code/Predictors/AccrualsBM.do` with `pyCode/Predictors/AccrualsBM.`        
-    - Search for relevant documentation in `../DocsForClaude/stata_*.md`
-    - Search for relevant Journal entries in `../Journal/`
+    - Search for relevant documentation in `DocsForClaude/stata_*.md`
+    - Search for relevant Journal entries in `Journal/`
     - If no relevant documentation on the stata command, search the web for info 
     - Check context7 to understand the python version
 - Improve the predictor py script there is a significant improvement in the superset test   
@@ -39,7 +43,7 @@ examples:
     - Think about the plan before writing code
     - Do not assume the code you have written is correct. 
     - Do not hardcode data or use placeholders.
-    - Write debugging code in `../Debug/` 
+    - Write debugging code in `Debug/` 
 
 # Document the Fix
 - Document the lessons learned with an md file in `../Journal/    `
