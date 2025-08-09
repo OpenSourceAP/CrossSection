@@ -50,37 +50,70 @@ Signals/
 ├── Debug/                  # Debugging scripts
 ```
 
+# Coding Environment, Tools, and Docs
+
+## Working Directory
+- **All Python scripts must be executed from `pyCode/`**
+- **Virtual environment is located at `pyCode/.venv/`**
+- **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
+- Before running any python script, `source .venv/bin/activate`
+
+## Environment Setup
+```bash
+# Initial setup (from pyCode/ directory)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Virtual Environment Management
+- **Only one .venv folder**: Located in `pyCode/.venv/`
+- **Always activate before running scripts**: `source .venv/bin/activate`
+- **Install packages in venv**: `pip install package_name`
+
+## Tools 
+- Do not use long Bash commands. 
+  - If a Bash command is more then 3 lines, write a py script in `Debug/` that generates test output instead.
+  - This ensures that the permissions are correct and avoids unneeded user intervention.
+
+## Docs
+- `DocsForClaude/` contains long-term docs about the project
+  - `stata_*.md` are docs about Stata commands
+  - `leg*.md` are docs about the project legs
+- `Journal/` contains messy notes about the project
+  - Recent Journal/ entries may be helpful for passing tests.
+
 # Translation Philosophy
 
-## 1. **Line-by-Line Translation**
+## **Line-by-Line Translation**
 - **❌ NEVER**: Add functions, abstractions, or "improvements" during translation
 - **✅ ALWAYS**: Translate Stata code line-by-line, preserving exact order
 - **✅ ALWAYS**: Use linear, procedural structure matching Stata
 - **Lesson**: Overengineering caused 40% data loss in CompustatAnnual
 
-## 2. **Execution Order is Critical**
+## **Execution Order is Critical**
 - **❌ NEVER**: Change the timing of data saves or processing steps
 - **✅ ALWAYS**: Match exact execution order from Stata script
 - **Example**: Stata saves CSV immediately after download, Python must do same
 - **Lesson**: Wrong save timing caused major shape mismatches
 
-## 3. **Missing Data Handling**
+## **Missing Data Handling**
 - **Stata**: Missing dates often mean "infinity" or "still active" → TRUE
 - **Python**: `datadate <= NaT` → FALSE  
 - **✅ ALWAYS**: Use explicit null handling: `(condition) | column.isna()`
 - **Lesson**: Missing data logic differences lost 19% of records
 
-## 4. **Simplicity Over Cleverness**  
+## **Simplicity Over Cleverness**  
 - **❌ NEVER**: Add complex dtype handling, YAML standardization, helper functions
 - **✅ ALWAYS**: Keep code simple, direct, and readable
 - **Principle**: **EXACT REPLICATION BEATS CLEVER ENGINEERING**
 
-## 5. **Immediate Validation**
+## **Immediate Validation**
 - **✅ ALWAYS**: Run test script after every translation
 - **✅ ALWAYS**: Fix shape mismatches before data mismatches
 - **✅ ALWAYS**: Achieve 99%+ row count match with Stata
 
-## 6. **Do Not Add Unrequested Features**
+## **Do Not Add Unrequested Features**
 - **❌ NEVER**: Add command-line options, modes, or features unless explicitly requested
 - **✅ ALWAYS**: Keep code simple and focused on the specific requirements
 - **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
@@ -119,206 +152,9 @@ Signals/
 - **❌ WRONG**: "If I hardcode rows that match stata's output, I'll have resolved the missing rows issue."
 - **✅ RIGHT**: Investigate why those rows are missing to decipher the issue in the translation.
 
-
 ## **Write Debugging py scripts**
 - **WRONG**: Run a long bash command that to generate test output.
 - **RIGHT**: Write a py script in `Debug/` that generates test output.
-
-# DataDownloads Leg
-
-## DataDownloads Script Mapping
-
-The DataDownloads leg is complicated. yaml files can help you get around
-- DataDownloads/00_map.yaml
-- DataDownloads/column_schemas.yaml
-
-
-## Basic Requirements
-- Python code should follow the stata counterpart as closely as possible
-- The Python code must **not** use any data or code from the Stata project.
-  - Do **not** use anything in `Data/`, including `Data/Intermediate/` or `Data/Prep/`
-  - Do **not** use any code in `Code/`
-- Output is parquet
-  - Not pkl
-
-## Validation 
-
-**IMPORTANT**: Validation is done by running `python3 utils/test_dl.py`
-  - Use `--max_rows` to limit the number of rows to test (-1 for all rows)
-  - Use `--datasets` to specify datset(s)
-
-### Basic Validation
-This simple validation is fast and easy. 
-
-Valid data satisfies:
-1. Column names (exact match)
-2. Column types (exact match)
-3. Row count (Python can have more rows, but only 0.1% more)
-  - Drop rows with missing keys before counting
-
-### Common Rows Validation
-This validation requires more careful analysis.
-
-Define:
-- Common rows: rows in both Stata and Python data that share the same keys 
-  - Keys are based on @DataDownloads/00_map.yaml
-- Perfect rows: common rows with columns that have no deviations
-- Imperfect rows: common rows that are not perfect rows
-
-Valid data satisfies:
-4. Python common rows are a superset of Stata common rows
-  - The Python data may contain recent observations that are not in the Stata data. 
-  - But the Python data should not be missing any rows that are in the Stata data, since it was downloaded after the Stata data.
-5. Imperfect cells / total cells < 0.1%
-6. Imperfect rows / total rows < 0.1% or...
-7. If Imperfect rows / total rows > 0.1%, have User appove:
-  - Worst column stats look OK.
-  - Sample of worst rows and columns look OK.
-
-## Data Processing Standards
-1. **Maintain data integrity**: Exact same filtering, cleaning, and transformations
-2. **Preserve column names**: Keep original variable names from Stata
-3. **Handle missing values**: Replicate Stata's missing value conventions
-4. **Date formatting**: Ensure consistent date handling across files
-5. **Data types**: Match Stata numeric precision where possible
-
-## Error Handling
-- Implement robust error handling for database connections
-- Log processing times and success/failure status
-- Create error flag system similar to Stata's `01_DownloadDataFlags`
-
-## Paths and Filenames
-
-**IMPORTANT**: All Python commands must be run from the `pyCode/` directory.
-
-```bash
-# Navigate to working directory
-cd /Users/idrees/Desktop/CrossSection/Signals/pyCode/
-
-# Activate virtual environment (required for all operations)
-source .venv/bin/activate
-
-# Install/update dependencies
-pip install -r requirements.txt
-
-# Run all downloads
-python3 01_DownloadData.py
-
-# Run individual DataDownloads script
-python3 DataDownloads/[SCRIPT_NAME].py
-
-```
-- check pyCode/DataDownloads/00_map.yaml to see which scripts should be used to download a given dataset
-
-
-## Python Development Environment
-
-### Working Directory
-- **All Python scripts must be executed from `pyCode/`**
-- **Virtual environment is located at `pyCode/.venv/`**
-- **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
-- Before running any python script, `source .venv/bin/activate`
-
-### Environment Setup
-```bash
-# Initial setup (from pyCode/ directory)
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Virtual Environment Management
-- **Only one .venv folder**: Located in `pyCode/.venv/`
-- **Always activate before running scripts**: `source .venv/bin/activate`
-- **Install packages in venv**: `pip install package_name`
-
-# SignalMasterTable Leg
-
-`Signals/Code/SignalMasterTable.do` is run in `02_CreatePredictors.do` and `03_CreatePlacebos.do`. But we should think about it as its own leg of the project. 
-
-## Files and descriptions
-
-Stata:
-- `Signals/Code/SignalMasterTable.do` 
-  - Makes `SignalMasterTable.dta`
-- `Signals/Data/Intermediate/SignalMasterTable.dta` 
-  - Indexed by (permno, time_avail_m)
-
-Python:
-- `pyCode/SignalMasterTable.py` tbc
-  - Makes `SignalMasterTable.parquet`
-- `pyData/Intermediate/SignalMasterTable.parquet` 
-  - Indexed by (permno, time_avail_m)
-
-Test script
-- `pyCode/utils/test_signalmaster.py`: 
-
-## Requirements
-
-### Simple requirements:
-1. Column names and order match exactly
-2. Column types match exactly
-3. Python indexes are a superset of Stata indexes
-  - All observations in the dta should be in the parquet
-
-### Precision requirements: 
-
-Define:
-- Common rows: rows with indexes that are in both Stata and Python
-- Perfect rows: common rows with columns that have no deviations
-- Imperfect rows: common rows that are not perfect rows
-
-The precision requirements are:
-4. Imperfect cells / total cells < 0.1%
-5. Imperfect rows / total rows < 0.1% or...
-
-# Predictors Leg
-
-Replicates `Code/01_CreatePredictors.do`, which in turn calls scripts in `Code/Predictors/`, in alphabetical order.
-
-## Variable Handling Rules for Predictors/
-
-How to interpret various variable types found in pyData/Intermediate/
-
-### Dates
-- time_avail_m  
-    - Convert to Period dtype with monthly frequency (M)
-- datadate
-    - Convert to Period dtype with monthly frequency (M)
-
-## Requirements
-
-### Basic requirements
-- For each do file in `Code/Predictors/`, say `Accruals.do` there is
-  - a corresponding python script `pyCode/Predictors/Accruals.py`
-  - a corresponding csv file `pyData/Predictors/Accruals.csv`
-    - No parquet files
-- Output has columns (permno, yyyymm, [predictor_name])
-  - index is (permno, yyyymm), both are integers
-    - index defines an "observation"
-  - [predictor_name] is "Accruals", "BM", etc. This column contains the signal values
-- The logic of each do file in `Code/Predictors/` is replicated precisely, line by line
-  - Exception: the `savepredictor.do` has an option to save in a format other than csv. Remove this option.
-  - Validation checks the Simple and Precision requirements below
-
-### Precision requirements:
-**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`. This script outputs `Logs/testout_predictors.md`. Here, 'common observations' are observations that are in both Stata and Python.
-
-1. Columns: Column names and order match exactly
-  - This is trivial if the indexes match
-2. Superset: Python observations are a superset of Stata observations
-  - All Stata observations should be found in the Python data
-  - Data source differences typically cannot explain a failure in this test
-  - ***IMPORTANT: data availability issues and historical data differences rarely explain a failure in this test***
-      - Check Logs/testout_dl.md shows that data availability issues happen only in:
-        - **Python missing Stata rows**:
-          - [CompustatAnnual](#compustatannual) (3)
-          - [CRSPdistributions](#crspdistributions) (1163)
-          - [m_CIQ_creditratings](#mciqcreditratings) (228480)
-          - [InputOutputMomentumProcessed](#inputoutputmomentumprocessed) (12)
-          - [customerMom](#customermom) (138)      
-3. Precision1: For common observations, the percentage for which std_diff >= TOL_DIFF_1 is less than TOL_OBS_1. std_diff is the difference between the python and stata values, divided by the standard deviation of all stata values.
-4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
 
 
 # Interaction 
