@@ -88,35 +88,38 @@ Signals/
 
 # Debugging Philosophy
 
-## 1. **Do Not Speculate That the Test Failed Because of Real Data Differences**
+## **Do Not Speculate That the Test Failed Because of Real Data Differences**
 - **❌ NEVER**: Stop debugging because of "data availability issues," "historical data differences," or "real data differences"
 - **✅ ALWAYS**: Keep checking the logic for what is causing the test to fail
 - **✅ ALWAYS**: For missing observations, use bisection strategy (Journal/2025-07-16_AnalystRevision_bisection_debugging.md) before giving up.
 - **✅ ALWAYS**: Check with the user before giving up.
 
-## 2. **Debug by Understanding Problematic Observations**
+## **Debug by Understanding Problematic Observations**
 - **✅ ALWAYS**: Focus on a specific permno-yyyymm observation that is causing the test to fail. Understand what step of the code is causing this specific observation to be problematic.
 - **❌ NEVER**: Debug my modifying code without understanding why the modification may affect a specific problematic observation.
 
-## 3. **Never Speculate About Data Differences**
+## **Never Speculate About Data Differences**
 - **❌ WRONG**: "This must be due to data availability issues or historical differences"
 - **✅ RIGHT**: Keep investigating the exact logic causing specific observations to fail
 
-## 4. **Understand Stata's Exact Behavior First**
+## **Understand Stata's Exact Behavior First**
 - **❌ WRONG**: Assume Python pandas methods match Stata operators
 - **✅ RIGHT**: Research StataDocs and trace Stata's exact processing logic
 - **Key Discovery**: Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
 
-## 5. **Never Assume Convenient Data Patterns**
+## **Never Assume Convenient Data Patterns**
 - **❌ WRONG**: "The issue must be missing data because my logic expects perfect monthly coverage"
 - **✅ RIGHT**: Investigate what the code actually does with irregular time series data, don't assume `1 obs = 1 month`
 
-## 6. **Never Make Up Data To Resolve Missing Rows**
+## **Never Make Up Data To Resolve Missing Rows**
 - **❌ WRONG**: "There are missing rows in this predictor's output, so let me create placeholder data"
 - **❌ WRONG**: "If I hardcode rows that match stata's output, I'll have resolved the missing rows issue."
 - **✅ RIGHT**: Investigate why those rows are missing to decipher the issue in the translation.
 
 
+## **Write Debugging py scripts**
+- **WRONG**: Run a long bash command that to generate test output.
+- **RIGHT**: Write a py script in `Debug/` that generates test output.
 
 # DataDownloads Leg
 
