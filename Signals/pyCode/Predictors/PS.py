@@ -47,6 +47,9 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Replace fopt with oancf if fopt is missing
 df['fopt'] = df['fopt'].fillna(df['oancf'])
 
+# Create tempebit before lag creation (needed for accurate comparison)
+df['tempebit'] = df['ib'] + df['txt'] + df['xint']
+
 # Create 12-month lags for required variables (time-based, like Stata l12.)
 # This approach matches Stata's l12. operator which looks for observations exactly 12 months earlier
 df['time_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)
@@ -88,8 +91,7 @@ df.loc[(df['dltt']/df['at'] - df['l12_dltt']/df['l12_at']) < 0, 'p5'] = 1
 df['p6'] = 0
 df.loc[(df['act']/df['lct'] - df['l12_act']/df['l12_lct']) > 0, 'p6'] = 1
 
-# p7: Improvement in gross margin
-df['tempebit'] = df['ib'] + df['txt'] + df['xint']
+# p7: Improvement in gross margin (following Stata logic: tempebit/sale - tempebit/l12.sale > 0)
 df['p7'] = 0
 df.loc[(df['tempebit']/df['sale'] - df['tempebit']/df['l12_sale']) > 0, 'p7'] = 1
 
@@ -125,6 +127,10 @@ df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
 
 # Keep required columns and order
 df = df[['permno', 'yyyymm', 'PS']].copy()
+
+# Convert to integer types to match Stata output format
+df['permno'] = df['permno'].astype('int64')
+df['yyyymm'] = df['yyyymm'].astype('int64')
 
 # SAVE
 df.to_csv("../pyData/Predictors/PS.csv", index=False)
