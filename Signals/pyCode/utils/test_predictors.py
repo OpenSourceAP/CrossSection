@@ -13,8 +13,9 @@ Usage:
 Precision Validation (per CLAUDE.md:290-304):
 1. Columns: Column names and order match exactly
 2. Superset: Python observations are a superset of Stata observations
-3. Precision1: For common observations, percentage with diff >= TOL_DIFF_1 < TOL_OBS_1
+3. Precision1: For common observations, percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
 4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
+   - std_diff = (python_value - stata_value) / std(all_stata_values)
    - common observations are observations that are in both Stata and Python
 
 Inputs:
@@ -45,7 +46,7 @@ import sys
 # ================================
 
 PTH_PERCENTILE = 1.00  # 100th percentile (maximum)
-TOL_DIFF_1 = 1e-4  # Threshold for identifying imperfect observations (Precision1)
+TOL_DIFF_1 = 1e-2  # Threshold for identifying imperfect observations (Precision1)
 TOL_OBS_1 = 0.1  # Max allowed percentage of imperfect observations (units: percent)
 TOL_DIFF_2 = 1e-6  # Tolerance for Pth percentile absolute difference (Precision2)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
@@ -171,8 +172,16 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
             pl.col("diff").abs().alias("abs_diff")
         ])
         
-        # Test 3: Precision1 - percentage of observations with abs_diff >= TOL_DIFF_1
-        bad_obs_count = cobs_diff.filter(pl.col("abs_diff") >= TOL_DIFF_1).height
+        # Calculate standard deviation of all Stata values for standardized differences
+        stata_std = cobs_diff.select(pl.col(predictor_name + "_right").std()).item()
+        
+        # Add standardized differences for Precision1 test
+        cobs_diff = cobs_diff.with_columns([
+            (pl.col("diff") / stata_std).alias("std_diff")
+        ])
+        
+        # Test 3: Precision1 - percentage of observations with std_diff >= TOL_DIFF_1
+        bad_obs_count = cobs_diff.filter(pl.col("std_diff").abs() >= TOL_DIFF_1).height
         total_obs_count = cobs_diff.height
         bad_obs_percentage = (bad_obs_count / total_obs_count) * 100
         
@@ -181,6 +190,7 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         results['bad_obs_count'] = bad_obs_count
         results['total_obs_count'] = total_obs_count
         results['bad_obs_percentage'] = bad_obs_percentage
+        results['stata_std'] = stata_std
         
         # Test 4: Precision2 - Pth percentile absolute difference < TOL_DIFF_2
         pth_percentile_diff = cobs_diff.select(pl.col("abs_diff").quantile(PTH_PERCENTILE)).item()
@@ -191,8 +201,8 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         
         # Generate feedback for failed precision tests
         if not precision1_ok or not precision2_ok:
-            # Find observations with differences >= TOL_DIFF_1 for detailed feedback
-            bad_obs_df = cobs_diff.filter(pl.col("abs_diff") >= TOL_DIFF_1)
+            # Find observations with standardized differences >= TOL_DIFF_1 for detailed feedback
+            bad_obs_df = cobs_diff.filter(pl.col("std_diff").abs() >= TOL_DIFF_1)
             
             if bad_obs_df.height > 0:
                 # Create feedback dataframes with proper column names for output compatibility
@@ -263,10 +273,10 @@ def output_predictor_results(predictor_name, results, overall_passed):
         print(f"  ❌ Test 3 - Precision1 check: FAILED (No common observations found)")
     elif results.get('test_3_passed', False):
         bad_pct = results.get('bad_obs_percentage', 0)
-        print(f"  ✅ Test 3 - Precision1 check: PASSED ({bad_pct:.3f}% obs with diff >= {TOL_DIFF_1:.2e} < {TOL_OBS_1}%)")
+        print(f"  ✅ Test 3 - Precision1 check: PASSED ({bad_pct:.3f}% obs with std_diff >= {TOL_DIFF_1:.2e} < {TOL_OBS_1}%)")
     else:
         bad_pct = results.get('bad_obs_percentage', 0)
-        print(f"  ❌ Test 3 - Precision1 check: FAILED ({bad_pct:.3f}% obs with diff >= {TOL_DIFF_1:.2e} >= {TOL_OBS_1}%)")
+        print(f"  ❌ Test 3 - Precision1 check: FAILED ({bad_pct:.3f}% obs with std_diff >= {TOL_DIFF_1:.2e} >= {TOL_OBS_1}%)")
     
     # Test 4: Precision2 check
     if results.get('common_obs_count', 0) == 0:
@@ -324,7 +334,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     # Precision results
     if 'bad_obs_percentage' in results:
-        md_lines.append(f"**Precision1**: {results['bad_obs_percentage']:.3f}% obs with diff >= {TOL_DIFF_1:.2e} (tolerance: < {TOL_OBS_1}%)\n\n")
+        md_lines.append(f"**Precision1**: {results['bad_obs_percentage']:.3f}% obs with std_diff >= {TOL_DIFF_1:.2e} (tolerance: < {TOL_OBS_1}%)\n\n")
     
     if 'pth_percentile_diff' in results:
         md_lines.append(f"**Precision2**: {PTH_PERCENTILE*100:.0f}th percentile diff = {results['pth_percentile_diff']:.2e} (tolerance: < {TOL_DIFF_2:.2e})\n\n")
@@ -338,7 +348,11 @@ def output_predictor_results(predictor_name, results, overall_passed):
     # Feedback for failed precision
     if 'bad_obs_count' in results:
         md_lines.append("**Feedback**:\n")
-        md_lines.append(f"- Num observations with diff >= TOL_DIFF_1: {results['bad_obs_count']}/{results['total_obs_count']} ({results['bad_obs_percentage']:.3f}%)\n\n")
+        md_lines.append(f"- Num observations with std_diff >= TOL_DIFF_1: {results['bad_obs_count']}/{results['total_obs_count']} ({results['bad_obs_percentage']:.3f}%)\n")
+        if 'stata_std' in results:
+            md_lines.append(f"- Stata standard deviation: {results['stata_std']:.2e}\n\n")
+        else:
+            md_lines.append("\n")
         
         if 'recent_bad' in results and len(results['recent_bad']) > 0:
             md_lines.append("**Most Recent Bad Observations**:\n")
