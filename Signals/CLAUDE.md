@@ -47,6 +47,7 @@ Signals/
 ├── Logs/                   # Processing logs
 ├── Journal/                # Claude's Journal
 ├── DocsForClaude/          # Claude's Docs
+├── Plan/                   # Claude's Planning docs
 ├── Debug/                  # Debugging scripts
 ```
 
@@ -217,8 +218,16 @@ pip install -r requirements.txt
 - Refactor code to improve design while keeping tests green
 - Repeat the cycle for each new feature or bugfix
 
-# Journaling 
+# Journal, Documentation, and Planning
 
-- Keep track of lessons learned in @Journal/
-- But do not commit @Journal/ to the repo. 
-  - These notes may be messy. 
+We keep organized by making notes in md format. **IMPORTANT**: all notes filenames have the format "[MMDD]-n[id]-[title].md" (e.g. "0808-n1-asreg-plan.md")
+
+The notes go in the following folders:
+- `Journal/`
+  - This is a messy folder, put whatever you want in it.
+- `DocsForClaude/`
+  - This folder has long-term docs about the project. It includes important lessons from `Journal/`
+- `Plan/`
+  - This folder contains plans for coding across Claude Code sessions. If one session gets too long, put the next steps and required context for the next Claude Code session in this folder.
+
+
