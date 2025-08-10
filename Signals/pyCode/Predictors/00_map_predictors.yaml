@@ -1,7 +1,3 @@
-AM.py:
-  created: 'yes'
-  outputs:
-  - AM.csv
 Accruals.py:
   created: 'yes'
   outputs:
@@ -18,6 +14,10 @@ AgeIPO.py:
   created: 'yes'
   outputs:
   - AgeIPO.csv
+AM.py:
+  created: 'yes'
+  outputs:
+  - AM.csv
 AnalystRevision.py:
   created: 'yes'
   outputs:
@@ -26,14 +26,6 @@ AssetGrowth.py:
   created: 'yes'
   outputs:
   - AssetGrowth.csv
-BM.py:
-  created: 'yes'
-  outputs:
-  - BM.csv
-BMdec.py:
-  created: 'yes'
-  outputs:
-  - BMdec.csv
 Beta.py:
   created: 'yes'
   outputs:
@@ -50,6 +42,14 @@ BidAskSpread.py:
   created: 'yes'
   outputs:
   - BidAskSpread.csv
+BM.py:
+  created: 'yes'
+  outputs:
+  - BM.csv
+BMdec.py:
+  created: 'yes'
+  outputs:
+  - BMdec.csv
 BookLeverage.py:
   created: 'yes'
   outputs:
@@ -58,18 +58,6 @@ BrandInvest.py:
   created: 'yes'
   outputs:
   - BrandInvest.csv
-CBOperProf.py:
-  created: 'yes'
-  outputs:
-  - CBOperProf.csv
-CF.py:
-  created: 'yes'
-  outputs:
-  - CF.csv
-CPVolSpread.py:
-  created: 'yes'
-  outputs:
-  - CPVolSpread.csv
 Cash.py:
   created: 'yes'
   outputs:
@@ -78,6 +66,22 @@ CashProd.py:
   created: 'yes'
   outputs:
   - CashProd.csv
+CBOperProf.py:
+  created: 'yes'
+  outputs:
+  - CBOperProf.csv
+CF.py:
+  created: 'yes'
+  outputs:
+  - CF.csv
+cfp.py:
+  created: 'yes'
+  outputs:
+  - cfp.csv
+ChangeInRecommendation.py:
+  created: 'no'
+  outputs:
+  - ChangeInRecommendation.csv
 ChAssetTurnover.py:
   created: 'yes'
   outputs:
@@ -114,10 +118,6 @@ ChTax.py:
   created: 'yes'
   outputs:
   - ChTax.csv
-ChangeInRecommendation.py:
-  created: 'no'
-  outputs:
-  - ChangeInRecommendation.csv
 CitationsRD.py:
   created: 'yes'
   outputs:
@@ -146,6 +146,10 @@ Coskewness.py:
   created: 'yes'
   outputs:
   - Coskewness.csv
+CPVolSpread.py:
+  created: 'yes'
+  outputs:
+  - CPVolSpread.csv
 CredRatDG.py:
   created: 'yes'
   outputs:
@@ -154,6 +158,10 @@ CustomerMomentum.py:
   created: 'yes'
   outputs:
   - CustomerMomentum.csv
+dCPVolSpread.py:
+  created: 'yes'
+  outputs:
+  - dCPVolSpread.csv
 DebtIssuance.py:
   created: 'yes'
   outputs:
@@ -206,6 +214,10 @@ DivYieldST.py:
   created: 'yes'
   outputs:
   - DivYieldST.csv
+dNoa.py:
+  created: 'yes'
+  outputs:
+  - dNoa.csv
 DolVol.py:
   created: 'yes'
   outputs:
@@ -214,14 +226,14 @@ DownRecomm.py:
   created: 'no'
   outputs:
   - DownRecomm.csv
-EP.py:
+dVolCall.py:
   created: 'yes'
   outputs:
-  - EP.csv
-EarnSupBig.py:
+  - dVolCall.csv
+dVolPut.py:
   created: 'yes'
   outputs:
-  - EarnSupBig.csv
+  - dVolPut.csv
 EarningsConsistency.py:
   created: 'no'
   outputs:
@@ -238,10 +250,18 @@ EarningsSurprise.py:
   created: 'no'
   outputs:
   - EarningsSurprise.csv
+EarnSupBig.py:
+  created: 'yes'
+  outputs:
+  - EarnSupBig.csv
 EntMult.py:
   created: 'yes'
   outputs:
   - EntMult.csv
+EP.py:
+  created: 'yes'
+  outputs:
+  - EP.csv
 EquityDuration.py:
   created: 'yes'
   outputs:
@@ -258,6 +278,10 @@ FEPS.py:
   created: 'no'
   outputs:
   - FEPS.csv
+fgr5yrLag.py:
+  created: 'yes'
+  outputs:
+  - fgr5yrLag.csv
 FirmAge.py:
   created: 'yes'
   outputs:
@@ -274,14 +298,14 @@ Frontier.py:
   created: 'yes'
   outputs:
   - Frontier.csv
-GP.py:
-  created: 'yes'
-  outputs:
-  - GP.csv
 Governance.py:
   created: 'yes'
   outputs:
   - Governance.csv
+GP.py:
+  created: 'yes'
+  outputs:
+  - GP.csv
 GrAdExp.py:
   created: 'no'
   outputs:
@@ -314,10 +338,10 @@ High52.py:
   created: 'no'
   outputs:
   - High52.csv
-IO_ShortInterest.py:
-  created: 'no'
+hire.py:
+  created: 'yes'
   outputs:
-  - IO_ShortInterest.csv
+  - hire.csv
 Illiquidity.py:
   created: 'yes'
   outputs:
@@ -338,34 +362,38 @@ IntMom.py:
   created: 'yes'
   outputs:
   - IntMom.csv
-InvGrowth.py:
-  created: 'yes'
-  outputs:
-  - InvGrowth.csv
-InvestPPEInv.py:
-  created: 'no'
-  outputs:
-  - InvestPPEInv.csv
 Investment.py:
   created: 'yes'
   outputs:
   - Investment.csv
-LRreversal.py:
+InvestPPEInv.py:
+  created: 'no'
+  outputs:
+  - InvestPPEInv.csv
+InvGrowth.py:
   created: 'yes'
   outputs:
-  - LRreversal.csv
+  - InvGrowth.csv
+IO_ShortInterest.py:
+  created: 'no'
+  outputs:
+  - IO_ShortInterest.csv
+iomom_cust.py:
+  created: 'yes'
+  outputs:
+  - iomom_cust.csv
+iomom_supp.py:
+  created: 'yes'
+  outputs:
+  - iomom_supp.csv
 Leverage.py:
   created: 'yes'
   outputs:
   - Leverage.csv
-MRreversal.py:
+LRreversal.py:
   created: 'yes'
   outputs:
-  - MRreversal.csv
-MS.py:
-  created: 'yes'
-  outputs:
-  - MS.csv
+  - LRreversal.csv
 MaxRet.py:
   created: 'yes'
   outputs:
@@ -434,10 +462,14 @@ MomVol.py:
   created: 'yes'
   outputs:
   - MomVol.csv
-NOA.py:
-  created: 'no'
+MRreversal.py:
+  created: 'yes'
   outputs:
-  - NOA.csv
+  - MRreversal.csv
+MS.py:
+  created: 'yes'
+  outputs:
+  - MS.csv
 NetDebtFinance.py:
   created: 'no'
   outputs:
@@ -454,18 +486,14 @@ NetPayoutYield.py:
   created: 'no'
   outputs:
   - NetPayoutYield.csv
+NOA.py:
+  created: 'no'
+  outputs:
+  - NOA.csv
 NumEarnIncrease.py:
   created: 'no'
   outputs:
   - NumEarnIncrease.csv
-OPLeverage.py:
-  created: 'yes'
-  outputs:
-  - OPLeverage.csv
-OScore.py:
-  created: 'yes'
-  outputs:
-  - OScore.csv
 OperProf.py:
   created: 'yes'
   outputs:
@@ -474,6 +502,10 @@ OperProfRD.py:
   created: 'yes'
   outputs:
   - OperProfRD.csv
+OPLeverage.py:
+  created: 'yes'
+  outputs:
+  - OPLeverage.csv
 OrderBacklog.py:
   created: 'yes'
   outputs:
@@ -482,10 +514,10 @@ OrderBacklogChg.py:
   created: 'yes'
   outputs:
   - OrderBacklogChg.csv
-PS.py:
+OScore.py:
   created: 'yes'
   outputs:
-  - PS.csv
+  - OScore.csv
 PatentsRD.py:
   created: 'yes'
   outputs:
@@ -510,6 +542,10 @@ ProbInformedTrading.py:
   created: 'yes'
   outputs:
   - ProbInformedTrading.csv
+PS.py:
+  created: 'yes'
+  outputs:
+  - PS.csv
 RD.py:
   created: 'yes'
   outputs:
@@ -518,6 +554,10 @@ RDAbility.py:
   created: 'yes'
   outputs:
   - RDAbility.csv
+RDcap.py:
+  created: 'yes'
+  outputs:
+  - RDcap.csv
 RDIPO.py:
   created: 'yes'
   outputs:
@@ -526,38 +566,42 @@ RDS.py:
   created: 'yes'
   outputs:
   - RDS.csv
-RDcap.py:
+realestate.py:
   created: 'yes'
   outputs:
-  - RDcap.csv
-REV6.py:
-  created: 'yes'
-  outputs:
-  - REV6.csv
+  - realestate.csv
 Recomm_ShortInterest.py:
   created: 'yes'
   outputs:
   - Recomm_ShortInterest.csv
+retConglomerate.py:
+  created: 'yes'
+  outputs:
+  - retConglomerate.csv
 ReturnSkew.py:
   created: 'yes'
   outputs:
   - ReturnSkew.csv
+REV6.py:
+  created: 'yes'
+  outputs:
+  - REV6.csv
 RevenueSurprise.py:
   created: 'no'
   outputs:
   - RevenueSurprise.csv
+roaq.py:
+  created: 'yes'
+  outputs:
+  - roaq.csv
 RoE.py:
   created: 'yes'
   outputs:
   - RoE.csv
-SP.py:
+sfe.py:
   created: 'yes'
   outputs:
-  - SP.csv
-STreversal.py:
-  created: 'yes'
-  outputs:
-  - STreversal.csv
+  - sfe.csv
 ShareIss1Y.py:
   created: 'no'
   outputs:
@@ -579,22 +623,46 @@ ShortInterest.py:
   created: 'no'
   outputs:
   - ShortInterest.csv
+sinAlgo.py:
+  created: 'yes'
+  outputs:
+  - sinAlgo.csv
 Size.py:
   created: 'yes'
   outputs:
   - Size.csv
+skew1.py:
+  created: 'yes'
+  outputs:
+  - skew1.csv
 SmileSlope.py:
   created: 'yes'
   outputs:
   - SmileSlope.csv
+SP.py:
+  created: 'yes'
+  outputs:
+  - SP.csv
 Spinoff.py:
   created: 'yes'
   outputs:
   - Spinoff.csv
+std_turn.py:
+  created: 'yes'
+  outputs:
+  - std_turn.csv
+STreversal.py:
+  created: 'yes'
+  outputs:
+  - STreversal.csv
 SurpriseRD.py:
   created: 'yes'
   outputs:
   - SurpriseRD.csv
+tang.py:
+  created: 'yes'
+  outputs:
+  - tang.csv
 Tax.py:
   created: 'yes'
   outputs:
@@ -659,6 +727,12 @@ ZZ1_FR_FRbook.py:
   outputs:
   - FR.csv
   - FRbook.csv
+ZZ1_grcapx_grcapx1y_grcapx3y.py:
+  created: 'no'
+  outputs:
+  - grcapx.csv
+  - grcapx3y.csv
+  - grcapx1y.csv
 ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py:
   created: 'yes'
   outputs:
@@ -676,6 +750,11 @@ ZZ1_OrgCap_OrgCapNoAdj.py:
   outputs:
   - OrgCap.csv
   - OrgCapNoAdj.csv
+ZZ1_ResidualMomentum6m_ResidualMomentum.py:
+  created: 'yes'
+  outputs:
+  - ResidualMomentum.csv
+  - ResidualMomentum6m.csv
 ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py:
   created: 'yes'
   outputs:
@@ -687,17 +766,6 @@ ZZ1_RIVolSpread.py:
   created: 'yes'
   outputs:
   - RIVolSpread.csv
-ZZ1_ResidualMomentum6m_ResidualMomentum.py:
-  created: 'yes'
-  outputs:
-  - ResidualMomentum.csv
-  - ResidualMomentum6m.csv
-ZZ1_grcapx_grcapx1y_grcapx3y.py:
-  created: 'no'
-  outputs:
-  - grcapx.csv
-  - grcapx3y.csv
-  - grcapx1y.csv
 ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py:
   created: 'yes'
   outputs:
@@ -717,6 +785,10 @@ ZZ2_BetaFP.py:
   created: 'no'
   outputs:
   - BetaFP.csv
+ZZ2_betaVIX.py:
+  created: 'no'
+  outputs:
+  - betaVIX.csv
 ZZ2_IdioVolAHT.py:
   created: 'yes'
   outputs:
@@ -727,75 +799,3 @@ ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py:
   - PriceDelaySlope.csv
   - PriceDelayRsq.csv
   - PriceDelayTstat.csv
-ZZ2_betaVIX.py:
-  created: 'no'
-  outputs:
-  - betaVIX.csv
-cfp.py:
-  created: 'yes'
-  outputs:
-  - cfp.csv
-dCPVolSpread.py:
-  created: 'yes'
-  outputs:
-  - dCPVolSpread.csv
-dNoa.py:
-  created: 'yes'
-  outputs:
-  - dNoa.csv
-dVolCall.py:
-  created: 'yes'
-  outputs:
-  - dVolCall.csv
-dVolPut.py:
-  created: 'yes'
-  outputs:
-  - dVolPut.csv
-fgr5yrLag.py:
-  created: 'yes'
-  outputs:
-  - fgr5yrLag.csv
-hire.py:
-  created: 'yes'
-  outputs:
-  - hire.csv
-iomom_cust.py:
-  created: 'yes'
-  outputs:
-  - iomom_cust.csv
-iomom_supp.py:
-  created: 'yes'
-  outputs:
-  - iomom_supp.csv
-realestate.py:
-  created: 'yes'
-  outputs:
-  - realestate.csv
-retConglomerate.py:
-  created: 'yes'
-  outputs:
-  - retConglomerate.csv
-roaq.py:
-  created: 'yes'
-  outputs:
-  - roaq.csv
-sfe.py:
-  created: 'yes'
-  outputs:
-  - sfe.csv
-sinAlgo.py:
-  created: 'yes'
-  outputs:
-  - sinAlgo.csv
-skew1.py:
-  created: 'yes'
-  outputs:
-  - skew1.csv
-std_turn.py:
-  created: 'yes'
-  outputs:
-  - std_turn.csv
-tang.py:
-  created: 'yes'
-  outputs:
-  - tang.csv
