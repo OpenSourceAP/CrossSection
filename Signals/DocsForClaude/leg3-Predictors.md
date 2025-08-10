@@ -11,6 +11,8 @@ How to interpret various variable types found in pyData/Intermediate/
     - Convert to Period dtype with monthly frequency (M)
 - datadate
     - Convert to Period dtype with monthly frequency (M)
+- yyyymm
+    - Convert to integer
 
 ## Requirements
 

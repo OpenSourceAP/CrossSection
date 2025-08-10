@@ -1,6 +1,6 @@
 # Predictor Validation Results
 
-**Generated**: 2025-08-10 10:45:25
+**Generated**: 2025-08-08 20:41:47
 
 **Configuration**:
 - PTH_PERCENTILE: 1.0
@@ -14,23 +14,14 @@
 | Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |
 |---------------------------|------------|----------|-----------|--------------|-------------------------|
 | Recomm_ShortInterest      | ✅         | ✅       | ❌ (87.39%)  | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
-| PatentsRD                 | ✅         | ✅       | ❌ (58.66%)  | ❌ (15.70%)   | ❌ (100th diff 1.0E+00)  |
 | retConglomerate           | ✅         | ✅       | ❌ (22.32%)  | ❌ (94.06%)   | ❌ (100th diff 4.0E+00)  |
 | Mom6mJunk                 | ✅         | ✅       | ❌ (18.09%)  | ❌ (0.28%)    | ❌ (100th diff 1.2E+00)  |
 | Coskewness                | ✅         | ✅       | ❌ (8.84%)   | ❌ (99.36%)   | ❌ (100th diff 4.5E+00)  |
-| RDAbility                 | ✅         | ✅       | ❌ (4.89%)   | ❌ (95.73%)   | ❌ (100th diff INF)      |
+| RDAbility                 | ✅         | ✅       | ❌ (4.88%)   | ❌ (95.73%)   | ❌ (100th diff NAN)      |
 | RIO_Volatility            | ✅         | ✅       | ❌ (4.40%)   | ❌ (26.58%)   | ❌ (100th diff 4.0E+00)  |
-| EarnSupBig                | ✅         | ✅       | ❌ (3.49%)   | ❌ (1.89%)    | ❌ (100th diff 3.3E+15)  |
-| IndRetBig                 | ✅         | ✅       | ❌ (3.47%)   | ❌ (87.02%)   | ❌ (100th diff 1.6E+00)  |
 | ResidualMomentum          | ✅         | ✅       | ❌ (2.40%)   | ❌ (0.71%)    | ❌ (100th diff 4.4E-02)  |
-| FirmAgeMom                | ✅         | ✅       | ❌ (1.85%)   | ❌ (0.39%)    | ❌ (100th diff 2.0E+00)  |
 | MomRev                    | ✅         | ✅       | ❌ (1.26%)   | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
-| IntanBM                   | ✅         | ✅       | ❌ (0.93%)   | ❌ (15.49%)   | ❌ (100th diff 1.8E-01)  |
-| IntanSP                   | ✅         | ✅       | ❌ (0.93%)   | ❌ (7.71%)    | ❌ (100th diff 5.8E+00)  |
-| IntanCFP                  | ✅         | ✅       | ❌ (0.93%)   | ❌ (15.60%)   | ❌ (100th diff 2.9E+00)  |
-| IntanEP                   | ✅         | ✅       | ❌ (0.93%)   | ❌ (13.83%)   | ❌ (100th diff 1.9E+00)  |
 | CPVolSpread               | ✅         | ✅       | ❌ (0.74%)   | ✅ (0.05%)    | ❌ (100th diff 5.3E-01)  |
-| CompEquIss                | ✅         | ✅       | ❌ (0.73%)   | ✅ (0.00%)    | ❌ (100th diff 1.4E-04)  |
 | OptionVolume2             | ✅         | ✅       | ❌ (0.72%)   | ✅ (0.05%)    | ❌ (100th diff 1.2E+02)  |
 | OptionVolume1             | ✅         | ✅       | ❌ (0.72%)   | ✅ (0.04%)    | ❌ (100th diff 5.4E+03)  |
 | dVolPut                   | ✅         | ✅       | ❌ (0.71%)   | ✅ (0.04%)    | ❌ (100th diff 1.6E+00)  |
@@ -41,6 +32,10 @@
 | RIVolSpread               | ✅         | ✅       | ❌ (0.71%)   | ✅ (0.05%)    | ❌ (100th diff 8.3E-01)  |
 | AbnormalAccruals          | ✅         | ✅       | ❌ (0.65%)   | ❌ (49.01%)   | ❌ (100th diff 3.7E+00)  |
 | BetaFP                    | ✅         | ✅       | ❌ (0.54%)   | ❌ (5.98%)    | ❌ (100th diff NAN)      |
+| IntanBM                   | ✅         | ✅       | ❌ (0.39%)   | ❌ (64.55%)   | ❌ (100th diff 4.0E+00)  |
+| IntanSP                   | ✅         | ✅       | ❌ (0.31%)   | ❌ (41.46%)   | ❌ (100th diff 1.1E+01)  |
+| IntanCFP                  | ✅         | ✅       | ❌ (0.31%)   | ❌ (45.82%)   | ❌ (100th diff 9.6E+00)  |
+| IntanEP                   | ✅         | ✅       | ❌ (0.31%)   | ❌ (42.60%)   | ❌ (100th diff 1.5E+01)  |
 | PredictedFE               | ✅         | ✅       | ❌ (0.27%)   | ❌ (95.81%)   | ❌ (100th diff 5.1E-02)  |
 | RIO_Disp                  | ✅         | ✅       | ❌ (0.24%)   | ❌ (6.72%)    | ❌ (100th diff 4.0E+00)  |
 | ConsRecomm                | ✅         | ✅       | ❌ (0.23%)   | ✅ (0.01%)    | ❌ (100th diff 1.0E+00)  |
@@ -53,12 +48,12 @@
 | RIO_Turnover              | ✅         | ✅       | ❌ (0.15%)   | ❌ (23.71%)   | ❌ (100th diff 4.0E+00)  |
 | ExclExp                   | ✅         | ✅       | ❌ (0.12%)   | ❌ (0.11%)    | ❌ (100th diff 3.7E+00)  |
 | ChNAnalyst                | ✅         | ✅       | ❌ (0.11%)   | ✅ (0.01%)    | ❌ (100th diff 1.0E+00)  |
+| MS                        | ✅         | ✅       | ❌ (0.07%)   | ❌ (63.49%)   | ❌ (100th diff 5.0E+00)  |
 | TrendFactor               | ✅         | ✅       | ❌ (0.07%)   | ❌ (98.42%)   | ❌ (100th diff 5.4E+00)  |
 | OScore                    | ✅         | ✅       | ❌ (0.04%)   | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
 | CustomerMomentum          | ✅         | ✅       | ❌ (0.04%)   | ✅ (0.01%)    | ❌ (100th diff 2.0E-01)  |
 | std_turn                  | ✅         | ✅       | ❌ (0.04%)   | ✅ (0.00%)    | ❌ (100th diff 1.9E-05)  |
 | ShareVol                  | ✅         | ✅       | ❌ (0.03%)   | ❌ (14.38%)   | ❌ (100th diff 1.0E+00)  |
-| OrgCap                    | ✅         | ✅       | ❌ (0.02%)   | ❌ (91.02%)   | ❌ (100th diff 5.1E+00)  |
 | VolSD                     | ✅         | ✅       | ❌ (0.02%)   | ✅ (0.01%)    | ❌ (100th diff 3.0E+01)  |
 | tang                      | ✅         | ✅       | ❌ (0.02%)   | ✅ (0.00%)    | ❌ (100th diff 2.4E-03)  |
 | VolMkt                    | ✅         | ✅       | ❌ (0.02%)   | ✅ (0.01%)    | ❌ (100th diff 5.3E+00)  |
@@ -67,22 +62,24 @@
 | MomOffSeason11YrPlus      | ✅         | ✅       | ❌ (0.00%)   | ❌ (24.78%)   | ❌ (100th diff 4.4E+00)  |
 | MomVol                    | ✅         | ✅       | ❌ (0.00%)   | ❌ (0.42%)    | ❌ (100th diff 1.0E+00)  |
 | ChTax                     | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ❌ (100th diff 6.9E-01)  |
-| PS                        | ✅         | ✅       | ❌ (0.00%)   | ❌ (17.90%)   | ❌ (100th diff 5.0E+00)  |
+| PS                        | ✅         | ✅       | ❌ (0.00%)   | ❌ (17.88%)   | ❌ (100th diff 5.0E+00)  |
 | InvGrowth                 | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ❌ (100th diff 3.6E-01)  |
 | EntMult                   | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ❌ (100th diff 2.2E+00)  |
 | DivYieldST                | ✅         | ✅       | ❌ (0.00%)   | ❌ (0.13%)    | ❌ (100th diff 3.0E+00)  |
 | DivSeason                 | ✅         | ✅       | ❌ (0.00%)   | ❌ (5.21%)    | ❌ (100th diff 1.0E+00)  |
 | NetDebtPrice              | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ❌ (100th diff 4.2E-02)  |
+| BetaTailRisk              | ✅         | ✅       | ✅           | ❌ (99.65%)   | ❌ (100th diff 1.1E+01)  |
+| CompEquIss                | ✅         | ✅       | ✅           | ❌ (97.72%)   | ❌ (100th diff 2.0E+03)  |
 | Mom12mOffSeason           | ✅         | ✅       | ✅           | ❌ (91.88%)   | ❌ (100th diff 2.4E+00)  |
 | Frontier                  | ✅         | ✅       | ✅           | ❌ (84.22%)   | ❌ (100th diff 6.0E+00)  |
+| BetaLiquidityPS           | ✅         | ✅       | ✅           | ❌ (80.82%)   | ❌ (100th diff 6.4E+00)  |
+| Beta                      | ✅         | ✅       | ✅           | ❌ (70.71%)   | ❌ (100th diff 7.3E+00)  |
 | betaVIX                   | ✅         | ✅       | ✅           | ❌ (69.59%)   | ❌ (100th diff 5.7E-01)  |
-| MS                        | ✅         | ✅       | ✅           | ❌ (63.45%)   | ❌ (100th diff 5.0E+00)  |
 | MomOffSeason06YrPlus      | ✅         | ✅       | ✅           | ❌ (24.78%)   | ❌ (100th diff 1.1E+01)  |
 | MomOffSeason              | ✅         | ✅       | ✅           | ❌ (21.89%)   | ❌ (100th diff 4.1E+00)  |
 | PriceDelayTstat           | ✅         | ✅       | ✅           | ❌ (19.38%)   | ❌ (100th diff 1.1E+01)  |
 | MomOffSeason16YrPlus      | ✅         | ✅       | ✅           | ❌ (14.06%)   | ❌ (100th diff 2.2E-01)  |
 | IdioVolAHT                | ✅         | ✅       | ✅           | ❌ (8.54%)    | ❌ (100th diff NAN)      |
-| BetaTailRisk              | ✅         | ✅       | ✅           | ❌ (4.15%)    | ❌ (100th diff 2.0E-01)  |
 | IndMom                    | ✅         | ✅       | ✅           | ❌ (3.28%)    | ❌ (100th diff 1.3E+00)  |
 | HerfAsset                 | ✅         | ✅       | ✅           | ❌ (1.44%)    | ❌ (100th diff 6.4E-01)  |
 | Tax                       | ✅         | ✅       | ✅           | ❌ (1.24%)    | ❌ (100th diff 2.0E+03)  |
@@ -92,7 +89,6 @@
 | CredRatDG                 | ✅         | ✅       | ✅           | ❌ (0.94%)    | ❌ (100th diff 1.0E+00)  |
 | Herf                      | ✅         | ✅       | ✅           | ❌ (0.79%)    | ❌ (100th diff 2.2E+00)  |
 | PriceDelaySlope           | ✅         | ✅       | ✅           | ❌ (0.58%)    | ❌ (100th diff 1.6E+04)  |
-| BetaLiquidityPS           | ✅         | ✅       | ✅           | ❌ (0.31%)    | ❌ (100th diff 4.7E-02)  |
 | REV6                      | ✅         | ✅       | ✅           | ❌ (0.17%)    | ❌ (100th diff 8.4E+03)  |
 | MRreversal                | ✅         | ✅       | ✅           | ❌ (0.15%)    | ❌ (100th diff 1.2E+01)  |
 | realestate                | ✅         | ✅       | ✅           | ❌ (0.14%)    | ❌ (100th diff INF)      |
@@ -123,7 +119,6 @@
 | ChNWC                     | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 4.8E-01)  |
 | DivOmit                   | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 1.0E+00)  |
 | OperProfRD                | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 4.4E-02)  |
-| OPLeverage                | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 3.1E-01)  |
 | XFIN                      | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 8.8E-02)  |
 | CitationsRD               | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 1.0E+00)  |
 | ChInv                     | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 2.0E-02)  |
@@ -158,15 +153,12 @@
 | Leverage                  | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 5.1E-02)  |
 | VarCF                     | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 1.8E-02)  |
 | SP                        | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 9.2E-03)  |
-| FR                        | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 2.5E-05)  |
 | zerotrade12M              | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 1.3E-05)  |
 | zerotrade6M               | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 8.8E-06)  |
 | EP                        | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 8.7E-06)  |
 | Mom12m                    | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 4.3E-06)  |
-| Activism2                 | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 4.0E-06)  |
 | AdExp                     | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 3.8E-06)  |
 | OrderBacklog              | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 2.7E-06)  |
-| Beta                      | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 2.2E-06)  |
 | IntMom                    | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 2.2E-06)  |
 | DelBreadth                | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 2.0E-06)  |
 | Mom6m                     | ✅         | ✅       | ✅           | ✅ (0.00%)    | ❌ (100th diff 1.7E-06)  |
@@ -187,19 +179,23 @@
 | ReturnSkew                | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 1.6E-14)  |
 | RealizedVol               | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 3.6E-15)  |
 | AccrualsBM                | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
-| Activism1                 | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
 | DebtIssuance              | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
 | FirmAge                   | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
 | Governance                | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
 | MaxRet                    | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
 | Spinoff                   | ✅         | ✅       | ✅           | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
+| Activism1                 | ❌         | NA      | NA          | NA           | NA                      |
+| Activism2                 | ❌         | NA      | NA          | NA           | NA                      |
 | ChangeInRecommendation    | ❌         | NA      | NA          | NA           | NA                      |
 | DownRecomm                | ❌         | NA      | NA          | NA           | NA                      |
+| EarnSupBig                | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsConsistency       | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsForecastDisparity | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsStreak            | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsSurprise          | ❌         | NA      | NA          | NA           | NA                      |
 | FEPS                      | ❌         | NA      | NA          | NA           | NA                      |
+| FR                        | ❌         | NA      | NA          | NA           | NA                      |
+| FirmAgeMom                | ❌         | NA      | NA          | NA           | NA                      |
 | ForecastDispersion        | ❌         | NA      | NA          | NA           | NA                      |
 | GrAdExp                   | ❌         | NA      | NA          | NA           | NA                      |
 | GrLTNOA                   | ❌         | NA      | NA          | NA           | NA                      |
@@ -207,12 +203,16 @@
 | GrSaleToGrOverhead        | ❌         | NA      | NA          | NA           | NA                      |
 | High52                    | ❌         | NA      | NA          | NA           | NA                      |
 | IO_ShortInterest          | ❌         | NA      | NA          | NA           | NA                      |
+| IndRetBig                 | ❌         | NA      | NA          | NA           | NA                      |
 | InvestPPEInv              | ❌         | NA      | NA          | NA           | NA                      |
 | NOA                       | ❌         | NA      | NA          | NA           | NA                      |
 | NetDebtFinance            | ❌         | NA      | NA          | NA           | NA                      |
 | NetEquityFinance          | ❌         | NA      | NA          | NA           | NA                      |
 | NetPayoutYield            | ❌         | NA      | NA          | NA           | NA                      |
 | NumEarnIncrease           | ❌         | NA      | NA          | NA           | NA                      |
+| OPLeverage                | ❌         | NA      | NA          | NA           | NA                      |
+| OrgCap                    | ❌         | NA      | NA          | NA           | NA                      |
+| PatentsRD                 | ❌         | NA      | NA          | NA           | NA                      |
 | PayoutYield               | ❌         | NA      | NA          | NA           | NA                      |
 | RevenueSurprise           | ❌         | NA      | NA          | NA           | NA                      |
 | ShareIss1Y                | ❌         | NA      | NA          | NA           | NA                      |
@@ -223,8 +223,8 @@
 | grcapx                    | ❌         | NA      | NA          | NA           | NA                      |
 | grcapx3y                  | ❌         | NA      | NA          | NA           | NA                      |
 
-**Overall**: 21/180 available predictors passed validation
-**Python CSVs**: 180/209 predictors have Python implementation
+**Overall**: 20/171 available predictors passed validation
+**Python CSVs**: 171/209 predictors have Python implementation
 
 ## Detailed Results
 
@@ -480,60 +480,6 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 0/220066 (0.000%)
 - Stata standard deviation: 5.00e-01
-
----
-
-### Activism1
-
-**Status**: ✅ PASSED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ✅ PASSED
-- Test 4 - Precision2 check: ✅ PASSED
-
-**Columns**: ['Activism1']
-
-**Observations**:
-- Stata:  108,733
-- Python: 108,768
-- Common: 108,733
-
-**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 0.00e+00 (tolerance: < 1.00e-06)
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/108733 (0.000%)
-- Stata standard deviation: 2.72e+00
-
----
-
-### Activism2
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ✅ PASSED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['Activism2']
-
-**Observations**:
-- Stata:  30,170
-- Python: 30,170
-- Common: 30,170
-
-**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 4.00e-06 (tolerance: < 1.00e-06)
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/30170 (0.000%)
-- Stata standard deviation: 1.26e+01
 
 ---
 
@@ -985,23 +931,53 @@
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
 - Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ✅ PASSED
+- Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
 **Columns**: ['Beta']
 
 **Observations**:
 - Stata:  4,285,574
-- Python: 4,353,773
+- Python: 5,072,338
 - Common: 4,285,574
 
-**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 70.708% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 2.25e-06 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 7.27e+00 (tolerance: < 1.00e-06)
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/4285574 (0.000%)
+- Num observations with std_diff >= TOL_DIFF_1: 3030258/4285574 (70.708%)
 - Stata standard deviation: 7.46e-01
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm    python     stata      diff
+0   10028  202412  0.980554  0.935156  0.045397
+1   10032  202412  0.772370  0.760410  0.011959
+2   10044  202412  1.084690  1.109201 -0.024511
+3   10065  202412  0.737840  0.728035  0.009805
+4   10066  202412  1.299571  1.215831  0.083739
+5   10104  202412  0.603324  0.579425  0.023899
+6   10107  202412  0.519840  0.501399  0.018441
+7   10158  202412  1.704453  1.684731  0.019721
+8   10200  202412  0.894190  0.883667  0.010523
+9   10220  202412  0.502114  0.489858  0.012256
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm     python      stata      diff
+0   92012  200903  14.727441  22.000491 -7.273050
+1   13643  201406   3.392522  -2.584796  5.977318
+2   13621  201408  -0.638886  -5.888610  5.249724
+3   13621  201407  -0.979878  -5.988304  5.008426
+4   13643  201408   3.435966  -1.087147  4.523113
+5   13643  201407   3.208480  -1.124818  4.333299
+6   16067  201801   2.440643   6.633473 -4.192830
+7   80471  199605  -0.152592  -4.186435  4.033843
+8   80471  199604  -0.460823  -4.390349  3.929526
+9   80471  199603  -1.046208  -4.770010  3.723802
+```
 
 ---
 
@@ -1091,45 +1067,45 @@
 
 **Observations**:
 - Stata:  3,423,856
-- Python: 3,479,410
+- Python: 4,574,505
 - Common: 3,423,856
 
-**Precision1**: 0.309% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 80.820% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 4.66e-02 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 6.35e+00 (tolerance: < 1.00e-06)
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 10596/3423856 (0.309%)
+- Num observations with std_diff >= TOL_DIFF_1: 2767149/3423856 (80.820%)
 - Stata standard deviation: 4.52e-01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   12527  202412  3.114748  3.110062  0.004685
-1   13812  202412 -0.279861 -0.285009  0.005148
-2   14280  202412 -0.195891 -0.200836  0.004945
-3   14328  202412  2.075094  2.067611  0.007482
-4   14720  202412 -0.783082 -0.788315  0.005233
-5   14791  202412 -2.796831 -2.804661  0.007830
-6   14813  202412  0.574480  0.568289  0.006190
-7   15172  202412  0.858918  0.854361  0.004557
-8   15489  202412  0.114074  0.101456  0.012619
-9   15775  202412  0.905586  0.899805  0.005782
+0   10026  202412  0.019552  0.013834  0.005717
+1   10028  202412 -0.294992 -0.258921 -0.036071
+2   10032  202412  0.140774  0.146161 -0.005386
+3   10044  202412  0.356851  0.337279  0.019572
+4   10066  202412  0.280660  0.344168 -0.063507
+5   10104  202412 -0.050344 -0.041437 -0.008906
+6   10107  202412  0.015080  0.021103 -0.006022
+7   10113  202412 -0.017947 -0.022844  0.004897
+8   10138  202412  0.023165  0.013537  0.009628
+9   10145  202412 -0.074239 -0.078817  0.004577
 ```
 
 **Largest Differences**:
 ```
-   permno  yyyymm    python     stata      diff
-0   48072  202311  2.920068  2.873500  0.046568
-1   89301  202311  1.966508  1.923020  0.043488
-2   48072  202310  3.102564  3.060607  0.041957
-3   48072  202403  4.981330  4.941999  0.039331
-4   48072  202402  4.975391  4.936378  0.039014
-5   89301  202310  2.094525  2.055533  0.038992
-6   48072  202401  4.069945  4.032388  0.037557
-7   89301  202403  3.828060  3.791143  0.036917
-8   48072  202312  4.056726  4.019963  0.036763
-9   89301  202402  3.823554  3.786863  0.036692
+   permno  yyyymm     python      stata      diff
+0   13755  202011 -12.452115 -18.804134  6.352019
+1   13755  202101 -13.016154 -19.151345  6.135191
+2   13755  202012 -12.366073 -18.474695  6.108622
+3   10349  198309  10.920025  15.680155 -4.760130
+4   16400  201910 -14.135623 -18.708413  4.572790
+5   16400  202002 -13.947204 -18.496625  4.549421
+6   13755  202102 -12.151586 -16.677923  4.526337
+7   13755  202103 -12.388607 -16.886392  4.497785
+8   16400  201911 -14.338342 -18.750074  4.411732
+9   16400  201912 -14.449057 -18.754869  4.305813
 ```
 
 ---
@@ -1148,45 +1124,45 @@
 
 **Observations**:
 - Stata:  2,292,350
-- Python: 2,332,084
+- Python: 3,839,453
 - Common: 2,292,350
 
-**Precision1**: 4.149% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 99.651% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 1.98e-01 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 1.10e+01 (tolerance: < 1.00e-06)
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 95107/2292350 (4.149%)
+- Num observations with std_diff >= TOL_DIFF_1: 2284350/2292350 (99.651%)
 - Stata standard deviation: 5.11e-01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   16099  202412  0.288367  0.293937 -0.005571
-1   16400  202412  1.372777  1.339924  0.032854
-2   18148  202412  0.111011  0.116482 -0.005471
-3   77437  202412  1.854679  1.846069  0.008610
-4   84411  202412  0.911352  0.901888  0.009464
-5   89029  202412  0.608437  0.614334 -0.005897
-6   89169  202412  1.567852  1.606029 -0.038177
-7   16099  202411  0.323722  0.329289 -0.005567
-8   16400  202411  1.385534  1.352590  0.032944
-9   18148  202411  0.147289  0.152762 -0.005473
+0   10026  202412  0.016994  0.324815 -0.307821
+1   10028  202412  0.073846 -0.427242  0.501088
+2   10032  202412  0.035983  0.523027 -0.487044
+3   10044  202412 -0.009575  0.422344 -0.431918
+4   10066  202412 -0.092147  0.979996 -1.072143
+5   10104  202412  0.036456  0.434910 -0.398454
+6   10107  202412  0.051836  0.453598 -0.401762
+7   10138  202412  0.024252  0.651162 -0.626910
+8   10145  202412  0.028329  0.496783 -0.468454
+9   10158  202412  0.057916  0.560077 -0.502161
 ```
 
 **Largest Differences**:
 ```
-   permno  yyyymm    python     stata      diff
-0   78050  199811 -0.557545 -0.755131  0.197586
-1   78050  199812 -0.396312 -0.593467  0.197155
-2   78050  199901 -0.158898 -0.349701  0.190803
-3   78050  199902 -0.069994 -0.254714  0.184720
-4   78050  199903  0.069028 -0.111589  0.180616
-5   78050  199904  0.224322  0.047509  0.176813
-6   78050  199905  0.378144  0.209011  0.169132
-7   78050  199906  0.461683  0.294377  0.167306
-8   78050  199907  0.347299  0.188068  0.159231
-9   78050  199908  0.386259  0.234870  0.151388
+   permno  yyyymm    python      stata       diff
+0   79006  200002  0.274322 -10.737284  11.011607
+1   79006  200003  0.261645  -8.409476   8.671121
+2   15489  202405  0.616246   8.570222  -7.953976
+3   15489  202407  0.597969   8.296404  -7.698435
+4   15489  202408  0.596744   8.289177  -7.692433
+5   15489  202406  0.589828   8.276302  -7.686475
+6   15489  202409  0.584055   8.143326  -7.559271
+7   15489  202410  0.577615   8.004680  -7.427066
+8   15489  202411  0.574300   7.718734  -7.144434
+9   15489  202412  0.567009   7.672620  -7.105611
 ```
 
 ---
@@ -2088,39 +2064,54 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 15840 Stata observations)
-- Test 3 - Precision1 check: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
 **Columns**: ['CompEquIss']
 
 **Observations**:
 - Stata:  2,172,395
-- Python: 2,581,962
-- Common: 2,156,555
+- Python: 4,043,273
+- Common: 2,172,395
 
-**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 97.716% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 1.37e-04 (tolerance: < 1.00e-06)
-
-**Missing Observations Sample**:
-```
- index  permno  yyyymm  CompEquIss
-     0   10001  199101   -0.637633
-     1   10002  199101   -0.288392
-     2   10003  199101   -1.116252
-     3   10005  199101   -0.192925
-     4   10009  199101    0.365490
-     5   10010  199101   -2.381285
-     6   10011  199306    0.171165
-     7   10016  199101   -0.109924
-     8   10018  199101   -0.670954
-     9   10019  199101   -0.276343
-```
+**Precision2**: 100th percentile diff = 1.96e+03 (tolerance: < 1.00e-06)
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/2156555 (0.000%)
-- Stata standard deviation: 3.03e+00
+- Num observations with std_diff >= TOL_DIFF_1: 2122775/2172395 (97.716%)
+- Stata standard deviation: 3.02e+00
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm    python     stata      diff
+0   10026  202412 -0.142015 -0.061804 -0.080211
+1   10032  202412  0.633364 -0.400428  1.033791
+2   10044  202412 -1.098442 -0.365838 -0.732604
+3   10104  202412  1.008915 -1.387315  2.396229
+4   10107  202412  0.959713 -0.835437  1.795150
+5   10138  202412 -0.131627 -0.259832  0.128205
+6   10145  202412  0.149622 -0.263066  0.412688
+7   10158  202412  0.464821  0.123109  0.341712
+8   10200  202412  0.515279 -0.040833  0.556112
+9   10220  202412  0.543835 -0.374860  0.918696
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm    python       stata         diff
+0   69681  200002  7.333129 -1948.37740  1955.710529
+1   69681  200003  7.054681 -1473.09190  1480.146581
+2   69681  200004  6.438723  -792.56262   799.001343
+3   69681  200006  6.340743  -717.99396   724.334703
+4   69681  200001  6.238836  -647.82153   654.060366
+5   69681  200005  5.950148  -483.85089   489.801038
+6   80114  199904  6.372611  -450.23285   456.605461
+7   77103  200002  6.568435  -341.93201   348.500445
+8   69681  199912  5.567645  -328.23318   333.800825
+9   80114  199906  6.011644  -311.94040   317.952044
+```
 
 ---
 
@@ -3375,78 +3366,6 @@
 
 ---
 
-### EarnSupBig
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 81189 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['EarnSupBig']
-
-**Observations**:
-- Stata:  2,327,518
-- Python: 2,546,840
-- Common: 2,246,329
-
-**Precision1**: 1.889% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 3.34e+15 (tolerance: < 1.00e-06)
-
-**Missing Observations Sample**:
-```
- index  permno  yyyymm  EarnSupBig
-     0   10002  200811   -0.755143
-     1   10002  200812   -1.854773
-     2   10003  198806   -0.001391
-     3   10003  198807   -0.060459
-     4   10003  198808   -0.047608
-     5   10006  197804   -2.586295
-     6   10006  197805   -2.586295
-     7   10006  197806    0.224887
-     8   10006  197807    0.224887
-     9   10006  197808    0.224887
-```
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 42444/2246329 (1.889%)
-- Stata standard deviation: 4.72e+12
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm        python     stata          diff
-0   13599  202405  1.277003e+12  0.003646  1.277003e+12
-1   13622  202405  1.277003e+12 -0.071999  1.277003e+12
-2   14033  202405  1.277003e+12 -0.071999  1.277003e+12
-3   14221  202405  1.277003e+12  0.003646  1.277003e+12
-4   14296  202405  1.277003e+12  0.003646  1.277003e+12
-5   14339  202405  1.277003e+12  0.003646  1.277003e+12
-6   14689  202405  1.277003e+12 -0.071999  1.277003e+12
-7   15028  202405  1.277003e+12  0.003646  1.277003e+12
-8   15802  202405  1.277003e+12  0.003646  1.277003e+12
-9   15906  202405  1.277003e+12  0.003646  1.277003e+12
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm        python     stata          diff
-0   10276  196309  3.340214e+15 -1.647278  3.340214e+15
-1   10479  196309  3.340214e+15 -1.647278  3.340214e+15
-2   10516  196309  3.340214e+15 -1.647278  3.340214e+15
-3   11543  196309  3.340214e+15 -1.647278  3.340214e+15
-4   12191  196309  3.340214e+15 -1.647278  3.340214e+15
-5   13565  196309  3.340214e+15 -1.647278  3.340214e+15
-6   13805  196309  3.340214e+15 -1.647278  3.340214e+15
-7   14488  196309  3.340214e+15 -1.647278  3.340214e+15
-8   15448  196309  3.340214e+15 -1.647278  3.340214e+15
-9   15843  196309  3.340214e+15 -1.647278  3.340214e+15
-```
-
----
-
 ### EntMult
 
 **Status**: ❌ FAILED
@@ -3642,33 +3561,6 @@
 
 ---
 
-### FR
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ✅ PASSED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['FR']
-
-**Observations**:
-- Stata:  683,893
-- Python: 683,893
-- Common: 683,893
-
-**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 2.46e-05 (tolerance: < 1.00e-06)
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/683893 (0.000%)
-- Stata standard deviation: 7.74e-01
-
----
-
 ### FirmAge
 
 **Status**: ✅ PASSED
@@ -3693,78 +3585,6 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 0/4045796 (0.000%)
 - Stata standard deviation: 1.70e+02
-
----
-
-### FirmAgeMom
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 10169 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['FirmAgeMom']
-
-**Observations**:
-- Stata:  550,434
-- Python: 570,774
-- Common: 540,265
-
-**Precision1**: 0.388% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 2.03e+00 (tolerance: < 1.00e-06)
-
-**Missing Observations Sample**:
-```
- index  permno  yyyymm  FirmAgeMom
-     0   10050  197411   -0.292222
-     1   10058  197506    0.000000
-     2   10058  197507    0.000000
-     3   10058  197508    0.000000
-     4   10058  197509    0.000000
-     5   10058  197510    0.000000
-     6   10058  197511    0.000000
-     7   10161  192706    0.005882
-     8   10189  198003   -0.095845
-     9   10284  192801    0.204752
-```
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 2098/540265 (0.388%)
-- Stata standard deviation: 3.57e-01
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm    python     stata      diff
-0   15266  201805  0.007699 -0.000955  0.008654
-1   15266  201804  0.028985  0.025023  0.003962
-2   15266  201803  0.007218  0.011110 -0.003893
-3   15266  201802  0.012596  0.005774  0.006822
-4   15280  201703  0.365385  0.352381  0.013003
-5   15266  201702  0.032934  0.024753  0.008182
-6   15280  201702 -0.020187 -0.043269  0.023082
-7   15280  201701 -0.074111 -0.052684 -0.021426
-8   15525  201701  0.011735  0.019014 -0.007279
-9   15280  201612 -0.042553 -0.047161  0.004608
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm    python     stata      diff
-0   22270  198106  2.029051  0.000000  2.029051
-1   22270  198108  1.740113 -0.237288  1.977401
-2   22270  198105  1.914746  0.000000  1.914746
-3   22270  198107  1.506913 -0.237288  1.744201
-4   11236  192901  1.281258  0.000000  1.281258
-5   11236  192904  1.221746  0.000000  1.221746
-6   47846  197905  1.000000  0.000000  1.000000
-7   20271  194207  1.428178  0.468201  0.959977
-8   18577  193207 -0.019230  0.888889 -0.908119
-9   17865  193211  0.118470  1.007253 -0.888784
-```
 
 ---
 
@@ -4278,78 +4098,6 @@
 
 ---
 
-### IndRetBig
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 90494 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['IndRetBig']
-
-**Observations**:
-- Stata:  2,607,795
-- Python: 2,836,040
-- Common: 2,517,301
-
-**Precision1**: 87.021% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 1.64e+00 (tolerance: < 1.00e-06)
-
-**Missing Observations Sample**:
-```
- index  permno  yyyymm  IndRetBig
-     0   10002  200811  -0.079728
-     1   10002  200812   0.025570
-     2   10003  198806   0.066902
-     3   10003  198807   0.015674
-     4   10003  198808  -0.017219
-     5   10006  192909   0.010343
-     6   10006  192910  -0.110933
-     7   10006  192911  -0.040963
-     8   10006  192912   0.011940
-     9   10006  193001   0.025242
-```
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 2190593/2517301 (87.021%)
-- Stata standard deviation: 7.04e-02
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm    python     stata      diff
-0   10026  202412 -0.048540 -0.054841  0.006301
-1   10032  202412 -0.040827 -0.032256 -0.008571
-2   10044  202412 -0.048540 -0.054841  0.006301
-3   10066  202412 -0.053247 -0.040106 -0.013141
-4   10158  202412 -0.143372 -0.146776  0.003404
-5   10252  202412 -0.085347 -0.080813 -0.004535
-6   10253  202412 -0.053247 -0.040106 -0.013141
-7   10258  202412 -0.065220 -0.057755 -0.007465
-8   10308  202412 -0.085347 -0.080813 -0.004535
-9   10333  202412 -0.065220 -0.057755 -0.007465
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm   python     stata      diff
-0   11332  193909  0.24214  1.883087 -1.640946
-1   11797  193909  0.24214  1.883087 -1.640946
-2   13872  193909  0.24214  1.883087 -1.640946
-3   15173  193909  0.24214  1.883087 -1.640946
-4   17398  193909  0.24214  1.883087 -1.640946
-5   18833  193909  0.24214  1.883087 -1.640946
-6   20028  193909  0.24214  1.883087 -1.640946
-7   20044  193909  0.24214  1.883087 -1.640946
-8   75471  193909  0.24214  1.883087 -1.640946
-9   16053  193305  1.77746  0.330448  1.447012
-```
-
----
-
 ### IntMom
 
 **Status**: ❌ FAILED
@@ -4383,7 +4131,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 16090 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 6708 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -4391,60 +4139,60 @@
 
 **Observations**:
 - Stata:  1,728,575
-- Python: 1,712,486
-- Common: 1,712,485
+- Python: 1,745,102
+- Common: 1,721,867
 
-**Precision1**: 15.489% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 64.552% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 1.85e-01 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 3.98e+00 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm   IntanBM
-     0   10012  200010  0.435589
-     1   10012  200011  0.043656
-     2   10012  200012 -0.200416
-     3   10012  200101  0.159326
-     4   10012  200102 -0.219190
-     5   10012  200103 -0.386991
-     6   10012  200104 -0.318972
-     7   10032  200504 -0.693991
-     8   10032  200505 -0.650467
-     9   10032  200506 -0.700650
+     0   10031  198906 -1.452560
+     1   10051  199203  3.137398
+     2   10051  199204  3.482056
+     3   10051  199205  3.315531
+     4   10066  198911 -0.067446
+     5   10082  199402  1.767595
+     6   10082  199403  2.291165
+     7   10082  199404  2.240274
+     8   10082  199405  1.983207
+     9   10082  199406  1.555254
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 265248/1712485 (15.489%)
+- Num observations with std_diff >= TOL_DIFF_1: 1111500/1721867 (64.552%)
 - Stata standard deviation: 7.49e-01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   10028  202412  0.851390  0.863343 -0.011953
-1   10107  202412  0.892323  0.902072 -0.009748
-2   10200  202412  0.001108  0.008795 -0.007687
-3   10220  202412  0.340137  0.351676 -0.011539
-4   10333  202412 -0.506140 -0.496696 -0.009443
-5   10463  202412  0.360981  0.370219 -0.009238
-6   10696  202412 -0.681702 -0.667270 -0.014432
-7   11308  202412  0.464057  0.472132 -0.008075
-8   11403  202412  1.641061  1.653305 -0.012244
-9   11618  202412  0.951321  0.958930 -0.007608
+0   10028  202412  1.083997  0.863343  0.220653
+1   10158  202412 -0.503026 -0.490164 -0.012863
+2   10257  202412 -0.192377 -0.181093 -0.011283
+3   10463  202412  0.385832  0.370219  0.015613
+4   10547  202412 -0.308187 -0.295218 -0.012969
+5   10550  202412  0.774077  0.654006  0.120072
+6   10629  202412 -0.308400 -0.299433 -0.008967
+7   10645  202412  0.240573  0.252948 -0.012374
+8   10777  202412  0.236505  0.262979 -0.026473
+9   10901  202412  0.079001  0.088220 -0.009219
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm    python     stata      diff
-0   82812  201903 -3.837965 -3.652979 -0.184986
-1   82812  201904 -4.277148 -4.097645 -0.179503
-2   10383  200502 -0.897697 -0.724693 -0.173004
-3   83944  200502 -2.066729 -1.898008 -0.168721
-4   83554  200502 -1.521989 -1.368283 -0.153706
-5   75107  201903  4.017033  4.166168 -0.149135
-6   82540  201210 -1.550672 -1.403938 -0.146733
-7   83944  200503 -2.162730 -2.018093 -0.144637
-8   44813  201904  6.986451  6.844165  0.142285
-9   85753  200502 -0.649444 -0.510682 -0.138763
+0   76995  200003  0.544785 -3.435120  3.979905
+1   76995  200002  0.317854 -3.593434  3.911288
+2   90170  202407 -3.370588  0.481798 -3.852386
+3   90170  202408 -3.062880  0.742377 -3.805256
+4   13751  202101 -4.115171 -0.481746 -3.633425
+5   90170  202312 -0.779426 -4.321275  3.541850
+6   76995  200001 -0.539534 -4.074275  3.534741
+7   90170  202401 -1.331707 -4.824741  3.493033
+8   65541  199912  1.087601 -2.354047  3.441648
+9   90170  202406 -2.883440  0.532473 -3.415913
 ```
 
 ---
@@ -4455,7 +4203,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 17477 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 5862 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -4463,60 +4211,60 @@
 
 **Observations**:
 - Stata:  1,881,254
-- Python: 1,863,778
-- Common: 1,863,777
+- Python: 1,899,552
+- Common: 1,875,392
 
-**Precision1**: 15.601% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 45.822% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 2.87e+00 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 9.57e+00 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  IntanCFP
-     0   10012  200010 -0.110909
-     1   10012  200011 -0.091954
-     2   10012  200012 -0.158818
-     3   10012  200101 -0.038301
-     4   10012  200102 -0.172225
-     5   10012  200103 -0.205286
-     6   10012  200104 -0.187080
-     7   10032  200504  0.012017
-     8   10032  200505  0.003932
-     9   10032  200506 -0.049715
+     0   10031  198906 -0.467256
+     1   10051  199203 -0.077828
+     2   10051  199204  0.117282
+     3   10051  199205 -0.010084
+     4   10057  197006 -0.014668
+     5   10057  197007 -0.037554
+     6   10057  197008 -0.037103
+     7   10057  197009 -0.060326
+     8   10057  197010 -0.063337
+     9   10057  197011 -0.073378
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 290764/1863777 (15.601%)
+- Num observations with std_diff >= TOL_DIFF_1: 859347/1875392 (45.822%)
 - Stata standard deviation: 4.69e-01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   10026  202412 -0.164720 -0.171818  0.007097
-1   10028  202412  0.652684  0.679321 -0.026637
-2   10044  202412 -0.066737 -0.082300  0.015563
-3   10104  202412  0.313689  0.322640 -0.008951
-4   10107  202412  0.194742  0.201555 -0.006812
-5   10138  202412 -0.152939 -0.159747  0.006808
-6   10158  202412 -0.159258 -0.167753  0.008496
-7   10252  202412 -0.210933 -0.218050  0.007117
-8   10308  202412 -0.146468 -0.155533  0.009064
-9   10397  202412 -0.231256 -0.243112  0.011857
+0   10026  202412 -0.188506 -0.171818 -0.016688
+1   10028  202412  0.740787  0.679321  0.061466
+2   10044  202412 -0.114935 -0.082300 -0.032635
+3   10104  202412  0.343113  0.322640  0.020473
+4   10107  202412  0.214476  0.201555  0.012921
+5   10138  202412 -0.173831 -0.159747 -0.014084
+6   10145  202412 -0.081892 -0.072032 -0.009860
+7   10158  202412 -0.180332 -0.167753 -0.012579
+8   10200  202412 -0.031344 -0.026040 -0.005304
+9   10252  202412 -0.234406 -0.218050 -0.016356
 ```
 
 **Largest Differences**:
 ```
-   permno  yyyymm    python     stata      diff
-0   91269  201904 -3.004514 -0.131550 -2.872964
-1   93126  201903 -2.689364 -0.089101 -2.600263
-2   91269  201903 -2.580106 -0.020104 -2.560001
-3   93285  201904 -2.940999 -0.431866 -2.509133
-4   93126  201904 -2.648814 -0.209416 -2.439397
-5   93285  201903 -2.593299 -0.344019 -2.249280
-6   46762  199801 -3.008948 -0.819476 -2.189472
-7   91472  201904 -1.763455  0.417369 -2.180824
-8   91379  201904 -2.533980 -0.368568 -2.165412
-9   91472  201903 -1.925069  0.211085 -2.136154
+   permno  yyyymm     python      stata      diff
+0   78041  199910  11.580927  21.148239 -9.567312
+1   18286  200106  27.697047  34.733170 -7.036123
+2   20968  199512   7.139837   0.166095  6.973742
+3   20968  199601   7.082126   1.889605  5.192520
+4   11887  199910   5.024956   9.897124 -4.872168
+5   78881  200209   4.652081   0.300865  4.351216
+6   78971  200801  -0.229538  -4.235927  4.006389
+7   75899  199910   3.907606   7.891233 -3.983627
+8   68339  199006  30.283925  34.174980 -3.891055
+9   18278  199203  15.088095  18.956718 -3.868623
 ```
 
 ---
@@ -4527,7 +4275,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 17477 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 5862 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -4535,60 +4283,60 @@
 
 **Observations**:
 - Stata:  1,881,254
-- Python: 1,863,778
-- Common: 1,863,777
+- Python: 1,899,552
+- Common: 1,875,392
 
-**Precision1**: 13.828% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 42.597% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 1.91e+00 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 1.53e+01 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm   IntanEP
-     0   10012  200010 -0.216717
-     1   10012  200011 -0.232402
-     2   10012  200012 -0.285582
-     3   10012  200101 -0.146766
-     4   10012  200102 -0.260816
-     5   10012  200103 -0.310573
-     6   10012  200104 -0.229020
-     7   10032  200504 -0.019629
-     8   10032  200505 -0.032088
-     9   10032  200506 -0.125404
+     0   10031  198906 -0.774279
+     1   10051  199203 -0.210539
+     2   10051  199204  0.106389
+     3   10051  199205 -0.074725
+     4   10057  197006 -0.060351
+     5   10057  197007 -0.077210
+     6   10057  197008 -0.078048
+     7   10057  197009 -0.087054
+     8   10057  197010 -0.093895
+     9   10057  197011 -0.101754
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 257728/1863777 (13.828%)
-- Stata standard deviation: 5.14e-01
+- Num observations with std_diff >= TOL_DIFF_1: 798858/1875392 (42.597%)
+- Stata standard deviation: 5.13e-01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   10026  202412 -0.217188 -0.224882  0.007693
-1   10028  202412  0.780385  0.798814 -0.018428
-2   10044  202412 -0.170901 -0.184353  0.013452
-3   10138  202412 -0.198904 -0.206796  0.007892
-4   10145  202412 -0.110101 -0.116019  0.005917
-5   10158  202412 -0.152984 -0.160120  0.007136
-6   10252  202412 -0.266768 -0.274823  0.008055
-7   10308  202412 -0.208900 -0.218393  0.009493
-8   10397  202412 -0.201413 -0.210025  0.008612
-9   10421  202412 -0.048765 -0.055604  0.006839
+0   10026  202412 -0.240116 -0.224882 -0.015234
+1   10028  202412  0.852046  0.798814  0.053232
+2   10044  202412 -0.212717 -0.184353 -0.028364
+3   10104  202412  0.382565  0.363849  0.018716
+4   10107  202412  0.226079  0.214817  0.011263
+5   10138  202412 -0.219474 -0.206796 -0.012679
+6   10145  202412 -0.124812 -0.116019 -0.008793
+7   10158  202412 -0.169487 -0.160120 -0.009367
+8   10200  202412 -0.067140 -0.061401 -0.005739
+9   10252  202412 -0.289813 -0.274823 -0.014990
 ```
 
 **Largest Differences**:
 ```
-   permno  yyyymm    python     stata      diff
-0   46762  199801 -2.845030 -0.937080 -1.907951
-1   75435  200204 -0.196973 -2.032043  1.835070
-2   75435  200201  0.176892 -1.529380  1.706272
-3   75435  200112 -0.036257 -1.506282  1.470025
-4   11747  199705  1.659067  0.217983  1.441085
-5   75660  199705  1.936851  0.520887  1.415964
-6   75435  200202  0.299604 -1.109453  1.409057
-7   27422  202009 -1.360094  0.015789 -1.375883
-8   75435  200205  0.228846 -1.132727  1.361572
-9   75435  200203 -0.237729 -1.487548  1.249820
+   permno  yyyymm     python      stata       diff
+0   68339  199006  17.903236  33.174107 -15.270871
+1   20968  199512  11.409520   1.054386  10.355134
+2   65445  199808  19.646535  29.729954 -10.083419
+3   20968  199601  11.296138   3.814879   7.481258
+4   18286  200106  26.751456  32.776867  -6.025411
+5   20968  199103   4.302338   9.887170  -5.584832
+6   65955  199103   4.001510   9.291549  -5.290039
+7   48047  199103   3.968767   9.184343  -5.215576
+8   78881  200209   5.286460   0.286337   5.000123
+9   69075  199103   3.575570   8.431818  -4.856248
 ```
 
 ---
@@ -4599,7 +4347,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 17460 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 5861 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -4607,60 +4355,60 @@
 
 **Observations**:
 - Stata:  1,876,810
-- Python: 1,859,351
-- Common: 1,859,350
+- Python: 1,895,046
+- Common: 1,870,949
 
-**Precision1**: 7.706% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 41.463% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = 5.78e+00 (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = 1.09e+01 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm   IntanSP
-     0   10012  200010 -1.000463
-     1   10012  200011 -1.219055
-     2   10012  200012 -1.361411
-     3   10012  200101 -1.189476
-     4   10012  200102 -1.269065
-     5   10012  200103 -1.297521
-     6   10012  200104 -1.310511
-     7   10032  200504 -1.377820
-     8   10032  200505 -1.407453
-     9   10032  200506 -1.519123
+     0   10031  198906 -1.643571
+     1   10051  199203 -0.498943
+     2   10051  199204  0.295998
+     3   10051  199205 -0.098516
+     4   10057  197006 -0.229430
+     5   10057  197007 -0.418658
+     6   10057  197008 -0.386506
+     7   10057  197009 -0.624340
+     8   10057  197010 -0.600878
+     9   10057  197011 -0.647544
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 143276/1859350 (7.706%)
+- Num observations with std_diff >= TOL_DIFF_1: 775758/1870949 (41.463%)
 - Stata standard deviation: 1.44e+00
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   11379  202412 -1.459475 -1.422896 -0.036579
-1   11701  202412 -0.528624 -0.512366 -0.016258
-2   12009  202412 -0.948509 -0.859868 -0.088642
-3   12076  202412  2.105411  2.124637 -0.019227
-4   12592  202412 -1.193780 -1.170948 -0.022832
-5   12877  202412 -2.881018 -2.841480 -0.039538
-6   13108  202412 -1.163470 -1.146944 -0.016526
-7   13196  202412 -0.416092 -0.401303 -0.014789
-8   13337  202412 -1.236131 -1.210017 -0.026115
-9   13343  202412 -0.712541 -0.696126 -0.016415
+0   10026  202412 -0.457794 -0.477482  0.019688
+1   10028  202412  3.507525  3.531562 -0.024038
+2   10044  202412 -1.144034 -1.159631  0.015597
+3   10104  202412  1.870738  1.835441  0.035298
+4   10107  202412  1.319656  1.285797  0.033859
+5   10138  202412 -0.241620 -0.263961  0.022341
+6   10145  202412  0.018534 -0.002560  0.021094
+7   10200  202412  0.172517  0.145393  0.027125
+8   10220  202412  0.488879  0.463940  0.024939
+9   10252  202412 -0.455440 -0.477771  0.022332
 ```
 
 **Largest Differences**:
 ```
-   permno  yyyymm    python     stata      diff
-0   72494  201307 -9.271958 -3.495846 -5.776112
-1   87168  201307 -6.909567 -2.465658 -4.443909
-2   86233  201306 -7.403351 -3.195898 -4.207453
-3   91727  201406  7.248843  3.550965  3.697879
-4   90640  201307 -6.286744 -2.705748 -3.580996
-5   91727  201307  1.396762 -2.008745  3.405507
-6   76553  201307 -6.100180 -2.711400 -3.388780
-7   92089  201307 -5.683464 -2.474969 -3.208495
-8   41515  199512 -5.495575 -2.302373 -3.193202
-9   72494  201306 -5.867321 -2.765284 -3.102037
+   permno  yyyymm     python      stata       diff
+0   81288  200709 -21.845115 -32.751595  10.906480
+1   81288  200707 -15.742404 -25.690916   9.948512
+2   59483  202103   7.107208  -2.339768   9.446976
+3   59483  202102   5.129913  -4.188400   9.318313
+4   10785  199703   8.095767  -0.876610   8.972376
+5   77042  200707 -12.379881 -20.649414   8.269533
+6   77393  200104   9.224737   0.967575   8.257162
+7   83161  200709  -1.711984   6.531930  -8.243913
+8   59483  202101   3.401558  -4.754353   8.155911
+9   68320  199512  -0.951288   7.122103  -8.073391
 ```
 
 ---
@@ -4923,7 +4671,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 337 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -4931,15 +4679,30 @@
 
 **Observations**:
 - Stata:  473,079
-- Python: 473,079
-- Common: 473,079
+- Python: 473,026
+- Common: 472,742
 
-**Precision1**: 63.453% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 63.487% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
 **Precision2**: 100th percentile diff = 5.00e+00 (tolerance: < 1.00e-06)
 
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  MS
+     0   10145  199711   5
+     1   10530  201509   6
+     2   10696  199911   5
+     3   10989  196610   1
+     4   11017  196701   1
+     5   11040  199502   4
+     6   11081  201108   5
+     7   11370  201301   5
+     8   11403  200305   6
+     9   11481  201608   3
+```
+
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 300181/473079 (63.453%)
+- Num observations with std_diff >= TOL_DIFF_1: 300131/472742 (63.487%)
 - Stata standard deviation: 1.54e+00
 
 **Most Recent Bad Observations**:
@@ -4953,7 +4716,7 @@
 5   11308  202412       4      3     1
 6   11809  202412       5      6    -1
 7   11995  202412       4      5    -1
-8   12060  202412       1      4    -3
+8   12060  202412       2      4    -2
 9   12082  202412       4      5    -1
 ```
 
@@ -5750,63 +5513,6 @@
 
 ---
 
-### OPLeverage
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ✅ PASSED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['OPLeverage']
-
-**Observations**:
-- Stata:  3,607,726
-- Python: 3,609,010
-- Common: 3,607,726
-
-**Precision1**: 0.003% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 3.06e-01 (tolerance: < 1.00e-06)
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 108/3607726 (0.003%)
-- Stata standard deviation: 1.20e+00
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm    python     stata      diff
-0   22620  202609  0.465662  0.492771 -0.027109
-1   22620  202608  0.465662  0.492771 -0.027109
-2   86776  202608  0.840232  0.872897 -0.032665
-3   22620  202607  0.465662  0.492771 -0.027109
-4   86776  202607  0.840232  0.872897 -0.032665
-5   22620  202606  0.465662  0.492771 -0.027109
-6   86776  202606  0.840232  0.872897 -0.032665
-7   12373  202605  0.141761  0.122242  0.019520
-8   22620  202605  0.465662  0.492771 -0.027109
-9   22908  202605  3.674934  3.568328  0.106606
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm    python     stata      diff
-0   23033  202406  1.667777  1.361796  0.305981
-1   23033  202407  1.667777  1.361796  0.305981
-2   23033  202408  1.667777  1.361796  0.305981
-3   23033  202409  1.667777  1.361796  0.305981
-4   23033  202410  1.667777  1.361796  0.305981
-5   23033  202411  1.667777  1.361796  0.305981
-6   23033  202412  1.667777  1.361796  0.305981
-7   23033  202501  1.667777  1.361796  0.305981
-8   23033  202502  1.667777  1.361796  0.305981
-9   23033  202503  1.667777  1.361796  0.305981
-```
-
----
-
 ### OScore
 
 **Status**: ❌ FAILED
@@ -6173,78 +5879,6 @@
 
 ---
 
-### OrgCap
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 291 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['OrgCap']
-
-**Observations**:
-- Stata:  1,243,383
-- Python: 1,251,842
-- Common: 1,243,092
-
-**Precision1**: 91.016% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 5.12e+00 (tolerance: < 1.00e-06)
-
-**Missing Observations Sample**:
-```
- index  permno  yyyymm    OrgCap
-     0   14306  196201  0.571375
-     1   14306  196202  0.571375
-     2   14306  196203  0.571375
-     3   14306  196204  0.569825
-     4   14306  196205  0.569825
-     5   14306  196206  0.002988
-     6   14750  201709 -0.474913
-     7   14750  201710 -0.478259
-     8   14750  201711 -0.483407
-     9   14750  201712 -0.490261
-```
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 1131417/1243092 (91.016%)
-- Stata standard deviation: 9.94e-01
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm    python     stata      diff
-0   10028  202412 -0.093992 -0.115577  0.021585
-1   10145  202412 -0.423675  0.067139 -0.490814
-2   10158  202412 -1.084997 -0.952382 -0.132615
-3   10200  202412 -0.592701 -0.670615  0.077914
-4   10220  202412 -0.288887 -0.358309  0.069422
-5   10318  202412 -0.567394 -0.386875 -0.180519
-6   10333  202412 -0.444889 -0.559429  0.114539
-7   10382  202412  0.276140  0.055639  0.220501
-8   10421  202412 -0.376262 -0.519943  0.143681
-9   10516  202412 -0.841478 -0.470462 -0.371016
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm    python     stata      diff
-0   23466  202407  0.587322  5.704437 -5.117115
-1   23466  202410  0.597688  5.703661 -5.105974
-2   23466  202411  0.598630  5.703661 -5.105031
-3   23466  202406  0.576467  5.680564 -5.104097
-4   23466  202409  0.612391  5.704437 -5.092047
-5   23466  202408  0.614712  5.704437 -5.089725
-6   63132  199106  2.167863  7.224134 -5.056271
-7   23466  202412  0.609125  5.636973 -5.027849
-8   30402  199712  0.709404  5.720303 -5.010899
-9   30402  199706  0.695160  5.699004 -5.003845
-```
-
----
-
 ### PS
 
 **Status**: ❌ FAILED
@@ -6259,10 +5893,10 @@
 
 **Observations**:
 - Stata:  463,944
-- Python: 464,239
+- Python: 464,340
 - Common: 463,941
 
-**Precision1**: 17.896% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 17.876% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
 **Precision2**: 100th percentile diff = 5.00e+00 (tolerance: < 1.00e-06)
 
@@ -6275,7 +5909,7 @@
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 83027/463941 (17.896%)
+- Num observations with std_diff >= TOL_DIFF_1: 82936/463941 (17.876%)
 - Stata standard deviation: 1.70e+00
 
 **Most Recent Bad Observations**:
@@ -6306,78 +5940,6 @@
 7   10005  198709     1.0      6  -5.0
 8   10005  198710     1.0      6  -5.0
 9   10005  198711     1.0      6  -5.0
-```
-
----
-
-### PatentsRD
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 394114 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['PatentsRD']
-
-**Observations**:
-- Stata:  671,832
-- Python: 479,052
-- Common: 277,718
-
-**Precision1**: 15.700% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
-
-**Precision2**: 100th percentile diff = 1.00e+00 (tolerance: < 1.00e-06)
-
-**Missing Observations Sample**:
-```
- index  permno  yyyymm  PatentsRD
-     0   10006  198401          1
-     1   10006  198402          1
-     2   10006  198403          1
-     3   10006  198404          1
-     4   10006  198405          1
-     5   10010  198906          0
-     6   10010  198907          0
-     7   10010  198908          0
-     8   10010  198909          0
-     9   10010  198910          0
-```
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 43603/277718 (15.700%)
-- Stata standard deviation: 4.56e-01
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm  python  stata  diff
-0   10026  202412     1.0      0   1.0
-1   10258  202412     1.0      0   1.0
-2   10333  202412     1.0      0   1.0
-3   10382  202412     1.0      0   1.0
-4   10645  202412     1.0      0   1.0
-5   10860  202412     1.0      0   1.0
-6   11154  202412     1.0      0   1.0
-7   11275  202412     1.0      0   1.0
-8   11292  202412     1.0      0   1.0
-9   11581  202412     1.0      0   1.0
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm  python  stata  diff
-0   10025  200806     1.0      0   1.0
-1   10025  200807     1.0      0   1.0
-2   10025  200808     1.0      0   1.0
-3   10025  200809     1.0      0   1.0
-4   10025  200810     1.0      0   1.0
-5   10025  200811     1.0      0   1.0
-6   10025  200812     1.0      0   1.0
-7   10025  201606     1.0      0   1.0
-8   10025  201607     1.0      0   1.0
-9   10025  201608     1.0      0   1.0
 ```
 
 ---
@@ -6840,7 +6402,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 8479 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 8455 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -6848,12 +6410,12 @@
 
 **Observations**:
 - Stata:  173,266
-- Python: 232,981
-- Common: 164,787
+- Python: 233,497
+- Common: 164,811
 
-**Precision1**: 95.728% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 95.729% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
-**Precision2**: 100th percentile diff = inf (tolerance: < 1.00e-06)
+**Precision2**: 100th percentile diff = nan (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
@@ -6871,7 +6433,7 @@
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 157748/164787 (95.728%)
+- Num observations with std_diff >= TOL_DIFF_1: 157772/164811 (95.729%)
 - Stata standard deviation: 5.48e+00
 
 **Most Recent Bad Observations**:
@@ -6892,16 +6454,16 @@
 **Largest Differences**:
 ```
    permno  yyyymm  python     stata  diff
-0   75853  200106    -inf -0.107289  -inf
-1   75853  200107    -inf -0.107289  -inf
-2   75853  200108    -inf -0.107289  -inf
-3   75853  200109    -inf -0.107289  -inf
-4   75853  200110    -inf -0.107289  -inf
-5   75853  200111    -inf -0.107289  -inf
-6   75853  200112    -inf -0.107289  -inf
-7   75853  200201    -inf -0.107289  -inf
-8   75853  200202    -inf -0.107289  -inf
-9   75853  200203    -inf -0.107289  -inf
+0   84666  200406     NaN  2.125255   NaN
+1   84666  200407     NaN  2.125255   NaN
+2   84666  200408     NaN  2.125255   NaN
+3   84666  200409     NaN  2.125255   NaN
+4   84666  200410     NaN  2.125255   NaN
+5   84666  200411     NaN  2.125255   NaN
+6   84666  200412     NaN  2.125255   NaN
+7   84666  200501     NaN  2.125255   NaN
+8   84666  200502     NaN  2.125255   NaN
+9   84666  200503     NaN  2.125255   NaN
 ```
 
 ---
@@ -9630,6 +9192,22 @@
 
 ---
 
+### Activism1
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/Activism1.csv
+
+---
+
+### Activism2
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/Activism2.csv
+
+---
+
 ### ChangeInRecommendation
 
 **Status**: ❌ MISSING PYTHON CSV
@@ -9643,6 +9221,14 @@
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Predictors/DownRecomm.csv
+
+---
+
+### EarnSupBig
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/EarnSupBig.csv
 
 ---
 
@@ -9683,6 +9269,22 @@
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Predictors/FEPS.csv
+
+---
+
+### FR
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/FR.csv
+
+---
+
+### FirmAgeMom
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/FirmAgeMom.csv
 
 ---
 
@@ -9742,6 +9344,14 @@
 
 ---
 
+### IndRetBig
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/IndRetBig.csv
+
+---
+
 ### InvestPPEInv
 
 **Status**: ❌ MISSING PYTHON CSV
@@ -9787,6 +9397,30 @@
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Predictors/NumEarnIncrease.csv
+
+---
+
+### OPLeverage
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/OPLeverage.csv
+
+---
+
+### OrgCap
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/OrgCap.csv
+
+---
+
+### PatentsRD
+
+**Status**: ❌ MISSING PYTHON CSV
+
+**Error**: Python CSV file not found: ../pyData/Predictors/PatentsRD.csv
 
 ---
 
