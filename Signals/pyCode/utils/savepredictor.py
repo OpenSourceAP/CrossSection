@@ -53,6 +53,11 @@ def save_predictor(df, predictor_name, output_dir="../pyData/Predictors"):
         df_save = df_save.with_columns(
             (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("yyyymm")
         )
+    elif str(df_save['time_avail_m'].dtype).startswith('Date'):
+        # Handle Date type (not Datetime)
+        df_save = df_save.with_columns(
+            (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("yyyymm")
+        )
     else:
         # Already in yyyymm integer format, just rename
         df_save = df_save.with_columns(
