@@ -31,10 +31,13 @@ Requirements:
 """
 
 import polars as pl
+import pandas as pd
+import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 print("=" * 80)
 print("🏗️  MS.py")
@@ -90,22 +93,19 @@ df = df.with_columns([
     pl.col("ceq") > 0  # Positive book equity
 )
 
-# Calculate BM quintiles by time_avail_m (replicates Stata's fastxtile)
-# Use rank-based approach to handle ties consistently
-df = df.with_columns([
-    # Calculate percentile ranks (0-1) within each time_avail_m
-    pl.col("BM").rank(method="average").over("time_avail_m").truediv(
-        pl.len().over("time_avail_m")
-    ).alias("BM_pct"),
-]).with_columns([
-    # Convert percentiles to quintiles (1-5)
-    pl.when(pl.col("BM_pct") <= 0.2).then(pl.lit(1))
-    .when(pl.col("BM_pct") <= 0.4).then(pl.lit(2))
-    .when(pl.col("BM_pct") <= 0.6).then(pl.lit(3))
-    .when(pl.col("BM_pct") <= 0.8).then(pl.lit(4))
-    .otherwise(pl.lit(5))
-    .alias("BM_quintile")
-]).filter(
+# Calculate BM quintiles using enhanced fastxtile (pandas-based for accuracy)
+# Convert to pandas temporarily for quintile calculation
+print("Calculating BM quintiles with enhanced fastxtile...")
+df_pd = df.to_pandas()
+
+# Clean infinite BM values explicitly (following successful PS pattern)
+df_pd['BM_clean'] = df_pd['BM'].replace([np.inf, -np.inf], np.nan)
+
+# Use enhanced fastxtile for quintile assignment
+df_pd['BM_quintile'] = fastxtile(df_pd, 'BM_clean', by='time_avail_m', n=5)
+
+# Convert back to polars and filter for lowest quintile
+df = pl.from_pandas(df_pd).filter(
     pl.col("BM_quintile") == 1  # Keep only lowest BM quintile (growth firms)
 )
 

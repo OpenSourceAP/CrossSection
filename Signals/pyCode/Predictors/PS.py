@@ -23,7 +23,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_fastxtile import fastxtile_by_group
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 # Load m_aCompustat data
@@ -50,21 +50,17 @@ df['fopt'] = df['fopt'].fillna(df['oancf'])
 # Create tempebit before lag creation (needed for accurate comparison)
 df['tempebit'] = df['ib'] + df['txt'] + df['xint']
 
-# Create 12-month lags for required variables (time-based, like Stata l12.)
-# This approach matches Stata's l12. operator which looks for observations exactly 12 months earlier
-df['time_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)
+# Create 12-month lags for required variables (Stata-compatible flexible matching)
+# Use groupby + shift(12) approach to match Stata's l12. behavior more closely
+# This handles missing months better than exact date matching
+df_sorted = df.sort_values(['permno', 'time_avail_m'])
 
 lag_vars = ['ib', 'at', 'dltt', 'act', 'lct', 'sale', 'shrout']
 for var in lag_vars:
-    # Create lag data for merging
-    lag_data = df[['permno', 'time_avail_m', var]].copy()
-    lag_data.columns = ['permno', 'time_lag12', f'l12_{var}']
-    
-    # Merge back to main dataframe
-    df = df.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+    # Create 12-period lag using shift (more flexible than exact date matching)
+    df_sorted[f'l12_{var}'] = df_sorted.groupby('permno')[var].shift(12)
 
-# Drop temporary column
-df = df.drop('time_lag12', axis=1)
+df = df_sorted
 
 # Calculate individual Piotroski components
 # p1: Positive net income
@@ -112,10 +108,10 @@ df.loc[(df['fopt'].isna()) | (df['ib'].isna()) | (df['at'].isna()) | (df['dltt']
 
 # Restrict to highest BM quintile
 df['BM'] = np.log(df['ceq'] / df['mve_c'])
-# Handle infinite values in BM
+# Clean infinite values explicitly before fastxtile (following MomRev successful pattern)
 df['BM_clean'] = df['BM'].replace([np.inf, -np.inf], np.nan)
-# Use Stata-equivalent fastxtile for BM quintiles
-df['temp'] = fastxtile_by_group(df, 'BM_clean', 'time_avail_m', n=5)
+# Use robust fastxtile for BM quintiles with cleaned values
+df['temp'] = fastxtile(df, 'BM_clean', by='time_avail_m', n=5)
 # Keep only highest BM quintile (quintile 5)
 df.loc[df['temp'] != 5, 'PS'] = np.nan
 

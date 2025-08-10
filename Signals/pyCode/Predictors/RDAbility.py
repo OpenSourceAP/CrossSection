@@ -3,10 +3,12 @@
 
 import polars as pl
 import polars_ols  # registers .least_squares namespace
+import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 print("=" * 80)
 print("🏗️  RDAbility.py")
@@ -124,29 +126,12 @@ df = df.with_columns(
 )
 
 # egen tempRDQuant = fastxtile(tempRD), n(3) by(time_avail_m)
-# Handle infinite values like Stata's fastxtile: exclude them from ranking
-df = df.with_columns(
-    pl.when(pl.col("tempRD").is_infinite())
-    .then(None)
-    .otherwise(pl.col("tempRD"))
-    .alias("tempRD_clean")
-)
-
-df = df.with_columns(
-    pl.col("tempRD_clean")
-    .rank(method="ordinal")
-    .over("time_avail_m")
-    .alias("temp_rank")
-)
-
-df = df.with_columns(
-    pl.col("temp_rank")
-    .truediv(pl.col("temp_rank").max().over("time_avail_m"))
-    .mul(3)
-    .ceil()
-    .cast(pl.Int32)
-    .alias("tempRDQuant")
-)
+# Use robust fastxtile for tercile assignment (handles infinite values automatically)
+# Convert to pandas properly with all needed columns, ensuring proper index alignment
+df_pandas_full = df.to_pandas()
+df_pandas_full['tempRDQuant'] = fastxtile(df_pandas_full, 'tempRD', by='time_avail_m', n=3)
+# Convert back to polars, preserving all data integrity
+df = pl.from_pandas(df_pandas_full)
 
 # replace RDAbility = . if tempRDQuant != 3
 df = df.with_columns(
@@ -194,7 +179,7 @@ df_expanded = df_expanded.sort(["permno", "time_avail_m"])
 df_expanded = df_expanded.group_by(["permno", "time_avail_m"], maintain_order=True).first()
 
 # Clean up columns
-df_expanded = df_expanded.drop(["month_offset", "tempRDQuant", "temp_rank", "tempRD_clean", "tempRD"])
+df_expanded = df_expanded.drop(["month_offset", "tempRDQuant", "tempRD"])
 
 # Select final data
 result = df_expanded.select(["permno", "time_avail_m", "RDAbility"])
