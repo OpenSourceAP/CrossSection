@@ -1,5 +1,5 @@
-# ABOUTME: BetaTailRisk.py - generates tail risk beta using custom tail risk factor and 120-month rolling regressions
-# ABOUTME: Python translation of BetaTailRisk.do using polars for tail risk calculation and polars-ols for beta estimation
+# ABOUTME: BetaTailRisk.py - generates tail risk beta using custom tail risk factor and asreg rolling regressions
+# ABOUTME: Python translation of BetaTailRisk.do using polars for tail risk calculation and asreg helper for exact Stata replication
 
 """
 BetaTailRisk.py
@@ -7,6 +7,7 @@ BetaTailRisk.py
 Generates tail risk beta predictor from daily and monthly return data:
 - Creates monthly tail risk factor from daily returns (5th percentile tail excess returns)
 - BetaTailRisk: Coefficient from regression ret ~ tailex over 120-month rolling windows
+- Exact replication of Stata: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)
 
 Usage:
     cd pyCode/
@@ -25,14 +26,15 @@ Requirements:
     - Tail risk factor: log(ret/retp5) for returns in bottom 5% each month
     - Rolling 120-month windows with minimum 72 observations per window
     - Filter out non-common stocks (shrcd > 11)
+    - Exact replication of Stata's asreg behavior
 """
 
 import polars as pl
-import polars_ols  # registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.asreg import asreg
 
 print("=" * 80)
 print("🏗️  BetaTailRisk.py")
@@ -98,23 +100,32 @@ print("Merging with tail risk factor...")
 df = monthly_crsp.join(monthly_tailrisk, on="time_avail_m", how="left").sort(["permno", "time_avail_m"])
 print(f"After merging: {len(df):,} observations")
 
-print(f"Computing rolling 120-month tail risk betas for {df['permno'].n_unique():,} unique permnos...")
+# Convert time_avail_m to integer for window-based asreg (matching Stata's mofd function)
+# Stata time starts from Jan 1960 = 0
+df = df.with_columns([
+    ((pl.col("time_avail_m").dt.year() - 1960) * 12 + (pl.col("time_avail_m").dt.month() - 1)).alias("time_avail_m_int")
+])
 
-# Rolling tail risk regression: ret ~ tailex with 120-month windows  
-df_with_beta = df.with_columns(
-    pl.col("ret")
-    .least_squares.rolling_ols(
-        pl.col("tailex"),
-        window_size=120,
-        mode="coefficients"
-    )
-    .over("permno")
-    .alias("_b_coeffs")
+print(f"Computing rolling 120-month tail risk betas for {df['permno'].n_unique():,} unique permnos...")
+print("This matches: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)")
+
+# Apply asreg rolling regression
+df_with_beta = asreg(
+    df,
+    y="ret", 
+    X=["tailex"],
+    by=["permno"], 
+    t="time_avail_m_int",
+    mode="rolling", 
+    window_size=120, 
+    min_samples=72,
+    outputs=("coef",),
+    coef_prefix="b_"
 )
 
 # Extract tail risk beta coefficient
 df_with_beta = df_with_beta.with_columns(
-    pl.col("_b_coeffs").struct.field("tailex").alias("BetaTailRisk")
+    pl.col("b_tailex").alias("BetaTailRisk")
 )
 
 # Apply filters: remove missing betas and non-common stocks (shrcd > 11)
@@ -124,13 +135,25 @@ df_final = df_with_beta.filter(
 ).select(["permno", "time_avail_m", "BetaTailRisk"])
 
 print(f"Generated BetaTailRisk values: {len(df_final):,} observations")
-print(f"BetaTailRisk summary stats:")
-print(f"  Mean: {df_final['BetaTailRisk'].mean():.4f}")
-print(f"  Std: {df_final['BetaTailRisk'].std():.4f}")
-print(f"  Min: {df_final['BetaTailRisk'].min():.4f}")  
-print(f"  Max: {df_final['BetaTailRisk'].max():.4f}")
 
-# SAVE
-print("💾 Saving BetaTailRisk predictor...")
-save_predictor(df_final, "BetaTailRisk")
-print("✅ BetaTailRisk.csv saved successfully")
+if len(df_final) > 0:
+    # Convert to pandas for summary stats (maintaining compatibility with save_predictor)
+    df_final_pd = df_final.to_pandas()
+    
+    print(f"BetaTailRisk summary stats:")
+    print(f"  Mean: {df_final_pd['BetaTailRisk'].mean():.4f}")
+    print(f"  Std: {df_final_pd['BetaTailRisk'].std():.4f}")
+    print(f"  Min: {df_final_pd['BetaTailRisk'].min():.4f}")  
+    print(f"  Max: {df_final_pd['BetaTailRisk'].max():.4f}")
+
+    # SAVE
+    print("💾 Saving BetaTailRisk predictor...")
+    save_predictor(df_final_pd, "BetaTailRisk")
+    print("✅ BetaTailRisk.csv saved successfully")
+else:
+    print("⚠️ No BetaTailRisk values generated - check data and parameters")
+    
+print("=" * 80)
+print("✅ BetaTailRisk.py Complete")
+print("Tail risk beta predictor generated using polars asreg exact Stata replication")
+print("=" * 80)
