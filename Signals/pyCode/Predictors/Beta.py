@@ -1,11 +1,12 @@
-# ABOUTME: Beta.py - generates CAPM Beta predictor using 60-month rolling regressions
-# ABOUTME: Python translation of Beta.do using polars-ols for performance
+# ABOUTME: Beta.py - generates CAPM Beta predictor using asreg rolling regressions
+# ABOUTME: Python translation of Beta.do using polars and asreg helper for exact Stata replication
 
 """
 Beta.py
 
-Generates CAPM Beta predictor from monthly returns and market returns using rolling 60-month regressions:
-- Beta: Coefficient from CAPM regression retrf ~ ewmktrf over 60-month rolling windows
+Generates CAPM Beta predictor from monthly returns and market returns using rolling 60-observation regressions:
+- Beta: Coefficient from CAPM regression retrf ~ ewmktrf over 60-observation rolling windows
+- Exact replication of Stata: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)
 
 Usage:
     cd pyCode/
@@ -21,20 +22,22 @@ Outputs:
     - ../pyData/Predictors/Beta.csv
 
 Requirements:
-    - Rolling 60-month windows with minimum 20 observations per window
+    - Rolling 60-observation windows (not 60 months) with minimum 20 observations per window
     - CAPM regression: retrf = alpha + beta * ewmktrf + residual
+    - Exact replication of Stata's asreg behavior
 """
 
 import polars as pl
-import polars_ols  # registers .least_squares namespace
+import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.asreg import asreg
 
 print("=" * 80)
 print("🏗️  Beta.py")
-print("Generating CAPM Beta predictor")
+print("Generating CAPM Beta predictor using polars asreg rolling regression")
 print("=" * 80)
 
 # DATA LOAD
@@ -65,48 +68,64 @@ df = (crsp
 print(f"After merging: {len(df):,} observations")
 
 # SIGNAL CONSTRUCTION
-print("🧮 Computing CAPM Beta using rolling 60-month regressions...")
+print("🧮 Computing CAPM Beta using asreg rolling 60-observation regressions...")
 
-# Create excess returns
+# Create excess returns (matching Stata exactly)
 df = df.with_columns([
     (pl.col("ret") - pl.col("rf")).alias("retrf"),
     (pl.col("ewretd") - pl.col("rf")).alias("ewmktrf")
 ])
 
-# Add time sequence for each permno (replicates Stata's time_temp)
+# Add time sequence for each permno (replicates Stata's time_temp = _n)
 df = df.with_columns(
-    pl.int_range(pl.len()).over("permno").alias("time_temp")
+    pl.int_range(pl.len()).over("permno").add(1).alias("time_temp")
 )
 
-print(f"Computing rolling regressions for {df['permno'].n_unique():,} unique permnos...")
+print("Computing rolling regressions by permno (exact Stata replication)...")
+print("This matches: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)")
 
-# Rolling CAPM regression: retrf ~ ewmktrf with 60-month windows
-df_with_beta = df.with_columns(
-    pl.col("retrf")
-    .least_squares.rolling_ols(
-        pl.col("ewmktrf"),
-        window_size=60,
-        mode="coefficients"
-    )
-    .over("permno")
-    .alias("_b_coeffs")
+# Apply asreg rolling regression
+print(f"Processing {df['permno'].n_unique():,} unique permnos...")
+df_with_beta = asreg(
+    df,
+    y="retrf", 
+    X=["ewmktrf"],
+    by=["permno"], 
+    t="time_temp",
+    mode="rolling", 
+    window_size=60, 
+    min_samples=20,
+    outputs=("coef",),
+    coef_prefix="b_"
 )
 
-# Extract Beta coefficient (slope coefficient from struct)
-df_final = df_with_beta.with_columns(
-    pl.col("_b_coeffs").struct.field("ewmktrf").alias("Beta")
-).select(["permno", "time_avail_m", "Beta"]).filter(
-    pl.col("Beta").is_not_null()
+# Extract Beta coefficient and filter to non-null values
+df_final = (df_with_beta
+    .filter(pl.col("b_ewmktrf").is_not_null())
+    .select(["permno", "time_avail_m", pl.col("b_ewmktrf").alias("Beta")])
 )
 
 print(f"Generated Beta values: {len(df_final):,} observations")
-print(f"Beta summary stats:")
-print(f"  Mean: {df_final['Beta'].mean():.4f}")
-print(f"  Std: {df_final['Beta'].std():.4f}")
-print(f"  Min: {df_final['Beta'].min():.4f}")  
-print(f"  Max: {df_final['Beta'].max():.4f}")
 
-# SAVE
-print("💾 Saving Beta predictor...")
-save_predictor(df_final, "Beta")
-print("✅ Beta.csv saved successfully")
+if len(df_final) > 0:
+    # Convert to pandas for summary stats (maintaining compatibility with save_predictor)
+    df_final_pd = df_final.to_pandas()
+    
+    print(f"Beta summary stats:")
+    print(f"  Mean: {df_final_pd['Beta'].mean():.4f}")
+    print(f"  Std: {df_final_pd['Beta'].std():.4f}")
+    print(f"  Min: {df_final_pd['Beta'].min():.4f}")  
+    print(f"  Max: {df_final_pd['Beta'].max():.4f}")
+
+    # SAVE
+    print("💾 Saving Beta predictor...")
+    save_predictor(df_final_pd, "Beta")
+    print("✅ Beta.csv saved successfully")
+
+else:
+    print("⚠️ No Beta values generated - check data and parameters")
+    
+print("=" * 80)
+print("✅ Beta.py Complete")
+print("CAPM Beta predictor generated using polars asreg exact Stata replication")
+print("=" * 80)
