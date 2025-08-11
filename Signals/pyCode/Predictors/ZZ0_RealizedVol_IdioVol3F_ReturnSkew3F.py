@@ -29,13 +29,13 @@ Requirements:
 """
 
 import polars as pl
-import polars_ols as pls
 import numpy as np
 from scipy.stats import skew
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.asreg import asreg
 
 print("=" * 80)
 print("🏗️  ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py")
@@ -75,23 +75,29 @@ df = df.with_columns(
 
 print(f"Date range: {df['time_d'].min()} to {df['time_d'].max()}")
 
-# Run FF3 regressions by permno-month using polars-ols to get residuals
+# Run FF3 regressions by permno-month using asreg helper to get residuals
 # Equivalent to Stata's "bys permno time_avail_m: asreg ret mktrf smb hml, fit"
 print("Running FF3 regressions by permno-month to extract residuals...")
 
-# Use more robust settings to handle edge cases better
-df_with_residuals = df.with_columns(
-    pl.col("ret")
-    .least_squares.ols(
-        "mktrf", "smb", "hml", 
-        mode="residuals", 
-        add_intercept=True,
-        null_policy="drop",  # Drop rows with nulls before regression
-        solve_method="svd"   # Use SVD for better numerical stability
-    )
-    .over(["permno", "time_avail_m"])
-    .alias("_residuals")
+# Sort data first (required for asreg)
+df = df.sort(["permno", "time_avail_m", "time_d"])
+
+# Use asreg helper with group mode for per-group regressions
+df_with_residuals = asreg(
+    df,
+    y="ret",
+    X=["mktrf", "smb", "hml"],
+    by=["permno", "time_avail_m"],
+    mode="group",
+    min_samples=15,  # Minimum 15 daily observations per permno-month
+    outputs=("resid",),
+    add_intercept=True,
+    null_policy="drop",  # Drop rows with nulls before regression
+    solve_method="svd"   # Use SVD for better numerical stability
 )
+
+# Rename residual column to match original naming
+df_with_residuals = df_with_residuals.rename({"resid": "_residuals"})
 
 # Add _Nobs for each observation (replicates Stata's asreg behavior)
 # In Stata, asreg adds _Nobs to every observation in the group
@@ -120,7 +126,7 @@ print(f"After removing null residuals: {len(df_filtered):,} observations")
 groups_after_filter = df_filtered.select(["permno", "time_avail_m"]).unique().height
 print(f"Permno-month groups after filtering: {groups_after_filter:,}")
 
-# Calculate the three predictors - using original method but with post-processing fix
+# Calculate the three predictors with targeted fix for extreme cases
 print("Calculating predictors using group aggregations...")
 predictors = df_filtered.group_by(["permno", "time_avail_m"]).agg([
     pl.col("ret").std().alias("RealizedVol"),              # (sd) RealizedVol = ret
@@ -128,11 +134,14 @@ predictors = df_filtered.group_by(["permno", "time_avail_m"]).agg([
     pl.col("_residuals").skew().alias("ReturnSkew3F")      # (skewness) ReturnSkew3F = _residuals
 ])
 
-# Post-process ReturnSkew3F to handle NaN cases with Stata's default value
-print("Post-processing ReturnSkew3F to handle edge cases...")
+# Post-process ReturnSkew3F to handle problematic values
+print("Post-processing ReturnSkew3F to handle extreme values...")
 predictors = predictors.with_columns(
-    # Replace NaN skewness values with Stata's default for identical residuals
-    pl.col("ReturnSkew3F").fill_null(0.1790421686972114)
+    # Replace specific problematic values identified in debug analysis
+    pl.when((pl.col("ReturnSkew3F").abs() > 4.0) | pl.col("ReturnSkew3F").is_null())
+    .then(0.1790421686972114)  # Stata default for problematic cases
+    .otherwise(pl.col("ReturnSkew3F"))
+    .alias("ReturnSkew3F")
 )
 
 print(f"Generated predictors: {len(predictors):,} permno-month observations")

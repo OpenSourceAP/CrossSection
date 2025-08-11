@@ -35,6 +35,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.saveplacebo import save_placebo
+from utils.asreg import asreg
 
 print("=" * 80)
 print("🏗️  ZZ1_ResidualMomentum6m_ResidualMomentum.py")
@@ -69,64 +70,38 @@ df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("retrf"))
 # Sort by permno and time_avail_m (important for time series operations)
 df = df.sort(["permno", "time_avail_m"])
 
-print("Running rolling 36-observation FF3 regressions by permno (manual implementation)...")
+# Create time_temp = _n by permno (position-based indexing like Stata)
+print("Creating time_temp position index by permno...")
+df = df.with_columns(
+    pl.int_range(pl.len()).over("permno").alias("time_temp")
+)
+
+print("Running rolling 36-observation FF3 regressions by permno using asreg helper...")
 print("Processing", df['permno'].n_unique(), "unique permnos...")
 
-# Manual rolling FF3 regression to exactly match Stata's asreg behavior
-# polars-ols was giving incorrect results, so implementing manual calculation
-result_dfs = []
+# Use asreg helper for rolling FF3 regression with residuals
+# Rolling 36-observation windows with minimum 36 observations (exact Stata asreg match)
+# Use time_temp (position-based) instead of time_avail_m (calendar-based)
+df = asreg(
+    df,
+    y="retrf",
+    X=["mktrf", "hml", "smb"],
+    by=["permno"],
+    t="time_temp", 
+    mode="rolling",
+    window_size=36,
+    min_samples=36,
+    add_intercept=True,  # Explicit parameter to match Stata asreg default behavior
+    outputs=("resid",),
+    null_policy="skip",  # Match Stata's handling of missing values
+    solve_method="svd",  # Match Stata's OLS solver method
+    collect=True
+)
 
-for permno in df['permno'].unique():
-    permno_data = df.filter(pl.col("permno") == permno).sort("time_avail_m")
-    n_obs = len(permno_data)
-    
-    residuals = [None] * n_obs
-    
-    # Convert to numpy for faster calculation
-    pdf = permno_data.to_pandas()
-    retrf_vals = pdf['retrf'].values
-    mktrf_vals = pdf['mktrf'].values  
-    hml_vals = pdf['hml'].values
-    smb_vals = pdf['smb'].values
-    
-    # Rolling 36-observation regressions
-    for i in range(n_obs):
-        if i >= 35:  # Need at least 36 observations (0-indexed)
-            try:
-                # Get 36-observation window ending at position i
-                y_window = retrf_vals[i-35:i+1]
-                X_window = np.column_stack([
-                    np.ones(36),  # Intercept
-                    mktrf_vals[i-35:i+1],
-                    hml_vals[i-35:i+1], 
-                    smb_vals[i-35:i+1]
-                ])
-                
-                # OLS regression
-                coeffs = np.linalg.lstsq(X_window, y_window, rcond=None)[0]
-                alpha, beta_mkt, beta_hml, beta_smb = coeffs
-                
-                # Calculate residual for current observation (position i)
-                predicted = alpha + beta_mkt * mktrf_vals[i] + beta_hml * hml_vals[i] + beta_smb * smb_vals[i]
-                residual = retrf_vals[i] - predicted
-                
-                residuals[i] = residual
-                
-            except Exception as e:
-                # Handle any numerical issues
-                residuals[i] = None
-    
-    # Add residuals back to permno data
-    # Ensure float64 type for residuals to avoid concat schema error
-    residuals_float = [float(r) if r is not None else None for r in residuals]
-    permno_with_residuals = permno_data.with_columns(
-        pl.Series("_residuals", residuals_float, dtype=pl.Float64)
-    )
-    result_dfs.append(permno_with_residuals)
-
-# Combine all permno results
-df = pl.concat(result_dfs)
-df = df.sort(["permno", "time_avail_m"])
+# Rename residual column to match existing code
+df = df.with_columns(
+    pl.col("resid").alias("_residuals")
+).drop("resid")
 
 print(f"Completed rolling regressions for {len(df):,} observations")
 

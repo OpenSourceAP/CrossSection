@@ -298,26 +298,32 @@ for var in variables:
     )
 
 # asreg FErr lag*, by(time_avail_m)
-df_with_predictions = df.with_columns(
-    pl.col("FErr")
-    .least_squares.ols(
-        "lagSG", "lagBM", "lagAOP", "lagLTG",
-        mode="coefficients",
-        add_intercept=True,
-        null_policy="drop"
-    )
-    .over("time_avail_m")
-    .alias("_b_coeffs")
+# Always sort data first
+df = df.sort(["time_avail_m", "permno"])
+
+# Use asreg helper with group mode  
+from utils.asreg import asreg
+df_with_predictions = asreg(
+    df,
+    y="FErr", 
+    X=["lagSG", "lagBM", "lagAOP", "lagLTG"],
+    by=["time_avail_m"],
+    mode="group",
+    add_intercept=True,
+    outputs=("coef",),
+    coef_prefix="_b_",
+    null_policy="drop",
+    min_samples=5  # Need at least 5 observations for 4 variables + intercept
 )
 
-# Extract coefficients
-df_with_predictions = df_with_predictions.with_columns([
-    pl.col("_b_coeffs").struct.field("const").alias("_b_cons"),
-    pl.col("_b_coeffs").struct.field("lagSG").alias("_b_lagSG"),
-    pl.col("_b_coeffs").struct.field("lagBM").alias("_b_lagBM"),
-    pl.col("_b_coeffs").struct.field("lagAOP").alias("_b_lagAOP"),
-    pl.col("_b_coeffs").struct.field("lagLTG").alias("_b_lagLTG")
-])
+# Rename coefficient columns to match original names
+df_with_predictions = df_with_predictions.rename({
+    "_b_const": "_b_cons",
+    "_b_lagSG": "_b_lagSG",
+    "_b_lagBM": "_b_lagBM", 
+    "_b_lagAOP": "_b_lagAOP",
+    "_b_lagLTG": "_b_lagLTG"
+})
 
 # gen PredictedFE = _b_cons + _b_lagSG*rankSG + _b_lagBM*rankBM + _b_lagAOP*rankAOP + _b_lagLTG*rankLTG
 df_with_predictions = df_with_predictions.with_columns(

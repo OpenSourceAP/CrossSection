@@ -1,101 +1,121 @@
-# ABOUTME: Translates VolumeTrend.do to create volume trend measure using rolling regression
+# ABOUTME: Translates VolumeTrend.do to create volume trend measure using time-based rolling regression
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/VolumeTrend.py
 
 # Run from pyCode/ directory
 # Inputs: monthlyCRSP.parquet
 # Output: ../pyData/Predictors/VolumeTrend.csv
 
-import pandas as pd
+import polars as pl
 import numpy as np
 
 print("Loading and processing VolumeTrend...")
 
 # DATA LOAD
-df = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet')
-df = df[['permno', 'time_avail_m', 'vol']].copy()
+df = pl.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet')
+df = df.select(['permno', 'time_avail_m', 'vol'])
 
-# SIGNAL CONSTRUCTION - Implementation matching Stata asreg exactly
-def rolling_regression_pandas(time_vals, vol_vals, window_size=60, min_periods=30):
-    """Fast rolling regression using numba - matches Stata asreg vol time_avail_m"""
-    n = len(time_vals)
-    betas = np.full(n, np.nan)
-    means = np.full(n, np.nan)
+# SIGNAL CONSTRUCTION - Time-based rolling regression
+print("Calculating time-based rolling regressions by permno...")
+
+# Sort data first
+df = df.sort(['permno', 'time_avail_m'])
+
+# Convert time_avail_m to numeric form for regression (months since 1960-01, Stata format)
+df = df.with_columns([
+    ((pl.col('time_avail_m').dt.year() - 1960) * 12 + pl.col('time_avail_m').dt.month() - 1).alias('time_numeric')
+])
+
+def time_based_rolling_regression(group_df):
+    """
+    Implement time-based rolling regression matching Stata:
+    asreg vol time_avail_m, window(time_av 60) min(30) by(permno)
     
-    for i in range(min_periods-1, n):  # Start from min_periods (30), not window_size (60)
-        # Get window indices (last 60 observations or all available if fewer)
-        start_idx = max(0, i - window_size + 1)
-        end_idx = i + 1
+    This uses a 60-month rolling window, not 60-observation window.
+    """
+    if len(group_df) == 0:
+        return group_df.with_columns([
+            pl.lit(None, dtype=pl.Float64).alias('betaVolTrend'),
+            pl.lit(None, dtype=pl.Float64).alias('meanX')
+        ])
+    
+    # Convert to numpy for efficient computation
+    dates = group_df['time_avail_m'].to_numpy()
+    time_numeric = group_df['time_numeric'].to_numpy() 
+    vol = group_df['vol'].to_numpy()
+    
+    n = len(group_df)
+    betaVolTrend = np.full(n, np.nan)
+    meanX = np.full(n, np.nan)
+    
+    # For each observation, look back 60 months
+    for i in range(n):
+        current_date = dates[i]
+        # Calculate 60 months ago (approximately 60 * 30.44 days)
+        cutoff_date = current_date - np.timedelta64(60 * 30, 'D')  # 60 months * 30 days
         
-        # Extract window data
-        window_time = time_vals[start_idx:end_idx]
-        window_vol = vol_vals[start_idx:end_idx]
+        # Find observations within the 60-month window
+        window_mask = (dates <= current_date) & (dates >= cutoff_date)
+        window_indices = np.where(window_mask)[0]
         
-        # Remove NaN values (like Stata automatically does)
-        valid_mask = ~(np.isnan(window_time) | np.isnan(window_vol))
-        if np.sum(valid_mask) < min_periods:
-            continue
+        if len(window_indices) >= 30:  # min(30) requirement
+            # Extract window data
+            window_time = time_numeric[window_indices]
+            window_vol = vol[window_indices]
             
-        clean_time = window_time[valid_mask]
-        clean_vol = window_vol[valid_mask]
-        
-        # Manual OLS calculation (much faster than sklearn)
-        # Regression: vol = alpha + beta * time
-        time_mean = np.mean(clean_time)
-        vol_mean = np.mean(clean_vol)
-        
-        # Calculate beta: (sum((x-x_mean)*(y-y_mean))) / (sum((x-x_mean)^2))
-        numerator = np.sum((clean_time - time_mean) * (clean_vol - vol_mean))
-        denominator = np.sum((clean_time - time_mean) ** 2)
-        
-        if denominator > 0:
-            beta = numerator / denominator  # This is _b_time_avail_m from Stata
-            betas[i] = beta
-            means[i] = vol_mean  # Rolling mean like asrol vol, stat(mean)
+            # Remove any NaN values
+            valid_mask = ~(np.isnan(window_time) | np.isnan(window_vol))
+            if np.sum(valid_mask) >= 30:
+                clean_time = window_time[valid_mask]
+                clean_vol = window_vol[valid_mask]
+                
+                # Simple linear regression: vol = alpha + beta * time_numeric
+                n_obs = len(clean_time)
+                sum_x = np.sum(clean_time)
+                sum_y = np.sum(clean_vol)
+                sum_xx = np.sum(clean_time * clean_time)
+                sum_xy = np.sum(clean_time * clean_vol)
+                
+                # Calculate beta coefficient
+                denominator = n_obs * sum_xx - sum_x * sum_x
+                if abs(denominator) > 1e-10:  # Avoid division by very small numbers
+                    beta = (n_obs * sum_xy - sum_x * sum_y) / denominator
+                    betaVolTrend[i] = beta
+                
+                # Calculate rolling mean of vol
+                meanX[i] = np.mean(clean_vol)
     
-    return betas, means
+    # Add results to dataframe
+    result = group_df.with_columns([
+        pl.Series('betaVolTrend', betaVolTrend),
+        pl.Series('meanX', meanX)
+    ])
+    
+    return result
 
-def calculate_volume_trend_vectorized(group):
-    """Vectorized volume trend calculation matching Stata exactly"""
-    group = group.sort_values('time_avail_m').copy()
-    
-    # Convert time_avail_m to numeric form (like Stata uses in regression)
-    reference_date = pd.Timestamp('1960-01-01')
-    group['time_numeric'] = ((group['time_avail_m'] - reference_date).dt.days / 30.44).round()
-    
-    # Extract arrays for numba processing
-    time_vals = group['time_numeric'].values.astype(np.float64)
-    vol_vals = group['vol'].values.astype(np.float64)
-    
-    # Use rolling regression
-    betas, means = rolling_regression_pandas(time_vals, vol_vals, window_size=60, min_periods=30)
-    
-    # Store results (matching Stata variable names)
-    group['betaVolTrend'] = betas  # rename _b_time betaVolTrend
-    group['meanX'] = means  # asrol vol, gen(meanX) stat(mean)
-    
-    return group
-
-# Apply to each permno
-print("Calculating rolling regressions by permno...")
-df = df.groupby('permno', group_keys=False).apply(calculate_volume_trend_vectorized)
+# Apply time-based rolling regression to each permno group
+df = df.group_by('permno', maintain_order=True).map_groups(time_based_rolling_regression)
 
 # Calculate VolumeTrend
-df['VolumeTrend'] = df['betaVolTrend'] / df['meanX']
+df = df.with_columns([
+    (pl.col('betaVolTrend') / pl.col('meanX')).alias('VolumeTrend')
+])
 
 # Winsorize at 1% and 99%
-lower = df['VolumeTrend'].quantile(0.01)
-upper = df['VolumeTrend'].quantile(0.99)
-df['VolumeTrend'] = df['VolumeTrend'].clip(lower=lower, upper=upper)
+lower = df.select(pl.col('VolumeTrend').quantile(0.01)).item()
+upper = df.select(pl.col('VolumeTrend').quantile(0.99)).item()
+df = df.with_columns([
+    pl.col('VolumeTrend').clip(lower_bound=lower, upper_bound=upper)
+])
 
 # Convert to output format
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
-df['permno'] = df['permno'].astype('int64')
-df['yyyymm'] = df['yyyymm'].astype('int64')
+df = df.with_columns([
+    (pl.col('time_avail_m').dt.year() * 100 + pl.col('time_avail_m').dt.month()).alias('yyyymm'),
+    pl.col('permno').cast(pl.Int64),
+])
 
-df_final = df[['permno', 'yyyymm', 'VolumeTrend']].copy()
-df_final = df_final.dropna(subset=['VolumeTrend'])
-df_final = df_final.set_index(['permno', 'yyyymm'])
+df_final = df.select(['permno', 'yyyymm', 'VolumeTrend']).drop_nulls(subset=['VolumeTrend'])
 
-# SAVE
-df_final.to_csv('../pyData/Predictors/VolumeTrend.csv')
+# SAVE - Convert to pandas for CSV output with proper indexing
+df_final_pandas = df_final.to_pandas().set_index(['permno', 'yyyymm'])
+df_final_pandas.to_csv('../pyData/Predictors/VolumeTrend.csv')
 print("VolumeTrend predictor saved successfully")
