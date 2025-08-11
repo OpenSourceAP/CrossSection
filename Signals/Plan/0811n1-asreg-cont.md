@@ -70,8 +70,8 @@ Think about the plan before writing code.
 
 **ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py** - 19.380% failure (PriceDelayTstat worst)
    - Outputs: `PriceDelaySlope.csv`, `PriceDelayRsq.csv`, `PriceDelayTstat.csv`
-   - Status: **Revisit**
-   - Note: We need to incorporate t-stat calculations in utils/asreg.py. Return to this when we overhaul utils/asreg.py.
+   - Status: UPDATED to use utils/asreg.py helper (precision unchanged)
+   - Note: Seems like there's a bug in the Stata code. Github issue created.
 
 **TrendFactor.py** (104 lines) - 97.153% failure (improved from 98.418%), missing 0.07% obs  
    - Output: `TrendFactor.csv`
