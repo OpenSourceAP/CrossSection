@@ -42,6 +42,8 @@ def asreg(
     outputs: Iterable[str] = ("coef",),
     coef_prefix: str = "b_",
     collect: bool = True,
+    null_policy: str = "skip",  # New parameter for handling nulls
+    solve_method: str = "svd",  # New parameter for solver
 ) -> pl.DataFrame | pl.LazyFrame:
     """Multi-purpose OLS over groups/windows (compact 'asreg').
     
@@ -57,7 +59,7 @@ def asreg(
         window_size: Number of observations for rolling windows
         min_samples: Minimum observations required per regression
         add_intercept: Whether to include intercept term
-        outputs: Which outputs to compute - "coef", "yhat", "resid"
+        outputs: Which outputs to compute - "coef", "yhat", "resid", "rmse"
         coef_prefix: Prefix for coefficient column names
         collect: Whether to collect LazyFrame to DataFrame
         
@@ -97,9 +99,20 @@ def asreg(
     over = (by or [])
     
     if mode == "group":
-        coef = yexpr.ols(*Xexprs, add_intercept=add_intercept, mode="coefficients").over(over)
-        if by and min_samples > 1:
-            coef = pl.when(pl.len().over(by) >= min_samples).then(coef).otherwise(None)
+        if "resid" in outputs and len(outputs) == 1:
+            # Direct residuals mode - more efficient
+            residuals = yexpr.ols(*Xexprs, add_intercept=add_intercept, mode="residuals",
+                                 null_policy=null_policy, solve_method=solve_method).over(over)
+            if by and min_samples > 1:
+                residuals = pl.when(pl.len().over(by) >= min_samples).then(residuals).otherwise(None)
+            lf = lf.with_columns(resid=residuals)
+            return lf.collect() if collect else lf
+        else:
+            # Standard coefficient mode
+            coef = yexpr.ols(*Xexprs, add_intercept=add_intercept, mode="coefficients", 
+                             null_policy=null_policy, solve_method=solve_method).over(over)
+            if by and min_samples > 1:
+                coef = pl.when(pl.len().over(by) >= min_samples).then(coef).otherwise(None)
     elif mode == "rolling":
         coef = yexpr.rolling_ols(*Xexprs, window_size=window_size,
                                  min_periods=min_samples, add_intercept=add_intercept,
@@ -111,20 +124,47 @@ def asreg(
 
     lf = lf.with_columns(coef=coef)
 
-    need_coef_cols = any(o in {"coef", "yhat", "resid"} for o in outputs)
+    need_coef_cols = any(o in {"coef", "yhat", "resid", "rmse"} for o in outputs)
     if need_coef_cols:
         cols = ([pl.col("coef").struct.field("const").alias(f"{coef_prefix}const")] if add_intercept else [])
         cols += [pl.col("coef").struct.field(x).alias(f"{coef_prefix}{x}") for x in X]
         lf = lf.with_columns(cols)
 
-    if any(o in {"yhat", "resid"} for o in outputs):
+    if any(o in {"yhat", "resid", "rmse"} for o in outputs):
         yhat = (pl.col(f"{coef_prefix}const") if add_intercept else pl.lit(0.0))
         for x in X:
             yhat = yhat + pl.col(f"{coef_prefix}{x}") * pl.col(x)
         lf = lf.with_columns(yhat.alias("yhat"))
 
-    if "resid" in outputs:
+    if any(o in {"resid", "rmse"} for o in outputs):
         lf = lf.with_columns((pl.col(y) - pl.col("yhat")).alias("resid"))
+
+    if "rmse" in outputs:
+        # Calculate RMSE: sqrt(sum(residuals^2) / (n - k))  
+        # where n is number of observations, k is number of parameters
+        # (residuals were already calculated above)
+        k = p  # number of parameters (including intercept if present)
+        if mode == "rolling":
+            # For rolling windows: each observation gets the RMSE from its window
+            lf = lf.with_columns(
+                (pl.col("resid").pow(2).rolling_sum(window_size, min_periods=min_samples).over(over) / 
+                 (pl.col("resid").is_not_null().cast(pl.Int32).rolling_sum(window_size, min_periods=min_samples).over(over) - k).clip(lower_bound=1)
+                ).sqrt().alias("rmse")
+            )
+        elif mode == "expanding":
+            # For expanding windows: RMSE grows as window expands
+            lf = lf.with_columns(
+                (pl.col("resid").pow(2).cumsum().over(over) / 
+                 (pl.int_range(pl.len()).over(over) + 1 - k).clip(lower_bound=1)
+                ).sqrt().alias("rmse")
+            )
+        else:  # group
+            # For group regressions: sqrt(sum(resid^2) / (n-k)) for each group
+            lf = lf.with_columns(
+                (pl.col("resid").pow(2).sum().over(over) / 
+                 (pl.count().over(over) - k).clip(lower_bound=1)
+                ).sqrt().alias("rmse")
+            )
 
     if "coef" not in outputs:
         lf = lf.drop("coef")

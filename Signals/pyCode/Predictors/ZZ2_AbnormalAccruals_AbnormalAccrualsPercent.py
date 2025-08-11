@@ -2,10 +2,10 @@
 # ABOUTME: Usage: python3 ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py (run from pyCode/ directory)
 
 import polars as pl
-import polars_ols  # registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.asreg import asreg
 from utils.savepredictor import save_predictor
 
 print("=" * 80)
@@ -120,24 +120,30 @@ df = df.with_columns(
 )
 
 # bys fyear sic2: asreg tempAccruals tempInvTA tempDelRev tempPPE, fitted
-# This runs cross-sectional regressions by year and industry
-df_with_residuals = df.with_columns(
-    pl.col("tempAccruals")
-    .least_squares.ols(
-        "tempInvTA", "tempDelRev", "tempPPE",
-        mode="residuals",
-        add_intercept=True,
-        null_policy="drop",
-        solve_method="svd"
-    )
-    .over(["fyear", "sic2"])
-    .alias("_residuals")
+# This runs cross-sectional regressions by year and industry using enhanced asreg helper
+df_with_residuals = asreg(
+    df,
+    y="tempAccruals",
+    X=["tempInvTA", "tempDelRev", "tempPPE"],
+    by=["fyear", "sic2"],
+    mode="group",
+    min_samples=1,  # Let all groups run, filter by _Nobs afterwards like Stata
+    add_intercept=True,
+    outputs=("resid",),
+    null_policy="drop",  # Pass through the null policy like original
+    solve_method="svd",   # Pass through the solve method like original
+    collect=True
 )
 
-# Also get the number of observations for filtering
+# Add the observation count for filtering (replicating _Nobs from Stata asreg)
 df_with_residuals = df_with_residuals.with_columns(
     pl.col("tempAccruals").count().over(["fyear", "sic2"]).alias("_Nobs")
 )
+
+# Rename residuals to match Stata's _residuals variable
+df_with_residuals = df_with_residuals.with_columns(
+    pl.col("resid").alias("_residuals")
+).drop("resid")
 
 # drop if _Nobs < 6 // p 360
 df_with_residuals = df_with_residuals.filter(pl.col("_Nobs") >= 6)
