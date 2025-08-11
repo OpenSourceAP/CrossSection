@@ -127,12 +127,15 @@ for m in range(60):
         (pl.col("ret_demeaned") * pl.col("mkt_demeaned") ** 2).alias("ret_mkt2")  # gen ret_mkt2 = ret*mkt2
     ])
     
+    # CRITICAL FIX: Filter out null returns before moment calculations (like Stata does)
     # gcollapse (mean) E_ret_mkt2=ret_mkt2 E_ret2=ret2 E_mkt2=mkt2 (count) nobs=ret, by(permno time_avail_m)
-    batch_result = batch_df.group_by(["permno", "time_avail_m_filled"]).agg([
+    batch_result = batch_df.filter(
+        pl.col("ret").is_not_null()  # Only include observations with non-null returns
+    ).group_by(["permno", "time_avail_m_filled"]).agg([
         pl.col("ret_mkt2").mean().alias("E_ret_mkt2"),
         pl.col("ret2").mean().alias("E_ret2"),
         pl.col("mkt2").mean().alias("E_mkt2"), 
-        pl.len().alias("nobs")
+        pl.len().alias("nobs")  # Count only non-null observations
     ]).with_columns([
         # gen Coskewness = E_ret_mkt2 / (sqrt(E_ret2) * E_mkt2)  // eq B-9
         (pl.col("E_ret_mkt2") / (pl.col("E_ret2").sqrt() * pl.col("E_mkt2"))).alias("Coskewness")
