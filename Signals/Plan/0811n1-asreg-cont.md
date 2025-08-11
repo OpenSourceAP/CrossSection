@@ -66,21 +66,21 @@ Think about the plan before writing code.
 
 **ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py** - 49.009% failure, missing 0.65% obs
    - Outputs: `AbnormalAccruals.csv`, `AbnormalAccrualsPercent.csv` (placebo)
-   - Status: ✅ **UPDATED** to use utils/asreg.py helper (precision unchanged)
+   - Status: UPDATED to use utils/asreg.py helper (precision unchanged)
 
 **ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py** - 19.380% failure (PriceDelayTstat worst)
    - Outputs: `PriceDelaySlope.csv`, `PriceDelayRsq.csv`, `PriceDelayTstat.csv`
-   - Status: Revisit
+   - Status: **Revisit**
    - Note: We need to incorporate t-stat calculations in utils/asreg.py. Return to this when we overhaul utils/asreg.py.
 
 **TrendFactor.py** (104 lines) - 97.153% failure (improved from 98.418%), missing 0.07% obs  
    - Output: `TrendFactor.csv`
-   - Status: ✅ **UPDATED** to use utils/asreg.py helper (1.3% improvement achieved)
+   - Status: UPDATED to use utils/asreg.py helper (1.3% improvement achieved)
    - Note: Complex predictor with multiple issues beyond regression implementation. Asreg standardization provided modest improvement but significant precision issues remain.
 
 **RDAbility.py** - 9.523% failure (improved from 95.728%), missing 4.95% obs
    - Output: `RDAbility.csv`
-   - Status: ✅ **UPDATED** to use utils/asreg.py helper (86.2% improvement achieved!)
+   - Status: UPDATED to use utils/asreg.py helper (86.2% improvement achieved!)
    - Key fix: Original had `add_intercept=False`, Stata asreg includes intercept by default
 
 ### Phase 3: Low priority files

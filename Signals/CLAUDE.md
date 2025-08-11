@@ -229,5 +229,6 @@ The notes go in the following folders:
   - This folder has long-term docs about the project. It includes important lessons from `Journal/`
 - `Plan/`
   - This folder contains plans for coding across Claude Code sessions. If one session gets too long, put the next steps and required context for the next Claude Code session in this folder.
+  - Each md file here should be one self-contained plan.
 
 
