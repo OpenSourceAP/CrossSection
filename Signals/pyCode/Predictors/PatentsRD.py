@@ -130,11 +130,26 @@ df.loc[(df['sizecat'] == 1) & (df['maincat'] == 3), 'PatentsRD'] = 1
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 1), 'PatentsRD'] = 0
 
 # Expand back to monthly
+def add_months_to_yyyymm(yyyymm, months_to_add):
+    """Add months to YYYYMM format, handling year rollover properly"""
+    year = yyyymm // 100
+    month = yyyymm % 100
+    
+    # Add months
+    total_months = month + months_to_add
+    
+    # Handle year rollover
+    while total_months > 12:
+        year += 1
+        total_months -= 12
+    
+    return year * 100 + total_months
+
 monthly_data = []
 for _, row in df.iterrows():
     for i in range(12):
         new_row = row.copy()
-        new_row['time_avail_m'] = row['time_avail_m'] + i
+        new_row['time_avail_m'] = add_months_to_yyyymm(row['time_avail_m'], i)
         monthly_data.append(new_row)
 
 df_monthly = pd.DataFrame(monthly_data)
