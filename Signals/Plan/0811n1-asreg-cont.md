@@ -53,11 +53,13 @@ Think about the plan before writing code.
 
 **ZZ2_IdioVolAHT.py** - 8.536% failure
     - Output: `IdioVolAHT.csv`
-    - Status: Skip for now based on user feedback. There may be a bug in the Stata code.
+    - Status: Skip
+    - Note: There may be a bug in the Stata code 
 
 **ZZ2_BetaFP.py** - 5.980% failure, missing 0.54% obs
     - Output: `BetaFP.csv`    
-    - Status: Skip for now based on user feedback. Computing correlation directly here is actually preferred to asreg and the deviations seem to be due to lag handling.
+    - Status: Skip
+    - Note: Computing correlation directly here is actually preferred to asreg and the deviations seem to be due to lag handling.
 
 ### Phase 2: Complex Files After Learning
 **Target: Apply lessons to harder cases**
@@ -68,11 +70,13 @@ Think about the plan before writing code.
 
 **ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py** - 19.380% failure (PriceDelayTstat worst)
    - Outputs: `PriceDelaySlope.csv`, `PriceDelayRsq.csv`, `PriceDelayTstat.csv`
-   - Status: tbc
+   - Status: Revisit
+   - Note: We need to incorporate t-stat calculations in utils/asreg.py. Return to this when we overhaul utils/asreg.py.
 
-**TrendFactor.py** (104 lines) - 98.418% failure, missing 0.07% obs  
+**TrendFactor.py** (104 lines) - 97.153% failure (improved from 98.418%), missing 0.07% obs  
    - Output: `TrendFactor.csv`
-   - Status: tbc
+   - Status: ✅ **UPDATED** to use utils/asreg.py helper (1.3% improvement achieved)
+   - Note: Complex predictor with multiple issues beyond regression implementation. Asreg standardization provided modest improvement but significant precision issues remain.
 
 **RDAbility.py** - 95.728% failure, missing 4.89% obs
    - Output: `RDAbility.csv`

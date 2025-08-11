@@ -2,7 +2,6 @@
 # ABOUTME: Usage: python3 TrendFactor.py (run from pyCode/ directory)
 
 import polars as pl
-import polars_ols  # registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -52,7 +51,7 @@ for L in lag_lengths:
     # asrol P, window(time_temp `L') stat(mean) by(permno) gen(A_`L')
     df_daily = df_daily.with_columns(
         pl.col("P")
-        .rolling_mean(window_size=L, min_samples=L)  # Require full window to prevent instability
+        .rolling_mean(window_size=L, min_samples=1)  # Allow partial windows like Stata default
         .over("permno")
         .alias(f"A_{L}")
     )
@@ -125,34 +124,26 @@ df = df.with_columns(
 
 
 # bys time_avail_m: asreg fRet A_*
-# Run cross-sectional regression by time_avail_m
-# Due to multicollinearity issues, add ridge regularization to stabilize coefficients
+# Run cross-sectional regression by time_avail_m using utils/asreg.py helper
 feature_cols = [f"A_{L}" for L in lag_lengths]
 
-print("🔧 Using OLS with explicit safeguards...")
-df_with_betas = df.with_columns(
-    pl.col("fRet")
-    .least_squares.ols(
-        *feature_cols,
-        mode="coefficients", 
-        add_intercept=True,
-        null_policy="drop"
-    )
-    .over("time_avail_m")
-    .alias("_b_coeffs")
-)
+print("🔧 Using asreg helper for cross-sectional regressions...")
+from utils.asreg import asreg
 
-# Extract beta coefficients
-beta_extracts = []
-for L in lag_lengths:
-    beta_extracts.append(
-        pl.col("_b_coeffs").struct.field(f"A_{L}").alias(f"_b_A_{L}")
-    )
-
-df_with_betas = df_with_betas.with_columns(beta_extracts)
-
-# Do not clip beta coefficients - let them be as computed to match Stata exactly
-print("🔧 Beta coefficients computed without clipping to match Stata...")
+df_with_betas = asreg(
+    df, 
+    y="fRet",
+    X=feature_cols,
+    by=["time_avail_m"], 
+    mode="group",
+    add_intercept=True,
+    outputs=("coef",),
+    coef_prefix="_b_",
+    null_policy="drop",
+    min_samples=12,  # Require at least 12 observations per group to avoid numerical issues
+    solve_method="lu",  # Use LU decomposition instead of SVD for better numerical stability
+    collect=False  # Keep as LazyFrame for continued processing
+).collect()  # Collect after asreg processing
 
 print("📊 Computing 12-month rolling averages of beta coefficients...")
 
