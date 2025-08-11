@@ -2,13 +2,13 @@
 # ABOUTME: Usage: python3 RDAbility.py (run from pyCode/ directory)
 
 import polars as pl
-import polars_ols  # registers .least_squares namespace
 import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.asreg import asreg
 
 print("=" * 80)
 print("🏗️  RDAbility.py")
@@ -62,22 +62,24 @@ for n in range(1, 6):
     )
     
     # Rolling regression: asreg tempY tempXLag, window(fyear 8) min(6) by(gvkey)
-    # Use polars-ols for rolling regression with 8-year window
-    df = df.with_columns(
-        pl.col("tempY")
-        .least_squares.rolling_ols(
-            pl.col("tempXLag"),
-            window_size=8,
-            min_periods=6,
-            mode="coefficients"
-        )
-        .over("gvkey")
-        .alias("_b_coeffs")
+    # Use asreg helper with 8-year window
+    result = asreg(
+        df, 
+        y="tempY", 
+        X=["tempXLag"], 
+        by=["gvkey"], 
+        t="fyear",  # Already sorted by gvkey, fyear above
+        mode="rolling", 
+        window_size=8, 
+        min_samples=6,
+        outputs=("coef",),
+        coef_prefix="b_"
+        # add_intercept=True by default - matches Stata asreg behavior
     )
     
     # Extract coefficient (slope) - this is gammaAbility`n'
     df = df.with_columns(
-        pl.col("_b_coeffs").struct.field("tempXLag").alias(f"gammaAbility{n}")
+        result["b_tempXLag"].alias(f"gammaAbility{n}")
     )
     
     # replace tempNonZero = tempXLag >0 & !mi(tempXLag)
@@ -102,8 +104,8 @@ for n in range(1, 6):
         .alias(f"gammaAbility{n}")
     )
     
-    # drop tempMean, _b_coeffs
-    df = df.drop(["tempMean", "_b_coeffs"])
+    # drop tempMean
+    df = df.drop(["tempMean"])
 
 # drop temp*
 df = df.drop(["tempXRD", "tempSale", "tempY", "tempX", "tempXLag", "lag_tempSale", "tempNonZero"])
