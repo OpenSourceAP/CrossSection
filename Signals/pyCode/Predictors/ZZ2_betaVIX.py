@@ -2,10 +2,10 @@
 # ABOUTME: Usage: python3 betaVIX.py (run from pyCode/ directory)
 
 import polars as pl
-import polars_ols  # Enable polars-ols functionality
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from asreg import asreg
 from savepredictor import save_predictor
 
 # Data load
@@ -35,30 +35,32 @@ df = df.join(
     how="inner"
 )
 
-# Set up time index for rolling window
+# Critical: Sort data first (from Beta.py success pattern)
 df = df.sort(["permno", "time_d"])
+
+# Set up time index for rolling window (Stata: time_temp = _n)
 df = df.with_columns([
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 ])
 
-# Rolling regression: ret_excess ~ mktrf + dVIX
-# 20-day window with minimum 15 observations
-df = df.with_columns([
-    pl.col("ret_excess")
-    .least_squares.rolling_ols(
-        pl.col("mktrf"),
-        pl.col("dVIX"),
-        window_size=20,
-        min_periods=15,
-        mode="coefficients"
-    )
-    .over("permno")
-    .alias("_b_coeffs")
-])
+# Use utils/asreg.py helper for rolling regression
+# This replicates: asreg ret mktrf dVIX, window(time_temp 20) min(15) by(permno)
+df = asreg(
+    df,
+    y="ret_excess",  # Stata: ret (but we already subtracted rf)
+    X=["mktrf", "dVIX"],
+    by=["permno"],
+    t="time_temp", 
+    mode="rolling",
+    window_size=20,
+    min_samples=15,
+    outputs=("coef",),
+    coef_prefix="b_"
+)
 
-# Extract betaVIX coefficient
+# Extract betaVIX coefficient (rename _b_dVIX betaVIX in Stata)
 df = df.with_columns([
-    pl.col("_b_coeffs").struct.field("dVIX").alias("betaVIX")
+    pl.col("b_dVIX").alias("betaVIX")
 ])
 
 # Convert to monthly and keep last observation per month
