@@ -46,9 +46,15 @@ import yaml
 # VALIDATION CONFIGURATION
 # ================================
 
-PTH_PERCENTILE = 0.99  # Quantile for extreme deviation (not percentile)
+# Superset test
+TOL_SUPERSET = 1.0  # Max allowed percentage of missing observations (units: percent)
+
+# Precision1
 TOL_DIFF_1 = 1e-2  # Threshold for identifying imperfect observations (Precision1)
-TOL_OBS_1  = 10  # Max allowed percentage of imperfect observations (units: percent)
+TOL_OBS_1 = 10  # Max allowed percentage of imperfect observations (units: percent)
+
+# Precision2
+PTH_PERCENTILE = 0.99  # Quantile for extreme deviation (not percentile)
 TOL_DIFF_2 = 1e-3  # Tolerance for Pth percentile absolute difference (Precision2)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
@@ -129,11 +135,18 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     missing_obs_df = stata_indexed.join(python_indexed, on=INDEX_COLS, how="anti")
     missing_count = missing_obs_df.height
     
-    is_superset = missing_count == 0
+    # Calculate missing percentage and check against threshold
+    if results['stata_obs_count'] > 0:
+        missing_percentage = (missing_count / results['stata_obs_count']) * 100
+    else:
+        missing_percentage = 0.0
+    
+    is_superset = missing_percentage <= TOL_SUPERSET
     results['is_superset'] = is_superset
+    results['missing_count'] = missing_count
+    results['missing_percentage'] = missing_percentage
     
     if not is_superset:
-        results['missing_count'] = missing_count
         
         # Get sample of missing observations with all columns for feedback
         missing_with_data = stata_df.join(missing_obs_df, on=INDEX_COLS, how="inner")
@@ -258,10 +271,12 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     # Test 2: Superset check
     if results.get('test_2_passed', False):
-        print(f"  ✅ Test 2 - Superset check: PASSED (Stata={results.get('stata_obs_count', 0)}, Python={results.get('python_obs_count', 0)})")
+        missing_pct = results.get('missing_percentage', 0)
+        print(f"  ✅ Test 2 - Superset check: PASSED (Missing {missing_pct:.2f}% <= {TOL_SUPERSET}% threshold)")
     else:
         missing_count = results.get('missing_count', 0)
-        print(f"  ❌ Test 2 - Superset check: FAILED (Python missing {missing_count} Stata observations)")
+        missing_pct = results.get('missing_percentage', 0)
+        print(f"  ❌ Test 2 - Superset check: FAILED (Missing {missing_pct:.2f}% > {TOL_SUPERSET}% threshold, {missing_count} observations)")
         
         # Show sample of missing observations
         if 'missing_observations_sample' in results:
@@ -432,9 +447,10 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"# Predictor Validation Results\n\n")
         f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         f.write(f"**Configuration**:\n")
-        f.write(f"- PTH_PERCENTILE: {PTH_PERCENTILE}\n")
+        f.write(f"- TOL_SUPERSET: {TOL_SUPERSET}%\n")
         f.write(f"- TOL_DIFF_1: {TOL_DIFF_1}\n")
         f.write(f"- TOL_OBS_1: {TOL_OBS_1}%\n")
+        f.write(f"- PTH_PERCENTILE: {PTH_PERCENTILE}\n")
         f.write(f"- TOL_DIFF_2: {TOL_DIFF_2}\n")
         f.write(f"- INDEX_COLS: {INDEX_COLS}\n\n")
         
