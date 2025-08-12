@@ -89,18 +89,36 @@ df = df.drop(["nyse_amex_mve", "p20", "p40", "p60", "p80", "sizecat"])
 print("🏛️ Computing Residual Institutional Ownership (RIO)...")
 
 # Residual Institutional Ownership sort
+# CRITICAL FIX: Match Stata's sequential replace logic exactly
 # gen temp = instown_perc/100
-# replace temp = 0 if mi(temp)
-# replace temp = .9999 if temp > .9999
-# replace temp = .0001 if temp < .0001
 df = df.with_columns(
     pl.when(pl.col("instown_perc").is_null())
-    .then(0.0)
-    .when(pl.col("instown_perc") / 100 > 0.9999)
-    .then(0.9999)
-    .when(pl.col("instown_perc") / 100 < 0.0001)
-    .then(0.0001)
+    .then(None)  # Keep as null initially
     .otherwise(pl.col("instown_perc") / 100)
+    .alias("temp")
+)
+
+# replace temp = 0 if mi(temp)
+df = df.with_columns(
+    pl.when(pl.col("temp").is_null())
+    .then(0.0)
+    .otherwise(pl.col("temp"))
+    .alias("temp")
+)
+
+# replace temp = .9999 if temp > .9999
+df = df.with_columns(
+    pl.when(pl.col("temp") > 0.9999)
+    .then(0.9999)
+    .otherwise(pl.col("temp"))
+    .alias("temp")
+)
+
+# replace temp = .0001 if temp < .0001 (this catches temp=0 from missing data!)
+df = df.with_columns(
+    pl.when(pl.col("temp") < 0.0001)
+    .then(0.0001)
+    .otherwise(pl.col("temp"))
     .alias("temp")
 )
 
