@@ -54,7 +54,7 @@ TOL_DIFF_1 = 1e-2  # Threshold for identifying imperfect observations (Precision
 TOL_OBS_1 = 10  # Max allowed percentage of imperfect observations (units: percent)
 
 # Precision2
-PTH_PERCENTILE = 0.99  # Quantile for extreme deviation (not percentile)
+EXTREME_Q = 0.99  # Quantile for extreme deviation (not percentile)
 TOL_DIFF_2 = 1e-3  # Tolerance for Pth percentile absolute difference (Precision2)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
@@ -207,7 +207,7 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         results['stata_std'] = stata_std
         
         # Test 4: Precision2 - Pth percentile absolute difference < TOL_DIFF_2
-        pth_percentile_diff = cobs_diff.select(pl.col("abs_diff").quantile(PTH_PERCENTILE)).item()
+        pth_percentile_diff = cobs_diff.select(pl.col("abs_diff").quantile(EXTREME_Q)).item()
         
         precision2_ok = pth_percentile_diff < TOL_DIFF_2
         results['pth_percentile_diff'] = pth_percentile_diff
@@ -299,10 +299,10 @@ def output_predictor_results(predictor_name, results, overall_passed):
         print(f"  ❌ Test 4 - Precision2 check: FAILED (No common observations found)")
     elif results.get('test_4_passed', False):
         pth_diff = results.get('pth_percentile_diff', 0)
-        print(f"  ✅ Test 4 - Precision2 check: PASSED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF_2:.2e})")
+        print(f"  ✅ Test 4 - Precision2 check: PASSED ({EXTREME_Q*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF_2:.2e})")
     else:
         pth_diff = results.get('pth_percentile_diff', 0)
-        print(f"  ❌ Test 4 - Precision2 check: FAILED ({PTH_PERCENTILE*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF_2:.2e})")
+        print(f"  ❌ Test 4 - Precision2 check: FAILED ({EXTREME_Q*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF_2:.2e})")
     
     # Overall result
     if overall_passed:
@@ -353,7 +353,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
         md_lines.append(f"**Precision1**: {results['bad_obs_percentage']:.3f}% obs with std_diff >= {TOL_DIFF_1:.2e} (tolerance: < {TOL_OBS_1}%)\n\n")
     
     if 'pth_percentile_diff' in results:
-        md_lines.append(f"**Precision2**: {PTH_PERCENTILE*100:.0f}th percentile diff = {results['pth_percentile_diff']:.2e} (tolerance: < {TOL_DIFF_2:.2e})\n\n")
+        md_lines.append(f"**Precision2**: {EXTREME_Q*100:.0f}th percentile diff = {results['pth_percentile_diff']:.2e} (tolerance: < {TOL_DIFF_2:.2e})\n\n")
     
     # Feedback for failed superset test
     if not results.get('test_2_passed', True) and 'missing_observations_sample' in results:
@@ -450,7 +450,7 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"- TOL_SUPERSET: {TOL_SUPERSET}%\n")
         f.write(f"- TOL_DIFF_1: {TOL_DIFF_1}\n")
         f.write(f"- TOL_OBS_1: {TOL_OBS_1}%\n")
-        f.write(f"- PTH_PERCENTILE: {PTH_PERCENTILE}\n")
+        f.write(f"- EXTREME_Q: {EXTREME_Q}\n")
         f.write(f"- TOL_DIFF_2: {TOL_DIFF_2}\n")
         f.write(f"- INDEX_COLS: {INDEX_COLS}\n\n")
         
@@ -519,9 +519,10 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             # Format symbols (emojis for pass/fail, NA for None)
             col1 = "✅" if test1 == True else ("❌" if test1 == False else "NA")
             
-            # Format superset column with failure percentage
+            # Format superset column with missing percentage for both pass/fail
             if test2 == True:
-                col2 = "✅"
+                missing_pct = results.get('missing_percentage', 0)
+                col2 = f"✅ ({missing_pct:.2f}%)"
             elif test2 == False:
                 # Include failure percentage when superset test fails
                 missing_count = results.get('missing_count', 0)
@@ -546,10 +547,10 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             # Format precision2 column with diff value information  
             if test4 == True:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"✅ (100th diff {pth_diff:.1E})"
+                col4 = f"✅ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
             elif test4 == False:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"❌ (100th diff {pth_diff:.1E})"
+                col4 = f"❌ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
             else:
                 col4 = "NA"
             
@@ -601,10 +602,10 @@ def format_predictor_statuses(results):
     test4 = results.get('test_4_passed', None)
     if test4 is True:
         pth_diff = results.get('pth_percentile_diff', 0)
-        precision2_status = f"yes (100th diff {pth_diff:.1E})"
+        precision2_status = f"yes ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
     elif test4 is False:
         pth_diff = results.get('pth_percentile_diff', 0)
-        precision2_status = f"no (100th diff {pth_diff:.1E}) ❌"
+        precision2_status = f"no ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E}) ❌"
     else:
         precision2_status = "no data ❌"
     
