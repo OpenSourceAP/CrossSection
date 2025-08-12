@@ -23,83 +23,159 @@ Fix the Precision1 failures for the predictors described below.
 Proceed in order from top to bottom.
 
 ### Group 1
-These should be easier (might not be).
+These failures are linked to the stata 'relrank.ado' function. Using utils/relrank.py should take care of them (hopefully).
 
-* **Mom12mOffSeason**
+- **IndRetBig**
+  - Script: IndRetBig
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (25.49%) ❌
+  - Precision2: no (99th diff 1.8E-02) ❌
+  - Status: TBC
 
-  - Precision1: 91.88%
-  - Superset: ✅
-  - Recent Fixes: None
-  - Root Cause: Seasonal momentum calculation
-  - Strategy:
-    Compare with other MomOffSeason*.py scripts. They many of the others work much better.
+- **PredictedFE**
+  - Script: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (95.81%) ❌
+  - Precision2: no (99th diff 2.3E-02) ❌
+  - Status: TBC
 
-* **OrgCap**
+## Group 2
+These scripts are relatively simple. Hopefully the fix will be straightforward.
 
-  - Precision1: 91.02%
-  - Superset: ❌ (0.02%)
-  - Recent Fixes: None
-  - Root Cause: Organizational capital measures  
+- **ShareVol**
+  - Script: ShareVol
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (14.38%) ❌
+  - Precision2: no (99th diff 1.0E+00) ❌
+  - Status: TBC
 
-* **MS**
+- **OrgCap**
+  - Script: ZZ1_OrgCap_OrgCapNoAdj
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (91.02%) ❌
+  - Precision2: no (99th diff 1.6E+00) ❌
+  - Status: TBC
 
-  - Precision1: 63.45%
-  - Superset: ✅
-  - Recent Fixes: **Major null handling fix**
-  - Root Cause: Precision differences remain
+- **MS**
+  - Script: MS
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (63.45%) ❌
+  - Precision2: no (99th diff 4.0E+00) ❌
+  - Status: TBC
 
-* **PatentsRD**
+- **retConglomerate**
+  - Script: retConglomerate
+  - Python CSV: yes
+  - Superset: no (22.32%) ❌
+  - Precision1: no (94.06%) ❌
+  - Precision2: no (99th diff 1.7E-01) ❌
+  - Status: TBC
 
-  - Precision1: 15.70%
-  - Superset: ❌ (29.14%)
-  - Recent Fixes: **Month arithmetic fix**
-  - Root Cause: Expansion logic partially fixed
+- **PS**
+  - Script: PS
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (17.90%) ❌
+  - Precision2: no (99th diff 5.0E+00) ❌  
+  - Status: TBC
 
-* **IndRetBig**
+## Group 3
+Relatively complicated do files. Need to be more careful.
 
-  - Precision1: 87.02%
-  - Superset: ❌ (3.47%)
-  - Recent Fixes: None
-  - Root Cause: Industry momentum calculation  
+- **AbnormalAccruals**
+  - Script: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (49.01%) ❌
+  - Precision2: no (99th diff 1.5E-01) ❌
+  - Status: TBC
 
-### Group 2
-Hard past return predictors
+- **RIO_Volatility**
+  - Script: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
+  - Python CSV: yes
+  - Superset: no (4.40%) ❌
+  - Precision1: no (26.58%) ❌
+  - Precision2: no (99th diff 4.0E+00) ❌
+  - Status: TBC
 
-* **Coskewness**
+- **RIO_Turnover**
+  - Script: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (23.71%) ❌
+  - Precision2: no (99th diff 3.0E+00) ❌
+  
+- **RIO_MB**
+  - Script: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (17.07%) ❌
+  - Precision2: no (99th diff 3.0E+00) ❌
 
-  - Precision1: 99.36%
-  - Superset: ❌ (8.84%)
-  - Recent Fixes: None
-  - Root Cause: Mathematical formula errors (missing values)    
+- **IntanCFP**
+  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (15.60%) ❌
+  - Precision2: no (99th diff 4.4E-02) ❌
 
-* **TrendFactor**
+- **IntanBM**
+  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (15.49%) ❌
+  - Precision2: no (99th diff 3.0E-02) ❌
 
-  - Precision1: 97.15%
-  - Superset: ❌ (0.07%)
-  - Recent Fixes: asreg standardization
-  - Root Cause: Sign reversal in coefficients
+- **IntanEP**
+  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (13.83%) ❌
+  - Precision2: no (99th diff 3.1E-02) ❌
 
-* **retConglomerate**
+# Group 4
+Complex and computationally intensive. Be very careful.
 
-  - Precision1: 94.06%
-  - Superset: ❌ (22.32%)
-  - Recent Fixes: Updates applied
-  - Root Cause: Industry classification logic
+- **TrendFactor**
+  - Script: TrendFactor
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (97.15%) ❌
+  - Precision2: no (99th diff 2.6E-01) ❌
 
-### Group 3
-Hard predictors doing random stuff  
+- **Frontier**
+  - Script: Frontier
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (84.22%) ❌
+  - Precision2: no (99th diff 5.4E-01) ❌
 
-* **PredictedFE**
+- **IdioVolAHT**
+  - Script: ZZ2_IdioVolAHT
+  - Python CSV: yes
+  - Superset: no (3.82%) ❌
+  - Precision1: no (17.59%) ❌
+  - Precision2: no (99th diff 5.3E-03) ❌
 
-  - Precision1: 95.81%
-  - Superset: ❌ (0.27%)
-  - Recent Fixes: None
-  - Root Cause: Complex statistical calculation
+- **PatentsRD**
+  - Script: PatentsRD
+  - Python CSV: yes
+  - Superset: no (29.14%) ❌
+  - Precision1: no (15.70%) ❌
+  - Precision2: no (99th diff 1.0E+00) ❌
 
-* **Frontier**
 
-  - Precision1: 84.22%
-  - Superset: ✅
-  - Recent Fixes: Fixes applied
-  - Root Cause: Complex calculation logic
+# Group 5
+Ignore these for now.
 
+- **PriceDelayTstat**
+  - Script: ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (19.38%) ❌
+  - Precision2: no (99th diff 6.1E+00) ❌
