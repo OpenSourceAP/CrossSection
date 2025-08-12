@@ -9,6 +9,7 @@ import numpy as np
 import sys
 sys.path.append('.')
 from utils.savepredictor import save_predictor
+from utils.relrank import relrank
 
 # DATA LOAD
 # Stata: use permno time_avail_m ret mve_c sicCRSP using "$pathDataIntermediate/SignalMasterTable", clear
@@ -338,31 +339,8 @@ df = df.dropna(subset=['tempFF48'])
 print(f"After dropping missing FF48 industries: {len(df)} observations")
 
 # Stata: bys tempFF48 time_avail_m: relrank mve_c, gen(tempRK) ref(mve_c)
-# Implement relrank functionality - creates relative ranks (percentiles) within groups
-def calculate_relrank(group):
-    """
-    Calculate relative ranks (percentiles) within group like Stata's relrank
-    relrank creates percentiles from 0 to 1 where largest value gets rank ~1.0
-    """
-    if len(group) == 1:
-        return pd.Series([1.0], index=group.index)
-    
-    # Sort ascending and assign ranks (smallest gets rank 1)
-    # Then convert to percentiles where largest gets highest percentile
-    ranks = group.rank(method='average', na_option='keep')
-    n_valid = group.count()
-    
-    if n_valid == 0:
-        return pd.Series([np.nan] * len(group), index=group.index)
-    
-    # Convert ranks to percentiles: (rank - 0.5) / n
-    # This matches Stata's relrank behavior
-    percentiles = (ranks - 0.5) / n_valid
-    
-    return percentiles
-
-# Calculate relative ranks by industry-month groups
-df['tempRK'] = df.groupby(['tempFF48', 'yyyymm'])['mve_c'].transform(calculate_relrank)
+# Use utils/relrank to match Stata's exact behavior
+df = relrank(df, 'mve_c', by=['tempFF48', 'yyyymm'], out='tempRK')
 
 print(f"Calculated tempRK ranks for {df['tempRK'].notna().sum()} observations")
 

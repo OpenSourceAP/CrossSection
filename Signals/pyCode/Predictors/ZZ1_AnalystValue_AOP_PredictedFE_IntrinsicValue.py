@@ -8,6 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.relrank import relrank
 
 print("=" * 80)
 print("🏗️  ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py")
@@ -288,17 +289,15 @@ df = df.with_columns(
     .alias("FErr")
 )
 
-# Convert to ranks
-# Note: Stata uses 'relrank' which creates relative ranks, typically 0-1
-# The original code used rank/count which creates 1/n to 1 range
-# Let's revert to the original approach first to match previous behavior
+# Convert to ranks using utils/relrank to match Stata's exact behavior
+# Stata: foreach v of varlist SG BM AOP LTG { by time_avail_m: relrank `v', gen(rank`v') ref(`v') }
+# Convert to pandas temporarily for relrank processing
+df_pandas = df.to_pandas()
 variables = ["SG", "BM", "AOP", "LTG"]
 for var in variables:
-    df = df.with_columns(
-        pl.col(var).rank(method="ordinal").over("time_avail_m")
-        .truediv(pl.col(var).count().over("time_avail_m"))
-        .alias(f"rank{var}")
-    )
+    df_pandas = relrank(df_pandas, var, by="time_avail_m", out=f"rank{var}")
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
 
 # Lag for forecasting and run reg
 for var in variables:
