@@ -13,8 +13,6 @@ This document establishes coding standards for fastxtile operations based on sys
 - **Success Pattern**: Explicit infinite cleaning + pd.qcut approach (MomRev: 0.00% precision1)
 - **Utility Enhancement**: Comprehensive edge case handling now supports all identified scenarios
 
-## 1. When to Use utils/stata_fastxtile.py vs Inline
-
 ### ✅ Use Enhanced Utility (RECOMMENDED)
 Use `from utils.stata_fastxtile import fastxtile` for:
 
@@ -38,20 +36,6 @@ df['quintile'] = fastxtile(df, 'variable', by='time_avail_m', n=5)
 df['quintile'] = fastxtile(df, 'variable', by=['time_avail_m', 'industry'], n=5)
 ```
 
-### ⚠️ Keep Inline Only If
-Keep existing inline implementations only if:
-
-- **Already achieving 0.00% precision1** (MomRev, OScore patterns)
-- **Simple, well-tested implementation** with proven success
-- **No future changes expected** to the predictor logic
-
-```python
-# EXISTING SUCCESS PATTERN - Can keep if working
-df['var_clean'] = df['var'].replace([np.inf, -np.inf], np.nan)
-df['quintile'] = df.groupby('time_avail_m')['var_clean'].transform(
-    lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1
-)
-```
 
 ## 2. Mandatory Infinite Value Pre-processing
 
