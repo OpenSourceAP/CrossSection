@@ -23,6 +23,9 @@ examples:
 - Goals
   - Replicate the logic in the do file, line by line
   - Use test_predictors.py to check the output
+  - Refer to the translation philosophy and writing code sections of @CLAUDE.md for our guide on how to translate.
+  - Refer to @StataDocs/ to understand what the stata code is doing before translating.
+  - Do NOT assume your translated python code is correct.
 
 # Error handling
 - if $ARGUMENTS is not a valid predictor, check with the user on the name of the predictor
