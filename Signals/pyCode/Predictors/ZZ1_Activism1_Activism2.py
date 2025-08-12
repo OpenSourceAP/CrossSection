@@ -1,11 +1,11 @@
-# ABOUTME: Activism1.py - translates Activism1 predictor from Stata to Python
-# ABOUTME: Replicates ZZ1_Activism1_Activism2.do line-by-line, outputs Activism1 signal only
+# ABOUTME: ZZ1_Activism1_Activism2.py - translates ZZ1_Activism1_Activism2.do from Stata to Python
+# ABOUTME: Replicates activism proxy generation line-by-line, outputs both Activism1 and Activism2 signals
 
 """
-Activism1.py
+ZZ1_Activism1_Activism2.py
 
 How to run:
-    python3 Predictors/Activism1.py
+    python3 Predictors/ZZ1_Activism1_Activism2.py
 
 Inputs:
     - ../pyData/Intermediate/SignalMasterTable.parquet
@@ -15,11 +15,11 @@ Inputs:
 
 Outputs:
     - ../pyData/Predictors/Activism1.csv (permno, yyyymm, Activism1)
+    - ../pyData/Predictors/Activism2.csv (permno, yyyymm, Activism2)
 
 Signal Construction:
-    - Shareholder activism proxy 1: External Gov among Large Blockheld
-    - Based on external governance score (24-G) among firms with large blockholdings (top quartile >5%)
-    - Excludes dual class shares
+    - Activism1: Shareholder activism proxy 1: External Gov among Large Blockheld
+    - Activism2: Shareholder activism proxy 2: Blockholdings among High External Governance
 """
 
 import pandas as pd
@@ -71,6 +71,7 @@ df = df.filter(pl.col('ticker').is_not_null())
 print(f"Records with ticker: {df.shape[0]}")
 print(f"Records without ticker: {temp_missing_ticker.shape[0]}")
 
+# drop if mi(ticker)
 # merge m:1 ticker time_avail_m using "$pathDataIntermediate/GovIndex", keep(master match) nogenerate
 gov = pl.read_parquet("../pyData/Intermediate/GovIndex.parquet")
 df = df.join(gov, on=['ticker', 'time_avail_m'], how='left')
@@ -120,6 +121,7 @@ df = df.with_columns(
 )
 
 # gen Activism1 = tempEXT
+# label var Activism1 "Shareholder activism I: External Gov among Large Blockheld"
 df = df.with_columns(pl.col('tempEXT').alias('Activism1'))
 
 print(f"Activism1 signal constructed")
@@ -128,8 +130,50 @@ print(f"Activism1 signal constructed")
 non_missing_count = df.filter(pl.col('Activism1').is_not_null()).shape[0]
 print(f"Non-missing Activism1 values: {non_missing_count}")
 
+# drop temp*
+df = df.drop(['tempBLOCK', 'tempBLOCKQuant', 'tempEXT'])
+
+# * Shareholder activism proxy 2
+print("Constructing Activism2 signal...")
+
+# gen tempBLOCK = maxinstown_perc if maxinstown_perc > 5
+# replace tempBLOCK = 0 if tempBLOCK == .
+tempBLOCK = pl.when(pl.col('maxinstown_perc') > 5).then(pl.col('maxinstown_perc')).otherwise(0)
+df = df.with_columns(tempBLOCK.alias('tempBLOCK'))
+
+# replace tempBLOCK = . if G == .
+# replace tempBLOCK = . if !mi(shrcls) // Exclude dual class shares
+df = df.with_columns(
+    pl.when(pl.col('G').is_null()).then(None)
+    .when((pl.col('shrcls') != '') & (pl.col('shrcls').is_not_null())).then(None)  # Exclude dual class shares
+    .otherwise(pl.col('tempBLOCK'))
+    .alias('tempBLOCK')
+)
+
+# replace tempBLOCK = . if 24 - G < 19
+df = df.with_columns(
+    pl.when((24 - pl.col('G')) < 19).then(None)
+    .otherwise(pl.col('tempBLOCK'))
+    .alias('tempBLOCK')
+)
+
+# gen Activism2 = tempBLOCK
+# label var Activism2 "Shareholder activism II: Blockholdings among High Ext Gov"
+df = df.with_columns(pl.col('tempBLOCK').alias('Activism2'))
+
+print(f"Activism2 signal constructed")
+
+# Check for non-missing values
+non_missing_count = df.filter(pl.col('Activism2').is_not_null()).shape[0]
+print(f"Non-missing Activism2 values: {non_missing_count}")
+
 # SAVE
+# do "$pathCode/savepredictor" Activism1
+# do "$pathCode/savepredictor" Activism2
 print("Saving Activism1...")
 save_predictor(df.to_pandas(), 'Activism1')
 
-print("Activism1 predictor completed!")
+print("Saving Activism2...")
+save_predictor(df.to_pandas(), 'Activism2')
+
+print("Activism1 and Activism2 predictors completed!")

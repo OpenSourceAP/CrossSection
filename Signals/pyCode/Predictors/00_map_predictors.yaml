@@ -882,7 +882,7 @@ ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py:
   - ReturnSkew3F.csv
   placebos: []
 ZZ1_Activism1_Activism2.py:
-  created: 'no'
+  created: 'yes'
   predictors:
   - Activism1.csv
   - Activism2.csv
