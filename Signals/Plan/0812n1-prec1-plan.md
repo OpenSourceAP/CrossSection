@@ -27,77 +27,79 @@ These should be easier (might not be).
 
 * **Mom12mOffSeason**
 
-  * Precision1: 91.88%
-  * Superset: ✅
-  * Recent Fixes: None
-  * Root Cause: Seasonal momentum calculation
+  - Precision1: 91.88%
+  - Superset: ✅
+  - Recent Fixes: None
+  - Root Cause: Seasonal momentum calculation
+  - Strategy:
+    Compare with other MomOffSeason*.py scripts. They many of the others work much better.
 
 * **OrgCap**
 
-  * Precision1: 91.02%
-  * Superset: ❌ (0.02%)
-  * Recent Fixes: None
-  * Root Cause: Organizational capital measures  
+  - Precision1: 91.02%
+  - Superset: ❌ (0.02%)
+  - Recent Fixes: None
+  - Root Cause: Organizational capital measures  
 
 * **MS**
 
-  * Precision1: 63.45%
-  * Superset: ✅
-  * Recent Fixes: **Major null handling fix**
-  * Root Cause: Precision differences remain
+  - Precision1: 63.45%
+  - Superset: ✅
+  - Recent Fixes: **Major null handling fix**
+  - Root Cause: Precision differences remain
 
 * **PatentsRD**
 
-  * Precision1: 15.70%
-  * Superset: ❌ (29.14%)
-  * Recent Fixes: **Month arithmetic fix**
-  * Root Cause: Expansion logic partially fixed
+  - Precision1: 15.70%
+  - Superset: ❌ (29.14%)
+  - Recent Fixes: **Month arithmetic fix**
+  - Root Cause: Expansion logic partially fixed
 
 * **IndRetBig**
 
-  * Precision1: 87.02%
-  * Superset: ❌ (3.47%)
-  * Recent Fixes: None
-  * Root Cause: Industry momentum calculation  
+  - Precision1: 87.02%
+  - Superset: ❌ (3.47%)
+  - Recent Fixes: None
+  - Root Cause: Industry momentum calculation  
 
 ### Group 2
 Hard past return predictors
 
 * **Coskewness**
 
-  * Precision1: 99.36%
-  * Superset: ❌ (8.84%)
-  * Recent Fixes: None
-  * Root Cause: Mathematical formula errors
+  - Precision1: 99.36%
+  - Superset: ❌ (8.84%)
+  - Recent Fixes: None
+  - Root Cause: Mathematical formula errors (missing values)    
 
 * **TrendFactor**
 
-  * Precision1: 97.15%
-  * Superset: ❌ (0.07%)
-  * Recent Fixes: asreg standardization
-  * Root Cause: Sign reversal in coefficients
+  - Precision1: 97.15%
+  - Superset: ❌ (0.07%)
+  - Recent Fixes: asreg standardization
+  - Root Cause: Sign reversal in coefficients
 
 * **retConglomerate**
 
-  * Precision1: 94.06%
-  * Superset: ❌ (22.32%)
-  * Recent Fixes: Updates applied
-  * Root Cause: Industry classification logic
+  - Precision1: 94.06%
+  - Superset: ❌ (22.32%)
+  - Recent Fixes: Updates applied
+  - Root Cause: Industry classification logic
 
 ### Group 3
 Hard predictors doing random stuff  
 
 * **PredictedFE**
 
-  * Precision1: 95.81%
-  * Superset: ❌ (0.27%)
-  * Recent Fixes: None
-  * Root Cause: Complex statistical calculation
+  - Precision1: 95.81%
+  - Superset: ❌ (0.27%)
+  - Recent Fixes: None
+  - Root Cause: Complex statistical calculation
 
 * **Frontier**
 
-  * Precision1: 84.22%
-  * Superset: ✅
-  * Recent Fixes: Fixes applied
-  * Root Cause: Complex calculation logic
+  - Precision1: 84.22%
+  - Superset: ✅
+  - Recent Fixes: Fixes applied
+  - Root Cause: Complex calculation logic
 

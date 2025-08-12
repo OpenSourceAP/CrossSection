@@ -1,118 +1,141 @@
-# ABOUTME: MomOffSeason06YrPlus.py - generates off-season long-term reversal for years 6-10
-# ABOUTME: Python translation of MomOffSeason06YrPlus.do using seasonal return extraction
+# ABOUTME: Translates MomOffSeason06YrPlus predictor from Stata to Python
+# ABOUTME: Creates off-season long-term reversal for years 6-10 by removing seasonal components
 
 """
-MomOffSeason06YrPlus.py
+MomOffSeason06YrPlus Predictor Translation
 
-Generates off-season long-term reversal predictor for years 6-10 by removing seasonal components:
-- MomOffSeason06YrPlus: (60-month momentum - seasonal returns) / (60-month count - seasonal count)
-- Seasonal returns: ret[t-71], ret[t-83], ret[t-95], ret[t-107], ret[t-119] (every 12 months)
-- Base lag: ret[t-60] for rolling calculation
+This script translates the Stata predictor MomOffSeason06YrPlus.do to Python.
+The predictor calculates off-season momentum for years 6-10 by subtracting seasonal returns
+from 60-month rolling momentum.
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate  
     python3 Predictors/MomOffSeason06YrPlus.py
-
-Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, ret)
-
-Outputs:
-    - ../pyData/Predictors/MomOffSeason06YrPlus.csv
-
-Requirements:
-    - 60-month rolling windows for base momentum calculation
-    - Seasonal return extraction at specific lags for years 6-10
+    
+Input:
+    - pyData/Intermediate/SignalMasterTable.parquet (columns: permno, time_avail_m, ret)
+    
+Output:
+    - pyData/Predictors/MomOffSeason06YrPlus.csv (columns: permno, yyyymm, MomOffSeason06YrPlus)
 """
 
-import polars as pl
+import pandas as pd
+import numpy as np
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.savepredictor import save_predictor
-from utils.time_based_operations import time_based_lag
 
-print("=" * 80)
-print("🏗️  MomOffSeason06YrPlus.py")
-print("Generating off-season long-term reversal for years 6-10")
-print("=" * 80)
+# Add parent directory to path for any shared utilities
+sys.path.append('..')
 
-# DATA LOAD
-print("📊 Loading SignalMasterTable data...")
+def main():
+    print("Starting MomOffSeason06YrPlus predictor translation...")
+    
+    # DATA LOAD
+    print("Loading SignalMasterTable...")
+    df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
+    
+    # Keep only required columns: permno, time_avail_m, ret
+    df = df[['permno', 'time_avail_m', 'ret']].copy()
+    print(f"Loaded {len(df)} observations")
+    
+    # Sort data by permno and time_avail_m (equivalent to xtset)
+    df = df.sort_values(['permno', 'time_avail_m'])
+    print("Data sorted by permno and time_avail_m")
+    
+    # SIGNAL CONSTRUCTION
+    print("Starting signal construction...")
+    
+    # Replace missing returns with 0 (equivalent to: replace ret = 0 if mi(ret))
+    df['ret'] = df['ret'].fillna(0)
+    print("Replaced missing returns with 0")
+    
+    # Create seasonal lag variables (equivalent to: foreach n of numlist 71(12)119)
+    # This creates lags for seasonal returns from 6+ years ago: 71, 83, 95, 107, 119 months
+    lag_periods = list(range(71, 120, 12))  # 71, 83, 95, 107, 119
+    print(f"Creating seasonal lags for periods: {lag_periods}")
+    
+    # Create time-based lag variables (equivalent to: gen temp`n' = l`n'.ret)
+    # Stata lags are time-based, not position-based
+    print("Creating time-based seasonal lags...")
+    
+    for n in lag_periods:
+        print(f"Creating temp{n} (lag {n} months)...")
+        # Create a lagged time column
+        df[f'lag_time_{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
+        
+        # Create a helper dataframe for the lag merge
+        lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
+        lag_data.columns = ['permno', f'lag_time_{n}', f'temp{n}']
+        
+        # Merge to get the lagged values
+        df = df.merge(lag_data, on=['permno', f'lag_time_{n}'], how='left')
+        
+        # Clean up the temporary time column
+        df = df.drop(f'lag_time_{n}', axis=1)
+    
+    # Create list of temporary variable names for row operations
+    temp_vars = [f'temp{n}' for n in lag_periods]
+    
+    # Calculate seasonal row total (equivalent to: egen retTemp1 = rowtotal(temp*), missing)
+    # The 'missing' option means if all values are missing, return missing (not 0)
+    df['retTemp1'] = df[temp_vars].sum(axis=1)
+    # Handle case where all values are NaN - should return NaN, not 0
+    all_missing = df[temp_vars].isna().all(axis=1)
+    df.loc[all_missing, 'retTemp1'] = np.nan
+    print("Calculated retTemp1 (seasonal row total)")
+    
+    # Calculate count of non-missing seasonal values (equivalent to: egen retTemp2 = rownonmiss(temp*))
+    df['retTemp2'] = df[temp_vars].notna().sum(axis=1)
+    print("Calculated retTemp2 (seasonal row non-missing count)")
+    
+    # Calculate momentum base using 60-month rolling window
+    print("Creating momentum base with 60-month rolling window...")
+    
+    # Create retLagTemp = l60.ret (60-month lagged returns)
+    print("Creating retLagTemp (lag 60 months)...")
+    df['lag_time_60'] = df['time_avail_m'] - pd.DateOffset(months=60)
+    lag_data_60 = df[['permno', 'time_avail_m', 'ret']].copy()
+    lag_data_60.columns = ['permno', 'lag_time_60', 'retLagTemp']
+    df = df.merge(lag_data_60, on=['permno', 'lag_time_60'], how='left')
+    df = df.drop('lag_time_60', axis=1)
+    
+    # Create 60-month rolling sum and count of retLagTemp (equivalent to asrol)
+    print("Calculating 60-month rolling sum and count...")
+    df = df.sort_values(['permno', 'time_avail_m'])
+    
+    # Rolling sum (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(sum))
+    df['retLagTemp_sum60'] = df.groupby('permno')['retLagTemp'].transform(
+        lambda x: x.rolling(window=60, min_periods=1).sum()
+    )
+    
+    # Rolling count (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(count))
+    df['retLagTemp_count60'] = df.groupby('permno')['retLagTemp'].transform(
+        lambda x: x.notna().rolling(window=60, min_periods=1).sum()
+    )
+    
+    print("Calculated 60-month rolling momentum base")
+    
+    # Calculate final predictor (equivalent to: gen MomOffSeason06YrPlus = (retLagTemp_sum60 - retTemp1)/(retLagTemp_count60 - retTemp2))
+    df['MomOffSeason06YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
+    # Handle division by zero - when denominator is 0, result should be NaN
+    df.loc[(df['retLagTemp_count60'] - df['retTemp2']) == 0, 'MomOffSeason06YrPlus'] = np.nan
+    print("Calculated MomOffSeason06YrPlus predictor")
+    
+    # Create yyyymm column from time_avail_m 
+    # Convert datetime to yyyymm integer format (e.g. 199112 for Dec 1991)
+    df['yyyymm'] = (df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month).astype(int)
+    
+    # SAVE - Keep only required output columns
+    output_df = df[['permno', 'yyyymm', 'MomOffSeason06YrPlus']].copy()
+    
+    # Drop rows where predictor is missing (following Stata convention)
+    output_df = output_df.dropna(subset=['MomOffSeason06YrPlus'])
+    
+    # Save to CSV
+    output_path = '../pyData/Predictors/MomOffSeason06YrPlus.csv'
+    output_df.to_csv(output_path, index=False)
+    print(f"Saved {len(output_df)} observations to {output_path}")
+    
+    print("MomOffSeason06YrPlus predictor translation completed successfully!")
 
-# Load SignalMasterTable data (permno, time_avail_m, ret)
-print("Loading SignalMasterTable.parquet...")
-df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select(["permno", "time_avail_m", "ret"])
-print(f"Loaded SignalMasterTable: {len(df):,} monthly observations")
-
-# SIGNAL CONSTRUCTION
-print("🧮 Computing off-season long-term reversal for years 6-10...")
-
-# Replace missing returns with 0 (following Stata logic)
-df = df.with_columns(
-    pl.col("ret").fill_null(0.0)
-)
-
-# Sort by permno and time for lag operations
-df = df.sort(["permno", "time_avail_m"])
-
-print("🗓️  Extracting seasonal returns for years 6-10 (every 12 months)...")
-
-# Extract seasonal returns: ret[t-71], ret[t-83], ret[t-95], ret[t-107], ret[t-119]
-# These are returns from 71, 83, 95, 107, and 119 months ago (seasonal pattern for years 6-10)
-df = df.with_columns([
-    pl.col("ret").shift(71).over("permno").alias("temp71"),
-    pl.col("ret").shift(83).over("permno").alias("temp83"), 
-    pl.col("ret").shift(95).over("permno").alias("temp95"),
-    pl.col("ret").shift(107).over("permno").alias("temp107"),
-    pl.col("ret").shift(119).over("permno").alias("temp119")
-])
-
-# Calculate seasonal return sum and count (following Stata's rowtotal/rownonmiss logic)
-df = df.with_columns([
-    # Sum of seasonal returns - fill nulls with 0 to match Stata's rowtotal behavior with missing option
-    pl.concat_list([
-        pl.col("temp71").fill_null(0.0),
-        pl.col("temp83").fill_null(0.0), 
-        pl.col("temp95").fill_null(0.0),
-        pl.col("temp107").fill_null(0.0),
-        pl.col("temp119").fill_null(0.0)
-    ]).list.sum().alias("retTemp1"),
-    # Count of non-null seasonal returns - use list evaluation
-    pl.concat_list(["temp71", "temp83", "temp95", "temp107", "temp119"]).list.eval(
-        pl.element().is_not_null().sum()
-    ).list.get(0).alias("retTemp2")
-])
-
-print("📊 Computing 60-month rolling momentum base...")
-
-# Get ret[t-60] for 60-month rolling calculation (using time-based lag to match Stata's l60.ret)
-df = time_based_lag(df, lag_months=60, value_col="ret", alias="retLagTemp")
-
-# Calculate 60-month rolling sum and count using rolling operations
-df = df.with_columns([
-    pl.col("retLagTemp").rolling_sum(window_size=60, min_samples=1).over("permno").alias("retLagTemp_sum60"),
-    # For rolling count: create indicator (1 if not null, 0 if null) then rolling sum
-    pl.col("retLagTemp").is_not_null().cast(pl.Int32).rolling_sum(window_size=60, min_samples=1).over("permno").alias("retLagTemp_count60")
-])
-
-print("🧮 Computing final MomOffSeason06YrPlus predictor...")
-
-# Calculate MomOffSeason06YrPlus: (60-month sum - seasonal sum) / (60-month count - seasonal count)
-# Calculate final predictor - let savepredictor handle filtering and formatting
-df_final = df.with_columns(
-    ((pl.col("retLagTemp_sum60") - pl.col("retTemp1")) / 
-     (pl.col("retLagTemp_count60") - pl.col("retTemp2"))).alias("MomOffSeason06YrPlus")
-).select(["permno", "time_avail_m", "MomOffSeason06YrPlus"])
-
-print(f"Generated MomOffSeason06YrPlus values: {len(df_final):,} observations")
-print(f"MomOffSeason06YrPlus summary stats:")
-print(f"  Mean: {df_final['MomOffSeason06YrPlus'].mean():.6f}")
-print(f"  Std: {df_final['MomOffSeason06YrPlus'].std():.6f}")
-print(f"  Min: {df_final['MomOffSeason06YrPlus'].min():.6f}")  
-print(f"  Max: {df_final['MomOffSeason06YrPlus'].max():.6f}")
-
-# SAVE
-print("💾 Saving MomOffSeason06YrPlus predictor...")
-save_predictor(df_final, "MomOffSeason06YrPlus")
-print("✅ MomOffSeason06YrPlus.csv saved successfully")
+if __name__ == "__main__":
+    main()

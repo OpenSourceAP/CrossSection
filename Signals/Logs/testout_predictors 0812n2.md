@@ -1,6 +1,6 @@
 # Predictor Validation Results
 
-**Generated**: 2025-08-12 11:33:52
+**Generated**: 2025-08-12 10:05:47
 
 **Configuration**:
 - PTH_PERCENTILE: 1.0
@@ -14,13 +14,16 @@
 | Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |
 |---------------------------|------------|----------|-----------|--------------|-------------------------|
 | Recomm_ShortInterest      | ✅         | ✅       | ❌ (55.76%)  | ✅ (0.00%)    | ✅ (100th diff 0.0E+00)  |
+| RIO_Volatility            | ✅         | ✅       | ❌ (41.67%)  | ❌ (21.51%)   | ❌ (100th diff 4.0E+00)  |
+| RIO_Turnover              | ✅         | ✅       | ❌ (33.04%)  | ❌ (22.23%)   | ❌ (100th diff 4.0E+00)  |
 | PatentsRD                 | ✅         | ✅       | ❌ (29.14%)  | ❌ (15.70%)   | ❌ (100th diff 1.0E+00)  |
 | FirmAgeMom                | ✅         | ✅       | ❌ (26.99%)  | ✅ (0.00%)    | ❌ (100th diff 1.0E-06)  |
+| RIO_MB                    | ✅         | ✅       | ❌ (23.53%)  | ❌ (24.12%)   | ❌ (100th diff 4.0E+00)  |
 | retConglomerate           | ✅         | ✅       | ❌ (22.32%)  | ❌ (94.06%)   | ❌ (100th diff 4.0E+00)  |
 | Mom6mJunk                 | ✅         | ✅       | ❌ (18.09%)  | ❌ (0.28%)    | ❌ (100th diff 1.2E+00)  |
+| RIO_Disp                  | ✅         | ✅       | ❌ (10.48%)  | ❌ (20.10%)   | ❌ (100th diff 4.0E+00)  |
 | Coskewness                | ✅         | ✅       | ❌ (8.84%)   | ❌ (99.36%)   | ❌ (100th diff 4.5E+00)  |
 | RDAbility                 | ✅         | ✅       | ❌ (4.95%)   | ❌ (9.52%)    | ❌ (100th diff 1.9E+02)  |
-| RIO_Volatility            | ✅         | ✅       | ❌ (4.40%)   | ❌ (26.58%)   | ❌ (100th diff 4.0E+00)  |
 | IdioVolAHT                | ✅         | ✅       | ❌ (3.82%)   | ❌ (17.59%)   | ❌ (100th diff 5.5E-01)  |
 | EarnSupBig                | ✅         | ✅       | ❌ (3.49%)   | ❌ (1.89%)    | ❌ (100th diff 3.3E+15)  |
 | IndRetBig                 | ✅         | ✅       | ❌ (3.47%)   | ❌ (87.02%)   | ❌ (100th diff 1.6E+00)  |
@@ -42,15 +45,12 @@
 | AbnormalAccruals          | ✅         | ✅       | ❌ (0.65%)   | ❌ (49.01%)   | ❌ (100th diff 3.7E+00)  |
 | BetaFP                    | ✅         | ✅       | ❌ (0.54%)   | ❌ (5.98%)    | ❌ (100th diff NAN)      |
 | PredictedFE               | ✅         | ✅       | ❌ (0.27%)   | ❌ (95.81%)   | ❌ (100th diff 5.1E-02)  |
-| RIO_Disp                  | ✅         | ✅       | ❌ (0.24%)   | ❌ (6.72%)    | ❌ (100th diff 4.0E+00)  |
 | ConsRecomm                | ✅         | ✅       | ❌ (0.23%)   | ✅ (0.01%)    | ❌ (100th diff 1.0E+00)  |
 | AnalystValue              | ✅         | ✅       | ❌ (0.22%)   | ❌ (0.26%)    | ❌ (100th diff 1.2E+01)  |
 | AOP                       | ✅         | ✅       | ❌ (0.22%)   | ✅ (0.00%)    | ❌ (100th diff 2.4E+03)  |
 | fgr5yrLag                 | ✅         | ✅       | ❌ (0.22%)   | ✅ (0.07%)    | ❌ (100th diff 4.5E+01)  |
 | sfe                       | ✅         | ✅       | ❌ (0.20%)   | ✅ (0.02%)    | ❌ (100th diff 1.0E+01)  |
-| RIO_MB                    | ✅         | ✅       | ❌ (0.18%)   | ❌ (17.07%)   | ❌ (100th diff 4.0E+00)  |
 | AnalystRevision           | ✅         | ✅       | ❌ (0.16%)   | ✅ (0.04%)    | ❌ (100th diff 5.4E+01)  |
-| RIO_Turnover              | ✅         | ✅       | ❌ (0.15%)   | ❌ (23.71%)   | ❌ (100th diff 4.0E+00)  |
 | ExclExp                   | ✅         | ✅       | ❌ (0.12%)   | ❌ (0.11%)    | ❌ (100th diff 3.7E+00)  |
 | RealizedVol               | ✅         | ✅       | ❌ (0.12%)   | ✅ (0.00%)    | ✅ (100th diff 3.6E-15)  |
 | ChNAnalyst                | ✅         | ✅       | ❌ (0.11%)   | ✅ (0.01%)    | ❌ (100th diff 1.0E+00)  |
@@ -7035,7 +7035,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 1211 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 52152 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -7043,60 +7043,60 @@
 
 **Observations**:
 - Stata:  497,437
-- Python: 513,660
-- Common: 496,226
+- Python: 461,030
+- Common: 445,285
 
-**Precision1**: 6.716% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 20.104% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
 **Precision2**: 100th percentile diff = 4.00e+00 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  RIO_Disp
-     0   10149  199605         5
-     1   10149  199606         4
-     2   10299  199403         2
-     3   10325  199403         5
-     4   10353  200006         2
-     5   10363  198903         4
-     6   10371  200110         5
-     7   10386  199704         3
-     8   10421  199605         5
-     9   10501  199108         5
+     0   10025  199803         3
+     1   10057  197807         3
+     2   10057  197808         3
+     3   10057  197809         3
+     4   10057  197810         3
+     5   10057  197811         3
+     6   10057  197904         3
+     7   10057  197905         3
+     8   10057  197906         3
+     9   10057  197909         3
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 33325/496226 (6.716%)
-- Stata standard deviation: 1.27e+00
+- Num observations with std_diff >= TOL_DIFF_1: 89520/445285 (20.104%)
+- Stata standard deviation: 1.08e+00
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm  python  stata  diff
-0   12008  202412       3      4    -1
-1   13954  202412       4      5    -1
-2   14317  202412       3      4    -1
-3   17812  202412       2      3    -1
-4   18452  202412       2      3    -1
-5   18784  202412       4      5    -1
-6   18808  202412       4      5    -1
-7   19076  202412       2      3    -1
-8   20295  202412       2      3    -1
-9   20751  202412       3      4    -1
+0   10026  202412     2.0      3  -1.0
+1   10032  202412     3.0      4  -1.0
+2   10933  202412     1.0      2  -1.0
+3   11499  202412     3.0      4  -1.0
+4   11533  202412     1.0      2  -1.0
+5   11803  202412     4.0      5  -1.0
+6   12008  202412     3.0      4  -1.0
+7   12476  202412     1.0      2  -1.0
+8   12623  202412     2.0      3  -1.0
+9   12905  202412     4.0      5  -1.0
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm  python  stata  diff
-0   11379  198901       1      5    -4
-1   11453  198808       1      5    -4
-2   11554  199101       1      5    -4
-3   11981  198002       5      1     4
-4   11981  198004       5      1     4
-5   12088  201304       1      5    -4
-6   12402  201107       1      5    -4
-7   12706  198002       5      1     4
-8   12706  198003       5      1     4
-9   12706  198005       5      1     4
+0   14423  202005     1.0      5  -4.0
+1   14423  202006     1.0      5  -4.0
+2   51829  199404     1.0      5  -4.0
+3   77501  201107     5.0      1   4.0
+4   92594  201406     5.0      1   4.0
+5   92594  201407     5.0      1   4.0
+6   10333  202010     1.0      4  -3.0
+7   10333  202011     1.0      4  -3.0
+8   17948  202209     2.0      5  -3.0
+9   18013  202001     2.0      5  -3.0
 ```
 
 ---
@@ -7107,7 +7107,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 624 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 83319 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -7115,60 +7115,60 @@
 
 **Observations**:
 - Stata:  354,170
-- Python: 367,163
-- Common: 353,546
+- Python: 281,201
+- Common: 270,851
 
-**Precision1**: 17.066% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 24.120% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
 **Precision2**: 100th percentile diff = 4.00e+00 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  RIO_MB
-     0   10051  199111       5
-     1   10116  198911       3
-     2   10116  199001       3
-     3   10125  198911       3
-     4   10152  198703       1
-     5   10253  200511       1
-     6   10281  198802       3
-     7   10285  198712       2
-     8   10287  198701       3
-     9   10316  198801       1
+     0   10011  199102       3
+     1   10051  199111       5
+     2   10104  198711       1
+     3   10104  198712       1
+     4   10104  198801       1
+     5   10104  198802       1
+     6   10104  198803       1
+     7   10104  198804       1
+     8   10104  198805       1
+     9   10104  198806       1
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 60337/353546 (17.066%)
-- Stata standard deviation: 1.36e+00
+- Num observations with std_diff >= TOL_DIFF_1: 65330/270851 (24.120%)
+- Stata standard deviation: 1.30e+00
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm  python  stata  diff
-0   11955  202412       1      2    -1
-1   15400  202412       3      4    -1
-2   16066  202412       2      3    -1
-3   17812  202412       2      3    -1
-4   18452  202412       2      3    -1
-5   18649  202412       3      4    -1
-6   19076  202412       2      3    -1
-7   51925  202412       3      4    -1
-8   70578  202412       1      2    -1
-9   81540  202412       2      3    -1
+0   10220  202412     2.0      3  -1.0
+1   11403  202412     1.0      2  -1.0
+2   11618  202412     1.0      2  -1.0
+3   11955  202412     1.0      2  -1.0
+4   12476  202412     1.0      2  -1.0
+5   13323  202412     1.0      2  -1.0
+6   13628  202412     1.0      2  -1.0
+7   13788  202412     1.0      2  -1.0
+8   13796  202412     3.0      4  -1.0
+9   13878  202412     3.0      4  -1.0
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm  python  stata  diff
-0   10400  197706       1      5    -4
-1   10400  197707       1      5    -4
-2   10400  197708       1      5    -4
-3   10400  197709       1      5    -4
-4   10400  197710       1      5    -4
-5   10400  197711       1      5    -4
-6   10875  197311       1      5    -4
-7   10875  197402       1      5    -4
-8   10971  197309       1      5    -4
-9   10971  197404       1      5    -4
+0   77501  201107     5.0      1   4.0
+1   80004  200107     1.0      5  -4.0
+2   85564  200607     5.0      1   4.0
+3   85877  198602     1.0      5  -4.0
+4   92594  201406     5.0      1   4.0
+5   92594  201407     5.0      1   4.0
+6   11653  199406     1.0      4  -3.0
+7   18287  199409     5.0      2   3.0
+8   21304  198406     2.0      5  -3.0
+9   28143  198212     2.0      5  -3.0
 ```
 
 ---
@@ -7179,7 +7179,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 659 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 147197 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -7187,60 +7187,60 @@
 
 **Observations**:
 - Stata:  445,546
-- Python: 462,744
-- Common: 444,887
+- Python: 308,914
+- Common: 298,349
 
-**Precision1**: 23.712% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 22.228% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
 **Precision2**: 100th percentile diff = 4.00e+00 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  RIO_Turnover
-     0   10051  199111             5
-     1   10066  199909             1
-     2   10125  198911             3
-     3   10276  193309             5
-     4   10281  198802             3
-     5   10341  198708             4
-     6   10350  199002             1
-     7   10358  198707             5
-     8   10371  198807             4
-     9   10380  193010             5
+     0   10003  198607             1
+     1   10003  198608             1
+     2   10006  193112             3
+     3   10006  193207             4
+     4   10006  193308             3
+     5   10006  193309             3
+     6   10006  193310             3
+     7   10006  193312             3
+     8   10006  193401             3
+     9   10006  193402             3
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 105493/444887 (23.712%)
-- Stata standard deviation: 1.35e+00
+- Num observations with std_diff >= TOL_DIFF_1: 66316/298349 (22.228%)
+- Stata standard deviation: 1.28e+00
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm  python  stata  diff
-0   12008  202412       3      4    -1
-1   13730  202412       2      3    -1
-2   13954  202412       4      5    -1
-3   15585  202412       3      4    -1
-4   18452  202412       2      3    -1
-5   18784  202412       4      5    -1
-6   19076  202412       2      3    -1
-7   20295  202412       2      3    -1
-8   20751  202412       3      4    -1
-9   21124  202412       2      3    -1
+0   11803  202412     4.0      5  -1.0
+1   12008  202412     3.0      4  -1.0
+2   12623  202412     2.0      3  -1.0
+3   13116  202412     2.0      3  -1.0
+4   13323  202412     1.0      2  -1.0
+5   13610  202412     2.0      3  -1.0
+6   13628  202412     1.0      2  -1.0
+7   13687  202412     2.0      3  -1.0
+8   13730  202412     2.0      3  -1.0
+9   13954  202412     4.0      5  -1.0
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm  python  stata  diff
-0   10014  192908       1      5    -4
-1   10014  193010       1      5    -4
-2   10014  193012       1      5    -4
-3   10014  193101       1      5    -4
-4   10014  193103       1      5    -4
-5   10014  194205       1      5    -4
-6   10014  194206       1      5    -4
-7   10014  194211       1      5    -4
-8   10014  194212       1      5    -4
-9   10014  194301       1      5    -4
+0   14423  202005     1.0      5  -4.0
+1   37196  198009     1.0      5  -4.0
+2   37196  198010     1.0      5  -4.0
+3   85877  198602     1.0      5  -4.0
+4   92594  201406     5.0      1   4.0
+5   92594  201407     5.0      1   4.0
+6   11653  199406     1.0      4  -3.0
+7   16994  198409     1.0      4  -3.0
+8   17948  202209     2.0      5  -3.0
+9   18013  202007     2.0      5  -3.0
 ```
 
 ---
@@ -7251,7 +7251,7 @@
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 20672 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 195853 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -7259,60 +7259,60 @@
 
 **Observations**:
 - Stata:  470,062
-- Python: 493,775
-- Common: 449,390
+- Python: 301,913
+- Common: 274,209
 
-**Precision1**: 26.583% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
+**Precision1**: 21.509% obs with std_diff >= 1.00e-02 (tolerance: < 0.1%)
 
 **Precision2**: 100th percentile diff = 4.00e+00 (tolerance: < 1.00e-06)
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  RIO_Volatility
-     0   10006  195405               4
-     1   10006  197407               1
-     2   10011  199103               3
-     3   10011  199104               3
-     4   10012  199602               3
-     5   10012  199603               3
-     6   10014  196704               5
-     7   10014  197601               5
-     8   10016  198610               3
-     9   10019  199210               5
+     0   10006  193207               4
+     1   10006  193208               4
+     2   10006  193209               4
+     3   10006  193210               4
+     4   10006  193211               4
+     5   10006  193212               4
+     6   10006  193301               3
+     7   10006  193302               3
+     8   10006  193303               3
+     9   10006  193405               3
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 119462/449390 (26.583%)
-- Stata standard deviation: 1.34e+00
+- Num observations with std_diff >= TOL_DIFF_1: 58979/274209 (21.509%)
+- Stata standard deviation: 1.19e+00
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm  python  stata  diff
-0   13954  202412       4      5    -1
-1   15585  202412       3      4    -1
-2   16066  202412       2      3    -1
-3   17812  202412       2      3    -1
-4   18062  202412       3      4    -1
-5   18452  202412       2      3    -1
-6   18784  202412       4      5    -1
-7   19076  202412       2      3    -1
-8   20295  202412       2      3    -1
-9   20751  202412       3      4    -1
+0   13323  202412     1.0      2  -1.0
+1   13508  202412     3.0      4  -1.0
+2   13687  202412     2.0      3  -1.0
+3   13796  202412     3.0      4  -1.0
+4   13878  202412     3.0      4  -1.0
+5   13954  202412     4.0      5  -1.0
+6   14044  202412     4.0      5  -1.0
+7   14328  202412     2.0      3  -1.0
+8   14479  202412     2.0      3  -1.0
+9   14543  202412     3.0      4  -1.0
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm  python  stata  diff
-0   10014  192904       1      5    -4
-1   10014  192905       1      5    -4
-2   10014  192906       1      5    -4
-3   10014  192907       1      5    -4
-4   10014  192908       1      5    -4
-5   10014  192909       1      5    -4
-6   10014  192910       1      5    -4
-7   10014  192911       1      5    -4
-8   10014  192912       1      5    -4
-9   10014  193001       1      5    -4
+0   37196  198009     1.0      5  -4.0
+1   37196  198010     1.0      5  -4.0
+2   38798  198712     1.0      5  -4.0
+3   72100  199803     5.0      1   4.0
+4   77501  201107     5.0      1   4.0
+5   85877  198602     1.0      5  -4.0
+6   92594  201407     5.0      1   4.0
+7   17948  202209     2.0      5  -3.0
+8   18287  199409     5.0      2   3.0
+9   19351  198401     2.0      5  -3.0
 ```
 
 ---
