@@ -23,6 +23,7 @@ import pandas as pd
 import numpy as np
 sys.path.append('.')
 from utils.savepredictor import save_predictor
+from utils.sicff import sicff
 
 # DATA LOAD
 print("Loading data files...")
@@ -127,67 +128,9 @@ df['OrgCapNoAdjtemp'] = df.groupby('time_avail_m')['OrgCapNoAdj'].transform(
 # sicff sicCRSP, generate(tempFF17) industry(17)
 # Need to create FF17 industry classification from sicCRSP
 # This is equivalent to Fama-French 17 industry classification
-def sic_to_ff17(sic):
-    """Convert SIC code to Fama-French 17 industry classification"""
-    if pd.isna(sic):
-        return np.nan
-    sic = int(sic)
-    
-    if 1 <= sic <= 999:
-        return 1  # Food
-    elif 1000 <= sic <= 1499:
-        return 2  # Mining
-    elif 1500 <= sic <= 1799:
-        return 3  # Construction
-    elif 2000 <= sic <= 2399:
-        return 4  # Food
-    elif 2400 <= sic <= 2499:
-        return 5  # Textiles
-    elif 2500 <= sic <= 2599:
-        return 6  # Construction
-    elif 2600 <= sic <= 2699:
-        return 7  # Paper
-    elif 2700 <= sic <= 2799:
-        return 8  # Paper
-    elif 2800 <= sic <= 2899:
-        return 9  # Chemical
-    elif 2900 <= sic <= 2999:
-        return 10  # Petroleum
-    elif 3000 <= sic <= 3099:
-        return 11  # Rubber
-    elif 3100 <= sic <= 3199:
-        return 12  # Leather
-    elif 3200 <= sic <= 3299:
-        return 13  # Stone
-    elif 3300 <= sic <= 3399:
-        return 14  # Metal
-    elif 3400 <= sic <= 3499:
-        return 15  # Metal
-    elif 3500 <= sic <= 3599:
-        return 16  # Machinery
-    elif 3600 <= sic <= 3699:
-        return 17  # Electrical
-    elif 3700 <= sic <= 3799:
-        return 16  # Machinery (Transportation)
-    elif 3800 <= sic <= 3899:
-        return 17  # Electrical (Instruments)
-    elif 3900 <= sic <= 3999:
-        return 18  # Miscellaneous
-    elif 4000 <= sic <= 4899:
-        return 19  # Transportation
-    elif 4900 <= sic <= 4999:
-        return 20  # Utilities
-    elif 5000 <= sic <= 5999:
-        return 21  # Wholesale
-    elif 6000 <= sic <= 6999:
-        return 22  # Financial
-    elif 7000 <= sic <= 8999:
-        return 23  # Services
-    else:
-        return np.nan
-
-# Apply FF17 classification to sicCRSP
-df['tempFF17'] = df['sicCRSP'].apply(sic_to_ff17)
+# sicff sicCRSP, generate(tempFF17) industry(17)
+# Use unified sicff module for Fama-French 17 industry classification
+df['tempFF17'] = sicff(df['sicCRSP'], industry=17)
 
 # drop if mi(tempFF17)
 df = df.dropna(subset=['tempFF17']).copy()

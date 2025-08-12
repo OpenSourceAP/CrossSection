@@ -11,6 +11,7 @@ import sys
 sys.path.append('.')
 from utils.savepredictor import save_predictor
 from utils.relrank import relrank
+from utils.sicff import sicff
 
 print("Creating EarnSupBig predictor...")
 
@@ -98,108 +99,8 @@ print(f"Merged earnings surprise data: {len(df)} observations, {df['EarningsSurp
 
 # SIGNAL CONSTRUCTION
 # Stata: sicff sicCRSP, generate(tempFF48) industry(48)
-# Implement Fama-French 48 industry classification
-def get_ff48(sic):
-    """
-    Fama-French 48 industry classification based on SIC code
-    Based on authoritative SAS code from https://github.com/JoostImpink/fama-french-industry
-    """
-    if pd.isna(sic):
-        return np.nan
-    try:
-        sic = int(sic)
-    except:
-        return np.nan
-    
-    # Simplified but accurate mapping for key industries (full mapping would be very long)
-    # Focus on getting the problem case SIC 4220 correct
-    
-    if sic >= 100 and sic <= 999:
-        return 1
-    elif sic >= 1000 and sic <= 1199:
-        return 2  # Mining
-    elif sic >= 1200 and sic <= 1399:
-        return 3  # Coal (SIC 1200 should be industry 3, not 48)
-    elif sic >= 1400 and sic <= 1499:
-        return 4
-    elif sic >= 1500 and sic <= 1799:
-        return 5
-    elif sic >= 2000 and sic <= 2099:
-        return 6
-    elif sic >= 2100 and sic <= 2199:
-        return 7
-    elif sic >= 2200 and sic <= 2299:
-        return 8
-    elif sic >= 2300 and sic <= 2399:
-        return 9
-    elif sic >= 2400 and sic <= 2499:
-        return 10
-    elif sic >= 2500 and sic <= 2599:
-        return 11
-    elif sic >= 2600 and sic <= 2699:
-        return 12
-    elif sic >= 2700 and sic <= 2799:
-        return 13
-    elif sic >= 2800 and sic <= 2899:
-        return 14
-    elif sic >= 2900 and sic <= 2999:
-        return 15
-    elif sic >= 3000 and sic <= 3099:
-        return 16
-    elif sic >= 3100 and sic <= 3199:
-        return 17
-    elif sic >= 3200 and sic <= 3299:
-        return 18
-    elif sic >= 3300 and sic <= 3399:
-        return 19
-    elif sic >= 3400 and sic <= 3499:
-        return 20
-    elif sic >= 3500 and sic <= 3599:
-        return 21
-    elif sic >= 3600 and sic <= 3699:
-        return 22
-    elif sic >= 3700 and sic <= 3799:
-        return 23
-    elif sic >= 3800 and sic <= 3899:
-        return 24
-    elif sic >= 3900 and sic <= 3999:
-        return 25
-    elif sic >= 4000 and sic <= 4099:
-        return 26
-    elif sic >= 4100 and sic <= 4199:
-        return 40  # Transportation (4100-4199 including 4150)
-    elif sic >= 4200 and sic <= 4219:
-        return 40  # Transportation (most 42xx codes)
-    elif sic >= 4220 and sic <= 4229:
-        return 34  # Business Services (KEY FIX: SIC 4220-4229 -> FF48 industry 34)
-    elif sic >= 4230 and sic <= 4799:
-        return 40  # Transportation
-    elif sic >= 4800 and sic <= 4899:
-        return 32
-    elif sic >= 4900 and sic <= 4999:
-        return 33
-    elif sic >= 5000 and sic <= 5199:
-        return 41
-    elif sic >= 5200 and sic <= 5999:
-        return 42
-    elif sic >= 6000 and sic <= 6099:
-        return 43
-    elif sic >= 6100 and sic <= 6199:
-        return 44
-    elif sic >= 6200 and sic <= 6299:
-        return 45
-    elif sic >= 6300 and sic <= 6399:
-        return 46
-    elif sic >= 6400 and sic <= 6499:
-        return 47
-    elif sic >= 6500 and sic <= 6999:
-        return 48
-    elif sic >= 7000 and sic <= 8999:
-        return 34  # Most 7xxx and 8xxx codes go to Business Services (industry 34)
-    else:
-        return 48  # Other
-
-df['tempFF48'] = df['sicCRSP'].apply(get_ff48)
+# Use unified sicff module for Fama-French 48 industry classification
+df['tempFF48'] = sicff(df['sicCRSP'], industry=48)
 
 # Stata: drop if mi(tempFF48)
 df = df.dropna(subset=['tempFF48'])

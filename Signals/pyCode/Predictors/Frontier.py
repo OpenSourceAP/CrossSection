@@ -10,6 +10,9 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import warnings
 warnings.filterwarnings('ignore')
+import sys
+sys.path.append('.')
+from utils.sicff import sicff
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
@@ -50,112 +53,9 @@ df['tempPPE'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ppent'] 
 
 df['tempEBIT'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ebitda'] / df['at'])
 
-# Proper FF48 industry classification based on Ken French's methodology
-def get_ff48(sic):
-    if pd.isna(sic):
-        return np.nan
-    sic = int(sic)
-    
-    if 100 <= sic <= 999:
-        return 1  # Agriculture
-    elif 1000 <= sic <= 1099:
-        return 2  # Mining
-    elif 1200 <= sic <= 1399:
-        return 3  # Coal
-    elif 1400 <= sic <= 1499:
-        return 4  # Oil
-    elif 1500 <= sic <= 1999:
-        return 5  # Construction
-    elif 2000 <= sic <= 2099:
-        return 6  # Food
-    elif 2100 <= sic <= 2199:
-        return 7  # Soda
-    elif 2200 <= sic <= 2269 or 2270 <= sic <= 2299:
-        return 8  # Textiles
-    elif 2300 <= sic <= 2399:
-        return 9  # Apparel
-    elif 2400 <= sic <= 2499:
-        return 10  # Wood
-    elif 2500 <= sic <= 2549 or 2590 <= sic <= 2599:
-        return 11  # Furniture
-    elif 2600 <= sic <= 2699:
-        return 12  # Paper
-    elif 2700 <= sic <= 2749 or 2770 <= sic <= 2799:
-        return 13  # Printing
-    elif 2800 <= sic <= 2829 or 2840 <= sic <= 2899:
-        return 14  # Chemicals
-    elif 2830 <= sic <= 2839:
-        return 15  # Drugs
-    elif 2900 <= sic <= 2999:
-        return 16  # Petroleum
-    elif 3000 <= sic <= 3099:
-        return 17  # Rubber
-    elif 3100 <= sic <= 3199:
-        return 18  # Leather
-    elif 3200 <= sic <= 3299:
-        return 19  # Stone
-    elif 3300 <= sic <= 3399:
-        return 20  # Steel
-    elif 3400 <= sic <= 3499:
-        return 21  # Fabricated Metal
-    elif 3500 <= sic <= 3569 or 3580 <= sic <= 3599:
-        return 22  # Machinery
-    elif 3570 <= sic <= 3579:
-        return 23  # Computers
-    elif 3600 <= sic <= 3699:
-        return 24  # Electronic Equipment
-    elif 3700 <= sic <= 3799:
-        return 25  # Transportation
-    elif 3800 <= sic <= 3829 or 3860 <= sic <= 3899:
-        return 26  # Instruments
-    elif 3830 <= sic <= 3859:
-        return 27  # Photo
-    elif 3900 <= sic <= 3999:
-        return 28  # Other Manufacturing
-    elif 4000 <= sic <= 4099:
-        return 29  # Railroad
-    elif 4100 <= sic <= 4199:
-        return 30  # Shipping
-    elif 4200 <= sic <= 4299:
-        return 31  # Transportation
-    elif 4400 <= sic <= 4499:
-        return 32  # Water
-    elif 4500 <= sic <= 4599:
-        return 33  # Aircraft
-    elif 4600 <= sic <= 4699:
-        return 34  # Communication
-    elif 4700 <= sic <= 4799:
-        return 35  # Communication
-    elif 4800 <= sic <= 4899:
-        return 36  # Communication  
-    elif 4900 <= sic <= 4999:
-        return 37  # Utilities
-    elif 5000 <= sic <= 5099:
-        return 38  # Wholesale
-    elif 5100 <= sic <= 5199:
-        return 39  # Wholesale
-    elif 5200 <= sic <= 5999:
-        return 40  # Retail
-    elif 6000 <= sic <= 6099:
-        return 41  # Banks
-    elif 6100 <= sic <= 6199:
-        return 42  # Insurance
-    elif 6200 <= sic <= 6299:
-        return 43  # Real Estate
-    elif 6300 <= sic <= 6399:
-        return 44  # Insurance
-    elif 6400 <= sic <= 6499:
-        return 45  # Insurance
-    elif 6500 <= sic <= 6599:
-        return 46  # Real Estate
-    elif 6700 <= sic <= 6799:
-        return 47  # Finance
-    elif 7000 <= sic <= 8999:
-        return 48  # Other
-    else:
-        return 48  # Other
-
-df['tempFF48'] = df['sicCRSP'].apply(get_ff48)
+# Stata: sicff sicCRSP, generate(tempFF48) industry(48)
+# Use unified sicff module for Fama-French 48 industry classification
+df['tempFF48'] = sicff(df['sicCRSP'], industry=48)
 df = df.dropna(subset=['tempFF48'])
 
 # Prepare regression variables

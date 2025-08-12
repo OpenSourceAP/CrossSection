@@ -7,6 +7,9 @@
 
 import pandas as pd
 import numpy as np
+import sys
+sys.path.append('.')
+from utils.sicff import sicff
 
 # DATA LOAD (Compustat Segments)
 segments = pd.read_parquet('../pyData/Intermediate/CompustatSegments.parquet')
@@ -76,31 +79,25 @@ df['sinStockAny'] = ((df['sinStockTobacco'] == 1) |
 # Comparison group (FF48 groups 2, 3, 7, 43 + Services)
 # Expanded to match Stata's more inclusive FF48 classification
 def get_ff48_comparison(sic):
-    """Returns True if SIC belongs to comparison groups (expanded to match Stata)"""
+    """Returns True if SIC belongs to comparison groups using unified sicff classification"""
     if pd.isna(sic):
         return False
-    try:
-        sic = int(sic)
-        # FF48 Group 2: Mining (1000-1499)
-        if 1000 <= sic <= 1499:
-            return True
-        # FF48 Group 3: Construction (1500-1799) 
-        elif 1500 <= sic <= 1799:
-            return True
-        # FF48 Group 7: Food Products (2000-2099) and Restaurants (5800-5999)
-        elif 2000 <= sic <= 2099 or 5800 <= sic <= 5999:
-            return True
-        # FF48 Group 43: Transportation (4000-4799)
-        elif 4000 <= sic <= 4799:
-            return True
-        # Services (7000-8999) - Added to match Stata's inclusive definition
-        # This captures the missing observations that should get sinAlgo=0
-        elif 7000 <= sic <= 8999:
-            return True
-        else:
-            return False
-    except:
+        
+    # Get FF48 industry classification using unified sicff module
+    ff48_industry = sicff(sic, industry=48)
+    
+    if pd.isna(ff48_industry):
         return False
+        
+    # Map FF48 industries to comparison groups:
+    # - Industries 2,3,28,29,30: Mining/Coal/Petroleum (covers 1000-1499 range)
+    # - Industry 18: Construction (covers 1500-1799 range) 
+    # - Industries 2,6,43: Food Products and Restaurants (covers 2000-2099, 5800-5999)
+    # - Industry 40: Transportation (covers 4000-4799)
+    # - Industries 33,34: Services (covers 7000-8999)
+    comparison_industries = {2, 3, 6, 18, 28, 29, 30, 33, 34, 40, 43}
+    
+    return int(ff48_industry) in comparison_industries
 
 df['ComparableStock'] = df['sicCRSP'].apply(get_ff48_comparison).astype(float)
 
