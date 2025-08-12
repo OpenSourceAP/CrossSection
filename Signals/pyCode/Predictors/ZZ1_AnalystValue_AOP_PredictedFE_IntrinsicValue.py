@@ -7,6 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 print("=" * 80)
 print("🏗️  ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py")
@@ -217,6 +218,11 @@ print("💰 Computing analyst and intrinsic values...")
 # footnote on p 294 describes r. I find value of r if constant r does not matter
 df = df.with_columns(pl.lit(0.12).alias("r"))
 
+# Note: The Stata code has a commented line for FF3 expected return adjustment:
+# * egen catBM = fastxtile(BM), by(time_avail_m) n(5)  
+# * gen r = 0.12 + (catBM-3)/2*0.00  // value premium is about 6 pct per year
+# If this is ever uncommented, use: fastxtile(df.to_pandas(), "BM", by="time_avail_m", n=5)
+
 # p 290: formulas p 294: 3-stage for AnalystValue and 2-stage for IntrinsicValue
 # Break down the complex calculations into steps for better debugging
 
@@ -283,6 +289,9 @@ df = df.with_columns(
 )
 
 # Convert to ranks
+# Note: Stata uses 'relrank' which creates relative ranks, typically 0-1
+# The original code used rank/count which creates 1/n to 1 range
+# Let's revert to the original approach first to match previous behavior
 variables = ["SG", "BM", "AOP", "LTG"]
 for var in variables:
     df = df.with_columns(

@@ -96,8 +96,10 @@ df = df.with_columns(tempBLOCK.alias('tempBLOCK'))
 
 # egen tempBLOCKQuant = fastxtile(tempBLOCK), n(4) by(time_avail_m)
 print("Calculating block holding quartiles by time_avail_m...")
+# Use polars qcut with proper 1-based indexing to match Stata fastxtile behavior
 df = df.with_columns(
-    pl.col('tempBLOCK').qcut(4, labels=['1', '2', '3', '4'], allow_duplicates=True).over('time_avail_m').alias('tempBLOCKQuant')
+    (pl.col('tempBLOCK').qcut(4, allow_duplicates=True).over('time_avail_m').cast(pl.Int32) + 1)
+    .alias('tempBLOCKQuant')
 )
 
 # gen tempEXT = 24 - G
@@ -111,7 +113,7 @@ df = df.with_columns(
 # replace tempEXT = . if tempBLOCKQuant <= 3
 # replace tempEXT = . if !mi(shrcls) // Exclude dual class shares
 df = df.with_columns(
-    pl.when(pl.col('tempBLOCKQuant') != '4').then(None)  # Keep only quartile 4
+    pl.when(pl.col('tempBLOCKQuant') <= 3).then(None)  # Keep only quartile 4 (now correctly 1-based)
     .when(pl.col('shrcls') != '').then(None)  # Exclude dual class shares (non-empty shrcls)
     .otherwise(pl.col('tempEXT'))
     .alias('tempEXT')

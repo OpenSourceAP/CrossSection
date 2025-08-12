@@ -6,6 +6,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 # Data load
 monthly_crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
@@ -30,22 +31,11 @@ df = df.with_columns(
     .alias("std_turn")
 )
 
-# Size quintiles by time_avail_m - use proper quantile ranking 
-df = df.with_columns(
-    pl.col("mve_c")
-    .rank(method="ordinal")
-    .over("time_avail_m")
-    .alias("temp_rank")
-)
-
-df = df.with_columns(
-    pl.col("temp_rank")
-    .truediv(pl.col("temp_rank").max().over("time_avail_m"))
-    .mul(5)
-    .ceil()
-    .cast(pl.Int32)
-    .alias("tempqsize")
-)
+# Size quintiles by time_avail_m using fastxtile helper
+# Convert to pandas for fastxtile, then back to polars
+df_pandas = df.to_pandas()
+df_pandas['tempqsize'] = fastxtile(df_pandas, 'mve_c', by='time_avail_m', n=5)
+df = pl.from_pandas(df_pandas)
 
 # Set to null for size quintiles 4 and 5 (tiny spread per OP Tab3B)
 df = df.with_columns(

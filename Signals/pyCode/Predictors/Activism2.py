@@ -27,7 +27,7 @@ import polars as pl
 from pathlib import Path
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.savepredictor import save_predictor
 
 # DATA LOAD
@@ -75,9 +75,13 @@ print(f"Records without ticker: {temp_missing_ticker.shape[0]}")
 gov = pl.read_parquet("../pyData/Intermediate/GovIndex.parquet")
 df = df.join(gov, on=['ticker', 'time_avail_m'], how='left')
 
-# append using "$pathtemp/temp" - only if there are missing ticker records
-if temp_missing_ticker.shape[0] > 0:
-    df = pl.concat([df, temp_missing_ticker])
+# append using "$pathtemp/temp"
+# Need to add the missing columns from GovIndex to temp_missing_ticker with null values
+gov_columns = [col for col in df.columns if col not in temp_missing_ticker.columns]
+for col in gov_columns:
+    temp_missing_ticker = temp_missing_ticker.with_columns(pl.lit(None).alias(col))
+
+df = pl.concat([df, temp_missing_ticker])
 print(f"After GovIndex merge and append: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
