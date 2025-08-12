@@ -32,6 +32,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 ## Group 1
 - **AccrualsBM**  
   - Standardized: YES
+  - Output: AccrualsBM.csv (predictor)
   - Python CSV: yes  
   - Superset: yes (0.00%)  
   - Precision1: yes (0.00%)  
@@ -39,6 +40,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **ChForecastAccrual**  
   - Standardized: YES  
+  - Output: ChForecastAccrual.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: NO (0.118%)  
@@ -46,6 +48,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **ChNAnalyst**  
   - Standardized: YES  
+  - Output: ChNAnalyst.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.11%)  
   - Precision1: yes (0.007%)  
@@ -53,6 +56,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **CitationsRD**  
   - Standardized: YES  
+  - Output: CitationsRD.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: yes (0.002%)  
@@ -61,6 +65,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 ## Group 2
 - **DivYieldST**  
   - Standardized: yes  
+  - Output: DivYieldST.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
   - Precision1: NO (0.13%)  
@@ -68,6 +73,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **EquityDuration**  
   - Standardized: NO  
+  - Output: EquityDuration.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: yes (0.00%)  
@@ -75,6 +81,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **FirmAgeMom**  
   - Standardized: NO  
+  - Output: FirmAgeMom.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (1.85%)  
   - Precision1: NO (0.39%)  
@@ -82,6 +89,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **GrAdExp**  
   - Standardized: NO  
+  - Output: GrAdExp.csv (predictor) [Script not created]
   - Python CSV: —  
   - Superset: —  
   - Precision1: —  
@@ -89,6 +97,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **MS**  
   - Standardized: yes  
+  - Output: MS.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: NO (63.45%)  
@@ -98,6 +107,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **MomRev**  
   - Standardized: YES  
+  - Output: MomRev.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (1.26%)  
   - Precision1: yes (0.000%)  
@@ -105,6 +115,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **MomVol**  
   - Standardized: YES  
+  - Output: MomVol.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
   - Precision1: NO (0.417%)  
@@ -112,6 +123,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **NetDebtPrice**  
   - Standardized: yes  
+  - Output: NetDebtPrice.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
   - Precision1: yes (0.00%)  
@@ -119,6 +131,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **OScore**  
   - Standardized: YES  
+  - Output: OScore.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.40%)  
   - Precision1: yes (0.000%)  
@@ -126,6 +139,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **OperProf**  
   - Standardized: YES  
+  - Output: OperProf.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: yes (0.000%)  
@@ -135,6 +149,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **PS**  
   - Standardized: yes  
+  - Output: PS.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
   - Precision1: NO (17.90%)  
@@ -142,6 +157,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **PatentsRD**  
   - Standardized: YES  
+  - Output: PatentsRD.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (58.66%)  
   - Precision1: NO (15.700%)  
@@ -149,6 +165,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **ProbInformedTrading**  
   - Standardized: YES  
+  - Output: ProbInformedTrading.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: yes (0.000%)  
@@ -156,6 +173,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **RDAbility**  
   - Standardized: yes  
+  - Output: RDAbility.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (4.95%)  
   - Precision1: NO (9.52%)  
@@ -163,6 +181,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **RDcap**  
   - Standardized: NO  
+  - Output: RDcap.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
   - Precision1: yes (0.00%)  
@@ -172,6 +191,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **ZZ1_Activism1_Activism2**  
   - Standardized: NO  
+  - Output: Activism1.csv, Activism2.csv (predictors) [Script not created]
   - Python CSV: —  
   - Superset: —  
   - Precision1: —  
@@ -179,6 +199,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue**  
   - Standardized: NO  
+  - Output: AnalystValue.csv, AOP.csv, PredictedFE.csv (predictors), IntrinsicValue.csv (placebo)
   - Python CSV: —  
   - Superset: —  
   - Precision1: —  
@@ -186,6 +207,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility**  
   - Standardized: NO  
+  - Output: RIO_MB.csv, RIO_Disp.csv, RIO_Turnover.csv, RIO_Volatility.csv (predictors)
   - Python CSV: —  
   - Superset: —  
   - Precision1: —  
@@ -195,6 +217,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **sfe**  
   - Standardized: YES  
+  - Output: sfe.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.20%)  
   - Precision1: yes (0.022%)  
@@ -202,6 +225,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **std_turn**  
   - Standardized: NO  
+  - Output: std_turn.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.04%)  
   - Precision1: yes (0.00%)  
@@ -209,6 +233,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 
 - **tang**  
   - Standardized: YES  
+  - Output: tang.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.02%)  
   - Precision1: yes (0.002%)  
