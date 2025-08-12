@@ -27,24 +27,9 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
+from stata_fastxtile import fastxtile
 
 
-def fastxtile(series, n_quantiles=5):
-    """
-    Python equivalent of Stata's fastxtile function using pd.qcut
-    Returns quantile ranks (1 to n_quantiles) for a series
-    Following StataDocs/fastxtile.md recommendations
-    """
-    try:
-        # Handle -inf values by replacing them with NaN before quantile calculation
-        # This matches Stata's behavior where extreme values are excluded from quantile calculation
-        series_clean = series.replace([np.inf, -np.inf], np.nan)
-        
-        # Use pd.qcut with duplicates='drop' as recommended in StataDocs
-        return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
-    except Exception:
-        # Fallback for edge cases (all NaN, insufficient data, etc.)
-        return pd.Series(np.nan, index=series.index)
 
 
 def main():
@@ -127,11 +112,11 @@ def main():
     
     # egen tempqBM = fastxtile(BM), by(time_avail_m) n(5)
     print("Creating BM quintiles...")
-    df['tempqBM'] = df.groupby('time_avail_m')['BM'].transform(lambda x: fastxtile(x, 5))
+    df['tempqBM'] = fastxtile(df, 'BM', by='time_avail_m', n=5)
     
     # egen tempqAcc = fastxtile(tempacc), by(time_avail_m) n(5)
     print("Creating accruals quintiles...")
-    df['tempqAcc'] = df.groupby('time_avail_m')['tempacc'].transform(lambda x: fastxtile(x, 5))
+    df['tempqAcc'] = fastxtile(df, 'tempacc', by='time_avail_m', n=5)
     
     # gen AccrualsBM = 1 if tempqBM == 5 & tempqAcc == 1
     # replace AccrualsBM = 0 if tempqBM == 1 & tempqAcc == 5
