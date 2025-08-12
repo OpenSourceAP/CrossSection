@@ -34,6 +34,9 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 import warnings
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.winsor2 import winsor2
 
 # Suppress sklearn warnings
 warnings.filterwarnings("ignore")
@@ -91,14 +94,9 @@ df.drop('target_date', axis=1, inplace=True)
 
 df['tempRet60'] = (df['tempCumRet'] - df['tempCumRet_lag60']) / df['tempCumRet_lag60']
 
-# Winsorize tempRet60 at 1% and 99% percentiles using trim (remove observations)
+# Winsorize tempRet60 at 1% and 99% percentiles using trim (set extreme values to NaN)
 # Stata: winsor2 tempRet60, replace cut(1 99) trim
-# This removes observations below 1st and above 99th percentiles
-p01 = df['tempRet60'].quantile(0.01)
-p99 = df['tempRet60'].quantile(0.99)
-# Keep observations within percentile range or with missing tempRet60
-trim_mask = ((df['tempRet60'] >= p01) & (df['tempRet60'] <= p99)) | df['tempRet60'].isna()
-df = df[trim_mask]
+df = winsor2(df, ['tempRet60'], replace=True, trim=True, cuts=[1, 99])
 
 # Loop over four measures
 temp_vars = ['tempAccBM', 'tempAccSP', 'tempAccCFP', 'tempAccEP']

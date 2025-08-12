@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.relrank import relrank
+from utils.winsor2 import winsor2
 
 print("=" * 80)
 print("🏗️  ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py")
@@ -275,19 +276,7 @@ df = df.with_columns(
 )
 
 # winsor2 FErr, replace cuts(1 99) trim by(time_avail_m)
-df = df.with_columns([
-    pl.col("FErr").quantile(0.01).over("time_avail_m").alias("ferr_p01"),
-    pl.col("FErr").quantile(0.99).over("time_avail_m").alias("ferr_p99")
-])
-
-df = df.with_columns(
-    pl.when(pl.col("FErr") < pl.col("ferr_p01"))
-    .then(pl.col("ferr_p01"))
-    .when(pl.col("FErr") > pl.col("ferr_p99"))
-    .then(pl.col("ferr_p99"))
-    .otherwise(pl.col("FErr"))
-    .alias("FErr")
-)
+df = winsor2(df, ["FErr"], replace=True, trim=True, cuts=[1, 99], by=["time_avail_m"])
 
 # Convert to ranks using utils/relrank to match Stata's exact behavior
 # Stata: foreach v of varlist SG BM AOP LTG { by time_avail_m: relrank `v', gen(rank`v') ref(`v') }

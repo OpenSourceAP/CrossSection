@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.asreg import asreg
 from utils.savepredictor import save_predictor
+from utils.winsor2 import winsor2
 
 print("=" * 80)
 print("🏗️  ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py")
@@ -86,26 +87,8 @@ df = df.with_columns(
 print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 
 # winsor2 temp*, replace cuts(0.1 99.9) trim by(fyear)
-# Winsorize the temporary variables by fyear
 temp_cols = ["tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]
-
-for col in temp_cols:
-    df = df.with_columns([
-        pl.col(col).quantile(0.001).over("fyear").alias(f"{col}_p001"),
-        pl.col(col).quantile(0.999).over("fyear").alias(f"{col}_p999")
-    ])
-    
-    df = df.with_columns(
-        pl.when(pl.col(col) < pl.col(f"{col}_p001"))
-        .then(pl.col(f"{col}_p001"))
-        .when(pl.col(col) > pl.col(f"{col}_p999"))
-        .then(pl.col(f"{col}_p999"))
-        .otherwise(pl.col(col))
-        .alias(col)
-    )
-    
-    # Drop the percentile columns
-    df = df.drop([f"{col}_p001", f"{col}_p999"])
+df = winsor2(df, temp_cols, replace=True, trim=True, cuts=[0.1, 99.9], by=["fyear"])
 
 print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
