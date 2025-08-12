@@ -46,32 +46,79 @@ ibes_recs = ibes_recs.with_columns(
 # xtset tempID time
 # tsfill
 # This fills in missing time periods for each tempID
-print("🔄 Forward-filling recommendations over 12-month windows...")
+print("🔄 Implementing tsfill to create complete time series per tempID...")
 
-# Use original data without tsfill for now, focus on getting the basic logic right
-print("Using original data - focusing on correct asrol implementation")
-ibes_filled = ibes_recs.sort(["tempID", "time_avail_m"])
+# Get min/max time_avail_m for each tempID to create complete balanced panels
+tempid_ranges = ibes_recs.group_by("tempID").agg([
+    pl.col("time_avail_m").min().alias("min_time"),
+    pl.col("time_avail_m").max().alias("max_time"),
+    pl.col("tickerIBES").first().alias("base_tickerIBES"),
+    pl.col("amaskcd").first().alias("base_amaskcd")
+])
 
-# asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1) 
+print(f"Processing {len(tempid_ranges)} tempIDs for tsfill...")
+
+# Create complete monthly time series for each tempID
+expanded_data = []
+for row in tempid_ranges.iter_rows(named=True):
+    tempID = row["tempID"]
+    min_time = row["min_time"] 
+    max_time = row["max_time"]
+    base_ticker = row["base_tickerIBES"]
+    base_amask = row["base_amaskcd"]
+    
+    # Create all months between min and max for this tempID
+    month_range = list(range(min_time, max_time + 1))
+    # Filter to valid months only (ending in 01-12)
+    valid_months = [m for m in month_range if (m % 100) >= 1 and (m % 100) <= 12]
+    
+    if valid_months:
+        tempid_complete = pl.DataFrame({
+            "tempID": [tempID] * len(valid_months),
+            "time_avail_m": valid_months,
+            "tickerIBES": [base_ticker] * len(valid_months),
+            "amaskcd": [base_amask] * len(valid_months)
+        })
+        expanded_data.append(tempid_complete)
+
+# Combine all complete time series
+if expanded_data:
+    complete_grid = pl.concat(expanded_data)
+    print(f"Complete grid after tsfill: {len(complete_grid):,} observations")
+    
+    # Left join original data onto complete grid to fill in ireccd where available
+    ibes_filled = complete_grid.join(
+        ibes_recs.select(["tempID", "time_avail_m", "ireccd", "anndats"]), 
+        on=["tempID", "time_avail_m"], 
+        how="left"
+    )
+    
+    print(f"After joining original data: {len(ibes_filled):,} observations")
+else:
+    ibes_filled = ibes_recs
+
+# Fill tickerIBES within each tempID (forward fill)
+# bys tempID (time_avail_m): replace tickerIBES = tickerIBES[_n-1] if mi(tickerIBES) & _n >1
+ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
+ibes_filled = ibes_filled.with_columns(
+    pl.col("tickerIBES").forward_fill().over("tempID")
+)
+
+# asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1)
 # This gets the first (most recent) ireccd value within the past 12 observations
 # "window(time_avail_m 12)" means 12 observations, not 12 months!
 # stat(first) means the most recent non-null value within that window
-# This is a BACKWARD-LOOKING rolling window, not forward fill
+print("🧮 Computing asrol rolling first of ireccd over 12 observations...")
+
+# Sort to ensure proper order for rolling window
 ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
 
-# Implement backward-looking rolling window to get most recent ireccd within 12 observations
-ibes_filled = ibes_filled.with_columns(
-    # For each row, look back up to 12 rows (including current) to find first non-null ireccd
-    pl.col("ireccd")
-    .rolling_min(window_size=12, min_periods=1)  # Use min to get most recent (first) value
-    .over("tempID")
-    .alias("temp_ireccd12")
-)
-
-# The above doesn't work correctly. Let's use a different approach with shift and coalesce
-ibes_filled = ibes_filled.with_columns(
+# Implement rolling window to find first (most recent) non-null ireccd within 12 observations
+# asrol with stat(first) and window(time_avail_m 12) means: look at current + previous 11 obs to find most recent non-null
+# We implement this by creating a custom rolling first logic using coalesce with shifts
+ibes_filled = ibes_filled.with_columns([
     pl.coalesce([
-        pl.col("ireccd"),  # Current value
+        pl.col("ireccd"),  # Current observation (most recent)
         pl.col("ireccd").shift(1).over("tempID"),  # 1 period back
         pl.col("ireccd").shift(2).over("tempID"),  # 2 periods back  
         pl.col("ireccd").shift(3).over("tempID"),  # 3 periods back
@@ -82,9 +129,9 @@ ibes_filled = ibes_filled.with_columns(
         pl.col("ireccd").shift(8).over("tempID"),  # 8 periods back
         pl.col("ireccd").shift(9).over("tempID"),  # 9 periods back
         pl.col("ireccd").shift(10).over("tempID"),  # 10 periods back
-        pl.col("ireccd").shift(11).over("tempID"),  # 11 periods back
+        pl.col("ireccd").shift(11).over("tempID"),  # 11 periods back (12 total)
     ]).alias("ireccd12")
-)
+])
 
 # collapse down to firm-month
 # gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)  
@@ -142,8 +189,21 @@ df = df.join(short_interest, on=["gvkey", "time_avail_m"], how="inner")
 print(f"After merging with short interest: {len(df):,} observations")
 
 # merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
+print(f"🔍 Debug: temp_rec has {len(temp_rec):,} rows")
+hgr_200704_temprec = temp_rec.filter((pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704))
+print(f"🔍 Debug: HGR 200704 in temp_rec: {len(hgr_200704_temprec)} rows")
+if len(hgr_200704_temprec) > 0:
+    print("🔍 Debug: HGR 200704 temp_rec value:")
+    print(hgr_200704_temprec)
+
+hgr_200704_main = df.filter((pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704))
+print(f"🔍 Debug: HGR 200704 in main dataset before join: {len(hgr_200704_main)} rows")
+
 df = df.join(temp_rec, on=["tickerIBES", "time_avail_m"], how="inner")
 print(f"After merging with recommendations: {len(df):,} observations")
+
+hgr_200704_after = df.filter((pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704))
+print(f"🔍 Debug: HGR 200704 after join: {len(hgr_200704_after)} rows")
 
 print("🧮 Signal construction...")
 
@@ -205,9 +265,20 @@ df = df.with_columns(
     .alias("Recomm_ShortInterest")
 )
 
+# Check HGR 200704 before final filtering
+hgr_200704_before_filter = df.filter((pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704))
+print(f"🔍 Debug: HGR 200704 before final filtering: {len(hgr_200704_before_filter)} rows")
+if len(hgr_200704_before_filter) > 0:
+    print("🔍 Debug: HGR 200704 signal values:")
+    print(hgr_200704_before_filter.select(["permno", "QuintShortInterest", "QuintConsRecomm", "Recomm_ShortInterest"]))
+
 # keep if !mi(Recomm_ShortInterest)
 result = df.filter(pl.col("Recomm_ShortInterest").is_not_null())
 result = result.select(["permno", "time_avail_m", "Recomm_ShortInterest"])
+
+# Check if HGR 200704 (permno 10051) is in final result
+hgr_200704_final = result.filter((pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704))
+print(f"🔍 Debug: permno 10051 (HGR) 200704 in final result: {len(hgr_200704_final)} rows")
 
 print(f"Generated Recomm_ShortInterest values: {len(result):,} observations")
 if len(result) > 0:
