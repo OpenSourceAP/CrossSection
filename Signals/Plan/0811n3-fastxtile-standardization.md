@@ -15,6 +15,8 @@ The migration was relatively easy. Changes are:
    - `df.groupby('time_avail_m')['BM'].transform(lambda x: fastxtile(x, 5))`  
    - → `fastxtile(df, 'BM', by='time_avail_m', n=5)`
 
+Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check the quality of the migration.
+
 ### Debugging Methodology
 - Focus on specific permno-yyyymm observations that fail
 - Use bisection strategy before assuming "data differences"
@@ -25,6 +27,7 @@ The migration was relatively easy. Changes are:
 
 # py Scripts that are based on fastxtile
 
+## Group 1
 - **AccrualsBM**  
   - Standardized: YES
   - Python CSV: yes  
@@ -60,6 +63,7 @@ The migration was relatively easy. Changes are:
   - Precision1: yes (0.01%)  
   - Precision2: NO (1.0E+00)  
 
+## Group 2
 - **DivYieldST**  
   - Standardized: yes  
   - Python CSV: yes  
@@ -94,6 +98,8 @@ The migration was relatively easy. Changes are:
   - Superset: yes  
   - Precision1: NO (63.45%)  
   - Precision2: NO (5.0E+00)  
+
+## Group 3  
 
 - **MomRev**  
   - Standardized: NO  
@@ -130,6 +136,8 @@ The migration was relatively easy. Changes are:
   - Precision1: yes (0.00%)  
   - Precision2: NO (2.5E-01)  
 
+## Group 4
+
 - **PS**  
   - Standardized: yes  
   - Python CSV: yes  
@@ -165,6 +173,8 @@ The migration was relatively easy. Changes are:
   - Precision1: yes (0.00%)  
   - Precision2: NO (1.3E-06)  
 
+## Group 5  
+
 - **ZZ1_Activism1_Activism2**  
   - Standardized: NO  
   - Python CSV: —  
@@ -185,6 +195,8 @@ The migration was relatively easy. Changes are:
   - Superset: —  
   - Precision1: —  
   - Precision2: —  
+
+## Group 6
 
 - **sfe**  
   - Standardized: NO  
