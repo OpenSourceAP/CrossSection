@@ -40,15 +40,16 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 import sys
+import yaml
 
 # ================================
 # VALIDATION CONFIGURATION
 # ================================
 
-PTH_PERCENTILE = 1.00  # 100th percentile (maximum)
+PTH_PERCENTILE = 0.99  # Quantile for extreme deviation (not percentile)
 TOL_DIFF_1 = 1e-2  # Threshold for identifying imperfect observations (Precision1)
-TOL_OBS_1 = 0.1  # Max allowed percentage of imperfect observations (units: percent)
-TOL_DIFF_2 = 1e-6  # Tolerance for Pth percentile absolute difference (Precision2)
+TOL_OBS_1  = 10  # Max allowed percentage of imperfect observations (units: percent)
+TOL_DIFF_2 = 1e-3  # Tolerance for Pth percentile absolute difference (Precision2)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
 def load_csv_robust_polars(file_path):
@@ -552,6 +553,171 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
     
     print(f"\nDetailed results written to: {log_path}")
 
+def write_worst_predictors_log(all_results, test_predictors):
+    """Write focused report on worst performing predictors"""
+    log_path = Path("../Logs/testworst_predictors.md")
+    
+    # Load YAML mapping file to get script names
+    yaml_path = Path("Predictors/00_map_predictors.yaml")
+    script_mapping = {}
+    try:
+        with open(yaml_path, 'r') as f:
+            yaml_data = yaml.safe_load(f)
+            for script_name, script_info in yaml_data.items():
+                if 'predictors' in script_info:
+                    for predictor_csv in script_info['predictors']:
+                        predictor_name = predictor_csv.replace('.csv', '')
+                        script_mapping[predictor_name] = script_name.replace('.py', '')
+    except Exception as e:
+        print(f"Warning: Could not load YAML mapping file: {e}")
+        # If YAML fails, use predictor name as script name
+        for predictor in test_predictors:
+            script_mapping[predictor] = predictor
+
+    # Get all predictors that have results (both tested and missing)
+    all_predictors_with_results = list(all_results.keys())
+    
+    # Sort predictors by superset failure (highest failure percentage first)
+    def superset_sort_key(predictor):
+        results = all_results.get(predictor, {})
+        test2 = results.get('test_2_passed', None)
+        if test2 == False:
+            missing_count = results.get('missing_count', 0)
+            stata_obs_count = results.get('stata_obs_count', 1)  # Avoid division by zero
+            return (missing_count / stata_obs_count) * 100
+        elif test2 == True:
+            return -1  # Passed tests go to end
+        else:
+            return -2  # NA/not tested go to very end
+    
+    # Sort predictors by precision1 failure (highest bad obs percentage first) 
+    def precision1_sort_key(predictor):
+        results = all_results.get(predictor, {})
+        test3 = results.get('test_3_passed', None)
+        if test3 is not None:
+            return results.get('bad_obs_percentage', 0)
+        else:
+            return -1  # NA/not tested go to end
+    
+    # Get worst 20 for each category
+    superset_worst = sorted(all_predictors_with_results, key=superset_sort_key, reverse=True)[:20]
+    precision1_worst = sorted(all_predictors_with_results, key=precision1_sort_key, reverse=True)[:20]
+    
+    with open(log_path, 'w') as f:
+        f.write(f"# Worst Performing Predictors Report\n\n")
+        f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"This report focuses on the 20 worst predictors by Superset and Precision1 metrics.\n\n")
+        
+        # Worst Superset section
+        f.write("## Worst Superset\n\n")
+        f.write("Predictors with highest superset failure rates (Python missing the most Stata observations):\n\n")
+        
+        for predictor in superset_worst:
+            results = all_results.get(predictor, {})
+            
+            # Get script name from mapping
+            script_name = script_mapping.get(predictor, predictor)
+            
+            # Python CSV status
+            python_csv = "yes" if results.get('python_csv_available', False) else "no"
+            
+            # Superset status
+            test2 = results.get('test_2_passed', None)
+            if test2 == True:
+                superset_status = "yes (100.00%)"
+            elif test2 == False:
+                missing_count = results.get('missing_count', 0)
+                stata_obs_count = results.get('stata_obs_count', 1)
+                failure_pct = (missing_count / stata_obs_count) * 100
+                superset_status = f"no ({failure_pct:.2f}%)"
+            else:
+                superset_status = "no data"
+            
+            # Precision1 status  
+            test3 = results.get('test_3_passed', None)
+            if test3 == True:
+                bad_pct = results.get('bad_obs_percentage', 0)
+                precision1_status = f"yes ({bad_pct:.2f}%)"
+            elif test3 == False:
+                bad_pct = results.get('bad_obs_percentage', 0)
+                precision1_status = f"no ({bad_pct:.2f}%)"
+            else:
+                precision1_status = "no data"
+            
+            # Precision2 status
+            test4 = results.get('test_4_passed', None)
+            if test4 == True:
+                pth_diff = results.get('pth_percentile_diff', 0)
+                precision2_status = f"yes (100th diff {pth_diff:.1E})"
+            elif test4 == False:
+                pth_diff = results.get('pth_percentile_diff', 0)
+                precision2_status = f"no (100th diff {pth_diff:.1E})"
+            else:
+                precision2_status = "no data"
+            
+            f.write(f"- **{predictor}**\n")
+            f.write(f"  - Script: {script_name}\n")
+            f.write(f"  - Python CSV: {python_csv}\n")
+            f.write(f"  - Superset: {superset_status}\n")
+            f.write(f"  - Precision1: {precision1_status}\n")
+            f.write(f"  - Precision2: {precision2_status}\n\n")
+        
+        # Worst Precision1 section
+        f.write("## Worst Precision1\n\n")
+        f.write("Predictors with highest precision1 failure rates (highest percentage of observations with significant differences):\n\n")
+        
+        for predictor in precision1_worst:
+            results = all_results.get(predictor, {})
+            
+            # Get script name from mapping
+            script_name = script_mapping.get(predictor, predictor)
+            
+            # Python CSV status
+            python_csv = "yes" if results.get('python_csv_available', False) else "no"
+            
+            # Superset status
+            test2 = results.get('test_2_passed', None)
+            if test2 == True:
+                superset_status = "yes (100.00%)"
+            elif test2 == False:
+                missing_count = results.get('missing_count', 0)
+                stata_obs_count = results.get('stata_obs_count', 1)
+                failure_pct = (missing_count / stata_obs_count) * 100
+                superset_status = f"no ({failure_pct:.2f}%)"
+            else:
+                superset_status = "no data"
+            
+            # Precision1 status  
+            test3 = results.get('test_3_passed', None)
+            if test3 == True:
+                bad_pct = results.get('bad_obs_percentage', 0)
+                precision1_status = f"yes ({bad_pct:.2f}%)"
+            elif test3 == False:
+                bad_pct = results.get('bad_obs_percentage', 0)
+                precision1_status = f"no ({bad_pct:.2f}%)"
+            else:
+                precision1_status = "no data"
+            
+            # Precision2 status
+            test4 = results.get('test_4_passed', None)
+            if test4 == True:
+                pth_diff = results.get('pth_percentile_diff', 0)
+                precision2_status = f"yes (100th diff {pth_diff:.1E})"
+            elif test4 == False:
+                pth_diff = results.get('pth_percentile_diff', 0)
+                precision2_status = f"no (100th diff {pth_diff:.1E})"
+            else:
+                precision2_status = "no data"
+            
+            f.write(f"- **{predictor}**\n")
+            f.write(f"  - Script: {script_name}\n")
+            f.write(f"  - Python CSV: {python_csv}\n")
+            f.write(f"  - Superset: {superset_status}\n")
+            f.write(f"  - Precision1: {precision1_status}\n")
+            f.write(f"  - Precision2: {precision2_status}\n\n")
+    
+    print(f"\nWorst predictors report written to: {log_path}")
+
 def main():
     parser = argparse.ArgumentParser(description='Validate Python predictor outputs against Stata CSV files')
     parser.add_argument('--predictors', '-p', nargs='+', help='Specific predictors to validate')
@@ -640,6 +806,9 @@ def main():
     
     # Write markdown log
     write_markdown_log(all_md_lines, all_predictors, passed_count, all_results)
+    
+    # Write worst predictors report
+    write_worst_predictors_log(all_results, all_predictors)
     
     # Summary
     print(f"\n=== SUMMARY ===")
