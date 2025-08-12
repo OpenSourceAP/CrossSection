@@ -272,7 +272,7 @@ df = df.with_columns(
     pl.col("tempMS").forward_fill().over("permno").alias("tempMS")
 )
 
-# Create final MS score with winsorization
+# Create final MS score
 df_final = df.with_columns([
     pl.when(pl.col("tempMS") >= 6)
     .then(pl.lit(6))
