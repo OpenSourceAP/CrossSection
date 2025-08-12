@@ -52,14 +52,6 @@ These failures may be linked to winsorization.
   - Precision2: no (99th diff 1.5E-01) ❌
   - Status: TBC
 
-- **MS**
-  - Script: MS
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (63.45%) ❌
-  - Precision2: no (99th diff 4.0E+00) ❌
-  - Status: TBC
-
 - **IntanCFP**
   - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
   - Python CSV: yes
@@ -83,6 +75,14 @@ These failures may be linked to winsorization.
 
 ### Group 3
 These scripts are relatively simple. Hopefully the fix will be straightforward.
+
+- **MS**
+  - Script: MS
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (63.45%) ❌
+  - Precision2: no (99th diff 4.0E+00) ❌
+  - Status: TBC
 
 - **ShareVol**
   - Script: ShareVol
