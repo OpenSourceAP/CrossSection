@@ -68,23 +68,23 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Output: DivYieldST.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
-  - Precision1: NO (0.13%)  
+  - Precision1: NO (0.132%)  
   - Precision2: NO (3.0E+00)  
 
 - **EquityDuration**  
-  - Standardized: NO  
+  - Standardized: NO ❌ 
   - Output: EquityDuration.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: NO (3.3E+05)  
 
 - **FirmAgeMom**  
-  - Standardized: NO  
+  - Standardized: NO ❌ 
   - Output: FirmAgeMom.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (1.85%)  
-  - Precision1: NO (0.39%)  
+  - Precision1: NO (0.388%)  
   - Precision2: NO (2.0E+00)  
 
 - **GrAdExp**  
@@ -100,7 +100,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Output: MS.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: NO (63.45%)  
+  - Precision1: NO (63.453%) ❌ 
   - Precision2: NO (5.0E+00)  
 
 ## Group 3  
@@ -126,7 +126,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Output: NetDebtPrice.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: NO (4.2E-02)  
 
 - **OScore**  
@@ -152,7 +152,7 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Output: PS.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.00%)  
-  - Precision1: NO (17.90%)  
+  - Precision1: NO (17.904%)  
   - Precision2: NO (5.0E+00)  
 
 - **PatentsRD**  
@@ -176,42 +176,42 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Output: RDAbility.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (4.95%)  
-  - Precision1: NO (9.52%)  
+  - Precision1: NO (9.523%)  
   - Precision2: NO (1.9E+02)  
 
 - **RDcap**  
-  - Standardized: NO  
+  - Standardized: NO ❌ 
   - Output: RDcap.csv (predictor)
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: NO (1.3E-06)  
 
 ## Group 5  
 
 - **ZZ1_Activism1_Activism2**  
   - Standardized: NO  
-  - Output: Activism1.csv, Activism2.csv (predictors) [Script not created]
-  - Python CSV: —  
-  - Superset: —  
-  - Precision1: —  
-  - Precision2: —  
+  - Output: Activism1.csv, Activism2.csv (predictors) [Script created]
+  - Python CSV: yes  
+  - Superset: yes  
+  - Precision1: NA
+  - Precision2: NA
 
 - **ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue**  
-  - Standardized: NO  
+  - Standardized: NO ❌ 
   - Output: AnalystValue.csv, AOP.csv, PredictedFE.csv (predictors), IntrinsicValue.csv (placebo)
-  - Python CSV: —  
-  - Superset: —  
-  - Precision1: —  
-  - Precision2: —  
+  - Python CSV: yes  
+  - Superset: NO (0.22%) / NO (0.22%) / NO (0.27%)  
+  - Precision1: NO (0.263%) / yes (0.002%) / NO (95.807%) ❌ 
+  - Precision2: NO (1.2E+01) / NO (2.4E+03) / NO (5.1E-02)  
 
 - **ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility**  
   - Standardized: NO  
   - Output: RIO_MB.csv, RIO_Disp.csv, RIO_Turnover.csv, RIO_Volatility.csv (predictors)
-  - Python CSV: —  
-  - Superset: —  
-  - Precision1: —  
-  - Precision2: —  
+  - Python CSV: yes  
+  - Superset: NO (0.18%) / NO (0.24%) / NO (0.15%) / NO (4.40%)  
+  - Precision1: NO (17.066%) / NO (6.716%) / NO (23.712%) / NO (26.583%) ❌ 
+  - Precision2: NO (4.0E+00) / NO (4.0E+00) / NO (4.0E+00) / NO (4.0E+00)  
 
 ## Group 6
 
@@ -224,11 +224,11 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Precision2: NO (1.0E+01)  
 
 - **std_turn**  
-  - Standardized: NO  
+  - Standardized: NO ❌ 
   - Output: std_turn.csv (predictor)
   - Python CSV: yes  
   - Superset: NO (0.04%)  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: NO (1.9E-05)  
 
 - **tang**  
