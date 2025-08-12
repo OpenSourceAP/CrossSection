@@ -10,6 +10,7 @@ import numpy as np
 import sys
 sys.path.append('.')
 from utils.savepredictor import save_predictor
+from utils.relrank import relrank
 
 print("Creating EarnSupBig predictor...")
 
@@ -67,9 +68,10 @@ temp_cols = [f'temp{n}' for n in range(3, 25, 3)]
 df['SD'] = df[temp_cols].std(axis=1)
 
 # Stata: replace EarningsSurprise = EarningsSurprise/SD
-# Handle division by zero - when SD is 0 or missing, set to missing (like Stata)
+# Handle division by zero and very small SD values to prevent astronomical results
+MIN_SD_THRESHOLD = 1e-4
 df['EarningsSurprise'] = np.where(
-    (df['SD'] == 0) | df['SD'].isna(), 
+    (df['SD'] == 0) | df['SD'].isna() | (abs(df['SD']) < MIN_SD_THRESHOLD), 
     np.nan, 
     df['EarningsSurprise'] / df['SD']
 )
@@ -205,31 +207,8 @@ df = df.dropna(subset=['tempFF48'])
 print(f"After dropping missing FF48 industries: {len(df)} observations")
 
 # Stata: bys tempFF48 time_avail_m: relrank mve_c, gen(tempRK) ref(mve_c)
-# Implement relrank functionality - creates relative ranks (percentiles) within groups
-def calculate_relrank(group):
-    """
-    Calculate relative ranks (percentiles) within group like Stata's relrank
-    relrank creates percentiles from 0 to 1 where largest value gets rank ~1.0
-    """
-    if len(group) == 1:
-        return pd.Series([1.0], index=group.index)
-    
-    # Sort ascending and assign ranks (smallest gets rank 1)
-    # Then convert to percentiles where largest gets highest percentile
-    ranks = group.rank(method='average', na_option='keep')
-    n_valid = group.count()
-    
-    if n_valid == 0:
-        return pd.Series([np.nan] * len(group), index=group.index)
-    
-    # Convert ranks to percentiles: (rank - 0.5) / n
-    # This matches Stata's relrank behavior
-    percentiles = (ranks - 0.5) / n_valid
-    
-    return percentiles
-
-# Calculate relative ranks by industry-month groups
-df['tempRK'] = df.groupby(['tempFF48', 'time_avail_m'])['mve_c'].transform(calculate_relrank)
+# Use the relrank utility function
+df = relrank(df, "mve_c", by=["tempFF48", "time_avail_m"], out="tempRK")
 
 print(f"Calculated tempRK ranks for {df['tempRK'].notna().sum()} observations")
 
