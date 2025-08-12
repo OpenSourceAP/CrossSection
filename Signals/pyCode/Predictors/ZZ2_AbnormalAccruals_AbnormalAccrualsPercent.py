@@ -94,9 +94,9 @@ print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
 # destring sic, replace
 # gen sic2 = floor(sic/100)
-df = df.with_columns([
-    pl.col("sic").str.extract(r"(\d+)").cast(pl.Float64, strict=False).alias("sic_numeric"),
-])
+df = df.with_columns(
+    pl.col("sic").cast(pl.Float64, strict=False).alias("sic_numeric")
+)
 
 df = df.with_columns(
     (pl.col("sic_numeric") / 100).floor().cast(pl.Int32).alias("sic2")
