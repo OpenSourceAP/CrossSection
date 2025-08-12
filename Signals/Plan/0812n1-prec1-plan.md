@@ -6,7 +6,15 @@
 
 ## Mission
 Fix the Precision1 failures for the predictors described below.
-- Identify the root causes of the failures. This is extremely important. Do not guess. Track down the problem.
+- Identify the root causes of the failures. 
+  - Use `cd pyCode && python3 utils/test_predictor.py --predictors [predictor_name]` to find observations with large deviations.
+  - Focus on *one* observation, find the exact line of code where the deviation first shows up.
+  - Think about the underlying cause
+    - Start with the line where the deviation first shows up. But also think about the previous lines too.
+    - Examine the Stata counterpart (in `Code/Predictors/*.do`)
+    - Check Stata command documentation in `DocsForClaude/stata_*.md` 
+    - Think about what is causing the problem.
+  - This is extremely important. Do not guess. Track down the problem.
 - Write down a plan to fix the problem in Journal/
 - Get the OK from the user to fix.
 
