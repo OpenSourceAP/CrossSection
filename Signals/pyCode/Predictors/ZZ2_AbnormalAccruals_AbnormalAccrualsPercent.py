@@ -2,6 +2,8 @@
 # ABOUTME: Usage: python3 ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py (run from pyCode/ directory)
 
 import polars as pl
+import pandas as pd
+import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -94,13 +96,11 @@ print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
 # destring sic, replace
 # gen sic2 = floor(sic/100)
-df = df.with_columns(
-    pl.col("sic").cast(pl.Float64, strict=False).alias("sic_numeric")
-)
-
-df = df.with_columns(
-    (pl.col("sic_numeric") / 100).floor().cast(pl.Int32).alias("sic2")
-)
+# Convert to pandas for proven SIC handling, then back to polars
+df_pandas_temp = df.to_pandas()
+df_pandas_temp['sic'] = pd.to_numeric(df_pandas_temp['sic'], errors='coerce')
+df_pandas_temp['sic2'] = np.floor(df_pandas_temp['sic'] / 100).astype('Int32')
+df = pl.from_pandas(df_pandas_temp)
 
 # bys fyear sic2: asreg tempAccruals tempInvTA tempDelRev tempPPE, fitted
 # This runs cross-sectional regressions by year and industry using enhanced asreg helper
