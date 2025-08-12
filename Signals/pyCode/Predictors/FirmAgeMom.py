@@ -8,6 +8,8 @@
 import pandas as pd
 import numpy as np
 import polars as pl
+import sys
+sys.path.append('.')
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 

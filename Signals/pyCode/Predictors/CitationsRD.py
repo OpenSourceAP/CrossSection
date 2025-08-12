@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
 
 # No need for additional imports for rolling calculations

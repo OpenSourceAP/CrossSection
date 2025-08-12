@@ -2,10 +2,12 @@
 # ABOUTME: Usage: python3 ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py (run from pyCode/ directory)
 
 import polars as pl
+import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 print("=" * 80)
 print("🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py")
@@ -140,21 +142,11 @@ df = df.with_columns(
 )
 
 # egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
-df = df.with_columns(
-    pl.col("RIOlag")
-    .rank(method="ordinal")
-    .over("time_avail_m")
-    .alias("temp_rank_rio")
-)
-
-df = df.with_columns(
-    pl.col("temp_rank_rio")
-    .truediv(pl.col("temp_rank_rio").max().over("time_avail_m"))
-    .mul(5)
-    .ceil()
-    .cast(pl.Int32)
-    .alias("cat_RIO")
-)
+# Convert to pandas for fastxtile operation
+df_pandas = df.to_pandas()
+df_pandas['cat_RIO'] = fastxtile(df_pandas, 'RIOlag', by='time_avail_m', n=5)
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
 
 print("📊 Computing characteristic variables...")
 
@@ -199,31 +191,18 @@ print("🏷️ Creating characteristic quintiles and RIO interactions...")
 # Create characteristic quintiles and RIO interactions
 variables = ["MB", "Disp", "Volatility", "Turnover"]
 
+# Convert to pandas for fastxtile operations
+df_pandas = df.to_pandas()
+
 for var in variables:
     # egen cat_`v' = fastxtile(`v'), n(5) by(time_avail_m)
-    df = df.with_columns(
-        pl.col(var)
-        .rank(method="ordinal")
-        .over("time_avail_m")
-        .alias(f"temp_rank_{var}")
-    )
-    
-    df = df.with_columns(
-        pl.col(f"temp_rank_{var}")
-        .truediv(pl.col(f"temp_rank_{var}").max().over("time_avail_m"))
-        .mul(5)
-        .ceil()
-        .cast(pl.Int32)
-        .alias(f"cat_{var}")
-    )
+    df_pandas[f'cat_{var}'] = fastxtile(df_pandas, var, by='time_avail_m', n=5)
     
     # gen RIO_`v' = cat_RIO if cat_`v' == 5
-    df = df.with_columns(
-        pl.when(pl.col(f"cat_{var}") == 5)
-        .then(pl.col("cat_RIO"))
-        .otherwise(None)
-        .alias(f"RIO_{var}")
-    )
+    df_pandas[f'RIO_{var}'] = df_pandas['cat_RIO'].where(df_pandas[f'cat_{var}'] == 5)
+
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
 
 # patch for Dispersion
 # replace RIO_Disp = cat_RIO if cat_Disp >= 4 & cat_Disp != .

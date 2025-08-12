@@ -7,6 +7,8 @@
 
 import pandas as pd
 import numpy as np
+import sys
+sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
 
 # Prep IBES data
