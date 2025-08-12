@@ -31,7 +31,10 @@ These failures are linked to the stata 'relrank.ado' function. Using utils/relra
   - Superset: yes (100%)
   - Precision1: no (25.49%) ❌
   - Precision2: no (99th diff 1.8E-02) ❌
-  - Status: TBC
+  - Status: DONE ✅
+
+### Group 2
+These failures may be linked to winsorization.  
 
 - **PredictedFE**
   - Script: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue
@@ -39,9 +42,46 @@ These failures are linked to the stata 'relrank.ado' function. Using utils/relra
   - Superset: yes (100%)
   - Precision1: no (95.81%) ❌
   - Precision2: no (99th diff 2.3E-02) ❌
+  - Status: Skip for now
+
+- **AbnormalAccruals**
+  - Script: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (49.01%) ❌
+  - Precision2: no (99th diff 1.5E-01) ❌
   - Status: TBC
 
-## Group 2
+- **MS**
+  - Script: MS
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (63.45%) ❌
+  - Precision2: no (99th diff 4.0E+00) ❌
+  - Status: TBC
+
+- **IntanCFP**
+  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (15.60%) ❌
+  - Precision2: no (99th diff 4.4E-02) ❌
+
+- **IntanBM**
+  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (15.49%) ❌
+  - Precision2: no (99th diff 3.0E-02) ❌
+
+- **IntanEP**
+  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (13.83%) ❌
+  - Precision2: no (99th diff 3.1E-02) ❌
+
+### Group 3
 These scripts are relatively simple. Hopefully the fix will be straightforward.
 
 - **ShareVol**
@@ -60,14 +100,6 @@ These scripts are relatively simple. Hopefully the fix will be straightforward.
   - Precision2: no (99th diff 1.6E+00) ❌
   - Status: TBC
 
-- **MS**
-  - Script: MS
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (63.45%) ❌
-  - Precision2: no (99th diff 4.0E+00) ❌
-  - Status: TBC
-
 - **retConglomerate**
   - Script: retConglomerate
   - Python CSV: yes
@@ -84,16 +116,8 @@ These scripts are relatively simple. Hopefully the fix will be straightforward.
   - Precision2: no (99th diff 5.0E+00) ❌  
   - Status: TBC
 
-## Group 3
+### Group 4
 Relatively complicated do files. Need to be more careful.
-
-- **AbnormalAccruals**
-  - Script: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (49.01%) ❌
-  - Precision2: no (99th diff 1.5E-01) ❌
-  - Status: TBC
 
 - **RIO_Volatility**
   - Script: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
@@ -117,28 +141,7 @@ Relatively complicated do files. Need to be more careful.
   - Precision1: no (17.07%) ❌
   - Precision2: no (99th diff 3.0E+00) ❌
 
-- **IntanCFP**
-  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (15.60%) ❌
-  - Precision2: no (99th diff 4.4E-02) ❌
-
-- **IntanBM**
-  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (15.49%) ❌
-  - Precision2: no (99th diff 3.0E-02) ❌
-
-- **IntanEP**
-  - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (13.83%) ❌
-  - Precision2: no (99th diff 3.1E-02) ❌
-
-# Group 4
+### Group 4
 Complex and computationally intensive. Be very careful.
 
 - **TrendFactor**
