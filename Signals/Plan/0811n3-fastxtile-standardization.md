@@ -9,9 +9,11 @@
 Standardize all fastxtile-based py scripts so that they use the `utils/stata_fastxtile.py` helper. Target: >99% Precision1 match for all predictors.
 
 ## Strategy: follow AccrualsBM.py migration
-The migration was relatively easy. Changes are:
-1. **Replaced local fastxtile** (lines 32-47) with `from utils.stata_fastxtile import fastxtile`
-2. **Updated fastxtile calls:**
+The migration was relatively easy. Steps are:
+1. **Check the Do file version** for the targeted algorithm
+  - In this case it's `Predictors/Code/AccrualsBM.do`
+2. **Replaced local fastxtile** (lines 32-47) with `from utils.stata_fastxtile import fastxtile`
+3. **Updated fastxtile calls**
    - `df.groupby('time_avail_m')['BM'].transform(lambda x: fastxtile(x, 5))`  
    - → `fastxtile(df, 'BM', by='time_avail_m', n=5)`
 
@@ -36,31 +38,24 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Precision2: yes (0.0E+00)  
 
 - **ChForecastAccrual**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: NO (0.12%)  
+  - Precision1: NO (0.118%)  
   - Precision2: NO (1.0E+00)  
 
 - **ChNAnalyst**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: NO (0.11%)  
-  - Precision1: yes (0.01%)  
+  - Precision1: yes (0.007%)  
   - Precision2: NO (1.0E+00)  
 
 - **CitationsRD**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: yes (0.00%)  
-  - Precision2: NO (1.0E+00)  
-
-- **ConsRecomm**  
-  - Standardized: NO  
-  - Python CSV: yes  
-  - Superset: NO (0.23%)  
-  - Precision1: yes (0.01%)  
+  - Precision1: yes (0.002%)  
   - Precision2: NO (1.0E+00)  
 
 ## Group 2
@@ -102,17 +97,17 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 ## Group 3  
 
 - **MomRev**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: NO (1.26%)  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: yes (0.0E+00)  
 
 - **MomVol**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: NO (0.00%)  
-  - Precision1: NO (0.42%)  
+  - Precision1: NO (0.417%)  
   - Precision2: NO (1.0E+00)  
 
 - **NetDebtPrice**  
@@ -123,17 +118,17 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Precision2: NO (4.2E-02)  
 
 - **OScore**  
-  - Standardized: NO  
-  - Python CSV: —  
-  - Superset: —  
-  - Precision1: —  
-  - Precision2: —  
+  - Standardized: YES  
+  - Python CSV: yes  
+  - Superset: NO (0.40%)  
+  - Precision1: yes (0.000%)  
+  - Precision2: yes (0.0E+00)  
 
 - **OperProf**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: NO (2.5E-01)  
 
 ## Group 4
@@ -146,17 +141,17 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Precision2: NO (5.0E+00)  
 
 - **PatentsRD**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: NO (58.66%)  
-  - Precision1: NO (15.70%)  
+  - Precision1: NO (15.700%)  
   - Precision2: NO (1.0E+00)  
 
 - **ProbInformedTrading**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: yes  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.000%)  
   - Precision2: yes (5.0E-08)  
 
 - **RDAbility**  
@@ -199,10 +194,10 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
 ## Group 6
 
 - **sfe**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: NO (0.20%)  
-  - Precision1: yes (0.02%)  
+  - Precision1: yes (0.022%)  
   - Precision2: NO (1.0E+01)  
 
 - **std_turn**  
@@ -213,8 +208,8 @@ Run `python3 utils/test_predictors.py --predictors [predictor_name]` to check th
   - Precision2: NO (1.9E-05)  
 
 - **tang**  
-  - Standardized: NO  
+  - Standardized: YES  
   - Python CSV: yes  
   - Superset: NO (0.02%)  
-  - Precision1: yes (0.00%)  
+  - Precision1: yes (0.002%)  
   - Precision2: NO (2.4E-03)  
