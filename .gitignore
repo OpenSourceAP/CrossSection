@@ -25,7 +25,7 @@ Signals/pyData/*
 
 # Python
 .venv
-__pycache__/
+__*__*
 
 # Testing and archive
 deleteme*
