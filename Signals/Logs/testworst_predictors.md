@@ -1,6 +1,6 @@
 # Worst Performing Predictors Report
 
-**Generated**: 2025-08-12 14:12:23
+**Generated**: 2025-08-12 16:05:35
 
 This report focuses on the 20 worst predictors by Superset and Precision1 metrics.
 
@@ -8,21 +8,21 @@ This report focuses on the 20 worst predictors by Superset and Precision1 metric
 
 Predictors with highest superset failure rates (Python missing the most Stata observations):
 
-- **IndRetBig**
-  - Script: IndRetBig
+- **AbnormalAccruals**
+  - Script: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
   - Python CSV: yes
   - Superset: yes (100%)
-  - Precision1: no (25.49%) ❌
-  - Precision2: no (99th diff 1.8E-02) ❌
+  - Precision1: no (27.95%) ❌
+  - Precision2: no (99th diff 5.2E-02) ❌
 
 ## Worst Precision1
 
 Predictors with highest precision1 failure rates (highest percentage of observations with significant differences):
 
-- **IndRetBig**
-  - Script: IndRetBig
+- **AbnormalAccruals**
+  - Script: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
   - Python CSV: yes
   - Superset: yes (100%)
-  - Precision1: no (25.49%) ❌
-  - Precision2: no (99th diff 1.8E-02) ❌
+  - Precision1: no (27.95%) ❌
+  - Precision2: no (99th diff 5.2E-02) ❌
 

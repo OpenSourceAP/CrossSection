@@ -58,6 +58,7 @@ These failures may be linked to winsorization.
   - Superset: yes (100%)
   - Precision1: no (15.60%) ❌
   - Precision2: no (99th diff 4.4E-02) ❌
+  - Status: DONE ✅
 
 - **IntanBM**
   - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
@@ -65,6 +66,7 @@ These failures may be linked to winsorization.
   - Superset: yes (100%)
   - Precision1: no (15.49%) ❌
   - Precision2: no (99th diff 3.0E-02) ❌
+  - Status: DONE ✅
 
 - **IntanEP**
   - Script: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP
@@ -72,25 +74,10 @@ These failures may be linked to winsorization.
   - Superset: yes (100%)
   - Precision1: no (13.83%) ❌
   - Precision2: no (99th diff 3.1E-02) ❌
+  - Status: DONE ✅
 
 ### Group 3
 These scripts are relatively simple. Hopefully the fix will be straightforward.
-
-- **MS**
-  - Script: MS
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (63.45%) ❌
-  - Precision2: no (99th diff 4.0E+00) ❌
-  - Status: TBC
-
-- **ShareVol**
-  - Script: ShareVol
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (14.38%) ❌
-  - Precision2: no (99th diff 1.0E+00) ❌
-  - Status: TBC
 
 - **OrgCap**
   - Script: ZZ1_OrgCap_OrgCapNoAdj
@@ -99,25 +86,6 @@ These scripts are relatively simple. Hopefully the fix will be straightforward.
   - Precision1: no (91.02%) ❌
   - Precision2: no (99th diff 1.6E+00) ❌
   - Status: TBC
-
-- **retConglomerate**
-  - Script: retConglomerate
-  - Python CSV: yes
-  - Superset: no (22.32%) ❌
-  - Precision1: no (94.06%) ❌
-  - Precision2: no (99th diff 1.7E-01) ❌
-  - Status: TBC
-
-- **PS**
-  - Script: PS
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (17.90%) ❌
-  - Precision2: no (99th diff 5.0E+00) ❌  
-  - Status: TBC
-
-### Group 4
-Relatively complicated do files. Need to be more careful.
 
 - **RIO_Volatility**
   - Script: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
@@ -141,6 +109,43 @@ Relatively complicated do files. Need to be more careful.
   - Precision1: no (17.07%) ❌
   - Precision2: no (99th diff 3.0E+00) ❌
 
+- **ShareVol**
+  - Script: ShareVol
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (14.38%) ❌
+  - Precision2: no (99th diff 1.0E+00) ❌
+  - Status: TBC
+
+- **PS**
+  - Script: PS
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (17.90%) ❌
+  - Precision2: no (99th diff 5.0E+00) ❌  
+  - Status: TBC
+
+### Group 4
+Relatively complicated do files. Need to be more careful.
+
+- **MS**
+  - Script: MS
+  - Python CSV: yes
+  - Superset: yes (100%)
+  - Precision1: no (63.45%) ❌
+  - Precision2: no (99th diff 4.0E+00) ❌
+  - Status: TBC
+
+
+- **retConglomerate**
+  - Script: retConglomerate
+  - Python CSV: yes
+  - Superset: no (22.32%) ❌
+  - Precision1: no (94.06%) ❌
+  - Precision2: no (99th diff 1.7E-01) ❌
+  - Status: TBC
+
+  
 ### Group 4
 Complex and computationally intensive. Be very careful.
 
