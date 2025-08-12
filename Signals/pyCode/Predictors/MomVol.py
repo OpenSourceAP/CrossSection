@@ -6,6 +6,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 # Data load
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -67,19 +68,8 @@ import numpy as np
 df_pd = df.to_pandas()
 
 # Create momentum deciles within each time_avail_m (like fastxtile)
-def fastxtile(series, n_quantiles):
-    """Equivalent to Stata's fastxtile"""
-    try:
-        # Handle infinite values
-        series_clean = series.replace([np.inf, -np.inf], np.nan)
-        if series_clean.notna().sum() < n_quantiles:
-            return pd.Series(np.nan, index=series.index)
-        return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
-    except:
-        return pd.Series(np.nan, index=series.index)
-
-df_pd['catMom'] = df_pd.groupby('time_avail_m')['Mom6m'].transform(lambda x: fastxtile(x, 10))
-df_pd['catVol'] = df_pd.groupby('time_avail_m')['temp'].transform(lambda x: fastxtile(x, 3))
+df_pd['catMom'] = fastxtile(df_pd, 'Mom6m', by='time_avail_m', n=10)
+df_pd['catVol'] = fastxtile(df_pd, 'temp', by='time_avail_m', n=3)
 
 # Convert back to polars
 df = pl.from_pandas(df_pd)

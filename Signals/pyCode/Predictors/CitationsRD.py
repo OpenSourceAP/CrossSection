@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+from utils.stata_fastxtile import fastxtile
 
 # No need for additional imports for rolling calculations
 
@@ -168,35 +169,7 @@ print("Creating tercile categories...")
 
 # Stata: egen maincat = fastxtile(tempCitationsRD), by(time_avail_m) n(3)
 # fastxtile creates equal-sized groups based on VALID (non-missing) observations
-def create_fastxtile_terciles(group):
-    """Replicate Stata's fastxtile exactly - equal-sized groups of valid observations"""
-    valid_signals = group['tempCitationsRD'].dropna()
-    
-    if len(valid_signals) < 3:
-        # Not enough valid observations for terciles
-        group['maincat'] = np.nan
-        return group
-    
-    # Create breakpoints for equal-sized terciles
-    n_valid = len(valid_signals)
-    tercile_size = n_valid / 3
-    
-    # Sort valid values to find breakpoints
-    sorted_values = valid_signals.sort_values()
-    
-    # Find 33rd and 67th percentile breakpoints
-    breakpoint_1 = sorted_values.iloc[int(tercile_size) - 1] if int(tercile_size) > 0 else sorted_values.iloc[0]
-    breakpoint_2 = sorted_values.iloc[int(2 * tercile_size) - 1] if int(2 * tercile_size) > 0 else sorted_values.iloc[-1]
-    
-    # Handle ties by using <= for lower categories and > for upper
-    group['maincat'] = np.nan
-    group.loc[group['tempCitationsRD'] <= breakpoint_1, 'maincat'] = 1
-    group.loc[(group['tempCitationsRD'] > breakpoint_1) & (group['tempCitationsRD'] <= breakpoint_2), 'maincat'] = 2  
-    group.loc[group['tempCitationsRD'] > breakpoint_2, 'maincat'] = 3
-    
-    return group
-
-df = df.groupby('time_avail_m').apply(create_fastxtile_terciles).reset_index(drop=True)
+df['maincat'] = fastxtile(df, 'tempCitationsRD', by='time_avail_m', n=3)
 
 # Create CitationsRD signal: 1 if small & high, 0 if small & low  
 df['CitationsRD'] = np.nan

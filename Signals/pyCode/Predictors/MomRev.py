@@ -9,6 +9,7 @@
 import pandas as pd
 import numpy as np
 import os
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 # use permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable", clear
@@ -46,14 +47,10 @@ df['Mom6m_clean'] = df['Mom6m'].replace([np.inf, -np.inf], np.nan)
 df['Mom36m_clean'] = df['Mom36m'].replace([np.inf, -np.inf], np.nan)
 
 # egen tempMom6  = fastxtile(Mom6m), by(time_avail_m) n(5)
-df['tempMom6'] = df.groupby('time_avail_m')['Mom6m_clean'].transform(
-    lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1
-)
+df['tempMom6'] = fastxtile(df, 'Mom6m_clean', by='time_avail_m', n=5)
 
 # egen tempMom36 = fastxtile(Mom36m), by(time_avail_m) n(5)
-df['tempMom36'] = df.groupby('time_avail_m')['Mom36m_clean'].transform(
-    lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1
-)
+df['tempMom36'] = fastxtile(df, 'Mom36m_clean', by='time_avail_m', n=5)
 
 # gen MomRev = 1 if tempMom6 == 5 & tempMom36 == 1
 df['MomRev'] = np.nan

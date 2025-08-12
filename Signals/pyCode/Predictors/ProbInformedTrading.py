@@ -7,6 +7,7 @@
 
 import pandas as pd
 import numpy as np
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 # use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
@@ -29,9 +30,7 @@ df = df.merge(pin_df[['permno', 'time_avail_m', 'a', 'u', 'es', 'eb']],
 df['pin'] = (df['a'] * df['u']) / (df['a'] * df['u'] + df['es'] + df['eb'])
 
 # egen tempsize = fastxtile(mve_c), by(time_avail_m) n(2)
-df['tempsize'] = df.groupby('time_avail_m')['mve_c'].transform(
-    lambda x: pd.qcut(x, q=2, labels=[1, 2], duplicates='drop')
-).astype(float)
+df['tempsize'] = fastxtile(df, 'mve_c', by='time_avail_m', n=2)
 
 # replace pin = . if tempsize == 2
 df.loc[df['tempsize'] == 2, 'pin'] = np.nan

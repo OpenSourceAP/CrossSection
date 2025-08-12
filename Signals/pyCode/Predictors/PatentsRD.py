@@ -8,6 +8,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
@@ -106,9 +107,8 @@ for time_month, group in df.groupby('time_avail_m'):
     
     if len(valid_group) > 0:
         try:
-            # Use rank method to handle duplicate values at quantile boundaries
-            valid_group['maincat'] = pd.qcut(valid_group['tempPatentsRD'].rank(method='first'), 
-                                           q=3, labels=[1, 2, 3])
+            # Use fastxtile to match Stata behavior
+            valid_group['maincat'] = fastxtile(valid_group['tempPatentsRD'], n=3)
             valid_group['maincat'] = valid_group['maincat'].astype(int)
             
             # Merge categories back to all observations

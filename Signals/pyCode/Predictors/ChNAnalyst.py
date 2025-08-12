@@ -20,6 +20,7 @@ Outputs:
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from utils.stata_fastxtile import fastxtile
 
 # Prep IBES data
 # use "$pathDataIntermediate/IBES_EPS_Unadj", replace
@@ -83,14 +84,7 @@ df.loc[mask_1987, 'ChNAnalyst'] = np.nan
 
 # only works in small firms (OP tab 2)
 # egen temp = fastxtile(mve_c), n(5)
-def fastxtile(series, n_quantiles=5):
-    try:
-        series_clean = series.replace([np.inf, -np.inf], np.nan)
-        return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
-    except Exception:
-        return pd.Series(np.nan, index=series.index)
-
-df['temp'] = fastxtile(df['mve_c'], n_quantiles=5)
+df['temp'] = fastxtile(df, 'mve_c', n=5)
 
 # keep if temp <= 2
 df = df[df['temp'] <= 2].copy()

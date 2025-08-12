@@ -19,6 +19,9 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+sys.path.insert(0, '.')
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
@@ -40,9 +43,7 @@ df['xsga'] = df['xsga'].fillna(0)
 df['tempprof'] = (df['revt'] - df['cogs'] - df['xsga'] - df['xint']) / df['ceq']
 
 # Create size terciles by time_avail_m and exclude smallest tercile
-df['tempsizeq'] = df.groupby('time_avail_m')['mve_c'].transform(
-    lambda x: pd.qcut(x, q=3, labels=[1, 2, 3], duplicates='drop')
-)
+df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)
 
 # Set tempprof to missing for smallest size tercile
 df.loc[df['tempsizeq'] == 1, 'tempprof'] = pd.NA

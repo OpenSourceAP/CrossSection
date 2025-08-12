@@ -21,6 +21,7 @@ Outputs:
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from utils.stata_fastxtile import fastxtile
 
 # Prep IBES data
 # use "$pathDataIntermediate/IBES_EPS_Unadj", replace
@@ -70,14 +71,7 @@ df['tempAccruals'] = ((df['act'] - df['act_l12']) - (df['che'] - df['che_l12']) 
                       ((df['lct'] - df['lct_l12']) - (df['dlc'] - df['dlc_l12']) - (df['txp'] - df['txp_l12']))) / ((df['at'] + df['at_l12']) / 2)
 
 # egen tempsort = fastxtile(tempAccruals), by(time_avail_m) n(2)
-def fastxtile(series, n_quantiles=2):
-    try:
-        series_clean = series.replace([np.inf, -np.inf], np.nan)
-        return pd.qcut(series_clean, q=n_quantiles, labels=False, duplicates='drop') + 1
-    except Exception:
-        return pd.Series(np.nan, index=series.index)
-
-df['tempsort'] = df.groupby('time_avail_m')['tempAccruals'].transform(lambda x: fastxtile(x, 2))
+df['tempsort'] = fastxtile(df, 'tempAccruals', by='time_avail_m', n=2)
 
 # gen ChForecastAccrual = 1 if meanest > l.meanest & !mi(meanest) & !mi(l.meanest)
 # Use positional lag (like Stata l.meanest after xtset) instead of calendar lag

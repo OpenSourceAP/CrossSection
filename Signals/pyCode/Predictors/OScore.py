@@ -7,6 +7,7 @@
 
 import pandas as pd
 import numpy as np
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -61,15 +62,7 @@ df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 df.loc[((df['sic'] > 3999) & (df['sic'] < 5000)) | (df['sic'] > 5999), 'OScore'] = np.nan
 
 # Create deciles and form long-short following Table 5
-def safe_qcut(x):
-    try:
-        if len(x.dropna()) < 10:  # Need at least 10 observations for deciles
-            return pd.Series(np.nan, index=x.index)
-        return pd.qcut(x, q=10, labels=False, duplicates='drop') + 1
-    except:
-        return pd.Series(np.nan, index=x.index)
-
-df['tempsort'] = df.groupby('time_avail_m')['OScore'].transform(safe_qcut)
+df['tempsort'] = fastxtile(df, 'OScore', by='time_avail_m', n=10)
 
 # Reset OScore and create binary signal
 df['OScore'] = np.nan

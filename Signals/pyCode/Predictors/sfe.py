@@ -7,6 +7,7 @@
 
 import pandas as pd
 import numpy as np
+from utils.stata_fastxtile import fastxtile
 
 # Prep IBES data
 ibes = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
@@ -33,7 +34,7 @@ df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 df = df[pd.to_datetime(df['datadate']).dt.month == 12].copy()
 
 # Lower analyst coverage only
-df['tempcoverage'] = df.groupby('time_avail_m')['numest'].transform(lambda x: pd.qcut(x, q=2, labels=[1, 2], duplicates='drop'))
+df['tempcoverage'] = fastxtile(df, 'numest', by='time_avail_m', n=2)
 df = df[df['tempcoverage'] == 1].copy()
 
 # SIGNAL CONSTRUCTION
