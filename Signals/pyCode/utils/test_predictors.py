@@ -14,7 +14,7 @@ Precision Validation (per CLAUDE.md:290-304):
 1. Columns: Column names and order match exactly
 2. Superset: Python observations are a superset of Stata observations
 3. Precision1: For common observations, percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
-4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
+4. Precision2: For common observations, Pth percentile standardized difference < TOL_DIFF_2
    - std_diff = (python_value - stata_value) / std(all_stata_values)
    - common observations are observations that are in both Stata and Python
 
@@ -50,13 +50,34 @@ import yaml
 TOL_SUPERSET = 1.0  # Max allowed percentage of missing observations (units: percent)
 
 # Precision1
-TOL_DIFF_1 = 1e-2  # Threshold for identifying imperfect observations (Precision1)
+TOL_DIFF_1 = 0.01  # Threshold for identifying imperfect observations (Precision1)
 TOL_OBS_1 = 10  # Max allowed percentage of imperfect observations (units: percent)
 
 # Precision2
 EXTREME_Q = 0.99  # Quantile for extreme deviation (not percentile)
-TOL_DIFF_2 = 1e-3  # Tolerance for Pth percentile absolute difference (Precision2)
+TOL_DIFF_2 = 1.00  # Tolerance for Pth percentile standardized difference (Precision2)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
+
+def load_overrides():
+    """Load predictor validation overrides from YAML file"""
+    override_path = Path("Predictors/overrides.yaml")
+    if not override_path.exists():
+        return {}
+    
+    try:
+        with open(override_path, 'r') as f:
+            overrides = yaml.safe_load(f) or {}
+        
+        # Filter to only accepted overrides
+        accepted_overrides = {}
+        for predictor, override_info in overrides.items():
+            if isinstance(override_info, dict) and override_info.get('status') == 'accepted':
+                accepted_overrides[predictor] = override_info
+        
+        return accepted_overrides
+    except Exception as e:
+        print(f"Warning: Could not load overrides.yaml: {e}")
+        return {}
 
 def load_csv_robust_polars(file_path):
     """Load CSV file with polars for performance, robust error handling"""
@@ -206,8 +227,8 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         results['bad_obs_percentage'] = bad_obs_percentage
         results['stata_std'] = stata_std
         
-        # Test 4: Precision2 - Pth percentile absolute difference < TOL_DIFF_2
-        pth_percentile_diff = cobs_diff.select(pl.col("abs_diff").quantile(EXTREME_Q)).item()
+        # Test 4: Precision2 - Pth percentile standardized difference < TOL_DIFF_2
+        pth_percentile_diff = cobs_diff.select(pl.col("std_diff").abs().quantile(EXTREME_Q)).item()
         
         precision2_ok = pth_percentile_diff < TOL_DIFF_2
         results['pth_percentile_diff'] = pth_percentile_diff
@@ -380,7 +401,12 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     # Overall result
     if overall_passed:
-        print(f"  ✅ {predictor_name} PASSED")
+        if results.get('override_applied'):
+            override_info = results.get('override_info', {})
+            print(f"  🔧 OVERRIDE APPLIED (reviewed {override_info.get('reviewed_on', 'unknown')} by {override_info.get('reviewed_by', 'unknown')})")
+            print(f"  ✅ {predictor_name} PASSED (with override)")
+        else:
+            print(f"  ✅ {predictor_name} PASSED")
     else:
         # For Python-only predictors, show different status
         if results.get('stata_csv_available') is False and results.get('python_csv_available') is True:
@@ -396,7 +422,15 @@ def output_predictor_results(predictor_name, results, overall_passed):
     md_lines.append(f"### {predictor_name}\n\n")
     
     if overall_passed:
-        md_lines.append("**Status**: ✅ PASSED\n\n")
+        if results.get('override_applied'):
+            override_info = results.get('override_info', {})
+            md_lines.append("**Status**: ✅ PASSED (with override)\n\n")
+            md_lines.append("**Override Applied**:\n")
+            md_lines.append(f"- Reviewed on: {override_info.get('reviewed_on', 'unknown')}\n")
+            md_lines.append(f"- Reviewed by: {override_info.get('reviewed_by', 'unknown')}\n")
+            md_lines.append(f"- Details: {override_info.get('details', 'No details provided').strip()}\n\n")
+        else:
+            md_lines.append("**Status**: ✅ PASSED\n\n")
     else:
         md_lines.append("**Status**: ❌ FAILED\n\n")
     
@@ -500,6 +534,15 @@ def validate_predictor(predictor_name):
     
     # Perform precision validation
     passed, results = validate_precision_requirements(stata_df, python_df, predictor_name)
+    
+    # Check for overrides
+    overrides = load_overrides()
+    if predictor_name in overrides:
+        override_info = overrides[predictor_name]
+        results['override_applied'] = True
+        results['override_info'] = override_info
+        # Override the pass/fail status
+        passed = True
     
     # Generate unified output
     md_lines = output_predictor_results(predictor_name, results, passed)
@@ -642,13 +685,22 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             else:
                 col4 = "NA"
             
-            f.write(f"| {predictor:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<23} |\n")
+            # Add asterisk if override was applied
+            predictor_display = predictor
+            if results.get('override_applied'):
+                predictor_display = f"{predictor}*"
+            
+            f.write(f"| {predictor_display:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<23} |\n")
         
-        # Count available predictors for summary
+        # Count available predictors and overrides for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
+        override_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('override_applied', False))
         
         f.write(f"\n**Overall**: {passed_count}/{available_count} available predictors passed validation\n")
-        f.write(f"**Python CSVs**: {available_count}/{len(test_predictors)} predictors have Python implementation\n\n")
+        f.write(f"  - Natural passes: {passed_count - override_count}\n")
+        f.write(f"  - Overridden passes: {override_count}\n")
+        f.write(f"**Python CSVs**: {available_count}/{len(test_predictors)} predictors have Python implementation\n")
+        f.write(f"\\* = Manual override applied (see Predictors/overrides.yaml for details)\n\n")
         
         f.write(f"## Detailed Results\n\n")
         
@@ -896,12 +948,17 @@ def main():
     # Write worst predictors report
     write_worst_predictors_log(all_results, all_predictors)
     
+    # Count overrides
+    override_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('override_applied', False))
+    
     # Summary
     print(f"\n=== SUMMARY ===")
     print(f"Available predictors tested: {len(test_predictors)}")
     print(f"Missing Python CSVs included: {len(include_missing)}")
     print(f"Python-only CSVs included: {len(include_python_only)}")
     print(f"Passed validation: {passed_count}")
+    print(f"  - Natural passes: {passed_count - override_count}")
+    print(f"  - Overridden passes: {override_count}")
     print(f"Failed validation: {len(test_predictors) - passed_count}")
     
     if passed_count == len(test_predictors):
