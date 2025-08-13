@@ -1,0 +1,46 @@
+# Predictor Validation Overrides
+# 
+# This file allows manual approval of validation failures at the predictor level.
+# If a predictor is listed here with status: accepted, all its validation 
+# failures will be treated as acceptable.
+#
+# Structure:
+#   predictor_name:
+#     status: accepted|rejected          # Required: approval decision
+#     reviewed_on: YYYY-MM-DD          # Required: date of review  
+#     reviewed_by: [reviewer_id]       # Required: who reviewed this
+#     details: |                       # Required: justification
+#       Multi-line explanation of the decision
+#
+# Supported validation checks that can be overridden:
+#   - Column names: Column names and order match exactly
+#   - Superset check: Python observations are superset of Stata observations  
+#   - Precision1: Percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
+#   - Precision2: Pth percentile absolute difference < TOL_DIFF_2
+#
+# Example entries (remove these when adding real overrides):
+#
+# ExamplePredictor:
+#   status: accepted
+#   reviewed_on: 2025-01-13
+#   reviewed_by: ac
+#   details: |
+#     Known differences due to data source updates.
+#     The differences are within acceptable business tolerances.
+#     Manual verification shows Python results are more accurate.
+#
+# AnotherPredictor:
+#   status: rejected
+#   reviewed_on: 2025-01-13
+#   reviewed_by: ac
+#   details: |
+#     This failure indicates a real data quality issue that needs to be fixed.
+#     The validation failure should remain until the underlying problem is resolved.
+
+# Real overrides go below this line:
+PredictedFE:
+  status: accepted
+  reviewed_on: 2025-08-13
+  reviewed_by: ac
+  details: |
+    The standardized deviation is on average 1% with a sd of 7 pp. So it's above the threshold, but it's small. Sumstats and regressions show that the replication works very well. Regressing python on stata shows that the coefficient is 0.9959 and the Rsq is 0.995. This is a complicated file, so it makes sense that there will be some deviations later in the code, which is where PredictedFE is created.
