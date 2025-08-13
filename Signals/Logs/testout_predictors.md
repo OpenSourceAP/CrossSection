@@ -1,6 +1,6 @@
 # Predictor Validation Results
 
-**Generated**: 2025-08-12 20:10:46
+**Generated**: 2025-08-12 20:43:57
 
 **Configuration**:
 - TOL_SUPERSET: 1.0%
@@ -14,14 +14,10 @@
 
 | Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |
 |---------------------------|------------|----------|-----------|--------------|-------------------------|
-| AgeIPO                    | ✅         | ❌       | NA          | NA           | NA                      |
-| RDIPO                     | ✅         | ❌       | NA          | NA           | NA                      |
 | PS                        | ✅         | ✅       | ✅ (0.00%)   | ❌ (17.90%)   | ❌ (99th diff 5.0E+00)   |
-| ShareVol                  | ✅         | ✅       | ✅ (0.03%)   | ❌ (14.38%)   | ❌ (99th diff 1.0E+00)   |
-| GrLTNOA                   | ❌         | NA      | NA          | NA           | NA                      |
 
-**Overall**: 0/4 available predictors passed validation
-**Python CSVs**: 4/5 predictors have Python implementation
+**Overall**: 0/1 available predictors passed validation
+**Python CSVs**: 1/1 predictors have Python implementation
 
 ## Detailed Results
 
@@ -79,109 +75,6 @@
 8   10005  198710     1.0      6  -5.0
 9   10005  198711     1.0      6  -5.0
 ```
-
----
-
-### ShareVol
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: ['ShareVol']
-
-**Observations**:
-- Stata:  1,660,340
-- Python: 1,660,875
-- Common: 1,659,922
-
-**Precision1**: 14.381% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
-
-**Precision2**: 99th percentile diff = 1.00e+00 (tolerance: < 1.00e-03)
-
-**Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 238708/1659922 (14.381%)
-- Stata standard deviation: 4.61e-01
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm  python  stata  diff
-0   91428  201605       0      1    -1
-1   12877  201403       0      1    -1
-2   12877  201402       0      1    -1
-3   80443  200010       0      1    -1
-4   80443  200009       0      1    -1
-5   75549  199807       0      1    -1
-6   75549  199806       0      1    -1
-7   75549  199805       0      1    -1
-8   75549  199804       0      1    -1
-9   75549  199803       0      1    -1
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm  python  stata  diff
-0   10013  198705       0      1    -1
-1   10021  198603       0      1    -1
-2   10021  198604       0      1    -1
-3   10023  197302       0      1    -1
-4   10023  197303       0      1    -1
-5   10023  197304       0      1    -1
-6   10023  197305       0      1    -1
-7   10049  192602       0      1    -1
-8   10050  197302       0      1    -1
-9   10050  197303       0      1    -1
-```
-
----
-
-### GrLTNOA
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Predictors/GrLTNOA.csv
-
----
-
-### AgeIPO
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ❌ FAILED
-- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: []
-
-**Observations**:
-- Stata:  0
-- Python: 353,486
-- Common: 0
-
----
-
-### RDIPO
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ❌ FAILED
-- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: []
-
-**Observations**:
-- Stata:  0
-- Python: 3,625,491
-- Common: 0
 
 ---
 
