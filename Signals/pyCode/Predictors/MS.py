@@ -38,6 +38,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.stata_ineq import stata_greater_than, stata_less_than
 
 print("=" * 80)
 print("🏗️  MS.py")
@@ -224,24 +225,24 @@ print("🎯 Creating binary indicators...")
 
 # Create the 8 binary Mohanram G-score components
 # Following Stata logic: gen m_x = 0, replace m_x = 1 if condition
-# This means null conditions should default to 0, not null
+# Using Stata-compatible inequality operators that treat missing as positive infinity
 df = df.with_columns([
-    # M1: ROA > industry median (null -> 0)
-    pl.when(pl.col("roa") > pl.col("md_roa")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
-    # M2: CF-ROA > industry median (null -> 0)
-    pl.when(pl.col("cfroa") > pl.col("md_cfroa")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
-    # M3: Operating cash flow > net income (null -> 0)
-    pl.when(pl.col("oancfqsum") > pl.col("niqsum")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
-    # M4: Earnings volatility < industry median (null -> 0)
-    pl.when(pl.col("niVol") < pl.col("md_niVol")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
-    # M5: Revenue volatility < industry median (null -> 0)
-    pl.when(pl.col("revVol") < pl.col("md_revVol")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
-    # M6: R&D intensity > industry median (null -> 0)
-    pl.when(pl.col("xrdint") > pl.col("md_xrdint")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
-    # M7: Capex intensity > industry median (null -> 0)
-    pl.when(pl.col("capxint") > pl.col("md_capxint")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
-    # M8: Advertising intensity > industry median (null -> 0)
-    pl.when(pl.col("xadint") > pl.col("md_xadint")).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
+    # M1: ROA > industry median (missing ROA treated as infinity)
+    pl.when(stata_greater_than(pl.col("roa"), pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
+    # M2: CF-ROA > industry median (missing CFROA treated as infinity)
+    pl.when(stata_greater_than(pl.col("cfroa"), pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
+    # M3: Operating cash flow > net income (missing treated as infinity)
+    pl.when(stata_greater_than(pl.col("oancfqsum"), pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
+    # M4: Earnings volatility < industry median (missing volatility treated as infinity)
+    pl.when(stata_less_than(pl.col("niVol"), pl.col("md_niVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
+    # M5: Revenue volatility < industry median (missing volatility treated as infinity)
+    pl.when(stata_less_than(pl.col("revVol"), pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
+    # M6: R&D intensity > industry median (missing R&D treated as infinity)
+    pl.when(stata_greater_than(pl.col("xrdint"), pl.col("md_xrdint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
+    # M7: Capex intensity > industry median (missing capex treated as infinity)
+    pl.when(stata_greater_than(pl.col("capxint"), pl.col("md_capxint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
+    # M8: Advertising intensity > industry median (missing advertising treated as infinity)
+    pl.when(stata_greater_than(pl.col("xadint"), pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
 ])
 
 # Sum the 8 components to get tempMS
@@ -272,9 +273,9 @@ df = df.with_columns(
     pl.col("tempMS").forward_fill().over("permno").alias("tempMS")
 )
 
-# Create final MS score
+# Create final MS score - fix missing upper bound condition
 df_final = df.with_columns([
-    pl.when(pl.col("tempMS") >= 6)
+    pl.when((pl.col("tempMS") >= 6) & (pl.col("tempMS") <= 8))
     .then(pl.lit(6))
     .when(pl.col("tempMS") <= 1) 
     .then(pl.lit(1))
