@@ -26,24 +26,41 @@ df = df.sort(["permno", "time_avail_m"])
 
 # Signal construction
 # tempShareVol = (vol + l1.vol + l2.vol)/(3*shrout)*100
-df = df.with_columns([
-    pl.col("vol").shift(1).over("permno").alias("l1_vol"),
-    pl.col("vol").shift(2).over("permno").alias("l2_vol")
-])
+# Use time-based lags to match Stata's calendar-based lag operators
 
-# Calculate tempShareVol using standard formula with missing value handling
-# Since first two observations will be set to ShareVol=1 regardless, use simpler logic
+# Create time-based lag data for 1 and 2 months
+df_l1 = df.select(["permno", "time_avail_m", "vol"]).with_columns([
+    (pl.col("time_avail_m") + pl.duration(days=32)).dt.truncate("1mo").cast(pl.Datetime("ns")).alias("time_avail_m_lag1")
+]).select(["permno", "time_avail_m_lag1", "vol"]).rename({"time_avail_m_lag1": "time_avail_m", "vol": "l1_vol"})
+
+df_l2 = df.select(["permno", "time_avail_m", "vol"]).with_columns([
+    (pl.col("time_avail_m") + pl.duration(days=62)).dt.truncate("1mo").cast(pl.Datetime("ns")).alias("time_avail_m_lag2")
+]).select(["permno", "time_avail_m_lag2", "vol"]).rename({"time_avail_m_lag2": "time_avail_m", "vol": "l2_vol"})
+
+# Merge lag data back
+df = df.join(df_l1, on=["permno", "time_avail_m"], how="left")
+df = df.join(df_l2, on=["permno", "time_avail_m"], how="left")
+
+# Calculate tempShareVol - Stata's missing arithmetic: missing values in sum make result missing
 df = df.with_columns([
-    ((pl.col("vol").fill_null(0) + pl.col("l1_vol").fill_null(0) + pl.col("l2_vol").fill_null(0)) / 
+    ((pl.col("vol") + pl.col("l1_vol") + pl.col("l2_vol")) / 
      (3 * pl.col("shrout")) * 100)
     .alias("tempShareVol")
 ])
 
 # Drop if shrout changes in last 3 months
-df = df.with_columns([
-    pl.col("shrout").shift(1).over("permno").alias("l1_shrout"),
-    pl.col("shrout").shift(2).over("permno").alias("l2_shrout")
-])
+# Create time-based lag data for shrout
+df_l1_shrout = df.select(["permno", "time_avail_m", "shrout"]).with_columns([
+    (pl.col("time_avail_m") + pl.duration(days=32)).dt.truncate("1mo").cast(pl.Datetime("ns")).alias("time_avail_m_lag1")
+]).select(["permno", "time_avail_m_lag1", "shrout"]).rename({"time_avail_m_lag1": "time_avail_m", "shrout": "l1_shrout"})
+
+df_l2_shrout = df.select(["permno", "time_avail_m", "shrout"]).with_columns([
+    (pl.col("time_avail_m") + pl.duration(days=62)).dt.truncate("1mo").cast(pl.Datetime("ns")).alias("time_avail_m_lag2")
+]).select(["permno", "time_avail_m_lag2", "shrout"]).rename({"time_avail_m_lag2": "time_avail_m", "shrout": "l2_shrout"})
+
+# Merge shrout lag data back
+df = df.join(df_l1_shrout, on=["permno", "time_avail_m"], how="left")
+df = df.join(df_l2_shrout, on=["permno", "time_avail_m"], how="left")
 
 # dshrout = shrout != l1.shrout
 df = df.with_columns([
@@ -65,10 +82,18 @@ df = df.with_columns([
 ])
 
 # dropObs = 1 if (dshrout + l1.dshrout + l2.dshrout) > 0
-df = df.with_columns([
-    pl.col("dshrout").shift(1).over("permno").alias("l1_dshrout_real"),
-    pl.col("dshrout").shift(2).over("permno").alias("l2_dshrout_real")
-])
+# Create time-based lag data for dshrout
+df_l1_dshrout = df.select(["permno", "time_avail_m", "dshrout"]).with_columns([
+    (pl.col("time_avail_m") + pl.duration(days=32)).dt.truncate("1mo").cast(pl.Datetime("ns")).alias("time_avail_m_lag1")
+]).select(["permno", "time_avail_m_lag1", "dshrout"]).rename({"time_avail_m_lag1": "time_avail_m", "dshrout": "l1_dshrout_real"})
+
+df_l2_dshrout = df.select(["permno", "time_avail_m", "dshrout"]).with_columns([
+    (pl.col("time_avail_m") + pl.duration(days=62)).dt.truncate("1mo").cast(pl.Datetime("ns")).alias("time_avail_m_lag2")
+]).select(["permno", "time_avail_m_lag2", "dshrout"]).rename({"time_avail_m_lag2": "time_avail_m", "dshrout": "l2_dshrout_real"})
+
+# Merge dshrout lag data back
+df = df.join(df_l1_dshrout, on=["permno", "time_avail_m"], how="left")
+df = df.join(df_l2_dshrout, on=["permno", "time_avail_m"], how="left")
 
 df = df.with_columns([
     (pl.col("dshrout").cast(pl.Int32) + 
@@ -89,19 +114,13 @@ df = df.filter(
     (pl.col("dropObs") != True) | (pl.col("dropObs").is_null())
 )
 
-# Create ShareVol signal
-# Based on debugging: Stata appears to set ShareVol=1 for first two observations of each permno
-# regardless of tempShareVol value, then uses normal logic for subsequent observations
+# Create ShareVol signal - matches Stata logic exactly
 df = df.with_columns([
-    pl.when((pl.col("obs_num") == 0) | (pl.col("obs_num") == 1))  # First two observations
-    .then(1)  # Always ShareVol=1 for first two observations 
-    .otherwise(
-        pl.when(pl.col("tempShareVol") < 5)
-        .then(0)
-        .when(pl.col("tempShareVol") > 10)
-        .then(1)
-        .otherwise(None)
-    )
+    pl.when(pl.col("tempShareVol") < 5)
+    .then(0)
+    .when(pl.col("tempShareVol") > 10)
+    .then(1)
+    .otherwise(None)
     .alias("ShareVol")
 ])
 
