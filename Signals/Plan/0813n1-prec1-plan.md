@@ -30,11 +30,6 @@ Unless directed otherwise, proceed in order from top to bottom.
   - Precision1: no (97.14%) ❌ 
   - Status: TBC
 
-- **PredictedFE**
-  - Script: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
-  - Precision1: no (93.91%) ❌ 
-  - Status: TBC
-
 - **MS**
   - Script: MS.py
   - Precision1: no (32.97%) ❌ 
@@ -53,11 +48,6 @@ Unless directed otherwise, proceed in order from top to bottom.
 - **PS**
   - Script: PS.py
   - Precision1: no (17.93%) ❌ 
-  - Status: TBC
-
-- **IdioVolAHT**
-  - Script: ZZ2_IdioVolAHT.py
-  - Precision1: no (17.59%) ❌ 
   - Status: TBC
 
 - **OrgCap**

@@ -7,7 +7,8 @@
 ## Mission
 Fix the Superset failures for the predictors described in the Initial Test Results below.
 - Strategy: rewrite the Python code from scratch.
-  - Read the Stata do file
+  - Find the script name using Predictors/00_map_predictors.yaml
+  - Read the corresponding Stata do file
   - Read DocsForClaude/traps.md
   - Given this information, think about how to translate the Stata code to Python.
   - Rewrite the Python code from scratch.
