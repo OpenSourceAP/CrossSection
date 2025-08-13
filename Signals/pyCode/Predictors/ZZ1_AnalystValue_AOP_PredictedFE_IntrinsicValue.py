@@ -270,10 +270,20 @@ df = df.with_columns(
 
 print("🔮 Computing predicted forecast error...")
 
+# ===============================================
 # Predicted FE
+# ===============================================
+
 # gen FErr = l12.FROE1 - ROE // almost works!
+# Create time-based 12-month lag for FROE1 (not position-based)
+df_lag = df.select(["permno", "time_avail_m", "FROE1"]).with_columns(
+    pl.col("time_avail_m").dt.offset_by("12mo").alias("time_avail_m_future")
+).select(["permno", "time_avail_m_future", "FROE1"]).rename({"time_avail_m_future": "time_avail_m", "FROE1": "FROE1_lag12"})
+
+df = df.join(df_lag, on=["permno", "time_avail_m"], how="left")
+
 df = df.with_columns(
-    (pl.col("FROE1").shift(1).over("permno") - pl.col("ROE")).alias("FErr")  # Changed from shift(12) to shift(1)
+    (pl.col("FROE1_lag12") - pl.col("ROE")).alias("FErr")
 )
 
 # winsor2 FErr, replace cuts(1 99) trim by(time_avail_m)
@@ -289,11 +299,15 @@ for var in variables:
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-# Lag for forecasting and run reg
+# Lag for forecasting and run reg - create time-based 12-month lags
 for var in variables:
-    df = df.with_columns(
-        pl.col(f"rank{var}").shift(1).over("permno").alias(f"lag{var}")  # Changed from shift(12) to shift(1)
-    )
+    df_lag_rank = df.select(["permno", "time_avail_m", f"rank{var}"]).with_columns(
+        pl.col("time_avail_m").dt.offset_by("12mo").alias("time_avail_m_future")
+    ).select(["permno", "time_avail_m_future", f"rank{var}"]).rename({
+        "time_avail_m_future": "time_avail_m", 
+        f"rank{var}": f"lag{var}"
+    })
+    df = df.join(df_lag_rank, on=["permno", "time_avail_m"], how="left")
 
 # asreg FErr lag*, by(time_avail_m)
 # Always sort data first
