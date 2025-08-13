@@ -122,13 +122,18 @@ def stata_greater_than_numpy(left, right):
     
     Args:
         left: NumPy array or pandas Series for left operand
-        right: NumPy array or pandas Series for right operand
+        right: NumPy array, pandas Series, or scalar for right operand
         
     Returns:
         NumPy boolean array following Stata rules
     """
     left_arr = np.asarray(left)
-    right_arr = np.asarray(right)
+    
+    # Handle scalar right operand
+    if np.isscalar(right):
+        right_arr = np.full_like(left_arr, right, dtype=float)
+    else:
+        right_arr = np.asarray(right)
     
     # Create masks for missing values
     left_missing = np.isnan(left_arr)
@@ -159,13 +164,18 @@ def stata_less_than_numpy(left, right):
     
     Args:
         left: NumPy array or pandas Series for left operand
-        right: NumPy array or pandas Series for right operand
+        right: NumPy array, pandas Series, or scalar for right operand
         
     Returns:
         NumPy boolean array following Stata rules
     """
     left_arr = np.asarray(left)
-    right_arr = np.asarray(right)
+    
+    # Handle scalar right operand
+    if np.isscalar(right):
+        right_arr = np.full_like(left_arr, right, dtype=float)
+    else:
+        right_arr = np.asarray(right)
     
     # Create masks for missing values
     left_missing = np.isnan(left_arr)

@@ -6,6 +6,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.stata_ineq import stata_greater_than
 
 print("=" * 80)
 print("🏗️  TrendFactor.py")
@@ -102,7 +103,7 @@ df = df.filter(
     ((pl.col("exchcd") == 1) | (pl.col("exchcd") == 2) | (pl.col("exchcd") == 3)) &
     ((pl.col("shrcd") == 10) | (pl.col("shrcd") == 11)) &
     (pl.col("prc").abs() >= 5) &
-    (pl.col("mve_c") >= pl.col("qu10"))
+    stata_greater_than(pl.col("mve_c"), pl.col("qu10"))
 )
 
 print(f"After applying filters: {len(df):,} observations")

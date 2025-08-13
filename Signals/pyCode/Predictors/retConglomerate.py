@@ -27,6 +27,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
+from stata_ineq import stata_greater_than_numpy
 
 def main():
     print("Starting retConglomerate predictor...")
@@ -96,28 +97,22 @@ def main():
     # tab tempNInd
     print(f"Industry count distribution:\n{segments_agg['tempNInd'].value_counts().head()}")
     
-    # Fix: Classification should be at firm level, not segment level
-    # First, determine firm-level conglomerate status
-    # A firm is conglomerate if tempNInd > 1 AND has at least one segment with tempCSSegmentShare > 0.8
-    # A firm is stand-alone if tempNInd == 1 AND the segment has tempCSSegmentShare > 0.8
+    # Apply Stata classification logic at SEGMENT level (not firm level!)
+    # gen Conglomerate = 0 if tempNInd == 1 & tempCSSegmentShare > .8
+    # replace Conglomerate = 1 if tempNInd > 1 & tempCSSegmentShare > .8
     
-    # Create firm-level classification
-    firm_classification = segments_agg.groupby(['gvkey', 'datadate']).apply(
-        lambda x: 1 if (x['tempNInd'].iloc[0] > 1 and (x['tempCSSegmentShare'] > 0.8).any()) 
-                 else (0 if (x['tempNInd'].iloc[0] == 1 and (x['tempCSSegmentShare'] > 0.8).any()) 
-                      else np.nan)
-    ).reset_index(name='firm_conglomerate')
+    segments_agg['Conglomerate'] = np.nan
     
-    # Merge firm classification back to all segments
-    segments_agg = pd.merge(segments_agg, firm_classification, on=['gvkey', 'datadate'], how='left')
+    # Stand-alone: tempNInd == 1 & tempCSSegmentShare > 0.8
+    # Use stata-compatible greater-than comparison for missing value handling
+    mask_standalone = (segments_agg['tempNInd'] == 1) & stata_greater_than_numpy(segments_agg['tempCSSegmentShare'], 0.8)
+    segments_agg.loc[mask_standalone, 'Conglomerate'] = 0
     
-    # Apply firm-level classification to all segments of the firm
-    segments_agg['Conglomerate'] = segments_agg['firm_conglomerate']
+    # Conglomerate: tempNInd > 1 & tempCSSegmentShare > 0.8  
+    mask_conglomerate = (segments_agg['tempNInd'] > 1) & stata_greater_than_numpy(segments_agg['tempCSSegmentShare'], 0.8)
+    segments_agg.loc[mask_conglomerate, 'Conglomerate'] = 1
     
-    # Clean up temporary column
-    segments_agg = segments_agg.drop('firm_conglomerate', axis=1)
-    
-    # drop if mi(Conglomerate) - this drops firms that don't meet either criterion
+    # drop if mi(Conglomerate) - this drops segments that don't meet either criterion
     segments_agg = segments_agg.dropna(subset=['Conglomerate'])
     
     # tab Conglomerate
