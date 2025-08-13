@@ -11,6 +11,7 @@ from sklearn.linear_model import LinearRegression
 import warnings
 warnings.filterwarnings('ignore')
 import sys
+import time
 sys.path.append('.')
 from utils.sicff import sicff
 
@@ -75,6 +76,10 @@ unique_dates = sorted(df['time_avail_m'].unique())
 # unique_dates = unique_dates[::3]  # Commented out - was for faster testing only
 
 print(f"Processing {len(unique_dates)} time periods (starting from {unique_dates[0].strftime('%Y-%m')})...")
+
+start_time = time.time()
+period_times = []  # Track recent period processing times
+last_period_time = time.time()
 
 for i, current_date in enumerate(unique_dates):
     # Use exact Stata logic: time_avail <= t & time_avail_m > t - 60
@@ -145,11 +150,35 @@ for i, current_date in enumerate(unique_dates):
             if (df.loc[idx, 'time_avail_m'] == current_date):
                 df.loc[idx, 'logmefit_NS'] = pred_value
         
-        if i % 60 == 0:  # Print progress every 60 periods (5 years)
-            print(f"Processed {i+1}/{len(unique_dates)} periods, stored {len(predictions)} predictions for {current_date.strftime('%Y-%m')}")
+        # Track time for this period
+        current_time = time.time()
+        period_duration = current_time - last_period_time
+        period_times.append(period_duration)
+        last_period_time = current_time
+        
+        # Keep only last 30 periods for rolling average
+        if len(period_times) > 30:
+            period_times.pop(0)
+        
+        if i % 30 == 0:  # Print progress every 30 periods
+            elapsed_time = time.time() - start_time
+            # Use rolling average of recent periods for better estimate
+            if len(period_times) > 0:
+                avg_time_per_period = sum(period_times) / len(period_times)
+            else:
+                avg_time_per_period = elapsed_time / (i + 1)
+            
+            periods_remaining = len(unique_dates) - (i + 1)
+            estimated_remaining = avg_time_per_period * periods_remaining
+            percent_complete = ((i + 1) / len(unique_dates)) * 100
+            
+            print(f"Processed {i+1}/{len(unique_dates)} periods ({percent_complete:.1f}%), "
+                  f"stored {len(predictions)} predictions for {current_date.strftime('%Y-%m')}")
+            print(f"  Elapsed: {elapsed_time:.1f}s, Est. remaining: {estimated_remaining:.1f}s, "
+                  f"Avg: {avg_time_per_period:.3f}s/period (last {len(period_times)} periods)")
         
     except Exception as e:
-        if i % 60 == 0:
+        if i % 30 == 0:
             print(f"Failed period {current_date.strftime('%Y-%m')}: {e}")
         continue
 
@@ -185,4 +214,10 @@ df_final = df_final.set_index(['permno', 'yyyymm'])
 # SAVE
 df_final.to_csv('../pyData/Predictors/Frontier.csv')
 
+# Final timing summary
+total_time = time.time() - start_time
+processing_rate = len(unique_dates) / total_time
+print(f"\nTiming Summary:")
+print(f"Total execution time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
+print(f"Processed {len(unique_dates)} periods at {processing_rate:.2f} periods/second")
 print("Frontier predictor saved successfully")
