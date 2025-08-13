@@ -1,6 +1,6 @@
 # Predictor Validation Results
 
-**Generated**: 2025-08-13 08:05:15
+**Generated**: 2025-08-13 06:40:51
 
 **Configuration**:
 - TOL_SUPERSET: 1.0%
@@ -14,8 +14,14 @@
 
 | Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |
 |---------------------------|------------|----------|-----------|--------------|-------------------------|
+| AbnormalAccrualsPercent   | ✅         | ❌       | NA          | NA           | NA                      |
 | AgeIPO                    | ✅         | ❌       | NA          | NA           | NA                      |
+| Beta_fixed                | ✅         | ❌       | NA          | NA           | NA                      |
+| FRbook                    | ✅         | ❌       | NA          | NA           | NA                      |
 | IndIPO                    | ✅         | ❌       | NA          | NA           | NA                      |
+| IntrinsicValue            | ✅         | ❌       | NA          | NA           | NA                      |
+| OScore_q                  | ✅         | ❌       | NA          | NA           | NA                      |
+| PatentsRD_old             | ✅         | ❌       | NA          | NA           | NA                      |
 | RDIPO                     | ✅         | ❌       | NA          | NA           | NA                      |
 | Recomm_ShortInterest      | ✅         | ✅       | ❌ (55.76%)  | ✅ (0.00%)    | ✅ (99th diff 0.0E+00)   |
 | FirmAgeMom                | ✅         | ✅       | ❌ (26.99%)  | ✅ (0.00%)    | ✅ (99th diff 3.6E-08)   |
@@ -227,8 +233,8 @@
 | OScore                    | ✅         | ✅       | ✅ (0.04%)   | ✅ (0.00%)    | ✅ (99th diff 0.0E+00)   |
 | Spinoff                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 0.0E+00)   |
 
-**Overall**: 161/212 available predictors passed validation
-**Python CSVs**: 212/212 predictors have Python implementation
+**Overall**: 161/218 available predictors passed validation
+**Python CSVs**: 218/218 predictors have Python implementation
 
 ## Detailed Results
 
@@ -7164,6 +7170,25 @@
 
 ---
 
+### AbnormalAccrualsPercent
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ❌ FAILED
+- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: []
+
+**Observations**:
+- Stata:  0
+- Python: 2,509,596
+- Common: 0
+
+---
+
 ### AgeIPO
 
 **Status**: ❌ FAILED
@@ -7183,6 +7208,44 @@
 
 ---
 
+### Beta_fixed
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ❌ FAILED
+- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: []
+
+**Observations**:
+- Stata:  0
+- Python: 4,353,777
+- Common: 0
+
+---
+
+### FRbook
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ❌ FAILED
+- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: []
+
+**Observations**:
+- Stata:  0
+- Python: 684,322
+- Common: 0
+
+---
+
 ### IndIPO
 
 **Status**: ❌ FAILED
@@ -7198,6 +7261,63 @@
 **Observations**:
 - Stata:  0
 - Python: 4,047,630
+- Common: 0
+
+---
+
+### IntrinsicValue
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ❌ FAILED
+- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: []
+
+**Observations**:
+- Stata:  0
+- Python: 1,299,504
+- Common: 0
+
+---
+
+### OScore_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ❌ FAILED
+- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: []
+
+**Observations**:
+- Stata:  0
+- Python: 884,979
+- Common: 0
+
+---
+
+### PatentsRD_old
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ❌ FAILED
+- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: []
+
+**Observations**:
+- Stata:  0
+- Python: 479,052
 - Common: 0
 
 ---
