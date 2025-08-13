@@ -28,6 +28,26 @@ import polars_ols as pls  # registers .least_squares on pl.Expr
 
 Mode = Literal["rolling", "expanding", "group"]
 
+
+def _valid_mask(y: str, X: Sequence[str]) -> pl.Expr:
+    """Row-wise validity mask: True where y and all X are non-null."""
+    m = pl.col(y).is_not_null()
+    for x in X:
+        m = m & pl.col(x).is_not_null()
+    return m
+
+
+def _agg_sum(expr: pl.Expr, *, mode: Mode, over: Sequence[str], window_size: Optional[int], min_samples: int) -> pl.Expr:
+    """Aggregate `expr` according to mode (rolling/expanding/group) and groups `over`."""
+    if mode == "rolling":
+        return expr.rolling_sum(window_size, min_periods=min_samples).over(over)
+    elif mode == "expanding":
+        return expr.cumsum().over(over)
+    else:
+        # group mode: sum per group, broadcast back to rows
+        return expr.sum().over(over)
+
+
 def asreg(
     df: pl.DataFrame | pl.LazyFrame,
     *,
@@ -42,94 +62,107 @@ def asreg(
     outputs: Iterable[str] = ("coef",),
     coef_prefix: str = "b_",
     collect: bool = True,
-    null_policy: str = "skip",  # New parameter for handling nulls
-    solve_method: str = "svd",  # New parameter for solver
+    null_policy: str = "drop",
+    solve_method: str = "svd",
 ) -> pl.DataFrame | pl.LazyFrame:
     """Multi-purpose OLS over groups/windows (compact 'asreg').
-    
-    Replicates Stata's asreg functionality with exact behavior matching.
-    
+
     Args:
         df: Input DataFrame or LazyFrame
         y: Dependent variable column name
         X: Independent variable column names
         by: Grouping columns (e.g., ["permno"] for by-permno regressions)
         t: Time/order column for rolling/expanding windows
-        mode: Regression mode - "rolling", "expanding", or "group"  
+        mode: "rolling", "expanding", or "group"
         window_size: Number of observations for rolling windows
-        min_samples: Minimum observations required per regression
-        add_intercept: Whether to include intercept term
-        outputs: Which outputs to compute - "coef", "yhat", "resid", "rmse"
-        coef_prefix: Prefix for coefficient column names
+        min_samples: Minimum observations required per regression (>= number of parameters)
+        add_intercept: Whether to include an intercept term
+        outputs: Any of "coef", "yhat", "resid", "rmse"
+        coef_prefix: Prefix for coefficient columns (only used when materializing separate coef cols)
         collect: Whether to collect LazyFrame to DataFrame
-        
+        null_policy: Passed to polars-ols (e.g., "drop"); controls how nulls are handled in estimation
+        solve_method: Numerical solver hint (e.g., "svd", "qr")
+
     Returns:
         DataFrame/LazyFrame with requested regression outputs
-        
-    Examples:
-        # CAPM Beta (60-month rolling, min 20, by permno)
-        beta = asreg(
-            df, y="retrf", X=["ewmktrf"],
-            by=["permno"], t="time_avail_m",
-            mode="rolling", window_size=60, min_samples=20,
-            outputs=("coef",)
-        )
-        # Beta coefficient in column "b_ewmktrf"
-        
-        # Per-group regression with residuals
-        result = asreg(
-            df, y="ret", X=["mktrf","smb","hml"],
-            by=["permno","month"], mode="group", min_samples=4,
-            outputs=("coef","resid")
-        )
     """
     lf = df.lazy() if isinstance(df, pl.DataFrame) else df
-    p = len(X) + (1 if add_intercept else 0)
-    min_samples = max(min_samples or p, 1)
-    
+    over = list(by or [])
+
+    # Parameter counts
+    k = len(X) + (1 if add_intercept else 0)
+    min_samples = max(min_samples or k, 1)
+
+    # Ordering
     if mode != "group" and t is None:
         raise ValueError("t= (time/order column) is required for rolling/expanding")
     if mode == "rolling" and window_size is None:
         raise ValueError("window_size is required for rolling")
     if mode != "group":
-        lf = lf.sort([*(by or []), t])  # deterministic window order
+        lf = lf.sort([*over, t])  # deterministic window order
 
+    # Build base expressions
     yexpr = pl.col(y).least_squares
     Xexprs = [pl.col(c) for c in X]
-    over = (by or [])
-    
+
+    # Coefficients
     if mode == "group":
-        if "resid" in outputs and len(outputs) == 1:
-            # Direct residuals mode - more efficient
-            residuals = yexpr.ols(*Xexprs, add_intercept=add_intercept, mode="residuals",
-                                 null_policy=null_policy, solve_method=solve_method).over(over)
-            if by and min_samples > 1:
-                residuals = pl.when(pl.len().over(by) >= min_samples).then(residuals).otherwise(None)
+        if set(outputs) == {"resid"}:
+            # Fast path: compute residuals directly without materializing coefficients
+            residuals = yexpr.ols(
+                *Xexprs,
+                add_intercept=add_intercept,
+                mode="residuals",
+                null_policy=null_policy,
+                solve_method=solve_method,
+            ).over(over)
+            # enforce min_samples at group level
+            if over and min_samples > 1:
+                n_eff_grp = _valid_mask(y, X).cast(pl.Int64).sum().over(over)
+                residuals = pl.when(n_eff_grp >= min_samples).then(residuals).otherwise(None)
             lf = lf.with_columns(resid=residuals)
             return lf.collect() if collect else lf
-        else:
-            # Standard coefficient mode
-            coef = yexpr.ols(*Xexprs, add_intercept=add_intercept, mode="coefficients", 
-                             null_policy=null_policy, solve_method=solve_method).over(over)
-            if by and min_samples > 1:
-                coef = pl.when(pl.len().over(by) >= min_samples).then(coef).otherwise(None)
+        # standard coefficients
+        coef = yexpr.ols(
+            *Xexprs,
+            add_intercept=add_intercept,
+            mode="coefficients",
+            null_policy=null_policy,
+            solve_method=solve_method,
+        ).over(over)
+        if over and min_samples > 1:
+            n_eff_grp = _valid_mask(y, X).cast(pl.Int64).sum().over(over)
+            coef = pl.when(n_eff_grp >= min_samples).then(coef).otherwise(None)
     elif mode == "rolling":
-        coef = yexpr.rolling_ols(*Xexprs, window_size=window_size,
-                                 min_periods=min_samples, add_intercept=add_intercept,
-                                 mode="coefficients").over(over)
+        coef = yexpr.rolling_ols(
+            *Xexprs,
+            window_size=window_size,
+            min_periods=min_samples,
+            add_intercept=add_intercept,
+            mode="coefficients",
+            null_policy=null_policy,
+        ).over(over)
     else:  # expanding
-        coef = yexpr.expanding_ols(*Xexprs,
-                                   min_periods=min_samples, add_intercept=add_intercept,
-                                   mode="coefficients").over(over)
+        coef = yexpr.expanding_ols(
+            *Xexprs,
+            min_periods=min_samples,
+            add_intercept=add_intercept,
+            mode="coefficients",
+            null_policy=null_policy,
+        ).over(over)
 
     lf = lf.with_columns(coef=coef)
 
+    # Materialize named coefficient columns when needed by outputs
     need_coef_cols = any(o in {"coef", "yhat", "resid", "rmse"} for o in outputs)
     if need_coef_cols:
-        cols = ([pl.col("coef").struct.field("const").alias(f"{coef_prefix}const")] if add_intercept else [])
-        cols += [pl.col("coef").struct.field(x).alias(f"{coef_prefix}{x}") for x in X]
-        lf = lf.with_columns(cols)
+        coef_cols: list[pl.Expr] = []
+        if add_intercept:
+            coef_cols.append(pl.col("coef").struct.field("const").alias(f"{coef_prefix}const"))
+        coef_cols += [pl.col("coef").struct.field(x).alias(f"{coef_prefix}{x}") for x in X]
+        lf = lf.with_columns(coef_cols)
 
+    # yhat / resid via manual calculation to avoid polars-ols predict issues
     if any(o in {"yhat", "resid", "rmse"} for o in outputs):
         yhat = (pl.col(f"{coef_prefix}const") if add_intercept else pl.lit(0.0))
         for x in X:
@@ -137,35 +170,70 @@ def asreg(
         lf = lf.with_columns(yhat.alias("yhat"))
 
     if any(o in {"resid", "rmse"} for o in outputs):
-        lf = lf.with_columns((pl.col(y) - pl.col("yhat")).alias("resid"))
+        lf = lf.with_columns(resid=(pl.col(y) - pl.col("yhat")).alias("resid"))
 
+    # RMSE with correct SSE and DOF per window/group
     if "rmse" in outputs:
-        # Calculate RMSE: sqrt(sum(residuals^2) / (n - k))  
-        # where n is number of observations, k is number of parameters
-        # (residuals were already calculated above)
-        k = p  # number of parameters (including intercept if present)
-        if mode == "rolling":
-            # For rolling windows: each observation gets the RMSE from its window
-            lf = lf.with_columns(
-                (pl.col("resid").pow(2).rolling_sum(window_size, min_periods=min_samples).over(over) / 
-                 (pl.col("resid").is_not_null().cast(pl.Int32).rolling_sum(window_size, min_periods=min_samples).over(over) - k).clip(lower_bound=1)
-                ).sqrt().alias("rmse")
-            )
-        elif mode == "expanding":
-            # For expanding windows: RMSE grows as window expands
-            lf = lf.with_columns(
-                (pl.col("resid").pow(2).cumsum().over(over) / 
-                 (pl.int_range(pl.len()).over(over) + 1 - k).clip(lower_bound=1)
-                ).sqrt().alias("rmse")
-            )
-        else:  # group
-            # For group regressions: sqrt(sum(resid^2) / (n-k)) for each group
-            lf = lf.with_columns(
-                (pl.col("resid").pow(2).sum().over(over) / 
-                 (pl.count().over(over) - k).clip(lower_bound=1)
-                ).sqrt().alias("rmse")
-            )
+        valid = _valid_mask(y, X)
 
+        def z_expr(name: str) -> pl.Expr:
+            return pl.lit(1.0) if name == "__const__" else pl.col(name)
+
+        # names of design columns Z (include intercept as "__const__")
+        Z_names = (["__const__"] if add_intercept else []) + list(X)
+
+        # Helper to mask invalid rows (skip nulls)
+        def mask(expr: pl.Expr) -> pl.Expr:
+            return pl.when(valid).then(expr).otherwise(None)
+
+        # Aggregate builders (per mode)
+        agg = lambda e: _agg_sum(mask(e), mode=mode, over=over, window_size=window_size, min_samples=min_samples)
+
+        # Moment sums
+        yy = agg(pl.col(y) * pl.col(y)).cast(pl.Float64)
+
+        zy = {zi: agg(z_expr(zi) * pl.col(y)).cast(pl.Float64) for zi in Z_names}
+
+        zz = {}
+        for i, zi in enumerate(Z_names):
+            for j, zj in enumerate(Z_names[i:]):
+                zz[(zi, Z_names[i + j])] = agg(z_expr(zi) * z_expr(Z_names[i + j])).cast(pl.Float64)
+
+        # Access coefficient fields from the struct (uses "const" for intercept)
+        def b_field(zi: str) -> pl.Expr:
+            if zi == "__const__":
+                return pl.col("coef").struct.field("const").cast(pl.Float64)
+            return pl.col("coef").struct.field(zi).cast(pl.Float64)
+
+        # term2 = 2 * b' (Z'Y)
+        t2 = None
+        for zi in Z_names:
+            contrib = b_field(zi) * zy[zi]
+            t2 = contrib if t2 is None else (t2 + contrib)
+        term2 = 2.0 * t2 if t2 is not None else pl.lit(None, dtype=pl.Float64)
+
+        # term3 = b' (Z'Z) b  [double the off-diagonals]
+        t3 = None
+        for i, zi in enumerate(Z_names):
+            bi = b_field(zi)
+            for j, zj in enumerate(Z_names[i:]):
+                zj_name = Z_names[i + j]
+                bj = b_field(zj_name)
+                factor = pl.lit(1.0) if j == 0 else pl.lit(2.0)  # j==0 => zi==zj
+                contrib = factor * bi * bj * zz[(zi, zj_name)]
+                t3 = contrib if t3 is None else (t3 + contrib)
+
+        SSE = yy - term2 + t3
+
+        # Effective sample size & DOF
+        n_eff = _agg_sum(valid.cast(pl.Int64), mode=mode, over=over, window_size=window_size, min_samples=min_samples)
+        dof = (n_eff - k)
+
+        rmse_expr = pl.when((dof > 0) & SSE.is_not_null())
+        rmse_expr = rmse_expr.then((SSE / dof.cast(pl.Float64)).sqrt()).otherwise(None)
+        lf = lf.with_columns(rmse=rmse_expr)
+
+    # Drop struct unless explicitly requested
     if "coef" not in outputs:
         lf = lf.drop("coef")
 
