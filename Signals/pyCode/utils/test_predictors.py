@@ -243,6 +243,59 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     
     return cols_match and is_superset and precision1_ok and precision2_ok, results
 
+def analyze_python_only(predictor_name):
+    """Analyze Python-only CSV file when Stata CSV is missing"""
+    python_path = Path(f"../pyData/Predictors/{predictor_name}.csv")
+    
+    if not python_path.exists():
+        return {
+            'error': f'Python file not found: {python_path}',
+            'python_csv_available': False,
+            'stata_csv_available': False
+        }
+    
+    # Load Python CSV
+    python_df = load_csv_robust_polars(python_path)
+    if python_df is None:
+        return {
+            'error': f'Failed to load Python file: {python_path}',
+            'python_csv_available': False,
+            'stata_csv_available': False
+        }
+    
+    # Extract basic information
+    results = {
+        'python_csv_available': True,
+        'stata_csv_available': False,
+        'python_obs_count': python_df.height,
+        'stata_obs_count': 0,
+        'common_obs_count': 0,
+        'python_columns': [col for col in python_df.columns if col not in INDEX_COLS],
+        'stata_columns': [],
+        
+        # Test results for summary table
+        'test_1_passed': False,  # ❌ for Columns since no Stata to compare
+        'test_2_passed': None,   # NA for Superset 
+        'test_3_passed': None,   # NA for Precision1
+        'test_4_passed': None,   # NA for Precision2
+        
+        # Additional info about the Python CSV
+        'date_range': None,
+        'unique_permnos': 0
+    }
+    
+    # Get date range if yyyymm column exists
+    if 'yyyymm' in python_df.columns:
+        min_date = python_df.select(pl.col('yyyymm').min()).item()
+        max_date = python_df.select(pl.col('yyyymm').max()).item()
+        results['date_range'] = f"{min_date}-{max_date}"
+    
+    # Get unique permno count if permno column exists
+    if 'permno' in python_df.columns:
+        results['unique_permnos'] = python_df.select(pl.col('permno').n_unique()).item()
+    
+    return results
+
 def output_predictor_results(predictor_name, results, overall_passed):
     """
     Output predictor results to both console and return markdown lines
@@ -262,18 +315,22 @@ def output_predictor_results(predictor_name, results, overall_passed):
         ]
     
     # Test 1: Column names
-    if results.get('test_1_passed', False):
+    test1 = results.get('test_1_passed', None)
+    if test1 is True:
         print(f"  ✅ Test 1 - Column names: PASSED")
-    else:
+    elif test1 is False:
         print(f"  ❌ Test 1 - Column names: FAILED")
         print(f"    Stata:  {results.get('stata_columns', [])}")
         print(f"    Python: {results.get('python_columns', [])}")
+    else:
+        print(f"  NA Test 1 - Column names: N/A (No Stata CSV to compare)")
     
     # Test 2: Superset check
-    if results.get('test_2_passed', False):
+    test2 = results.get('test_2_passed', None)
+    if test2 is True:
         missing_pct = results.get('missing_percentage', 0)
         print(f"  ✅ Test 2 - Superset check: PASSED (Missing {missing_pct:.2f}% <= {TOL_SUPERSET}% threshold)")
-    else:
+    elif test2 is False:
         missing_count = results.get('missing_count', 0)
         missing_pct = results.get('missing_percentage', 0)
         print(f"  ❌ Test 2 - Superset check: FAILED (Missing {missing_pct:.2f}% > {TOL_SUPERSET}% threshold, {missing_count} observations)")
@@ -283,35 +340,56 @@ def output_predictor_results(predictor_name, results, overall_passed):
             print(f"  Sample of missing observations:")
             sample_df = results['missing_observations_sample']
             print(f"  {sample_df.to_string(index=False)}")
+    else:
+        print(f"  NA Test 2 - Superset check: N/A (No Stata CSV to compare)")
     
     # Test 3: Precision1 check
-    if results.get('common_obs_count', 0) == 0:
+    test3 = results.get('test_3_passed', None)
+    if results.get('common_obs_count', 0) == 0 and test3 is not None:
         print(f"  ❌ Test 3 - Precision1 check: FAILED (No common observations found)")
-    elif results.get('test_3_passed', False):
+    elif test3 is True:
         bad_pct = results.get('bad_obs_percentage', 0)
         print(f"  ✅ Test 3 - Precision1 check: PASSED ({bad_pct:.3f}% obs with std_diff >= {TOL_DIFF_1:.2e} < {TOL_OBS_1}%)")
-    else:
+    elif test3 is False:
         bad_pct = results.get('bad_obs_percentage', 0)
         print(f"  ❌ Test 3 - Precision1 check: FAILED ({bad_pct:.3f}% obs with std_diff >= {TOL_DIFF_1:.2e} >= {TOL_OBS_1}%)")
+    else:
+        print(f"  NA Test 3 - Precision1 check: N/A (No Stata CSV to compare)")
     
     # Test 4: Precision2 check
-    if results.get('common_obs_count', 0) == 0:
+    test4 = results.get('test_4_passed', None)
+    if results.get('common_obs_count', 0) == 0 and test4 is not None:
         print(f"  ❌ Test 4 - Precision2 check: FAILED (No common observations found)")
-    elif results.get('test_4_passed', False):
+    elif test4 is True:
         pth_diff = results.get('pth_percentile_diff', 0)
         print(f"  ✅ Test 4 - Precision2 check: PASSED ({EXTREME_Q*100:.0f}th percentile diff = {pth_diff:.2e} < {TOL_DIFF_2:.2e})")
-    else:
+    elif test4 is False:
         pth_diff = results.get('pth_percentile_diff', 0)
         print(f"  ❌ Test 4 - Precision2 check: FAILED ({EXTREME_Q*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF_2:.2e})")
+    else:
+        print(f"  NA Test 4 - Precision2 check: N/A (No Stata CSV to compare)")
+    
+    # Show Python-only specific info
+    if results.get('stata_csv_available') is False and results.get('python_csv_available') is True:
+        print(f"  📊 Python CSV Info:")
+        print(f"    Columns: {results.get('python_columns', [])}")
+        if 'date_range' in results and results['date_range']:
+            print(f"    Date range: {results['date_range']}")
+        if 'unique_permnos' in results:
+            print(f"    Unique permnos: {results['unique_permnos']:,}")
     
     # Overall result
     if overall_passed:
         print(f"  ✅ {predictor_name} PASSED")
     else:
-        print(f"  ❌ {predictor_name} FAILED")
-        # Print feedback for failed predictors
-        if 'bad_obs_count' in results:
-            print(f"    Bad observations: {results['bad_obs_count']}/{results['total_obs_count']} ({results['bad_obs_percentage']:.3f}%)")
+        # For Python-only predictors, show different status
+        if results.get('stata_csv_available') is False and results.get('python_csv_available') is True:
+            print(f"  📊 {predictor_name} PYTHON-ONLY (No Stata baseline for comparison)")
+        else:
+            print(f"  ❌ {predictor_name} FAILED")
+            # Print feedback for failed predictors
+            if 'bad_obs_count' in results:
+                print(f"    Bad observations: {results['bad_obs_count']}/{results['total_obs_count']} ({results['bad_obs_percentage']:.3f}%)")
     
     # Generate markdown lines
     md_lines = []
@@ -388,9 +466,18 @@ def validate_predictor(predictor_name):
     # Load Stata CSV with polars
     stata_path = Path(f"../Data/Predictors/{predictor_name}.csv")
     if not stata_path.exists():
-        results = {'error': f'Stata file not found: {stata_path}'}
-        md_lines = output_predictor_results(predictor_name, results, False)
-        return False, results, md_lines
+        # Check if Python CSV exists for Python-only case
+        python_path = Path(f"../pyData/Predictors/{predictor_name}.csv")
+        if python_path.exists():
+            # Python-only case: analyze Python CSV without comparison
+            results = analyze_python_only(predictor_name)
+            md_lines = output_predictor_results(predictor_name, results, False)
+            return False, results, md_lines
+        else:
+            # Neither file exists
+            results = {'error': f'Stata file not found: {stata_path}'}
+            md_lines = output_predictor_results(predictor_name, results, False)
+            return False, results, md_lines
     
     stata_df = load_csv_robust_polars(stata_path)
     if stata_df is None:
@@ -420,7 +507,7 @@ def validate_predictor(predictor_name):
     return passed, results, md_lines
 
 def get_available_predictors():
-    """Get list of available predictor files and missing Python CSVs"""
+    """Get list of available predictor files, missing Python CSVs, and Python-only CSVs"""
     stata_dir = Path("../Data/Predictors/")
     python_dir = Path("../pyData/Predictors/")
     
@@ -433,11 +520,12 @@ def get_available_predictors():
     if python_dir.exists():
         python_files = {f.stem for f in python_dir.glob("*.csv")}
     
-    # Return intersection (available for validation) and missing Python CSVs
+    # Return intersection (available for validation), missing Python CSVs, and Python-only CSVs
     available_predictors = sorted(list(stata_files.intersection(python_files)))
     missing_python_csvs = sorted(list(stata_files - python_files))
+    python_only_csvs = sorted(list(python_files - stata_files))
     
-    return available_predictors, missing_python_csvs
+    return available_predictors, missing_python_csvs, python_only_csvs
 
 def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results):
     """Write detailed results to markdown log file"""
@@ -708,7 +796,7 @@ def main():
     
     args = parser.parse_args()
     
-    available_predictors, missing_python_csvs = get_available_predictors()
+    available_predictors, missing_python_csvs, python_only_csvs = get_available_predictors()
     
     if args.list:
         print("Available predictors (have both Stata and Python CSV):")
@@ -717,34 +805,42 @@ def main():
         print("\nMissing Python CSVs (have Stata but no Python CSV):")
         for pred in missing_python_csvs:
             print(f"  {pred}")
+        print("\nPython-only CSVs (have Python but no Stata CSV):")
+        for pred in python_only_csvs:
+            print(f"  {pred}")
         return
     
     # Select predictors to test
     if args.predictors:
-        # Split requested predictors into available and missing
+        # Split requested predictors into available, missing, and python-only
         requested_set = set(args.predictors)
         available_to_test = [p for p in available_predictors if p in requested_set]
         missing_to_include = [p for p in missing_python_csvs if p in requested_set]
+        python_only_to_include = [p for p in python_only_csvs if p in requested_set]
         
         # Check for completely unknown predictors
-        all_known = set(available_predictors + missing_python_csvs)
+        all_known = set(available_predictors + missing_python_csvs + python_only_csvs)
         unknown = requested_set - all_known
         if unknown:
-            print(f"Warning: These predictors not found in Stata data: {unknown}")
+            print(f"Warning: These predictors not found: {unknown}")
         
         test_predictors = available_to_test
         include_missing = missing_to_include
+        include_python_only = python_only_to_include
     else:
         test_predictors = available_predictors
         include_missing = missing_python_csvs
+        include_python_only = python_only_csvs
     
-    if not test_predictors and not include_missing:
+    if not test_predictors and not include_missing and not include_python_only:
         print("No predictors to test")
         return
     
     print(f"Validating {len(test_predictors)} predictors: {test_predictors}")
     if include_missing:
         print(f"Including {len(include_missing)} missing Python CSVs in summary: {include_missing}")
+    if include_python_only:
+        print(f"Including {len(include_python_only)} Python-only CSVs in summary: {include_python_only}")
     
     # Validate each available predictor
     all_md_lines = []
@@ -784,8 +880,15 @@ def main():
         ]
         all_md_lines.append(md_lines)
     
+    # Add results for Python-only CSVs
+    for predictor in include_python_only:
+        passed, results, md_lines = validate_predictor(predictor)
+        all_md_lines.append(md_lines)
+        all_results[predictor] = results
+        # Python-only predictors cannot "pass" validation since there's no Stata baseline
+    
     # Combine all predictors for summary
-    all_predictors = test_predictors + include_missing
+    all_predictors = test_predictors + include_missing + include_python_only
     
     # Write markdown log
     write_markdown_log(all_md_lines, all_predictors, passed_count, all_results)
@@ -797,6 +900,7 @@ def main():
     print(f"\n=== SUMMARY ===")
     print(f"Available predictors tested: {len(test_predictors)}")
     print(f"Missing Python CSVs included: {len(include_missing)}")
+    print(f"Python-only CSVs included: {len(include_python_only)}")
     print(f"Passed validation: {passed_count}")
     print(f"Failed validation: {len(test_predictors) - passed_count}")
     

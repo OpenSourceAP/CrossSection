@@ -1,6 +1,6 @@
 # Worst Performing Predictors Report
 
-**Generated**: 2025-08-12 17:22:51
+**Generated**: 2025-08-12 20:10:46
 
 This report focuses on the 20 worst predictors by Superset and Precision1 metrics.
 
@@ -8,77 +8,77 @@ This report focuses on the 20 worst predictors by Superset and Precision1 metric
 
 Predictors with highest superset failure rates (Python missing the most Stata observations):
 
-- **EarnSupBig**
-  - Script: EarnSupBig
-  - Python CSV: yes
-  - Superset: no (3.76%) ❌
-  - Precision1: yes (0.16%)
-  - Precision2: no (99th diff 6.5E+00) ❌
-
-- **Frontier**
-  - Script: Frontier
+- **PS**
+  - Script: PS
   - Python CSV: yes
   - Superset: yes (100%)
-  - Precision1: no (84.22%) ❌
-  - Precision2: no (99th diff 5.4E-01) ❌
+  - Precision1: no (17.90%) ❌
+  - Precision2: no (99th diff 5.0E+00) ❌
 
-- **IndRetBig**
-  - Script: IndRetBig
+- **ShareVol**
+  - Script: ShareVol
   - Python CSV: yes
   - Superset: yes (100%)
-  - Precision1: yes (7.12%)
-  - Precision2: no (99th diff 8.8E-03) ❌
+  - Precision1: no (14.38%) ❌
+  - Precision2: no (99th diff 1.0E+00) ❌
 
-- **OrgCap**
-  - Script: ZZ1_OrgCap_OrgCapNoAdj
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: no (91.02%) ❌
-  - Precision2: no (99th diff 1.6E+00) ❌
+- **GrLTNOA**
+  - Script: GrLTNOA
+  - Python CSV: no
+  - Superset: no data ❌
+  - Precision1: no data ❌
+  - Precision2: no data ❌
 
-- **sinAlgo**
-  - Script: sinAlgo
+- **AgeIPO**
+  - Script: AgeIPO
   - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: yes (0.01%)
-  - Precision2: yes (99th diff 0.0E+00)
+  - Superset: no data ❌
+  - Precision1: no data ❌
+  - Precision2: no data ❌
+
+- **RDIPO**
+  - Script: RDIPO
+  - Python CSV: yes
+  - Superset: no data ❌
+  - Precision1: no data ❌
+  - Precision2: no data ❌
 
 ## Worst Precision1
 
 Predictors with highest precision1 failure rates (highest percentage of observations with significant differences):
 
-- **OrgCap**
-  - Script: ZZ1_OrgCap_OrgCapNoAdj
+- **PS**
+  - Script: PS
   - Python CSV: yes
   - Superset: yes (100%)
-  - Precision1: no (91.02%) ❌
-  - Precision2: no (99th diff 1.6E+00) ❌
+  - Precision1: no (17.90%) ❌
+  - Precision2: no (99th diff 5.0E+00) ❌
 
-- **Frontier**
-  - Script: Frontier
+- **ShareVol**
+  - Script: ShareVol
   - Python CSV: yes
   - Superset: yes (100%)
-  - Precision1: no (84.22%) ❌
-  - Precision2: no (99th diff 5.4E-01) ❌
+  - Precision1: no (14.38%) ❌
+  - Precision2: no (99th diff 1.0E+00) ❌
 
-- **IndRetBig**
-  - Script: IndRetBig
-  - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: yes (7.12%)
-  - Precision2: no (99th diff 8.8E-03) ❌
+- **GrLTNOA**
+  - Script: GrLTNOA
+  - Python CSV: no
+  - Superset: no data ❌
+  - Precision1: no data ❌
+  - Precision2: no data ❌
 
-- **EarnSupBig**
-  - Script: EarnSupBig
+- **AgeIPO**
+  - Script: AgeIPO
   - Python CSV: yes
-  - Superset: no (3.76%) ❌
-  - Precision1: yes (0.16%)
-  - Precision2: no (99th diff 6.5E+00) ❌
+  - Superset: no data ❌
+  - Precision1: no data ❌
+  - Precision2: no data ❌
 
-- **sinAlgo**
-  - Script: sinAlgo
+- **RDIPO**
+  - Script: RDIPO
   - Python CSV: yes
-  - Superset: yes (100%)
-  - Precision1: yes (0.01%)
-  - Precision2: yes (99th diff 0.0E+00)
+  - Superset: no data ❌
+  - Precision1: no data ❌
+  - Precision2: no data ❌
 

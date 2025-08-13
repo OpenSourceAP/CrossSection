@@ -3,6 +3,7 @@
 ## Context
 **Important: Before you start, read these doc(s)**: 
 - DocsForClaude/leg3-Predictors.md for the big picture
+- DocsForClaude/traps.md for common pitfalls when translating Stata code
 
 ## Mission
 Fix the Precision1 failures for the predictors described below.
@@ -20,35 +21,6 @@ Fix the Precision1 failures for the predictors described below.
 - Write down a plan to fix the problem in Journal/
 - Get the OK from the user to fix.
 
-## ✅ MAJOR BREAKTHROUGH: Sequential Logic Pattern (2025-08-12)
-
-**Discovery**: Fixed RIO predictor family (Group 3) using **sequential logic translation pattern**.
-
-**Root Cause**: Python nested `when/then/otherwise` logic doesn't match Stata's sequential `replace` statements.
-- **Stata**: `replace temp = 0 if mi(temp)` → `replace temp = .0001 if temp < .0001` (sequential)
-- **Python**: Nested conditionals skip later conditions if earlier ones match
-
-**Fix Pattern**: Use separate `.with_columns()` calls for each Stata `replace` statement.
-
-**Results**: 80-85% precision improvement across RIO predictor family.
-
-**Applicability**: This pattern likely applies to **any predictor with multiple sequential `replace` statements**.
-
-## 📊 **Current Progress Summary**
-
-**Completed Predictors**: 7 out of 19 total (37% complete)
-
-- **Group 1**: 1/1 ✅ COMPLETE (IndRetBig)
-- **Group 2**: 3/5 ✅ MOSTLY COMPLETE (IntanCFP, IntanBM, IntanEP fixed; PredictedFE, AbnormalAccruals skipped)  
-- **Group 3**: 3/6 ✅ HALF COMPLETE (RIO family fixed; OrgCap major improvement; ShareVol, PS remaining)
-- **Groups 4-5**: 0/7 ❌ NOT STARTED
-
-**Major Methodological Breakthroughs**:
-1. **Sequential Logic Pattern** (RIO family): 80-85% precision improvement
-2. **Winsorization Standardization** (Intan family): Complete precision fixes
-3. **Relrank Implementation** (IndRetBig): Complete precision fixes
-
----
 
 ## List of Predictors with Major Precision1 Failures
 
@@ -118,7 +90,7 @@ These scripts are relatively simple. Hopefully the fix will be straightforward.
   - Precision1: yes (14.23%) ✅ **MAJOR FIX** (was 91.02%, 77pt improvement)
   - Precision2: yes (99th diff 1.3E-01) ✅ **MAJOR FIX** (was 1.6E+00, 92% improvement)
   - Status: Skip for now 
-  
+
 - **RIO_Volatility**
   - Script: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
   - Python CSV: yes

@@ -1,0 +1,171 @@
+Create Predictors Log - Started at 2025-08-12 17:55:00
+================================================================================
+
+
+🔄 Creating Signal Master Table: SignalMasterTable.py
+============================================================
+Starting SignalMasterTable.py...
+Loading monthly CRSP data...
+Loaded monthlyCRSP: 5153763 rows, 9 columns
+Filtering for common stocks and major exchanges...
+After filtering: 4047630 rows
+Merging with m_aCompustat...
+After Compustat merge: 4047630 rows
+Adding auxiliary variables...
+After adding auxiliary vars: 4047630 rows, 13 columns
+Checking for IBES-CRSP linking table...
+Adding IBES-CRSP link...
+After IBES link merge: 4047630 rows, 14 columns
+Checking for OptionMetrics-CRSP linking table...
+Adding OptionMetrics-CRSP link...
+After OptionMetrics link merge: 4047630 rows, 16 columns
+Saving SignalMasterTable...
+SignalMasterTable saved to: ../pyData/Intermediate/SignalMasterTable.parquet
+Final shape: 4047630 rows, 16 columns
+Column names: ['permno', 'ret', 'prc', 'shrcd', 'exchcd', 'sicCRSP', 'ticker', 'time_avail_m', 'mve_c', 'gvkey', 'sicCS', 'NYSE', 'bh1m', 'tickerIBES', 'secid', 'om_score']
+============================================================
+✅ Completed: SignalMasterTable.py
+Execution time: 4.92 seconds
+
+
+🔄 Starting: AM.py
+============================================================
+AM predictor saved successfully
+============================================================
+✅ Completed: AM.py
+Execution time: 4.49 seconds
+
+
+🔄 Starting: Accruals.py
+============================================================
+Starting Accruals.py...
+Loading m_aCompustat data...
+Loaded m_aCompustat: 3625491 rows, 10 columns
+Deduplicating by permno time_avail_m...
+After deduplication: 3625491 rows
+Setting up panel data structure...
+Creating lag variables...
+Calculating Accruals...
+Calculated Accruals for 3276202 observations
+saving Accruals
+Saved 3276202 rows to ../pyData/Predictors/Accruals.csv
+Accruals.py completed successfully
+============================================================
+✅ Completed: Accruals.py
+Execution time: 1.69 seconds
+
+
+🔄 Starting: AccrualsBM.py
+============================================================
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: divide by zero encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+Starting AccrualsBM.py...
+Loading m_aCompustat data...
+Loaded m_aCompustat: 3625491 rows, 10 columns
+Deduplicating by permno time_avail_m...
+After deduplication: 3625491 rows
+Merging with SignalMasterTable...
+After merging with SignalMasterTable: 4047630 rows
+Setting up panel data structure...
+Calculating BM...
+Creating lag variables for accruals...
+Calculating tempacc...
+Creating BM quintiles...
+Creating accruals quintiles...
+Generating AccrualsBM signal...
+Calculated AccrualsBM for 1511521 observations
+saving AccrualsBM
+Saved 1511521 rows to ../pyData/Predictors/AccrualsBM.csv
+AccrualsBM.py completed successfully
+============================================================
+✅ Completed: AccrualsBM.py
+Execution time: 4.89 seconds
+
+
+🔄 Starting: AdExp.py
+============================================================
+Starting AdExp.py...
+Loading m_aCompustat data...
+Loaded m_aCompustat: 3625491 rows, 3 columns
+Merging with SignalMasterTable...
+After merging with SignalMasterTable: 4047630 rows
+Calculating AdExp...
+Calculated AdExp for 1049037 observations
+saving AdExp
+Saved 1049037 rows to ../pyData/Predictors/AdExp.csv
+AdExp.py completed successfully
+============================================================
+✅ Completed: AdExp.py
+Execution time: 1.77 seconds
+
+
+🔄 Starting: AgeIPO.py
+============================================================
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/AgeIPO.py:92: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'nan' has dtype incompatible with bool, please explicitly cast to a compatible dtype first.
+  df.loc[df['IPOdate'].isna(), 'tempipo'] = np.nan
+Starting AgeIPO.py...
+Loading SignalMasterTable data...
+Loaded SignalMasterTable: 4047630 rows, 2 columns
+Merging with IPODates...
+After merging with IPODates: 4047630 rows
+Calculating recent IPO filter...
+Calculating AgeIPO...
+Applying minimum IPO firms per month filter...
+Calculated AgeIPO for 353486 observations
+saving AgeIPO
+Saved 353486 rows to ../pyData/Predictors/AgeIPO.csv
+AgeIPO.py completed successfully
+============================================================
+✅ Completed: AgeIPO.py
+Execution time: 1.06 seconds
+
+
+🔄 Starting: AnalystRevision.py
+============================================================
+Starting AnalystRevision.py...
+Loading and preparing IBES data...
+Prepared IBES data: 2382154 rows, 3 columns
+Loading SignalMasterTable...
+Loaded SignalMasterTable: 4047630 rows, 3 columns
+Merging with IBES data...
+After merging with IBES data: 4047630 rows
+Setting up panel data (sorting by permno, time_avail_m)...
+Calculating 1-month lag and AnalystRevision...
+Calculated AnalystRevision for 1923490 observations
+saving AnalystRevision
+Saved 1923490 rows to ../pyData/Predictors/AnalystRevision.csv
+AnalystRevision.py completed successfully
+============================================================
+✅ Completed: AnalystRevision.py
+Execution time: 1.92 seconds
+
+
+🔄 Starting: AssetGrowth.py
+============================================================
+Starting AssetGrowth.py...
+Loading m_aCompustat data...
+Loaded m_aCompustat: 3625491 rows, 4 columns
+Setting up panel data (sorting by permno, time_avail_m)...
+Calculating 12-month lag and AssetGrowth...
+Calculated AssetGrowth for 3311751 observations
+saving AssetGrowth
+Saved 3311751 rows to ../pyData/Predictors/AssetGrowth.csv
+AssetGrowth.py completed successfully
+============================================================
+✅ Completed: AssetGrowth.py
+Execution time: 1.45 seconds
+
+
+🔄 Starting: BM.py
+============================================================
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: divide by zero encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: invalid value encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+============================================================
+✅ Completed: BM.py
+Execution time: 4.81 seconds
+
+Log completed at 2025-08-12 17:55:27
