@@ -41,6 +41,8 @@ from pathlib import Path
 from datetime import datetime
 import sys
 import yaml
+import statsmodels.formula.api as smf
+import numpy as np
 
 # ================================
 # VALIDATION CONFIGURATION
@@ -233,6 +235,50 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         precision2_ok = pth_percentile_diff < TOL_DIFF_2
         results['pth_percentile_diff'] = pth_percentile_diff
         results['precision2_ok'] = precision2_ok
+        
+        # Calculate additional summary statistics and regression analysis
+        try:
+            # Calculate summary statistics for stata, python, diff, and std_diff
+            stata_values = cobs_diff.select(pl.col(predictor_name + "_right")).to_pandas()[predictor_name + "_right"]
+            python_values = cobs_diff.select(pl.col(predictor_name)).to_pandas()[predictor_name]
+            diff_values = cobs_diff.select(pl.col("diff")).to_pandas()["diff"]
+            std_diff_values = cobs_diff.select(pl.col("std_diff")).to_pandas()["std_diff"]
+            
+            # Store summary statistics
+            results['summary_stats'] = {
+                'stata': stata_values.describe().to_dict(),
+                'python': python_values.describe().to_dict(),
+                'diff': diff_values.describe().to_dict(),
+                'std_diff': std_diff_values.describe().to_dict()
+            }
+            
+            # Perform regression analysis: python ~ stata
+            if len(stata_values) > 1 and stata_values.std() > 0:
+                reg_data = pd.DataFrame({
+                    'python': python_values,
+                    'stata': stata_values
+                }).dropna()
+                
+                if len(reg_data) > 1:
+                    model = smf.ols('python ~ stata', data=reg_data)
+                    reg_result = model.fit()
+                    
+                    # Store regression results
+                    results['regression_stats'] = {
+                        'intercept': reg_result.params['Intercept'],
+                        'slope': reg_result.params['stata'],
+                        'r_squared': reg_result.rsquared,
+                        'intercept_se': reg_result.bse['Intercept'],
+                        'slope_se': reg_result.bse['stata'],
+                        'intercept_tstat': reg_result.tvalues['Intercept'],
+                        'slope_tstat': reg_result.tvalues['stata'],
+                        'intercept_pvalue': reg_result.pvalues['Intercept'],
+                        'slope_pvalue': reg_result.pvalues['stata'],
+                        'n_obs': len(reg_data)
+                    }
+        except Exception as e:
+            # If summary stats or regression fails, store error but don't break validation
+            results['summary_stats_error'] = str(e)
         
         # Generate feedback for failed precision tests
         if not precision1_ok or not precision2_ok:
@@ -466,6 +512,90 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     if 'pth_percentile_diff' in results:
         md_lines.append(f"**Precision2**: {EXTREME_Q*100:.0f}th percentile diff = {results['pth_percentile_diff']:.2e} (tolerance: < {TOL_DIFF_2:.2e})\n\n")
+    
+    # Add Summary Statistics section for common observations
+    if 'summary_stats' in results:
+        md_lines.append("**Summary Statistics** (Common Observations):\n\n")
+        
+        stats = results['summary_stats']
+        
+        # Create summary table with fixed column widths
+        md_lines.append("| Statistic  |          Stata |         Python |     Difference | Std Difference |\n")
+        md_lines.append("|------------|----------------|----------------|----------------|----------------|\n")
+        
+        # Format each statistic row
+        for stat_name in ['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max']:
+            stata_val = stats['stata'].get(stat_name, 'N/A')
+            python_val = stats['python'].get(stat_name, 'N/A')
+            diff_val = stats['diff'].get(stat_name, 'N/A')
+            std_diff_val = stats['std_diff'].get(stat_name, 'N/A')
+            
+            # Format numbers for display with consistent width
+            def format_stat(val, width=14):
+                if val == 'N/A' or pd.isna(val):
+                    return 'N/A'.rjust(width)
+                elif isinstance(val, (int, float)):
+                    if abs(val) < 1e-3 and val != 0:
+                        formatted = f"{val:.2e}"
+                    elif abs(val) > 1e6:
+                        formatted = f"{val:.2e}"
+                    else:
+                        formatted = f"{val:.4f}"
+                    return formatted.rjust(width)
+                else:
+                    return str(val).rjust(width)
+            
+            md_lines.append(f"| {stat_name:<10} | {format_stat(stata_val)} | {format_stat(python_val)} | {format_stat(diff_val)} | {format_stat(std_diff_val)} |\n")
+        
+        md_lines.append("\n")
+    
+    # Add Regression Analysis section
+    if 'regression_stats' in results:
+        md_lines.append("**Regression Analysis** (Python ~ Stata):\n\n")
+        
+        reg = results['regression_stats']
+        
+        md_lines.append(f"- **Model**: python = {reg['intercept']:.4f} + {reg['slope']:.4f} * stata\n")
+        md_lines.append(f"- **R-squared**: {reg['r_squared']:.4f}\n")
+        md_lines.append(f"- **N observations**: {reg['n_obs']:,}\n\n")
+        
+        # Coefficient details table with fixed column widths
+        md_lines.append("| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |\n")
+        md_lines.append("|-------------|--------------|--------------|-------------|----------|\n")
+        
+        # Format regression values consistently
+        def format_reg_stat(val, width=12):
+            if pd.isna(val) or (isinstance(val, float) and not np.isfinite(val)):
+                return 'nan'.rjust(width)
+            elif isinstance(val, (int, float)):
+                if abs(val) < 1e-3 and val != 0:
+                    formatted = f"{val:.2e}"
+                elif abs(val) > 1e6:
+                    formatted = f"{val:.2e}"
+                else:
+                    formatted = f"{val:.4f}"
+                return formatted.rjust(width)
+            else:
+                return str(val).rjust(width)
+        
+        # Format p-value specially (3 decimal places, but show as 0.000 for very small values)
+        def format_pvalue(val, width=9):
+            if pd.isna(val) or (isinstance(val, float) and not np.isfinite(val)):
+                return 'nan'.rjust(width)
+            elif isinstance(val, (int, float)):
+                if val < 0.0005:  # Very small p-values
+                    formatted = "0.000"
+                else:
+                    formatted = f"{val:.3f}"
+                return formatted.rjust(width)
+            else:
+                return str(val).rjust(width)
+        
+        md_lines.append(f"| Intercept   | {format_reg_stat(reg['intercept'])} | {format_reg_stat(reg['intercept_se'])} | {format_reg_stat(reg['intercept_tstat'], 11)} | {format_pvalue(reg['intercept_pvalue'])} |\n")
+        md_lines.append(f"| Slope       | {format_reg_stat(reg['slope'])} | {format_reg_stat(reg['slope_se'])} | {format_reg_stat(reg['slope_tstat'], 11)} | {format_pvalue(reg['slope_pvalue'])} |\n\n")
+    
+    elif 'summary_stats_error' in results:
+        md_lines.append(f"**Summary Statistics Error**: {results['summary_stats_error']}\n\n")
     
     # Feedback for failed superset test
     if not results.get('test_2_passed', True) and 'missing_observations_sample' in results:
