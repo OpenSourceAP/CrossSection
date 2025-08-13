@@ -71,33 +71,51 @@ df.loc[df['ib'] > 0, 'p1'] = 1
 df['p2'] = 0
 df.loc[df['fopt'] > 0, 'p2'] = 1
 
-# p3: Improvement in ROA
+# p3: Improvement in ROA - with Stata missing logic
 df['p3'] = 0
-df.loc[(df['ib']/df['at'] - df['l12_ib']/df['l12_at']) > 0, 'p3'] = 1
+# Stata treats missing lags as making the comparison TRUE
+condition = (df['ib']/df['at'] - df['l12_ib']/df['l12_at']) > 0
+lag_missing = df['l12_ib'].isna() | df['l12_at'].isna()
+df.loc[condition | lag_missing, 'p3'] = 1
 
 # p4: Cash flow exceeds net income
 df['p4'] = 0
 df.loc[df['fopt'] > df['ib'], 'p4'] = 1
 
-# p5: Reduction in leverage
+# p5: Reduction in leverage - with Stata missing logic
 df['p5'] = 0
-df.loc[(df['dltt']/df['at'] - df['l12_dltt']/df['l12_at']) < 0, 'p5'] = 1
+# Stata treats missing lags as making the comparison TRUE
+condition = (df['dltt']/df['at'] - df['l12_dltt']/df['l12_at']) < 0
+lag_missing = df['l12_dltt'].isna() | df['l12_at'].isna()
+df.loc[condition | lag_missing, 'p5'] = 1
 
-# p6: Improvement in current ratio
+# p6: Improvement in current ratio - with Stata missing logic
 df['p6'] = 0
-df.loc[(df['act']/df['lct'] - df['l12_act']/df['l12_lct']) > 0, 'p6'] = 1
+# Stata treats missing lags as making the comparison TRUE
+condition = (df['act']/df['lct'] - df['l12_act']/df['l12_lct']) > 0
+lag_missing = df['l12_act'].isna() | df['l12_lct'].isna()
+df.loc[condition | lag_missing, 'p6'] = 1
 
-# p7: Improvement in gross margin (following Stata logic: tempebit/sale - tempebit/l12.sale > 0)
+# p7: Improvement in gross margin - with Stata missing logic
 df['p7'] = 0
-df.loc[(df['tempebit']/df['sale'] - df['tempebit']/df['l12_sale']) > 0, 'p7'] = 1
+# Stata treats missing lags as making the comparison TRUE
+condition = (df['tempebit']/df['sale'] - df['tempebit']/df['l12_sale']) > 0
+lag_missing = df['l12_sale'].isna()
+df.loc[condition | lag_missing, 'p7'] = 1
 
-# p8: Improvement in asset turnover
+# p8: Improvement in asset turnover - with Stata missing logic
 df['p8'] = 0
-df.loc[(df['sale']/df['at'] - df['l12_sale']/df['l12_at']) > 0, 'p8'] = 1
+# Stata treats missing lags as making the comparison TRUE
+condition = (df['sale']/df['at'] - df['l12_sale']/df['l12_at']) > 0
+lag_missing = df['l12_sale'].isna() | df['l12_at'].isna()
+df.loc[condition | lag_missing, 'p8'] = 1
 
-# p9: No increase in shares outstanding
+# p9: No increase in shares outstanding - with Stata missing logic
 df['p9'] = 0
-df.loc[df['shrout'] <= df['l12_shrout'], 'p9'] = 1
+# Stata treats missing lags as making the comparison TRUE
+condition = df['shrout'] <= df['l12_shrout']
+lag_missing = df['l12_shrout'].isna()
+df.loc[condition | lag_missing, 'p9'] = 1
 
 # Sum all components
 df['PS'] = df['p1'] + df['p2'] + df['p3'] + df['p4'] + df['p5'] + df['p6'] + df['p7'] + df['p8'] + df['p9']
