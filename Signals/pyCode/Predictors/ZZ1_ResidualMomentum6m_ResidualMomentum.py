@@ -93,7 +93,7 @@ df = asreg(
     min_samples=36,
     add_intercept=True,  # Explicit parameter to match Stata asreg default behavior
     outputs=("resid",),
-    null_policy="skip",  # Match Stata's handling of missing values
+    null_policy="ignore",  # Match Stata's handling of missing values
     solve_method="svd",  # Match Stata's OLS solver method
     collect=True
 )

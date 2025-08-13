@@ -80,6 +80,6 @@ frbook_output = df[['permno', 'time_avail_m', 'FRbook']].dropna()
 frbook_output = frbook_output.astype({'permno': int, 'time_avail_m': int})
 frbook_output = frbook_output.rename(columns={'time_avail_m': 'yyyymm'})
 frbook_output = frbook_output.set_index(['permno', 'yyyymm']).sort_index()
-frbook_output.to_csv('../pyData/Placobos/FRbook.csv')
+frbook_output.to_csv('../pyData/Placebos/FRbook.csv')
 
 print("FR (Predictor) and FRbook (Placobo) saved successfully")
