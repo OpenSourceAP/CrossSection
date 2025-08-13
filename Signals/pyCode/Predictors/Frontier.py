@@ -1,9 +1,10 @@
-# ABOUTME: Translates Frontier.do to create efficient frontier index predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Frontier.py
+# ABOUTME: Optimized version of Frontier.do for faster processing with optional year filtering
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/Frontier.py [--max-year YEAR]
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet
 # Output: ../pyData/Predictors/Frontier.csv
+# Usage: python3 Predictors/Frontier.py --max-year 1985 (for testing)
 
 import pandas as pd
 import numpy as np
@@ -12,145 +13,151 @@ import warnings
 warnings.filterwarnings('ignore')
 import sys
 import time
+import argparse
 sys.path.append('.')
 from utils.sicff import sicff
 
-# DATA LOAD
-df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-df = df[['permno', 'time_avail_m', 'mve_c', 'sicCRSP']].copy()
+def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Generate Frontier predictor with optional year filtering')
+    parser.add_argument('--max-year', type=int, default=None, 
+                        help='Drop data after this year (e.g., 1985 for testing)')
+    args = parser.parse_args()
 
-# Merge with Compustat
-comp = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
-comp = comp[['permno', 'time_avail_m', 'at', 'ceq', 'dltt', 'capx', 'sale', 'xrd', 'xad', 'ppent', 'ebitda']].copy()
-df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
+    print(f"Frontier.py starting with max_year={args.max_year}")
+    start_total = time.time()
 
-# Create time_avail as numeric time variable (Stata monthly format) 
-# Use Stata's tm format: months since 1960m1 = 0
-stata_base = pd.to_datetime('1960-01-01')
-df['time_avail'] = ((df['time_avail_m'].dt.year - stata_base.year) * 12 + 
-                    (df['time_avail_m'].dt.month - stata_base.month))
+    # DATA LOAD
+    print("Loading data...")
+    df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
+    df = df[['permno', 'time_avail_m', 'mve_c', 'sicCRSP']].copy()
 
-# SIGNAL CONSTRUCTION
-# Replace missing xad with 0
-df['xad'] = df['xad'].fillna(0)
+    # Merge with Compustat
+    comp = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
+    comp = comp[['permno', 'time_avail_m', 'at', 'ceq', 'dltt', 'capx', 'sale', 'xrd', 'xad', 'ppent', 'ebitda']].copy()
+    df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 
-# Create variables - handle infinite values like Stata (set to NaN)
-df['YtempBM'] = np.log(df['mve_c'])
-df['YtempBM'] = df['YtempBM'].replace([np.inf, -np.inf], np.nan)
+    # Apply max_year filter early to reduce data size
+    if args.max_year:
+        print(f"Filtering data to max year {args.max_year}")
+        original_len = len(df)
+        df = df[df['time_avail_m'].dt.year <= args.max_year].copy()
+        filtered_len = len(df)
+        print(f"Reduced data from {original_len:,} to {filtered_len:,} rows ({100*filtered_len/original_len:.1f}%)")
 
-df['tempBook'] = np.log(df['ceq'])
-df['tempBook'] = df['tempBook'].replace([np.inf, -np.inf], np.nan)
+    # Create time_avail as numeric time variable (Stata monthly format)
+    # Use Stata's tm format: months since 1960m1 = 0
+    df['time_avail'] = ((df['time_avail_m'].dt.year - 1960) * 12 + 
+                        (df['time_avail_m'].dt.month - 1))
 
-# Handle division by zero - set to NaN when denominator is 0 or missing
-df['tempLTDebt'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['dltt'] / df['at'])
+    # SIGNAL CONSTRUCTION
+    # Replace missing xad with 0
+    df['xad'] = df['xad'].fillna(0)
 
-df['tempCapx'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['capx'] / df['sale'])
+    # Create variables - handle infinite values like Stata (set to NaN)
+    df['YtempBM'] = np.log(df['mve_c'])
+    df['YtempBM'] = df['YtempBM'].replace([np.inf, -np.inf], np.nan)
 
-df['tempRD'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['xrd'] / df['sale'])
+    df['tempBook'] = np.log(df['ceq'])
+    df['tempBook'] = df['tempBook'].replace([np.inf, -np.inf], np.nan)
 
-df['tempAdv'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['xad'] / df['sale'])
-
-df['tempPPE'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ppent'] / df['at'])
-
-df['tempEBIT'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ebitda'] / df['at'])
-
-# Stata: sicff sicCRSP, generate(tempFF48) industry(48)
-# Use unified sicff module for Fama-French 48 industry classification
-df['tempFF48'] = sicff(df['sicCRSP'], industry=48)
-df = df.dropna(subset=['tempFF48'])
-
-# Prepare regression variables
-reg_vars = ['tempBook', 'tempLTDebt', 'tempCapx', 'tempRD', 'tempAdv', 'tempPPE', 'tempEBIT']
-
-# Rolling regression for each time period
-df['logmefit_NS'] = np.nan
-df = df.sort_values(['permno', 'time_avail_m'])
-
-# Process each unique time period like Stata's levelsof
-unique_dates = sorted(df['time_avail_m'].unique())
-# Only skip periods that can't have 60 months of training data (i.e., before 1960 + 60 months)
-# But let the regression logic handle insufficient data rather than pre-filtering
-# This matches Stata's approach of processing all available dates
-
-# Process all time periods for complete data coverage
-# unique_dates = unique_dates[::3]  # Commented out - was for faster testing only
-
-print(f"Processing {len(unique_dates)} time periods (starting from {unique_dates[0].strftime('%Y-%m')})...")
-
-start_time = time.time()
-period_times = []  # Track recent period processing times
-last_period_time = time.time()
-
-for i, current_date in enumerate(unique_dates):
-    # Use exact Stata logic: time_avail <= t & time_avail_m > t - 60
-    # Where t is the numeric time representation of current_date
+    # Handle division by zero - set to NaN when denominator is 0 or missing
+    df['tempLTDebt'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['dltt'] / df['at'])
+    df['tempCapx'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['capx'] / df['sale'])
+    df['tempRD'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['xrd'] / df['sale'])
+    df['tempAdv'] = np.where((df['sale'] == 0) | df['sale'].isna(), np.nan, df['xad'] / df['sale'])
+    df['tempPPE'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ppent'] / df['at'])
+    df['tempEBIT'] = np.where((df['at'] == 0) | df['at'].isna(), np.nan, df['ebitda'] / df['at'])
     
-    # Convert current_date to time_avail for comparison (Stata tm format)
-    current_time_avail = ((current_date.year - stata_base.year) * 12 + 
-                         (current_date.month - stata_base.month))
+    # Convert sicCRSP for sicff function
+    print("Computing FF48 industry codes...")
+    df['tempFF48'] = sicff(df['sicCRSP'], industry=48)
+    df = df.dropna(subset=['tempFF48'])
+
+    # Prepare regression variables
+    reg_vars = ['tempBook', 'tempLTDebt', 'tempCapx', 'tempRD', 'tempAdv', 'tempPPE', 'tempEBIT']
     
-    # Calendar-based 60 months back (like Stata `t' - 60)
-    # Convert current time_avail back to date, subtract 60 months, then convert to time_avail
-    months_back_60 = current_time_avail - 60
+    # Sort for processing
+    df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Get training data: time_avail <= current AND time_avail > 60 time units back
-    train_data = df[(df['time_avail'] <= current_time_avail) & 
-                   (df['time_avail'] > months_back_60)].copy()
-    
-    if len(train_data) < 3:  # Match Stata's very minimal threshold
-        continue
+    # Initialize predictions column
+    df['logmefit_NS'] = np.nan
+
+    # Process each unique time period
+    unique_dates = sorted(df['time_avail_m'].unique())
+    print(f"Processing {len(unique_dates)} time periods (starting from {unique_dates[0].strftime('%Y-%m')})...")
+
+    start_time = time.time()
+    period_times = []
+    last_period_time = time.time()
+    predictions_stored = 0
+
+    for i, current_date in enumerate(unique_dates):
+        # Convert current_date to time_avail for comparison (Stata tm format)
+        current_time_avail = ((current_date.year - 1960) * 12 + (current_date.month - 1))
         
-    # Prepare training data
-    train_data = train_data.dropna(subset=['YtempBM'] + reg_vars)
-    
-    if len(train_data) < 3:  # Allow very small samples like Stata (minimum for regression)
-        continue
-    
-    # Create industry dummies
-    industry_dummies = pd.get_dummies(train_data['tempFF48'], prefix='ff48')
-    
-    # Prepare X matrix
-    X = train_data[reg_vars].copy()
-    X = pd.concat([X, industry_dummies], axis=1)
-    
-    y = train_data['YtempBM']
-    
-    # Fit regression
-    try:
-        reg = LinearRegression()
-        reg.fit(X, y)
+        # Calendar-based 60 months back (like Stata `t' - 60)
+        months_back_60 = current_time_avail - 60
         
-        # Predict for current time period (time_avail_m == current_date)
-        current_data = df[df['time_avail_m'] == current_date].copy()
+        # Get training data: time_avail <= current AND time_avail > 60 time units back
+        train_mask = (df['time_avail'] <= current_time_avail) & (df['time_avail'] > months_back_60)
+        train_data = df[train_mask].copy()
+        train_data = train_data.dropna(subset=['YtempBM'] + reg_vars)
+        
+        if len(train_data) < 3:  # Match Stata's minimal threshold
+            continue
+            
+        # Get current period data for prediction
+        current_mask = (df['time_avail_m'] == current_date)
+        current_data = df[current_mask].copy()
         current_data = current_data.dropna(subset=reg_vars)
         
         if len(current_data) == 0:
             continue
+
+        try:
+            # Create industry dummies for training data
+            train_industries = pd.get_dummies(train_data['tempFF48'], prefix='ff48')
+            
+            # Prepare training X matrix
+            X_train = train_data[reg_vars].copy()
+            X_train = pd.concat([X_train, train_industries], axis=1)
+            y_train = train_data['YtempBM']
+            
+            # Create industry dummies for current data
+            current_industries = pd.get_dummies(current_data['tempFF48'], prefix='ff48')
+            
+            # Align columns between training and prediction data
+            for col in train_industries.columns:
+                if col not in current_industries.columns:
+                    current_industries[col] = 0
+            current_industries = current_industries.reindex(columns=train_industries.columns, fill_value=0)
+            
+            # Prepare prediction X matrix
+            X_pred = current_data[reg_vars].copy()
+            X_pred = pd.concat([X_pred, current_industries], axis=1)
+            
+            # Fit regression using sklearn
+            reg = LinearRegression()
+            reg.fit(X_train, y_train)
+            
+            # Make predictions
+            predictions = reg.predict(X_pred)
+            
+            # Store predictions back in main dataframe
+            # Use the current_data index to properly align predictions
+            for idx, pred_value in zip(current_data.index, predictions):
+                if df.loc[idx, 'time_avail_m'] == current_date:
+                    df.loc[idx, 'logmefit_NS'] = pred_value
+            
+            predictions_stored += len(predictions)
+            
+        except Exception as e:
+            if i % 30 == 0:
+                print(f"Failed period {current_date.strftime('%Y-%m')}: {e}")
+            continue
         
-        # Create industry dummies for current data
-        current_industry = pd.get_dummies(current_data['tempFF48'], prefix='ff48')
-        
-        # Align columns
-        for col in industry_dummies.columns:
-            if col not in current_industry.columns:
-                current_industry[col] = 0
-        current_industry = current_industry.reindex(columns=industry_dummies.columns, fill_value=0)
-        
-        X_pred = current_data[reg_vars].copy()
-        X_pred = pd.concat([X_pred, current_industry], axis=1)
-        
-        predictions = reg.predict(X_pred)
-        
-        # Store predictions - ensure proper alignment
-        mask = (df['time_avail_m'] == current_date) & (df.index.isin(current_data.index))
-        
-        # Critical fix: Ensure predictions are assigned to correct observations
-        # by explicitly matching indices rather than relying on mask ordering
-        for idx, pred_value in zip(current_data.index, predictions):
-            if (df.loc[idx, 'time_avail_m'] == current_date):
-                df.loc[idx, 'logmefit_NS'] = pred_value
-        
-        # Track time for this period
+        # Track timing and progress
         current_time = time.time()
         period_duration = current_time - last_period_time
         period_times.append(period_duration)
@@ -162,7 +169,6 @@ for i, current_date in enumerate(unique_dates):
         
         if i % 30 == 0:  # Print progress every 30 periods
             elapsed_time = time.time() - start_time
-            # Use rolling average of recent periods for better estimate
             if len(period_times) > 0:
                 avg_time_per_period = sum(period_times) / len(period_times)
             else:
@@ -176,48 +182,45 @@ for i, current_date in enumerate(unique_dates):
                   f"stored {len(predictions)} predictions for {current_date.strftime('%Y-%m')}")
             print(f"  Elapsed: {elapsed_time:.1f}s, Est. remaining: {estimated_remaining:.1f}s, "
                   f"Avg: {avg_time_per_period:.3f}s/period (last {len(period_times)} periods)")
-        
-    except Exception as e:
-        if i % 30 == 0:
-            print(f"Failed period {current_date.strftime('%Y-%m')}: {e}")
-        continue
 
-# Calculate Frontier
-total_predictions = df['logmefit_NS'].notna().sum()
-print(f"Total predictions generated: {total_predictions}")
+    # Calculate Frontier
+    print(f"Total predictions generated: {predictions_stored}")
+    
+    df['Frontier'] = df['YtempBM'] - df['logmefit_NS']
+    df['Frontier'] = -1 * df['Frontier']
 
-df['Frontier'] = df['YtempBM'] - df['logmefit_NS']
-df['Frontier'] = -1 * df['Frontier']
+    # Apply filters
+    print(f"Before ceq filter: {len(df)}")
+    df = df[(~df['ceq'].isna()) & (df['ceq'] > 0)].copy()
+    print(f"After ceq filter: {len(df)}")
 
-# Apply filters
-print(f"Before ceq filter: {len(df)}")
-df = df[(~df['ceq'].isna()) & (df['ceq'] > 0)].copy()
-print(f"After ceq filter: {len(df)}")
+    # Keep only necessary columns for output
+    df_final = df[['permno', 'time_avail_m', 'Frontier']].copy()
+    print(f"Before dropping NaN Frontier: {len(df_final)}")
+    df_final = df_final.dropna(subset=['Frontier'])
+    print(f"Final output: {len(df_final)} observations")
 
-# Keep only necessary columns for output
-df_final = df[['permno', 'time_avail_m', 'Frontier']].copy()
-print(f"Before dropping NaN Frontier: {len(df_final)}")
-df_final = df_final.dropna(subset=['Frontier'])
-print(f"Final output: {len(df_final)} observations")
+    # Convert time_avail_m to yyyymm format like other predictors
+    df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
 
-# Convert time_avail_m to yyyymm format like other predictors
-df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
+    # Convert to integers for consistency with other predictors
+    df_final['permno'] = df_final['permno'].astype('int64')
+    df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
 
-# Convert to integers for consistency with other predictors
-df_final['permno'] = df_final['permno'].astype('int64')
-df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
+    # Keep only required columns and set index
+    df_final = df_final[['permno', 'yyyymm', 'Frontier']].copy()
+    df_final = df_final.set_index(['permno', 'yyyymm'])
 
-# Keep only required columns and set index
-df_final = df_final[['permno', 'yyyymm', 'Frontier']].copy()
-df_final = df_final.set_index(['permno', 'yyyymm'])
+    # SAVE
+    df_final.to_csv('../pyData/Predictors/Frontier.csv')
 
-# SAVE
-df_final.to_csv('../pyData/Predictors/Frontier.csv')
+    # Final timing summary
+    total_time = time.time() - start_total
+    processing_rate = len(unique_dates) / (time.time() - start_time) if len(unique_dates) > 0 else 0
+    print(f"\nTiming Summary:")
+    print(f"Total execution time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
+    print(f"Processed {len(unique_dates)} periods at {processing_rate:.2f} periods/second")
+    print("Frontier predictor saved successfully")
 
-# Final timing summary
-total_time = time.time() - start_time
-processing_rate = len(unique_dates) / total_time
-print(f"\nTiming Summary:")
-print(f"Total execution time: {total_time:.2f} seconds ({total_time/60:.2f} minutes)")
-print(f"Processed {len(unique_dates)} periods at {processing_rate:.2f} periods/second")
-print("Frontier predictor saved successfully")
+if __name__ == "__main__":
+    main()
