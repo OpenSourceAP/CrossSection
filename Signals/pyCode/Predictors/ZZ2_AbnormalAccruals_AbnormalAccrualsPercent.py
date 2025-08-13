@@ -9,6 +9,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.asreg import asreg
 from utils.savepredictor import save_predictor
+from utils.saveplacebo import save_placebo
 from utils.winsor2 import winsor2
 
 print("=" * 80)
@@ -224,5 +225,5 @@ if len(valid_aap) > 0:
     print(f"  Max: {valid_aap['AbnormalAccrualsPercent'].max():.6f}")
 
 print("💾 Saving AbnormalAccrualsPercent predictor...")
-save_predictor(result_aap, "AbnormalAccrualsPercent")
+save_placebo(result_aap, "AbnormalAccrualsPercent")
 print("✅ AbnormalAccrualsPercent.csv saved successfully")

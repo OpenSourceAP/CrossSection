@@ -7,13 +7,14 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
+from utils.saveplacebo import save_placebo
 from utils.stata_fastxtile import fastxtile
 from utils.relrank import relrank
 from utils.winsor2 import winsor2
 
 print("=" * 80)
 print("🏗️  ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py")
-print("Generating analyst value predictors: AnalystValue, AOP, PredictedFE, IntrinsicValue")
+print("Generating analyst value predictors: AnalystValue, AOP, PredictedFE. Also the placebo IntrinsicValue.")
 print("=" * 80)
 
 print("📊 Preparing IBES forecast data...")
@@ -356,7 +357,7 @@ df_expanded = df_expanded.drop(["tempTime"])
 print("💾 Saving predictors...")
 
 # Save multiple predictors
-predictors = ["AnalystValue", "AOP", "PredictedFE", "IntrinsicValue"]
+predictors = ["AnalystValue", "AOP", "PredictedFE"]
 
 for predictor in predictors:
     result = df_expanded.select(["permno", "time_avail_m", predictor])
@@ -369,5 +370,11 @@ for predictor in predictors:
     
     save_predictor(result, predictor)
     print(f"✅ {predictor}.csv saved successfully")
+
+# Save IntrinsicValue as a placebo
+result = df_expanded.select(["permno", "time_avail_m", "IntrinsicValue"])
+valid_result = result.filter(pl.col("IntrinsicValue").is_not_null())
+save_placebo(result, "IntrinsicValue")
+print("✅ IntrinsicValue.csv saved successfully")
 
 print("🎉 All analyst value predictors completed!")
