@@ -27,7 +27,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
-from stata_ineq import stata_greater_than_numpy
+from stata_ineq import stata_ineq_pd
 
 def main():
     print("Starting retConglomerate predictor...")
@@ -57,8 +57,9 @@ def main():
                                        columns=['gvkey', 'permno', 'sale', 'fyear'])
     # rename sale saleACS
     compustat_annual = compustat_annual.rename(columns={'sale': 'saleACS'})
-    # drop if saleACS <0 | mi(saleACS)
-    compustat_annual = compustat_annual[(compustat_annual['saleACS'] > 0) & compustat_annual['saleACS'].notna()]
+    # drop if saleACS <0 | mi(saleACS) - keep rows that don't match this condition
+    mask_drop = stata_ineq_pd(compustat_annual['saleACS'], "<", 0) | compustat_annual['saleACS'].isna()
+    compustat_annual = compustat_annual[~mask_drop]
     # save "$pathtemp/tempCS", replace
     tempCS = compustat_annual.copy()
     print(f"Loaded {len(tempCS):,} annual sales records")
@@ -69,8 +70,9 @@ def main():
                                  columns=['gvkey', 'datadate', 'stype', 'sics1', 'sales'])
     # keep if stype == "OPSEG" | stype == "BUSSEG"
     segments_df = segments_df[segments_df['stype'].isin(['OPSEG', 'BUSSEG'])]
-    # drop if sales < 0 | mi(sales)
-    segments_df = segments_df[(segments_df['sales'] > 0) & segments_df['sales'].notna()]
+    # drop if sales < 0 | mi(sales) - keep rows that don't match this condition
+    mask_drop = stata_ineq_pd(segments_df['sales'], "<", 0) | segments_df['sales'].isna()
+    segments_df = segments_df[~mask_drop]
     # tostring sics1, replace
     segments_df['sics1'] = segments_df['sics1'].astype(str)
     # gen sic2D = substr(sics1, 1,2)
@@ -105,11 +107,11 @@ def main():
     
     # Stand-alone: tempNInd == 1 & tempCSSegmentShare > 0.8
     # Use stata-compatible greater-than comparison for missing value handling
-    mask_standalone = (segments_agg['tempNInd'] == 1) & stata_greater_than_numpy(segments_agg['tempCSSegmentShare'], 0.8)
+    mask_standalone = (segments_agg['tempNInd'] == 1) & stata_ineq_pd(segments_agg['tempCSSegmentShare'], ">", 0.8)
     segments_agg.loc[mask_standalone, 'Conglomerate'] = 0
     
     # Conglomerate: tempNInd > 1 & tempCSSegmentShare > 0.8  
-    mask_conglomerate = (segments_agg['tempNInd'] > 1) & stata_greater_than_numpy(segments_agg['tempCSSegmentShare'], 0.8)
+    mask_conglomerate = (segments_agg['tempNInd'] > 1) & stata_ineq_pd(segments_agg['tempCSSegmentShare'], ">", 0.8)
     segments_agg.loc[mask_conglomerate, 'Conglomerate'] = 1
     
     # drop if mi(Conglomerate) - this drops segments that don't meet either criterion
