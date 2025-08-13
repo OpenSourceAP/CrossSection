@@ -61,37 +61,17 @@ df = df[df['price'] > 1000]  # Missing values become False, opposite of Stata!
 ```
 
 **✅ CORRECT Python Translation (explicit missing handling):**
+Use the `stata_ineq` module to translate Stata's inequality operators to Python.
 ```python
-# Method 1: Exclude missing values explicitly
-df = df[(df['price'] > 1000) & (df['price'].notna())]
+from utils.stata_ineq import stata_ineq_pd, stata_ineq_pl
 
-# Method 2: Handle missing separately
-mask_valid = df['price'].notna()
-mask_condition = df['price'] > 1000
-df = df[mask_valid & mask_condition]
+# For pandas Series
+result = stata_ineq_pd(pd_series, ">", value)
 
-# Method 3: Use query with explicit null check
-df = df.query('price > 1000 and price == price')  # NaN != NaN
-```
-
-**For boolean variable creation:**
-```python
-# ❌ WRONG: Missing becomes False in Python
-df['high_sales'] = df['sales'] > 100000
-
-# ✅ CORRECT: Explicit missing handling to match Stata
-df['high_sales'] = np.where(
-    df['sales'].isna(), 
-    1,  # Missing treated as True in Stata
-    (df['sales'] > 100000).astype(int)
-)
-
-# ✅ ALTERNATIVE: Mark missing as missing
-df['high_sales'] = np.where(
-    df['sales'].notna(),
-    (df['sales'] > 100000).astype(int),
-    np.nan
-)
+# For polars expressions
+df.with_columns([
+    stata_ineq_pl(pl.col("x"), ">", pl.col("y")).alias("x_gt_y")
+])
 ```
 
 ### Stata's Safe Practices (for reference)
