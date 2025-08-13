@@ -38,7 +38,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.stata_ineq import stata_greater_than, stata_less_than
+from utils.stata_ineq import stata_ineq_pl
 
 print("=" * 80)
 print("🏗️  MS.py")
@@ -228,21 +228,21 @@ print("🎯 Creating binary indicators...")
 # Using Stata-compatible inequality operators that treat missing as positive infinity
 df = df.with_columns([
     # M1: ROA > industry median (missing ROA treated as infinity)
-    pl.when(stata_greater_than(pl.col("roa"), pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
+    pl.when(stata_ineq_pl(pl.col("roa"), ">", pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
     # M2: CF-ROA > industry median (missing CFROA treated as infinity)
-    pl.when(stata_greater_than(pl.col("cfroa"), pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
+    pl.when(stata_ineq_pl(pl.col("cfroa"), ">", pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
     # M3: Operating cash flow > net income (missing treated as infinity)
-    pl.when(stata_greater_than(pl.col("oancfqsum"), pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
+    pl.when(stata_ineq_pl(pl.col("oancfqsum"), ">", pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
     # M4: Earnings volatility < industry median (missing volatility treated as infinity)
-    pl.when(stata_less_than(pl.col("niVol"), pl.col("md_niVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
+    pl.when(stata_ineq_pl(pl.col("niVol"), "<", pl.col("md_niVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
     # M5: Revenue volatility < industry median (missing volatility treated as infinity)
-    pl.when(stata_less_than(pl.col("revVol"), pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
+    pl.when(stata_ineq_pl(pl.col("revVol"), "<", pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
     # M6: R&D intensity > industry median (missing R&D treated as infinity)
-    pl.when(stata_greater_than(pl.col("xrdint"), pl.col("md_xrdint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
+    pl.when(stata_ineq_pl(pl.col("xrdint"), ">", pl.col("md_xrdint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
     # M7: Capex intensity > industry median (missing capex treated as infinity)
-    pl.when(stata_greater_than(pl.col("capxint"), pl.col("md_capxint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
+    pl.when(stata_ineq_pl(pl.col("capxint"), ">", pl.col("md_capxint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
     # M8: Advertising intensity > industry median (missing advertising treated as infinity)
-    pl.when(stata_greater_than(pl.col("xadint"), pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
+    pl.when(stata_ineq_pl(pl.col("xadint"), ">", pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
 ])
 
 # Sum the 8 components to get tempMS

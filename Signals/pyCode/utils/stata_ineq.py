@@ -14,187 +14,159 @@ Stata-compatible inequality operators that handle missing values according to St
 - missing < missing = False
 
 Usage:
+    import pandas as pd
     import polars as pl
-    from utils.stata_ineq import stata_greater_than, stata_less_than
+    from utils.stata_ineq import stata_ineq_pd, stata_ineq_pl
     
-    # Polars expressions
+    # For pandas Series
+    result = stata_ineq_pd(pd_series, ">", value)
+    
+    # For polars expressions
     df.with_columns([
-        stata_greater_than(pl.col("x"), pl.col("y")).alias("x_gt_y"),
-        stata_less_than(pl.col("x"), pl.col("y")).alias("x_lt_y")
+        stata_ineq_pl(pl.col("x"), ">", pl.col("y")).alias("x_gt_y")
     ])
-    
-    # NumPy arrays  
-    import numpy as np
-    x_gt_y_numpy = stata_greater_than_numpy(x_array, y_array)
 
 Functions:
-    - stata_greater_than(left, right): Polars expression for left > right with Stata logic
-    - stata_less_than(left, right): Polars expression for left < right with Stata logic
-    - stata_greater_than_numpy(left, right): NumPy version for pandas/numpy arrays
-    - stata_less_than_numpy(left, right): NumPy version for pandas/numpy arrays
+    - stata_ineq_pd(s, op, rhs): Pandas Series version for x op rhs with Stata logic
+    - stata_ineq_pl(e, op, rhs): Polars expression version for x op rhs with Stata logic
 
 Note: These functions implement the exact behavior documented in DocsForClaude/traps.md
 """
 
-import polars as pl
 import numpy as np
+import pandas as pd
+import polars as pl
+import math
+import re
 
+# ================================
+# PANDAS VERSION
+# ================================
 
-def stata_greater_than(left, right):
-    """
-    Polars expression for Stata-compatible greater-than comparison (left > right).
-    
-    Stata logic:
-    - missing > finite = True (missing treated as positive infinity)
-    - finite > missing = False
-    - missing > missing = False  
-    - finite > finite = normal comparison
-    
-    Args:
-        left: Polars expression for left operand
-        right: Polars expression for right operand
-        
-    Returns:
-        Polars expression that evaluates to True/False following Stata rules
-    """
-    return pl.when(
-        # Case 1: left is missing, right is not missing → True
-        left.is_null() & right.is_not_null()
-    ).then(
-        pl.lit(True)
-    ).when(
-        # Case 2: left is not missing, right is missing → False
-        left.is_not_null() & right.is_null()
-    ).then(
-        pl.lit(False)
-    ).when(
-        # Case 3: both are missing → False
-        left.is_null() & right.is_null()
-    ).then(
-        pl.lit(False)
-    ).otherwise(
-        # Case 4: both are not missing → normal comparison
-        left > right
-    )
+_OPMAP = {"=": "==", "~=": "!=", "^=": "!=", "==": "==", "!=": "!=", ">": ">", ">=": ">=", "<": "<", "<=": "<="}
 
+_missing_token = re.compile(r"^\.(?:[a-z])?$")  # '.', '.a'..'.z' (collapsed)
 
-def stata_less_than(left, right):
-    """
-    Polars expression for Stata-compatible less-than comparison (left < right).
-    
-    Stata logic:
-    - missing < finite = False (missing treated as positive infinity)
-    - finite < missing = True
-    - missing < missing = False
-    - finite < finite = normal comparison
-    
-    Args:
-        left: Polars expression for left operand
-        right: Polars expression for right operand
-        
-    Returns:
-        Polars expression that evaluates to True/False following Stata rules
-    """
-    return pl.when(
-        # Case 1: left is missing, right is not missing → False
-        left.is_null() & right.is_not_null()
-    ).then(
-        pl.lit(False)
-    ).when(
-        # Case 2: left is not missing, right is missing → True
-        left.is_not_null() & right.is_null()
-    ).then(
-        pl.lit(True)
-    ).when(
-        # Case 3: both are missing → False
-        left.is_null() & right.is_null()
-    ).then(
-        pl.lit(False)
-    ).otherwise(
-        # Case 4: both are not missing → normal comparison
-        left < right
-    )
+def _is_missing_rhs(x):
+    # Accept Stata '.' / '.a'..'.z', plus Python None/NaN
+    if isinstance(x, str) and _missing_token.fullmatch(x):
+        return True
+    try:
+        # np.isnan on non-floats raises; guard with try
+        return x is None or (isinstance(x, float) and np.isnan(x))
+    except Exception:
+        return False
 
+def stata_ineq_pd(s: pd.Series, op: str, rhs) -> pd.Series:
+    """
+    Stata-style numeric inequalities for pandas.
+    - Numeric missing values (NaN) behave like Stata: greater than any number.
+    - Equality/inequality treat missing like Stata: NaN == c -> False; NaN != c -> True.
+    - Supports RHS 'missing' via '.', '.a'..'.z', None, or NaN (all treated the same).
+    """
+    op = _OPMAP.get(op, op)
+    if op not in {">", ">=", "<", "<=", "==", "!="}:
+        raise ValueError(f"Unsupported operator: {op}")
 
-def stata_greater_than_numpy(left, right):
+    # If RHS is a Stata missing token: use is-missing semantics directly
+    if _is_missing_rhs(rhs):
+        if op in (">", ">="):   # x >= .  <=> is missing
+            return s.isna()
+        if op in ("<", "<="):   # x < .   <=> not missing
+            return ~s.isna()
+        if op == "==":          # x == .  <=> is missing
+            return s.isna()
+        if op == "!=":          # x != .  <=> not missing
+            return ~s.isna()
+
+    # Regular numeric RHS: map NaN -> +inf for inequality comparisons
+    s_inf = s.fillna(np.inf)
+
+    if op == "==":  # missing never equals a number in Stata
+        return s.eq(rhs) & s.notna()
+    if op == "!=":  # missing is not equal to any number in Stata
+        return s.ne(rhs) | s.isna()
+
+    # Inequalities: with +inf fill, missings naturally behave as Stata wants
+    if op == ">":
+        return s_inf.gt(rhs)
+    if op == ">=":
+        return s_inf.ge(rhs)
+    if op == "<":
+        # Ensure missings (now +inf) don't pass a '<' check
+        return s_inf.lt(rhs) & s.notna()
+    if op == "<=":
+        return s_inf.le(rhs) & s.notna()
+
+# ================================
+# POLARS VERSION
+# ================================
+
+def _is_missing_rhs_pl(x):
+    if isinstance(x, str) and _missing_token.fullmatch(x):
+        return True
+    if x is None:
+        return True
+    try:
+        return isinstance(x, float) and math.isnan(x)
+    except Exception:
+        return False
+
+def stata_ineq_pl(e: pl.Expr, op: str, rhs) -> pl.Expr:
     """
-    NumPy version of Stata-compatible greater-than comparison for pandas/numpy arrays.
-    
-    Args:
-        left: NumPy array or pandas Series for left operand
-        right: NumPy array, pandas Series, or scalar for right operand
-        
-    Returns:
-        NumPy boolean array following Stata rules
+    Stata-style numeric inequalities for Polars.
+    - Numeric nulls behave like Stata by treating nulls as +inf for inequalities.
+    - Supports RHS 'missing' via '.', '.a'..'.z', None, or NaN.
+    - Handles both scalar RHS and expression RHS that might be null.
     """
-    left_arr = np.asarray(left)
+    op = {"=": "==", "~=": "!=", "^=": "!=", **{k: k for k in (">", ">=", "<", "<=", "==", "!=")}}.get(op, op)
+    if op not in {">", ">=", "<", "<=", "==", "!="}:
+        raise ValueError(f"Unsupported operator: {op}")
+
+    # Check if RHS is a literal missing value  
+    if _is_missing_rhs_pl(rhs):
+        if op in (">", ">=", "=="):
+            return e.is_null()
+        if op in ("<", "<="):
+            return e.is_not_null()
+        if op == "!=":
+            return e.is_not_null()
+
+    # Handle case where RHS might be an expression that could be null
+    # Convert both sides to +inf when null for inequality comparisons
+    e_inf = e.fill_null(float("inf"))
     
-    # Handle scalar right operand
-    if np.isscalar(right):
-        right_arr = np.full_like(left_arr, right, dtype=float)
+    # If rhs is an expression, also handle its nulls
+    if hasattr(rhs, 'fill_null'):  # It's a polars expression
+        rhs_inf = rhs.fill_null(float("inf"))
     else:
-        right_arr = np.asarray(right)
-    
-    # Create masks for missing values
-    left_missing = np.isnan(left_arr)
-    right_missing = np.isnan(right_arr)
-    
-    # Initialize result array
-    result = np.zeros_like(left_arr, dtype=bool)
-    
-    # Case 1: left is missing, right is not missing → True
-    result[(left_missing) & (~right_missing)] = True
-    
-    # Case 2: left is not missing, right is missing → False
-    result[(~left_missing) & (right_missing)] = False
-    
-    # Case 3: both are missing → False
-    result[(left_missing) & (right_missing)] = False
-    
-    # Case 4: both are not missing → normal comparison
-    both_not_missing = (~left_missing) & (~right_missing)
-    result[both_not_missing] = left_arr[both_not_missing] > right_arr[both_not_missing]
-    
-    return result
+        rhs_inf = rhs  # It's a scalar
 
-
-def stata_less_than_numpy(left, right):
-    """
-    NumPy version of Stata-compatible less-than comparison for pandas/numpy arrays.
-    
-    Args:
-        left: NumPy array or pandas Series for left operand
-        right: NumPy array, pandas Series, or scalar for right operand
-        
-    Returns:
-        NumPy boolean array following Stata rules
-    """
-    left_arr = np.asarray(left)
-    
-    # Handle scalar right operand
-    if np.isscalar(right):
-        right_arr = np.full_like(left_arr, right, dtype=float)
-    else:
-        right_arr = np.asarray(right)
-    
-    # Create masks for missing values
-    left_missing = np.isnan(left_arr)
-    right_missing = np.isnan(right_arr)
-    
-    # Initialize result array
-    result = np.zeros_like(left_arr, dtype=bool)
-    
-    # Case 1: left is missing, right is not missing → False
-    result[(left_missing) & (~right_missing)] = False
-    
-    # Case 2: left is not missing, right is missing → True
-    result[(~left_missing) & (right_missing)] = True
-    
-    # Case 3: both are missing → False
-    result[(left_missing) & (right_missing)] = False
-    
-    # Case 4: both are not missing → normal comparison
-    both_not_missing = (~left_missing) & (~right_missing)
-    result[both_not_missing] = left_arr[both_not_missing] < right_arr[both_not_missing]
-    
-    return result
+    if op == "==":
+        # Both sides must be non-null and equal
+        return e.eq(rhs) & e.is_not_null() & (rhs.is_not_null() if hasattr(rhs, 'is_not_null') else pl.lit(True))
+    if op == "!=":
+        # If either side is null, return True (Stata behavior)
+        return e.ne(rhs) | e.is_null() | (rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False))
+    if op == ">":
+        return e_inf > rhs_inf
+    if op == ">=":
+        return e_inf >= rhs_inf
+    if op == "<":
+        # Handle the complex Stata logic for less-than with nulls
+        return pl.when(e.is_null() & (rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False)))\
+                 .then(pl.lit(False))\
+                 .when(e.is_null())\
+                 .then(pl.lit(False))\
+                 .when(rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False))\
+                 .then(pl.lit(True))\
+                 .otherwise(e < rhs)
+    if op == "<=":
+        # Handle the complex Stata logic for less-than-equal with nulls
+        return pl.when(e.is_null() & (rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False)))\
+                 .then(pl.lit(False))\
+                 .when(e.is_null())\
+                 .then(pl.lit(False))\
+                 .when(rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False))\
+                 .then(pl.lit(True))\
+                 .otherwise(e <= rhs)
