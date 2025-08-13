@@ -136,9 +136,14 @@ for i, current_date in enumerate(unique_dates):
         
         predictions = reg.predict(X_pred)
         
-        # Store predictions
+        # Store predictions - ensure proper alignment
         mask = (df['time_avail_m'] == current_date) & (df.index.isin(current_data.index))
-        df.loc[mask, 'logmefit_NS'] = predictions
+        
+        # Critical fix: Ensure predictions are assigned to correct observations
+        # by explicitly matching indices rather than relying on mask ordering
+        for idx, pred_value in zip(current_data.index, predictions):
+            if (df.loc[idx, 'time_avail_m'] == current_date):
+                df.loc[idx, 'logmefit_NS'] = pred_value
         
         if i % 60 == 0:  # Print progress every 60 periods (5 years)
             print(f"Processed {i+1}/{len(unique_dates)} periods, stored {len(predictions)} predictions for {current_date.strftime('%Y-%m')}")
