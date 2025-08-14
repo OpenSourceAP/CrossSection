@@ -52,12 +52,12 @@ import numpy as np
 TOL_SUPERSET = 1.0  # Max allowed percentage of missing observations (units: percent)
 
 # Precision1
-TOL_DIFF_1 = 0.01  # Threshold for identifying imperfect observations (Precision1)
-TOL_OBS_1 = 10  # Max allowed percentage of imperfect observations (units: percent)
+TOL_DIFF_1 = 0.01  # Standardized difference threshold for imperfect observations
+TOL_OBS_1 = 1  # Max allowed percentage of imperfect observations (units: percent)
 
 # Precision2
-EXTREME_Q = 0.99  # Quantile for extreme deviation (not percentile)
-TOL_DIFF_2 = 1.00  # Tolerance for Pth percentile standardized difference (Precision2)
+TOL_DIFF_2 = 0.10  # Tolerance for Pth percentile standardized difference (Precision2)
+EXTREME_Q = 0.999  # Quantile for extreme deviation (not percentile)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
 def load_overrides():
@@ -716,6 +716,8 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"- INDEX_COLS: {INDEX_COLS}\n\n")
         
         f.write(f"## Summary\n\n")
+
+        f.write(f"Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.\n\n")
         
         # Create summary table with Python CSV column
         f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |\n")
@@ -808,10 +810,10 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             # Format precision2 column with diff value information  
             if test4 == True:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"✅ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
+                col4 = f"✅ ({EXTREME_Q*100:.3f}th diff {pth_diff:.1E})"
             elif test4 == False:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"❌ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
+                col4 = f"❌ ({EXTREME_Q*100:.3f}th diff {pth_diff:.1E})"
             else:
                 col4 = "NA"
             
@@ -872,10 +874,10 @@ def format_predictor_statuses(results):
     test4 = results.get('test_4_passed', None)
     if test4 is True:
         pth_diff = results.get('pth_percentile_diff', 0)
-        precision2_status = f"yes ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
+        precision2_status = f"yes ({EXTREME_Q*100:.3f}th diff {pth_diff:.1E})"
     elif test4 is False:
         pth_diff = results.get('pth_percentile_diff', 0)
-        precision2_status = f"no ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E}) ❌"
+        precision2_status = f"no ({EXTREME_Q*100:.3f}th diff {pth_diff:.1E}) ❌"
     else:
         precision2_status = "no data ❌"
     
