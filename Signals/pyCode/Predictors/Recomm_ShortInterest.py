@@ -152,6 +152,25 @@ temp_rec = (ibes_filled
 
 print(f"Consensus recommendations by ticker-month: {len(temp_rec):,} observations")
 
+# CHECKPOINT 1: Check if sample missing observations exist in recommendations
+print("=== CHECKPOINT 1: IBES Recommendations ===")
+ibm_check = temp_rec.filter(
+    (pl.col("tickerIBES") == "IBM") & (pl.col("time_avail_m") == 200704)
+)
+if len(ibm_check) > 0:
+    print(f"IBM 2007m4 found in recommendations: {ibm_check.select(['tickerIBES', 'time_avail_m', 'ireccd12'])}")
+else:
+    print("IBM 2007m4 NOT found in recommendations")
+
+ace_check = temp_rec.filter(
+    (pl.col("tickerIBES") == "ACE") & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+if len(ace_check) > 0:
+    print(f"ACE observations found in recommendations: {ace_check.select(['tickerIBES', 'time_avail_m', 'ireccd12'])}")
+else:
+    print("ACE observations NOT found in recommendations")
+
 # ===================================================================
 # STEP 2: MERGE RECOMMENDATIONS AND SHORT INTEREST ONTO SIGNALMASTER
 # ===================================================================
@@ -185,6 +204,23 @@ if crsp['time_avail_m'].dtype == pl.Datetime:
 df = signal_master.join(crsp, on=["permno", "time_avail_m"], how="inner")
 print(f"After merging with CRSP: {len(df):,} observations")
 
+# CHECKPOINT 2: Check if sample missing observations survive CRSP merge
+print("=== CHECKPOINT 2: After CRSP merge ===")
+check_10051 = df.filter(
+    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
+)
+print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
+if len(check_10051) > 0:
+    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout'])}")
+
+check_10104 = df.filter(
+    (pl.col("permno") == 10104) & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
+if len(check_10104) > 0:
+    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout'])}")
+
 # merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/monthlyShortInterest", keep(match) nogenerate keepusing(shortint)
 short_interest = pl.read_parquet("../pyData/Intermediate/monthlyShortInterest.parquet")
 short_interest = short_interest.select(["gvkey", "time_avail_m", "shortint"])
@@ -201,9 +237,43 @@ short_interest = short_interest.with_columns(pl.col("gvkey").cast(pl.Float64))
 df = df.join(short_interest, on=["gvkey", "time_avail_m"], how="inner")
 print(f"After merging with short interest: {len(df):,} observations")
 
+# CHECKPOINT 3: Check if sample missing observations survive short interest merge
+print("=== CHECKPOINT 3: After Short Interest merge ===")
+check_10051 = df.filter(
+    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
+)
+print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
+if len(check_10051) > 0:
+    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint'])}")
+
+check_10104 = df.filter(
+    (pl.col("permno") == 10104) & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
+if len(check_10104) > 0:
+    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint'])}")
+
 # merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
 df = df.join(temp_rec, on=["tickerIBES", "time_avail_m"], how="inner")
 print(f"After merging with recommendations: {len(df):,} observations")
+
+# CHECKPOINT 4: Check if sample missing observations survive recommendation merge
+print("=== CHECKPOINT 4: After Recommendation merge ===")
+check_10051 = df.filter(
+    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
+)
+print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
+if len(check_10051) > 0:
+    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint', 'ireccd12'])}")
+
+check_10104 = df.filter(
+    (pl.col("permno") == 10104) & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
+if len(check_10104) > 0:
+    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint', 'ireccd12'])}")
 
 # ===================================================================
 # STEP 3: SIGNAL CONSTRUCTION
@@ -238,6 +308,49 @@ df_pandas['QuintConsRecomm'] = fastxtile(df_pandas, "ConsRecomm", by="time_avail
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
+# CHECKPOINT 5: Check quintile assignments for sample missing observations
+print("=== CHECKPOINT 5: After quintile creation ===")
+check_10051 = df.filter(
+    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
+)
+print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
+if len(check_10051) > 0:
+    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'ShortInterest', 'ConsRecomm', 'QuintShortInterest', 'QuintConsRecomm'])}")
+
+check_10104 = df.filter(
+    (pl.col("permno") == 10104) & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
+if len(check_10104) > 0:
+    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'ShortInterest', 'ConsRecomm', 'QuintShortInterest', 'QuintConsRecomm'])}")
+
+# Show quintile cutoffs for 2007m4
+print("--- Quintile cutoffs for 2007m4 ---")
+cutoffs_2007m4 = df.filter(pl.col("time_avail_m") == 200704)
+if len(cutoffs_2007m4) > 0:
+    shortint_stats = (cutoffs_2007m4
+        .group_by("QuintShortInterest")
+        .agg([
+            pl.col("ShortInterest").min().alias("min_ShortInterest"),
+            pl.col("ShortInterest").max().alias("max_ShortInterest"),
+            pl.len().alias("count")
+        ])
+        .sort("QuintShortInterest")
+    )
+    print(f"ShortInterest quintiles 2007m4: {shortint_stats}")
+    
+    recomm_stats = (cutoffs_2007m4
+        .group_by("QuintConsRecomm")
+        .agg([
+            pl.col("ConsRecomm").min().alias("min_ConsRecomm"),
+            pl.col("ConsRecomm").max().alias("max_ConsRecomm"),
+            pl.len().alias("count")
+        ])
+        .sort("QuintConsRecomm")
+    )
+    print(f"ConsRecomm quintiles 2007m4: {recomm_stats}")
+
 # Define binary signal: pessimistic vs optimistic cases
 # cap drop Recomm_ShortInterest
 # gen Recomm_ShortInterest = .
@@ -252,9 +365,45 @@ df = df.with_columns(
     .alias("Recomm_ShortInterest")
 )
 
+# CHECKPOINT 6: Check final signal values for sample missing observations
+print("=== CHECKPOINT 6: Before final filter (keep if !mi(Recomm_ShortInterest)) ===")
+check_10051 = df.filter(
+    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
+)
+print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
+if len(check_10051) > 0:
+    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'QuintShortInterest', 'QuintConsRecomm', 'Recomm_ShortInterest'])}")
+
+check_10104 = df.filter(
+    (pl.col("permno") == 10104) & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
+if len(check_10104) > 0:
+    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'QuintShortInterest', 'QuintConsRecomm', 'Recomm_ShortInterest'])}")
+
+# Show distribution of signal assignments
+print("--- Signal assignment counts ---")
+signal_counts = df.group_by("Recomm_ShortInterest").agg(pl.len().alias("count"))
+print(f"Signal distribution: {signal_counts}")
+
 # keep if !mi(Recomm_ShortInterest)
 result = df.filter(pl.col("Recomm_ShortInterest").is_not_null())
 result = result.select(["permno", "time_avail_m", "Recomm_ShortInterest"])
+
+# CHECKPOINT 7: Final counts after filter
+print("=== CHECKPOINT 7: After final filter ===")
+final_check_10051 = result.filter(
+    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
+)
+print(f"Final count permno=10051, time_avail_m=200704: {len(final_check_10051)}")
+
+final_check_10104 = result.filter(
+    (pl.col("permno") == 10104) & 
+    pl.col("time_avail_m").is_in([200607, 200807, 200903])
+)
+print(f"Final count permno=10104, time_avail_m in (200607, 200807, 200903): {len(final_check_10104)}")
+print(f"Total observations in final dataset: {len(result)}")
 
 print(f"Generated Recomm_ShortInterest values: {len(result):,} observations")
 if len(result) > 0:

@@ -49,6 +49,8 @@ use gvkey permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable
 drop if gvkey ==.
 merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_SP_creditratings", keep(master match) nogenerate
 merge 1:1 gvkey time_avail_m using "$pathtemp/temp_ciq_rat", keep(master match) nogenerate
+* CHECKPOINT 1: After merging credit ratings
+list permno time_avail_m credrat credratciq if permno == 10026 & time_avail_m == tm(2015m9), noobs
 
 * fill missing credratciq with most recent 
 xtset permno time_avail_m
@@ -60,12 +62,18 @@ foreach v of varlist credratciq {
 
 * coalecse credit ratings
 replace credrat = credratciq if credrat == .
+* CHECKPOINT 2: After filling missing credratciq
+list permno time_avail_m credrat credratciq if permno == 10026 & time_avail_m == tm(2015m9), noobs
 
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
 replace ret = 0 if mi(ret)
 gen Mom6m = ( (1+l.ret)*(1+l2.ret)*(1+l3.ret)*(1+l4.ret)*(1+l5.ret)) - 1
+* CHECKPOINT 3: After creating Mom6m
+list permno time_avail_m ret Mom6m if permno == 10026 & time_avail_m == tm(2015m9), noobs
 gen Mom6mJunk = Mom6m if ( credrat <= 14 & credrat > 0 )
+* CHECKPOINT 4: When filtering for junk (credrat <= 14)
+list permno time_avail_m credrat Mom6m Mom6mJunk if permno == 10026 & time_avail_m == tm(2015m9), noobs
 label var Mom6mJunk "Junk stock momentum"
 
 // SAVE

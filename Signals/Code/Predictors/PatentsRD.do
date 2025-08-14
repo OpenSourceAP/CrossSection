@@ -50,13 +50,21 @@ gen tempPatentsRD = npat/RDcap if RDcap > 0
 
 // Filter
 bysort gvkey (time_avail_m): drop if _n <= 2
+* CHECKPOINT 1: After dropping first 2 obs per gvkey
+list permno time_avail_m sicCRSP ceq if permno == 10006 & time_avail_m == tm(1983m6), noobs
 drop if sicCRSP >= 6000 & sicCRSP <= 6999
+* CHECKPOINT 2: After filtering sicCRSP
+list permno time_avail_m sicCRSP ceq if permno == 10006 & time_avail_m == tm(1983m6), noobs
 drop if ceq < 0
+* CHECKPOINT 3: After filtering ceq < 0
+list permno time_avail_m sicCRSP ceq if permno == 10006 & time_avail_m == tm(1983m6), noobs
 
 
 // double indep sort (can't just drop high mve_c, need indep)
 bys time_avail_m: astile sizecat = mve_c, qc(exchcd == 1) nq(2)
 egen maincat = fastxtile(tempPatentsRD), by(time_avail_m) n(3)
+* CHECKPOINT 4: After astile/fastxtile operations
+list permno time_avail_m mve_c sizecat tempPatentsRD maincat if permno == 10006 & time_avail_m == tm(1983m6), noobs
 
 // * following FF1993, others, first digit is S or B, second digit is L,M,or H
 // * i.e. 13 = S/H, then VW before compbining

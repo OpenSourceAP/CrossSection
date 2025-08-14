@@ -44,6 +44,12 @@ for i in range(13, 37):
     mom36m_product *= (1 + df[f'l{i}_ret'])
 df['Mom36m'] = mom36m_product - 1
 
+# CHECKPOINT 1: After creating Mom6m and Mom36m
+data_10028 = df[(df['permno'] == 10028) & (df['time_avail_m'] == pd.Timestamp('2007-10-01'))]
+if not data_10028.empty:
+    print("CHECKPOINT 1 - After creating Mom6m and Mom36m:")
+    print(data_10028[['permno', 'time_avail_m', 'Mom6m', 'Mom36m']])
+
 # Handle infinite values before quintile calculation (critical for pd.qcut)
 df['Mom6m_clean'] = df['Mom6m'].replace([np.inf, -np.inf], np.nan)
 df['Mom36m_clean'] = df['Mom36m'].replace([np.inf, -np.inf], np.nan)
@@ -51,8 +57,20 @@ df['Mom36m_clean'] = df['Mom36m'].replace([np.inf, -np.inf], np.nan)
 # egen tempMom6  = fastxtile(Mom6m), by(time_avail_m) n(5)
 df['tempMom6'] = fastxtile(df, 'Mom6m_clean', by='time_avail_m', n=5)
 
+# CHECKPOINT 2: After fastxtile for Mom6m
+data_10028 = df[(df['permno'] == 10028) & (df['time_avail_m'] == pd.Timestamp('2007-10-01'))]
+if not data_10028.empty:
+    print("CHECKPOINT 2 - After fastxtile for Mom6m:")
+    print(data_10028[['permno', 'time_avail_m', 'Mom6m', 'tempMom6']])
+
 # egen tempMom36 = fastxtile(Mom36m), by(time_avail_m) n(5)
 df['tempMom36'] = fastxtile(df, 'Mom36m_clean', by='time_avail_m', n=5)
+
+# CHECKPOINT 3: After fastxtile for Mom36m
+data_10028 = df[(df['permno'] == 10028) & (df['time_avail_m'] == pd.Timestamp('2007-10-01'))]
+if not data_10028.empty:
+    print("CHECKPOINT 3 - After fastxtile for Mom36m:")
+    print(data_10028[['permno', 'time_avail_m', 'Mom36m', 'tempMom36']])
 
 # gen MomRev = 1 if tempMom6 == 5 & tempMom36 == 1
 df['MomRev'] = np.nan
@@ -60,6 +78,12 @@ df.loc[(df['tempMom6'] == 5) & (df['tempMom36'] == 1), 'MomRev'] = 1
 
 # replace MomRev = 0 if tempMom6 == 1 & tempMom36 == 5
 df.loc[(df['tempMom6'] == 1) & (df['tempMom36'] == 5), 'MomRev'] = 0
+
+# CHECKPOINT 4: When creating MomRev conditions
+data_10028 = df[(df['permno'] == 10028) & (df['time_avail_m'] == pd.Timestamp('2007-10-01'))]
+if not data_10028.empty:
+    print("CHECKPOINT 4 - When creating MomRev conditions:")
+    print(data_10028[['permno', 'time_avail_m', 'tempMom6', 'tempMom36', 'MomRev']])
 
 # label var MomRev "Momentum and LT Reversal"
 # (Labels are comments in Python)

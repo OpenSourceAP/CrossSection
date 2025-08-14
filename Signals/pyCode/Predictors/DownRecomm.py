@@ -22,8 +22,20 @@ def last_non_missing(series):
 
 df = df.groupby(['tickerIBES', 'amaskcd', 'time_avail_m'])['ireccd'].apply(last_non_missing).reset_index()
 
+# CHECKPOINT 1: After first gcollapse
+aapl_data = df[(df['tickerIBES'] == 'AAPL') & (df['time_avail_m'] == pd.Timestamp('1993-11-01'))]
+if not aapl_data.empty:
+    print("CHECKPOINT 1 - After first gcollapse:")
+    print(aapl_data[['tickerIBES', 'time_avail_m', 'ireccd']])
+
 # Second collapse: gcollapse (mean) ireccd by (tickerIBES, time_avail_m)
 df = df.groupby(['tickerIBES', 'time_avail_m'], as_index=False)['ireccd'].mean()
+
+# CHECKPOINT 2: After second gcollapse
+aapl_data = df[(df['tickerIBES'] == 'AAPL') & (df['time_avail_m'] == pd.Timestamp('1993-11-01'))]
+if not aapl_data.empty:
+    print("CHECKPOINT 2 - After second gcollapse:")
+    print(aapl_data[['tickerIBES', 'time_avail_m', 'ireccd']])
 
 # bys tickerIBES (time_avail_m): gen DownRecomm = ireccd > ireccd[_n-1] & ireccd[_n-1] != .
 # Sort by ticker and time within groups
@@ -35,6 +47,12 @@ df['ireccd_lag'] = df.groupby('tickerIBES')['ireccd'].shift(1)
 # Calculate DownRecomm: current > previous AND previous is not missing
 df['DownRecomm'] = ((df['ireccd'] > df['ireccd_lag']) & (df['ireccd_lag'].notna())).astype(int)
 
+# CHECKPOINT 3: After creating DownRecomm variable
+aapl_data = df[(df['tickerIBES'] == 'AAPL') & (df['time_avail_m'] == pd.Timestamp('1993-11-01'))]
+if not aapl_data.empty:
+    print("CHECKPOINT 3 - After creating DownRecomm variable:")
+    print(aapl_data[['tickerIBES', 'time_avail_m', 'ireccd', 'DownRecomm']])
+
 # add permno
 # Merge with SignalMasterTable to get permno
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
@@ -42,6 +60,12 @@ signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parque
 
 # Merge 1:m tickerIBES time_avail_m, keep only matches
 df = df.merge(signal_master, on=['tickerIBES', 'time_avail_m'], how='inner')
+
+# CHECKPOINT 4: After merge with SignalMasterTable
+data_10001 = df[(df['permno'] == 10001) & (df['time_avail_m'] == pd.Timestamp('1993-11-01'))]
+if not data_10001.empty:
+    print("CHECKPOINT 4 - After merge with SignalMasterTable:")
+    print(data_10001[['permno', 'time_avail_m', 'DownRecomm']])
 
 # Keep only observations where DownRecomm calculation was valid (had a lag)
 df = df[df['ireccd_lag'].notna()]
