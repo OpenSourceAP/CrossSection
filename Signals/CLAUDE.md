@@ -18,6 +18,9 @@ The `pyData/` folder contains the Python data files.
 
 ## Files
 
+Check @~/.claude/openap-instructions.md for full path of `Signals/`
+- If this file does not exist, ask user to create an md file pointing to `Signals/`'s full path.
+
 ```
 Signals/
 ├── Code/                    # Original Stata code
@@ -38,6 +41,7 @@ Signals/
 │   ├── requirements.txt    # Python dependencies
 │   ├── 01_DownloadData.py  # Main download orchestrator
 |   ├── utils/              # Utility functions and persistent testing scripts
+|   ├── Debug/              # Debugging scripts
 ├── pyData/                 # Python data files
 │   ├── Intermediate/       # Processed data from Python (.parquet)
 │   ├── Prep/              # Preprocessed inputs
@@ -48,13 +52,13 @@ Signals/
 ├── Journal/                # Claude's Journal
 ├── DocsForClaude/          # Claude's Docs
 ├── Plan/                   # Claude's Planning docs
-├── Debug/                  # Debugging scripts
 ```
 
 # Coding Environment, Tools, and Docs
 
 ## Working Directory
 - **All Python scripts must be executed from `pyCode/`**
+  - Check @~/.claude/openap-instructions.md for full path of `Signals/pyCode/`
 - **Virtual environment is located at `pyCode/.venv/`**
 - **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
 - Before running any python script, `source .venv/bin/activate`
@@ -74,7 +78,7 @@ pip install -r requirements.txt
 
 ## Tools 
 - Do not use long Bash commands. 
-  - If a Bash command is more then 3 lines, write a py script in `Debug/` that generates test output instead.
+  - If a Bash command is more then 3 lines, write a py script in `pyCode/Debug/` that generates test output instead.
   - This ensures that the permissions are correct and avoids unneeded user intervention.
 
 ## Docs
@@ -121,7 +125,7 @@ pip install -r requirements.txt
 
 ## **Write Test py Scripts**
 - **WRONG**: Run a long Bash command that to generate test output.
-- **RIGHT**: Write a py script in `Debug/` that generates test output.
+- **RIGHT**: Write a py script in `pyCode/Debug/` that generates test output.
 
 # Debugging Philosophy
 
@@ -155,7 +159,7 @@ pip install -r requirements.txt
 
 ## **Write Debugging py scripts**
 - **WRONG**: Run a long bash command that to generate test output.
-- **RIGHT**: Write a py script in `Debug/` that generates test output.
+- **RIGHT**: Write a py script in `pyCode/Debug/` that generates test output.
 
 
 # Interaction 
@@ -182,7 +186,7 @@ pip install -r requirements.txt
 - When you are trying to fix a bug or compilation error or any other issue, YOU MUST NEVER throw away the old implementation and rewrite without expliict permission from the user. If you are going to do this, YOU MUST STOP and get explicit permission from the user.
 - NEVER name things as 'improved' or 'new' or 'enhanced', etc. Code naming should be evergreen. What is new today will be "old" someday.
 - When creating final versions of translated code files, do NOT create multiple versions with endings like "_fixed". Keep a 1-to-1 matching between original and translated.
-- When debugging, if you create code to debug, place it in Debug/ and no where else.
+- When debugging, if you create code to debug, place it in `pyCode/Debug/` and no where else.
 - NEVER create "placeholder" data when you are struggling to debug code. If you are instructed to debug code and are having a hard time, let me know and keep trying. Creating "placeholder" data is unacceptable.
 
 # Getting help
