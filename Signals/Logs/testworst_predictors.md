@@ -1,6 +1,6 @@
 # Worst Performing Predictors Report
 
-**Generated**: 2025-08-13 17:48:31
+**Generated**: 2025-08-14 12:28:27
 
 This report focuses on the 20 worst predictors by Superset and Precision1 metrics.
 
@@ -8,21 +8,21 @@ This report focuses on the 20 worst predictors by Superset and Precision1 metric
 
 Predictors with highest superset failure rates (Python missing the most Stata observations):
 
-- **RDAbility**
-  - Script: RDAbility
+- **TrendFactor**
+  - Script: TrendFactor
   - Python CSV: yes
-  - Superset: no (1.43%) ❌
-  - Precision1: no (10.38%) ❌
-  - Precision2: yes (99th diff 9.4E-01)
+  - Superset: yes (100%)
+  - Precision1: no (97.13%) ❌
+  - Precision2: no (99th diff 1.3E+00) ❌
 
 ## Worst Precision1
 
 Predictors with highest precision1 failure rates (highest percentage of observations with significant differences):
 
-- **RDAbility**
-  - Script: RDAbility
+- **TrendFactor**
+  - Script: TrendFactor
   - Python CSV: yes
-  - Superset: no (1.43%) ❌
-  - Precision1: no (10.38%) ❌
-  - Precision2: yes (99th diff 9.4E-01)
+  - Superset: yes (100%)
+  - Precision1: no (97.13%) ❌
+  - Precision2: no (99th diff 1.3E+00) ❌
 
