@@ -54,3 +54,10 @@ Recomm_ShortInterest:
     Seems like the difference is due to forming quintiles on recommendations, which are integers from 1 to 5, leading to weird tie breaking issues. I checked the Python code and it looks OK. I'm not sure how some of the Stata recommendation quintiles could make sense. 
     
     Also the sum stats look good. Python data has more obs than Stata data, identical summary stats, and the regression model is 0 + 1.000 * stata with an Rsq of 1.000.
+
+PriceDelayTstat:
+  status: accepted
+  reviewed_on: 2025-08-14
+  reviewed_by: ac
+  details: |
+    There was a bug with the Stata code's winsorization. No way to replicate this. There's also a typo in the Stata formula for this. See https://github.com/OpenSourceAP/CrossSection/issues/177
