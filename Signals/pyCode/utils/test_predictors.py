@@ -7,7 +7,7 @@ test_predictors.py
 Usage:
     cd pyCode/
     source .venv/bin/activate
-    python3 utils/test_predictors.py                    # Test all predictors
+    python3 utils/test_predictors.py --all             # Test all predictors
     python3 utils/test_predictors.py --predictors Accruals  # Test specific predictor
 
 Precision Validation (per CLAUDE.md:290-304):
@@ -918,6 +918,27 @@ def write_worst_predictors_log(all_results, test_predictors):
     # Get all predictors that have results (both tested and missing)
     all_predictors_with_results = list(all_results.keys())
     
+    # Identify all failing predictors (any test failed)
+    failing_predictors = []
+    for predictor in all_predictors_with_results:
+        results = all_results.get(predictor, {})
+        # A predictor fails if any test failed (False result)
+        test1_failed = results.get('test_1_passed') == False
+        test2_failed = results.get('test_2_passed') == False  
+        test3_failed = results.get('test_3_passed') == False
+        test4_failed = results.get('test_4_passed') == False
+        
+        if test1_failed or test2_failed or test3_failed or test4_failed:
+            failing_predictors.append(predictor)
+    
+    # Map failing predictors to scripts and create unique sorted list
+    failing_scripts = set()
+    for predictor in failing_predictors:
+        script_name = script_mapping.get(predictor, predictor)
+        failing_scripts.add(script_name)
+    
+    failing_scripts_sorted = sorted(list(failing_scripts))
+    
     # Sort predictors by superset failure (highest failure percentage first)
     def superset_sort_key(predictor):
         results = all_results.get(predictor, {})
@@ -945,9 +966,21 @@ def write_worst_predictors_log(all_results, test_predictors):
     precision1_worst = sorted(all_predictors_with_results, key=precision1_sort_key, reverse=True)[:20]
     
     with open(log_path, 'w') as f:
-        f.write(f"# Worst Performing Predictors Report\n\n")
+        f.write(f"# Scripts That Failed Any Test\n\n")
         f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write(f"This report focuses on the 20 worst predictors by Superset and Precision1 metrics.\n\n")
+        
+        f.write(f"The following scripts failed at least one test (alphabetical order):\n\n")
+        
+        # Write the failing scripts list
+        if failing_scripts_sorted:
+            for script in failing_scripts_sorted:
+                f.write(f"{script} ")
+            f.write("\n")
+        else:
+            f.write("- No scripts failed any tests\n")
+        
+        f.write(f"\n## Detailed Analysis\n\n")
+        f.write(f"This section focuses on the 20 worst predictors by Superset and Precision1 metrics.\n\n")
         
         # Worst Superset section
         f.write("## Worst Superset\n\n")
@@ -977,6 +1010,7 @@ def main():
     parser = argparse.ArgumentParser(description='Validate Python predictor outputs against Stata CSV files')
     parser.add_argument('--predictors', '-p', nargs='+', help='Specific predictors to validate')
     parser.add_argument('--list', '-l', action='store_true', help='List available predictors and exit')
+    parser.add_argument('--all', '-a', action='store_true', help='Test all available predictors')
     
     args = parser.parse_args()
     
@@ -993,6 +1027,10 @@ def main():
         for pred in python_only_csvs:
             print(f"  {pred}")
         return
+    
+    # Check that user provided either --all or --predictors
+    if not args.all and not args.predictors:
+        parser.error("Must specify either --all to test all predictors or --predictors to test specific ones")
     
     # Select predictors to test
     if args.predictors:
@@ -1011,7 +1049,7 @@ def main():
         test_predictors = available_to_test
         include_missing = missing_to_include
         include_python_only = python_only_to_include
-    else:
+    elif args.all:
         test_predictors = available_predictors
         include_missing = missing_python_csvs
         include_python_only = python_only_csvs
