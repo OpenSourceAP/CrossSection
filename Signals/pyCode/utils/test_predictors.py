@@ -51,11 +51,11 @@ import numpy as np
 # Superset test
 TOL_SUPERSET = 1.0  # Max allowed percentage of missing observations (units: percent)
 
-# Precision1
+# Precision1: goal is 0.01, 1
 TOL_DIFF_1 = 0.01  # Standardized difference threshold for imperfect observations
 TOL_OBS_1 = 1  # Max allowed percentage of imperfect observations (units: percent)
 
-# Precision2
+# Precision2: goal is 0.10, 0.999
 TOL_DIFF_2 = 0.10  # Tolerance for Pth percentile standardized difference (Precision2)
 EXTREME_Q = 0.999  # Quantile for extreme deviation (not percentile)
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
@@ -918,26 +918,54 @@ def write_worst_predictors_log(all_results, test_predictors):
     # Get all predictors that have results (both tested and missing)
     all_predictors_with_results = list(all_results.keys())
     
-    # Identify all failing predictors (any test failed)
-    failing_predictors = []
+    # Get predictors to exclude from failing list
+    overrides = load_overrides()
+    accepted_overrides = set(overrides.keys())
+    
+    _, _, python_only_csvs = get_available_predictors()
+    python_only_set = set(python_only_csvs)
+    
+    # Identify failing predictors by category
+    superset_failing_predictors = []
+    other_failing_predictors = []
+    
     for predictor in all_predictors_with_results:
         results = all_results.get(predictor, {})
-        # A predictor fails if any test failed (False result)
+        
+        # Skip predictors without Stata CSVs (Python-only)
+        if predictor in python_only_set:
+            continue
+            
+        # Skip predictors with accepted overrides
+        if predictor in accepted_overrides:
+            continue
+        
+        # Check which tests failed
         test1_failed = results.get('test_1_passed') == False
         test2_failed = results.get('test_2_passed') == False  
         test3_failed = results.get('test_3_passed') == False
         test4_failed = results.get('test_4_passed') == False
         
+        # If any test failed, categorize by superset failure
         if test1_failed or test2_failed or test3_failed or test4_failed:
-            failing_predictors.append(predictor)
+            if test2_failed:
+                superset_failing_predictors.append(predictor)
+            else:
+                other_failing_predictors.append(predictor)
     
-    # Map failing predictors to scripts and create unique sorted list
-    failing_scripts = set()
-    for predictor in failing_predictors:
+    # Map failing predictors to scripts for each category
+    superset_failing_scripts = set()
+    for predictor in superset_failing_predictors:
         script_name = script_mapping.get(predictor, predictor)
-        failing_scripts.add(script_name)
+        superset_failing_scripts.add(script_name)
     
-    failing_scripts_sorted = sorted(list(failing_scripts))
+    other_failing_scripts = set()
+    for predictor in other_failing_predictors:
+        script_name = script_mapping.get(predictor, predictor)
+        other_failing_scripts.add(script_name)
+    
+    superset_failing_scripts_sorted = sorted(list(superset_failing_scripts))
+    other_failing_scripts_sorted = sorted(list(other_failing_scripts))
     
     # Sort predictors by superset failure (highest failure percentage first)
     def superset_sort_key(predictor):
@@ -969,17 +997,25 @@ def write_worst_predictors_log(all_results, test_predictors):
         f.write(f"# Scripts That Failed Any Test\n\n")
         f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
-        f.write(f"The following scripts failed at least one test (alphabetical order):\n\n")
-        
-        # Write the failing scripts list
-        if failing_scripts_sorted:
-            for script in failing_scripts_sorted:
+        # Write scripts that failed superset test
+        f.write(f"**Scripts that failed superset test** (Python missing Stata observations):\n\n")
+        if superset_failing_scripts_sorted:
+            for script in superset_failing_scripts_sorted:
                 f.write(f"{script} ")
-            f.write("\n")
+            f.write("\n\n")
         else:
-            f.write("- No scripts failed any tests\n")
+            f.write("- No scripts failed superset test\n\n")
         
-        f.write(f"\n## Detailed Analysis\n\n")
+        # Write scripts that failed other tests
+        f.write(f"**Scripts that failed other tests** (but passed superset):\n\n")
+        if other_failing_scripts_sorted:
+            for script in other_failing_scripts_sorted:
+                f.write(f"{script} ")
+            f.write("\n\n")
+        else:
+            f.write("- No scripts failed other tests\n\n")
+        
+        f.write(f"## Detailed Analysis\n\n")
         f.write(f"This section focuses on the 20 worst predictors by Superset and Precision1 metrics.\n\n")
         
         # Worst Superset section
