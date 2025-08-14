@@ -46,15 +46,6 @@ PredictedFE:
   details: |
     The standardized deviation is on average 1% with a sd of 7 pp. So it's above the threshold, but it's small. Sumstats and regressions show that the replication works very well. Regressing python on stata shows that the coefficient is 0.9959 and the Rsq is 0.995. This is a complicated file, so it makes sense that there will be some deviations later in the code, which is where PredictedFE is created.
 
-Recomm_ShortInterest:
-  status: accepted
-  reviewed_on: 2025-08-14
-  reviewed_by: ac
-  details: |
-    Seems like the difference is due to forming quintiles on recommendations, which are integers from 1 to 5, leading to weird tie breaking issues. I checked the Python code and it looks OK. I'm not sure how some of the Stata recommendation quintiles could make sense. 
-    
-    Also the sum stats look good. Python data has more obs than Stata data, identical summary stats, and the regression model is 0 + 1.000 * stata with an Rsq of 1.000.
-
 PriceDelayTstat:
   status: accepted
   reviewed_on: 2025-08-14
