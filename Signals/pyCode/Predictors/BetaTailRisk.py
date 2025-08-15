@@ -54,6 +54,16 @@ daily_crsp = daily_crsp.with_columns([
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 ])
 
+# CHECKPOINT 1: Debug data for permno 78050 in Nov 1998 - Feb 1999
+print("CHECKPOINT 1: Daily data for permno 78050 (Nov 1998 - Feb 1999)")
+debug_data = daily_crsp.filter(
+    (pl.col("permno") == 78050) & 
+    (pl.col("time_avail_m") >= pl.date(1998, 11, 1)) &
+    (pl.col("time_avail_m") <= pl.date(1999, 2, 28))
+).sort(["time_avail_m", "time_d"])
+print(debug_data)
+print()
+
 print("Calculating 5th percentile returns by month...")
 # Calculate 5th percentile of returns by month (retp5)
 monthly_p5 = daily_crsp.group_by("time_avail_m").agg([
@@ -62,6 +72,15 @@ monthly_p5 = daily_crsp.group_by("time_avail_m").agg([
 
 print(f"Generated monthly 5th percentiles for {len(monthly_p5):,} months")
 
+# CHECKPOINT 2: Debug retp5 values for Nov 1998 - Feb 1999
+print("CHECKPOINT 2: Monthly 5th percentile values (Nov 1998 - Feb 1999)")
+debug_p5 = monthly_p5.filter(
+    (pl.col("time_avail_m") >= pl.date(1998, 11, 1)) &
+    (pl.col("time_avail_m") <= pl.date(1999, 2, 28))
+).sort("time_avail_m")
+print(debug_p5)
+print()
+
 # Merge back to daily data
 daily_with_p5 = daily_crsp.join(monthly_p5, on="time_avail_m", how="inner")
 
@@ -69,10 +88,33 @@ print("Filtering to tail observations (bottom 5%) and calculating tail excess re
 # Keep only observations where ret <= retp5 (tail observations)
 tail_data = daily_with_p5.filter(
     pl.col("ret") <= pl.col("retp5")
-).with_columns([
-    # Calculate tail excess return: tailex = log(ret/retp5)
+)
+
+# CHECKPOINT 3: Count tail observations for permno 78050
+print("CHECKPOINT 3: Tail observations for permno 78050 (Nov 1998 - Feb 1999)")
+debug_tail_count = tail_data.filter(
+    (pl.col("permno") == 78050) & 
+    (pl.col("time_avail_m") >= pl.date(1998, 11, 1)) &
+    (pl.col("time_avail_m") <= pl.date(1999, 2, 28))
+)
+print(f"Count of tail observations: {len(debug_tail_count)}")
+print(debug_tail_count.sort(["time_avail_m", "time_d"]))
+print()
+
+# Calculate tail excess return: tailex = log(ret/retp5)
+tail_data = tail_data.with_columns([
     (pl.col("ret") / pl.col("retp5")).log().alias("tailex")
 ])
+
+# CHECKPOINT 4: Show tailex calculations for permno 78050
+print("CHECKPOINT 4: Tailex calculations for permno 78050 (Nov 1998 - Feb 1999)")
+debug_tailex = tail_data.filter(
+    (pl.col("permno") == 78050) & 
+    (pl.col("time_avail_m") >= pl.date(1998, 11, 1)) &
+    (pl.col("time_avail_m") <= pl.date(1999, 2, 28))
+).sort(["time_avail_m", "time_d"])
+print(debug_tailex)
+print()
 
 print(f"Filtered to {len(tail_data):,} tail observations")
 
@@ -99,6 +141,16 @@ print(f"Loaded monthly CRSP: {len(monthly_crsp):,} monthly observations")
 print("Merging with tail risk factor...")
 df = monthly_crsp.join(monthly_tailrisk, on="time_avail_m", how="left").sort(["permno", "time_avail_m"])
 print(f"After merging: {len(df):,} observations")
+
+# CHECKPOINT 5: Show merged data for permno 78050 (1990-2000)
+print("CHECKPOINT 5: Merged monthly data for permno 78050 (1990-2000)")
+debug_merged = df.filter(
+    (pl.col("permno") == 78050) & 
+    (pl.col("time_avail_m") >= pl.date(1990, 1, 1)) &
+    (pl.col("time_avail_m") <= pl.date(2000, 12, 31))
+).sort("time_avail_m")
+print(debug_merged)
+print()
 
 # Convert time_avail_m to integer for window-based asreg (matching Stata's mofd function)
 # Stata time starts from Jan 1960 = 0
@@ -133,6 +185,16 @@ df_final = df_with_beta.filter(
     pl.col("BetaTailRisk").is_not_null() & 
     (pl.col("shrcd") <= 11)
 ).select(["permno", "time_avail_m", "BetaTailRisk"])
+
+# CHECKPOINT 6: Show final BetaTailRisk values for permno 78050 (1998-2000)
+print("CHECKPOINT 6: Final BetaTailRisk values for permno 78050 (1998-2000)")
+debug_final = df_with_beta.filter(
+    (pl.col("permno") == 78050) & 
+    (pl.col("time_avail_m") >= pl.date(1998, 1, 1)) &
+    (pl.col("time_avail_m") <= pl.date(2000, 12, 31))
+).select(["permno", "time_avail_m", "ret", "tailex", "BetaTailRisk"]).sort("time_avail_m")
+print(debug_final)
+print()
 
 print(f"Generated BetaTailRisk values: {len(df_final):,} observations")
 
