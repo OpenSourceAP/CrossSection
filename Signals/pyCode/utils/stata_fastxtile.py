@@ -134,10 +134,12 @@ def _fastxtile_core(series, n=5):
         return result
     
     try:
-        # PRIMARY METHOD: Use successful pd.qcut pattern (proven in MomRev, NetDebtPrice)
+        # PRIMARY METHOD: Use rank-based approach that always creates exactly n categories
         result = pd.Series(np.nan, index=series.index, dtype='float64')
-        qcut_result = pd.qcut(valid_series, q=n, labels=False, duplicates='drop') + 1
-        result[valid_mask] = qcut_result
+        ranks = valid_series.rank(method='average')
+        quantiles = np.floor((ranks - 1) / len(valid_series) * n).astype(int) + 1
+        quantiles = np.clip(quantiles, 1, n)  # Ensure in range [1, n]
+        result[valid_mask] = quantiles
         return result
         
     except ValueError as e:

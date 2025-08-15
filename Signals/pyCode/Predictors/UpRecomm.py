@@ -67,8 +67,7 @@ if not data_10001.empty:
     print("CHECKPOINT 4 - After merge with SignalMasterTable:")
     print(data_10001[['permno', 'time_avail_m', 'UpRecomm']])
 
-# Keep only observations where UpRecomm calculation was valid (had a lag)
-df = df[df['ireccd_lag'].notna()]
+# Note: Removed aggressive ireccd_lag filter - Stata keeps missing lag observations with UpRecomm=0
 
 # Keep only required columns for final output
 result = df[['permno', 'time_avail_m', 'UpRecomm']].copy()

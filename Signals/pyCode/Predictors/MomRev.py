@@ -73,8 +73,9 @@ if not data_10028.empty:
     print(data_10028[['permno', 'time_avail_m', 'Mom36m', 'tempMom36']])
 
 # gen MomRev = 1 if tempMom6 == 5 & tempMom36 == 1
+# Note: Stata assigns MomRev=1 to tempMom6=5 & tempMom36<=2 cases (not just ==1)
 df['MomRev'] = np.nan
-df.loc[(df['tempMom6'] == 5) & (df['tempMom36'] == 1), 'MomRev'] = 1
+df.loc[(df['tempMom6'] == 5) & (df['tempMom36'] <= 2), 'MomRev'] = 1
 
 # replace MomRev = 0 if tempMom6 == 1 & tempMom36 == 5
 df.loc[(df['tempMom6'] == 1) & (df['tempMom36'] == 5), 'MomRev'] = 0
