@@ -109,7 +109,7 @@ df['SD'] = df[temp_cols].std(axis=1)
 
 # Stata: replace EarningsSurprise = EarningsSurprise/SD
 # Handle division by zero and very small SD values to prevent astronomical results
-MIN_SD_THRESHOLD = 1e-4
+MIN_SD_THRESHOLD = 1e-8
 df['EarningsSurprise'] = np.where(
     (df['SD'] == 0) | df['SD'].isna() | (abs(df['SD']) < MIN_SD_THRESHOLD), 
     np.nan, 
