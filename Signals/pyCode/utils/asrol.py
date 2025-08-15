@@ -81,9 +81,11 @@ def _simple_rolling(
         'mean': lambda col: col.rolling_mean(window_size=window, min_periods=min_periods),
         'sum': lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
         'std': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
-        'count': lambda col: col.rolling_count(window_size=window, min_periods=min_periods),
+        'sd': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),  # Alias for std
+        'count': lambda col: col.is_not_null().cast(pl.Int32).rolling_sum(window_size=window, min_periods=min_periods),
         'min': lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
-        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods)
+        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
+        'first': lambda col: col.first()
     }
     
     if stat not in rolling_funcs:
@@ -110,17 +112,27 @@ def _stata_rolling(
     """Stata-compatible rolling with consecutive period detection"""
     
     # Add gap detection columns
-    df_with_gaps = df_pl.with_columns([
-        # Calculate days difference within groups
-        pl.col(time_col).diff().dt.total_days().over(group_col).alias("_days_diff"),
-        # Create group counter for consecutive segments
-        pl.lit(0).alias("_segment_id")
-    ])
+    # Check if time column is integer (like fyear, time_temp) or datetime
+    time_dtype = df_pl[time_col].dtype
+    if time_dtype in [pl.Int16, pl.Int32, pl.Int64, pl.UInt16, pl.UInt32, pl.UInt64]:
+        # Integer time column - use simple difference for gap detection
+        df_with_gaps = df_pl.with_columns([
+            pl.col(time_col).diff().over(group_col).alias("_days_diff"),
+            pl.lit(0).alias("_segment_id")
+        ])
+        gap_threshold = 1  # Gap if difference > 1 for integer time
+    else:
+        # DateTime time column - use days difference
+        df_with_gaps = df_pl.with_columns([
+            pl.col(time_col).diff().dt.total_days().over(group_col).alias("_days_diff"),
+            pl.lit(0).alias("_segment_id")
+        ])
+        gap_threshold = 90  # Gap if difference > 90 days for datetime
     
-    # Identify breaks (gaps > 90 days) and create segment IDs
+    # Identify breaks and create segment IDs
     df_with_gaps = df_with_gaps.with_columns([
-        # Mark where gaps occur (diff > 90 days)
-        pl.when(pl.col("_days_diff") > 90)
+        # Mark where gaps occur using dynamic threshold
+        pl.when(pl.col("_days_diff") > gap_threshold)
         .then(1)
         .otherwise(0)
         .alias("_is_break")
@@ -145,9 +157,11 @@ def _stata_rolling(
         'mean': lambda col: col.rolling_mean(window_size=window, min_periods=min_periods),
         'sum': lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
         'std': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
-        'count': lambda col: col.rolling_count(window_size=window, min_periods=min_periods),
+        'sd': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),  # Alias for std
+        'count': lambda col: col.is_not_null().cast(pl.Int32).rolling_sum(window_size=window, min_periods=min_periods),
         'min': lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
-        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods)
+        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
+        'first': lambda col: col.first()
     }
     
     if stat not in rolling_funcs:

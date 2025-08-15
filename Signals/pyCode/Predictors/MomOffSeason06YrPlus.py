@@ -24,7 +24,7 @@ import sys
 import os
 
 # Add parent directory to path for any shared utilities
-sys.path.append('..')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.asrol import asrol
 
 def main():
