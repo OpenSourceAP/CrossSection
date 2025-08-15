@@ -97,7 +97,7 @@ if not data_10006.empty:
     print("CHECKPOINT 2 - After filtering sicCRSP:")
     print(data_10006[['permno', 'time_avail_m', 'sicCRSP', 'ceq']])
     
-df = df[df['ceq'] >= 0]
+df = df[~(df['ceq'] < 0)]
 # CHECKPOINT 3: After filtering ceq < 0
 data_10006 = df[(df['permno'] == 10006) & (df['time_avail_m'] == 198306)]
 if not data_10006.empty:
