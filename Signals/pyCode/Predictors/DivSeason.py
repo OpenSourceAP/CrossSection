@@ -13,6 +13,7 @@ import os
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.data_utils import asrol
+from utils.stata_ineq import stata_ineq_pd
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
@@ -223,21 +224,36 @@ for pn in [10001, 10006, 11406, 12473]:
 # Keep if cd3 < 6 (Tab 2 note) - exact match to Stata logic
 df = df[df['cd3'] < 6]
 
-# CHECKPOINT 11: Check after keeping only cd3 < 6
-print("\n=== CHECKPOINT 11: Check after keeping only cd3 < 6 ===")
+# CRITICAL FIX: Filter to only include observations from the first dividend month onward
+# This must be done BEFORE creating lags to match Stata's behavior
+first_div_dates = df[df['divamt'] > 0].groupby('permno')['time_avail_m'].min().reset_index()
+first_div_dates.columns = ['permno', 'first_div_date']
+
+# Merge to get first dividend date for each permno-month
+df = df.merge(first_div_dates, on='permno', how='left')
+
+# Only keep observations from first dividend date onward (not before)
+# If no dividends ever observed, keep all (first_div_date will be NaN)
+df = df[(df['time_avail_m'] >= df['first_div_date']) | df['first_div_date'].isna()]
+
+# Drop the helper column
+df = df.drop('first_div_date', axis=1)
+
+# CHECKPOINT 11: Check after keeping only cd3 < 6 and filtering by first dividend date
+print("\n=== CHECKPOINT 11: Check after keeping only cd3 < 6 and filtering by first dividend date ===")
 for pn in [10001, 10006, 11406, 12473]:
     print(f"\n--- Permno {pn} ---")
     total_count = len(df[df['permno'] == pn])
-    print(f"Total observations for permno {pn} after keeping cd3 < 6: {total_count}")
+    print(f"Total observations for permno {pn} after filtering: {total_count}")
     
     test_data = df[(df['permno'] == pn) & 
                    (df['time_avail_m'] >= pd.Timestamp('1986-01-01')) & 
                    (df['time_avail_m'] <= pd.Timestamp('1987-12-01'))]
     if not test_data.empty:
-        print(f"permno {pn} data after keeping cd3 < 6:")
+        print(f"permno {pn} data after filtering:")
         print(test_data[['permno', 'time_avail_m', 'cd3', 'divamt', 'divpaid']].to_string(index=False))
     else:
-        print(f"No data found for permno {pn} after keeping cd3 < 6")
+        print(f"No data found for permno {pn} after filtering")
 
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
@@ -289,20 +305,23 @@ for lag in [2, 5, 8, 11]:
 # temp3: quarterly, unknown, or missing frequency with expected dividend timing
 # cd3 == 3 (quarterly) | cd3 == 0 (unknown) | cd3 == 1 (annual treated as quarterly?)
 # with dividends 2, 5, 8, or 11 months ago
-# NOTE: In Stata, missing lag values behave as TRUE in boolean OR operations
+# In Stata: l2.divpaid | l5.divpaid | l8.divpaid | l11.divpaid
+# This is TRUE if any lag is 1 OR if any lag is missing (Stata treats missing as positive infinity)
 df['temp3'] = ((df['cd3'].isin([0, 1, 3])) & 
-               ((df['divpaid_lag2'] == 1) | (df['divpaid_lag5'] == 1) | 
-                (df['divpaid_lag8'] == 1) | (df['divpaid_lag11'] == 1) |
-                (df['divpaid_lag2'].isna()) | (df['divpaid_lag5'].isna()) |
-                (df['divpaid_lag8'].isna()) | (df['divpaid_lag11'].isna()))).astype(int)
+               (stata_ineq_pd(df['divpaid_lag2'], ">", 0) | 
+                stata_ineq_pd(df['divpaid_lag5'], ">", 0) | 
+                stata_ineq_pd(df['divpaid_lag8'], ">", 0) | 
+                stata_ineq_pd(df['divpaid_lag11'], ">", 0))).astype(int)
 
 # temp4: semi-annual (cd3 == 4) with dividends 5 or 11 months ago
+# In Stata: l5.divpaid | l11.divpaid
 df['temp4'] = ((df['cd3'] == 4) & 
-               ((df['divpaid_lag5'] == 1) | (df['divpaid_lag11'] == 1) |
-                (df['divpaid_lag5'].isna()) | (df['divpaid_lag11'].isna()))).astype(int)
+               (stata_ineq_pd(df['divpaid_lag5'], ">", 0) | 
+                stata_ineq_pd(df['divpaid_lag11'], ">", 0))).astype(int)
 
 # temp5: annual (cd3 == 5) with dividend 11 months ago
-df['temp5'] = ((df['cd3'] == 5) & ((df['divpaid_lag11'] == 1) | (df['divpaid_lag11'].isna()))).astype(int)
+# In Stata: l11.divpaid
+df['temp5'] = ((df['cd3'] == 5) & stata_ineq_pd(df['divpaid_lag11'], ">", 0)).astype(int)
 
 # CHECKPOINT 14: Check temp variables for prediction logic
 print("\n=== CHECKPOINT 14: Check temp variables for prediction logic ===")
@@ -349,23 +368,6 @@ print(year_counts.head(10))
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'DivSeason']].copy()
 df_final = df_final.dropna(subset=['DivSeason'])
-
-# POTENTIAL FIX: Filter to only include observations from the first dividend month onward for each permno
-# This might match Stata's implicit filtering behavior
-# Check if this is needed by looking at first dividend dates
-first_div_dates = df[df['divamt'] > 0].groupby('permno')['time_avail_m'].min().reset_index()
-first_div_dates.columns = ['permno', 'first_div_date']
-
-# Merge to get first dividend date for each permno-month
-df_final = df_final.merge(first_div_dates, on='permno', how='left')
-
-# Only keep observations from first dividend date onward (not before)
-# If no dividends ever observed, keep all (first_div_date will be NaN)
-# This should exclude 198601 and 198602 for permno 10001 since first dividend is 198603
-df_final = df_final[(df_final['time_avail_m'] >= df_final['first_div_date']) | df_final['first_div_date'].isna()]
-
-# Drop the helper column
-df_final = df_final.drop('first_div_date', axis=1)
 
 # Convert time_avail_m to yyyymm format like other predictors
 df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
