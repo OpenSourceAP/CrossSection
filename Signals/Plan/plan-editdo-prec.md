@@ -28,3 +28,27 @@ The goal is *not* to fix the problem, just yet. First, we're just getting helpfu
 - `time_avail_m` is a monthly date. To filter, use `if time_avail_m == tm(2007m4)`
   - Do NOT use `if time_avail_m >= 200704`
 - `permno` is an integer. To filter, use `if permno == 10051`
+
+## Progress Tracking
+
+# Done 
+BetaTailRisk ChForecastAccrual CredRatDG DivSeason EarnSupBig Herf HerfAsset IndMom IndRetBig Investment 
+
+# Group 2
+
+MRreversal MS Mom12mOffSeason MomOffSeason MomOffSeason06YrPlus MomOffSeason11YrPlus MomOffSeason16YrPlus MomVol NumEarnIncrease 
+
+# Group 3
+
+PS Tax TrendFactor VolumeTrend realestate retConglomerate 
+
+# Group 4
+
+ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F 
+ZZ1_OrgCap_OrgCapNoAdj 
+ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility 
+ZZ1_ResidualMomentum6m_ResidualMomentum 
+ZZ2_AbnormalAccruals_AbnormalAccrualsPercent 
+ZZ2_BetaFP 
+ZZ2_IdioVolAHT 
+ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat 

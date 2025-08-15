@@ -111,15 +111,16 @@ if len(test_obs_2) > 0:
 
 # Stata: gcollapse (mean) ret, by(tempFF48 time_avail_m)
 # Calculate mean returns by industry-month for large companies only
-industry_returns = df_big.groupby(['tempFF48', 'yyyymm'])['ret'].mean().reset_index()
+# Use time_avail_m to match Stata exactly
+industry_returns = df_big.groupby(['tempFF48', 'time_avail_m'])['ret'].mean().reset_index()
 industry_returns = industry_returns.rename(columns={'ret': 'IndRetBig'})
 
 # CHECKPOINT 7: After industry return calculation
 print(f"CHECKPOINT 7: Industry returns calculated for {len(industry_returns)} industry-month groups")
-test_returns = industry_returns[industry_returns['yyyymm'] == 200704]
+test_returns = industry_returns[industry_returns['time_avail_m'] == pd.Timestamp('2007-04-01')]
 print(f"Industry returns for 2007m4:")
 if len(test_returns) > 0:
-    print(test_returns[['tempFF48', 'yyyymm', 'IndRetBig']].to_string())
+    print(test_returns[['tempFF48', 'time_avail_m', 'IndRetBig']].to_string())
 
 # Stata: save "$pathtemp/temp",replace
 # Stata: restore
@@ -139,7 +140,7 @@ if len(test_obs_2) > 0:
     print(test_obs_2[['permno', 'time_avail_m', 'tempRK']].to_string())
 
 # Stata: merge m:1 tempFF48 time_avail_m using "$pathtemp/temp", nogenerate
-df = df.merge(industry_returns, on=['tempFF48', 'yyyymm'], how='left')
+df = df.merge(industry_returns, on=['tempFF48', 'time_avail_m'], how='left')
 
 # CHECKPOINT 9: After merge with industry returns
 print(f"CHECKPOINT 9: After merge, {len(df)} observations")
