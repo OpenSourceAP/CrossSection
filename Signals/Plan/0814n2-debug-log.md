@@ -13,6 +13,9 @@ Plan/0814n1-editdo-superset.md describes how we added do file log output to help
 - Think of up to three hypotheses for the problems and test them
     - Check `DocsForClaude/traps.md` for common pitfalls 
     - Write py scripts in `Debug/` to test the hypotheses
+      - Do NOT edit the `py` script for the predictor in this step.
+    - If your hypothesis is that the underlying data is different, check the underlying datasets that are being imported in the `do` file and the `py` script.
 - Attempt to fix the problem in the `py` script
+    - Once your hypothesis is confirmed, edit the `py` script to fix the problem
     - Test with `python3 utils/test_predictors.py --predictors [predictor_name]`
     - Iterate
