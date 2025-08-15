@@ -56,6 +56,25 @@ def main():
     # Set first observation per gvkey to missing
     comp_df.loc[comp_df.groupby('gvkey').cumcount() == 0, 'credrat_dwn'] = np.nan
     
+    # CHECKPOINT 1: Check credrat_dwn creation for problem observations
+    print("\n=== CHECKPOINT 1: credrat_dwn creation ===")
+    problem_gvkey_1013 = comp_df[
+        (comp_df['gvkey'] == 1013) & 
+        (comp_df['time_avail_m'].dt.year.between(1983, 1984))
+    ][['gvkey', 'time_avail_m', 'credrat', 'l_credrat', 'credrat_dwn']]
+    if not problem_gvkey_1013.empty:
+        print("Problem observations for gvkey=1013, years 1983-1984:")
+        print(problem_gvkey_1013.to_string())
+    
+    problem_gvkey_1175 = comp_df[
+        (comp_df['gvkey'] == 1175) & 
+        (comp_df['time_avail_m'].dt.year == 2024) & 
+        (comp_df['time_avail_m'].dt.month == 12)
+    ][['gvkey', 'time_avail_m', 'credrat', 'l_credrat', 'credrat_dwn']]
+    if not problem_gvkey_1175.empty:
+        print("Problem observations for gvkey=1175, 2024m12:")
+        print(problem_gvkey_1175.to_string())
+    
     # Keep only required columns
     comp_df = comp_df[['gvkey', 'time_avail_m', 'credrat_dwn']].copy()
     
@@ -112,6 +131,25 @@ def main():
     # Use CIQ if Compustat data is missing
     df['credrat_dwn'] = df['credrat_dwn'].fillna(df['ciq_dg'])
     
+    # CHECKPOINT 2: Check credrat_dwn after CIQ merge for problem observations
+    print("\n=== CHECKPOINT 2: credrat_dwn after CIQ merge ===")
+    problem_permno_10006 = df[
+        (df['permno'] == 10006) & 
+        (df['time_avail_m'].dt.year.between(1983, 1984))
+    ][['permno', 'gvkey', 'time_avail_m', 'credrat_dwn', 'ciq_dg']]
+    if not problem_permno_10006.empty:
+        print("Problem observations for permno=10006, years 1983-1984:")
+        print(problem_permno_10006.to_string())
+    
+    problem_permno_11990 = df[
+        (df['permno'] == 11990) & 
+        (df['time_avail_m'].dt.year == 2024) & 
+        (df['time_avail_m'].dt.month == 12)
+    ][['permno', 'gvkey', 'time_avail_m', 'credrat_dwn', 'ciq_dg']]
+    if not problem_permno_11990.empty:
+        print("Problem observations for permno=11990, 2024m12:")
+        print(problem_permno_11990.to_string())
+    
     print(f"After merging: {len(df):,} observations")
     
     # SIGNAL CONSTRUCTION
@@ -140,11 +178,54 @@ def main():
     
     df.loc[downgrade_mask, 'CredRatDG'] = 1
     
+    # CHECKPOINT 3: Check CredRatDG signal creation with lags for problem observations
+    print("\n=== CHECKPOINT 3: CredRatDG signal creation with lags ===")
+    lag_cols = ['credrat_dwn'] + [f'l{i}_credrat_dwn' for i in range(1, 6)]
+    display_cols = ['permno', 'time_avail_m'] + lag_cols + ['CredRatDG']
+    
+    problem_permno_10006_lags = df[
+        (df['permno'] == 10006) & 
+        (df['time_avail_m'].dt.year.between(1983, 1984))
+    ][display_cols]
+    if not problem_permno_10006_lags.empty:
+        print("Problem observations for permno=10006, years 1983-1984 (with lags):")
+        print(problem_permno_10006_lags.to_string())
+    
+    problem_permno_11990_lags = df[
+        (df['permno'] == 11990) & 
+        (df['time_avail_m'].dt.year == 2024) & 
+        (df['time_avail_m'].dt.month == 12)
+    ][display_cols]
+    if not problem_permno_11990_lags.empty:
+        print("Problem observations for permno=11990, 2024m12 (with lags):")
+        print(problem_permno_11990_lags.to_string())
+    
     # Exclude data before 1979
     # gen year = yofd(dofm(time_avail_m))
     # replace CredRatDG = . if year < 1979
     df['year'] = df['time_avail_m'].dt.year
     df.loc[df['year'] < 1979, 'CredRatDG'] = np.nan
+    
+    # CHECKPOINT 4: Check final CredRatDG signal after year filter for problem observations
+    print("\n=== CHECKPOINT 4: Final CredRatDG signal after year filter ===")
+    final_cols = ['permno', 'time_avail_m', 'year', 'CredRatDG']
+    
+    problem_permno_10006_final = df[
+        (df['permno'] == 10006) & 
+        (df['time_avail_m'].dt.year.between(1983, 1984))
+    ][final_cols]
+    if not problem_permno_10006_final.empty:
+        print("Problem observations for permno=10006, years 1983-1984 (final):")
+        print(problem_permno_10006_final.to_string())
+    
+    problem_permno_11990_final = df[
+        (df['permno'] == 11990) & 
+        (df['time_avail_m'].dt.year == 2024) & 
+        (df['time_avail_m'].dt.month == 12)
+    ][final_cols]
+    if not problem_permno_11990_final.empty:
+        print("Problem observations for permno=11990, 2024m12 (final):")
+        print(problem_permno_11990_final.to_string())
     
     print(f"Generated CredRatDG values for {df['CredRatDG'].notna().sum():,} observations")
     

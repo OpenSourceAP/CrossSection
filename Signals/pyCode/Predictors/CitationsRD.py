@@ -89,7 +89,21 @@ print(f"After creating lags: {df.shape}")
 # Form portfolios only in June AFTER creating lags
 print("Filtering to June observations...")
 df = df[df['time_avail_m'] >= '1975-01']  # >= ym(1975,1)
+
+# CHECKPOINT 1: Check observations before June filter
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 1: Before June filter")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'year', 'gvkey', 'ncitscale']])
+
 df = df[df['time_avail_m'].dt.month == 6]  # month(dofm(time_avail_m)) == 6 (June)
+
+# CHECKPOINT 2: Check observations after June filter  
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 2: After June filter")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'year', 'gvkey', 'ncitscale']])
+
 print(f"After June filter: {df.shape}")
 
 # Calendar-based rolling sums to match Stata's asrol behavior exactly
@@ -127,9 +141,21 @@ df['sum_ncit'] = df.groupby('permno').apply(
 df['tempCitationsRD'] = np.where(df['sum_xrd'] > 0, df['sum_ncit'] / df['sum_xrd'], np.nan)
 
 # Filter
+# CHECKPOINT 3: Check observations before gvkey filter
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 3: Before gvkey filter")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'gvkey', 'sum_xrd', 'sum_ncit', 'tempCitationsRD']])
+
 # bysort gvkey (time_avail_m): drop if _n <= 2
 df = df.sort_values(['gvkey', 'time_avail_m'])
 df = df.groupby('gvkey').apply(lambda x: x.iloc[2:]).reset_index(drop=True)
+
+# CHECKPOINT 4: Check observations after gvkey filter
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 4: After gvkey filter")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'gvkey', 'sum_xrd', 'sum_ncit', 'tempCitationsRD']])
 
 # Drop financial firms
 df = df[~((df['sicCRSP'] >= 6000) & (df['sicCRSP'] <= 6999))]
@@ -165,6 +191,18 @@ def calculate_size_breakpoints(group):
 
 df = df.groupby('time_avail_m').apply(calculate_size_breakpoints).reset_index(drop=True)
 
+# CHECKPOINT 5: Check size categories for problematic observation
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 5: Size categories")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'mve_c', 'sizecat']])
+    # Show NYSE median for comparison
+    june_1983 = df[df['time_avail_m'] == '1983-06']
+    nyse_stocks = june_1983[june_1983['exchcd'] == 1]
+    if len(nyse_stocks) > 0:
+        print(f"NYSE median mve_c for 1983-06: {nyse_stocks['mve_c'].median()}")
+        print(f"NYSE mve_c percentiles: {nyse_stocks['mve_c'].describe()}")
+
 # Main category using fastxtile logic exactly like Stata
 print("Creating tercile categories...")
 
@@ -172,14 +210,32 @@ print("Creating tercile categories...")
 # fastxtile creates equal-sized groups based on VALID (non-missing) observations
 df['maincat'] = fastxtile(df, 'tempCitationsRD', by='time_avail_m', n=3)
 
+# CHECKPOINT 6: Check fastxtile results and quantiles
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 6: Fastxtile results")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'tempCitationsRD', 'sizecat', 'maincat']])
+    # Show distribution for June 1983
+    june_1983 = df[df['time_avail_m'] == '1983-06']
+    print(f"tempCitationsRD summary for 1983-06:")
+    print(june_1983['tempCitationsRD'].describe())
+    print(f"maincat distribution:")
+    print(june_1983.groupby('maincat')['tempCitationsRD'].agg(['min', 'max', 'count']))
+
 # Create CitationsRD signal: 1 if small & high, 0 if small & low  
 df['CitationsRD'] = np.nan
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 3), 'CitationsRD'] = 1
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 1), 'CitationsRD'] = 0
 
-# Also assign CitationsRD = 0 to small companies with middle tercile
-# This handles companies with missing/low patent data that don't reach high tercile
-df.loc[(df['sizecat'] == 1) & (df['maincat'] == 2), 'CitationsRD'] = 0
+# CHECKPOINT 7: Check final signal assignment
+debug_mask = (df['permno'] == 10006) & (df['time_avail_m'] == '1983-06')
+if debug_mask.any():
+    print("* CHECKPOINT 7: Final signal assignment")
+    print(df.loc[debug_mask, ['permno', 'time_avail_m', 'sizecat', 'maincat', 'CitationsRD']])
+    # Show signal distribution by size category for June 1983
+    june_1983 = df[df['time_avail_m'] == '1983-06']
+    print(f"CitationsRD by sizecat for 1983-06:")
+    print(june_1983.groupby('sizecat')['CitationsRD'].agg(['mean', 'count']))
 
 # OPTIMIZED: Expand back to monthly using more efficient approach
 print("Expanding to monthly observations...")

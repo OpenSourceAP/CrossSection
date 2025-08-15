@@ -9,6 +9,10 @@ xtset gvkey time_avail_m
 gen credrat_dwn = 1 if credrat - l.credrat < 0
 bys gvkey: replace credrat_dwn = . if _n == 1
 
+* CHECKPOINT 1: Check credrat_dwn creation for problem observations
+list gvkey time_avail_m credrat l.credrat credrat_dwn if gvkey == 1013 & inrange(year(dofm(time_avail_m)), 1983, 1984)
+list gvkey time_avail_m credrat l.credrat credrat_dwn if gvkey == 1175 & time_avail_m == tm(2024m12)
+
 save "$pathtemp/temp_comp_rat", replace
 
 // Define signal for CIQ SP ratings data
@@ -32,14 +36,26 @@ merge 1:1 gvkey time_avail_m using "$pathtemp/temp_ciq_rat", keep(master match) 
 * use ciq of compustat data is missing
 replace credrat_dwn = ciq_dg if credrat_dwn == .
 
+* CHECKPOINT 2: Check credrat_dwn after CIQ merge for problem observations  
+list permno gvkey time_avail_m credrat_dwn ciq_dg if permno == 10006 & inrange(year(dofm(time_avail_m)), 1983, 1984)
+list permno gvkey time_avail_m credrat_dwn ciq_dg if permno == 11990 & time_avail_m == tm(2024m12)
+
 // SIGNAL CONSTRUCTION
 xtset permno time_avail_m
 
 gen CredRatDG = 0
-replace CredRatDG = 1 if (credrat_dwn == 1 | l.credrat_dwn == 1 | l2.credrat_dwn == 1 | l3.credrat_dwn == 1 | l4.credrat_dwn == 1 | l5.credrat_dwn == 1  ) 
+replace CredRatDG = 1 if (credrat_dwn == 1 | l.credrat_dwn == 1 | l2.credrat_dwn == 1 | l3.credrat_dwn == 1 | l4.credrat_dwn == 1 | l5.credrat_dwn == 1  )
+
+* CHECKPOINT 3: Check CredRatDG signal creation with lags for problem observations
+list permno time_avail_m credrat_dwn l.credrat_dwn l2.credrat_dwn l3.credrat_dwn l4.credrat_dwn l5.credrat_dwn CredRatDG if permno == 10006 & inrange(year(dofm(time_avail_m)), 1983, 1984)
+list permno time_avail_m credrat_dwn l.credrat_dwn l2.credrat_dwn l3.credrat_dwn l4.credrat_dwn l5.credrat_dwn CredRatDG if permno == 11990 & time_avail_m == tm(2024m12) 
 
 gen year = yofd(dofm(time_avail_m))
 replace CredRatDG = . if year < 1979 // No data before that
+
+* CHECKPOINT 4: Check final CredRatDG signal after year filter for problem observations
+list permno time_avail_m year CredRatDG if permno == 10006 & inrange(year(dofm(time_avail_m)), 1983, 1984)
+list permno time_avail_m year CredRatDG if permno == 11990 & time_avail_m == tm(2024m12)
 
 label var CredRatDG "Credit Rating Downgrade"
 
