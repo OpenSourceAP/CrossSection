@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.asrol import asrol
 
 print("=" * 80)
 print("🏗️  Recomm_ShortInterest.py")
@@ -173,23 +174,22 @@ print("🧮 Computing asrol rolling first of ireccd over 12 observations...")
 # stat(first) = most recent non-null value within 12 observations (current + previous 11)
 ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
 
-# Implement rolling first using efficient polars operations
-ibes_filled = ibes_filled.with_columns([
-    pl.coalesce([
-        pl.col("ireccd"),  # Current observation (most recent)
-        pl.col("ireccd").shift(1).over("tempID"),   # 1 period back
-        pl.col("ireccd").shift(2).over("tempID"),   # 2 periods back  
-        pl.col("ireccd").shift(3).over("tempID"),   # 3 periods back
-        pl.col("ireccd").shift(4).over("tempID"),   # 4 periods back
-        pl.col("ireccd").shift(5).over("tempID"),   # 5 periods back
-        pl.col("ireccd").shift(6).over("tempID"),   # 6 periods back
-        pl.col("ireccd").shift(7).over("tempID"),   # 7 periods back
-        pl.col("ireccd").shift(8).over("tempID"),   # 8 periods back
-        pl.col("ireccd").shift(9).over("tempID"),   # 9 periods back
-        pl.col("ireccd").shift(10).over("tempID"),  # 10 periods back
-        pl.col("ireccd").shift(11).over("tempID"),  # 11 periods back (12 total)
-    ]).alias("ireccd12")
-])
+# Use asrol_legacy for rolling first statistic
+import pandas as pd
+ibes_pd = ibes_filled.to_pandas()
+
+ibes_pd = asrol(
+    ibes_pd,
+    group_col='tempID',
+    time_col='time_avail_m',
+    value_col='ireccd',
+    window=12,
+    stat='first',
+    new_col_name='ireccd12',
+    min_periods=1
+)
+
+ibes_filled = pl.from_pandas(ibes_pd)
 
 # ===================================================================
 # DEBUG: asrol Results for HGR

@@ -12,7 +12,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.asrol import asrol, AsrolOptions
+from utils.asrol import asrol
 from utils.stata_ineq import stata_ineq_pd
 
 # PREP DISTRIBUTIONS DATA
@@ -273,25 +273,8 @@ for pn in [10001, 10006, 11406, 12473]:
 
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
-# Convert time_avail_m to integer-coded rangevar for new asrol module
-epoch = pd.Timestamp('1960-01-01')
-df['time_avail_m_int'] = ((df['time_avail_m'] - epoch).dt.days / 30.44).round().astype(int)
-
-# Using new asrol module with AsrolOptions
-opts = AsrolOptions(
-    varlist=["divpaid"],
-    by=["permno"],
-    window=("time_avail_m_int", 12),  # trailing 12
-    stat=("sum",),
-    minimum=1,
-    type="population",
-    generate="div12"
-)
-
-df = asrol(df, options=opts)
-
-# Clean up temporary column
-df = df.drop('time_avail_m_int', axis=1)
+# Use fast asrol for 12-month rolling sum of dividend payments
+df = asrol(df, 'permno', 'time_avail_m', 'divpaid', 12, stat='sum', new_col_name='div12', min_periods=1)
 
 # CHECKPOINT 12: Check div12 rolling sum calculation
 print("\n=== CHECKPOINT 12: Check div12 rolling sum calculation ===")

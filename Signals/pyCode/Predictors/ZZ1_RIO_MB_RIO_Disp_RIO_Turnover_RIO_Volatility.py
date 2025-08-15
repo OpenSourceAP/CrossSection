@@ -8,6 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.asrol import asrol
 
 print("=" * 80)
 print("🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py")
@@ -179,12 +180,21 @@ df = df.with_columns(
 )
 
 # bys permno: asrol ret, gen(Volatility) stat(sd) window(time_avail_m 12) min(6)
-df = df.with_columns(
-    pl.col("ret")
-    .rolling_std(window_size=12, min_samples=6)
-    .over("permno")
-    .alias("Volatility")
+# Use asrol_legacy for rolling standard deviation
+df_pandas_vol = df.to_pandas()
+
+df_pandas_vol = asrol(
+    df_pandas_vol,
+    group_col='permno',
+    time_col='time_avail_m',
+    value_col='ret',
+    window=12,
+    stat='sd',
+    new_col_name='Volatility',
+    min_periods=6
 )
+
+df = pl.from_pandas(df_pandas_vol)
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 

@@ -7,6 +7,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_ineq import stata_ineq_pl
+from utils.asrol import asrol
 
 print("=" * 80)
 print("🏗️  TrendFactor.py")
@@ -47,15 +48,26 @@ print("📈 Computing moving averages for 11 different lags...")
 # xtset permno time_temp
 lag_lengths = [3, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
 
+# Convert to pandas for asrol_legacy operations
+import pandas as pd
+df_daily_pd = df_daily.to_pandas()
+
 for L in lag_lengths:
     print(f"  Computing {L}-day moving average...")
     # asrol P, window(time_temp `L') stat(mean) by(permno) gen(A_`L')
-    df_daily = df_daily.with_columns(
-        pl.col("P")
-        .rolling_mean(window_size=L, min_samples=1)  # Allow partial windows like Stata default
-        .over("permno")
-        .alias(f"A_{L}")
+    df_daily_pd = asrol(
+        df_daily_pd,
+        group_col='permno',
+        time_col='time_temp',
+        value_col='P',
+        window=L,
+        stat='mean',
+        new_col_name=f'A_{L}',
+        min_periods=1  # Allow partial windows like Stata default
     )
+
+# Convert back to polars
+df_daily = pl.from_pandas(df_daily_pd)
 
 print("📅 Keeping only end-of-month observations...")
 

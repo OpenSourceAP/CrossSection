@@ -7,6 +7,7 @@ import os
 sys.path.append('.')
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.asrol import asrol
 
 # Data load
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -54,18 +55,23 @@ df = df.with_columns([
 ])
 
 # Calculate 6-month rolling mean volume (like Stata asrol)
-df = df.with_columns([
-    pl.col("vol")
-    .rolling_mean(window_size=6, min_samples=5)
-    .over("permno")
-    .alias("temp")
-])
-
-# Convert to pandas for proper quantile operations (fastxtile equivalent)
+# Convert to pandas for asrol_legacy
 import pandas as pd
 import numpy as np
 
 df_pd = df.to_pandas()
+
+# Use asrol_legacy for rolling mean volume
+df_pd = asrol(
+    df_pd, 
+    group_col='permno', 
+    time_col='time_avail_m', 
+    value_col='vol', 
+    window=6, 
+    stat='mean', 
+    new_col_name='temp', 
+    min_periods=5
+)
 
 # Create momentum deciles within each time_avail_m (like fastxtile)
 df_pd['catMom'] = fastxtile(df_pd, 'Mom6m', by='time_avail_m', n=10)

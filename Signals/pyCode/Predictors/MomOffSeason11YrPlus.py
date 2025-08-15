@@ -25,6 +25,7 @@ import os
 
 # Add parent directory to path for any shared utilities
 sys.path.append('..')
+from utils.asrol import asrol
 
 def main():
     print("Starting MomOffSeason11YrPlus predictor translation...")
@@ -102,15 +103,9 @@ def main():
     print("Calculating 60-month rolling sum and count...")
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Rolling sum (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(sum))
-    df['retLagTemp_sum60'] = df.groupby('permno')['retLagTemp'].transform(
-        lambda x: x.rolling(window=60, min_periods=1).sum()
-    )
-    
-    # Rolling count (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(count))
-    df['retLagTemp_count60'] = df.groupby('permno')['retLagTemp'].transform(
-        lambda x: x.notna().rolling(window=60, min_periods=1).sum()
-    )
+    # Use asrol for 60-month rolling sum and count
+    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 60, stat='sum', new_col_name='retLagTemp_sum60', min_periods=1)
+    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 60, stat='count', new_col_name='retLagTemp_count60', min_periods=1)
     
     print("Calculated 60-month rolling momentum base")
     

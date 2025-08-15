@@ -48,7 +48,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # temp = divamt > 0 & l1.divsum == 0
 df['divsum_lag1'] = df.groupby('permno')['divsum'].shift(1)
 df['temp'] = (df['divamt'] > 0) & (df['divsum_lag1'] == 0)
-df['temp'] = df['temp'].fillna(False)
+df['temp'] = df['temp'].fillna(False).astype(int)  # Convert boolean to numeric
 
 # Keep for 6 months using asrol
 df = asrol(df, 'permno', 'time_avail_m', 'temp', 6, stat='sum', new_col_name='initsum')

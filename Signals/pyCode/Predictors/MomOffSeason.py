@@ -25,6 +25,7 @@ import os
 
 # Add parent directory to path for any shared utilities
 sys.path.append('..')
+from utils.asrol import asrol
 
 def main():
     print("Starting MomOffSeason predictor translation...")
@@ -98,19 +99,13 @@ def main():
     df = df.merge(lag_data_12, on=['permno', 'lag_time_12'], how='left')
     df = df.drop('lag_time_12', axis=1)
     
-    # Create 48-month rolling sum and count of retLagTemp (equivalent to asrol)
+    # Create 48-month rolling sum and count of retLagTemp using asrol
     print("Calculating 48-month rolling sum and count...")
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Use position-based rolling as approximation (since data is monthly, 48 positions ≈ 48 months)
-    # This matches the approach used in working predictors
-    df['retLagTemp_sum48'] = df.groupby('permno')['retLagTemp'].transform(
-        lambda x: x.rolling(window=48, min_periods=1).sum()
-    )
-    
-    df['retLagTemp_count48'] = df.groupby('permno')['retLagTemp'].transform(
-        lambda x: x.notna().rolling(window=48, min_periods=1).sum()
-    )
+    # Use asrol for 48-month rolling sum and count
+    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 48, stat='sum', new_col_name='retLagTemp_sum48', min_periods=1)
+    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 48, stat='count', new_col_name='retLagTemp_count48', min_periods=1)
     
     print("Calculated 48-month rolling momentum base")
     

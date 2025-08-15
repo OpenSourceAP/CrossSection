@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.asreg import asreg
+from utils.asrol import asrol
 
 print("=" * 80)
 print("RDAbility.py")
@@ -127,16 +128,20 @@ for n in range(1, 6):
     )
     
     # asrol tempNonZero, window(fyear 8) min(6) by(gvkey) stat(mean) gen(tempMean)
-    # Critical fix: Use pandas for exact rolling window behavior that matches Stata
+    # Use asrol_legacy for exact Stata behavior that matches asrol
     df_pandas = df.to_pandas()
     df_pandas = df_pandas.sort_values(['gvkey', 'fyear'])
     
     # Calculate rolling mean per gvkey with exactly 8-year window and min 6 observations (matches Stata asrol min(6))
-    df_pandas['tempMean'] = (
-        df_pandas.groupby('gvkey')['tempNonZero']
-        .rolling(window=8, min_periods=6)
-        .mean()
-        .reset_index(0, drop=True)
+    df_pandas = asrol(
+        df_pandas,
+        group_col='gvkey',
+        time_col='fyear', 
+        value_col='tempNonZero',
+        window=8,
+        stat='mean',
+        new_col_name='tempMean',
+        min_periods=6
     )
     
     df = pl.from_pandas(df_pandas)

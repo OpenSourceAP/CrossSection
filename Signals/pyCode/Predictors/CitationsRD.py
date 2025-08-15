@@ -11,8 +11,7 @@ import sys
 import os
 sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
-
-# No need for additional imports for rolling calculations
+from utils.asrol import asrol
 
 # DATA LOAD with early filtering for performance
 print("Loading SignalMasterTable...")
@@ -106,36 +105,18 @@ if debug_mask.any():
 
 print(f"After June filter: {df.shape}")
 
-# Calendar-based rolling sums to match Stata's asrol behavior exactly
+# Calendar-based rolling sums using standardized asrol implementation
 # Stata: asrol xrd_lag, window(time_avail_m 48) stat(sum) 
-# This sums all observations within 48 calendar months, not 4 positions
 print("Creating calendar-based rolling sums...")
-df = df.sort_values(['permno', 'time_avail_m'])
-
-def calendar_asrol_sum(group, var_col):
-    """Replicate Stata's asrol with 48-month calendar window"""
-    result = []
-    for idx, row in group.iterrows():
-        current_date = row['time_avail_m']
-        # 48-month lookback window (inclusive of current month)
-        start_date = current_date - pd.DateOffset(months=47)
-        
-        # Find all observations within the 48-month calendar window
-        window_mask = (group['time_avail_m'] >= start_date) & (group['time_avail_m'] <= current_date)
-        window_sum = group.loc[window_mask, var_col].sum()
-        result.append(window_sum)
-    
-    return pd.Series(result, index=group.index)
 
 print("  Computing 48-month calendar rolling XRD sums...")
-df['sum_xrd'] = df.groupby('permno').apply(
-    lambda x: calendar_asrol_sum(x, 'xrd_lag')
-).reset_index(level=0, drop=True)
+# asrol xrd_lag, window(time_avail_m 48) stat(sum) by(permno)
+df = asrol(df, 'permno', 'time_avail_m', 'xrd_lag', 48, stat='sum', new_col_name='sum_xrd')
 
-print("  Computing 48-month calendar rolling citation sums...")  
-df['sum_ncit'] = df.groupby('permno').apply(
-    lambda x: calendar_asrol_sum(x, 'ncitscale')
-).reset_index(level=0, drop=True)
+print("  Computing 48-month calendar rolling citation sums...")
+# asrol ncitscale, window(time_avail_m 48) stat(sum) by(permno)
+df = asrol(df, 'permno', 'time_avail_m', 'ncitscale', 48, stat='sum', new_col_name='sum_ncit')
+
 
 # Create temporary CitationsRD signal
 df['tempCitationsRD'] = np.where(df['sum_xrd'] > 0, df['sum_ncit'] / df['sum_xrd'], np.nan)
