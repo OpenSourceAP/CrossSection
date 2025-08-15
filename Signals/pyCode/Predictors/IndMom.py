@@ -86,67 +86,35 @@ for permno in checkpoint_permnos_extended:
 # Stata: egen IndMom = wtmean(Mom6m), by(sic2D time_avail_m) weight(mve_c)
 # Calculate weighted average using transform to match egen wtmean exactly
 def calculate_weighted_mean(group):
+    # Match Stata's exact logic: require both Mom6m and mve_c to be non-missing AND mve_c > 0
     valid_mask = group['Mom6m'].notna() & group['mve_c'].notna() & (group['mve_c'] > 0)
     if not valid_mask.any():
         return np.nan
     
-    valid_mom = group.loc[valid_mask, 'Mom6m']
-    valid_weights = group.loc[valid_mask, 'mve_c']
+    valid_mom = group.loc[valid_mask, 'Mom6m'].astype('float64')
+    valid_weights = group.loc[valid_mask, 'mve_c'].astype('float64')
     
-    return (valid_mom * valid_weights).sum() / valid_weights.sum()
-
-# Calculate weighted means by group with outlier exclusion to match Stata wtmean behavior
-def calculate_weighted_mean_stata_like(group):
-    """
-    Calculate weighted mean with outlier exclusion to match Stata wtmean behavior.
-    Excludes observations that are both extreme outliers AND have disproportionately large weights.
-    """
-    valid_mask = group['Mom6m'].notna() & group['mve_c'].notna() & (group['mve_c'] > 0)
-    if not valid_mask.any():
+    # Use higher precision calculation
+    numerator = (valid_mom * valid_weights).sum()
+    denominator = valid_weights.sum()
+    
+    if denominator == 0:
         return np.nan
     
-    valid_group = group.loc[valid_mask].copy()
-    
-    if len(valid_group) <= 2:  # Too few observations for outlier detection
-        valid_values = valid_group['Mom6m']
-        valid_weights = valid_group['mve_c']
-        return (valid_values * valid_weights).sum() / valid_weights.sum()
-    
-    # Calculate statistics for outlier detection
-    mom6m_mean = valid_group['Mom6m'].mean()
-    mom6m_std = valid_group['Mom6m'].std()
-    weight_mean = valid_group['mve_c'].mean()
-    weight_std = valid_group['mve_c'].std()
-    
-    # Only exclude if std > 0 (avoid division by zero)
-    if mom6m_std > 0 and weight_std > 0:
-        # Identify observations that are both:
-        # 1. Extreme outliers in Mom6m (>2.5 std devs from mean)
-        # 2. Have disproportionately large weights (>2 std devs from mean)
-        mom6m_outliers = abs(valid_group['Mom6m'] - mom6m_mean) > 2.5 * mom6m_std
-        weight_outliers = (valid_group['mve_c'] - weight_mean) > 2 * weight_std
-        
-        # Exclude observations that are both extreme in value AND weight
-        exclude_mask = mom6m_outliers & weight_outliers
-        
-        if exclude_mask.any():
-            # Use only non-excluded observations
-            filtered_group = valid_group[~exclude_mask]
-            if len(filtered_group) > 0:
-                valid_values = filtered_group['Mom6m']
-                valid_weights = filtered_group['mve_c']
-                return (valid_values * valid_weights).sum() / valid_weights.sum()
-    
-    # Default: use all valid observations
-    valid_values = valid_group['Mom6m']
-    valid_weights = valid_group['mve_c']
-    return (valid_values * valid_weights).sum() / valid_weights.sum()
+    return numerator / denominator
 
-# Calculate weighted means by group and merge back
-group_weighted_means = df.groupby(['sic2D', 'time_avail_m']).apply(calculate_weighted_mean_stata_like, include_groups=False).reset_index()
+# Calculate weighted means by group to match Stata wtmean exactly
+# Stata's egen wtmean uses formula: SUM(weight * value) / SUM(weight) with no outlier handling
+# Use higher precision to match Stata's numerical behavior
+group_weighted_means = df.groupby(['sic2D', 'time_avail_m']).apply(calculate_weighted_mean, include_groups=False).reset_index()
 group_weighted_means.columns = ['sic2D', 'time_avail_m', 'IndMom']
 
+# Convert to float64 for higher precision
+group_weighted_means['IndMom'] = group_weighted_means['IndMom'].astype('float64')
+
 # Merge back to get IndMom for all observations
+# Stata's egen assigns the group weighted mean to ALL observations in the group,
+# even those with missing Mom6m, as long as the group has some valid observations
 df = df.merge(group_weighted_means, on=['sic2D', 'time_avail_m'], how='left')
 
 # CHECKPOINT 5: After IndMom calculation
