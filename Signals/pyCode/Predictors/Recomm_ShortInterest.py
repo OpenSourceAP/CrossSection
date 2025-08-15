@@ -31,6 +31,31 @@ if ibes_recs['time_avail_m'].dtype == pl.Datetime:
 
 print(f"Loaded IBES Recommendations: {len(ibes_recs):,} observations")
 
+# ===================================================================
+# DEBUG: Pre-tsfill Analysis
+# ===================================================================
+print("=== DEBUG: Pre-tsfill Analysis ===")
+print(f"Total observations before tsfill: {len(ibes_recs):,}")
+
+# Check HGR specifically
+print("HGR analysts before tsfill:")
+hgr_data = ibes_recs.filter(pl.col("tickerIBES") == "HGR")
+if len(hgr_data) > 0:
+    # Show analyst distribution
+    analyst_counts = hgr_data.group_by("amaskcd").agg(pl.len().alias("count"))
+    print(f"HGR analyst counts: {analyst_counts}")
+    
+    # Show specific data for 2006-2007 period
+    hgr_period = hgr_data.filter(
+        (pl.col("time_avail_m") >= 200601) & (pl.col("time_avail_m") <= 200712)
+    ).sort(["amaskcd", "time_avail_m"])
+    
+    if len(hgr_period) > 0:
+        print("HGR data 2006-2007:")
+        print(hgr_period.select(["amaskcd", "time_avail_m", "ireccd"]))
+else:
+    print("No HGR data found")
+
 # bys tickerIBES amaskcd time_avail_m (anndats): keep if _n==_N  
 # Keep only latest recommendation per firm-month
 ibes_recs = ibes_recs.sort(["tickerIBES", "amaskcd", "time_avail_m", "anndats"])
@@ -99,6 +124,30 @@ def create_complete_panel():
 complete_panel = create_complete_panel()
 print(f"Complete balanced panel: {len(complete_panel):,} observations")
 
+# ===================================================================
+# DEBUG: Post-tsfill Analysis
+# ===================================================================
+print("=== DEBUG: Post-tsfill Analysis ===")
+print(f"Total observations after tsfill: {len(complete_panel):,}")
+
+# Check what tsfill did for HGR
+print("Analyzing tsfill effect on HGR:")
+hgr_tempids = complete_panel.filter(pl.col("tickerIBES") == "HGR")
+if len(hgr_tempids) > 0:
+    # Get unique tempIDs for HGR
+    unique_hgr_tempids = hgr_tempids.select("tempID").unique()
+    print(f"HGR tempIDs after tsfill: {unique_hgr_tempids}")
+    
+    # Check for 2007m4 specifically
+    hgr_2007m4 = hgr_tempids.filter(pl.col("time_avail_m") == 200704)
+    if len(hgr_2007m4) > 0:
+        print(f"HGR observations at 2007m4: {len(hgr_2007m4)}")
+        print(hgr_2007m4.select(["tempID", "tickerIBES", "amaskcd"]))
+    else:
+        print("No HGR data found at 2007m4 after tsfill")
+else:
+    print("No HGR data found after tsfill")
+
 # Join original data onto complete panel
 ibes_filled = complete_panel.join(
     ibes_recs.select(["tempID", "time_avail_m", "ireccd", "anndats"]), 
@@ -142,6 +191,77 @@ ibes_filled = ibes_filled.with_columns([
     ]).alias("ireccd12")
 ])
 
+# ===================================================================
+# DEBUG: asrol Results for HGR
+# ===================================================================
+print("=== DEBUG: asrol Results for HGR ===")
+hgr_asrol = ibes_filled.filter(
+    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
+)
+if len(hgr_asrol) > 0:
+    print("HGR asrol results for 2007m4:")
+    print(hgr_asrol.select(["tempID", "amaskcd", "ireccd", "ireccd12"]))
+else:
+    print("No HGR data found for asrol results at 2007m4")
+
+# ===================================================================
+# DEBUG: Individual analyst lookback windows
+# ===================================================================
+print("=== DEBUG: Individual Analyst Lookback Windows ===")
+hgr_2007m4_tempids = ibes_filled.filter(
+    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
+).select("tempID").unique()
+
+if len(hgr_2007m4_tempids) > 0:
+    for row in hgr_2007m4_tempids.iter_rows(named=True):
+        tempid = row["tempID"]
+        print(f"=== TempID {tempid} lookback window ===")
+        
+        # Show 12-month lookback window (2006m5 to 2007m4)
+        lookback_data = ibes_filled.filter(
+            (pl.col("tempID") == tempid) & 
+            (pl.col("time_avail_m") >= 200605) & 
+            (pl.col("time_avail_m") <= 200704)
+        ).sort("time_avail_m")
+        
+        if len(lookback_data) > 0:
+            print(lookback_data.select(["time_avail_m", "ireccd"]))
+        else:
+            print("No lookback data found")
+else:
+    print("No HGR tempIDs found for lookback analysis")
+
+# ===================================================================
+# DEBUG: Pre-collapse HGR Analysts for 2007m4
+# ===================================================================
+print("=== DEBUG: Pre-collapse HGR Analysts for 2007m4 ===")
+hgr_pre_collapse = ibes_filled.filter(
+    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
+)
+if len(hgr_pre_collapse) > 0:
+    print(f"Number of HGR analysts contributing: {len(hgr_pre_collapse)}")
+    print("Individual analyst contributions:")
+    print(hgr_pre_collapse.select(["tempID", "amaskcd", "ireccd12"]))
+    
+    # Summary statistics
+    ireccd12_stats = hgr_pre_collapse.select("ireccd12").filter(pl.col("ireccd12").is_not_null())
+    if len(ireccd12_stats) > 0:
+        stats = ireccd12_stats.select([
+            pl.col("ireccd12").count().alias("count"),
+            pl.col("ireccd12").mean().alias("mean"),
+            pl.col("ireccd12").std().alias("std"),
+            pl.col("ireccd12").min().alias("min"),
+            pl.col("ireccd12").quantile(0.25).alias("p25"),
+            pl.col("ireccd12").quantile(0.5).alias("median"),
+            pl.col("ireccd12").quantile(0.75).alias("p75"),
+            pl.col("ireccd12").max().alias("max")
+        ])
+        print(f"Summary statistics: {stats}")
+    else:
+        print("No valid ireccd12 values for statistics")
+else:
+    print("No HGR data found for pre-collapse analysis")
+
 # Collapse to firm-month level
 # gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)  
 temp_rec = (ibes_filled
@@ -151,6 +271,19 @@ temp_rec = (ibes_filled
 )
 
 print(f"Consensus recommendations by ticker-month: {len(temp_rec):,} observations")
+
+# ===================================================================
+# DEBUG: Post-collapse Consensus for HGR
+# ===================================================================
+print("=== DEBUG: Post-collapse Consensus for HGR ===")
+hgr_consensus = temp_rec.filter(
+    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
+)
+if len(hgr_consensus) > 0:
+    print("HGR consensus for 2007m4:")
+    print(hgr_consensus.select(["tickerIBES", "time_avail_m", "ireccd12"]))
+else:
+    print("No HGR consensus found for 2007m4")
 
 # CHECKPOINT 1: Check if sample missing observations exist in recommendations
 print("=== CHECKPOINT 1: IBES Recommendations ===")
