@@ -12,17 +12,77 @@ bys tickerIBES amaskcd time_avail_m (anndats): keep if _n==_N  // Keep only late
 
 * Create firm ID and set panel for time-series filling
 egen tempID = group(tickerIBES amaskcd)
+
+* DEBUG: Analyze data before tsfill
+di "=== DEBUG: Pre-tsfill Analysis ==="
+count
+di "Total observations before tsfill: " r(N)
+
+* Check HGR specifically
+preserve
+keep if tickerIBES == "HGR"
+tab amaskcd
+di "HGR analysts before tsfill:"
+list amaskcd time_avail_m ireccd if time_avail_m >= tm(2006m1) & time_avail_m <= tm(2007m12), sepby(amaskcd)
+restore
+
 xtset tempID time
 tsfill   // Fill in missing time points for each firm
+
+* DEBUG: Analyze effect of tsfill
+di "=== DEBUG: Post-tsfill Analysis ==="
+count
+di "Total observations after tsfill: " r(N)
+
+* Check what tsfill did for HGR
+preserve
+keep if tickerIBES == "HGR" | mi(tickerIBES)
+gen has_ireccd = !mi(ireccd)
+bys tempID: egen n_actual = sum(has_ireccd)
+bys tempID: gen n_total = _N
+keep if time_avail_m == tm(2007m4)
+list tempID tickerIBES amaskcd n_actual n_total if tickerIBES == "HGR"
+restore
 
 * Forward-fill tickerIBES after tsfill
 bys tempID (time_avail_m): replace tickerIBES = tickerIBES[_n-1] if mi(tickerIBES) & _n >1
 
 * Get most recent recommendation within past 12 months
-asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1) 
+asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1)
+
+* DEBUG: Analyze asrol results for HGR
+di "=== DEBUG: asrol Results for HGR ==="
+preserve
+keep if tickerIBES == "HGR" & time_avail_m == tm(2007m4)
+list tempID amaskcd ireccd ireccd12
+restore
+
+* DEBUG: Show individual analyst lookback windows
+preserve
+keep if tickerIBES == "HGR"
+* Find tempIDs for HGR
+levelsof tempID if time_avail_m == tm(2007m4), local(hgr_tempids)
+foreach tid of local hgr_tempids {
+    di "=== TempID `tid' lookback window ==="
+    list time_avail_m ireccd if tempID == `tid' & time_avail_m >= tm(2006m5) & time_avail_m <= tm(2007m4), sepby(tempID)
+}
+restore 
+
+* DEBUG: Show all analyst contributions before collapse
+di "=== DEBUG: Pre-collapse HGR Analysts for 2007m4 ==="
+preserve
+keep if tickerIBES == "HGR" & time_avail_m == tm(2007m4)
+list tempID amaskcd ireccd12
+di "Number of HGR analysts contributing: " _N
+su ireccd12, detail
+restore
 
 * Collapse to firm-month level
-gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)  
+gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)
+
+* DEBUG: Verify consensus calculation
+di "=== DEBUG: Post-collapse Consensus for HGR ==="
+list tickerIBES time_avail_m ireccd12 if tickerIBES == "HGR" & time_avail_m == tm(2007m4)  
 
 * CHECKPOINT 1: Check if sample missing observations exist in recommendations
 di "=== CHECKPOINT 1: IBES Recommendations ==="
