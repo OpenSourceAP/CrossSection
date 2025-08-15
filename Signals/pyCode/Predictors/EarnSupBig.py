@@ -67,8 +67,18 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Stata: gen GrTemp = (epspxq - l12.epspxq)
 df['GrTemp'] = df.groupby('permno')['epspxq'].transform(lambda x: x - x.shift(12))
 
-# CHECKPOINT 4: After calculating GrTemp (12-month lag)
+# CHECKPOINT 4: After calculating GrTemp (12-month lag) 
 print(f"CHECKPOINT 4: GrTemp calculated for {df['GrTemp'].notna().sum()} observations")
+# Debug specific problematic observations from test results
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 4 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'epspxq', 'GrTemp']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 4 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'epspxq', 'GrTemp']].to_string())
+
 april_2007_data = df[df['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     debug_data = april_2007_data[april_2007_data['permno'].isin(debug_permnos)]
@@ -84,11 +94,31 @@ for n in range(3, 25, 3):  # 3, 6, 9, 12, 15, 18, 21, 24
 temp_cols = [f'temp{n}' for n in range(3, 25, 3)]
 df['Drift'] = df[temp_cols].mean(axis=1)
 
+# CHECKPOINT 4.5: After calculating Drift
+print(f"CHECKPOINT 4.5: Drift calculated")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 4.5 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'GrTemp', 'Drift']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 4.5 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'GrTemp', 'Drift']].to_string())
+
 # Stata: gen EarningsSurprise = epspxq - l12.epspxq - Drift
 df['EarningsSurprise'] = df.groupby('permno')['epspxq'].transform(lambda x: x - x.shift(12)) - df['Drift']
 
-# CHECKPOINT 5: After calculating EarningsSurprise
-print(f"CHECKPOINT 5: EarningsSurprise calculated for {df['EarningsSurprise'].notna().sum()} observations")
+# CHECKPOINT 5: After calculating raw EarningsSurprise (before standardization)
+print(f"CHECKPOINT 5: Raw EarningsSurprise calculated for {df['EarningsSurprise'].notna().sum()} observations")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 5 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'epspxq', 'Drift', 'EarningsSurprise']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 5 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'epspxq', 'Drift', 'EarningsSurprise']].to_string())
+
 april_2007_data = df[df['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     debug_data = april_2007_data[april_2007_data['permno'].isin(debug_permnos)]
@@ -107,6 +137,26 @@ for n in range(3, 25, 3):  # 3, 6, 9, 12, 15, 18, 21, 24
 temp_cols = [f'temp{n}' for n in range(3, 25, 3)]
 df['SD'] = df[temp_cols].std(axis=1)
 
+# CHECKPOINT 5.5: After calculating SD (critical for standardization)
+print(f"CHECKPOINT 5.5: SD calculated")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 5.5 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'SD', 'EarningsSurprise']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 5.5 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'SD', 'EarningsSurprise']].to_string())
+
+# Check for very small SD values that could cause extreme results
+small_sd = df[(df['SD'] < 0.001) & (df['SD'] > 0) & df['SD'].notna() & df['EarningsSurprise'].notna()]
+if len(small_sd) > 0:
+    print(f"CHECKPOINT 5.5 - Found {len(small_sd)} observations with very small SD values:")
+    print(small_sd[['permno', 'time_avail_m', 'SD', 'EarningsSurprise']].head().to_string())
+
+# Store original EarningsSurprise for comparison
+df['EarningsSurprise_raw'] = df['EarningsSurprise'].copy()
+
 # Stata: replace EarningsSurprise = EarningsSurprise/SD
 # Handle division by zero and very small SD values to prevent astronomical results
 MIN_SD_THRESHOLD = 1e-8
@@ -116,8 +166,23 @@ df['EarningsSurprise'] = np.where(
     df['EarningsSurprise'] / df['SD']
 )
 
-# CHECKPOINT 6: After standardizing EarningsSurprise
-print(f"CHECKPOINT 6: Standardized EarningsSurprise for {df['EarningsSurprise'].notna().sum()} observations")
+# CHECKPOINT 6: After standardization (CRITICAL STEP)
+print(f"CHECKPOINT 6: EarningsSurprise standardized for {df['EarningsSurprise'].notna().sum()} observations")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 6 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'SD', 'EarningsSurprise']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 6 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'SD', 'EarningsSurprise']].to_string())
+
+# Check for extreme values after standardization
+extreme_vals = df[df['EarningsSurprise'].abs() > 1000]
+if len(extreme_vals) > 0:
+    print(f"CHECKPOINT 6 - Found {len(extreme_vals)} observations with extreme standardized values:")
+    print(extreme_vals[['permno', 'time_avail_m', 'SD', 'EarningsSurprise']].head().to_string())
+
 april_2007_data = df[df['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     debug_data = april_2007_data[april_2007_data['permno'].isin(debug_permnos)]
@@ -192,6 +257,15 @@ df = relrank(df, "mve_c", by=["tempFF48", "time_avail_m"], out="tempRK")
 
 # CHECKPOINT 11: After calculating relrank
 print(f"CHECKPOINT 11: Relrank calculated for {df['tempRK'].notna().sum()} observations")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 11 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'tempFF48', 'mve_c', 'tempRK', 'EarningsSurprise']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 11 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'tempFF48', 'mve_c', 'tempRK', 'EarningsSurprise']].to_string())
+
 april_2007_data = df[df['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     debug_data = april_2007_data[april_2007_data['permno'].isin(debug_permnos)]
@@ -221,6 +295,16 @@ industry_earnings = industry_earnings.rename(columns={'EarningsSurprise': 'EarnS
 
 # CHECKPOINT 13: Industry-month averages for large companies
 print(f"CHECKPOINT 13: Industry-month groups with EarnSupBig: {len(industry_earnings)} groups")
+# Check for problematic periods
+prob_1973 = industry_earnings[industry_earnings['time_avail_m'] == pd.Timestamp('1973-08-01')]
+prob_2001 = industry_earnings[industry_earnings['time_avail_m'] == pd.Timestamp('2001-05-01')]
+if len(prob_1973) > 0:
+    print("CHECKPOINT 13 - Industry averages for 1973-08:")
+    print(prob_1973[['tempFF48', 'time_avail_m', 'EarnSupBig']].to_string())
+if len(prob_2001) > 0:
+    print("CHECKPOINT 13 - Industry averages for 2001-05:")
+    print(prob_2001[['tempFF48', 'time_avail_m', 'EarnSupBig']].to_string())
+
 april_2007_data = industry_earnings[industry_earnings['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     print("CHECKPOINT 13 - April 2007 industry averages:")
@@ -236,6 +320,15 @@ df = df.merge(industry_earnings, on=['tempFF48', 'time_avail_m'], how='left')
 # CHECKPOINT 14: After merging industry averages back
 print(f"CHECKPOINT 14: After merging industry averages: {len(df)} observations")
 print(f"CHECKPOINT 14: With non-missing EarnSupBig: {df['EarnSupBig'].notna().sum()} observations")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 14 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'tempFF48', 'tempRK', 'EarnSupBig']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 14 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'tempFF48', 'tempRK', 'EarnSupBig']].to_string())
+
 april_2007_data = df[df['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     debug_data = april_2007_data[april_2007_data['permno'].isin(debug_permnos)]
@@ -249,6 +342,15 @@ df.loc[df['tempRK'] >= 0.7, 'EarnSupBig'] = np.nan
 
 # CHECKPOINT 15: Final result after setting large companies to missing
 print(f"CHECKPOINT 15: Final EarnSupBig (excluding large companies): {df['EarnSupBig'].notna().sum()} observations")
+problem_obs_1973 = df[(df['permno'] == 10613) & (df['time_avail_m'] == pd.Timestamp('1973-08-01'))]
+problem_obs_2001 = df[(df['permno'] == 10100) & (df['time_avail_m'] == pd.Timestamp('2001-05-01'))]
+if len(problem_obs_1973) > 0:
+    print("CHECKPOINT 15 - Problem observation 1973-08 (permno=10613):")
+    print(problem_obs_1973[['permno', 'time_avail_m', 'tempFF48', 'tempRK', 'EarnSupBig']].to_string())
+if len(problem_obs_2001) > 0:
+    print("CHECKPOINT 15 - Problem observation 2001-05 (permno=10100):")
+    print(problem_obs_2001[['permno', 'time_avail_m', 'tempFF48', 'tempRK', 'EarnSupBig']].to_string())
+
 april_2007_data = df[df['time_avail_m'] == april_2007]
 if len(april_2007_data) > 0:
     debug_data = april_2007_data[april_2007_data['permno'].isin(debug_permnos)]

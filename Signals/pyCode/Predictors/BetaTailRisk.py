@@ -142,8 +142,17 @@ print("Merging with tail risk factor...")
 df = monthly_crsp.join(monthly_tailrisk, on="time_avail_m", how="left").sort(["permno", "time_avail_m"])
 print(f"After merging: {len(df):,} observations")
 
-# CHECKPOINT 5: Show merged data for permno 78050 (1990-2000)
-print("CHECKPOINT 5: Merged monthly data for permno 78050 (1990-2000)")
+# CHECKPOINT 5: Show monthly average tailex values (Nov 1998 - Feb 1999)
+print("CHECKPOINT 5: Monthly average tailex values (Nov 1998 - Feb 1999)")
+debug_monthly_tailex = monthly_tailrisk.filter(
+    (pl.col("time_avail_m") >= pl.date(1998, 11, 1)) &
+    (pl.col("time_avail_m") <= pl.date(1999, 2, 28))
+).sort("time_avail_m")
+print(debug_monthly_tailex)
+print()
+
+# CHECKPOINT 6: Show merged data for permno 78050 (1990-2000)
+print("CHECKPOINT 6: Merged monthly data for permno 78050 (1990-2000)")
 debug_merged = df.filter(
     (pl.col("permno") == 78050) & 
     (pl.col("time_avail_m") >= pl.date(1990, 1, 1)) &
@@ -186,13 +195,13 @@ df_final = df_with_beta.filter(
     (pl.col("shrcd") <= 11)
 ).select(["permno", "time_avail_m", "BetaTailRisk"])
 
-# CHECKPOINT 6: Show final BetaTailRisk values for permno 78050 (1998-2000)
-print("CHECKPOINT 6: Final BetaTailRisk values for permno 78050 (1998-2000)")
+# CHECKPOINT 7: Show final BetaTailRisk values for permno 78050 (1998-2000)
+print("CHECKPOINT 7: Final BetaTailRisk values for permno 78050 (1998-2000)")
 debug_final = df_with_beta.filter(
     (pl.col("permno") == 78050) & 
     (pl.col("time_avail_m") >= pl.date(1998, 1, 1)) &
     (pl.col("time_avail_m") <= pl.date(2000, 12, 31))
-).select(["permno", "time_avail_m", "ret", "tailex", "BetaTailRisk"]).sort("time_avail_m")
+).select(["permno", "time_avail_m", "BetaTailRisk"]).sort("time_avail_m")
 print(debug_final)
 print()
 

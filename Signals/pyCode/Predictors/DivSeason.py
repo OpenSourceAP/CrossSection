@@ -224,6 +224,22 @@ for pn in [10001, 10006, 11406, 12473]:
 # Keep if cd3 < 6 (Tab 2 note) - exact match to Stata logic
 df = df[df['cd3'] < 6]
 
+# CHECKPOINT 11: Check after keeping only cd3 < 6
+print("\n=== CHECKPOINT 11: Check after keeping only cd3 < 6 ===")
+for pn in [10001, 10006, 11406, 12473]:
+    print(f"\n--- Permno {pn} ---")
+    total_count = len(df[df['permno'] == pn])
+    print(f"Total observations for permno {pn} after cd3 < 6 filter: {total_count}")
+    
+    test_data = df[(df['permno'] == pn) & 
+                   (df['time_avail_m'] >= pd.Timestamp('1986-01-01')) & 
+                   (df['time_avail_m'] <= pd.Timestamp('1987-12-01'))]
+    if not test_data.empty:
+        print(f"permno {pn} data after cd3 < 6 filter:")
+        print(test_data[['permno', 'time_avail_m', 'cd3', 'divamt', 'divpaid']].to_string(index=False))
+    else:
+        print(f"No data found for permno {pn} after cd3 < 6 filter")
+
 # CRITICAL FIX: Filter to only include observations from the first dividend month onward
 # This must be done BEFORE creating lags to match Stata's behavior
 first_div_dates = df[df['divamt'] > 0].groupby('permno')['time_avail_m'].min().reset_index()
@@ -239,8 +255,8 @@ df = df[(df['time_avail_m'] >= df['first_div_date']) | df['first_div_date'].isna
 # Drop the helper column
 df = df.drop('first_div_date', axis=1)
 
-# CHECKPOINT 11: Check after keeping only cd3 < 6 and filtering by first dividend date
-print("\n=== CHECKPOINT 11: Check after keeping only cd3 < 6 and filtering by first dividend date ===")
+# CHECKPOINT 11B: Check after first dividend date filtering (Python-specific step)
+print("\n=== CHECKPOINT 11B: Check after first dividend date filtering ===")
 for pn in [10001, 10006, 11406, 12473]:
     print(f"\n--- Permno {pn} ---")
     total_count = len(df[df['permno'] == pn])
