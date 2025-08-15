@@ -134,23 +134,64 @@ def _fastxtile_core(series, n=5):
         return result
     
     try:
-        # PRIMARY METHOD: Use rank-based approach that always creates exactly n categories
+        # PRIMARY METHOD: Use percentile-based approach to match Stata's empirical CDF behavior
         result = pd.Series(np.nan, index=series.index, dtype='float64')
-        ranks = valid_series.rank(method='average')
-        quantiles = np.floor((ranks - 1) / len(valid_series) * n).astype(int) + 1
-        quantiles = np.clip(quantiles, 1, n)  # Ensure in range [1, n]
-        result[valid_mask] = quantiles
+        
+        # Check for extremely sparse data first (edge case optimization)
+        unique_values = np.sort(valid_series.unique())
+        
+        if len(unique_values) <= 2:
+            # Handle sparse cases directly to match Stata behavior
+            if len(unique_values) == 1:
+                categories = np.full(len(valid_series), 1, dtype=int)
+            else:  # len(unique_values) == 2
+                # Two unique values - assign to categories 1 and n (skip middle categories)
+                min_val, max_val = unique_values[0], unique_values[1]
+                categories = np.full(len(valid_series), 1, dtype=int)
+                categories[valid_series == max_val] = n
+        else:
+            # Standard percentile approach for data with sufficient variation
+            percentile_points = [(i / n) for i in range(1, n)]  # [0.333, 0.667] for n=3
+            cutpoints = valid_series.quantile(percentile_points).values
+            
+            # Assign categories based on percentile boundaries
+            categories = np.full(len(valid_series), 1, dtype=int)  # Start with category 1
+            
+            for i, cutpoint in enumerate(cutpoints):
+                # Assign to category i+2 for values strictly greater than cutpoint
+                categories[valid_series > cutpoint] = i + 2
+            
+            # Ensure categories don't exceed n
+            categories = np.clip(categories, 1, n)
+        
+        result[valid_mask] = categories
         return result
         
     except ValueError as e:
-        # FALLBACK 1: Handle duplicate boundary issues with rank-based approach
+        # FALLBACK 1: Handle edge cases with too few unique values
         try:
             result = pd.Series(np.nan, index=series.index, dtype='float64')
-            # Use rank with average ties, then cut into n groups
-            ranks = valid_series.rank(method='average', ascending=True)
-            # Scale ranks to [0, n-1] range, then add 1 for 1-based indexing
-            quantiles = np.floor(ranks / ranks.max() * n).clip(0, n-1) + 1
-            result[valid_mask] = quantiles
+            
+            # If we have very few unique values, use a simple approach
+            unique_values = np.sort(valid_series.unique())
+            
+            if len(unique_values) == 1:
+                # All values identical - assign all to category 1
+                result[valid_mask] = 1
+            elif len(unique_values) == 2:
+                # Two unique values - split into categories 1 and n (typically 3)
+                # This matches the percentile approach behavior for sparse data
+                min_val, max_val = unique_values[0], unique_values[1]
+                result[valid_mask & (series == min_val)] = 1
+                result[valid_mask & (series == max_val)] = n
+            else:
+                # Multiple values but still sparse - use simple quantile division
+                result[valid_mask] = 1  # Default to category 1
+                for i in range(1, min(n, len(unique_values))):
+                    threshold_idx = int(len(unique_values) * i / n)
+                    threshold = unique_values[threshold_idx] if threshold_idx < len(unique_values) else unique_values[-1]
+                    result[valid_mask & (series > threshold)] = i + 1
+                    
             return result
             
         except Exception:
@@ -160,7 +201,7 @@ def _fastxtile_core(series, n=5):
             return result
             
     except Exception as e:
-        # FALLBACK 2: Emergency fallback for any other error
+        # FALLBACK 3: Emergency fallback for any other error
         result = pd.Series(np.nan, index=series.index, dtype='float64')
         result[valid_mask] = 1
         return result
