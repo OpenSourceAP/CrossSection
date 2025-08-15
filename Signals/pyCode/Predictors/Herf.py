@@ -10,7 +10,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.data_utils import asrol
+from utils.asrol import asrol
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -109,7 +109,7 @@ df['year'] = df['time_avail_m'].dt.year
 # Regulated industries before deregulation dates
 df.loc[(df['tempSIC'].isin(['4011', '4210', '4213'])) & (df['year'] <= 1980), 'Herf'] = np.nan
 df.loc[(df['tempSIC'] == '4512') & (df['year'] <= 1978), 'Herf'] = np.nan
-df.loc[(df['tempSIC'].isin(['4812', '4813'])) & (df['year'] <= 1982), 'Herf'] = np.nan
+df.loc[(df['tempSIC'].isin(['4812', ' 4813'])) & (df['year'] <= 1982), 'Herf'] = np.nan
 df.loc[df['tempSIC'].str[:2] == '49', 'Herf'] = np.nan
 
 # CHECKPOINT 8: Check after regulated industry filters
