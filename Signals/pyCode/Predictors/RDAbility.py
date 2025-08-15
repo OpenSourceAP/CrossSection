@@ -63,7 +63,8 @@ df = df.with_columns(
     pl.when(
         pl.col("tempSale").is_not_null() & 
         pl.col("l_tempSale").is_not_null() & 
-        (pl.col("l_tempSale") > 0)
+        (pl.col("l_tempSale") > 0) &
+        (pl.col("tempSale") > 0)  # Add condition to exclude zero sales
     )
     .then((pl.col("tempSale") / pl.col("l_tempSale")).log())
     .otherwise(None)
@@ -130,7 +131,7 @@ for n in range(1, 6):
     df_pandas = df.to_pandas()
     df_pandas = df_pandas.sort_values(['gvkey', 'fyear'])
     
-    # Calculate rolling mean per gvkey with exactly 8-year window and min 6 observations
+    # Calculate rolling mean per gvkey with exactly 8-year window and min 6 observations (matches Stata asrol min(6))
     df_pandas['tempMean'] = (
         df_pandas.groupby('gvkey')['tempNonZero']
         .rolling(window=8, min_periods=6)
