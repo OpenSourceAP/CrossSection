@@ -220,29 +220,24 @@ for pn in [10001, 10006, 11406, 12473]:
     else:
         print(f"No data found for permno {pn} after dropping monthly dividends")
 
-# Mark special dividends (cd3 >= 6) for special handling
-df['is_special_dividend'] = (df['cd3'] >= 6).astype(int)
+# Keep if cd3 < 6 (Tab 2 note) - exact match to Stata logic
+df = df[df['cd3'] < 6]
 
-# For dividend prediction logic, treat special dividends as if they don't exist
-# But keep them in the dataset for output with DivSeason = 0
-df['cd3_for_prediction'] = df['cd3'].copy()
-df.loc[df['cd3'] >= 6, 'cd3_for_prediction'] = np.nan
-
-# CHECKPOINT 11: Check after keeping only cd3 < 6 (equivalent in Python: marking special dividends)
+# CHECKPOINT 11: Check after keeping only cd3 < 6
 print("\n=== CHECKPOINT 11: Check after keeping only cd3 < 6 ===")
 for pn in [10001, 10006, 11406, 12473]:
     print(f"\n--- Permno {pn} ---")
     total_count = len(df[df['permno'] == pn])
-    print(f"Total observations for permno {pn} after special dividend handling: {total_count}")
+    print(f"Total observations for permno {pn} after keeping cd3 < 6: {total_count}")
     
     test_data = df[(df['permno'] == pn) & 
                    (df['time_avail_m'] >= pd.Timestamp('1986-01-01')) & 
                    (df['time_avail_m'] <= pd.Timestamp('1987-12-01'))]
     if not test_data.empty:
-        print(f"permno {pn} data after special dividend handling:")
+        print(f"permno {pn} data after keeping cd3 < 6:")
         print(test_data[['permno', 'time_avail_m', 'cd3', 'divamt', 'divpaid']].to_string(index=False))
     else:
-        print(f"No data found for permno {pn}")
+        print(f"No data found for permno {pn} after keeping cd3 < 6")
 
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
@@ -264,9 +259,9 @@ for pn in [10001, 10006, 11406, 12473]:
     else:
         print(f"No data found for permno {pn}")
 
-# Initialize DivSeason: 0 if had dividends in last 12 months, otherwise start with 0 for early periods
-# This handles the case where companies exist but have no dividend history yet
-df['DivSeason'] = np.where(df['div12'] > 0, 0, 0)
+# Initialize DivSeason: 0 if had dividends in last 12 months, otherwise missing (NaN)
+# This exactly replicates Stata's: gen DivSeason = 0 if div12 > 0
+df['DivSeason'] = np.where(df['div12'] > 0, 0, np.nan)
 
 # CHECKPOINT 13: Check initial DivSeason assignment
 print("\n=== CHECKPOINT 13: Check initial DivSeason assignment ===")
@@ -294,17 +289,20 @@ for lag in [2, 5, 8, 11]:
 # temp3: quarterly, unknown, or missing frequency with expected dividend timing
 # cd3 == 3 (quarterly) | cd3 == 0 (unknown) | cd3 == 1 (annual treated as quarterly?)
 # with dividends 2, 5, 8, or 11 months ago
-# Use cd3_for_prediction to exclude special dividends from prediction logic
-df['temp3'] = ((df['cd3_for_prediction'].isin([0, 1, 3])) & 
+# NOTE: In Stata, missing lag values behave as TRUE in boolean OR operations
+df['temp3'] = ((df['cd3'].isin([0, 1, 3])) & 
                ((df['divpaid_lag2'] == 1) | (df['divpaid_lag5'] == 1) | 
-                (df['divpaid_lag8'] == 1) | (df['divpaid_lag11'] == 1))).astype(int)
+                (df['divpaid_lag8'] == 1) | (df['divpaid_lag11'] == 1) |
+                (df['divpaid_lag2'].isna()) | (df['divpaid_lag5'].isna()) |
+                (df['divpaid_lag8'].isna()) | (df['divpaid_lag11'].isna()))).astype(int)
 
 # temp4: semi-annual (cd3 == 4) with dividends 5 or 11 months ago
-df['temp4'] = ((df['cd3_for_prediction'] == 4) & 
-               ((df['divpaid_lag5'] == 1) | (df['divpaid_lag11'] == 1))).astype(int)
+df['temp4'] = ((df['cd3'] == 4) & 
+               ((df['divpaid_lag5'] == 1) | (df['divpaid_lag11'] == 1) |
+                (df['divpaid_lag5'].isna()) | (df['divpaid_lag11'].isna()))).astype(int)
 
 # temp5: annual (cd3 == 5) with dividend 11 months ago
-df['temp5'] = ((df['cd3_for_prediction'] == 5) & (df['divpaid_lag11'] == 1)).astype(int)
+df['temp5'] = ((df['cd3'] == 5) & ((df['divpaid_lag11'] == 1) | (df['divpaid_lag11'].isna()))).astype(int)
 
 # CHECKPOINT 14: Check temp variables for prediction logic
 print("\n=== CHECKPOINT 14: Check temp variables for prediction logic ===")
@@ -341,9 +339,6 @@ for pn in [10001, 10006, 11406, 12473]:
     else:
         print(f"No data found for permno {pn}")
 
-# Special dividends (cd3 >= 6) always get DivSeason = 0
-df.loc[df['is_special_dividend'] == 1, 'DivSeason'] = 0
-
 # CHECKPOINT 16: Show data drops at critical points
 print("\n=== CHECKPOINT 16: Data drop summary ===")
 print(f"Total observations in final dataset: {len(df)}")
@@ -354,6 +349,23 @@ print(year_counts.head(10))
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'DivSeason']].copy()
 df_final = df_final.dropna(subset=['DivSeason'])
+
+# POTENTIAL FIX: Filter to only include observations from the first dividend month onward for each permno
+# This might match Stata's implicit filtering behavior
+# Check if this is needed by looking at first dividend dates
+first_div_dates = df[df['divamt'] > 0].groupby('permno')['time_avail_m'].min().reset_index()
+first_div_dates.columns = ['permno', 'first_div_date']
+
+# Merge to get first dividend date for each permno-month
+df_final = df_final.merge(first_div_dates, on='permno', how='left')
+
+# Only keep observations from first dividend date onward (not before)
+# If no dividends ever observed, keep all (first_div_date will be NaN)
+# This should exclude 198601 and 198602 for permno 10001 since first dividend is 198603
+df_final = df_final[(df_final['time_avail_m'] >= df_final['first_div_date']) | df_final['first_div_date'].isna()]
+
+# Drop the helper column
+df_final = df_final.drop('first_div_date', axis=1)
 
 # Convert time_avail_m to yyyymm format like other predictors
 df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
