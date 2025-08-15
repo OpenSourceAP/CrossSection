@@ -174,7 +174,7 @@ print("🧮 Computing asrol rolling first of ireccd over 12 observations...")
 # stat(first) = most recent non-null value within 12 observations (current + previous 11)
 ibes_filled = ibes_filled.sort(["tempID", "time_avail_m"])
 
-# Use asrol_legacy for rolling first statistic
+# Use regular asrol with pandas conversion for compatibility
 import pandas as pd
 ibes_pd = ibes_filled.to_pandas()
 
