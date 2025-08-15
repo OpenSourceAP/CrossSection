@@ -67,9 +67,6 @@ if not data_10001.empty:
     print("CHECKPOINT 4 - After merge with SignalMasterTable:")
     print(data_10001[['permno', 'time_avail_m', 'DownRecomm']])
 
-# Keep only observations where DownRecomm calculation was valid (had a lag)
-df = df[df['ireccd_lag'].notna()]
-
 # Keep only required columns for final output
 result = df[['permno', 'time_avail_m', 'DownRecomm']].copy()
 
