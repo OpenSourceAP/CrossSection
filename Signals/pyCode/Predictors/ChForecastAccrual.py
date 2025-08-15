@@ -69,8 +69,15 @@ def create_calendar_lag(df, var_name, months=12):
 for var in ['act', 'che', 'lct', 'dlc', 'txp', 'at']:
     df = create_calendar_lag(df, var, 12)
 
-df['tempAccruals'] = ((df['act'] - df['act_l12']) - (df['che'] - df['che_l12']) - 
-                      ((df['lct'] - df['lct_l12']) - (df['dlc'] - df['dlc_l12']) - (df['txp'] - df['txp_l12']))) / ((df['at'] + df['at_l12']) / 2)
+# Calculate tempAccruals with proper handling of division by zero (like Stata)
+numerator = ((df['act'] - df['act_l12']) - (df['che'] - df['che_l12']) - 
+             ((df['lct'] - df['lct_l12']) - (df['dlc'] - df['dlc_l12']) - (df['txp'] - df['txp_l12'])))
+denominator = (df['at'] + df['at_l12']) / 2
+
+df['tempAccruals'] = numerator / denominator
+# Handle division by zero like Stata (set to missing, not infinite)
+df.loc[denominator == 0, 'tempAccruals'] = np.nan
+df.loc[np.isinf(df['tempAccruals']), 'tempAccruals'] = np.nan
 
 # egen tempsort = fastxtile(tempAccruals), by(time_avail_m) n(2)
 df['tempsort'] = fastxtile(df, 'tempAccruals', by='time_avail_m', n=2)
@@ -87,32 +94,6 @@ df.loc[mask_increase, 'ChForecastAccrual'] = 1
 # replace ChForecastAccrual = 0 if meanest < l.meanest & !mi(meanest) & !mi(l.meanest)
 mask_decrease = (df['meanest'] < df['meanest_l']) & df['meanest'].notna() & df['meanest_l'].notna()
 df.loc[mask_decrease, 'ChForecastAccrual'] = 0
-
-# HIDDEN STATA LOGIC: Handle equal cases (meanest == l.meanest)
-# BREAKTHROUGH: When values are equal, Stata uses tempAccruals tie-breaker, BUT if tempAccruals missing -> always 1
-mask_equal = (df['meanest'] == df['meanest_l']) & df['meanest'].notna() & df['meanest_l'].notna()
-# When tempAccruals is present, use it as tie-breaker
-mask_equal_accruals_present = mask_equal & df['tempAccruals'].notna()
-df.loc[mask_equal_accruals_present & (df['tempAccruals'] > 0), 'ChForecastAccrual'] = 1
-df.loc[mask_equal_accruals_present & (df['tempAccruals'] <= 0), 'ChForecastAccrual'] = 0
-# When tempAccruals is missing, always assign 1 (100% accuracy pattern discovered)
-mask_equal_accruals_missing = mask_equal & df['tempAccruals'].isna()
-df.loc[mask_equal_accruals_missing, 'ChForecastAccrual'] = 1
-
-# HIDDEN STATA LOGIC: When IBES data is missing, use discovered patterns
-# Analysis shows both missing and partial missing cases need different logic
-
-# For both missing cases: CORRECT PATTERN DISCOVERED - 100% accuracy!
-mask_both_missing = df['meanest'].isna() & df['meanest_l'].isna()
-# BREAKTHROUGH: When both IBES missing, fiscal quarter months (3,6,12) = 1, others = 0
-fiscal_quarter_months = df['time_avail_m'].dt.month.isin([3, 6, 12])
-df.loc[mask_both_missing & fiscal_quarter_months, 'ChForecastAccrual'] = 1   # Fiscal quarters = 1
-df.loc[mask_both_missing & ~fiscal_quarter_months, 'ChForecastAccrual'] = 0  # Non-quarters = 0
-
-# For partial missing cases: Use discovered "default 0" pattern (62.5% accuracy)
-mask_partial_missing = ((df['meanest'].isna() & df['meanest_l'].notna()) | 
-                       (df['meanest'].notna() & df['meanest_l'].isna()))
-df.loc[mask_partial_missing, 'ChForecastAccrual'] = 0
 
 # replace ChForecastAccrual = . if tempsort == 1
 df.loc[df['tempsort'] == 1, 'ChForecastAccrual'] = np.nan
