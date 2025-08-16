@@ -66,8 +66,9 @@ print()
 
 print("Calculating 5th percentile returns by month...")
 # Calculate 5th percentile of returns by month (retp5)
+# Use "lower" interpolation to match Stata's quantile method
 monthly_p5 = daily_crsp.group_by("time_avail_m").agg([
-    pl.col("ret").quantile(0.05).alias("retp5")
+    pl.col("ret").quantile(0.05, interpolation="lower").alias("retp5")
 ])
 
 print(f"Generated monthly 5th percentiles for {len(monthly_p5):,} months")
