@@ -36,12 +36,46 @@ def main():
     df = df.sort_values(['permno', 'time_avail_m'])
     print("Data sorted by permno and time_avail_m")
 
+    # CHECKPOINT 1: After data load
+    print("CHECKPOINT 1: After data load")
+    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Period('2021-03')) & (df['time_avail_m'] <= pd.Period('2021-05'))]
+    if not checkpoint_data.empty:
+        print("permno 13755, 2021m3-2021m5:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
+    
+    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Period('2020-09')) & (df['time_avail_m'] <= pd.Period('2020-11'))]
+    if not checkpoint_data.empty:
+        print("permno 89169, 2020m9-2020m11:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
+    
+    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Period('2019-07')) & (df['time_avail_m'] <= pd.Period('2019-09'))]
+    if not checkpoint_data.empty:
+        print("permno 91201, 2019m7-2019m9:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
+
     # SIGNAL CONSTRUCTION
     print("Starting signal construction...")
     
     # Replace missing returns with 0 (equivalent to: replace ret = 0 if mi(ret))
     df['ret'] = df['ret'].fillna(0)
     print("Replaced missing returns with 0")
+
+    # CHECKPOINT 2: After replacing missing returns with 0
+    print("CHECKPOINT 2: After replacing missing returns with 0")
+    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Period('2021-03')) & (df['time_avail_m'] <= pd.Period('2021-05'))]
+    if not checkpoint_data.empty:
+        print("permno 13755, 2021m3-2021m5:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
+    
+    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Period('2020-09')) & (df['time_avail_m'] <= pd.Period('2020-11'))]
+    if not checkpoint_data.empty:
+        print("permno 89169, 2020m9-2020m11:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
+    
+    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Period('2019-07')) & (df['time_avail_m'] <= pd.Period('2019-09'))]
+    if not checkpoint_data.empty:
+        print("permno 91201, 2019m7-2019m9:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
     
     # Calculate 10-month rolling statistics
     # Need to exclude focal (current) observation from the rolling calculation
@@ -65,6 +99,23 @@ def main():
         df['sum_excluding_focal'] / df['count_excluding_focal'],
         np.nan
     )
+
+    # CHECKPOINT 3: After Mom12mOffSeason calculation
+    print("CHECKPOINT 3: After Mom12mOffSeason calculation")
+    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Period('2021-03')) & (df['time_avail_m'] <= pd.Period('2021-05'))]
+    if not checkpoint_data.empty:
+        print("permno 13755, 2021m3-2021m5:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']].to_string())
+    
+    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Period('2020-09')) & (df['time_avail_m'] <= pd.Period('2020-11'))]
+    if not checkpoint_data.empty:
+        print("permno 89169, 2020m9-2020m11:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']].to_string())
+    
+    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Period('2019-07')) & (df['time_avail_m'] <= pd.Period('2019-09'))]
+    if not checkpoint_data.empty:
+        print("permno 91201, 2019m7-2019m9:")
+        print(checkpoint_data[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']].to_string())
     
     # Keep only observations with valid Mom12mOffSeason values
     df_final = df.dropna(subset=['Mom12mOffSeason']).copy()
@@ -82,6 +133,23 @@ def main():
     # Convert to integers for consistency
     df_output['permno'] = df_output['permno'].astype('int64')
     df_output['yyyymm'] = df_output['yyyymm'].astype('int64')
+
+    # CHECKPOINT 4: Before save
+    print("CHECKPOINT 4: Before save")
+    checkpoint_data = df_output[(df_output['permno'] == 13755) & (df_output['yyyymm'] == 202105)]
+    if not checkpoint_data.empty:
+        print("permno 13755, yyyymm 202105:")
+        print(checkpoint_data[['permno', 'yyyymm', 'Mom12mOffSeason']].to_string())
+    
+    checkpoint_data = df_output[(df_output['permno'] == 89169) & (df_output['yyyymm'] == 202011)]
+    if not checkpoint_data.empty:
+        print("permno 89169, yyyymm 202011:")
+        print(checkpoint_data[['permno', 'yyyymm', 'Mom12mOffSeason']].to_string())
+    
+    checkpoint_data = df_output[(df_output['permno'] == 91201) & (df_output['yyyymm'] == 201909)]
+    if not checkpoint_data.empty:
+        print("permno 91201, yyyymm 201909:")
+        print(checkpoint_data[['permno', 'yyyymm', 'Mom12mOffSeason']].to_string())
     
     # Save to CSV
     output_path = '../pyData/Predictors/Mom12mOffSeason.csv'

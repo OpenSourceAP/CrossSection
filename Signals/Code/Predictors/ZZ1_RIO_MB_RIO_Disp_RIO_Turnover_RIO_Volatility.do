@@ -15,11 +15,18 @@ merge 1:1 permno time_avail_m using "$pathDataIntermediate/m_aCompustat", keep(m
 merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(vol shrout ret)
 merge m:1 tickerIBES time_avail_m using "$pathtemp/tempIBES", keep(master match) nogenerate keepusing (stdev)
 
+* CHECKPOINT 1: After all data merges
+list permno time_avail_m tickerIBES mve_c instown_perc at ceq txditc vol shrout ret stdev if permno == 11379 & time_avail_m == tm(1989m1)
+
 * filter below 20th pct NYSE me 
 * do before indep sort
 bys time_avail_m: astile sizecat = mve_c, qc(exchcd==1 | exchcd == 2) nq(5)
 drop if sizecat == 1
 drop sizecat
+
+* CHECKPOINT 2: After size filtering
+count if permno == 11379 & time_avail_m == tm(1989m1)
+list permno time_avail_m mve_c if permno == 11379 & time_avail_m == tm(1989m1)
 
 * Residual Institutional Ownership sort
 gen temp = instown_perc/100
@@ -28,9 +35,16 @@ replace temp = .9999 if temp > .9999
 replace temp = .0001 if temp < .0001
 gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
 
+* CHECKPOINT 3: After RIO calculation
+list permno time_avail_m instown_perc temp mve_c RIO if permno == 11379 & time_avail_m == tm(1989m1)
+
 xtset permno time_avail_m
 gen RIOlag = l6.RIO
 egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
+
+* CHECKPOINT 4: After RIO lag and quantile calculation
+list permno time_avail_m RIO RIOlag cat_RIO if permno == 11379 & time_avail_m == tm(1989m1)
+tabstat RIOlag if time_avail_m == tm(1989m1), statistics(min p20 p40 p60 p80 max) by(cat_RIO)
 
 
 * Forecast dispersion, market-to-book, turnover, volatiltity sorts
@@ -42,13 +56,26 @@ gen Disp = stdev/at if stdev > 0
 gen Turnover = vol/shrout
 bys permno: asrol ret, gen(Volatility) stat(sd) window(time_avail_m 12) min(6)
 
+* CHECKPOINT 5: After MB, Disp, Turnover, Volatility calculations
+list permno time_avail_m MB Disp Turnover Volatility if permno == 11379 & time_avail_m == tm(1989m1)
+
 foreach v of varlist MB Disp Volatility Turnover {
 	egen cat_`v'  = fastxtile(`v'), n(5) by(time_avail_m)
 	gen RIO_`v' = cat_RIO if cat_`v' == 5
 }
 
+* CHECKPOINT 6: After quantile calculations for all variables
+list permno time_avail_m cat_MB cat_Disp cat_Turnover cat_Volatility if permno == 11379 & time_avail_m == tm(1989m1)
+foreach v of varlist MB Disp Volatility Turnover {
+    display "Quantile boundaries for `v' at tm(1989m1):"
+    tabstat `v' if time_avail_m == tm(1989m1), statistics(min p20 p40 p60 p80 max) by(cat_`v')
+}
+
 * patch for Dispersion
 replace RIO_Disp = cat_RIO if cat_Disp >= 4 & cat_Disp != .
+
+* CHECKPOINT 7: Final RIO predictor values
+list permno time_avail_m cat_RIO cat_MB cat_Disp cat_Turnover cat_Volatility RIO_MB RIO_Disp RIO_Turnover RIO_Volatility if permno == 11379 & time_avail_m == tm(1989m1)
 
 label var RIO_MB "Inst Own and MB"
 label var RIO_Disp "Inst Own and Forecast Dispersion"

@@ -37,6 +37,11 @@ from utils.savepredictor import save_predictor
 from utils.saveplacebo import save_placebo
 from utils.asreg import asreg
 
+# Debug constants - replace with actual problematic observation from test results
+DEBUG_PERMNO = 43880  # Replace with actual value
+DEBUG_YYYYMM = 199301  # Replace with actual value (e.g., 200704)
+DEBUG_DATE = pl.date(DEBUG_YYYYMM//100, DEBUG_YYYYMM%100, 1)  # Convert to polars date
+
 print("=" * 80)
 print("🏗️  ZZ1_ResidualMomentum6m_ResidualMomentum.py")
 print("Generating ResidualMomentum6m and ResidualMomentum predictors")
@@ -67,6 +72,15 @@ print("\n🔧 Starting signal construction...")
 print("Calculating excess returns (retrf = ret - rf)...")
 df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("retrf"))
 
+# CHECKPOINT 1: After data merge and excess return calculation
+print(f"CHECKPOINT 1: After data merge and excess return calculation for permno={DEBUG_PERMNO}")
+checkpoint_data = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("time_avail_m") == DEBUG_DATE)
+).head(10)
+if checkpoint_data.height > 0:
+    print(checkpoint_data.select(["permno", "time_avail_m", "ret", "rf", "retrf", "mktrf", "hml", "smb"]))
+
 # Sort by permno and time_avail_m (important for time series operations)
 df = df.sort(["permno", "time_avail_m"])
 
@@ -75,6 +89,17 @@ print("Creating time_temp position index by permno...")
 df = df.with_columns(
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 )
+
+# CHECKPOINT 2: After creating time_temp position index
+print(f"CHECKPOINT 2: After creating time_temp for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
+checkpoint_data = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("time_avail_m") == DEBUG_DATE)
+).head(10)
+if checkpoint_data.height > 0:
+    print(checkpoint_data.select(["permno", "time_avail_m", "time_temp", "retrf"]))
+permno_count = df.filter(pl.col("permno") == DEBUG_PERMNO).height
+print(f"Total observations for permno {DEBUG_PERMNO}: {permno_count}")
 
 print("Running rolling 36-observation FF3 regressions by permno using asreg helper...")
 print("Processing", df['permno'].n_unique(), "unique permnos...")
@@ -103,6 +128,27 @@ df = df.with_columns(
     pl.col("resid").alias("_residuals")
 ).drop("resid")
 
+# CHECKPOINT 3: After rolling FF3 regression
+print(f"CHECKPOINT 3: After rolling FF3 regression for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
+checkpoint_data = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("time_avail_m") == DEBUG_DATE)
+).head(5)
+if checkpoint_data.height > 0:
+    print(checkpoint_data.select(["permno", "time_avail_m", "time_temp", "_residuals", "retrf", "mktrf"]))
+    # Show summary stats
+    summary = checkpoint_data.select([
+        pl.col("_residuals").count().alias("resid_count"),
+        pl.col("_residuals").mean().alias("resid_mean"),
+        pl.col("_residuals").std().alias("resid_std")
+    ])
+    print("Residual summary stats:", summary)
+non_null_count = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("_residuals").is_not_null())
+).height
+print(f"Non-null residuals for permno {DEBUG_PERMNO}: {non_null_count}")
+
 print(f"Completed rolling regressions for {len(df):,} observations")
 
 # Calculate lagged residuals and rolling momentum signals using pure Polars
@@ -110,14 +156,50 @@ print("Calculating lagged residuals and momentum signals...")
 df = df.with_columns([
     # Lag residuals by 1 observation: temp = l1._residuals
     pl.col("_residuals").shift(1).over("permno").alias("temp")
-]).with_columns([
+])
+
+# CHECKPOINT 4: After lagged residuals calculation
+print(f"CHECKPOINT 4: After lagged residuals for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
+checkpoint_data = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("time_avail_m") == DEBUG_DATE)
+).head(5)
+if checkpoint_data.height > 0:
+    print(checkpoint_data.select(["permno", "time_avail_m", "time_temp", "_residuals", "temp"]))
+# Show recent observations
+recent_data = df.filter(pl.col("permno") == DEBUG_PERMNO).tail(10)
+print("Recent observations for permno:", recent_data.select(["permno", "time_avail_m", "time_temp", "_residuals", "temp"]))
+non_null_temp_count = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("temp").is_not_null())
+).height
+print(f"Non-null temp (lagged residuals) for permno {DEBUG_PERMNO}: {non_null_temp_count}")
+
+df = df.with_columns([
     # 6-observation rolling statistics (position-based, min 6 observations)
     pl.col("temp").rolling_mean(window_size=6, min_samples=6).over("permno").alias("mean6_temp"),
     pl.col("temp").rolling_std(window_size=6, min_samples=6).over("permno").alias("sd6_temp"),
     # 11-observation rolling statistics (position-based, min 11 observations)
     pl.col("temp").rolling_mean(window_size=11, min_samples=11).over("permno").alias("mean11_temp"),
     pl.col("temp").rolling_std(window_size=11, min_samples=11).over("permno").alias("sd11_temp")
-]).with_columns([
+])
+
+# CHECKPOINT 5: After 6-month rolling statistics
+print(f"CHECKPOINT 5: After 6-month rolling statistics for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
+checkpoint_data = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("time_avail_m") == DEBUG_DATE)
+)
+if checkpoint_data.height > 0:
+    print(checkpoint_data.select(["permno", "time_avail_m", "temp", "mean6_temp", "sd6_temp"]))
+    # Show summary stats
+    summary = checkpoint_data.select([
+        pl.col("mean6_temp").alias("mean6"),
+        pl.col("sd6_temp").alias("sd6")
+    ])
+    print("6-month rolling stats:", summary)
+
+df = df.with_columns([
     # Calculate momentum signals
     (pl.col("mean6_temp") / pl.col("sd6_temp")).alias("ResidualMomentum6m"),
     (pl.col("mean11_temp") / pl.col("sd11_temp")).alias("ResidualMomentum")
@@ -131,6 +213,25 @@ print(f"ResidualMomentum6m - Mean: {df.select(pl.col('ResidualMomentum6m').mean(
 print(f"ResidualMomentum - Mean: {df.select(pl.col('ResidualMomentum').mean()).item():.4f}, Std: {df.select(pl.col('ResidualMomentum').std()).item():.4f}")
 print(f"Non-missing ResidualMomentum6m: {df.select(pl.col('ResidualMomentum6m').is_not_null().sum()).item():,}")
 print(f"Non-missing ResidualMomentum: {df.select(pl.col('ResidualMomentum').is_not_null().sum()).item():,}")
+
+# CHECKPOINT 6: After 11-month rolling statistics and final calculation
+print(f"CHECKPOINT 6: After 11-month rolling stats for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
+checkpoint_data = df.filter(
+    (pl.col("permno") == DEBUG_PERMNO) & 
+    (pl.col("time_avail_m") == DEBUG_DATE)
+)
+if checkpoint_data.height > 0:
+    print(checkpoint_data.select(["permno", "time_avail_m", "temp", "mean11_temp", "sd11_temp", "ResidualMomentum"]))
+    # Show summary stats
+    summary = checkpoint_data.select([
+        pl.col("mean11_temp").alias("mean11"),
+        pl.col("sd11_temp").alias("sd11"),
+        pl.col("ResidualMomentum").alias("momentum")
+    ])
+    print("11-month rolling stats:", summary)
+    # Show final predictors
+    final_predictors = checkpoint_data.select(["permno", "time_avail_m", "ResidualMomentum6m", "ResidualMomentum"])
+    print("Final predictor values:", final_predictors)
 
 # SAVE
 print("\n💾 Saving signals...")

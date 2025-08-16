@@ -19,6 +19,17 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Replace missing returns with 0
 df['ret'] = df['ret'].fillna(0)
 
+# CHECKPOINT 1: After ret cleanup, before lag calculation
+print("CHECKPOINT 1: After ret cleanup, before lag calculation")
+debug_obs1 = df[(df['permno'] == 15017) & (df['time_avail_m'] == pd.Period('2018-06', freq='M'))]
+if not debug_obs1.empty:
+    print("permno=15017, time_avail_m=2018-06:")
+    print(debug_obs1[['permno', 'time_avail_m', 'ret']].to_string())
+debug_obs2 = df[(df['permno'] == 91201) & (df['time_avail_m'] == pd.Period('2019-10', freq='M'))]
+if not debug_obs2.empty:
+    print("permno=91201, time_avail_m=2019-10:")
+    print(debug_obs2[['permno', 'time_avail_m', 'ret']].to_string())
+
 # Calculate lags for months 13-18
 df['ret_lag13'] = df.groupby('permno')['ret'].shift(13).fillna(0)
 df['ret_lag14'] = df.groupby('permno')['ret'].shift(14).fillna(0)
@@ -35,6 +46,17 @@ df['MRreversal'] = ((1 + df['ret_lag13']) *
                     (1 + df['ret_lag17']) * 
                     (1 + df['ret_lag18'])) - 1
 
+# CHECKPOINT 2: After MRreversal calculation
+print("\nCHECKPOINT 2: After MRreversal calculation")
+debug_obs1 = df[(df['permno'] == 15017) & (df['time_avail_m'] == pd.Period('2018-06', freq='M'))]
+if not debug_obs1.empty:
+    print("permno=15017, time_avail_m=2018-06:")
+    print(debug_obs1[['permno', 'time_avail_m', 'ret', 'ret_lag13', 'ret_lag14', 'ret_lag15', 'ret_lag16', 'ret_lag17', 'ret_lag18', 'MRreversal']].to_string())
+debug_obs2 = df[(df['permno'] == 91201) & (df['time_avail_m'] == pd.Period('2019-10', freq='M'))]
+if not debug_obs2.empty:
+    print("permno=91201, time_avail_m=2019-10:")
+    print(debug_obs2[['permno', 'time_avail_m', 'ret', 'ret_lag13', 'ret_lag14', 'ret_lag15', 'ret_lag16', 'ret_lag17', 'ret_lag18', 'MRreversal']].to_string())
+
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'MRreversal']].copy()
 df_final = df_final.dropna(subset=['MRreversal'])
@@ -49,6 +71,17 @@ df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
 # Keep only required columns and set index
 df_final = df_final[['permno', 'yyyymm', 'MRreversal']].copy()
 df_final = df_final.set_index(['permno', 'yyyymm'])
+
+# CHECKPOINT 3: Before save
+print("\nCHECKPOINT 3: Before save")
+debug_obs1 = df_final[(df_final.index.get_level_values('permno') == 15017) & (df_final.index.get_level_values('yyyymm') == 201806)]
+if not debug_obs1.empty:
+    print("permno=15017, yyyymm=201806:")
+    print(debug_obs1.to_string())
+debug_obs2 = df_final[(df_final.index.get_level_values('permno') == 91201) & (df_final.index.get_level_values('yyyymm') == 201910)]
+if not debug_obs2.empty:
+    print("permno=91201, yyyymm=201910:")
+    print(debug_obs2.to_string())
 
 # SAVE
 df_final.to_csv('../pyData/Predictors/MRreversal.csv')
