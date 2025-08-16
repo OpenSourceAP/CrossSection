@@ -170,6 +170,35 @@ for pn in [10001, 10006, 11406, 12473]:
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
+# CRITICAL: Identify the first observation with actual dividend data for each permno
+# This matches Stata's behavior where observations before first dividend data are effectively excluded
+first_div_obs = df[df['cd3'].notna()].groupby('permno')['time_avail_m'].min().reset_index()
+first_div_obs.columns = ['permno', 'first_div_date']
+
+# Merge to get first dividend observation date
+df = df.merge(first_div_obs, on='permno', how='left')
+
+# Only keep observations from first dividend observation onward
+# This matches Stata's effective behavior after the merge step
+df = df[(df['time_avail_m'] >= df['first_div_date']) | df['first_div_date'].isna()]
+df = df.drop('first_div_date', axis=1)
+
+# CHECKPOINT 8B: Check after filtering to first dividend observation
+print("\n=== CHECKPOINT 8B: Check after filtering to first dividend observation ===")
+for pn in [10001, 10006, 11406, 12473]:
+    print(f"\n--- Permno {pn} ---")
+    total_count = len(df[df['permno'] == pn])
+    print(f"Total observations for permno {pn} after filtering: {total_count}")
+    
+    test_data = df[(df['permno'] == pn) & 
+                   (df['time_avail_m'] >= pd.Timestamp('1986-01-01')) & 
+                   (df['time_avail_m'] <= pd.Timestamp('1987-12-01'))]
+    if not test_data.empty:
+        print(f"permno {pn} data after filtering:")
+        print(test_data[['permno', 'time_avail_m', 'cd3', 'divamt']].to_string(index=False))
+    else:
+        print(f"No data found for permno {pn} after filtering")
+
 # Fill missing cd3 with previous value (equivalent to Stata's l1.cd3 logic)
 # Stata: replace cd3 = l1.cd3 if cd3 == .
 # This should ONLY fill missing values, not override existing values
@@ -240,36 +269,6 @@ for pn in [10001, 10006, 11406, 12473]:
     else:
         print(f"No data found for permno {pn} after cd3 < 6 filter")
 
-# CRITICAL FIX: Filter to only include observations from the first dividend month onward
-# This must be done BEFORE creating lags to match Stata's behavior
-first_div_dates = df[df['divamt'] > 0].groupby('permno')['time_avail_m'].min().reset_index()
-first_div_dates.columns = ['permno', 'first_div_date']
-
-# Merge to get first dividend date for each permno-month
-df = df.merge(first_div_dates, on='permno', how='left')
-
-# Only keep observations from first dividend date onward (not before)
-# If no dividends ever observed, keep all (first_div_date will be NaN)
-df = df[(df['time_avail_m'] >= df['first_div_date']) | df['first_div_date'].isna()]
-
-# Drop the helper column
-df = df.drop('first_div_date', axis=1)
-
-# CHECKPOINT 11B: Check after first dividend date filtering (Python-specific step)
-print("\n=== CHECKPOINT 11B: Check after first dividend date filtering ===")
-for pn in [10001, 10006, 11406, 12473]:
-    print(f"\n--- Permno {pn} ---")
-    total_count = len(df[df['permno'] == pn])
-    print(f"Total observations for permno {pn} after filtering: {total_count}")
-    
-    test_data = df[(df['permno'] == pn) & 
-                   (df['time_avail_m'] >= pd.Timestamp('1986-01-01')) & 
-                   (df['time_avail_m'] <= pd.Timestamp('1987-12-01'))]
-    if not test_data.empty:
-        print(f"permno {pn} data after filtering:")
-        print(test_data[['permno', 'time_avail_m', 'cd3', 'divamt', 'divpaid']].to_string(index=False))
-    else:
-        print(f"No data found for permno {pn} after filtering")
 
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
@@ -384,6 +383,9 @@ print(year_counts.head(10))
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'DivSeason']].copy()
+
+# CRITICAL: Match Stata's savepredictor.do behavior - drop if DivSeason == .
+# This is the key step that was missing!
 df_final = df_final.dropna(subset=['DivSeason'])
 
 # Convert time_avail_m to yyyymm format like other predictors
