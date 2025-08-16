@@ -47,12 +47,12 @@ STOP HERE. Do not run the scripts.
 
 ## Group 2
 
-- MS: TBC
-- NumEarnIncrease: TBC
-- PS: TBC
-- Tax: TBC
-- VolumeTrend: TBC
-- retConglomerate: TBC
+- MS: ✅ COMPLETED
+- NumEarnIncrease: ✅ COMPLETED
+- PS: ✅ COMPLETED
+- Tax: ✅ COMPLETED
+- VolumeTrend: ✅ COMPLETED
+- retConglomerate: ✅ COMPLETED
 
 ## Group 3
 
