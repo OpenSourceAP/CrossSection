@@ -46,7 +46,7 @@ count if !missing(MomVol) & time_avail_m == tm(1943m1)
 // filter
 bys permno (time_avail_m): replace MomVol = . if _n < 24
 * CHECKPOINT 6: Debug time filter  
-list permno time_avail_m _n MomVol if permno == 10006 & time_avail_m == tm(1943m1)
+list permno time_avail_m MomVol if permno == 10006 & time_avail_m == tm(1943m1)
 drop temp*
 label var MomVol "Momentum among high volume stocks"
 
