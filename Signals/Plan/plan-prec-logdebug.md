@@ -2,7 +2,7 @@
 
 ## Context
 
-- Read Plan/0814n3-editdo-prec.md 
+- Read Plan/0814n4-editdo2-prec.md 
     - It explains how we added do file log output to help trace precision failures.
 
 ## Task: use the do file logs to debug the precision failures
@@ -32,49 +32,8 @@ List of scripts to debug is below.
 
 ### Group 1
 
-- BetaTailRisk
-    - Skip
-- ChForecastAccrual
-    - Fixed ✅
-- CredRatDG
-    - Skip
-- DivSeason
-    - Improved
-- EarnSupBig
-    - Attempted
-    - May want to override. The stata data has insane outliers, like 1E+13. Likely due to division by zero.
-- Herf
-    - Fixed ✅
-- HerfAsset
-    - TBC
-- IndMom
-    - TBC
-- IndRetBig
-    - Attempted
-- Investment
-    - TBC
-
-### Group 2
-- MRreversal
-- MS
-- Mom12mOffSeason
-- MomOffSeason
-- MomOffSeason06YrPlus
-- MomOffSeason11YrPlus
-- MomOffSeason16YrPlus
-- MomVol
-- NumEarnIncrease
-- PS
-- Tax
-- TrendFactor
-- VolumeTrend
-- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F
-- ZZ1_OrgCap_OrgCapNoAdj
-- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility
-- ZZ1_ResidualMomentum6m_ResidualMomentum
-- ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
-- ZZ2_BetaFP
-- ZZ2_IdioVolAHT
-- ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat
-- realestate
-- retConglomerate
+- BetaTailRisk: ✅ COMPLETED
+- DivSeason: TBC
+- EarnSupBig: TBC
+- IndMom: TBC
+- IndRetBig: TBC
