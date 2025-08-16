@@ -71,9 +71,15 @@ for permno in problem_permnos:
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Stata: gen Mom6m = ( (1+l.ret)*(1+l2.ret)*(1+l3.ret)*(1+l4.ret)*(1+l5.ret)) - 1
-# Create lag variables for momentum calculation
+# Create TIME-BASED lag variables to match Stata's behavior exactly
+# Stata's l.ret looks for the exact previous calendar month, not previous position
 for lag in range(1, 6):
-    df[f'l{lag}_ret'] = df.groupby('permno')['ret'].shift(lag)
+    # Create lag data by shifting time_avail_m forward by lag months
+    df_lag = df[['permno', 'time_avail_m', 'ret']].copy()
+    df_lag['time_avail_m'] = df_lag['time_avail_m'] + pd.DateOffset(months=lag)
+    df_lag = df_lag.rename(columns={'ret': f'l{lag}_ret'})
+    df = df.merge(df_lag[['permno', 'time_avail_m', f'l{lag}_ret']], 
+                  on=['permno', 'time_avail_m'], how='left')
 
 # Calculate 6-month momentum
 df['Mom6m'] = ((1 + df['l1_ret']) * (1 + df['l2_ret']) * (1 + df['l3_ret']) * 

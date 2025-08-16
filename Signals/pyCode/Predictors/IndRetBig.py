@@ -120,7 +120,8 @@ else:
     print("No observation for permno 10886 in 200204")
 
 # Stata: keep if tempRK >=.7 & !mi(tempRK)
-df_big = df[(df['tempRK'] >= 0.7) & df['tempRK'].notna()].copy()
+# Fix: Use strict inequality to match Stata's exact behavior for companies at tempRK = 0.7
+df_big = df[(df['tempRK'] > 0.7) & df['tempRK'].notna()].copy()
 
 # CHECKPOINT 6: After filtering for large companies
 print("CHECKPOINT 6: Large companies (tempRK >= 0.7)")

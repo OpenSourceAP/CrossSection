@@ -2,7 +2,7 @@
 
 ## Context
 
-- Read Plan/0814n4-editdo2-prec.md 
+- Read Plan/plan-editdo2-prec.md 
     - It explains how we added do file log output to help trace precision failures.
 
 ## Task: use the do file logs to debug the precision failures
@@ -33,7 +33,8 @@ List of scripts to debug is below.
 ### Group 1
 
 - BetaTailRisk: ✅ COMPLETED
-- DivSeason: TBC
+- DivSeason: ATTEMPTED
+  - no improvement in tests despite improved logic.
 - EarnSupBig: TBC
 - IndMom: TBC
 - IndRetBig: TBC
