@@ -27,6 +27,14 @@ foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
 
 * Keep only last observation each month
 bys permno time_avail_m (time_d): keep if _n == _N
+
+* CHECKPOINT 1: Check moving averages for problem observations before normalization
+list permno time_avail_m P A_* if (permno == 89901 & time_avail_m == tm(2020m10)) | ///
+                                    (permno == 89901 & time_avail_m == tm(2020m9)) | ///
+                                    (permno == 91040 & time_avail_m == tm(2018m2)) | ///
+                                    (permno == 91040 & time_avail_m == tm(2018m3)) | ///
+                                    (permno == 91040 & time_avail_m == tm(2018m1))
+
 drop time_d time_temp 
 * Normalize by closing price at end of month
 foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
@@ -34,6 +42,13 @@ foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
     replace A_`L' = A_`L'/P
 	
 }
+
+* CHECKPOINT 2: Check normalized moving averages for problem observations
+list permno time_avail_m A_* if (permno == 89901 & time_avail_m == tm(2020m10)) | ///
+                                 (permno == 89901 & time_avail_m == tm(2020m9)) | ///
+                                 (permno == 91040 & time_avail_m == tm(2018m2)) | ///
+                                 (permno == 91040 & time_avail_m == tm(2018m3)) | ///
+                                 (permno == 91040 & time_avail_m == tm(2018m1))
 
 keep permno time_avail_m A_*
 save tempMA, replace
@@ -64,7 +79,22 @@ merge 1:1 permno time_avail_m using tempMA, keep(match) nogenerate
 * Cross-sectional regression of returns on trend signals in month t-1
 xtset permno time_avail_m
 gen fRet = f.ret  // Instead of lagging all moving averages, I lead the return (and adjust the rolling sums below accordingly)
+
+* CHECKPOINT 3: Check data for problem observations before regression
+list permno time_avail_m ret fRet A_* if (permno == 89901 & time_avail_m == tm(2020m10)) | ///
+                                          (permno == 89901 & time_avail_m == tm(2020m9)) | ///
+                                          (permno == 91040 & time_avail_m == tm(2018m2)) | ///
+                                          (permno == 91040 & time_avail_m == tm(2018m3)) | ///
+                                          (permno == 91040 & time_avail_m == tm(2018m1))
+
 bys time_avail_m: asreg fRet A_*
+
+* CHECKPOINT 4: Check regression coefficients for problem observations
+list permno time_avail_m _b_* if (permno == 89901 & time_avail_m == tm(2020m10)) | ///
+                                  (permno == 89901 & time_avail_m == tm(2020m9)) | ///
+                                  (permno == 91040 & time_avail_m == tm(2018m2)) | ///
+                                  (permno == 91040 & time_avail_m == tm(2018m3)) | ///
+                                  (permno == 91040 & time_avail_m == tm(2018m1))
 
 * Take 12-month rolling average of MA beta coefficients (leaving out most recent one to not use future information from fRet)
 preserve
@@ -80,6 +110,14 @@ restore
 merge m:1 time_avail_m using tempBeta, nogenerate 
 	
 * Calculate expected return E[r] = \sum E[\beta_i]A_L_i
+
+* CHECKPOINT 5: Check expected betas for problem observations
+list permno time_avail_m EBeta* if (permno == 89901 & time_avail_m == tm(2020m10)) | ///
+                                    (permno == 89901 & time_avail_m == tm(2020m9)) | ///
+                                    (permno == 91040 & time_avail_m == tm(2018m2)) | ///
+                                    (permno == 91040 & time_avail_m == tm(2018m3)) | ///
+                                    (permno == 91040 & time_avail_m == tm(2018m1))
+
 gen TrendFactor = EBeta_3    * A_3 +   ///
                   EBeta_5    * A_5 +   ///
                   EBeta_10   * A_10 +  ///
@@ -91,6 +129,13 @@ gen TrendFactor = EBeta_3    * A_3 +   ///
                   EBeta_600  * A_600 + ///
 				  EBeta_800  * A_800 + ///
 				  EBeta_1000 * A_1000
+
+* CHECKPOINT 6: Check final TrendFactor values for problem observations
+list permno time_avail_m TrendFactor if (permno == 89901 & time_avail_m == tm(2020m10)) | ///
+                                         (permno == 89901 & time_avail_m == tm(2020m9)) | ///
+                                         (permno == 91040 & time_avail_m == tm(2018m2)) | ///
+                                         (permno == 91040 & time_avail_m == tm(2018m3)) | ///
+                                         (permno == 91040 & time_avail_m == tm(2018m1))
 				  
 label var TrendFactor "Trend Factor"
 

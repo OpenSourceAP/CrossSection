@@ -67,6 +67,17 @@ df['xsga'] = df['xsga'].fillna(0)
 # replace xsga = xsga/gnpdefl (price deflation)
 df['xsga'] = df['xsga'] / df['gnpdefl']
 
+# CHECKPOINT 1: Check data for problem observations before OrgCapNoAdj calculation
+print("* CHECKPOINT 1: Check data for problem observations before OrgCapNoAdj calculation")
+problem_obs_1 = df[
+    ((df['permno'] == 13812) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 14925) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 24087) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 89698) & (df['time_avail_m'] == pd.Timestamp('2024-06-01')))
+]
+if len(problem_obs_1) > 0:
+    print(problem_obs_1[['permno', 'time_avail_m', 'tempAge', 'xsga', 'gnpdefl', 'at']])
+
 # Initialize OrgCapNoAdj
 # gen OrgCapNoAdj = 4*xsga if tempAge <= 12 
 df['OrgCapNoAdj'] = np.where(df['tempAge'] <= 12, 4 * df['xsga'], np.nan)
@@ -100,6 +111,21 @@ for idx, row in df.iterrows():
                 new_value = 0.85 * lag_value + row['xsga']
                 df.at[idx, 'OrgCapNoAdj'] = new_value
 
+# CHECKPOINT 2: Check OrgCapNoAdj calculation for problem observations
+print("* CHECKPOINT 2: Check OrgCapNoAdj calculation for problem observations")
+# Create lag column for display purposes
+df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
+df['l12_OrgCapNoAdj'] = df.groupby('permno')['OrgCapNoAdj'].shift(12)
+
+problem_obs_2 = df[
+    ((df['permno'] == 13812) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 14925) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 24087) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 89698) & (df['time_avail_m'] == pd.Timestamp('2024-06-01')))
+]
+if len(problem_obs_2) > 0:
+    print(problem_obs_2[['permno', 'time_avail_m', 'OrgCapNoAdj', 'l12_OrgCapNoAdj']])
+
 # replace OrgCapNoAdj = OrgCapNoAdj/at
 df['OrgCapNoAdj'] = df['OrgCapNoAdj'] / df['at']
 
@@ -125,6 +151,17 @@ df['OrgCapNoAdjtemp'] = df.groupby('time_avail_m')['OrgCapNoAdj'].transform(
     lambda x: winsorize_by_group(pd.DataFrame({'val': x}), 'val')
 )
 
+# CHECKPOINT 3: Check winsorized values for problem observations
+print("* CHECKPOINT 3: Check winsorized values for problem observations")
+problem_obs_3 = df[
+    ((df['permno'] == 13812) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 14925) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 24087) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 89698) & (df['time_avail_m'] == pd.Timestamp('2024-06-01')))
+]
+if len(problem_obs_3) > 0:
+    print(problem_obs_3[['permno', 'time_avail_m', 'OrgCapNoAdj', 'OrgCapNoAdjtemp']])
+
 # sicff sicCRSP, generate(tempFF17) industry(17)
 # Need to create FF17 industry classification from sicCRSP
 # This is equivalent to Fama-French 17 industry classification
@@ -134,6 +171,17 @@ df['tempFF17'] = sicff(df['sicCRSP'], industry=17)
 
 # drop if mi(tempFF17)
 df = df.dropna(subset=['tempFF17']).copy()
+
+# CHECKPOINT 4: Check FF17 industry classification for problem observations
+print("* CHECKPOINT 4: Check FF17 industry classification for problem observations")
+problem_obs_4 = df[
+    ((df['permno'] == 13812) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 14925) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 24087) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 89698) & (df['time_avail_m'] == pd.Timestamp('2024-06-01')))
+]
+if len(problem_obs_4) > 0:
+    print(problem_obs_4[['permno', 'time_avail_m', 'sicCRSP', 'tempFF17']])
 
 print(f"After FF17 classification: {len(df):,} observations")
 
@@ -145,12 +193,34 @@ temp_stats.columns = ['tempFF17', 'time_avail_m', 'tempMean', 'tempSD']
 
 df = pd.merge(df, temp_stats, on=['tempFF17', 'time_avail_m'], how='left')
 
+# CHECKPOINT 5: Check industry mean and SD for problem observations
+print("* CHECKPOINT 5: Check industry mean and SD for problem observations")
+problem_obs_5 = df[
+    ((df['permno'] == 13812) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 14925) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 24087) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 89698) & (df['time_avail_m'] == pd.Timestamp('2024-06-01')))
+]
+if len(problem_obs_5) > 0:
+    print(problem_obs_5[['permno', 'time_avail_m', 'tempFF17', 'tempMean', 'tempSD']])
+
 # gen OrgCap = (OrgCapNoAdjtemp - tempMean)/tempSD
 df['OrgCap'] = (df['OrgCapNoAdjtemp'] - df['tempMean']) / df['tempSD']
 
 # Handle cases where tempSD is 0 or NaN
 df.loc[df['tempSD'] == 0, 'OrgCap'] = np.nan
 df.loc[df['tempSD'].isna(), 'OrgCap'] = np.nan
+
+# CHECKPOINT 6: Check final OrgCap values for problem observations
+print("* CHECKPOINT 6: Check final OrgCap values for problem observations")
+problem_obs_6 = df[
+    ((df['permno'] == 13812) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 14925) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 24087) & (df['time_avail_m'] == pd.Timestamp('2024-06-01'))) |
+    ((df['permno'] == 89698) & (df['time_avail_m'] == pd.Timestamp('2024-06-01')))
+]
+if len(problem_obs_6) > 0:
+    print(problem_obs_6[['permno', 'time_avail_m', 'OrgCap']])
 
 print(f"Final OrgCap values: {df['OrgCap'].notna().sum():,} non-missing")
 
