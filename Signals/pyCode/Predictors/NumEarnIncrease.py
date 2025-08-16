@@ -25,6 +25,15 @@ df = df.merge(temp_ibq, on=['permno', 'time_lag12'], how='left')
 
 df['chearn'] = df['ibq'] - df['l12_ibq']
 
+# CHECKPOINT 1
+print("CHECKPOINT 1 - Earnings changes for permno 10056:")
+debug_filter = (df['permno'] == 10056) & (df['time_avail_m'].dt.year == 2001) & (df['time_avail_m'].dt.month.isin([3, 4, 5]))
+if debug_filter.any():
+    debug_data = df[debug_filter][['permno', 'time_avail_m', 'ibq', 'chearn']].copy()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 10056 in 2001 Mar-May period")
+
 # Create calendar-based lag variables for chearn (quarterly lags)
 for lag in [3, 6, 9, 12, 15, 18, 21, 24]:
     df[f'time_lag{lag}'] = df['time_avail_m'] - pd.DateOffset(months=lag)
@@ -59,6 +68,15 @@ df.loc[(df['chearn'] > 0) & ((df['l3_chearn'] > 0) | df['l3_chearn'].isna()) & (
 df.loc[(df['chearn'] > 0) & ((df['l3_chearn'] > 0) | df['l3_chearn'].isna()) & ((df['l6_chearn'] > 0) | df['l6_chearn'].isna()) & ((df['l9_chearn'] > 0) | df['l9_chearn'].isna()) & ((df['l12_chearn'] > 0) | df['l12_chearn'].isna()) & ((df['l15_chearn'] > 0) | df['l15_chearn'].isna()) & ((df['l18_chearn'] > 0) | df['l18_chearn'].isna()) & ((df['l21_chearn'] > 0) | df['l21_chearn'].isna()) & (df['l24_chearn'] <= 0), 'nincr'] = 8
 
 df['NumEarnIncrease'] = df['nincr']
+
+# CHECKPOINT 2
+print("CHECKPOINT 2 - Final nincr values for permno 10056:")
+debug_filter = (df['permno'] == 10056) & (df['time_avail_m'].dt.year == 2001) & (df['time_avail_m'].dt.month.isin([3, 4, 5]))
+if debug_filter.any():
+    debug_data = df[debug_filter][['permno', 'time_avail_m', 'chearn', 'nincr']].copy()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 10056 in 2001 Mar-May period")
 
 # Create yyyymm
 df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month

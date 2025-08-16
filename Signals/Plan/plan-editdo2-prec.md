@@ -47,27 +47,30 @@ STOP HERE. Do not run the scripts.
 
 ## Group 2
 
-- MRreversal: TBC
 - MS: TBC
+- NumEarnIncrease: TBC
+- PS: TBC
+- Tax: TBC
+- VolumeTrend: TBC
+- retConglomerate: TBC
+
+## Group 3
+
+very small errors
+
+- realestate: TBC
+- MRreversal: TBC
 - Mom12mOffSeason: TBC
 - MomOffSeason: TBC
 - MomOffSeason06YrPlus: TBC
 - MomOffSeason11YrPlus: TBC
-- MomOffSeason16YrPlus: TBC
 - MomVol: TBC
-- NumEarnIncrease: TBC
-
-## Group 3
-
-- PS: TBC
-- Tax: TBC
-- TrendFactor: TBC
-- VolumeTrend: TBC
-- realestate: TBC
-- retConglomerate: TBC
 
 ## Group 4
 
+complicated scripts
+
+- TrendFactor: TBC
 - ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: TBC
 - ZZ1_OrgCap_OrgCapNoAdj: TBC
 - ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility: TBC

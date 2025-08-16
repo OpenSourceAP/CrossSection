@@ -110,6 +110,15 @@ df = pl.from_pandas(df_pd).filter(
     pl.col("BM_quintile") == 1  # Keep only lowest BM quintile (growth firms)
 )
 
+# CHECKPOINT 1
+print("CHECKPOINT 1 - BM quintile data for permno 11170:")
+debug_filter = (pl.col("permno") == 11170) & (pl.col("time_avail_m").dt.year() >= 1995) & (pl.col("time_avail_m").dt.year() <= 1996)
+if df.filter(debug_filter).height > 0:
+    debug_data = df.filter(debug_filter).select(["permno", "time_avail_m", "BM", "BM_quintile"]).to_pandas()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 11170 in 1995-1996 period")
+
 print(f"After BM quintile filter: {len(df):,} observations")
 
 # Keep if at least 3 firms in sic2D-time_avail_m combination
@@ -221,6 +230,24 @@ for col in median_cols:
         pl.col(col).median().over(["sic2D", "time_avail_m"]).alias(f"md_{col}")
     )
 
+# CHECKPOINT 2
+print("CHECKPOINT 2 - ROA and CFROA medians for permno 11170:")
+debug_filter = (pl.col("permno") == 11170) & (pl.col("time_avail_m").dt.year() >= 1995) & (pl.col("time_avail_m").dt.year() <= 1996)
+if df.filter(debug_filter).height > 0:
+    debug_data = df.filter(debug_filter).select(["permno", "time_avail_m", "roa", "md_roa", "cfroa", "md_cfroa"]).to_pandas()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 11170 in 1995-1996 period")
+
+# CHECKPOINT 3
+print("CHECKPOINT 3 - Volatility medians for permno 11170:")
+debug_filter = (pl.col("permno") == 11170) & (pl.col("time_avail_m").dt.year() >= 1995) & (pl.col("time_avail_m").dt.year() <= 1996)
+if df.filter(debug_filter).height > 0:
+    debug_data = df.filter(debug_filter).select(["permno", "time_avail_m", "niVol", "md_niVol", "revVol", "md_revVol"]).to_pandas()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 11170 in 1995-1996 period")
+
 print("🎯 Creating binary indicators...")
 
 # Create the 8 binary Mohanram G-score components
@@ -244,6 +271,15 @@ df = df.with_columns([
     # M8: Advertising intensity > industry median (missing advertising treated as infinity)
     pl.when(stata_ineq_pl(pl.col("xadint"), ">", pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
 ])
+
+# CHECKPOINT 4
+print("CHECKPOINT 4 - Binary indicators for permno 11170:")
+debug_filter = (pl.col("permno") == 11170) & (pl.col("time_avail_m").dt.year() >= 1995) & (pl.col("time_avail_m").dt.year() <= 1996)
+if df.filter(debug_filter).height > 0:
+    debug_data = df.filter(debug_filter).select(["permno", "time_avail_m", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"]).to_pandas()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 11170 in 1995-1996 period")
 
 # Sum the 8 components to get tempMS
 df = df.with_columns(
@@ -281,7 +317,18 @@ df_final = df.with_columns([
     .then(pl.lit(1))
     .otherwise(pl.col("tempMS"))
     .alias("MS")
-]).select(["permno", "time_avail_m", "MS"]).filter(
+])
+
+# CHECKPOINT 5
+print("CHECKPOINT 5 - Final tempMS and MS for permno 11170:")
+debug_filter = (pl.col("permno") == 11170) & (pl.col("time_avail_m").dt.year() >= 1995) & (pl.col("time_avail_m").dt.year() <= 1996)
+if df_final.filter(debug_filter).height > 0:
+    debug_data = df_final.filter(debug_filter).select(["permno", "time_avail_m", "tempMS", "MS"]).to_pandas()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 11170 in 1995-1996 period")
+
+df_final = df_final.select(["permno", "time_avail_m", "MS"]).filter(
     pl.col("MS").is_not_null()
 )
 

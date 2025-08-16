@@ -37,6 +37,15 @@ df.loc[df['year'] == 1987, 'tr'] = 0.4
 df.loc[(df['year'] >= 1988) & (df['year'] <= 1992), 'tr'] = 0.34
 df.loc[df['year'] >= 1993, 'tr'] = 0.35
 
+# CHECKPOINT 1
+print("CHECKPOINT 1 - Tax rate and components for permno 26542:")
+debug_filter = (df['permno'] == 26542) & (df['year'] >= 1989) & (df['year'] <= 1990)
+if debug_filter.any():
+    debug_data = df[debug_filter][['permno', 'time_avail_m', 'year', 'tr', 'txfo', 'txfed', 'txt', 'txdi', 'ib']].copy()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 26542 in 1989-1990 period")
+
 # Step 1: gen Tax = ((txfo+txfed)/tr)/ib
 df['Tax'] = ((df['txfo'] + df['txfed']) / df['tr']) / df['ib']
 
@@ -64,6 +73,15 @@ cond_txfo_txfed = ((df['txfo'] + df['txfed']) > 0).fillna(False)
 cond_txt_txdi = (df['txt'] > df['txdi']).fillna(False)
 cond_standard = (cond_txfo_txfed | cond_txt_txdi) & (df['ib'] <= 0).fillna(False)
 df.loc[cond_standard, 'Tax'] = 1.0
+
+# CHECKPOINT 2
+print("CHECKPOINT 2 - Final Tax values for permno 26542:")
+debug_filter = (df['permno'] == 26542) & (df['year'] >= 1989) & (df['year'] <= 1990)
+if debug_filter.any():
+    debug_data = df[debug_filter][['permno', 'time_avail_m', 'Tax']].copy()
+    print(debug_data.to_string(index=False))
+else:
+    print("No data for permno 26542 in 1989-1990 period")
 
 # Convert time_avail_m to yyyymm
 df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month

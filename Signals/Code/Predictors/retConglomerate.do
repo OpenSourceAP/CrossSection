@@ -42,6 +42,9 @@ gen Conglomerate = 0 if tempNInd == 1 & tempCSSegmentShare > .8
 replace Conglomerate = 1 if tempNInd > 1 & tempCSSegmentShare > .8
 drop if mi(Conglomerate)
 
+* CHECKPOINT 1
+list permno gvkey sic2D tempNInd tempCSSegmentShare Conglomerate if permno == 92294 | permno == 89704, abbrev(10)
+
 tab Conglomerate
 save tempConglomerate, replace
 
@@ -94,6 +97,9 @@ keep if fyear == year
 * Now take weighted return
 egen tempTotal = total(sales), by(permno time_avail_m)
 gen tempweight = sales/tempTotal
+
+* CHECKPOINT 2
+list permno time_avail_m sic2DCSS sales tempweight ret if permno == 92294 | permno == 89704, abbrev(10)
 
 *ALL WEIGHTS ALMOST 1. WHERE ARE THE CONGLOMERATES?
 gcollapse (mean) ret [iweight = tempweight], by(permno time_avail_m)

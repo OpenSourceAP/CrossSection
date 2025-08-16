@@ -95,10 +95,28 @@ def time_based_rolling_regression(group_df):
 # Apply time-based rolling regression to each permno group
 df = df.group_by('permno', maintain_order=True).map_groups(time_based_rolling_regression)
 
+# CHECKPOINT 1
+print("CHECKPOINT 1 - Regression components for permno 83630:")
+debug_filter = (pl.col('permno') == 83630) & (pl.col('time_avail_m').dt.year() == 2012) & (pl.col('time_avail_m').dt.month().is_in([3, 4, 5]))
+debug_data = df.filter(debug_filter).select(['permno', 'time_avail_m', 'betaVolTrend', 'meanX'])
+if debug_data.height > 0:
+    print(debug_data.to_pandas().to_string(index=False))
+else:
+    print("No data for permno 83630 in 2012 Mar-May period")
+
 # Calculate VolumeTrend
 df = df.with_columns([
     (pl.col('betaVolTrend') / pl.col('meanX')).alias('VolumeTrend')
 ])
+
+# CHECKPOINT 2
+print("CHECKPOINT 2 - Final VolumeTrend for permno 83630:")
+debug_filter = (pl.col('permno') == 83630) & (pl.col('time_avail_m').dt.year() == 2012) & (pl.col('time_avail_m').dt.month().is_in([3, 4, 5]))
+debug_data = df.filter(debug_filter).select(['permno', 'time_avail_m', 'VolumeTrend'])
+if debug_data.height > 0:
+    print(debug_data.to_pandas().to_string(index=False))
+else:
+    print("No data for permno 83630 in 2012 Mar-May period")
 
 # Winsorize at 1% and 99%
 lower = df.select(pl.col('VolumeTrend').quantile(0.01)).item()

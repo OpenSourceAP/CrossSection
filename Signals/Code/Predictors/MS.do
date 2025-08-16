@@ -10,6 +10,8 @@ merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_QCompustat", keep(ma
 * (has to be done first!, see also MP)
 gen BM = log(ceq/mve_c)
 egen temp = fastxtile(BM), by(time_avail_m) n(5) 
+* CHECKPOINT 1
+list permno time_avail_m BM temp if permno == 11170 & time_avail_m >= tm(1995m6) & time_avail_m <= tm(1996m1), abbrev(10)
 keep if temp == 1 & ceq > 0
 drop temp
 
@@ -60,6 +62,8 @@ gen cfroa = oancfqsum/atdenom
 foreach v of varlist roa cfroa {
 	egen md_`v' = median(`v'), by(sic2D time_avail_m)
 }
+* CHECKPOINT 2
+list permno time_avail_m roa md_roa cfroa md_cfroa if permno == 11170 & time_avail_m >= tm(1995m6) & time_avail_m <= tm(1996m1), abbrev(10)
 gen m1 = 0
 replace m1 = 1 if roa > md_roa
 gen m2 = 0
@@ -77,6 +81,8 @@ bys permno: asrol sg, gen(revVol) stat(sd) window(time_avail_m 48) min(18)
 foreach v of varlist niVol revVol {
 	egen md_`v' = median(`v'), by(sic2D time_avail_m)
 }
+* CHECKPOINT 3
+list permno time_avail_m niVol md_niVol revVol md_revVol if permno == 11170 & time_avail_m >= tm(1995m6) & time_avail_m <= tm(1996m1), abbrev(10)
 gen m4 = 0
 replace m4 = 1 if niVol < md_niVol
 gen m5 = 0
@@ -98,6 +104,9 @@ replace m7 = 1 if capxint > md_capxint
 gen m8 = 0
 replace m8 = 1 if xadint > md_xadint
 
+* CHECKPOINT 4
+list permno time_avail_m m1 m2 m3 m4 m5 m6 m7 m8 if permno == 11170 & time_avail_m >= tm(1995m6) & time_avail_m <= tm(1996m1), abbrev(10)
+
 gen tempMS = m1 + m2 + m3 + m4 + m5 + m6 + m7 + m8
 
 * fix tempMS at most recent data release for entire yer
@@ -111,6 +120,9 @@ foreach v of varlist tempMS {
 gen MS = tempMS
 replace MS = 6 if tempMS >= 6 & tempMS <= 8
 replace MS = 1 if tempMS <= 1
+
+* CHECKPOINT 5
+list permno time_avail_m tempMS MS if permno == 11170 & time_avail_m >= tm(1995m6) & time_avail_m <= tm(1996m1), abbrev(10)
 
 
 label var MS "Mohanram G-score"

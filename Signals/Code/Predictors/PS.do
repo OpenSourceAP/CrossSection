@@ -24,12 +24,20 @@ gen p8 = 0
 replace p8 = 1 if sale/at - l12.sale/l12.at>0
 gen p9 = 0
 replace p9 = 1 if shrout <= l12.shrout
+
+* CHECKPOINT 1
+list permno time_avail_m p1 p2 p3 p4 p5 p6 p7 p8 p9 if permno == 10193 & time_avail_m >= tm(1988m2) & time_avail_m <= tm(1988m11), abbrev(10)
+
 gen PS = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9
 replace PS = . if fopt == . | ib == . | at == . | dltt == . | sale == . | act == . ///
 	| tempebit == . | shrout == .	
 	
 gen BM = log(ceq/mve_c)
 egen temp = fastxtile(BM), by(time_avail_m) n(5)  // Find highest BM quintile
+
+* CHECKPOINT 2
+list permno time_avail_m BM temp PS if permno == 10193 & time_avail_m >= tm(1988m2) & time_avail_m <= tm(1988m11), abbrev(10)
+
 replace PS =. if temp != 5
 
 label var PS "Piotroski F-score"
