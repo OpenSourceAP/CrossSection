@@ -35,6 +35,7 @@ List of scripts to debug is below.
 - BetaTailRisk: ✅ COMPLETED
 - DivSeason: ATTEMPTED
   - no improvement in tests despite improved logic.
-- EarnSupBig: TBC
-- IndMom: TBC
-- IndRetBig: TBC
+- EarnSupBig: ATTEMPTED
+  - no improvement
+- IndMom: ✅ COMPLETED
+- IndRetBig: ✅ COMPLETED
