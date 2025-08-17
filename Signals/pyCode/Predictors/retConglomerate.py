@@ -95,7 +95,10 @@ def main():
     print(f"After sales filter: {segments_df.shape}")
     
     # tostring sics1, replace
+    # In Stata, missing numeric values become "." when converted to string
+    # In Python, NaN becomes "nan" - we need to match Stata behavior
     segments_df['sics1'] = segments_df['sics1'].astype(str)
+    segments_df['sics1'] = segments_df['sics1'].replace('nan', '.')
     
     # ------------------------------------------------------------
     # Identify Conglomerates (following Stata code lines 27-46 exactly)

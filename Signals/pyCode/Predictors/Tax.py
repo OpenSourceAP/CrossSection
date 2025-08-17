@@ -69,9 +69,19 @@ cond_step3_simple = df['Tax'].isna() & (df['ib'] <= 0).fillna(False)
 df.loc[cond_step3_simple, 'Tax'] = 1.0
 
 # Handle standard Stata condition: (txfo + txfed > 0 | txt > txdi) & ib <=0
-cond_txfo_txfed = ((df['txfo'] + df['txfed']) > 0).fillna(False)
+# When txfed is missing but txfo > 0, Stata treats this as txfo + txfed > 0
+cond_txfo_txfed_fixed = (
+    (df['txfed'].isna() & (df['txfo'] > 0).fillna(False)) |
+    (~df['txfed'].isna() & (df['txfo'] + df['txfed'] > 0).fillna(False))
+)
 cond_txt_txdi = (df['txt'] > df['txdi']).fillna(False)
-cond_standard = (cond_txfo_txfed | cond_txt_txdi) & (df['ib'] <= 0).fillna(False)
+
+# Additional condition: when both txfo and txfed are missing but there's tax activity and ib <= 0
+cond_both_missing = (df['txfo'].isna() & df['txfed'].isna() & 
+                     ((df['txt'].notna() & (df['txt'] != 0)) | (df['txdi'].notna() & (df['txdi'] != 0))) &
+                     (df['ib'] <= 0).fillna(False))
+
+cond_standard = (cond_txfo_txfed_fixed | cond_txt_txdi | cond_both_missing) & (df['ib'] <= 0).fillna(False)
 df.loc[cond_standard, 'Tax'] = 1.0
 
 # CHECKPOINT 2
