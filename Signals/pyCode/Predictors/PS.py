@@ -96,7 +96,7 @@ condition = (df['act']/df['lct'] - df['l12_act']/df['l12_lct']) > 0
 lag_missing = df['l12_act'].isna() | df['l12_lct'].isna()
 df.loc[condition | lag_missing, 'p6'] = 1
 
-# p7: Improvement in gross margin - with Stata missing logic
+# p7: Improvement in gross margin - exact Stata replication (tempebit/sale - tempebit/l12.sale)
 df['p7'] = 0
 # Stata treats missing lags as making the comparison TRUE
 condition = (df['tempebit']/df['sale'] - df['tempebit']/df['l12_sale']) > 0
