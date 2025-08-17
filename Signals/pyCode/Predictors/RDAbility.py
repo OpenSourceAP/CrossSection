@@ -170,11 +170,6 @@ df = df.with_columns(
     .alias("RDAbility")
 )
 
-# CHECKPOINT 1: After asreg operations
-data_10116 = df.filter((pl.col("permno") == 10116) & (pl.col("time_avail_m") == pd.Timestamp('2016-06-01')))
-if len(data_10116) > 0:
-    print("CHECKPOINT 1 - After asreg operations:")
-    print(data_10116.select(["permno", "time_avail_m", "RDAbility"]).to_pandas())
 
 # gen tempRD = xrd/sale
 df = df.with_columns(
@@ -205,11 +200,6 @@ df_pandas = df.to_pandas()
 df_pandas['tempRDQuant'] = fastxtile(df_pandas, 'tempRD', by='time_avail_m', n=3)
 df = pl.from_pandas(df_pandas)
 
-# CHECKPOINT 2: After fastxtile for RD quantiles
-data_10116 = df.filter((pl.col("permno") == 10116) & (pl.col("time_avail_m") == pd.Timestamp('2016-06-01')))
-if len(data_10116) > 0:
-    print("CHECKPOINT 2 - After fastxtile for RD quantiles:")
-    print(data_10116.select(["permno", "time_avail_m", "tempRD", "tempRDQuant", "RDAbility"]).to_pandas())
 
 # replace RDAbility = . if tempRDQuant != 3
 # Critical fix: In Stata, missing tempRDQuant is treated as positive infinity
@@ -256,11 +246,6 @@ for i in range(12):
 df = pl.concat(df_monthly)
 print(f"After expansion: {len(df):,} observations")
 
-# CHECKPOINT 3: After expand operation
-data_10116 = df.filter((pl.col("permno") == 10116) & (pl.col("time_avail_m") == pd.Timestamp('2016-06-01')))
-if len(data_10116) > 0:
-    print("CHECKPOINT 3 - After expand operation:")
-    print(data_10116.select(["permno", "time_avail_m", "RDAbility"]).to_pandas())
 
 # drop temp
 # gen tempTime = time_avail_m
@@ -291,11 +276,6 @@ df = df.sort(["permno", "time_avail_m"])
 df = df.group_by(["permno", "time_avail_m"], maintain_order=True).first()
 print(f"After permno-time filter: {len(df):,} observations")
 
-# CHECKPOINT 4: After final deduplication
-data_10116 = df.filter((pl.col("permno") == 10116) & (pl.col("time_avail_m") == pd.Timestamp('2016-06-01')))
-if len(data_10116) > 0:
-    print("CHECKPOINT 4 - After final deduplication:")
-    print(data_10116.select(["permno", "time_avail_m", "RDAbility"]).to_pandas())
 
 # Select final columns
 result = df.select(["permno", "time_avail_m", "RDAbility"])

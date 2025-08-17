@@ -10,10 +10,6 @@ from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.asrol import asrol
 
-# Debug constants - replace with actual problematic observation from test results
-DEBUG_PERMNO = 11379  # Replace with actual value
-DEBUG_YYYYMM = 198901  # Replace with actual value (e.g., 200704)
-DEBUG_DATE = pd.Timestamp(f"{DEBUG_YYYYMM//100}-{DEBUG_YYYYMM%100:02d}-01")  # Convert to datetime
 
 print("=" * 80)
 print("🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py")
@@ -55,12 +51,6 @@ df = df.join(temp_ibes, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging all data sources: {len(df):,} observations")
 
-# CHECKPOINT 1: After all data merges
-print(f"CHECKPOINT 1: After all data merges for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_mask = (df['permno'] == DEBUG_PERMNO) & (df['time_avail_m'] == DEBUG_DATE)
-if debug_mask.sum() > 0:
-    debug_df = df.filter(debug_mask).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'tickerIBES', 'mve_c', 'instown_perc', 'at', 'ceq', 'txditc', 'vol', 'shrout', 'ret', 'stdev']].to_string())
 
 print("🔍 Applying size filters...")
 
@@ -98,13 +88,6 @@ df = df.with_columns(
 df = df.filter(pl.col("sizecat") != 1)
 print(f"After filtering bottom size quintile: {len(df):,} observations")
 
-# CHECKPOINT 2: After size filtering
-print(f"CHECKPOINT 2: After size filtering for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_count = (df.filter((pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE))).height
-print(f"Count for problematic observation: {debug_count}")
-if debug_count > 0:
-    debug_df = df.filter((pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE)).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'mve_c']].to_string())
 
 # Clean up temporary columns
 df = df.drop(["nyse_amex_mve", "p20", "p40", "p60", "p80", "sizecat"])
@@ -155,12 +138,6 @@ df = df.with_columns(
     ).alias("RIO")
 )
 
-# CHECKPOINT 3: After RIO calculation
-print(f"CHECKPOINT 3: After RIO calculation for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_mask = (pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE)
-if df.filter(debug_mask).height > 0:
-    debug_df = df.filter(debug_mask).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'instown_perc', 'temp', 'mve_c', 'RIO']].to_string())
 
 # xtset permno time_avail_m
 # gen RIOlag = l6.RIO
@@ -193,19 +170,6 @@ df_pandas['cat_RIO'] = fastxtile(df_pandas, 'RIOlag', by='time_avail_m', n=5)
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-# CHECKPOINT 4: After RIO lag and quantile calculation
-print(f"CHECKPOINT 4: After RIO lag and quantile for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_mask = (pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE)
-if df.filter(debug_mask).height > 0:
-    debug_df = df.filter(debug_mask).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'RIO', 'RIOlag', 'cat_RIO']].to_string())
-
-# Show quantile boundaries for that month
-month_data = df.filter(pl.col('time_avail_m') == DEBUG_DATE)['RIOlag'].to_pandas().dropna()
-if len(month_data) > 0:
-    print(f"RIOlag quantile boundaries for {DEBUG_YYYYMM}:")
-    print(f"Min: {month_data.min():.4f}, P20: {month_data.quantile(0.2):.4f}, P40: {month_data.quantile(0.4):.4f}")
-    print(f"P60: {month_data.quantile(0.6):.4f}, P80: {month_data.quantile(0.8):.4f}, Max: {month_data.max():.4f}")
 
 print("📊 Computing characteristic variables...")
 
@@ -254,12 +218,6 @@ df_pandas_vol = asrol(
 
 df = pl.from_pandas(df_pandas_vol)
 
-# CHECKPOINT 5: After MB, Disp, Turnover, Volatility calculations
-print(f"CHECKPOINT 5: After characteristic calculations for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_mask = (pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE)
-if df.filter(debug_mask).height > 0:
-    debug_df = df.filter(debug_mask).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'MB', 'Disp', 'Turnover', 'Volatility']].to_string())
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 
@@ -279,22 +237,6 @@ for var in variables:
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-# CHECKPOINT 6: After quantile calculations for all variables
-print(f"CHECKPOINT 6: After all quantile calculations for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_mask = (pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE)
-if df.filter(debug_mask).height > 0:
-    debug_df = df.filter(debug_mask).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'cat_MB', 'cat_Disp', 'cat_Turnover', 'cat_Volatility']].to_string())
-
-# Show quantile boundaries for each variable
-variables = ["MB", "Disp", "Volatility", "Turnover"]
-month_df = df.filter(pl.col('time_avail_m') == DEBUG_DATE).to_pandas()
-for var in variables:
-    var_data = month_df[var].dropna()
-    if len(var_data) > 0:
-        print(f"{var} quantile boundaries for {DEBUG_YYYYMM}:")
-        print(f"  Min: {var_data.min():.4f}, P20: {var_data.quantile(0.2):.4f}, P40: {var_data.quantile(0.4):.4f}")
-        print(f"  P60: {var_data.quantile(0.6):.4f}, P80: {var_data.quantile(0.8):.4f}, Max: {var_data.max():.4f}")
 
 # patch for Dispersion
 # replace RIO_Disp = cat_RIO if cat_Disp >= 4 & cat_Disp != .
@@ -305,12 +247,6 @@ df = df.with_columns(
     .alias("RIO_Disp")
 )
 
-# CHECKPOINT 7: Final RIO predictor values
-print(f"CHECKPOINT 7: Final RIO values for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-debug_mask = (pl.col('permno') == DEBUG_PERMNO) & (pl.col('time_avail_m') == DEBUG_DATE)
-if df.filter(debug_mask).height > 0:
-    debug_df = df.filter(debug_mask).to_pandas()
-    print(debug_df[['permno', 'time_avail_m', 'cat_RIO', 'cat_MB', 'cat_Disp', 'cat_Turnover', 'cat_Volatility', 'RIO_MB', 'RIO_Disp', 'RIO_Turnover', 'RIO_Volatility']].to_string())
 
 print("💾 Saving RIO predictors...")
 

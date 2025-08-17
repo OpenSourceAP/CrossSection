@@ -72,11 +72,6 @@ df = pd.merge(df, df_sp, on=['gvkey', 'time_avail_m'], how='left')
 # Merge with CIQ ratings
 df = pd.merge(df, temp_ciq_rat, on=['gvkey', 'time_avail_m'], how='left')
 
-# CHECKPOINT 1: After merging credit ratings
-data_10026 = df[(df['permno'] == 10026) & (df['time_avail_m'] == pd.Timestamp('2015-09-01'))]
-if not data_10026.empty:
-    print("CHECKPOINT 1 - After merging credit ratings:")
-    print(data_10026[['permno', 'time_avail_m', 'credrat', 'credratciq']])
 
 # Sort by permno and time_avail_m
 df = df.sort_values(['permno', 'time_avail_m'])
@@ -93,11 +88,6 @@ df['credratciq'] = df.groupby('permno')['credratciq'].ffill()
 # Coalesce credit ratings - use CIQ if available, otherwise SP  
 df.loc[df['credrat'].isna(), 'credrat'] = df.loc[df['credrat'].isna(), 'credratciq']
 
-# CHECKPOINT 2: After filling missing credratciq
-data_10026 = df[(df['permno'] == 10026) & (df['time_avail_m'] == pd.Timestamp('2015-09-01'))]
-if not data_10026.empty:
-    print("CHECKPOINT 2 - After filling missing credratciq:")
-    print(data_10026[['permno', 'time_avail_m', 'credrat', 'credratciq']])
 
 # SIGNAL CONSTRUCTION
 # Set index for time series operations
@@ -117,20 +107,10 @@ df['ret_lag5'] = df.groupby('permno')['ret'].shift(5)
 df['Mom6m'] = ((1 + df['ret_lag1']) * (1 + df['ret_lag2']) * (1 + df['ret_lag3']) * 
                (1 + df['ret_lag4']) * (1 + df['ret_lag5'])) - 1
 
-# CHECKPOINT 3: After creating Mom6m
-data_10026 = df[(df['permno'] == 10026) & (df['time_avail_m'] == pd.Timestamp('2015-09-01'))]
-if not data_10026.empty:
-    print("CHECKPOINT 3 - After creating Mom6m:")
-    print(data_10026[['permno', 'time_avail_m', 'ret', 'Mom6m']])
 
 # Create Mom6mJunk for junk stocks (rating <= 14 and > 0)
 df['Mom6mJunk'] = np.where((df['credrat'] <= 14) & (df['credrat'] > 0), df['Mom6m'], np.nan)
 
-# CHECKPOINT 4: When filtering for junk (credrat <= 14)
-data_10026 = df[(df['permno'] == 10026) & (df['time_avail_m'] == pd.Timestamp('2015-09-01'))]
-if not data_10026.empty:
-    print("CHECKPOINT 4 - When filtering for junk (credrat <= 14):")
-    print(data_10026[['permno', 'time_avail_m', 'credrat', 'Mom6m', 'Mom6mJunk']])
 
 # Keep only necessary columns and create yyyymm
 # Convert time_avail_m datetime to YYYYMM integer format

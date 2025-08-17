@@ -32,30 +32,6 @@ if ibes_recs['time_avail_m'].dtype == pl.Datetime:
 
 print(f"Loaded IBES Recommendations: {len(ibes_recs):,} observations")
 
-# ===================================================================
-# DEBUG: Pre-tsfill Analysis
-# ===================================================================
-print("=== DEBUG: Pre-tsfill Analysis ===")
-print(f"Total observations before tsfill: {len(ibes_recs):,}")
-
-# Check HGR specifically
-print("HGR analysts before tsfill:")
-hgr_data = ibes_recs.filter(pl.col("tickerIBES") == "HGR")
-if len(hgr_data) > 0:
-    # Show analyst distribution
-    analyst_counts = hgr_data.group_by("amaskcd").agg(pl.len().alias("count"))
-    print(f"HGR analyst counts: {analyst_counts}")
-    
-    # Show specific data for 2006-2007 period
-    hgr_period = hgr_data.filter(
-        (pl.col("time_avail_m") >= 200601) & (pl.col("time_avail_m") <= 200712)
-    ).sort(["amaskcd", "time_avail_m"])
-    
-    if len(hgr_period) > 0:
-        print("HGR data 2006-2007:")
-        print(hgr_period.select(["amaskcd", "time_avail_m", "ireccd"]))
-else:
-    print("No HGR data found")
 
 # bys tickerIBES amaskcd time_avail_m (anndats): keep if _n==_N  
 # Keep only latest recommendation per firm-month
@@ -125,29 +101,6 @@ def create_complete_panel():
 complete_panel = create_complete_panel()
 print(f"Complete balanced panel: {len(complete_panel):,} observations")
 
-# ===================================================================
-# DEBUG: Post-tsfill Analysis
-# ===================================================================
-print("=== DEBUG: Post-tsfill Analysis ===")
-print(f"Total observations after tsfill: {len(complete_panel):,}")
-
-# Check what tsfill did for HGR
-print("Analyzing tsfill effect on HGR:")
-hgr_tempids = complete_panel.filter(pl.col("tickerIBES") == "HGR")
-if len(hgr_tempids) > 0:
-    # Get unique tempIDs for HGR
-    unique_hgr_tempids = hgr_tempids.select("tempID").unique()
-    print(f"HGR tempIDs after tsfill: {unique_hgr_tempids}")
-    
-    # Check for 2007m4 specifically
-    hgr_2007m4 = hgr_tempids.filter(pl.col("time_avail_m") == 200704)
-    if len(hgr_2007m4) > 0:
-        print(f"HGR observations at 2007m4: {len(hgr_2007m4)}")
-        print(hgr_2007m4.select(["tempID", "tickerIBES", "amaskcd"]))
-    else:
-        print("No HGR data found at 2007m4 after tsfill")
-else:
-    print("No HGR data found after tsfill")
 
 # Join original data onto complete panel
 ibes_filled = complete_panel.join(
@@ -191,76 +144,8 @@ ibes_pd = asrol(
 
 ibes_filled = pl.from_pandas(ibes_pd)
 
-# ===================================================================
-# DEBUG: asrol Results for HGR
-# ===================================================================
-print("=== DEBUG: asrol Results for HGR ===")
-hgr_asrol = ibes_filled.filter(
-    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
-)
-if len(hgr_asrol) > 0:
-    print("HGR asrol results for 2007m4:")
-    print(hgr_asrol.select(["tempID", "amaskcd", "ireccd", "ireccd12"]))
-else:
-    print("No HGR data found for asrol results at 2007m4")
 
-# ===================================================================
-# DEBUG: Individual analyst lookback windows
-# ===================================================================
-print("=== DEBUG: Individual Analyst Lookback Windows ===")
-hgr_2007m4_tempids = ibes_filled.filter(
-    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
-).select("tempID").unique()
 
-if len(hgr_2007m4_tempids) > 0:
-    for row in hgr_2007m4_tempids.iter_rows(named=True):
-        tempid = row["tempID"]
-        print(f"=== TempID {tempid} lookback window ===")
-        
-        # Show 12-month lookback window (2006m5 to 2007m4)
-        lookback_data = ibes_filled.filter(
-            (pl.col("tempID") == tempid) & 
-            (pl.col("time_avail_m") >= 200605) & 
-            (pl.col("time_avail_m") <= 200704)
-        ).sort("time_avail_m")
-        
-        if len(lookback_data) > 0:
-            print(lookback_data.select(["time_avail_m", "ireccd"]))
-        else:
-            print("No lookback data found")
-else:
-    print("No HGR tempIDs found for lookback analysis")
-
-# ===================================================================
-# DEBUG: Pre-collapse HGR Analysts for 2007m4
-# ===================================================================
-print("=== DEBUG: Pre-collapse HGR Analysts for 2007m4 ===")
-hgr_pre_collapse = ibes_filled.filter(
-    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
-)
-if len(hgr_pre_collapse) > 0:
-    print(f"Number of HGR analysts contributing: {len(hgr_pre_collapse)}")
-    print("Individual analyst contributions:")
-    print(hgr_pre_collapse.select(["tempID", "amaskcd", "ireccd12"]))
-    
-    # Summary statistics
-    ireccd12_stats = hgr_pre_collapse.select("ireccd12").filter(pl.col("ireccd12").is_not_null())
-    if len(ireccd12_stats) > 0:
-        stats = ireccd12_stats.select([
-            pl.col("ireccd12").count().alias("count"),
-            pl.col("ireccd12").mean().alias("mean"),
-            pl.col("ireccd12").std().alias("std"),
-            pl.col("ireccd12").min().alias("min"),
-            pl.col("ireccd12").quantile(0.25).alias("p25"),
-            pl.col("ireccd12").quantile(0.5).alias("median"),
-            pl.col("ireccd12").quantile(0.75).alias("p75"),
-            pl.col("ireccd12").max().alias("max")
-        ])
-        print(f"Summary statistics: {stats}")
-    else:
-        print("No valid ireccd12 values for statistics")
-else:
-    print("No HGR data found for pre-collapse analysis")
 
 # Collapse to firm-month level
 # gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)  
@@ -272,37 +157,7 @@ temp_rec = (ibes_filled
 
 print(f"Consensus recommendations by ticker-month: {len(temp_rec):,} observations")
 
-# ===================================================================
-# DEBUG: Post-collapse Consensus for HGR
-# ===================================================================
-print("=== DEBUG: Post-collapse Consensus for HGR ===")
-hgr_consensus = temp_rec.filter(
-    (pl.col("tickerIBES") == "HGR") & (pl.col("time_avail_m") == 200704)
-)
-if len(hgr_consensus) > 0:
-    print("HGR consensus for 2007m4:")
-    print(hgr_consensus.select(["tickerIBES", "time_avail_m", "ireccd12"]))
-else:
-    print("No HGR consensus found for 2007m4")
 
-# CHECKPOINT 1: Check if sample missing observations exist in recommendations
-print("=== CHECKPOINT 1: IBES Recommendations ===")
-ibm_check = temp_rec.filter(
-    (pl.col("tickerIBES") == "IBM") & (pl.col("time_avail_m") == 200704)
-)
-if len(ibm_check) > 0:
-    print(f"IBM 2007m4 found in recommendations: {ibm_check.select(['tickerIBES', 'time_avail_m', 'ireccd12'])}")
-else:
-    print("IBM 2007m4 NOT found in recommendations")
-
-ace_check = temp_rec.filter(
-    (pl.col("tickerIBES") == "ACE") & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-if len(ace_check) > 0:
-    print(f"ACE observations found in recommendations: {ace_check.select(['tickerIBES', 'time_avail_m', 'ireccd12'])}")
-else:
-    print("ACE observations NOT found in recommendations")
 
 # ===================================================================
 # STEP 2: MERGE RECOMMENDATIONS AND SHORT INTEREST ONTO SIGNALMASTER
@@ -337,22 +192,6 @@ if crsp['time_avail_m'].dtype == pl.Datetime:
 df = signal_master.join(crsp, on=["permno", "time_avail_m"], how="inner")
 print(f"After merging with CRSP: {len(df):,} observations")
 
-# CHECKPOINT 2: Check if sample missing observations survive CRSP merge
-print("=== CHECKPOINT 2: After CRSP merge ===")
-check_10051 = df.filter(
-    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
-)
-print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
-if len(check_10051) > 0:
-    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout'])}")
-
-check_10104 = df.filter(
-    (pl.col("permno") == 10104) & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
-if len(check_10104) > 0:
-    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout'])}")
 
 # merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/monthlyShortInterest", keep(match) nogenerate keepusing(shortint)
 short_interest = pl.read_parquet("../pyData/Intermediate/monthlyShortInterest.parquet")
@@ -370,43 +209,11 @@ short_interest = short_interest.with_columns(pl.col("gvkey").cast(pl.Float64))
 df = df.join(short_interest, on=["gvkey", "time_avail_m"], how="inner")
 print(f"After merging with short interest: {len(df):,} observations")
 
-# CHECKPOINT 3: Check if sample missing observations survive short interest merge
-print("=== CHECKPOINT 3: After Short Interest merge ===")
-check_10051 = df.filter(
-    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
-)
-print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
-if len(check_10051) > 0:
-    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint'])}")
-
-check_10104 = df.filter(
-    (pl.col("permno") == 10104) & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
-if len(check_10104) > 0:
-    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint'])}")
 
 # merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
 df = df.join(temp_rec, on=["tickerIBES", "time_avail_m"], how="inner")
 print(f"After merging with recommendations: {len(df):,} observations")
 
-# CHECKPOINT 4: Check if sample missing observations survive recommendation merge
-print("=== CHECKPOINT 4: After Recommendation merge ===")
-check_10051 = df.filter(
-    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
-)
-print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
-if len(check_10051) > 0:
-    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint', 'ireccd12'])}")
-
-check_10104 = df.filter(
-    (pl.col("permno") == 10104) & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
-if len(check_10104) > 0:
-    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'gvkey', 'tickerIBES', 'shrout', 'shortint', 'ireccd12'])}")
 
 # ===================================================================
 # STEP 3: SIGNAL CONSTRUCTION
@@ -441,22 +248,6 @@ df_pandas['QuintConsRecomm'] = fastxtile(df_pandas, "ConsRecomm", by="time_avail
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-# CHECKPOINT 5: Check quintile assignments for sample missing observations
-print("=== CHECKPOINT 5: After quintile creation ===")
-check_10051 = df.filter(
-    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
-)
-print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
-if len(check_10051) > 0:
-    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'ShortInterest', 'ConsRecomm', 'QuintShortInterest', 'QuintConsRecomm'])}")
-
-check_10104 = df.filter(
-    (pl.col("permno") == 10104) & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
-if len(check_10104) > 0:
-    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'ShortInterest', 'ConsRecomm', 'QuintShortInterest', 'QuintConsRecomm'])}")
 
 # Show quintile cutoffs for 2007m4
 print("--- Quintile cutoffs for 2007m4 ---")
@@ -498,22 +289,6 @@ df = df.with_columns(
     .alias("Recomm_ShortInterest")
 )
 
-# CHECKPOINT 6: Check final signal values for sample missing observations
-print("=== CHECKPOINT 6: Before final filter (keep if !mi(Recomm_ShortInterest)) ===")
-check_10051 = df.filter(
-    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
-)
-print(f"Count permno=10051, time_avail_m=200704: {len(check_10051)}")
-if len(check_10051) > 0:
-    print(f"Data: {check_10051.select(['permno', 'time_avail_m', 'QuintShortInterest', 'QuintConsRecomm', 'Recomm_ShortInterest'])}")
-
-check_10104 = df.filter(
-    (pl.col("permno") == 10104) & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-print(f"Count permno=10104, time_avail_m in (200607, 200807, 200903): {len(check_10104)}")
-if len(check_10104) > 0:
-    print(f"Data: {check_10104.select(['permno', 'time_avail_m', 'QuintShortInterest', 'QuintConsRecomm', 'Recomm_ShortInterest'])}")
 
 # Show distribution of signal assignments
 print("--- Signal assignment counts ---")
@@ -524,19 +299,6 @@ print(f"Signal distribution: {signal_counts}")
 result = df.filter(pl.col("Recomm_ShortInterest").is_not_null())
 result = result.select(["permno", "time_avail_m", "Recomm_ShortInterest"])
 
-# CHECKPOINT 7: Final counts after filter
-print("=== CHECKPOINT 7: After final filter ===")
-final_check_10051 = result.filter(
-    (pl.col("permno") == 10051) & (pl.col("time_avail_m") == 200704)
-)
-print(f"Final count permno=10051, time_avail_m=200704: {len(final_check_10051)}")
-
-final_check_10104 = result.filter(
-    (pl.col("permno") == 10104) & 
-    pl.col("time_avail_m").is_in([200607, 200807, 200903])
-)
-print(f"Final count permno=10104, time_avail_m in (200607, 200807, 200903): {len(final_check_10104)}")
-print(f"Total observations in final dataset: {len(result)}")
 
 print(f"Generated Recomm_ShortInterest values: {len(result):,} observations")
 if len(result) > 0:

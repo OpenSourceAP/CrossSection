@@ -87,15 +87,6 @@ df = df.with_columns(
     (pl.col("ppegt") / pl.col("l_at")).alias("tempPPE")
 )
 
-# CHECKPOINT 1: Check accruals calculation for problem observations before winsorization
-print("* CHECKPOINT 1: Check accruals calculation for problem observations before winsorization")
-problem_obs_1 = df.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("fyear") >= 2017) & 
-    (pl.col("fyear") <= 2018)
-)
-if len(problem_obs_1) > 0:
-    print(problem_obs_1.select(["permno", "gvkey", "fyear", "tempCFO", "tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]))
 
 print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 
@@ -103,15 +94,6 @@ print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 temp_cols = ["tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]
 df = winsor2(df, temp_cols, replace=True, trim=True, cuts=[0.1, 99.9], by=["fyear"])
 
-# CHECKPOINT 2: Check accruals after winsorization for problem observations
-print("* CHECKPOINT 2: Check accruals after winsorization for problem observations")
-problem_obs_2 = df.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("fyear") >= 2017) & 
-    (pl.col("fyear") <= 2018)
-)
-if len(problem_obs_2) > 0:
-    print(problem_obs_2.select(["permno", "gvkey", "fyear", "tempCFO", "tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]))
 
 print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
@@ -123,15 +105,6 @@ df_pandas_temp['sic'] = pd.to_numeric(df_pandas_temp['sic'], errors='coerce')
 df_pandas_temp['sic2'] = np.floor(df_pandas_temp['sic'] / 100).astype('Int32')
 df = pl.from_pandas(df_pandas_temp)
 
-# CHECKPOINT 3: Check SIC2 industry codes for problem observations
-print("* CHECKPOINT 3: Check SIC2 industry codes for problem observations")
-problem_obs_3 = df.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("fyear") >= 2017) & 
-    (pl.col("fyear") <= 2018)
-)
-if len(problem_obs_3) > 0:
-    print(problem_obs_3.select(["permno", "gvkey", "fyear", "sic", "sic2"]))
 
 # bys fyear sic2: asreg tempAccruals tempInvTA tempDelRev tempPPE, fitted
 # This runs cross-sectional regressions by year and industry using enhanced asreg helper
@@ -159,15 +132,6 @@ df_with_residuals = df_with_residuals.with_columns(
     pl.col("resid").alias("_residuals")
 ).drop("resid")
 
-# CHECKPOINT 4: Check regression results for problem observations
-print("* CHECKPOINT 4: Check regression results for problem observations")
-problem_obs_4 = df_with_residuals.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("fyear") >= 2017) & 
-    (pl.col("fyear") <= 2018)
-)
-if len(problem_obs_4) > 0:
-    print(problem_obs_4.select(["permno", "gvkey", "fyear", "_Nobs", "_residuals"]))
 
 # drop if _Nobs < 6 // p 360
 df_with_residuals = df_with_residuals.filter(pl.col("_Nobs") >= 6)
@@ -177,15 +141,6 @@ df_with_residuals = df_with_residuals.filter(
     ~((pl.col("exchcd") == 3) & (pl.col("fyear") < 1982))
 )
 
-# CHECKPOINT 5: Check residuals after filtering for problem observations
-print("* CHECKPOINT 5: Check residuals after filtering for problem observations")
-problem_obs_5 = df_with_residuals.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("fyear") >= 2017) & 
-    (pl.col("fyear") <= 2018)
-)
-if len(problem_obs_5) > 0:
-    print(problem_obs_5.select(["permno", "gvkey", "fyear", "_residuals"]))
 
 # rename _residuals AbnormalAccruals
 df_with_residuals = df_with_residuals.with_columns(
@@ -200,15 +155,6 @@ df_with_residuals = df_with_residuals.group_by(["permno", "fyear"], maintain_ord
 
 print(f"After cross-sectional regressions and filtering: {len(df_with_residuals):,} observations")
 
-# CHECKPOINT 6: Check final AbnormalAccruals values before monthly expansion
-print("* CHECKPOINT 6: Check final AbnormalAccruals values before monthly expansion")
-problem_obs_6 = df_with_residuals.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("fyear") >= 2017) & 
-    (pl.col("fyear") <= 2018)
-)
-if len(problem_obs_6) > 0:
-    print(problem_obs_6.select(["permno", "gvkey", "fyear", "time_avail_m", "AbnormalAccruals"]))
 
 # Abnormal Accruals Percent
 # xtset permno fyear
@@ -252,15 +198,6 @@ df_expanded = df_expanded.group_by(["permno", "time_avail_m"], maintain_order=Tr
 # Clean up columns
 df_expanded = df_expanded.drop(["month_offset"])
 
-# CHECKPOINT 7: Check monthly expansion for problem observations
-print("* CHECKPOINT 7: Check monthly expansion for problem observations")
-problem_obs_7 = df_expanded.filter(
-    (pl.col("permno") == 79702) & 
-    (pl.col("time_avail_m") >= pl.datetime(2017, 12, 1)) & 
-    (pl.col("time_avail_m") <= pl.datetime(2018, 12, 31))
-)
-if len(problem_obs_7) > 0:
-    print(problem_obs_7.select(["permno", "time_avail_m", "AbnormalAccruals"]).sort("time_avail_m"))
 
 # Select and save AbnormalAccruals
 result_aa = df_expanded.select(["permno", "time_avail_m", "AbnormalAccruals"])

@@ -48,11 +48,6 @@ def main():
     df['ret'] = df['ret'].fillna(0)
     print("Replaced missing returns with 0")
     
-    # CHECKPOINT 1: After replacing missing returns with 0
-    bad_obs = df[(df['permno'] == 89169) & (df['time_avail_m'] == pd.Period('2021-05', freq='M'))]
-    if not bad_obs.empty:
-        print("CHECKPOINT 1: After replacing missing returns with 0")
-        print(bad_obs[['permno', 'time_avail_m', 'ret']].to_string(index=False))
     
     # Create seasonal lag variables (equivalent to: foreach n of numlist 23(12)59)
     # This creates lags for seasonal returns: 23, 35, 47, 59 months
@@ -78,11 +73,6 @@ def main():
         # Clean up the temporary time column
         df = df.drop(f'lag_time_{n}', axis=1)
     
-    # CHECKPOINT 2: After creating seasonal lag variables
-    bad_obs = df[(df['permno'] == 89169) & (df['time_avail_m'] == pd.Period('2021-05', freq='M'))]
-    if not bad_obs.empty:
-        print("CHECKPOINT 2: After creating seasonal lag variables")
-        print(bad_obs[['permno', 'time_avail_m', 'temp23', 'temp35', 'temp47', 'temp59']].to_string(index=False))
     
     # Create list of temporary variable names for row operations
     temp_vars = [f'temp{n}' for n in lag_periods]
@@ -99,11 +89,6 @@ def main():
     df['retTemp2'] = df[temp_vars].notna().sum(axis=1)
     print("Calculated retTemp2 (seasonal row non-missing count)")
     
-    # CHECKPOINT 3: After calculating seasonal totals
-    bad_obs = df[(df['permno'] == 89169) & (df['time_avail_m'] == pd.Period('2021-05', freq='M'))]
-    if not bad_obs.empty:
-        print("CHECKPOINT 3: After calculating seasonal totals")
-        print(bad_obs[['permno', 'time_avail_m', 'retTemp1', 'retTemp2']].to_string(index=False))
     
     # Calculate momentum base using 48-month rolling window
     print("Creating momentum base with 48-month rolling window...")
@@ -116,11 +101,6 @@ def main():
     df = df.merge(lag_data_12, on=['permno', 'lag_time_12'], how='left')
     df = df.drop('lag_time_12', axis=1)
     
-    # CHECKPOINT 4: After creating 12-month lag
-    bad_obs = df[(df['permno'] == 89169) & (df['time_avail_m'] == pd.Period('2021-05', freq='M'))]
-    if not bad_obs.empty:
-        print("CHECKPOINT 4: After creating 12-month lag")
-        print(bad_obs[['permno', 'time_avail_m', 'retLagTemp']].to_string(index=False))
     
     # Create 48-month rolling sum and count of retLagTemp using calendar-based approach
     print("Calculating 48-month calendar-based rolling sum and count...")
@@ -177,11 +157,6 @@ def main():
     
     print("Calculated 48-month rolling momentum base")
     
-    # CHECKPOINT 5: After rolling calculations
-    bad_obs = df[(df['permno'] == 89169) & (df['time_avail_m'] == pd.Period('2021-05', freq='M'))]
-    if not bad_obs.empty:
-        print("CHECKPOINT 5: After rolling calculations")
-        print(bad_obs[['permno', 'time_avail_m', 'retLagTemp_sum48', 'retLagTemp_count48']].to_string(index=False))
     
     # Calculate final predictor (equivalent to: gen MomOffSeason = (retLagTemp_sum48 - retTemp1)/(retLagTemp_count48 - retTemp2))
     df['MomOffSeason'] = (df['retLagTemp_sum48'] - df['retTemp1']) / (df['retLagTemp_count48'] - df['retTemp2'])
@@ -189,11 +164,6 @@ def main():
     df.loc[(df['retLagTemp_count48'] - df['retTemp2']) == 0, 'MomOffSeason'] = np.nan
     print("Calculated MomOffSeason predictor")
     
-    # CHECKPOINT 6: After final calculation
-    bad_obs = df[(df['permno'] == 89169) & (df['time_avail_m'] == pd.Period('2021-05', freq='M'))]
-    if not bad_obs.empty:
-        print("CHECKPOINT 6: After final calculation")
-        print(bad_obs[['permno', 'time_avail_m', 'MomOffSeason', 'retLagTemp_sum48', 'retTemp1', 'retLagTemp_count48', 'retTemp2']].to_string(index=False))
     
     # Create yyyymm column from time_avail_m 
     # Convert datetime to yyyymm integer format (e.g. 199112 for Dec 1991)

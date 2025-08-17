@@ -49,14 +49,6 @@ def main():
     df['ret'] = df['ret'].fillna(0)
     print("Replaced missing returns with 0")
     
-    # CHECKPOINT 1: After ret replacement
-    print("CHECKPOINT 1: After ret replacement")
-    bad_obs_1 = df[(df['permno'] == 83382) & (df['time_avail_m'] == pd.Period('2005-10', freq='M'))]
-    bad_obs_2 = df[(df['permno'] == 33268) & (df['time_avail_m'] == pd.Period('1983-11', freq='M'))]
-    if not bad_obs_1.empty:
-        print(f"permno=83382, time_avail_m=2005-10: ret={bad_obs_1['ret'].iloc[0]}")
-    if not bad_obs_2.empty:
-        print(f"permno=33268, time_avail_m=1983-11: ret={bad_obs_2['ret'].iloc[0]}")
     
     # Create seasonal lag variables (equivalent to: foreach n of numlist 71(12)119)
     # This creates lags for seasonal returns from 6+ years ago: 71, 83, 95, 107, 119 months
@@ -82,17 +74,6 @@ def main():
         # Clean up the temporary time column
         df = df.drop(f'lag_time_{n}', axis=1)
     
-    # CHECKPOINT 2: After seasonal lag creation
-    print("CHECKPOINT 2: After seasonal lag creation")
-    temp_vars = [f'temp{n}' for n in lag_periods]
-    bad_obs_1 = df[(df['permno'] == 83382) & (df['time_avail_m'] == pd.Period('2005-10', freq='M'))]
-    bad_obs_2 = df[(df['permno'] == 33268) & (df['time_avail_m'] == pd.Period('1983-11', freq='M'))]
-    if not bad_obs_1.empty:
-        temp_vals_1 = [str(bad_obs_1[var].iloc[0]) if var in bad_obs_1.columns else 'NaN' for var in temp_vars]
-        print(f"permno=83382, time_avail_m=2005-10: temp71={temp_vals_1[0]}, temp83={temp_vals_1[1]}, temp95={temp_vals_1[2]}, temp107={temp_vals_1[3]}, temp119={temp_vals_1[4]}")
-    if not bad_obs_2.empty:
-        temp_vals_2 = [str(bad_obs_2[var].iloc[0]) if var in bad_obs_2.columns else 'NaN' for var in temp_vars]
-        print(f"permno=33268, time_avail_m=1983-11: temp71={temp_vals_2[0]}, temp83={temp_vals_2[1]}, temp95={temp_vals_2[2]}, temp107={temp_vals_2[3]}, temp119={temp_vals_2[4]}")
     
     # Create list of temporary variable names for row operations
     
@@ -108,14 +89,6 @@ def main():
     df['retTemp2'] = df[temp_vars].notna().sum(axis=1)
     print("Calculated retTemp2 (seasonal row non-missing count)")
     
-    # CHECKPOINT 3: After seasonal aggregation
-    print("CHECKPOINT 3: After seasonal aggregation")
-    bad_obs_1 = df[(df['permno'] == 83382) & (df['time_avail_m'] == pd.Period('2005-10', freq='M'))]
-    bad_obs_2 = df[(df['permno'] == 33268) & (df['time_avail_m'] == pd.Period('1983-11', freq='M'))]
-    if not bad_obs_1.empty:
-        print(f"permno=83382, time_avail_m=2005-10: retTemp1={bad_obs_1['retTemp1'].iloc[0]}, retTemp2={bad_obs_1['retTemp2'].iloc[0]}")
-    if not bad_obs_2.empty:
-        print(f"permno=33268, time_avail_m=1983-11: retTemp1={bad_obs_2['retTemp1'].iloc[0]}, retTemp2={bad_obs_2['retTemp2'].iloc[0]}")
     
     # Calculate momentum base using 60-month rolling window
     print("Creating momentum base with 60-month rolling window...")
@@ -183,14 +156,6 @@ def main():
     
     print("Calculated 60-month rolling momentum base")
     
-    # CHECKPOINT 4: After rolling momentum calculation
-    print("CHECKPOINT 4: After rolling momentum calculation")
-    bad_obs_1 = df[(df['permno'] == 83382) & (df['time_avail_m'] == pd.Period('2005-10', freq='M'))]
-    bad_obs_2 = df[(df['permno'] == 33268) & (df['time_avail_m'] == pd.Period('1983-11', freq='M'))]
-    if not bad_obs_1.empty:
-        print(f"permno=83382, time_avail_m=2005-10: retLagTemp={bad_obs_1['retLagTemp'].iloc[0]}, retLagTemp_sum60={bad_obs_1['retLagTemp_sum60'].iloc[0]}, retLagTemp_count60={bad_obs_1['retLagTemp_count60'].iloc[0]}")
-    if not bad_obs_2.empty:
-        print(f"permno=33268, time_avail_m=1983-11: retLagTemp={bad_obs_2['retLagTemp'].iloc[0]}, retLagTemp_sum60={bad_obs_2['retLagTemp_sum60'].iloc[0]}, retLagTemp_count60={bad_obs_2['retLagTemp_count60'].iloc[0]}")
     
     # Calculate final predictor (equivalent to: gen MomOffSeason06YrPlus = (retLagTemp_sum60 - retTemp1)/(retLagTemp_count60 - retTemp2))
     df['MomOffSeason06YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
@@ -198,14 +163,6 @@ def main():
     df.loc[(df['retLagTemp_count60'] - df['retTemp2']) == 0, 'MomOffSeason06YrPlus'] = np.nan
     print("Calculated MomOffSeason06YrPlus predictor")
     
-    # CHECKPOINT 5: After final calculation
-    print("CHECKPOINT 5: After final calculation")
-    bad_obs_1 = df[(df['permno'] == 83382) & (df['time_avail_m'] == pd.Period('2005-10', freq='M'))]
-    bad_obs_2 = df[(df['permno'] == 33268) & (df['time_avail_m'] == pd.Period('1983-11', freq='M'))]
-    if not bad_obs_1.empty:
-        print(f"permno=83382, time_avail_m=2005-10: MomOffSeason06YrPlus={bad_obs_1['MomOffSeason06YrPlus'].iloc[0]}, retLagTemp_sum60={bad_obs_1['retLagTemp_sum60'].iloc[0]}, retTemp1={bad_obs_1['retTemp1'].iloc[0]}, retLagTemp_count60={bad_obs_1['retLagTemp_count60'].iloc[0]}, retTemp2={bad_obs_1['retTemp2'].iloc[0]}")
-    if not bad_obs_2.empty:
-        print(f"permno=33268, time_avail_m=1983-11: MomOffSeason06YrPlus={bad_obs_2['MomOffSeason06YrPlus'].iloc[0]}, retLagTemp_sum60={bad_obs_2['retLagTemp_sum60'].iloc[0]}, retTemp1={bad_obs_2['retTemp1'].iloc[0]}, retLagTemp_count60={bad_obs_2['retLagTemp_count60'].iloc[0]}, retTemp2={bad_obs_2['retTemp2'].iloc[0]}")
     
     # yyyymm column already created in the rolling function above
     

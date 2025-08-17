@@ -33,17 +33,6 @@ df = df[(df['ppent'].notna()) | (df['ppegt'].notna())].copy()
 df['re_old'] = (df['ppenb'] + df['ppenls']) / df['ppent']
 df['re_new'] = (df['fatb'] + df['fatl']) / df['ppegt']
 
-# CHECKPOINT 1
-bad_obs_1 = (df['permno'] == 10018) & (df['time_avail_m'].dt.year == 1987) & (df['time_avail_m'].dt.month == 4)
-bad_obs_2 = (df['permno'] == 10018) & (df['time_avail_m'].dt.year == 1987) & (df['time_avail_m'].dt.month == 5)
-bad_obs_3 = (df['permno'] == 10083) & (df['time_avail_m'].dt.year == 1986) & (df['time_avail_m'].dt.month == 12)
-print("CHECKPOINT 1")
-if bad_obs_1.any():
-    print(df[bad_obs_1][['permno', 'time_avail_m', 're_old', 're_new']])
-if bad_obs_2.any():
-    print(df[bad_obs_2][['permno', 'time_avail_m', 're_old', 're_new']])
-if bad_obs_3.any():
-    print(df[bad_obs_3][['permno', 'time_avail_m', 're_old', 're_new']])
 
 # Use new method, fallback to old method if new is missing
 df['re'] = df['re_new']
@@ -52,14 +41,6 @@ df.loc[df['re_new'].isna(), 're'] = df['re_old']
 # Convert infinite values to NaN to match Stata's behavior (division by zero)
 df['re'] = df['re'].replace([np.inf, -np.inf], np.nan)
 
-# CHECKPOINT 2
-print("CHECKPOINT 2")
-if bad_obs_1.any():
-    print(df[bad_obs_1][['permno', 'time_avail_m', 're', 're_old', 're_new']])
-if bad_obs_2.any():
-    print(df[bad_obs_2][['permno', 'time_avail_m', 're', 're_old', 're_new']])
-if bad_obs_3.any():
-    print(df[bad_obs_3][['permno', 'time_avail_m', 're', 're_old', 're_new']])
 
 # Extract year and decade
 df['year'] = df['time_avail_m'].dt.year
@@ -68,25 +49,9 @@ df['decade'] = (df['year'] // 10) * 10
 # Industry adjustment - subtract industry mean
 df['tempMean'] = df.groupby(['sic2D', 'time_avail_m'])['re'].transform('mean')
 
-# CHECKPOINT 3
-print("CHECKPOINT 3")
-if bad_obs_1.any():
-    print(df[bad_obs_1][['permno', 'time_avail_m', 're', 'tempMean', 'sic2D']])
-if bad_obs_2.any():
-    print(df[bad_obs_2][['permno', 'time_avail_m', 're', 'tempMean', 'sic2D']])
-if bad_obs_3.any():
-    print(df[bad_obs_3][['permno', 'time_avail_m', 're', 'tempMean', 'sic2D']])
 
 df['realestate'] = df['re'] - df['tempMean']
 
-# CHECKPOINT 4
-print("CHECKPOINT 4")
-if bad_obs_1.any():
-    print(df[bad_obs_1][['permno', 'time_avail_m', 'realestate', 're', 'tempMean']])
-if bad_obs_2.any():
-    print(df[bad_obs_2][['permno', 'time_avail_m', 'realestate', 're', 'tempMean']])
-if bad_obs_3.any():
-    print(df[bad_obs_3][['permno', 'time_avail_m', 'realestate', 're', 'tempMean']])
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'realestate']].copy()

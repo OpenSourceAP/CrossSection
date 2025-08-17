@@ -117,14 +117,6 @@ condition = df['shrout'] <= df['l12_shrout']
 lag_missing = df['l12_shrout'].isna()
 df.loc[condition | lag_missing, 'p9'] = 1
 
-# CHECKPOINT 1
-print("CHECKPOINT 1 - Piotroski components for permno 10193:")
-debug_filter = (df['permno'] == 10193) & (df['time_avail_m'].dt.year == 1988) & (df['time_avail_m'].dt.month.isin([2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))
-if debug_filter.any():
-    debug_data = df[debug_filter][['permno', 'time_avail_m', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9']].copy()
-    print(debug_data.to_string(index=False))
-else:
-    print("No data for permno 10193 in 1988 Feb-Nov period")
 
 # Sum all components
 df['PS'] = df['p1'] + df['p2'] + df['p3'] + df['p4'] + df['p5'] + df['p6'] + df['p7'] + df['p8'] + df['p9']
@@ -140,14 +132,6 @@ df['BM_clean'] = df['BM'].replace([np.inf, -np.inf], np.nan)
 # Use robust fastxtile for BM quintiles with cleaned values
 df['temp'] = fastxtile(df, 'BM_clean', by='time_avail_m', n=5)
 
-# CHECKPOINT 2
-print("CHECKPOINT 2 - BM quintile assignment for permno 10193:")
-debug_filter = (df['permno'] == 10193) & (df['time_avail_m'].dt.year == 1988) & (df['time_avail_m'].dt.month.isin([2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))
-if debug_filter.any():
-    debug_data = df[debug_filter][['permno', 'time_avail_m', 'BM', 'temp', 'PS']].copy()
-    print(debug_data.to_string(index=False))
-else:
-    print("No data for permno 10193 in 1988 Feb-Nov period")
 
 # Keep only highest BM quintile (quintile 5)
 df.loc[df['temp'] != 5, 'PS'] = np.nan

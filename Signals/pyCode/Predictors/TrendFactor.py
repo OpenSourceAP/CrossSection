@@ -76,17 +76,6 @@ print("📅 Keeping only end-of-month observations...")
 df_daily = df_daily.sort(["permno", "time_avail_m", "time_d"])
 df_monthly = df_daily.group_by(["permno", "time_avail_m"], maintain_order=True).last()
 
-# CHECKPOINT 1: Check moving averages for problem observations before normalization
-print("* CHECKPOINT 1: Check moving averages for problem observations before normalization")
-problem_obs_before = df_monthly.filter(
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 10, 1))) |
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 9, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 2, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 3, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 1, 1)))
-)
-if len(problem_obs_before) > 0:
-    print(problem_obs_before.select(["permno", "time_avail_m", "P"] + [f"A_{L}" for L in lag_lengths]))
 
 print(f"Monthly data after filtering: {len(df_monthly):,} observations")
 
@@ -96,17 +85,6 @@ for L in lag_lengths:
         (pl.col(f"A_{L}") / pl.col("P")).alias(f"A_{L}")
     )
 
-# CHECKPOINT 2: Check normalized moving averages for problem observations  
-print("* CHECKPOINT 2: Check normalized moving averages for problem observations")
-problem_obs_after = df_monthly.filter(
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 10, 1))) |
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 9, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 2, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 3, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 1, 1)))
-)
-if len(problem_obs_after) > 0:
-    print(problem_obs_after.select(["permno", "time_avail_m"] + [f"A_{L}" for L in lag_lengths]))
 
 # Keep only needed columns
 moving_avg_cols = [f"A_{L}" for L in lag_lengths]
@@ -159,17 +137,6 @@ df = df.with_columns(
     pl.col("ret").shift(-1).over("permno").alias("fRet")
 )
 
-# CHECKPOINT 3: Check data for problem observations before regression
-print("* CHECKPOINT 3: Check data for problem observations before regression")
-problem_obs_reg = df.filter(
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 10, 1))) |
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 9, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 2, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 3, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 1, 1)))
-)
-if len(problem_obs_reg) > 0:
-    print(problem_obs_reg.select(["permno", "time_avail_m", "ret", "fRet"] + [f"A_{L}" for L in lag_lengths]))
 
 # bys time_avail_m: asreg fRet A_*
 # Run cross-sectional regression by time_avail_m using utils/asreg.py helper
@@ -193,17 +160,6 @@ df_with_betas = asreg(
     collect=False  # Keep as LazyFrame for continued processing
 ).collect()  # Collect after asreg processing
 
-# CHECKPOINT 4: Check regression coefficients for problem observations
-print("* CHECKPOINT 4: Check regression coefficients for problem observations")
-problem_obs_coef = df_with_betas.filter(
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 10, 1))) |
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 9, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 2, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 3, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 1, 1)))
-)
-if len(problem_obs_coef) > 0:
-    print(problem_obs_coef.select(["permno", "time_avail_m"] + [f"_b_A_{L}" for L in lag_lengths]))
 
 print("📊 Computing 12-month rolling averages of beta coefficients...")
 
@@ -235,17 +191,6 @@ temp_beta = time_level_data.select(["time_avail_m"] + ebeta_cols)
 # Merge back to main data
 df_final = df_with_betas.join(temp_beta, on="time_avail_m", how="left")
 
-# CHECKPOINT 5: Check expected betas for problem observations
-print("* CHECKPOINT 5: Check expected betas for problem observations")
-problem_obs_ebeta = df_final.filter(
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 10, 1))) |
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 9, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 2, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 3, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 1, 1)))
-)
-if len(problem_obs_ebeta) > 0:
-    print(problem_obs_ebeta.select(["permno", "time_avail_m"] + [f"EBeta_{L}" for L in lag_lengths]))
 
 print("🎯 Computing TrendFactor...")
 
@@ -258,17 +203,6 @@ df_final = df_final.with_columns(
     pl.sum_horizontal(trend_terms).alias("TrendFactor")
 )
 
-# CHECKPOINT 6: Check final TrendFactor values for problem observations
-print("* CHECKPOINT 6: Check final TrendFactor values for problem observations")
-problem_obs_final = df_final.filter(
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 10, 1))) |
-    ((pl.col("permno") == 89901) & (pl.col("time_avail_m") == pl.datetime(2020, 9, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 2, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 3, 1))) |
-    ((pl.col("permno") == 91040) & (pl.col("time_avail_m") == pl.datetime(2018, 1, 1)))
-)
-if len(problem_obs_final) > 0:
-    print(problem_obs_final.select(["permno", "time_avail_m", "TrendFactor"]))
 
 # Select final result
 result = df_final.select(["permno", "time_avail_m", "TrendFactor"])

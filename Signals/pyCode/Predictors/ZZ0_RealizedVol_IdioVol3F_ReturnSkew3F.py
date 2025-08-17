@@ -37,10 +37,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.asreg import asreg
 
-# Debug constants - problematic observation from test results
-DEBUG_PERMNO = 11651  # Worst permno from test results  
-DEBUG_YYYYMM = 198709  # Worst yyyymm from test results (1987m9)
-DEBUG_DATE = pl.datetime(1987, 9, 1)  # Convert to polars datetime
 
 print("=" * 80)
 print("🏗️  ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py")
@@ -69,12 +65,6 @@ print(f"Merged dataset: {len(df):,} observations")
 print("Adjusting returns by risk-free rate...")
 df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
 
-# CHECKPOINT 1: After data merge and return adjustment
-print(f"CHECKPOINT 1: After data merge and return adjustment for permno={DEBUG_PERMNO}")
-debug_mask = (pl.col("permno") == DEBUG_PERMNO) & (pl.col("time_d").dt.month() == DEBUG_YYYYMM%100) & (pl.col("time_d").dt.year() == DEBUG_YYYYMM//100)
-checkpoint_data = df.filter(debug_mask).head(10)
-if checkpoint_data.height > 0:
-    print(checkpoint_data.select(["permno", "time_d", "ret", "mktrf", "smb", "hml"]))
 
 # SIGNAL CONSTRUCTION
 print("\n🔧 Starting signal construction...")
@@ -85,14 +75,6 @@ df = df.with_columns(
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 ).sort(["permno", "time_d"])
 
-# CHECKPOINT 2: After creating time_avail_m
-print(f"CHECKPOINT 2: After creating time_avail_m for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-checkpoint_data = df.filter(
-    (pl.col("permno") == DEBUG_PERMNO) & 
-    (pl.col("time_avail_m") == DEBUG_DATE)
-).head(10)
-if checkpoint_data.height > 0:
-    print(checkpoint_data.select(["permno", "time_d", "time_avail_m", "ret", "mktrf", "smb", "hml"]))
 
 print(f"Date range: {df['time_d'].min()} to {df['time_d'].max()}")
 
@@ -120,21 +102,6 @@ df_with_residuals = asreg(
 # Rename residual column to match original naming
 df_with_residuals = df_with_residuals.rename({"resid": "_residuals"})
 
-# CHECKPOINT 3: After FF3 regression
-print(f"CHECKPOINT 3: After FF3 regression for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-checkpoint_data = df_with_residuals.filter(
-    (pl.col("permno") == DEBUG_PERMNO) & 
-    (pl.col("time_avail_m") == DEBUG_DATE)
-).head(10)
-if checkpoint_data.height > 0:
-    print(checkpoint_data.select(["permno", "time_avail_m", "_residuals", "ret", "mktrf", "smb", "hml"]))
-    # Show summary stats
-    summary = checkpoint_data.select([
-        pl.col("_residuals").count().alias("count"),
-        pl.col("_residuals").mean().alias("resid_mean"),
-        pl.col("_residuals").std().alias("resid_std")
-    ])
-    print("Summary stats:", summary)
 
 # Add _Nobs for each observation (replicates Stata's asreg behavior)
 # In Stata, asreg adds _Nobs to every observation in the group
@@ -159,39 +126,11 @@ print("Filtering out observations where FF3 regression failed (null residuals)..
 df_filtered = df_with_nobs.filter(pl.col("_residuals").is_not_null())
 print(f"After removing null residuals: {len(df_filtered):,} observations")
 
-# CHECKPOINT 4: After filtering by _Nobs >= 15 equivalent
-print(f"CHECKPOINT 4: After filtering for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-checkpoint_count = df_filtered.filter(
-    (pl.col("permno") == DEBUG_PERMNO) & 
-    (pl.col("time_avail_m") == DEBUG_DATE)
-).height
-print(f"Count for problematic observation: {checkpoint_count}")
-if checkpoint_count > 0:
-    checkpoint_data = df_filtered.filter(
-        (pl.col("permno") == DEBUG_PERMNO) & 
-        (pl.col("time_avail_m") == DEBUG_DATE)
-    ).head(10)
-    print(checkpoint_data.select(["permno", "time_avail_m", "_Nobs", "_residuals", "ret"]))
 
 # Check how many permno-month groups this represents  
 groups_after_filter = df_filtered.select(["permno", "time_avail_m"]).unique().height
 print(f"Permno-month groups after filtering: {groups_after_filter:,}")
 
-# CHECKPOINT 5: Before aggregation
-print(f"CHECKPOINT 5: Before aggregation for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-checkpoint_data = df_filtered.filter(
-    (pl.col("permno") == DEBUG_PERMNO) & 
-    (pl.col("time_avail_m") == DEBUG_DATE)
-)
-if checkpoint_data.height > 0:
-    print(f"Number of observations for calculation: {checkpoint_data.height}")
-    # Manual calculation to match Stata output
-    manual_stats = checkpoint_data.select([
-        pl.col("ret").std().alias("manual_sd_ret"),
-        pl.col("_residuals").std().alias("manual_sd_resid"),
-        pl.col("_residuals").skew().alias("manual_skew_resid")
-    ])
-    print("Manual calculation preview:", manual_stats)
 
 # Calculate the three predictors with targeted fix for extreme cases
 print("Calculating predictors using group aggregations...")
@@ -201,21 +140,6 @@ predictors = df_filtered.group_by(["permno", "time_avail_m"]).agg([
     pl.col("_residuals").skew().alias("ReturnSkew3F")      # (skewness) ReturnSkew3F = _residuals
 ])
 
-# CHECKPOINT 6: After aggregation
-print(f"CHECKPOINT 6: After aggregation for permno={DEBUG_PERMNO}, yyyymm={DEBUG_YYYYMM}")
-checkpoint_result = predictors.filter(
-    (pl.col("permno") == DEBUG_PERMNO) & 
-    (pl.col("time_avail_m") == DEBUG_DATE)
-)
-if checkpoint_result.height > 0:
-    print(checkpoint_result.select(["permno", "time_avail_m", "RealizedVol", "IdioVol3F", "ReturnSkew3F"]))
-    # Show summary stats
-    summary = checkpoint_result.select([
-        pl.col("RealizedVol").alias("RealizedVol_final"),
-        pl.col("IdioVol3F").alias("IdioVol3F_final"),
-        pl.col("ReturnSkew3F").alias("ReturnSkew3F_final")
-    ])
-    print("Final predictor values:", summary)
 
 # NO POST-PROCESSING: Stata code does not modify ReturnSkew3F values
 

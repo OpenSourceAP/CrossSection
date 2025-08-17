@@ -67,11 +67,6 @@ df_pd['Mom6m'] = (
     (1 + df_pd['l5_ret']) - 1
 )
 
-# CHECKPOINT 1: Debug momentum calculation for problematic observations  
-print("CHECKPOINT 1: Momentum calculation")
-debug_obs = df_pd[(df_pd["permno"] == 10006) & (df_pd["time_avail_m"] == pd.Timestamp('1943-01-01'))]
-if len(debug_obs) > 0:
-    print(debug_obs[["permno", "time_avail_m", "ret", "l1_ret", "l2_ret", "l3_ret", "l4_ret", "l5_ret", "Mom6m"]])
 
 # Calculate 6-month calendar-based rolling mean volume (like Stata asrol window(time_avail_m 6))
 # Use the asrol utility but with calendar-based approach
@@ -92,34 +87,10 @@ df_pd = asrol(
 # Create momentum deciles within each time_avail_m (like fastxtile)
 df_pd['catMom'] = fastxtile(df_pd, 'Mom6m', by='time_avail_m', n=10)
 
-# CHECKPOINT 2: Debug momentum quantiles
-print("CHECKPOINT 2: Momentum quantiles")
-debug_obs = df_pd[(df_pd["permno"] == 10006) & (df_pd["time_avail_m"] == pd.Timestamp('1943-01-01'))]
-if len(debug_obs) > 0:
-    print(debug_obs[["permno", "time_avail_m", "Mom6m", "catMom"]])
-time_subset = df_pd[df_pd["time_avail_m"] == pd.Timestamp('1943-01-01')]["Mom6m"].dropna()
-if len(time_subset) > 0:
-    print(f"Momentum stats for 1943-01: {time_subset.describe()}")
-    print(f"Momentum decile cutoffs: {np.percentile(time_subset, [10, 20, 30, 40, 50, 60, 70, 80, 90])}")
 
-# CHECKPOINT 3: Debug volume rolling calculation
-print("CHECKPOINT 3: Volume rolling calculation")
-debug_obs = df_pd[(df_pd["permno"] == 10006) & (df_pd["time_avail_m"] == pd.Timestamp('1943-01-01'))]
-if len(debug_obs) > 0:
-    print(debug_obs[["permno", "time_avail_m", "vol", "temp"]])
 # Volume terciles within each time_avail_m
 df_pd['catVol'] = fastxtile(df_pd, 'temp', by='time_avail_m', n=3)
 
-# CHECKPOINT 4: Debug volume quantiles
-print("CHECKPOINT 4: Volume quantiles")
-debug_obs = df_pd[(df_pd["permno"] == 10006) & (df_pd["time_avail_m"] == pd.Timestamp('1943-01-01'))]
-if len(debug_obs) > 0:
-    print(debug_obs[["permno", "time_avail_m", "temp", "catVol"]])
-time_subset = df_pd[df_pd["time_avail_m"] == pd.Timestamp('1943-01-01')]["temp"].dropna()
-if len(time_subset) > 0:
-    print(f"Volume stats for 1943-01: {time_subset.describe()}")
-    print(f"Volume tercile cutoffs: {np.percentile(time_subset, [33.33, 66.67])}")
-    print(f"Volume tercile counts: {df_pd[df_pd['time_avail_m'] == pd.Timestamp('1943-01-01')]['catVol'].value_counts().sort_index()}")
 
 # Convert back to polars (we're already in pandas from lag calculation)
 df = pl.from_pandas(df_pd)
@@ -132,15 +103,6 @@ df = df.with_columns([
     .alias("MomVol")
 ])
 
-# CHECKPOINT 5: Debug final signal assignment  
-print("CHECKPOINT 5: Final signal assignment")
-debug_obs = df.filter((pl.col("permno") == 10006) & (pl.col("time_avail_m") == pl.date(1943, 1, 1)))
-if len(debug_obs) > 0:
-    print(debug_obs.select(["permno", "time_avail_m", "catMom", "catVol", "MomVol"]))
-high_vol_count = len(df.filter((pl.col("catVol") == 3) & (pl.col("time_avail_m") == pl.date(1943, 1, 1))))
-non_missing_count = len(df.filter((pl.col("MomVol").is_not_null()) & (pl.col("time_avail_m") == pl.date(1943, 1, 1))))
-print(f"High volume stocks (catVol==3): {high_vol_count}")
-print(f"Non-missing MomVol: {non_missing_count}")
 
 # Filter: set to missing if observation number < 24 (like Stata _n < 24)
 # Add observation number within each permno group
@@ -155,11 +117,6 @@ df = df.with_columns([
     .alias("MomVol")
 ])
 
-# CHECKPOINT 6: Debug time filter
-print("CHECKPOINT 6: Time filter") 
-debug_obs = df.filter((pl.col("permno") == 10006) & (pl.col("time_avail_m") == pl.date(1943, 1, 1)))
-if len(debug_obs) > 0:
-    print(debug_obs.select(["permno", "time_avail_m", "obs_num", "MomVol"]))
 
 # Drop temporary columns (including new lag columns)
 df = df.drop(["l1_ret", "l2_ret", "l3_ret", "l4_ret", "l5_ret", "obs_num", "temp", "catMom", "catVol"])

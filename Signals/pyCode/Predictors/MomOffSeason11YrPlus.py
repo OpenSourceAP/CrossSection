@@ -49,12 +49,6 @@ def main():
     df['ret'] = df['ret'].fillna(0)
     print("Replaced missing returns with 0")
     
-    # CHECKPOINT 1: After data load and ret replacement
-    debug_mask = (df['permno'] == 75302) & (df['time_avail_m'] == pd.Period('1993-12', 'M'))
-    if debug_mask.any():
-        print("CHECKPOINT 1: After data load and ret replacement")
-        debug_obs = df[debug_mask][['permno', 'time_avail_m', 'ret']]
-        print(debug_obs.to_string())
     
     # Create seasonal lag variables (equivalent to: foreach n of numlist 131(12)179)
     # This creates lags for seasonal returns from years 11-15: 131, 143, 155, 167, 179 months
@@ -80,12 +74,6 @@ def main():
         # Clean up the temporary time column
         df = df.drop(f'lag_time_{n}', axis=1)
     
-    # CHECKPOINT 2: After seasonal lag creation
-    debug_mask = (df['permno'] == 75302) & (df['time_avail_m'] == pd.Period('1993-12', 'M'))
-    if debug_mask.any():
-        print("CHECKPOINT 2: After seasonal lag creation")
-        debug_obs = df[debug_mask][['permno', 'time_avail_m', 'temp131', 'temp143', 'temp155', 'temp167', 'temp179']]
-        print(debug_obs.to_string())
     
     # Create list of temporary variable names for row operations
     temp_vars = [f'temp{n}' for n in lag_periods]
@@ -102,12 +90,6 @@ def main():
     df['retTemp2'] = df[temp_vars].notna().sum(axis=1)
     print("Calculated retTemp2 (seasonal row non-missing count)")
     
-    # CHECKPOINT 3: After seasonal calculations
-    debug_mask = (df['permno'] == 75302) & (df['time_avail_m'] == pd.Period('1993-12', 'M'))
-    if debug_mask.any():
-        print("CHECKPOINT 3: After seasonal calculations")
-        debug_obs = df[debug_mask][['permno', 'time_avail_m', 'retTemp1', 'retTemp2']]
-        print(debug_obs.to_string())
     
     # Calculate momentum base using 60-month rolling window
     print("Creating momentum base with 60-month rolling window...")
@@ -175,12 +157,6 @@ def main():
     
     print("Calculated 60-month rolling momentum base")
     
-    # CHECKPOINT 4: After 60-month rolling calculations
-    debug_mask = (df['permno'] == 75302) & (df['time_avail_m'] == pd.Period('1993-12', 'M'))
-    if debug_mask.any():
-        print("CHECKPOINT 4: After 60-month rolling calculations")
-        debug_obs = df[debug_mask][['permno', 'time_avail_m', 'retLagTemp', 'retLagTemp_sum60', 'retLagTemp_count60']]
-        print(debug_obs.to_string())
     
     # Calculate final predictor (equivalent to: gen MomOffSeason11YrPlus = (retLagTemp_sum60 - retTemp1)/(retLagTemp_count60 - retTemp2))
     df['MomOffSeason11YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
@@ -188,12 +164,6 @@ def main():
     df.loc[(df['retLagTemp_count60'] - df['retTemp2']) == 0, 'MomOffSeason11YrPlus'] = np.nan
     print("Calculated MomOffSeason11YrPlus predictor")
     
-    # CHECKPOINT 5: After final calculation
-    debug_mask = (df['permno'] == 75302) & (df['time_avail_m'] == pd.Period('1993-12', 'M'))
-    if debug_mask.any():
-        print("CHECKPOINT 5: After final calculation")
-        debug_obs = df[debug_mask][['permno', 'time_avail_m', 'MomOffSeason11YrPlus', 'retLagTemp_sum60', 'retTemp1', 'retLagTemp_count60', 'retTemp2']]
-        print(debug_obs.to_string())
     
     # yyyymm column already created earlier for calendar-based rolling
     

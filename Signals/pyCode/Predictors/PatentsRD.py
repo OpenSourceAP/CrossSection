@@ -84,25 +84,10 @@ df = df.reset_index()
 # Filter
 df = df.sort_values(['gvkey', 'time_avail_m'])
 df = df.groupby('gvkey').apply(lambda x: x.iloc[2:] if len(x) > 2 else x.iloc[0:0]).reset_index(drop=True)
-# CHECKPOINT 1: After dropping first 2 obs per gvkey
-data_10006 = df[(df['permno'] == 10006) & (df['time_avail_m'] == 198306)]
-if not data_10006.empty:
-    print("CHECKPOINT 1 - After dropping first 2 obs per gvkey:")
-    print(data_10006[['permno', 'time_avail_m', 'sicCRSP', 'ceq']])
     
 df = df[~((df['sicCRSP'] >= 6000) & (df['sicCRSP'] <= 6999))]
-# CHECKPOINT 2: After filtering sicCRSP
-data_10006 = df[(df['permno'] == 10006) & (df['time_avail_m'] == 198306)]
-if not data_10006.empty:
-    print("CHECKPOINT 2 - After filtering sicCRSP:")
-    print(data_10006[['permno', 'time_avail_m', 'sicCRSP', 'ceq']])
     
 df = df[~(df['ceq'] < 0)]
-# CHECKPOINT 3: After filtering ceq < 0
-data_10006 = df[(df['permno'] == 10006) & (df['time_avail_m'] == 198306)]
-if not data_10006.empty:
-    print("CHECKPOINT 3 - After filtering ceq < 0:")
-    print(data_10006[['permno', 'time_avail_m', 'sicCRSP', 'ceq']])
 
 # Double independent sort
 # Size categories
@@ -143,11 +128,6 @@ for time_month, group in df.groupby('time_avail_m'):
     patents_cuts.append(group)
 df = pd.concat(patents_cuts, ignore_index=True)
 
-# CHECKPOINT 4: After astile/fastxtile operations
-data_10006 = df[(df['permno'] == 10006) & (df['time_avail_m'] == 198306)]
-if not data_10006.empty:
-    print("CHECKPOINT 4 - After astile/fastxtile operations:")
-    print(data_10006[['permno', 'time_avail_m', 'mve_c', 'sizecat', 'tempPatentsRD', 'maincat']])
 
 # Create PatentsRD signal (binary: 1 for small/high, 0 for small/low)
 df['PatentsRD'] = np.nan
