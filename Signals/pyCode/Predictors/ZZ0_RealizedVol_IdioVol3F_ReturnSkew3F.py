@@ -217,15 +217,7 @@ if checkpoint_result.height > 0:
     ])
     print("Final predictor values:", summary)
 
-# Post-process ReturnSkew3F to handle problematic values
-print("Post-processing ReturnSkew3F to handle extreme values...")
-predictors = predictors.with_columns(
-    # Replace specific problematic values identified in debug analysis
-    pl.when((pl.col("ReturnSkew3F").abs() > 4.0) | pl.col("ReturnSkew3F").is_null())
-    .then(0.1790421686972114)  # Stata default for problematic cases
-    .otherwise(pl.col("ReturnSkew3F"))
-    .alias("ReturnSkew3F")
-)
+# NO POST-PROCESSING: Stata code does not modify ReturnSkew3F values
 
 print(f"Generated predictors: {len(predictors):,} permno-month observations")
 
