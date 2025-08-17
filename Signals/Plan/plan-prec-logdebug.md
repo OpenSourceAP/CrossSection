@@ -82,30 +82,30 @@ List of scripts to debug is below.
 
 complicated scripts
 
-- TrendFactor: ✅ COMPLETED
-- ZZ1_OrgCap_OrgCapNoAdj: ✅ COMPLETED
-- ZZ2_AbnormalAccruals_AbnormalAccrualsPercent: ✅ COMPLETED
-- ZZ2_BetaFP: ✅ COMPLETED
-- CitationsRD: ✅ COMPLETED
+- TrendFactor: TBC
+- ZZ1_OrgCap_OrgCapNoAdj: TBC
+- ZZ2_AbnormalAccruals_AbnormalAccrualsPercent: TBC
+- ZZ2_BetaFP: TBC
+- CitationsRD: TBC
 
 ## Group 4
 
 complicated scripts with small errors
 
-- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility: ✅ COMPLETED
-- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: ✅ COMPLETED
-- ZZ1_ResidualMomentum6m_ResidualMomentum: ✅ COMPLETED
-- ZZ2_IdioVolAHT: ✅ COMPLETED
+- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility: TBC
+- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: TBC
+- ZZ1_ResidualMomentum6m_ResidualMomentum: TBC
+- ZZ2_IdioVolAHT: TBC
 
 
 ## Group 5
 
 very small errors
 
-- realestate: ✅ COMPLETED
-- MRreversal: ✅ COMPLETED
-- Mom12mOffSeason: ✅ COMPLETED
-- MomOffSeason: ✅ COMPLETED
-- MomOffSeason06YrPlus: ✅ COMPLETED
-- MomOffSeason11YrPlus: ✅ COMPLETED
-- MomVol: ✅ COMPLETED
+- realestate: TBC
+- MRreversal: TBC
+- Mom12mOffSeason: TBC
+- MomOffSeason: TBC
+- MomOffSeason06YrPlus: TBC
+- MomOffSeason11YrPlus: TBC
+- MomVol: TBC
