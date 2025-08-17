@@ -1,10 +1,5 @@
 # Plan use logs from do files to debug precision failures
 
-## Context
-
-- Read Plan/plan-editdo2-prec.md 
-    - It explains how we added do file log output to help trace precision failures.
-
 ## Task: use the do file logs to debug the precision failures
 
 - For the requested predictor, read the do file log in `Human/Logs/*.log`
@@ -39,3 +34,15 @@ List of scripts to debug is below.
   - no improvement
 - IndMom: ✅ COMPLETED
 - IndRetBig: ✅ COMPLETED
+
+## Group 2
+
+- MS: ATTEMPTED
+  - Debug completed: Fixed BM quintile calculation order to match Stata, but precision issue persists
+  - Core issue identified: Quarterly aggregation differences between Stata asrol and Polars rolling functions
+  - 32.967% precision failure remains due to calendar-time vs observation-based rolling windows
+- NumEarnIncrease: TBC
+- PS: TBC
+- Tax: TBC
+- VolumeTrend: TBC
+- retConglomerate: TBC
