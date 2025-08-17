@@ -41,7 +41,11 @@ List of scripts to debug is below.
   - Debug completed: Fixed BM quintile calculation order to match Stata, but precision issue persists
   - Core issue identified: Quarterly aggregation differences between Stata asrol and Polars rolling functions
   - 32.967% precision failure remains due to calendar-time vs observation-based rolling windows
-- NumEarnIncrease: TBC
+- NumEarnIncrease: ✅ COMPLETED
+  - Issue: Missing chearn values treated differently in Stata vs Python
+  - Root cause: Stata treats missing values as positive infinity in comparisons (chearn > 0 = TRUE when missing)
+  - Fix: Modified all nincr assignment conditions to include `| df['chearn'].isna()` to treat missing chearn as positive
+  - Result: Precision improved from 1.010% failure to 0.009% success (all tests passed)
 - PS: TBC
 - Tax: TBC
 - VolumeTrend: TBC
