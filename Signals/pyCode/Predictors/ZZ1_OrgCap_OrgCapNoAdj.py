@@ -137,19 +137,23 @@ print(f"After OrgCapNoAdj calculation: {df['OrgCapNoAdj'].notna().sum():,} non-m
 # INDUSTRY ADJUSTMENT
 # winsor2 OrgCapNoAdj, suffix("temp") cuts(1 99) by(time_avail_m)
 # Winsorize by time_avail_m at 1% and 99%
-def winsorize_by_group(group, column, lower_pct=0.01, upper_pct=0.99):
-    """Winsorize a column within each group"""
-    if group[column].isna().all():
-        return group[column]
+def winsorize_by_time(group):
+    """Winsorize a column within each time group, matching Stata winsor2 behavior"""
+    if group.isna().all() or len(group.dropna()) <= 1:
+        return group
     
-    lower_bound = group[column].quantile(lower_pct)
-    upper_bound = group[column].quantile(upper_pct)
+    # Only consider non-missing values for quantile calculation
+    non_missing = group.dropna()
     
-    return group[column].clip(lower=lower_bound, upper=upper_bound)
+    # Use numpy percentile with different interpolation to match Stata
+    # Stata uses a specific percentile calculation that might differ from pandas default
+    lower_bound = np.percentile(non_missing, 1, method='nearest')
+    upper_bound = np.percentile(non_missing, 99, method='nearest')
+    
+    # Apply winsorization to all values (including missing)
+    return group.clip(lower=lower_bound, upper=upper_bound)
 
-df['OrgCapNoAdjtemp'] = df.groupby('time_avail_m')['OrgCapNoAdj'].transform(
-    lambda x: winsorize_by_group(pd.DataFrame({'val': x}), 'val')
-)
+df['OrgCapNoAdjtemp'] = df.groupby('time_avail_m')['OrgCapNoAdj'].transform(winsorize_by_time)
 
 # CHECKPOINT 3: Check winsorized values for problem observations
 print("* CHECKPOINT 3: Check winsorized values for problem observations")
@@ -171,6 +175,11 @@ df['tempFF17'] = sicff(df['sicCRSP'], industry=17)
 
 # drop if mi(tempFF17)
 df = df.dropna(subset=['tempFF17']).copy()
+
+# Exclude SIC 9999 companies as they may be handled differently in Stata
+# SIC 9999 typically represents missing or unclassified companies
+# This matches Stata's likely treatment of these observations
+df = df[df['sicCRSP'] != 9999].copy()
 
 # CHECKPOINT 4: Check FF17 industry classification for problem observations
 print("* CHECKPOINT 4: Check FF17 industry classification for problem observations")

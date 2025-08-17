@@ -145,7 +145,7 @@ df_with_residuals = asreg(
     add_intercept=True,
     outputs=("resid",),
     null_policy="drop",  # Pass through the null policy like original
-    solve_method="svd",   # Pass through the solve method like original
+    solve_method="svd",   # Revert to original SVD method
     collect=True
 )
 

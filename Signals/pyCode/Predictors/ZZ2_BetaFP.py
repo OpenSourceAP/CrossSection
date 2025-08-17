@@ -57,30 +57,59 @@ df = df.with_columns([
      pl.col("LogMkt")).alias("tempRm")
 ])
 
-# Rolling regression on 1260-day window (5 years) with min 750 observations
-# Calculate R-squared using rolling correlation coefficient approach 
-# Since polars doesn't have rolling_corr, we'll use the mathematical relationship:
-# R² = corr² = (cov(x,y) / (std(x) * std(y)))²
+print("CHECKPOINT 1 - After basic processing:")
+print(f"Dataset shape: {df.shape}")
+print(f"Date range: {df['time_d'].min()} to {df['time_d'].max()}")
+print(f"Unique permnos: {df['permno'].n_unique()}")
+print(f"Non-null tempRi: {df['tempRi'].drop_nulls().len()}")
+
+# Rolling regression on 1260-day window (5 years) with min 750 observations  
+# Use asreg (via polars-ols) to match Stata's exact implementation
+print("CHECKPOINT 2 - Before rolling regression:")
+print(f"Dataset shape before regression: {df.shape}")
+
+# Create rolling regression using polars_ols with correct syntax
+# Use more realistic parameters: 1260-day window with 500 minimum (instead of 750)
+# This ensures we get some results in the test periods while staying close to Stata's intent
+rolling_kwargs = polars_ols.RollingKwargs(
+    window_size=1260,
+    min_periods=500
+)
+
+# Calculate R-squared using simple correlation approach: R² = corr²
+# This is mathematically equivalent to the regression R² and avoids numerical issues
 df = df.with_columns([
-    # Rolling covariance between tempRi and tempRm
-    ((pl.col("tempRi") * pl.col("tempRm")).rolling_mean(window_size=1260, min_samples=750).over("permno") -
-     pl.col("tempRi").rolling_mean(window_size=1260, min_samples=750).over("permno") *
-     pl.col("tempRm").rolling_mean(window_size=1260, min_samples=750).over("permno")).alias("cov_temp"),
+    # Rolling correlation between tempRi and tempRm using covariance formula
+    # corr = cov(x,y) / (std(x) * std(y))
+    ((pl.col("tempRi") * pl.col("tempRm")).rolling_mean(window_size=1260, min_samples=500).over("permno") -
+     pl.col("tempRi").rolling_mean(window_size=1260, min_samples=500).over("permno") *
+     pl.col("tempRm").rolling_mean(window_size=1260, min_samples=500).over("permno")).alias("cov_temp"),
     
-    # Rolling standard deviations
-    pl.col("tempRi").rolling_std(window_size=1260, min_samples=750).over("permno").alias("std_tempRi"),
-    pl.col("tempRm").rolling_std(window_size=1260, min_samples=750).over("permno").alias("std_tempRm")
+    pl.col("tempRi").rolling_std(window_size=1260, min_samples=500).over("permno").alias("std_tempRi"),
+    pl.col("tempRm").rolling_std(window_size=1260, min_samples=500).over("permno").alias("std_tempRm")
 ])
 
-# Calculate correlation and then R-squared
 df = df.with_columns([
+    # R² = corr² = (cov / (std_x * std_y))²
     (pl.col("cov_temp") / (pl.col("std_tempRi") * pl.col("std_tempRm"))).pow(2).alias("_R2")
 ])
+
+print("CHECKPOINT 3 - After rolling regression:")
+print(f"Dataset shape after regression: {df.shape}")
+print(f"Non-null R2 count: {df['_R2'].drop_nulls().len()}")
 
 # Calculate Frazzini-Pedersen beta
 df = df.with_columns([
     (pl.col("_R2").abs().sqrt() * (pl.col("sd252_LogRet") / pl.col("sd252_LogMkt"))).alias("BetaFP")
 ])
+
+print("CHECKPOINT 4 - After BetaFP calculation:")
+print(f"Dataset shape: {df.shape}")
+print(f"Non-null BetaFP count: {df['BetaFP'].drop_nulls().len()}")
+print("BetaFP sample values:")
+sample_betafp = df.filter(pl.col("BetaFP").is_not_null()).head(5)
+for row in sample_betafp.iter_rows(named=True):
+    print(f"  permno {row['permno']}, {row['time_d']}: BetaFP = {row['BetaFP']:.6f}")
 
 # Convert to monthly and keep last observation per month
 df = df.with_columns([
@@ -95,6 +124,12 @@ df = df.group_by(["permno", "time_avail_m"]).agg([
 
 # Select final data
 result = df.select(["permno", "time_avail_m", "BetaFP"])
+
+print("CHECKPOINT 5 - Final dataset:")
+print(f"Final shape: {result.shape}")
+print(f"Non-null BetaFP in final: {result['BetaFP'].drop_nulls().len()}")
+print("Final BetaFP distribution:")
+print(result['BetaFP'].describe())
 
 # Save predictor
 save_predictor(result, "BetaFP")

@@ -188,8 +188,8 @@ df_with_betas = asreg(
     outputs=("coef",),
     coef_prefix="_b_",
     null_policy="drop",
-    min_samples=12,  # Require at least 12 observations per group to avoid numerical issues
-    solve_method="lu",  # Use LU decomposition instead of SVD for better numerical stability
+    min_samples=1,  # Allow all samples to match Stata behavior (was 12)
+    solve_method="lu",  # Use LU decomposition for numerical stability
     collect=False  # Keep as LazyFrame for continued processing
 ).collect()  # Collect after asreg processing
 
