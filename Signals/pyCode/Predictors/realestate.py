@@ -49,6 +49,9 @@ if bad_obs_3.any():
 df['re'] = df['re_new']
 df.loc[df['re_new'].isna(), 're'] = df['re_old']
 
+# Convert infinite values to NaN to match Stata's behavior (division by zero)
+df['re'] = df['re'].replace([np.inf, -np.inf], np.nan)
+
 # CHECKPOINT 2
 print("CHECKPOINT 2")
 if bad_obs_1.any():

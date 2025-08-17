@@ -25,7 +25,6 @@ import os
 
 # Add parent directory to path for any shared utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.asrol import asrol
 
 def main():
     print("Starting MomOffSeason predictor translation...")
@@ -123,13 +122,58 @@ def main():
         print("CHECKPOINT 4: After creating 12-month lag")
         print(bad_obs[['permno', 'time_avail_m', 'retLagTemp']].to_string(index=False))
     
-    # Create 48-month rolling sum and count of retLagTemp using asrol
-    print("Calculating 48-month rolling sum and count...")
+    # Create 48-month rolling sum and count of retLagTemp using calendar-based approach
+    print("Calculating 48-month calendar-based rolling sum and count...")
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Use asrol for 48-month rolling sum and count
-    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 48, stat='sum', new_col_name='retLagTemp_sum48', min_periods=1)
-    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 48, stat='count', new_col_name='retLagTemp_count48', min_periods=1)
+    # Convert to yyyymm integer for efficient calendar arithmetic
+    df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+    
+    def calculate_calendar_rolling_48m(group):
+        group = group.sort_values('yyyymm').reset_index(drop=True)
+        n_obs = len(group)
+        sum_values = np.full(n_obs, np.nan)
+        count_values = np.full(n_obs, np.nan)
+        
+        # Pre-compute all yyyymm values for efficient comparison
+        yyyymm_values = group['yyyymm'].values
+        retLagTemp_values = group['retLagTemp'].values
+        
+        for i in range(n_obs):
+            current_yyyymm = yyyymm_values[i]
+            
+            # Calculate 48-month calendar window start (47 months back, including current)
+            current_year = current_yyyymm // 100
+            current_month = current_yyyymm % 100
+            
+            start_month = current_month - 47
+            start_year = current_year
+            while start_month <= 0:
+                start_month += 12
+                start_year -= 1
+            
+            window_start_yyyymm = start_year * 100 + start_month
+            
+            # Find observations in 48-month calendar window (including focal)
+            window_mask = (
+                (yyyymm_values >= window_start_yyyymm) & 
+                (yyyymm_values <= current_yyyymm)
+            )
+            
+            # Calculate sum and count (including NaN handling like Stata minimum(1))
+            window_values = retLagTemp_values[window_mask]
+            non_missing_values = window_values[~pd.isna(window_values)]
+            
+            if len(non_missing_values) >= 1:  # minimum(1) like in Stata
+                sum_values[i] = np.sum(non_missing_values)
+                count_values[i] = len(non_missing_values)
+        
+        group['retLagTemp_sum48'] = sum_values
+        group['retLagTemp_count48'] = count_values
+        return group
+    
+    print("Processing groups for calendar-based rolling (this may take time)...")
+    df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_48m)
     
     print("Calculated 48-month rolling momentum base")
     

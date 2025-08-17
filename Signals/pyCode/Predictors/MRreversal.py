@@ -30,13 +30,20 @@ if not debug_obs2.empty:
     print("permno=91201, time_avail_m=2019-10:")
     print(debug_obs2[['permno', 'time_avail_m', 'ret']].to_string())
 
-# Calculate lags for months 13-18
-df['ret_lag13'] = df.groupby('permno')['ret'].shift(13).fillna(0)
-df['ret_lag14'] = df.groupby('permno')['ret'].shift(14).fillna(0)
-df['ret_lag15'] = df.groupby('permno')['ret'].shift(15).fillna(0)
-df['ret_lag16'] = df.groupby('permno')['ret'].shift(16).fillna(0)
-df['ret_lag17'] = df.groupby('permno')['ret'].shift(17).fillna(0)
-df['ret_lag18'] = df.groupby('permno')['ret'].shift(18).fillna(0)
+# Calculate lags for months 13-18 using calendar-based approach (matching Stata's l13.ret etc.)
+# Use merge operations to efficiently create calendar-based lags
+for lag in [13, 14, 15, 16, 17, 18]:
+    # Create a copy for the lag data with shifted dates
+    lag_df = df[['permno', 'time_avail_m', 'ret']].copy()
+    lag_df['time_avail_m'] = lag_df['time_avail_m'] + pd.DateOffset(months=lag)
+    lag_df = lag_df.rename(columns={'ret': f'ret_lag{lag}'})
+    
+    # Merge to get the lagged values
+    df = df.merge(lag_df[['permno', 'time_avail_m', f'ret_lag{lag}']], 
+                  on=['permno', 'time_avail_m'], how='left')
+    
+    # Fill missing lags with 0 (consistent with Stata behavior for missing)
+    df[f'ret_lag{lag}'] = df[f'ret_lag{lag}'].fillna(0)
 
 # Calculate momentum-reversal (geometric return over months 13-18)
 df['MRreversal'] = ((1 + df['ret_lag13']) * 

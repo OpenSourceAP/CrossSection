@@ -128,13 +128,58 @@ def main():
     df = df.merge(lag_data_60, on=['permno', 'lag_time_60'], how='left')
     df = df.drop('lag_time_60', axis=1)
     
-    # Create 60-month rolling sum and count of retLagTemp (equivalent to asrol)
-    print("Calculating 60-month rolling sum and count...")
+    # Create 60-month rolling sum and count of retLagTemp using calendar-based approach
+    print("Calculating 60-month calendar-based rolling sum and count...")
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Use asrol for 60-month rolling sum and count
-    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 60, stat='sum', new_col_name='retLagTemp_sum60', min_periods=1)
-    df = asrol(df, 'permno', 'time_avail_m', 'retLagTemp', 60, stat='count', new_col_name='retLagTemp_count60', min_periods=1)
+    # Convert to yyyymm integer for efficient calendar arithmetic
+    df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+    
+    def calculate_calendar_rolling_60m(group):
+        group = group.sort_values('yyyymm').reset_index(drop=True)
+        n_obs = len(group)
+        sum_values = np.full(n_obs, np.nan)
+        count_values = np.full(n_obs, np.nan)
+        
+        # Pre-compute all yyyymm values for efficient comparison
+        yyyymm_values = group['yyyymm'].values
+        retLagTemp_values = group['retLagTemp'].values
+        
+        for i in range(n_obs):
+            current_yyyymm = yyyymm_values[i]
+            
+            # Calculate 60-month calendar window start (59 months back, including current)
+            current_year = current_yyyymm // 100
+            current_month = current_yyyymm % 100
+            
+            start_month = current_month - 59
+            start_year = current_year
+            while start_month <= 0:
+                start_month += 12
+                start_year -= 1
+            
+            window_start_yyyymm = start_year * 100 + start_month
+            
+            # Find observations in 60-month calendar window (including focal)
+            window_mask = (
+                (yyyymm_values >= window_start_yyyymm) & 
+                (yyyymm_values <= current_yyyymm)
+            )
+            
+            # Calculate sum and count (including NaN handling like Stata minimum(1))
+            window_values = retLagTemp_values[window_mask]
+            non_missing_values = window_values[~pd.isna(window_values)]
+            
+            if len(non_missing_values) >= 1:  # minimum(1) like in Stata
+                sum_values[i] = np.sum(non_missing_values)
+                count_values[i] = len(non_missing_values)
+        
+        group['retLagTemp_sum60'] = sum_values
+        group['retLagTemp_count60'] = count_values
+        return group
+    
+    print("Processing groups for calendar-based rolling (this may take time)...")
+    df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_60m)
     
     print("Calculated 60-month rolling momentum base")
     
@@ -162,9 +207,7 @@ def main():
     if not bad_obs_2.empty:
         print(f"permno=33268, time_avail_m=1983-11: MomOffSeason06YrPlus={bad_obs_2['MomOffSeason06YrPlus'].iloc[0]}, retLagTemp_sum60={bad_obs_2['retLagTemp_sum60'].iloc[0]}, retTemp1={bad_obs_2['retTemp1'].iloc[0]}, retLagTemp_count60={bad_obs_2['retLagTemp_count60'].iloc[0]}, retTemp2={bad_obs_2['retTemp2'].iloc[0]}")
     
-    # Create yyyymm column from time_avail_m 
-    # Convert datetime to yyyymm integer format (e.g. 199112 for Dec 1991)
-    df['yyyymm'] = (df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month).astype(int)
+    # yyyymm column already created in the rolling function above
     
     # SAVE - Keep only required output columns
     output_df = df[['permno', 'yyyymm', 'MomOffSeason06YrPlus']].copy()

@@ -38,17 +38,17 @@ def main():
 
     # CHECKPOINT 1: After data load
     print("CHECKPOINT 1: After data load")
-    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Period('2021-03')) & (df['time_avail_m'] <= pd.Period('2021-05'))]
+    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Timestamp('2021-03-01')) & (df['time_avail_m'] <= pd.Timestamp('2021-05-31'))]
     if not checkpoint_data.empty:
         print("permno 13755, 2021m3-2021m5:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
     
-    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Period('2020-09')) & (df['time_avail_m'] <= pd.Period('2020-11'))]
+    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Timestamp('2020-09-01')) & (df['time_avail_m'] <= pd.Timestamp('2020-11-30'))]
     if not checkpoint_data.empty:
         print("permno 89169, 2020m9-2020m11:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
     
-    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Period('2019-07')) & (df['time_avail_m'] <= pd.Period('2019-09'))]
+    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Timestamp('2019-07-01')) & (df['time_avail_m'] <= pd.Timestamp('2019-09-30'))]
     if not checkpoint_data.empty:
         print("permno 91201, 2019m7-2019m9:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
@@ -62,57 +62,90 @@ def main():
 
     # CHECKPOINT 2: After replacing missing returns with 0
     print("CHECKPOINT 2: After replacing missing returns with 0")
-    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Period('2021-03')) & (df['time_avail_m'] <= pd.Period('2021-05'))]
+    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Timestamp('2021-03-01')) & (df['time_avail_m'] <= pd.Timestamp('2021-05-31'))]
     if not checkpoint_data.empty:
         print("permno 13755, 2021m3-2021m5:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
     
-    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Period('2020-09')) & (df['time_avail_m'] <= pd.Period('2020-11'))]
+    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Timestamp('2020-09-01')) & (df['time_avail_m'] <= pd.Timestamp('2020-11-30'))]
     if not checkpoint_data.empty:
         print("permno 89169, 2020m9-2020m11:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
     
-    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Period('2019-07')) & (df['time_avail_m'] <= pd.Period('2019-09'))]
+    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Timestamp('2019-07-01')) & (df['time_avail_m'] <= pd.Timestamp('2019-09-30'))]
     if not checkpoint_data.empty:
         print("permno 91201, 2019m7-2019m9:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret']].to_string())
     
-    # Calculate 10-month rolling statistics
+    # Calculate 10-month calendar-based rolling statistics
     # Need to exclude focal (current) observation from the rolling calculation
-    print("Computing 10-month rolling statistics excluding focal return...")
+    print("Computing 10-month calendar-based rolling statistics excluding focal return...")
     
-    # Calculate rolling sum and count over 10 periods
-    df['rolling_sum_10'] = df.groupby('permno')['ret'].transform(
-        lambda x: x.rolling(window=10, min_periods=1).sum()
-    )
-    df['rolling_count_10'] = df.groupby('permno')['ret'].transform(
-        lambda x: x.rolling(window=10, min_periods=1).count()
-    )
+    # Import relativedelta for calendar-based calculations
+    from dateutil.relativedelta import relativedelta
     
-    # Exclude focal observation: subtract current return from sum and 1 from count
-    df['sum_excluding_focal'] = df['rolling_sum_10'] - df['ret']
-    df['count_excluding_focal'] = df['rolling_count_10'] - 1
+    # Implement true calendar-based rolling to exactly match Stata asrol
+    # This will be slow but is necessary for correct results
+    print("Computing true calendar-based rolling statistics (this may take several minutes)...")
     
-    # Calculate mean excluding focal (equivalent to Stata's xf(focal))
-    df['Mom12mOffSeason'] = np.where(
-        df['count_excluding_focal'] >= 6,  # minimum 6 observations requirement
-        df['sum_excluding_focal'] / df['count_excluding_focal'],
-        np.nan
-    )
+    # Convert to yyyymm integer for efficient calendar arithmetic
+    df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+    
+    def calculate_calendar_rolling_fast(group):
+        group = group.sort_values('yyyymm').reset_index(drop=True)
+        n_obs = len(group)
+        mom_values = np.full(n_obs, np.nan)
+        
+        # Pre-compute all yyyymm values for efficient comparison
+        yyyymm_values = group['yyyymm'].values
+        ret_values = group['ret'].values
+        
+        for i in range(n_obs):
+            current_yyyymm = yyyymm_values[i]
+            
+            # Calculate 10-month calendar window start (9 months back)
+            current_year = current_yyyymm // 100
+            current_month = current_yyyymm % 100
+            
+            start_month = current_month - 9
+            start_year = current_year
+            while start_month <= 0:
+                start_month += 12
+                start_year -= 1
+            
+            window_start_yyyymm = start_year * 100 + start_month
+            
+            # Find observations in calendar window, excluding focal
+            window_mask = (
+                (yyyymm_values >= window_start_yyyymm) & 
+                (yyyymm_values <= current_yyyymm) &
+                (yyyymm_values != current_yyyymm)
+            )
+            
+            # Calculate mean if minimum 6 observations
+            window_returns = ret_values[window_mask]
+            if len(window_returns) >= 6:
+                mom_values[i] = np.mean(window_returns)
+        
+        group['Mom12mOffSeason'] = mom_values
+        return group[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']]
+    
+    print("Processing groups (this will take time for large dataset)...")
+    df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_fast)
 
     # CHECKPOINT 3: After Mom12mOffSeason calculation
     print("CHECKPOINT 3: After Mom12mOffSeason calculation")
-    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Period('2021-03')) & (df['time_avail_m'] <= pd.Period('2021-05'))]
+    checkpoint_data = df[(df['permno'] == 13755) & (df['time_avail_m'] >= pd.Timestamp('2021-03-01')) & (df['time_avail_m'] <= pd.Timestamp('2021-05-31'))]
     if not checkpoint_data.empty:
         print("permno 13755, 2021m3-2021m5:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']].to_string())
     
-    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Period('2020-09')) & (df['time_avail_m'] <= pd.Period('2020-11'))]
+    checkpoint_data = df[(df['permno'] == 89169) & (df['time_avail_m'] >= pd.Timestamp('2020-09-01')) & (df['time_avail_m'] <= pd.Timestamp('2020-11-30'))]
     if not checkpoint_data.empty:
         print("permno 89169, 2020m9-2020m11:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']].to_string())
     
-    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Period('2019-07')) & (df['time_avail_m'] <= pd.Period('2019-09'))]
+    checkpoint_data = df[(df['permno'] == 91201) & (df['time_avail_m'] >= pd.Timestamp('2019-07-01')) & (df['time_avail_m'] <= pd.Timestamp('2019-09-30'))]
     if not checkpoint_data.empty:
         print("permno 91201, 2019m7-2019m9:")
         print(checkpoint_data[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']].to_string())
