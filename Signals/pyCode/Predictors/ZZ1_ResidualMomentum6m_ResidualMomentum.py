@@ -104,15 +104,15 @@ print(f"Total observations for permno {DEBUG_PERMNO}: {permno_count}")
 print("Running rolling 36-observation FF3 regressions by permno using asreg helper...")
 print("Processing", df['permno'].n_unique(), "unique permnos...")
 
-# Use asreg helper for rolling FF3 regression with residuals
+# Use asreg helper for rolling FF3 regression with residuals  
 # Rolling 36-observation windows with minimum 36 observations (exact Stata asreg match)
-# Use time_temp (position-based) instead of time_avail_m (calendar-based)
+# Use time_temp (position-based) to match Stata's approach exactly
 df = asreg(
     df,
     y="retrf",
     X=["mktrf", "hml", "smb"],
     by=["permno"],
-    t="time_temp", 
+    t="time_temp",  # Use position-based time_temp to match Stata exactly 
     mode="rolling",
     window_size=36,
     min_samples=36,
@@ -176,12 +176,12 @@ non_null_temp_count = df.filter(
 print(f"Non-null temp (lagged residuals) for permno {DEBUG_PERMNO}: {non_null_temp_count}")
 
 df = df.with_columns([
-    # 6-observation rolling statistics (position-based, min 6 observations)
+    # 6-observation rolling statistics (position-based, min 6 observations)  
     pl.col("temp").rolling_mean(window_size=6, min_samples=6).over("permno").alias("mean6_temp"),
-    pl.col("temp").rolling_std(window_size=6, min_samples=6).over("permno").alias("sd6_temp"),
+    pl.col("temp").rolling_std(window_size=6, min_samples=6, ddof=1).over("permno").alias("sd6_temp"),
     # 11-observation rolling statistics (position-based, min 11 observations)
-    pl.col("temp").rolling_mean(window_size=11, min_samples=11).over("permno").alias("mean11_temp"),
-    pl.col("temp").rolling_std(window_size=11, min_samples=11).over("permno").alias("sd11_temp")
+    pl.col("temp").rolling_mean(window_size=11, min_samples=11).over("permno").alias("mean11_temp"), 
+    pl.col("temp").rolling_std(window_size=11, min_samples=11, ddof=1).over("permno").alias("sd11_temp")
 ])
 
 # CHECKPOINT 5: After 6-month rolling statistics
