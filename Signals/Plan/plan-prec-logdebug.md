@@ -37,7 +37,7 @@ List of scripts to debug is below.
 
 ## Group 2
 
-- MS: ✅ MAJOR BREAKTHROUGH ACHIEVED
+- MS: IMPROVED
   - Issue: Position-based vs time-based rolling windows in quarterly aggregations and volatility measures
   - Root cause: Stata's `asrol window(time_avail_m 12)` uses calendar-based windows, Python's `rolling(12)` uses consecutive observations
   - Fix: Implemented time-based rolling using pandas `rolling('366D')` for 12-month and `rolling('1470D')` for 48-month windows
