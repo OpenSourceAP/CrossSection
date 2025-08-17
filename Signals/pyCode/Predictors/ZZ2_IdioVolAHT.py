@@ -58,6 +58,10 @@ count_debug = df.filter(
 ).height
 print(f"Count for debug period: {count_debug}")
 
+# Critical: Filter out missing returns before creating time index
+# This ensures rolling windows contain exactly 252 valid observations
+df = df.filter(pl.col("ret").is_not_null() & pl.col("mktrf").is_not_null())
+
 # Critical: Sort data first (from Beta.py success pattern)
 df = df.sort(["permno", "time_d"])
 

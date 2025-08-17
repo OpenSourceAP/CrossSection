@@ -164,10 +164,27 @@ if df.filter(debug_mask).height > 0:
 
 # xtset permno time_avail_m
 # gen RIOlag = l6.RIO
+# CRITICAL FIX: Use calendar-based lag (6 months) instead of position-based shift(6)
+# This matches Stata's l6. behavior which goes back 6 calendar months
 df = df.sort(["permno", "time_avail_m"])
-df = df.with_columns(
-    pl.col("RIO").shift(6).over("permno").alias("RIOlag")
+
+# Convert to pandas for easier date arithmetic
+df_pandas = df.to_pandas()
+
+# Calculate the exact 6-month lag date for each observation
+df_pandas['lag_date'] = df_pandas['time_avail_m'] - pd.DateOffset(months=6)
+
+# Create lookup for RIO values by permno and date
+rio_lookup = df_pandas.set_index(['permno', 'time_avail_m'])['RIO']
+
+# Get RIOlag by looking up RIO at lag_date
+df_pandas['RIOlag'] = df_pandas.apply(
+    lambda row: rio_lookup.get((row['permno'], row['lag_date']), None), 
+    axis=1
 )
+
+# Convert back to polars (lag_date was already used and not in dataframe)
+df = pl.from_pandas(df_pandas)
 
 # egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
 # Convert to pandas for fastxtile operation
