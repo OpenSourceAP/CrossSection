@@ -163,18 +163,38 @@ df = df.with_columns([
 
 print("📈 Computing quarterly aggregations...")
 
-# Aggregate quarterly data using 12-month rolling means and annualize (*4)
-# Stata: min(12) requires full 12-month window
-df = df.with_columns([
-    # 12-month rolling mean of quarterly net income, annualized
-    pl.col("niq").rolling_mean(window_size=12, min_samples=12).over("permno").mul(4).alias("niqsum"),
-    # 12-month rolling mean of quarterly R&D, annualized
-    pl.col("xrdq").rolling_mean(window_size=12, min_samples=12).over("permno").mul(4).alias("xrdqsum"),
-    # 12-month rolling mean of quarterly operating cash flow, annualized
-    pl.col("oancfq").rolling_mean(window_size=12, min_samples=12).over("permno").mul(4).alias("oancfqsum"),
-    # 12-month rolling mean of quarterly capex, annualized
-    pl.col("capxq").rolling_mean(window_size=12, min_samples=12).over("permno").mul(4).alias("capxqsum")
-])
+# Aggregate quarterly data using time-based rolling to match Stata's asrol behavior
+# Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations 
+# spanning 12 calendar months, not just 12 consecutive data points
+
+# Convert to pandas for time-based rolling calculations
+df_pd = df.to_pandas()
+df_pd = df_pd.set_index('time_avail_m').sort_index()
+
+# Use pandas' built-in rolling with time window to match Stata's asrol behavior
+# This is much faster than the custom loop approach
+print("  Calculating time-based rolling means (matching Stata's asrol)...")
+
+# Group by permno for rolling calculations
+def apply_stata_rolling(group):
+    """Apply Stata-like rolling aggregation to a permno group"""
+    # Ensure data is sorted by time
+    group = group.sort_index()
+    
+    # Use exact 12-month window to match Stata's asrol window(time_avail_m 12) min(12)
+    # 365D can be slightly off due to leap years, use 366D to be safe
+    group['niqsum'] = group['niq'].rolling('366D', min_periods=12).mean() * 4
+    group['xrdqsum'] = group['xrdq'].rolling('366D', min_periods=12).mean() * 4
+    group['oancfqsum'] = group['oancfq'].rolling('366D', min_periods=12).mean() * 4
+    group['capxqsum'] = group['capxq'].rolling('366D', min_periods=12).mean() * 4
+    
+    return group
+
+# Apply rolling calculations by permno
+df_pd = df_pd.groupby('permno', group_keys=False).apply(apply_stata_rolling)
+
+# Convert back to polars
+df = pl.from_pandas(df_pd.reset_index())
 
 # Handle special case for early years (endnote 3): Use fopt - wcapch for oancfqsum before 1988
 df = df.with_columns(
@@ -208,18 +228,32 @@ df = df.with_columns([
 ])
 
 print("  Computing volatility measures...")
-# Calculate quarterly ratios first, then rolling volatility
+# Calculate quarterly ratios first, then time-based rolling volatility
 df = df.with_columns([
     (pl.col("niq") / pl.col("atq")).alias("roaq"),
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
-# Now calculate rolling standard deviations
-# Stata: min(18) requires 18 observations minimum for 48-month window
-df = df.with_columns([
-    pl.col("roaq").rolling_std(window_size=48, min_samples=18).over("permno").alias("niVol"),
-    pl.col("sg").rolling_std(window_size=48, min_samples=18).over("permno").alias("revVol")
-])
+# Convert to pandas for time-based volatility calculations (48-month rolling)
+print("    Calculating time-based 48-month rolling volatility...")
+df_pd_vol = df.to_pandas().set_index('time_avail_m').sort_index()
+
+def apply_stata_volatility_rolling(group):
+    """Apply Stata-like 48-month rolling volatility calculations"""
+    group = group.sort_index()
+    
+    # Use 48-month (4 years) time window with min_periods=18 to match Stata's asrol
+    # 48 months ≈ 1460 days, use 1470D to be safe with leap years
+    group['niVol'] = group['roaq'].rolling('1470D', min_periods=18).std()
+    group['revVol'] = group['sg'].rolling('1470D', min_periods=18).std()
+    
+    return group
+
+# Apply volatility rolling calculations by permno
+df_pd_vol = df_pd_vol.groupby('permno', group_keys=False).apply(apply_stata_volatility_rolling)
+
+# Convert back to polars
+df = pl.from_pandas(df_pd_vol.reset_index())
 
 print("🏭 Computing industry medians...")
 

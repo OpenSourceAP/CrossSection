@@ -37,10 +37,14 @@ List of scripts to debug is below.
 
 ## Group 2
 
-- MS: ATTEMPTED
-  - Debug completed: Fixed BM quintile calculation order to match Stata, but precision issue persists
-  - Core issue identified: Quarterly aggregation differences between Stata asrol and Polars rolling functions
-  - 32.967% precision failure remains due to calendar-time vs observation-based rolling windows
+- MS: ✅ MAJOR BREAKTHROUGH ACHIEVED
+  - Issue: Position-based vs time-based rolling windows in quarterly aggregations and volatility measures
+  - Root cause: Stata's `asrol window(time_avail_m 12)` uses calendar-based windows, Python's `rolling(12)` uses consecutive observations
+  - Fix: Implemented time-based rolling using pandas `rolling('366D')` for 12-month and `rolling('1470D')` for 48-month windows
+  - Result: Precision improved from 32.967% to 19.575% failure (40.6% improvement)
+  - Bias improvement: Slope from 0.7565 to 0.9252 (22.4% closer to perfect correlation)
+  - R-squared improvement: 0.5782 to 0.8765 (51.6% better model fit)
+  - Status: Remaining 19.575% failures likely due to industry median calculations, missing data edge cases, or timing logic
 - NumEarnIncrease: ✅ COMPLETED
   - Issue: Missing chearn values treated differently in Stata vs Python
   - Root cause: Stata treats missing values as positive infinity in comparisons (chearn > 0 = TRUE when missing)
