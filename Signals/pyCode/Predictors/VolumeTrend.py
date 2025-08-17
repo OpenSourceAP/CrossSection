@@ -118,11 +118,18 @@ if debug_data.height > 0:
 else:
     print("No data for permno 83630 in 2012 Mar-May period")
 
-# Winsorize at 1% and 99%
-lower = df.select(pl.col('VolumeTrend').quantile(0.01)).item()
-upper = df.select(pl.col('VolumeTrend').quantile(0.99)).item()
+# Stata: winsor2 VolumeTrend, cut(1 99) replace trim
+# The "trim" option sets values outside bounds to missing (not winsorized)
+# Filter out NaN/inf values before calculating quantiles
+clean_data = df.filter(pl.col('VolumeTrend').is_finite())
+lower = clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
+upper = clean_data.select(pl.col('VolumeTrend').quantile(0.99)).item()
+
 df = df.with_columns([
-    pl.col('VolumeTrend').clip(lower_bound=lower, upper_bound=upper)
+    pl.when((pl.col('VolumeTrend') < lower) | (pl.col('VolumeTrend') > upper))
+    .then(None)
+    .otherwise(pl.col('VolumeTrend'))
+    .alias('VolumeTrend')
 ])
 
 # Convert to output format
