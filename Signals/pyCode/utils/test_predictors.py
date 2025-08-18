@@ -308,6 +308,14 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
                 # Observations with largest differences (sorted by absolute diff descending)
                 largest_diff = feedback_df.with_columns(pl.col("diff").abs().alias("abs_diff_sort")).sort("abs_diff_sort", descending=True).drop("abs_diff_sort").head(10)
                 results['largest_diff'] = largest_diff.to_pandas()
+                
+                # Observations with largest differences before 1950 (yyyymm < 195001)
+                feedback_df_before1950 = feedback_df.filter(pl.col("yyyymm") < 195001)
+                if feedback_df_before1950.height > 0:
+                    largest_diff_before1950 = feedback_df_before1950.with_columns(pl.col("diff").abs().alias("abs_diff_sort")).sort("abs_diff_sort", descending=True).drop("abs_diff_sort").head(10)
+                    results['largest_diff_before1950'] = largest_diff_before1950.to_pandas()
+                else:
+                    results['largest_diff_before1950'] = None
     
     # Store individual test results
     results['test_1_passed'] = cols_match
@@ -626,6 +634,14 @@ def output_predictor_results(predictor_name, results, overall_passed):
         if 'largest_diff' in results and len(results['largest_diff']) > 0:
             md_lines.append("**Largest Differences**:\n")
             md_lines.append(f"```\n{results['largest_diff'].to_string()}\n```\n\n")
+        
+        if 'largest_diff_before1950' in results:
+            if results['largest_diff_before1950'] is not None and len(results['largest_diff_before1950']) > 0:
+                md_lines.append("**Largest Differences Before 1950**:\n")
+                md_lines.append(f"```\n{results['largest_diff_before1950'].to_string()}\n```\n\n")
+            else:
+                md_lines.append("**Largest Differences Before 1950**:\n")
+                md_lines.append("```\nNo data before 1950\n```\n\n")
     
     md_lines.append("---\n\n")
     
