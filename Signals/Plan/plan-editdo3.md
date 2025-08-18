@@ -22,16 +22,19 @@ Unless otherwise specified, work on the first TBC script under the "Progress Tra
         - **Largest Differences Before 1950** (if available)
         - **Largest Differences** (otherwise)
 
-
-## Task 2: edit `do` file so that it outputs information on the bad observations
+## Task 2: edit `do` file so that it nicely outputs information on the bad observations
 
 - Read the `Code/Predictors/-.do` file
+- If a script is very slow, keep only data before 1950 early in the do file
+    - Slow scripts are: ZZ2_BetaFP, ZZ2_IdioVolAHT, TrendFactor, ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP, CoskewnessACX, ZZ2_betaVIX, ZZ2_AnnouncementReturn, Frontier, ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat, ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F
+    - Mark this debug mode clearly with `DEBUG_MODE` comment
 - Think about the key lines of code where the calculations may be hard to translate
 - Add checkpoints at these key lines
     - use `list` to print data on the bad observations
     - if `fastxtile` or `xtile` is used, print the related quantiles    
     - if industries (sic codes) are used, tabulate the number of observations in each industry for key observations
     - clearly mark these debug lines with a comment `- CHECKPOINT N` where N is the checkpoint number
+    - ensure the checkpoints work with pre-1950 data if `DEBUG_MODE` is enabled
 
 ## Task 3: edit the `py` script to match the updated `do` file
 
@@ -51,7 +54,7 @@ STOP HERE. Do not run the scripts.
 - Recomm_ShortInterest: TBC
 - Mom6mJunk: TBC
 - CitationsRD: TBC
-- RIO_Volatility: TBC
+- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility: TBC
 
 ## Group 2
 - TrendFactor: TBC
@@ -61,8 +64,8 @@ STOP HERE. Do not run the scripts.
 - RDAbility: TBC
 
 ## Group 3
-- OrgCap: TBC
-- BetaFP: TBC
-- ResidualMomentum: TBC
-- ReturnSkew3F: TBC
-- PriceDelayRsq: TBC
+- ZZ1_OrgCap_OrgCapNoAdj: TBC
+- ZZ2_BetaFP: TBC
+- ZZ1_ResidualMomentum6m_ResidualMomentum: TBC
+- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: TBC
+- ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat: TBC
