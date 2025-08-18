@@ -86,6 +86,10 @@ def load_csv_robust_polars(file_path):
     try:
         # First try normal read
         df = pl.read_csv(file_path)
+        # Filter out rows where the predictor value (non-index column) is null or NaN
+        predictor_name = Path(file_path).stem
+        if predictor_name in df.columns:
+            df = df.filter(pl.col(predictor_name).is_finite())
         return df
     except Exception as e:
         print(f"Error loading {file_path}: {e}")
@@ -105,6 +109,9 @@ def load_csv_robust_polars(file_path):
             
             df = pl.read_csv(file_path, schema_overrides=schema_overrides)
             print(f"Successfully loaded {file_path} with schema overrides")
+            # Filter out rows where the predictor value is null or NaN
+            if predictor_name in df.columns:
+                df = df.filter(pl.col(predictor_name).is_finite())
             return df
         except Exception as e2:
             print(f"Failed to load {file_path} even with schema overrides: {e2}")
