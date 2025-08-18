@@ -17,18 +17,8 @@ drop if ppent == . & ppegt == .
 gen re_old = (ppenb+ppenls)/ppent
 gen re_new = (fatb+fatl)/ppegt  
 
-* CHECKPOINT 1
-list permno time_avail_m re_old re_new if permno == 10018 & time_avail_m == tm(1987m4)
-list permno time_avail_m re_old re_new if permno == 10018 & time_avail_m == tm(1987m5)
-list permno time_avail_m re_old re_new if permno == 10083 & time_avail_m == tm(1986m12)
-
 gen re = re_new
 replace re = re_old if re_new == .
-
-* CHECKPOINT 2
-list permno time_avail_m re re_old re_new if permno == 10018 & time_avail_m == tm(1987m4)
-list permno time_avail_m re re_old re_new if permno == 10018 & time_avail_m == tm(1987m5)
-list permno time_avail_m re re_old re_new if permno == 10083 & time_avail_m == tm(1986m12)
 
 gen year = year(dofm(time_avail_m))
 gen decade = floor(year/10)*10
@@ -36,18 +26,7 @@ gen decade = floor(year/10)*10
 
 * industry adjustment
 egen tempMean = mean(re), by(sic2D time_avail_m)
-
-* CHECKPOINT 3
-list permno time_avail_m re tempMean sic2D if permno == 10018 & time_avail_m == tm(1987m4)
-list permno time_avail_m re tempMean sic2D if permno == 10018 & time_avail_m == tm(1987m5)
-list permno time_avail_m re tempMean sic2D if permno == 10083 & time_avail_m == tm(1986m12)
-
 gen realestate = re - tempMean
-
-* CHECKPOINT 4
-list permno time_avail_m realestate re tempMean if permno == 10018 & time_avail_m == tm(1987m4)
-list permno time_avail_m realestate re tempMean if permno == 10018 & time_avail_m == tm(1987m5)
-list permno time_avail_m realestate re tempMean if permno == 10083 & time_avail_m == tm(1986m12)
 label var realestate "Real estate holdings"
 
 // SAVE

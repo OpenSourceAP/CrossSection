@@ -33,13 +33,9 @@ drop tempMean
 }
 drop temp*
 egen RDAbility = rowmean(gammaAbil*)
-* CHECKPOINT 1: After asreg operations
-list permno time_avail_m RDAbility if permno == 10116 & time_avail_m == tm(2016m6), noobs
 gen tempRD = xrd/sale
 replace tempRD = . if xrd <= 0
 egen tempRDQuant = fastxtile(tempRD), n(3) by(time_avail_m)
-* CHECKPOINT 2: After fastxtile for RD quantiles
-list permno time_avail_m tempRD tempRDQuant RDAbility if permno == 10116 & time_avail_m == tm(2016m6), noobs
 replace RDAbility = . if tempRDQuant != 3
 replace RDAbility = . if xrd <=0
 cap drop temp*
@@ -51,11 +47,7 @@ drop temp
 gen tempTime = time_avail_m
 bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1 
 drop tempTime
-* CHECKPOINT 3: After expand operation
-list permno time_avail_m RDAbility if permno == 10116 & time_avail_m == tm(2016m6), noobs
 bysort gvkey time_avail_m (datadate): keep if _n == _N 
 bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
-* CHECKPOINT 4: After final deduplication
-list permno time_avail_m RDAbility if permno == 10116 & time_avail_m == tm(2016m6), noobs
 // SAVE
 do "$pathCode/savepredictor" RDAbility

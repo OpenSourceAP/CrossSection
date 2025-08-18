@@ -6,15 +6,8 @@ asreg vol time_avail_m, window(time_av 60) min(30) by(permno)
 rename _b_time betaVolTrend
 drop _*
 bys permno: asrol vol, gen(meanX) stat(mean) window(time_avail_m 60) min(30)  
-
-* CHECKPOINT 1
-list permno time_avail_m betaVolTrend meanX if permno == 83630 & time_avail_m >= tm(2012m3) & time_avail_m <= tm(2012m5), abbrev(10)
-
 gen VolumeTrend = betaVolTrend/meanX
 winsor2 VolumeTrend, cut(1 99) replace trim  // ADD ON SINCE SOME VALUES LOOKED OUT OF LINE (e^14)
-
-* CHECKPOINT 2
-list permno time_avail_m VolumeTrend if permno == 83630 & time_avail_m >= tm(2012m3) & time_avail_m <= tm(2012m5), abbrev(10)
 label var VolumeTrend "Volume Trend"
 
 // SAVE

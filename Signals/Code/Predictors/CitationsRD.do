@@ -21,18 +21,7 @@ drop temp
 // SIGNAL CONSTRUCTION
 * form portfolios only in june
 drop if time_avail_m < ym(1975,1)  // Takes into account that xrd data standardized after 1975
-
-* CHECKPOINT 1: Check observations before June filter
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m year gvkey ncitscale if permno == 10006 & time_avail_m == tm(1983m6)
-}
-
 keep if month(dofm(time_avail_m)) == 6
-
-* CHECKPOINT 2: Check observations after June filter  
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m year gvkey ncitscale if permno == 10006 & time_avail_m == tm(1983m6)
-}
 
 xtset permno time_avail_m
 gen xrd_lag = l24.xrd
@@ -43,38 +32,13 @@ bys permno: asrol ncitscale, window(time_avail_m 48) stat(sum) gen(sum_ncit)
 gen tempCitationsRD  = sum_ncit/sum_xrd if sum_xrd > 0
 
 // Filter
-* CHECKPOINT 3: Check observations before gvkey filter
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m gvkey sum_xrd sum_ncit tempCitationsRD if permno == 10006 & time_avail_m == tm(1983m6)
-}
-
 bysort gvkey (time_avail_m): drop if _n <= 2
-
-* CHECKPOINT 4: Check observations after gvkey filter
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m gvkey sum_xrd sum_ncit tempCitationsRD if permno == 10006 & time_avail_m == tm(1983m6)
-}
-
 drop if sicCRSP >= 6000 & sicCRSP <= 6999
 drop if ceq < 0
 
 // double indep sort (can't just drop high mve_c, need indep)
 bys time_avail_m: astile sizecat = mve_c, qc(exchcd == 1) nq(2)
-
-* CHECKPOINT 5: Check size categories for problematic observation
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m mve_c sizecat if permno == 10006 & time_avail_m == tm(1983m6)
-    summarize mve_c if time_avail_m == tm(1983m6) & exchcd == 1, detail
-}
-
 egen maincat = fastxtile(tempCitationsRD), by(time_avail_m) n(3)
-
-* CHECKPOINT 6: Check fastxtile results and quantiles  
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m tempCitationsRD sizecat maincat if permno == 10006 & time_avail_m == tm(1983m6)
-    summarize tempCitationsRD if time_avail_m == tm(1983m6), detail
-    tabstat tempCitationsRD if time_avail_m == tm(1983m6), by(maincat) stat(min max n)
-}
 
 // * following FF1993, others, first digit is S or B, second digit is L,M,or H
 // * i.e. 13 = S/H, then VW before compbining
@@ -82,12 +46,6 @@ if permno == 10006 & time_avail_m == tm(1983m6) {
 // * just do simple binary VW for ease
 gen CitationsRD = 1 if sizecat == 1 & maincat == 3
 replace CitationsRD = 0 if sizecat == 1 & maincat == 1
-
-* CHECKPOINT 7: Check final signal assignment
-if permno == 10006 & time_avail_m == tm(1983m6) {
-    list permno time_avail_m sizecat maincat CitationsRD if permno == 10006 & time_avail_m == tm(1983m6)
-    tabstat CitationsRD if time_avail_m == tm(1983m6), by(sizecat) stat(mean n)
-}
 	
 // expand back to monthly
 gen temp = 12
