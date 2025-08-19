@@ -40,25 +40,30 @@ df_ciq_raw = pd.read_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet
 # Convert gvkey to numeric to match SignalMasterTable
 df_ciq_raw['gvkey'] = pd.to_numeric(df_ciq_raw['gvkey'], errors='coerce')
 
-# Expand each rating to be valid for 12 months after ratingdate
+# Expand each rating to monthly observations (12 months forward)
 from dateutil.relativedelta import relativedelta
-expanded_ciq_records = []
+expanded_records = []
 
 for _, row in df_ciq_raw.iterrows():
-    if pd.notna(row['gvkey']) and pd.notna(row['currentratingnum']):
-        base_date = pd.to_datetime(row['ratingdate'])
-        for months_offset in range(12):
-            time_avail_m = (base_date + relativedelta(months=months_offset)).replace(day=1)
-            expanded_ciq_records.append({
-                'gvkey': row['gvkey'],
-                'time_avail_m': time_avail_m,
-                'credratciq': row['currentratingnum']
-            })
+    base_date = pd.to_datetime(row['ratingdate'])
+    for months_offset in range(12):
+        time_avail_m = (base_date + relativedelta(months=months_offset)).replace(day=1)
+        expanded_records.append({
+            'gvkey': row['gvkey'],
+            'time_avail_m': time_avail_m,
+            'currentratingnum': row['currentratingnum']
+        })
 
-temp_ciq_rat = pd.DataFrame(expanded_ciq_records)
+df_ciq_expanded = pd.DataFrame(expanded_records)
 
 # Handle duplicates within month by taking the mean rating
-temp_ciq_rat = temp_ciq_rat.groupby(['gvkey', 'time_avail_m'])['credratciq'].mean().reset_index()
+df_ciq_expanded = df_ciq_expanded.groupby(['gvkey', 'time_avail_m']).agg({
+    'currentratingnum': 'mean'
+}).reset_index()
+
+# Rename for consistency
+temp_ciq_rat = df_ciq_expanded.rename(columns={'currentratingnum': 'credratciq'})
+temp_ciq_rat = temp_ciq_rat[['gvkey', 'time_avail_m', 'credratciq']]
 
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -88,6 +93,13 @@ df['credratciq'] = df.groupby('permno')['credratciq'].ffill()
 # Coalesce credit ratings - use CIQ if available, otherwise SP  
 df.loc[df['credrat'].isna(), 'credrat'] = df.loc[df['credrat'].isna(), 'credratciq']
 
+# CHECKPOINT 1 - Create yyyymm for checkpoint  
+df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+bad_obs = df[((df['permno'] == 10026) & (df['yyyymm'] == 201509)) | 
+             ((df['permno'] == 10342) & (df['yyyymm'] == 200001))]
+print("CHECKPOINT 1:")
+print(bad_obs[['permno', 'yyyymm', 'credrat']])
+
 
 # SIGNAL CONSTRUCTION
 # Set index for time series operations
@@ -107,14 +119,25 @@ df['ret_lag5'] = df.groupby('permno')['ret'].shift(5)
 df['Mom6m'] = ((1 + df['ret_lag1']) * (1 + df['ret_lag2']) * (1 + df['ret_lag3']) * 
                (1 + df['ret_lag4']) * (1 + df['ret_lag5'])) - 1
 
+# CHECKPOINT 2
+bad_obs = df[((df['permno'] == 10026) & (df['yyyymm'] == 201509)) | 
+             ((df['permno'] == 10342) & (df['yyyymm'] == 200001))]
+print("CHECKPOINT 2:")
+print(bad_obs[['permno', 'yyyymm', 'ret', 'ret_lag1', 'ret_lag2', 'ret_lag3', 'ret_lag4', 'ret_lag5', 'Mom6m']])
+
 
 # Create Mom6mJunk for junk stocks (rating <= 14 and > 0)
 df['Mom6mJunk'] = np.where((df['credrat'] <= 14) & (df['credrat'] > 0), df['Mom6m'], np.nan)
 
+# CHECKPOINT 3
+bad_obs = df[((df['permno'] == 10026) & (df['yyyymm'] == 201509)) | 
+             ((df['permno'] == 10342) & (df['yyyymm'] == 200001))]
+print("CHECKPOINT 3:")
+print(bad_obs[['permno', 'yyyymm', 'credrat', 'Mom6m', 'Mom6mJunk']])
 
-# Keep only necessary columns and create yyyymm
-# Convert time_avail_m datetime to YYYYMM integer format
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+
+# Keep only necessary columns
+# yyyymm already created for checkpoints
 result = df[['permno', 'yyyymm', 'Mom6mJunk']].copy()
 
 # Drop rows where Mom6mJunk is missing
