@@ -51,21 +51,21 @@ STOP HERE. Do not run the scripts.
 # Progress Tracking
 
 ## Group 1
-- Recomm_ShortInterest: TBC
-- Mom6mJunk: TBC
-- CitationsRD: TBC
-- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility: TBC
+- Recomm_ShortInterest: COMPLETED
+- Mom6mJunk: COMPLETED
+- CitationsRD: COMPLETED
+- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility: COMPLETED
 
 ## Group 2
-- TrendFactor: TBC
-- AbnormalAccruals: TBC
-- MS: TBC
-- PS: TBC
-- RDAbility: TBC
+- TrendFactor: COMPLETED
+- ZZ2_AbnormalAccruals_AbnormalAccrualsPercent: COMPLETED
+- MS: COMPLETED
+- PS: COMPLETED
+- RDAbility: COMPLETED
 
 ## Group 3
-- ZZ1_OrgCap_OrgCapNoAdj: TBC
-- ZZ2_BetaFP: TBC
-- ZZ1_ResidualMomentum6m_ResidualMomentum: TBC
-- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: TBC
-- ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat: TBC
+- ZZ1_OrgCap_OrgCapNoAdj: COMPLETED
+- ZZ2_BetaFP: COMPLETED
+- ZZ1_ResidualMomentum6m_ResidualMomentum: COMPLETED
+- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: COMPLETED
+- ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat: COMPLETED
