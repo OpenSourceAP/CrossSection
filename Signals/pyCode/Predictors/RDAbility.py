@@ -23,6 +23,7 @@ df = pl.read_parquet("../pyData/Intermediate/a_aCompustat.parquet")
 df = df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "xrd", "sale"])
 print(f"Loaded Compustat: {len(df):,} observations")
 
+
 # SIGNAL CONSTRUCTION - Following Stata code line by line with careful missing value handling
 
 # xtset gvkey fyear - sort by gvkey fyear for lag operations
@@ -84,6 +85,7 @@ df = df.with_columns(
     .alias("tempX")
 )
 
+
 # gen tempNonZero = .
 # gen tempXLag = .
 df = df.with_columns([
@@ -91,11 +93,8 @@ df = df.with_columns([
     pl.lit(None, dtype=pl.Float64).alias("tempXLag")
 ])
 
-print("Processing lag regressions...")
-
 # Loop through each lag 1 to 5  
 for n in range(1, 6):
-    print(f"Processing lag {n}...")
     
     # replace tempXLag = l`n'.tempX
     df = df.with_columns(
@@ -116,10 +115,29 @@ for n in range(1, 6):
         coef_prefix="b_"
     )
     
-    # rename _b_tempXLag gammaAbility`n'
+    # CRITICAL FIX: Manually enforce min_samples requirement
+    # Count valid observations in each 8-year rolling window
+    # This replicates Stata's behavior of returning missing when < min observations
+    df = df.with_columns([
+        # Count non-null observations in 8-year rolling window
+        (pl.col("tempY").is_not_null() & pl.col("tempXLag").is_not_null())
+        .cast(pl.Int32)
+        .rolling_sum(window_size=8, min_samples=1)
+        .over("gvkey")
+        .alias("_valid_count")
+    ])
+    
+    # rename _b_tempXLag gammaAbility`n' with min_samples enforcement
     df = df.with_columns(
-        result["b_tempXLag"].alias(f"gammaAbility{n}")
+        pl.when(pl.col("_valid_count") >= 6)
+        .then(result["b_tempXLag"])
+        .otherwise(None)
+        .alias(f"gammaAbility{n}")
     )
+    
+    # Drop temporary column
+    df = df.drop("_valid_count")
+    
     
     # replace tempNonZero = tempXLag >0 & !mi(tempXLag)
     # In Stata: missing values are handled explicitly
@@ -156,6 +174,7 @@ for n in range(1, 6):
         .alias(f"gammaAbility{n}")
     )
     
+    
     # drop tempMean
     df = df.drop("tempMean")
 
@@ -169,6 +188,7 @@ df = df.with_columns(
     .list.mean()
     .alias("RDAbility")
 )
+
 
 
 # gen tempRD = xrd/sale
@@ -221,6 +241,7 @@ df = df.with_columns(
     .otherwise(pl.col("RDAbility"))
     .alias("RDAbility")
 )
+
 
 # cap drop temp*
 df = df.drop(["tempRD", "tempRDQuant"] + gamma_cols)
@@ -275,6 +296,7 @@ print(f"After gvkey-time filter: {len(df):,} observations")
 df = df.sort(["permno", "time_avail_m"])
 df = df.group_by(["permno", "time_avail_m"], maintain_order=True).first()
 print(f"After permno-time filter: {len(df):,} observations")
+
 
 
 # Select final columns
