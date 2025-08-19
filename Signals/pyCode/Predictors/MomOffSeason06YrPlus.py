@@ -76,6 +76,7 @@ def main():
     
     
     # Create list of temporary variable names for row operations
+    temp_vars = [f'temp{n}' for n in lag_periods]    
     
     # Calculate seasonal row total (equivalent to: egen retTemp1 = rowtotal(temp*), missing)
     # The 'missing' option means if all values are missing, return missing (not 0)
