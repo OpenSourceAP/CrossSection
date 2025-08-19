@@ -3,6 +3,9 @@
 ## Project Overview
 This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet/CSV format instead of DTA/CSV.
 
+## Current Stage
+We are currently working on translating `Placebos/`. Refer to @DocsForClaude/leg4-Placebos.md for details.
+
 # Project Structure
 
 There are four main legs of the project:
