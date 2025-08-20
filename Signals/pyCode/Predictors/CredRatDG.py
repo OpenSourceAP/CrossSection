@@ -10,17 +10,13 @@ Credit rating downgrade signal using both Compustat and CIQ data.
 
 Inputs:
 - m_SP_creditratings.parquet (gvkey, time_avail_m, credrat)
-- m_CIQ_creditratings.parquet (gvkey, time_avail_m, ratingaction)
+- m_CIQ_creditratings.parquet 
 - SignalMasterTable.parquet (gvkey, permno, time_avail_m)
 
 Outputs:
 - CredRatDG.csv (permno, yyyymm, CredRatDG)
 
-This predictor calculates:
-1. Credit rating downgrade from Compustat (credrat < l.credrat)
-2. Credit rating downgrade from CIQ (ratingaction == "Downgrade")
-3. Signal = 1 if any downgrade in current or previous 5 months
-4. Excludes data before 1979
+
 """
 
 import pandas as pd
@@ -58,6 +54,8 @@ comp_df['downgrade_sp'] = np.where(
 comp_df.query('downgrade_sp == 1', inplace=True)
 comp_df = comp_df[['gvkey', 'time_avail_m', 'downgrade_sp']]
 
+# note: SP credit ratings are already deduplicated
+
 print(f"Generated dataset of {comp_df['downgrade_sp'].notna().sum():,} SP downgrades")
 
 #%%
@@ -65,7 +63,7 @@ print(f"Generated dataset of {comp_df['downgrade_sp'].notna().sum():,} SP downgr
 # Process CIQ SP ratings data
 print("Loading m_CIQ_creditratings data...")
 ciq_df = pd.read_parquet('../pyData/Intermediate/m_CIQ_creditratings.parquet', 
-                            columns=['gvkey', 'ratingdate', 'anydowngrade'])
+                            columns=['gvkey', 'ratingdate', 'source', 'anydowngrade'])
 ciq_df['gvkey'] = ciq_df['gvkey'].astype(np.int64)
 ciq_df['ratingdate'] = pd.to_datetime(ciq_df['ratingdate']).dt.to_period('M')
 ciq_df.rename(columns={
@@ -75,6 +73,11 @@ ciq_df.rename(columns={
 
 # keep only downgrades
 ciq_df.query('downgrade_ciq == 1', inplace=True)
+
+# deduplicate: assign downgrade if any source has a downgrade in the month
+ciq_df = ciq_df.groupby(['gvkey', 'time_avail_m']).agg({
+    'downgrade_ciq': 'max'
+}).reset_index()
 
 #%%
 
@@ -94,7 +97,7 @@ print("Merging data...")
 df = pd.merge(signal_master, comp_df, on=['gvkey', 'time_avail_m'], how='left')
 df = pd.merge(df, ciq_df, on=['gvkey', 'time_avail_m'], how='left')
 
-# define dg_cur: uses SP downgrade if available, otherwise CIQ downgrade
+# define dg_cur: use SP downgrade if available, otherwise use CIQ downgrade
 # if no data, assume no downgrade
 df['dg_cur'] = df['downgrade_sp'].fillna(df['downgrade_ciq'])
 df['dg_cur'] = df['dg_cur'].fillna(0)
