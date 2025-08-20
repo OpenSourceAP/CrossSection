@@ -1,10 +1,4 @@
 #%%
-import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir('..')
-os.getcwd()
-
-#%%
 
 # ABOUTME: Recommendation and Short Interest predictor combining analyst sentiment with short interest
 # ABOUTME: Usage: python3 Recomm_ShortInterest.py (run from pyCode/ directory)
@@ -62,20 +56,17 @@ for i in range(1, 12):
 
 rec_expand = rec_expand.sort(["tickerIBES", "amaskcd", "anndats", "time_avail_m"])
 
+# keep only the most recent anndats for each tickerIBES-amaskcd-time_avail_m
+# (if an analyst updates the rec, then take it on)
+rec_expand = rec_expand.sort(["tickerIBES", "amaskcd", "time_avail_m", "anndats"])
+rec_expand = rec_expand.group_by(["tickerIBES", "amaskcd", "time_avail_m"], maintain_order=True).last()
+
 print(f"After expanding to assume recommendations are valid for 12 months: {len(rec_expand):,} observations")
 
 # take mean recommendation within each stock-month
 stock_rec = rec_expand.group_by(["tickerIBES", "time_avail_m"]).agg(pl.col("ireccd").mean())
 
 print(f"After taking mean recommendation within each stock-month: {len(stock_rec):,} observations")
-
-#%%
-
-stock_rec.filter(
-    pl.col("tickerIBES") == "HGR",
-    pl.col("time_avail_m") >= date(2007, 1, 1),
-    pl.col("time_avail_m") <= date(2007, 12, 31)
-)
 
 
 #%%
@@ -112,14 +103,6 @@ crsp = crsp.with_columns(
 df = signal_master.join(crsp, on=["permno", "time_avail_m"], how="inner")
 print(f"SignalMasterTable merged with CRSP: {len(df):,} observations")
 
-#%%
-
-df.filter(
-    pl.col("permno") == 10051,
-    pl.col("time_avail_m") >= date(2007, 1, 1)
-)
-
-#%%
 
 # merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/monthlyShortInterest", keep(match) nogenerate keepusing(shortint)
 short_interest = pl.read_parquet("../pyData/Intermediate/monthlyShortInterest.parquet")
@@ -136,30 +119,10 @@ short_interest = short_interest.with_columns(pl.col("gvkey").cast(pl.Float64))
 df = df.join(short_interest, on=["gvkey", "time_avail_m"], how="inner")
 print(f"After merging with short interest: {len(df):,} observations")
 
-#%%
-
-# still there
-
-df.filter(
-    pl.col("permno") == 10051,
-    pl.col("time_avail_m") >= date(2007, 1, 1)
-)
-
-#%%
-
 
 # merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
 df = df.join(stock_rec, on=["tickerIBES", "time_avail_m"], how="inner")
 print(f"After merging with recommendations: {len(df):,} observations")
-
-#%%
-
-# still there..
-df.filter(
-    pl.col("permno") == 10051,
-    pl.col("time_avail_m") >= date(2007, 1, 1),
-    pl.col("time_avail_m") <= date(2007, 12, 31)
-)
 
 #%%
 
@@ -229,46 +192,3 @@ result = result.select(["permno", "time_avail_m", "Recomm_ShortInterest"])
 print("💾 Saving Recomm_ShortInterest predictor...")
 save_predictor(result, "Recomm_ShortInterest")
 print("✅ Recomm_ShortInterest.csv saved successfully")
-
-#%%
-# debug
-# test_predictors.py finds missing obs:
-# **Missing Observations Sample**:
-# ```
-#  index  permno  yyyymm  Recomm_ShortInterest
-#      0   10051  200704                     1
-#      1   10104  200607                     1
-#      2   10104  200807                     1
-# ```
-# so let's check
-
-
-# permno 10051, in 2007-04 has ConsRecomm=3.5 and ShortInterest=633
-# that's not a low enough ConsRecomm to get into quintile 1
-# it's actually quite close to the median.
-print(df.filter(
-    pl.col("permno") == 10051,
-    pl.col("time_avail_m") >= date(2007, 1, 1),
-    pl.col("time_avail_m") <= date(2007, 12, 31)
-).select(["permno", "tickerIBES", "gvkey", "time_avail_m", "ConsRecomm", "ShortInterest", "QuintShortInterest", "QuintConsRecomm", "Recomm_ShortInterest"])\
-    .sort(["time_avail_m"]))
-
-print(df.filter(
-    pl.col("time_avail_m") == date(2007, 4, 1)
-).select(["ConsRecomm"]).describe())
-
-#%%
-
-# same with permno 10104, in 2006-07.
-# It has ConsRecomm=3.7 and ShortInterest=2600
-# That's a median ShortInterest, not a 1st quintile.
-print(df.filter(
-    pl.col("permno") == 10104,
-    pl.col("time_avail_m") >= date(2006, 3, 1),
-    pl.col("time_avail_m") <= date(2006, 9, 1)
-).select(["permno", "time_avail_m", "ConsRecomm", "ShortInterest", "QuintShortInterest", "QuintConsRecomm", "Recomm_ShortInterest"])\
-    .sort(["time_avail_m"]))
-
-print(df.filter(
-    pl.col("time_avail_m") == date(2007, 3, 1)
-).select(["ConsRecomm"]).describe())
