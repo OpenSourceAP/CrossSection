@@ -2,8 +2,16 @@
 * ------------
 * See sections 2.1 and 2.2 of the paper for a detailed description
 
+* debug mode
+local DEBUG_MODE_PRE1950 1
+
 * 1. Compute moving averages
 use permno time_d prc cfacpr using "$pathDataIntermediate/dailyCRSP", clear
+
+* debug mode
+if `DEBUG_MODE_PRE1950' == 1 {
+    keep if time_d < td(01jan1950)
+}
 
 * Adjust prices for splits etc
 gen P = abs(prc)/cfacpr // I guess they just take the absolute value of prc but it does not say in the paper

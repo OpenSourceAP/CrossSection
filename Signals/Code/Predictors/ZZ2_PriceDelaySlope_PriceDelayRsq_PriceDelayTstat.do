@@ -1,6 +1,9 @@
 * -----------------------------------------
 * Takes about 10 min
 
+* debug mode
+local DEBUG_MODE_PRE1950 1
+
 * works best with nlag 4 weightscale 1 so far.  
 global nlag 4
 global weightscale 1
@@ -18,6 +21,12 @@ save "$pathtemp/tempdailyff", replace
 
 * load daily crsp
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
+
+* debug mode
+if `DEBUG_MODE_PRE1950' == 1 {
+    keep if time_d < td(01jan1950)
+}
+
 merge m:1 time_d using "$pathtemp/tempdailyff", nogenerate keep(match) 
 replace ret = ret - rf
 drop rf 
