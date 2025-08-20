@@ -34,3 +34,10 @@ Recomm_ShortInterest:
     The do file was using asrol with stat(first) to fill in missing values. This method is not used anywhere else. Also, this method does not work properly. I really don't understand what it's doing See https://github.com/OpenSourceAP/CrossSection/issues/178. 
 
     I wrote Recomm_ShortInterest.py from scratch to fill in the missing values properly. It results in far more observations than the do file. I checked a few of the Stata observations that are missing in Python and they all should be missing. They had ConsRecomm scores of around 3.0, which should not be an extreme quintile and therefore should be dropped.
+
+CredRatDG:
+  status: accepted
+  reviewed_on: 2025-08-20
+  reviewed_by: ac
+  details: |
+    The sample deviations are all downgrades found in Python but not in Stata. I manually checked a few and found these all have CIQ downgrades. This is likely an improvement due to patching the CIQ deduplication bugs in the Stata DataDownloads code.
