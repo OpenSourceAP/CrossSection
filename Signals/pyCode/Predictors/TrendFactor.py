@@ -76,6 +76,16 @@ print("📅 Keeping only end-of-month observations...")
 df_daily = df_daily.sort(["permno", "time_avail_m", "time_d"])
 df_monthly = df_daily.group_by(["permno", "time_avail_m"], maintain_order=True).last()
 
+# - CHECKPOINT 1: Show sample data before normalization for bad observations
+checkpoint1_data = df_monthly.filter(
+    (pl.col("permno").is_in([15683, 25486, 14787])) & 
+    (pl.col("time_avail_m") == pl.date(1928, 2, 1))
+).select(["permno", "time_avail_m", "P", "A_3", "A_5", "A_10"])
+print("CHECKPOINT 1 - Data before normalization for bad observations:")
+if len(checkpoint1_data) > 0:
+    print(checkpoint1_data.to_pandas().to_string(index=False))
+else:
+    print("  No data found for bad observations before normalization")
 
 print(f"Monthly data after filtering: {len(df_monthly):,} observations")
 
@@ -84,6 +94,17 @@ for L in lag_lengths:
     df_monthly = df_monthly.with_columns(
         (pl.col(f"A_{L}") / pl.col("P")).alias(f"A_{L}")
     )
+
+# - CHECKPOINT 2: Show normalized moving averages for bad observations
+checkpoint2_data = df_monthly.filter(
+    (pl.col("permno").is_in([15683, 25486, 14787])) & 
+    (pl.col("time_avail_m") == pl.date(1928, 2, 1))
+).select(["permno", "time_avail_m", "P", "A_3", "A_5", "A_10"])
+print("CHECKPOINT 2 - Normalized moving averages for bad observations:")
+if len(checkpoint2_data) > 0:
+    print(checkpoint2_data.to_pandas().to_string(index=False))
+else:
+    print("  No data found for bad observations after normalization")
 
 
 # Keep only needed columns
@@ -126,6 +147,17 @@ print(f"After applying filters: {len(df):,} observations")
 df = df.join(temp_ma, on=["permno", "time_avail_m"], how="inner")
 print(f"After merging moving averages: {len(df):,} observations")
 
+# - CHECKPOINT 3: Show data after merging moving averages for bad observations  
+checkpoint3_data = df.filter(
+    (pl.col("permno").is_in([15683, 25486, 14787])) & 
+    (pl.col("time_avail_m") == pl.date(1928, 2, 1))
+).select(["permno", "time_avail_m", "A_3", "A_5", "A_10"])
+print("CHECKPOINT 3 - Data after merging moving averages for bad observations:")
+if len(checkpoint3_data) > 0:
+    print(checkpoint3_data.to_pandas().to_string(index=False))
+else:
+    print("  No data found for bad observations after merging moving averages")
+
 print("📊 Running cross-sectional regressions...")
 
 # Cross-sectional regression of returns on trend signals in month t-1
@@ -160,6 +192,15 @@ df_with_betas = asreg(
     collect=False  # Keep as LazyFrame for continued processing
 ).collect()  # Collect after asreg processing
 
+# - CHECKPOINT 4: Show regression coefficients for the key time period
+checkpoint4_data = df_with_betas.filter(
+    pl.col("time_avail_m") == pl.date(1928, 2, 1)
+).select(["time_avail_m", "_b_A_3", "_b_A_5", "_b_A_10"]).head(1)
+print("CHECKPOINT 4 - Regression coefficients for key time period:")
+if len(checkpoint4_data) > 0:
+    print(checkpoint4_data.to_pandas().to_string(index=False))
+else:
+    print("  No regression coefficients found for key time period")
 
 print("📊 Computing 12-month rolling averages of beta coefficients...")
 
@@ -191,6 +232,26 @@ temp_beta = time_level_data.select(["time_avail_m"] + ebeta_cols)
 # Merge back to main data
 df_final = df_with_betas.join(temp_beta, on="time_avail_m", how="left")
 
+# - CHECKPOINT 5: Show EBeta values for the key time period
+checkpoint5_data = temp_beta.filter(
+    pl.col("time_avail_m") == pl.date(1928, 2, 1)
+).select(["time_avail_m", "EBeta_3", "EBeta_5", "EBeta_10"])
+print("CHECKPOINT 5 - EBeta values for key time period:")
+if len(checkpoint5_data) > 0:
+    print(checkpoint5_data.to_pandas().to_string(index=False))
+else:
+    print("  No EBeta values found for key time period")
+
+# - CHECKPOINT 6: Show A_ values and EBeta values for bad observations before TrendFactor calculation
+checkpoint6_data = df_final.filter(
+    (pl.col("permno").is_in([15683, 25486, 14787])) & 
+    (pl.col("time_avail_m") == pl.date(1928, 2, 1))
+).select(["permno", "time_avail_m", "A_3", "A_5", "A_10", "EBeta_3", "EBeta_5", "EBeta_10"])
+print("CHECKPOINT 6 - A_ values and EBeta values for bad observations:")
+if len(checkpoint6_data) > 0:
+    print(checkpoint6_data.to_pandas().to_string(index=False))
+else:
+    print("  No data found for bad observations before TrendFactor calculation")
 
 print("🎯 Computing TrendFactor...")
 
@@ -203,6 +264,16 @@ df_final = df_final.with_columns(
     pl.sum_horizontal(trend_terms).alias("TrendFactor")
 )
 
+# - CHECKPOINT 7: Show final TrendFactor values for bad observations
+checkpoint7_data = df_final.filter(
+    (pl.col("permno").is_in([15683, 25486, 14787])) & 
+    (pl.col("time_avail_m") == pl.date(1928, 2, 1))
+).select(["permno", "time_avail_m", "TrendFactor"])
+print("CHECKPOINT 7 - Final TrendFactor values for bad observations:")
+if len(checkpoint7_data) > 0:
+    print(checkpoint7_data.to_pandas().to_string(index=False))
+else:
+    print("  No final TrendFactor values found for bad observations")
 
 # Select final result
 result = df_final.select(["permno", "time_avail_m", "TrendFactor"])

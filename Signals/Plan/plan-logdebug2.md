@@ -32,7 +32,7 @@
 - RDAbility: IMPROVED. by enforcing minimum obs for the asreg. 
 
 ## Group 3
-- ZZ1_OrgCap_OrgCapNoAdj: IMPROVED. The problem was with the tie breakers in the winsorization. Crazy how detailed this is. Also seems to be sic code issues.
+- ZZ1_OrgCap_OrgCapNoAdj: COMPLETED. The problem was with the tie breakers in the winsorization. Also a problem with sicff for industry 17. Claude Opus FTW.
 - ZZ2_BetaFP: SKIP. do log failed.
 - ZZ1_ResidualMomentum6m_ResidualMomentum: TBC
 - ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F: SKIP log failed

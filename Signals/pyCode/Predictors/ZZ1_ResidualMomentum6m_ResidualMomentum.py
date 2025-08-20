@@ -68,6 +68,18 @@ print("\n🔧 Starting signal construction...")
 print("Calculating excess returns (retrf = ret - rf)...")
 df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("retrf"))
 
+# CHECKPOINT 1: Check retrf calculation for problematic observations
+print("\n=== CHECKPOINT 1: retrf calculation for problematic observations ===")
+debug_filter = (
+    ((pl.col("permno") == 43880) & (pl.col("time_avail_m") >= 199301) & (pl.col("time_avail_m") <= 199306)) |
+    ((pl.col("permno") == 79490) & (pl.col("time_avail_m") >= 200712) & (pl.col("time_avail_m") <= 200803)) |
+    ((pl.col("permno") == 85570) & (pl.col("time_avail_m") >= 200712) & (pl.col("time_avail_m") <= 200803)) |
+    ((pl.col("permno") == 13725) & (pl.col("time_avail_m") >= 193501) & (pl.col("time_avail_m") <= 193512))
+)
+debug_df = df.filter(debug_filter).select(["permno", "time_avail_m", "ret", "rf", "retrf"]).sort(["permno", "time_avail_m"])
+print(debug_df)
+print()
+
 
 # Sort by permno and time_avail_m (important for time series operations)
 df = df.sort(["permno", "time_avail_m"])
@@ -106,8 +118,13 @@ df = df.with_columns(
     pl.col("resid").alias("_residuals")
 ).drop("resid")
 
-
 print(f"Completed rolling regressions for {len(df):,} observations")
+
+# CHECKPOINT 2: Check FF3 regression results for problematic observations
+print("\n=== CHECKPOINT 2: FF3 regression results for problematic observations ===")
+debug_df2 = df.filter(debug_filter).select(["permno", "time_avail_m", "time_temp", "_residuals"]).sort(["permno", "time_avail_m"])
+print(debug_df2)
+print()
 
 # Calculate lagged residuals and rolling momentum signals using pure Polars
 print("Calculating lagged residuals and momentum signals...")
@@ -115,6 +132,12 @@ df = df.with_columns([
     # Lag residuals by 1 observation: temp = l1._residuals
     pl.col("_residuals").shift(1).over("permno").alias("temp")
 ])
+
+# CHECKPOINT 3: Check lagged residuals
+print("\n=== CHECKPOINT 3: lagged residuals ===")
+debug_df3 = df.filter(debug_filter).select(["permno", "time_avail_m", "time_temp", "_residuals", "temp"]).sort(["permno", "time_avail_m"])
+print(debug_df3)
+print()
 
 
 df = df.with_columns([
@@ -134,6 +157,18 @@ df = df.with_columns([
 ])
 
 print("Calculating 6-observation and 11-observation rolling momentum signals...")
+
+# CHECKPOINT 4: Check 6-month rolling statistics
+print("\n=== CHECKPOINT 4: 6-month rolling statistics ===")
+debug_df4 = df.filter(debug_filter).select(["permno", "time_avail_m", "time_temp", "temp", "mean6_temp", "sd6_temp", "ResidualMomentum6m"]).sort(["permno", "time_avail_m"])
+print(debug_df4)
+print()
+
+# CHECKPOINT 5: Check 11-month rolling statistics and final ResidualMomentum
+print("\n=== CHECKPOINT 5: 11-month rolling statistics and final ResidualMomentum ===")
+debug_df5 = df.filter(debug_filter).select(["permno", "time_avail_m", "time_temp", "temp", "mean11_temp", "sd11_temp", "ResidualMomentum"]).sort(["permno", "time_avail_m"])
+print(debug_df5)
+print()
 
 # Display signal summary statistics
 print("\n📈 Signal summary statistics:")
