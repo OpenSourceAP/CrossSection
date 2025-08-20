@@ -249,7 +249,41 @@ def get_ff17(sic):
         return 16
         
     # FF17 Industry 17: Other
-    elif (100 <= sic <= 9999):
+    elif ((2520 <= sic <= 2549) or (2600 <= sic <= 2639) or (2640 <= sic <= 2659) or (sic == 2661) or (2670 <= sic <= 2699) or
+          (2700 <= sic <= 2709) or (2710 <= sic <= 2719) or (2720 <= sic <= 2729) or (2730 <= sic <= 2739) or (2740 <= sic <= 2749) or
+          (2750 <= sic <= 2759) or (2760 <= sic <= 2761) or (2770 <= sic <= 2771) or (2780 <= sic <= 2789) or (2790 <= sic <= 2799) or
+          (sic == 2835) or (sic == 2836) or (2990 <= sic <= 2999) or (sic == 3000) or (3010 <= sic <= 3011) or
+          (sic == 3041) or (3050 <= sic <= 3053) or (3160 <= sic <= 3161) or (3170 <= sic <= 3171) or (sic == 3172) or
+          (3190 <= sic <= 3199) or (3220 <= sic <= 3221) or (sic == 3229) or (3230 <= sic <= 3231) or (sic == 3260) or
+          (3262 <= sic <= 3263) or (sic == 3269) or (3295 <= sic <= 3299) or (sic == 3537) or (3640 <= sic <= 3644) or
+          (sic == 3645) or (sic == 3646) or (sic == 3647) or (3648 <= sic <= 3649) or (sic == 3660) or
+          (sic == 3661) or (sic == 3662) or (sic == 3663) or (sic == 3664) or (sic == 3665) or
+          (sic == 3666) or (sic == 3669) or (3840 <= sic <= 3849) or (3850 <= sic <= 3851) or (sic == 3991) or
+          (sic == 3993) or (sic == 3995) or (sic == 3996) or (4810 <= sic <= 4813) or (4820 <= sic <= 4822) or
+          (4830 <= sic <= 4839) or (4840 <= sic <= 4841) or (sic == 4890) or (sic == 4891) or (sic == 4892) or
+          (sic == 4899) or (4950 <= sic <= 4959) or (4960 <= sic <= 4961) or (4970 <= sic <= 4971) or (sic == 4991) or
+          (5040 <= sic <= 5042) or (sic == 5043) or (sic == 5044) or (sic == 5045) or (sic == 5046) or
+          (sic == 5047) or (sic == 5048) or (sic == 5049) or (sic == 5082) or (sic == 5083) or
+          (sic == 5084) or (sic == 5085) or (5086 <= sic <= 5087) or (sic == 5088) or (sic == 5090) or
+          (5091 <= sic <= 5092) or (sic == 5093) or (sic == 5100) or (5110 <= sic <= 5113) or (sic == 5199) or
+          (sic == 7000) or (7010 <= sic <= 7011) or (7020 <= sic <= 7021) or (7030 <= sic <= 7033) or (7040 <= sic <= 7041) or
+          (sic == 7200) or (7210 <= sic <= 7212) or (sic == 7213) or (7215 <= sic <= 7216) or (sic == 7217) or
+          (sic == 7218) or (sic == 7219) or (7220 <= sic <= 7221) or (7230 <= sic <= 7231) or (7240 <= sic <= 7241) or
+          (7250 <= sic <= 7251) or (7260 <= sic <= 7269) or (sic == 7290) or (sic == 7291) or (sic == 7299) or
+          (sic == 7300) or (7310 <= sic <= 7319) or (7320 <= sic <= 7323) or (7330 <= sic <= 7338) or (7340 <= sic <= 7342) or
+          (sic == 7349) or (7350 <= sic <= 7351) or (sic == 7352) or (sic == 7353) or (sic == 7359) or
+          (7360 <= sic <= 7369) or (7370 <= sic <= 7372) or (sic == 7373) or (sic == 7374) or (sic == 7375) or
+          (sic == 7376) or (sic == 7377) or (sic == 7378) or (sic == 7379) or (sic == 7380) or
+          (7381 <= sic <= 7382) or (sic == 7383) or (sic == 7384) or (sic == 7385) or (7389 <= sic <= 7390) or
+          (sic == 7391) or (sic == 7392) or (sic == 7393) or (sic == 7394) or (sic == 7395) or
+          (sic == 7397) or (sic == 7399) or (sic == 7500) or (7510 <= sic <= 7519) or (7520 <= sic <= 7523) or
+          (7530 <= sic <= 7539) or (7540 <= sic <= 7549) or (sic == 7600) or (sic == 7620) or (sic == 7622) or
+          (sic == 7623) or (sic == 7629) or (7630 <= sic <= 7631) or (7640 <= sic <= 7641) or (7690 <= sic <= 7699) or
+          (7800 <= sic <= 7829) or (7830 <= sic <= 7833) or (7840 <= sic <= 7841) or (sic == 7900) or (7910 <= sic <= 7911) or
+          (7920 <= sic <= 7929) or (7930 <= sic <= 7933) or (7940 <= sic <= 7949) or (sic == 7980) or (7990 <= sic <= 7999) or
+          (8000 <= sic <= 8099) or (8100 <= sic <= 8199) or (8200 <= sic <= 8299) or (8300 <= sic <= 8399) or (8400 <= sic <= 8499) or
+          (8600 <= sic <= 8699) or (sic == 8700) or (8710 <= sic <= 8713) or (8720 <= sic <= 8721) or (8730 <= sic <= 8734) or
+          (8740 <= sic <= 8748) or (8800 <= sic <= 8899) or (8900 <= sic <= 8910) or (sic == 8911) or (8920 <= sic <= 8999)):
         return 17
         
     else:
