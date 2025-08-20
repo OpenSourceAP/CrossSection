@@ -11,33 +11,6 @@
 #     reviewed_by: [reviewer_id]       # Required: who reviewed this
 #     details: |                       # Required: justification
 #       Multi-line explanation of the decision
-#
-# Supported validation checks that can be overridden:
-#   - Column names: Column names and order match exactly
-#   - Superset check: Python observations are superset of Stata observations  
-#   - Precision1: Percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
-#   - Precision2: Pth percentile absolute difference < TOL_DIFF_2
-#
-# Example entries (remove these when adding real overrides):
-#
-# ExamplePredictor:
-#   status: accepted
-#   reviewed_on: 2025-01-13
-#   reviewed_by: ac
-#   details: |
-#     Known differences due to data source updates.
-#     The differences are within acceptable business tolerances.
-#     Manual verification shows Python results are more accurate.
-#
-# AnotherPredictor:
-#   status: rejected
-#   reviewed_on: 2025-01-13
-#   reviewed_by: ac
-#   details: |
-#     This failure indicates a real data quality issue that needs to be fixed.
-#     The validation failure should remain until the underlying problem is resolved.
-
-# Real overrides go below this line:
 
 PredictedFE:
   status: accepted
@@ -52,3 +25,12 @@ PriceDelayTstat:
   reviewed_by: ac
   details: |
     There was a bug with the Stata code's winsorization. No way to replicate this. There's also a typo in the Stata formula for this. See https://github.com/OpenSourceAP/CrossSection/issues/177
+
+Recomm_ShortInterest:
+  status: accepted
+  reviewed_on: 2025-08-20
+  reviewed_by: ac
+  details: |
+    The do file was using asrol with stat(first) to fill in missing values. This method is not used anywhere else. Also, this method does not work properly. I really don't understand what it's doing See https://github.com/OpenSourceAP/CrossSection/issues/178. 
+
+    I wrote Recomm_ShortInterest.py from scratch to fill in the missing values properly. It results in far more observations than the do file. I checked a few of the Stata observations that are missing in Python and they all should be missing. They had ConsRecomm scores of around 3.0, which should not be an extreme quintile and therefore should be dropped.
