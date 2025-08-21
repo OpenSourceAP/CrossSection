@@ -1,8 +1,4 @@
 #%%
-# debug
-import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir('..')
 
 # ABOUTME: Translates DivSeason.do to create seasonal dividend yield predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/DivSeason.py
@@ -42,6 +38,8 @@ tempdivamt = dist_df.groupby(['permno', 'cd3', 'time_avail_m'])['divamt'].sum().
 tempdivamt = tempdivamt.sort_values(['permno', 'time_avail_m', 'cd3'])
 tempdivamt = tempdivamt.groupby(['permno', 'time_avail_m']).first().reset_index()
 
+#%%
+
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m']].copy()
@@ -73,10 +71,6 @@ df['cd3'] = df.groupby('permno')['cd3'].fillna(method='ffill')
 # Replace missing dividend amounts with 0
 df['divamt'] = df['divamt'].fillna(0)
 
-# Handle cd3 = NaN for early periods with no distributions yet
-# OP page 5: "unknown and missing frequency are assumed quarterly"
-# So cd3 = NaN should be treated as quarterly (cd3 = 3)
-df['cd3'] = df['cd3'].fillna(3)
 
 # Create dividend paid indicator
 df['divpaid'] = (df['divamt'] > 0).astype(int)
@@ -84,9 +78,11 @@ df['divpaid'] = (df['divamt'] > 0).astype(int)
 # Drop monthly dividends (OP drops monthly div unless otherwise noted - p5)
 df = df[df['cd3'] != 2]
 
-
 # Keep if cd3 < 6 (Tab 2 note) - exact match to Stata logic
 df = df[df['cd3'] < 6]
+
+
+#%%
 
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
