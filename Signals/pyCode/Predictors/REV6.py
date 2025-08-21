@@ -78,13 +78,13 @@ rev6_df = pd.DataFrame({
     f'term_{i}': term for i, term in enumerate(rev6_terms)
 })
 
-# Sum all terms, ignoring NaN values (matching Stata's missing value logic)
-# REV6 is NaN only if ALL terms are NaN
-df['REV6'] = rev6_df.sum(axis=1, skipna=True)
+# Sum all terms, but require at least 6 of 7 terms to be non-missing (matching Stata logic)
+# This prevents calculations with insufficient historical data
+non_missing_count = rev6_df.notna().sum(axis=1)
+sufficient_data_mask = non_missing_count >= 6
 
-# Set REV6 to NaN if all terms were NaN (matching Stata behavior)
-all_nan_mask = rev6_df.isna().all(axis=1)
-df.loc[all_nan_mask, 'REV6'] = np.nan
+df['REV6'] = rev6_df.sum(axis=1, skipna=True)
+df.loc[~sufficient_data_mask, 'REV6'] = np.nan
 
 # Convert to output format
 df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
