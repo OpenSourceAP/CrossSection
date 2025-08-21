@@ -1,3 +1,10 @@
+#%%
+
+# debug
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir('..')
+
 # ABOUTME: Translates Code/Predictors/Mom6mJunk.do to calculate 6-month momentum for junk stocks
 # ABOUTME: Creates junk stock momentum signal using CIQ and SP credit ratings with forward fill
 
@@ -16,96 +23,94 @@ Inputs:
 
 Outputs:
     - ../pyData/Predictors/Mom6mJunk.csv (permno, yyyymm, Mom6mJunk)
-
-Logic:
-    1. Clean CIQ credit ratings by removing suffixes
-    2. Create numerical rating scale (0-22) from D to AAA
-    3. Merge with SignalMasterTable and SP ratings
-    4. Forward fill missing CIQ ratings
-    5. Use SP ratings as fallback for missing CIQ ratings
-    6. Calculate 6-month momentum for junk stocks (rating <= 14)
 """
 
 import pandas as pd
 import numpy as np
 import os
-
-# Set working directory to pyCode
-os.chdir('/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode')
-
-# Clean CIQ ratings
-df_ciq_raw = pd.read_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet",
-                             columns=['gvkey', 'ratingdate', 'currentratingnum'])
-
-# Convert gvkey to numeric to match SignalMasterTable
-df_ciq_raw['gvkey'] = pd.to_numeric(df_ciq_raw['gvkey'], errors='coerce')
-
-# Expand each rating to monthly observations (12 months forward)
-from dateutil.relativedelta import relativedelta
-expanded_records = []
-
-for _, row in df_ciq_raw.iterrows():
-    base_date = pd.to_datetime(row['ratingdate'])
-    for months_offset in range(12):
-        time_avail_m = (base_date + relativedelta(months=months_offset)).replace(day=1)
-        expanded_records.append({
-            'gvkey': row['gvkey'],
-            'time_avail_m': time_avail_m,
-            'currentratingnum': row['currentratingnum']
-        })
-
-df_ciq_expanded = pd.DataFrame(expanded_records)
-
-# Handle duplicates within month by taking the mean rating
-df_ciq_expanded = df_ciq_expanded.groupby(['gvkey', 'time_avail_m']).agg({
-    'currentratingnum': 'mean'
-}).reset_index()
-
-# Rename for consistency
-temp_ciq_rat = df_ciq_expanded.rename(columns={'currentratingnum': 'credratciq'})
-temp_ciq_rat = temp_ciq_rat[['gvkey', 'time_avail_m', 'credratciq']]
-
-# DATA LOAD
-df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df[['gvkey', 'permno', 'time_avail_m', 'ret']].copy()
-df = df.dropna(subset=['gvkey'])
-
-# Merge with SP credit ratings
-df_sp = pd.read_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
-df = pd.merge(df, df_sp, on=['gvkey', 'time_avail_m'], how='left')
-
-# Merge with CIQ ratings
-df = pd.merge(df, temp_ciq_rat, on=['gvkey', 'time_avail_m'], how='left')
+import sys
+# Add utils directory to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from savepredictor import save_predictor
 
 
-# Sort by permno and time_avail_m
-df = df.sort_values(['permno', 'time_avail_m'])
+#%%
+# ==== Import and clean data ====
 
-# CRITICAL: Implement Stata's tsfill + forward fill logic
-# Stata tsfill creates complete balanced panel, then forward fills ratings within permno groups
-# This is essential for filling gaps in credit rating data
+# CIQ ratings
+ciq_raw = pd.read_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet",
+                             columns=['gvkey', 'ratingdate', 'source', 'currentratingnum'])
 
-# Forward fill BOTH SP ratings (credrat) and CIQ ratings (credratciq) within permno groups
-# This replicates the effect of Stata's tsfill creating missing periods + forward fill
+# clean up formats and names
+ciq_raw['gvkey'] = ciq_raw['gvkey'].astype(np.int64)
+ciq_raw['ratingdate'] = pd.to_datetime(ciq_raw['ratingdate'])
+ciq_raw.rename(columns={'currentratingnum': 'ratingciq'}, inplace=True)
+
+# keep most recent rating each month
+ciq_raw.sort_values(['gvkey', 'ratingdate'], inplace=True)
+ciq_raw['time_avail_m'] = ciq_raw['ratingdate'].dt.to_period('M').dt.start_time
+ciq_raw = ciq_raw.drop_duplicates(subset=['gvkey', 'time_avail_m'], keep='last')
+
+# SP ratings
+# (this is already deduplicated)
+sp_raw = pd.read_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
+sp_raw.rename(columns={'credrat': 'ratingsp'}, inplace=True)
+
+# SignalMasterTable
+df_raw = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet",
+                     columns=['gvkey', 'permno', 'time_avail_m', 'ret'])
+
+#%%
+# ==== Merge and Process Credit Ratings ====
+
+# use SP ratings by default, CIQ as fallback
+df = df_raw.copy()
+
+# ac: Mom6mJunk.do has `drop if gvkey == .` but I'm not sure it makes sense! 
+df.query('gvkey.notna()', inplace=True)
+
+df = pd.merge(df, sp_raw, on=['gvkey', 'time_avail_m'], how='left')
+print(f"left join with sp ratings, nrow = {len(df)}")
+
+df = pd.merge(df, ciq_raw, on=['gvkey', 'time_avail_m'], how='left') 
+print(f"left join with ciq ratings, nrow = {len(df)}")
+
+# use sp by default (as in Avramov et al), CIQ otherwise
+df['credrat'] = df['ratingsp'].fillna(df['ratingciq'])
+
+#%%
+# ==== Fill in date gaps and forward fill missing values ====
+# replicate Stata: xtset permno time_avail_m; tsfill
+# ac: the fill date gaps is only needed because we drop missing gvkey above
+
+
+# get all permno and time_avail_m
+permno_list = df['permno'].unique()
+ym_list = df['time_avail_m'].unique() # let's make this cleaner
+
+# 're-index' the df to make a balanced panel with lots of missing values
+full_idx = pd.MultiIndex.from_product([permno_list, ym_list], names=['permno', 'time_avail_m'])
+df_balanced = df.set_index(['permno', 'time_avail_m']).reindex(full_idx2).reset_index()\
+    .sort_values(['permno', 'time_avail_m'])
+
+# keep only the observations that are within the range of the original df
+ym_ranges = df.groupby('permno')['time_avail_m'].agg(ym_min='min', ym_max='max').reset_index()
+df_balanced = df_balanced.merge(ym_ranges, on='permno', how='left')
+df_balanced.query('time_avail_m >= ym_min & time_avail_m <= ym_max', inplace=True)
+
+# finally, fill credrat with most recent rating
+df.sort_values(['permno', 'time_avail_m'], inplace=True)
 df['credrat'] = df.groupby('permno')['credrat'].ffill()
-df['credratciq'] = df.groupby('permno')['credratciq'].ffill()
 
-# Coalesce credit ratings - use CIQ if available, otherwise SP  
-df.loc[df['credrat'].isna(), 'credrat'] = df.loc[df['credrat'].isna(), 'credratciq']
+#%%
 
-# CHECKPOINT 1 - Create yyyymm for checkpoint  
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
-bad_obs = df[((df['permno'] == 10026) & (df['yyyymm'] == 201509)) | 
-             ((df['permno'] == 10342) & (df['yyyymm'] == 200001))]
-print("CHECKPOINT 1:")
-print(bad_obs[['permno', 'yyyymm', 'credrat']])
+# ==== SIGNAL CONSTRUCTION ====
 
-
-# SIGNAL CONSTRUCTION
 # Set index for time series operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Replace missing returns with 0
+# Replace missing returns with 0 
+# ac: this interacts with the missing gvkey drop above
 df.loc[df['ret'].isna(), 'ret'] = 0
 
 # Calculate 6-month momentum using lags
@@ -115,43 +120,22 @@ df['ret_lag3'] = df.groupby('permno')['ret'].shift(3)
 df['ret_lag4'] = df.groupby('permno')['ret'].shift(4)
 df['ret_lag5'] = df.groupby('permno')['ret'].shift(5)
 
-# Calculate Mom6m
-df['Mom6m'] = ((1 + df['ret_lag1']) * (1 + df['ret_lag2']) * (1 + df['ret_lag3']) * 
-               (1 + df['ret_lag4']) * (1 + df['ret_lag5'])) - 1
-
-# CHECKPOINT 2
-bad_obs = df[((df['permno'] == 10026) & (df['yyyymm'] == 201509)) | 
-             ((df['permno'] == 10342) & (df['yyyymm'] == 200001))]
-print("CHECKPOINT 2:")
-print(bad_obs[['permno', 'yyyymm', 'ret', 'ret_lag1', 'ret_lag2', 'ret_lag3', 'ret_lag4', 'ret_lag5', 'Mom6m']])
-
+# Calculate 6-month momentum (geometric return)
+df['Mom6m'] = ((1 + df['ret_lag1']) * 
+               (1 + df['ret_lag2']) * 
+               (1 + df['ret_lag3']) * 
+               (1 + df['ret_lag4']) * 
+               (1 + df['ret_lag5'])) - 1
 
 # Create Mom6mJunk for junk stocks (rating <= 14 and > 0)
+# set missing to +Inf, following stata rules
+df['credrat'] = df['credrat'].fillna(np.inf)
 df['Mom6mJunk'] = np.where((df['credrat'] <= 14) & (df['credrat'] > 0), df['Mom6m'], np.nan)
 
-# CHECKPOINT 3
-bad_obs = df[((df['permno'] == 10026) & (df['yyyymm'] == 201509)) | 
-             ((df['permno'] == 10342) & (df['yyyymm'] == 200001))]
-print("CHECKPOINT 3:")
-print(bad_obs[['permno', 'yyyymm', 'credrat', 'Mom6m', 'Mom6mJunk']])
+# SAVE 
+# note: save_predictor drops missing values for Mom6mJunk
+save_predictor(df, 'Mom6mJunk')
 
 
-# Keep only necessary columns
-# yyyymm already created for checkpoints
-result = df[['permno', 'yyyymm', 'Mom6mJunk']].copy()
+print(f"Mom6mJunk saved with {len(df)} observations")
 
-# Drop rows where Mom6mJunk is missing
-result = result.dropna(subset=['Mom6mJunk'])
-
-# Ensure permno and yyyymm are integers
-result['permno'] = result['permno'].astype(int)
-result['yyyymm'] = result['yyyymm'].astype(int)
-
-# Sort by permno, yyyymm
-result = result.sort_values(['permno', 'yyyymm'])
-
-# Save to CSV
-os.makedirs("../pyData/Predictors", exist_ok=True)
-result.to_csv("../pyData/Predictors/Mom6mJunk.csv", index=False)
-
-print(f"Mom6mJunk saved with {len(result)} observations")
