@@ -1,10 +1,5 @@
 #%%
 
-# debug
-import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir('..')
-
 # ABOUTME: Translates Code/Predictors/Mom6mJunk.do to calculate 6-month momentum for junk stocks
 # ABOUTME: Creates junk stock momentum signal using CIQ and SP credit ratings with forward fill
 
@@ -77,6 +72,7 @@ print(f"left join with ciq ratings, nrow = {len(df)}")
 
 # use sp by default (as in Avramov et al), CIQ otherwise
 df['credrat'] = df['ratingsp'].fillna(df['ratingciq'])
+
 
 #%%
 # ==== Fill in date gaps and forward fill missing values ====
