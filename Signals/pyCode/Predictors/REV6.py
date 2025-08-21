@@ -66,14 +66,6 @@ df['prc_lag1'] = df.groupby('permno')['prc'].shift(1)
 # Calculate tempRev following Stata's exact logic
 df['tempRev'] = (df['meanest'] - df['meanest_lag1']) / np.abs(df['prc_lag1'])
 
-# In Stata, when both meanest and meanest_lag1 are missing, (NaN - NaN) might be treated as 0
-# Apply this logic: when both current and lagged meanest are missing, set tempRev = 0
-both_meanest_missing = df['meanest'].isna() & df['meanest_lag1'].isna()
-has_price_data = df['prc_lag1'].notna()
-fallback_condition = both_meanest_missing & has_price_data
-
-df.loc[fallback_condition, 'tempRev'] = 0.0
-
 # gen REV6 = tempRev + l.tempRev + l2.tempRev + l3.tempRev + l4.tempRev + l5.tempRev + l6.tempRev
 # This sums current tempRev plus 6 lagged values (l., l2., l3., l4., l5., l6.)
 rev6_terms = [df['tempRev']]  # Current tempRev
