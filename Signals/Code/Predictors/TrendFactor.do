@@ -2,16 +2,8 @@
 * ------------
 * See sections 2.1 and 2.2 of the paper for a detailed description
 
-* debug mode
-local DEBUG_MODE_PRE1950 1
-
 * 1. Compute moving averages
 use permno time_d prc cfacpr using "$pathDataIntermediate/dailyCRSP", clear
-
-* debug mode
-if `DEBUG_MODE_PRE1950' == 1 {
-    keep if time_d < td(01jan1950)
-}
 
 * Adjust prices for splits etc
 gen P = abs(prc)/cfacpr // I guess they just take the absolute value of prc but it does not say in the paper
@@ -36,9 +28,6 @@ foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
 * Keep only last observation each month
 bys permno time_avail_m (time_d): keep if _n == _N
 
-* - CHECKPOINT 1: Show sample data before normalization for bad observations
-list permno time_avail_m P A_3 A_5 A_10 if inlist(permno, 15683, 25486, 14787) & time_avail_m == tm(1928m2), sep(0)
-
 drop time_d time_temp 
 * Normalize by closing price at end of month
 foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
@@ -46,9 +35,6 @@ foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
     replace A_`L' = A_`L'/P
 	
 }
-
-* - CHECKPOINT 2: Show normalized moving averages for bad observations
-list permno time_avail_m P A_3 A_5 A_10 if inlist(permno, 15683, 25486, 14787) & time_avail_m == tm(1928m2), sep(0)
 
 keep permno time_avail_m A_*
 save tempMA, replace
@@ -76,16 +62,10 @@ drop exchcd shrcd qu10 mve_c prc
 * Merge moving averages
 merge 1:1 permno time_avail_m using tempMA, keep(match) nogenerate
 
-* - CHECKPOINT 3: Show data after merging moving averages for bad observations
-list permno time_avail_m A_3 A_5 A_10 if inlist(permno, 15683, 25486, 14787) & time_avail_m == tm(1928m2), sep(0)
-
 * Cross-sectional regression of returns on trend signals in month t-1
 xtset permno time_avail_m
 gen fRet = f.ret  // Instead of lagging all moving averages, I lead the return (and adjust the rolling sums below accordingly)
 bys time_avail_m: asreg fRet A_*
-
-* - CHECKPOINT 4: Show regression coefficients for the key time period
-list time_avail_m _b_A_3 _b_A_5 _b_A_10 if time_avail_m == tm(1928m2) & _n == 1, sep(0)
 
 * Take 12-month rolling average of MA beta coefficients (leaving out most recent one to not use future information from fRet)
 preserve
@@ -100,12 +80,6 @@ restore
 
 merge m:1 time_avail_m using tempBeta, nogenerate 
 
-* - CHECKPOINT 5: Show EBeta values for the key time period
-list time_avail_m EBeta_3 EBeta_5 EBeta_10 if time_avail_m == tm(1928m2) & _n == 1, sep(0)
-
-* - CHECKPOINT 6: Show A_ values and EBeta values for bad observations before TrendFactor calculation
-list permno time_avail_m A_3 A_5 A_10 EBeta_3 EBeta_5 EBeta_10 if inlist(permno, 15683, 25486, 14787) & time_avail_m == tm(1928m2), sep(0)
-	
 * Calculate expected return E[r] = \sum E[\beta_i]A_L_i
 gen TrendFactor = EBeta_3    * A_3 +   ///
                   EBeta_5    * A_5 +   ///
@@ -118,9 +92,6 @@ gen TrendFactor = EBeta_3    * A_3 +   ///
                   EBeta_600  * A_600 + ///
 				  EBeta_800  * A_800 + ///
 				  EBeta_1000 * A_1000
-
-* - CHECKPOINT 7: Show final TrendFactor values for bad observations
-list permno time_avail_m TrendFactor if inlist(permno, 15683, 25486, 14787) & time_avail_m == tm(1928m2), sep(0)
 				  
 label var TrendFactor "Trend Factor"
 
