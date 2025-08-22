@@ -474,7 +474,7 @@ def _asreg_cross_sectional(
     rtol: float | None,
 ) -> pd.DataFrame:
     """
-    Cross-sectional asreg: Run separate regressions for each group.
+    Run separate regressions for each group using all available data.
     This mimics Stata's "bys group_var: asreg y x_vars" behavior.
     Returns one row per group with regression results.
     """
@@ -494,7 +494,7 @@ def _asreg_cross_sectional(
 
     if not by_list:
         raise ValueError(
-            "cross_sectional=True requires 'by' parameter to specify groups"
+            "window=None requires 'by' parameter to specify groups"
         )
 
     # Prepare column names
@@ -610,7 +610,7 @@ def asreg(
     *,
     by: List[str] | str | None = None,
     time: str | None = None,
-    window: int = 60,
+    window: int | None = None,
     min_obs: int = 10,
     expanding: bool = False,
     add_constant: bool = True,
@@ -618,22 +618,21 @@ def asreg(
     compute_se: bool = False,  # Conventional (non-robust) SEs and t-stats
     method: str = "auto",  # kept for future use; currently cholesky→lstsq
     rtol: float | None = None,
-    cross_sectional: bool = False,  # If True: separate regression per group (like "bys group: asreg")
 ) -> pd.DataFrame:
     """
     Stata-like rolling OLS over a panel/time index, or cross-sectional regressions by group.
 
     Behavior
     --------
-    If cross_sectional=False (default):
+    If window is None:
+      - Runs separate regression for each group in 'by' using all data (like "bys group: asreg").
+      - All observations in each group get the same regression coefficients.
+      - Ignores 'time' and 'expanding' parameters.
+
+    If window is an int:
       - Sorts by [by..., time] (if provided).
       - Right-aligned rolling window over *valid* rows (listwise within y and X).
       - On a row where valid_obs < max(min_obs, p+1), outputs NaNs.
-
-    If cross_sectional=True:
-      - Runs separate regression for each group in 'by' (like "bys group: asreg").
-      - All observations in each group get the same regression coefficients.
-      - Ignores 'time', 'window', 'expanding' parameters.
 
     Common behavior:
       - If a window/group is rank-deficient and drop_collinear=True, outputs NaNs for that row/group.
@@ -646,29 +645,32 @@ def asreg(
     y  : str name of dependent variable.
     X  : list[str] or pattern string (supports wildcards like "A_*", or "A_* B_*").
     by : panel keys (list or single str) or None for single-group time series.
-    time : time column; required for deterministic ordering (ignored if cross_sectional=True).
-    window : size in valid rows (if expanding=False) or ignored for expanding windows (uses all rows so far).
+    time : time column; required for deterministic ordering when window is not None.
+    window : None for cross-sectional (all data per group), or int for rolling window size.
     min_obs : minimum valid rows needed to compute estimates for a row.
     expanding : use an expanding window from the first valid row (True) or a fixed-size rolling window (False).
+              Only applies when window is an int.
     add_constant : include an intercept in each window.
     drop_collinear : if True, windows with rank < p are marked NaN.
     compute_se : compute conventional SEs and t-stats (slower).
     method : reserved; the solver auto-falls back from Cholesky to lstsq.
     rtol : optional tolerance forwarded to lstsq fallback.
-    cross_sectional : if True, run separate regression for each group in 'by' (like Stata "bys group: asreg").
 
     Returns
     -------
     DataFrame aligned to df.index with Stata-like column names.
     """
-    # Handle cross-sectional case
-    if cross_sectional:
+    # Handle cross-sectional case (window=None)
+    if window is None:
         return _asreg_cross_sectional(
             df, y, X, by, add_constant, drop_collinear, compute_se, rtol
         )
 
+    # Rolling window case - validate parameters
     if time is None:
-        raise ValueError("`time` column must be provided for rolling alignment.")
+        raise ValueError("`time` column must be provided for rolling window regressions.")
+    if not isinstance(window, int) or window <= 0:
+        raise ValueError("`window` must be a positive integer for rolling window regressions.")
     if isinstance(by, str):
         by = [by]
     by = list(by) if by is not None else []

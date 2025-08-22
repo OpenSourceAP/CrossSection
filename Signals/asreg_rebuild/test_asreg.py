@@ -3,7 +3,7 @@
 
 #!/usr/bin/env python3
 # ABOUTME: Test asreg function on MWE
-# ABOUTME: Verifies that asreg with cross_sectional=True matches Stata's "bys time_avail_m: asreg"
+# ABOUTME: Verifies that asreg with window=None matches Stata's "bys time_avail_m: asreg"
 
 import pandas as pd
 from stata_regress import asreg
@@ -24,7 +24,7 @@ results = asreg(
     y="fRet",
     X="A_*",  # Will be expanded to all A_* columns
     by="time_avail_m",
-    cross_sectional=True,  # This is the key parameter!
+    window=None,  # None means use all data per group (cross-sectional)
     add_constant=True,
     drop_collinear=True,
 )
@@ -34,5 +34,5 @@ print(f"Columns: {list(results.columns)}")
 
 #%%
 
-results
+results.query('time_avail_m >= "1940-01-01"')
 
