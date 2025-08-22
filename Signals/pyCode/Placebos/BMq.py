@@ -1,0 +1,71 @@
+# ABOUTME: BMq.py - calculates BMq placebo (Book-to-market quarterly)
+# ABOUTME: Python equivalent of BMq.do, translates line-by-line from Stata code
+
+"""
+BMq.py
+
+Inputs:
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - m_QCompustat.parquet: gvkey, time_avail_m, ceqq columns
+
+Outputs:
+    - BMq.csv: permno, yyyymm, BMq columns
+
+Usage:
+    cd pyCode
+    source .venv/bin/activate  
+    python3 Placebos/BMq.py
+"""
+
+import pandas as pd
+import polars as pl
+import sys
+import os
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.saveplacebo import save_placebo
+
+print("Starting BMq.py")
+
+# DATA LOAD
+# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+print("Loading SignalMasterTable...")
+df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+
+# keep if !mi(gvkey)
+df = df.filter(pl.col('gvkey').is_not_null())
+
+print(f"After filtering for non-null gvkey: {len(df)} rows")
+
+# merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_QCompustat", keepusing(ceqq) nogenerate keep(match)
+print("Loading m_QCompustat...")
+qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
+qcomp = qcomp.select(['gvkey', 'time_avail_m', 'ceqq'])
+
+# Convert gvkey to same type for join
+df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
+qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
+
+print("Merging with m_QCompustat...")
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+
+print(f"After merge: {len(df)} rows")
+
+# SIGNAL CONSTRUCTION
+# gen BMq = log(ceqq/mve_c)
+df = df.with_columns(
+    (pl.col('ceqq') / pl.col('mve_c')).log().alias('BMq')
+)
+
+print(f"Generated BMq for {len(df)} observations")
+
+# Keep only required columns for output
+df_final = df.select(['permno', 'time_avail_m', 'BMq'])
+
+# SAVE
+# do "$pathCode/saveplacebo" BMq
+save_placebo(df_final, 'BMq')
+
+print("BMq.py completed")
