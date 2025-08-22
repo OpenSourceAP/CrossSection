@@ -41,3 +41,12 @@ CredRatDG:
   reviewed_by: ac
   details: |
     The sample deviations are all downgrades found in Python but not in Stata. I manually checked a few and found these all have CIQ downgrades. This is likely an improvement due to patching the CIQ deduplication bugs in the Stata DataDownloads code.
+
+Mom6mJunk:
+  status: accepted
+  reviewed_on: 2025-08-21
+  reviewed_by: ac
+  details: |
+    Python is missing permno 10026 (gvkey 12825) in 198907. This is because the CIQ security rating has "NR" in 1989-07, which means that it should be excluded (see Avramov et al 2007 JF Table 3). We want only not-investment-grade stocks, excluding not-rated stocks. The old CIQ data likely missed this due to the poor deduplication code. The original paper only used SP ratings, so it's unclear what to do here. But the long-short portfolio t-stat and mean return match the OP quite well, so I'm accepting this.
+
+    
