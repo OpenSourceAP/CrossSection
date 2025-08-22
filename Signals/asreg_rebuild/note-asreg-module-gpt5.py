@@ -1,9 +1,17 @@
+# === gpt5's asreg module ===
+
+
+
+```python
 #!/usr/bin/env python3
-# ABOUTME: Module that replicates Stata's regress and asreg commands with collinearity handling
-# ABOUTME: Includes drop_collinear, regress, and asreg functions for Stata-like OLS analysis
+# ABOUTME: Module that replicates Stata's regress and adds a fast, minimal asreg (rolling OLS) helper.
+# ABOUTME: Collinearity handling mirrors Stata-style behavior. Rolling core is implemented with cross-moment updates.
+
+from __future__ import annotations
 
 from collections import deque
 from typing import Iterable, Sequence, Tuple, Dict, List, Optional
+
 import fnmatch
 import warnings
 
@@ -11,6 +19,10 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+
+# --------------------------------------------------------------------------------------
+# Existing functionality (kept with light documentation tweaks)
+# --------------------------------------------------------------------------------------
 
 def drop_collinear(
     X: pd.DataFrame,
@@ -43,15 +55,6 @@ def drop_collinear(
     drop_cols : list[str] in original order
     reasons   : dict[col -> "constant" | "collinear"]
     X_reduced : DataFrame with kept columns on the estimation sample (only if return_reduced_X=True)
-
-    Notes
-    -----
-    - This operates on the *current estimation sample* (Stata-like). Rows with any non-finite
-      value in the used columns (and optionally y) are excluded.
-    - Factor variables / dummies: including a full set of category dummies *plus* a constant will cause
-      one dummy to be flagged as collinear (which is expected).
-    - If you must preserve certain columns, pass them first in X's column order and use method="greedy",
-      which tends to keep earlier independent columns.
     """
     # --- 0) Basic validations ---
     if not isinstance(X, pd.DataFrame):
@@ -84,7 +87,7 @@ def drop_collinear(
     if p == 0:
         return [], [], {}, (Xs if return_reduced_X else None)
 
-    # --- 2) Quick constant-column screening (gives clear reasons, also speeds the rank step) ---
+    # --- 2) Quick constant-column screening ---
     ptp = np.ptp(A, axis=0)  # max-min per column
     is_const = ptp == 0
     reasons = {}
@@ -106,14 +109,12 @@ def drop_collinear(
     # Optionally scale columns to unit norm (improves numerical stability of rank tests)
     if scale:
         norms = np.linalg.norm(A_pre, axis=0)
-        # Norms should be >0 here (we removed constants), but guard anyway:
         norms[norms == 0] = 1.0
         A_test = A_pre / norms
     else:
         A_test = A_pre
 
     # --- 3) Rank-revealing step: QR w/ pivoting (fast) or greedy fallback ---
-    # Determine tolerance (relative to the largest scale in the factorization)
     eps = np.finfo(A_test.dtype).eps
     if method == "qr":
         try:
@@ -121,38 +122,27 @@ def drop_collinear(
 
             Q, R, piv = scipy_qr(A_test, mode="economic", pivoting=True)
             diagR = np.abs(np.diag(R))
-            # Set default tolerance if not provided
-            tol = (
-                rtol
-                if rtol is not None
-                else (eps * max(n, A_test.shape[1]) * diagR.max())
-            )
+            tol = rtol if rtol is not None else (eps * max(n, A_test.shape[1]) * diagR.max())
             rank = int((diagR > tol).sum())
             piv = np.asarray(piv)
             indep_local = piv[:rank].tolist()
             dep_local = piv[rank:].tolist()
         except Exception:
-            # SciPy not available or failed: fall back to greedy
             method = "greedy"
 
     if method == "greedy":
-        # Greedy: keep earliest independent columns (in A_pre's order).
-        # At each step, test if new col is in span(kept); if yes → dependent.
         tol = rtol if rtol is not None else (eps * max(n, A_test.shape[1]))
         indep_local = []
         dep_local = []
         for j in range(A_test.shape[1]):
             if not indep_local:
-                # If this column has nonzero norm, keep it
                 if np.linalg.norm(A_test[:, j]) > tol:
                     indep_local.append(j)
                 else:
                     dep_local.append(j)
                 continue
-            # Project A_test[:, j] onto columns in indep_local, then check residual norm
             Aj = A_test[:, j]
             Akeep = A_test[:, indep_local]
-            # Solve least squares Akeep * b ≈ Aj
             b, *_ = np.linalg.lstsq(Akeep, Aj, rcond=None)
             resid = Aj - Akeep @ b
             if np.linalg.norm(resid) > tol:
@@ -160,20 +150,17 @@ def drop_collinear(
             else:
                 dep_local.append(j)
 
-    # indep_local/dep_local are indices in A_pre/cols_pre space; map back to original columns
     keep_cols_preorder = [cols_pre[k] for k in indep_local]
     drop_cols_preorder = [cols_pre[k] for k in dep_local]
     for c in drop_cols_preorder:
         reasons[c] = "collinear"
 
-    # Reconstitute full keep/drop *in original column order*
     keep_set = set(keep_cols_preorder)
     keep_cols = [
         c
         for c in cols
         if (c in keep_set) and (c not in reasons or reasons[c] != "constant")
     ]
-    # Everything else is dropped either as constant or collinear
     drop_cols = [c for c in cols if c not in keep_cols]
 
     if return_reduced_X:
@@ -202,15 +189,10 @@ def regress(X, y, add_constant=True, omit_collinear=True, return_full_coefs=True
     Returns
     -------
     model : statsmodels regression results
-        The fitted model
     kept_vars : list
-        Variables kept in the model
     dropped_vars : list
-        Variables dropped due to collinearity
     reasons : dict
-        Reasons for dropping variables
     full_coefficients : pd.DataFrame (if return_full_coefs=True)
-        Complete coefficient table with zeros for omitted variables
     """
     if omit_collinear:
         keep_cols, drop_cols, reasons, X_reduced = drop_collinear(X, y=y)
@@ -231,45 +213,45 @@ def regress(X, y, add_constant=True, omit_collinear=True, return_full_coefs=True
     if return_full_coefs:
         # Create full coefficient DataFrame with zeros for omitted variables
         full_coefs = {}
-        
-        # Add coefficients for kept variables using parameter names from model
+
         for var in keep_cols:
             if var in model.params.index:
                 full_coefs[var] = {
-                    'coefficient': model.params[var],
-                    'std_err': model.bse[var],
-                    'omitted': False
+                    "coefficient": model.params[var],
+                    "std_err": model.bse[var],
+                    "omitted": False,
                 }
-        
-        # Add zeros for dropped variables
+
         for var in drop_cols:
             full_coefs[var] = {
-                'coefficient': 0.0,
-                'std_err': np.nan,
-                'omitted': True
+                "coefficient": 0.0,
+                "std_err": np.nan,
+                "omitted": True,
             }
-        
-        # Add constant if it was included
-        if add_constant and 'const' in model.params.index:
-            full_coefs['_cons'] = {
-                'coefficient': model.params['const'],
-                'std_err': model.bse['const'],
-                'omitted': False
+
+        if add_constant and "const" in model.params.index:
+            full_coefs["_cons"] = {
+                "coefficient": model.params["const"],
+                "std_err": model.bse["const"],
+                "omitted": False,
             }
-        
-        # Create DataFrame in original variable order, then add constant
+
         original_vars = list(X.columns)
         ordered_vars = [var for var in original_vars if var in full_coefs]
         if add_constant:
-            ordered_vars.append('_cons')
-        
+            ordered_vars.append("_cons")
+
         ordered_results = {var: full_coefs[var] for var in ordered_vars}
-        full_coefficients = pd.DataFrame.from_dict(ordered_results, orient='index')
-        
+        full_coefficients = pd.DataFrame.from_dict(ordered_results, orient="index")
+
         return model, keep_cols, drop_cols, reasons, full_coefficients
     else:
         return model, keep_cols, drop_cols, reasons
 
+
+# --------------------------------------------------------------------------------------
+# New lightweight numeric core shared by asreg (and available for future reuse)
+# --------------------------------------------------------------------------------------
 
 def _solve_ols_from_crossmoments(
     Sxx: np.ndarray,
@@ -407,6 +389,10 @@ def _solve_ols_from_crossmoments(
         return beta, se, meta
 
 
+# --------------------------------------------------------------------------------------
+# Small helpers
+# --------------------------------------------------------------------------------------
+
 def _expand_columns(df: pd.DataFrame, X: str | Sequence[str]) -> List[str]:
     """
     Expand a list of RHS columns. If X is a string with wildcards, match df columns.
@@ -457,126 +443,9 @@ def _coerce_numeric_block(df: pd.DataFrame, cols: List[str], ycol: str) -> Tuple
     return X, y
 
 
-def _asreg_cross_sectional(
-    df: pd.DataFrame,
-    y: str,
-    X: List[str] | str,
-    by: List[str] | str | None,
-    add_constant: bool,
-    drop_collinear: bool,
-    compute_se: bool,
-    rtol: float | None,
-) -> pd.DataFrame:
-    """
-    Cross-sectional asreg: Run separate regressions for each group.
-    This mimics Stata's "bys group_var: asreg y x_vars" behavior.
-    """
-    # Expand X column patterns
-    if isinstance(X, str):
-        X_cols = _expand_columns(df, X)
-    else:
-        X_cols = X
-    
-    # Group handling
-    if isinstance(by, str):
-        by = [by]
-    
-    if not by:
-        raise ValueError("cross_sectional=True requires 'by' parameter to specify groups")
-    
-    # Initialize results with NaN
-    result_dict = {}
-    stat_cols = ['_Nobs', '_R2', '_adjR2', '_sigma']
-    coef_cols = [f'_b_{col}' for col in X_cols]
-    if add_constant:
-        coef_cols.append('_b_cons')
-    
-    if compute_se:
-        se_cols = [f'_se_{col}' for col in X_cols]
-        t_cols = [f'_t_{col}' for col in X_cols]
-        if add_constant:
-            se_cols.append('_se_cons')
-            t_cols.append('_t_cons')
-        all_cols = stat_cols + coef_cols + se_cols + t_cols
-    else:
-        all_cols = stat_cols + coef_cols
-    
-    for col in all_cols:
-        result_dict[col] = np.full(len(df), np.nan, dtype=float)
-    
-    # Process each group
-    for name, group in df.groupby(by):
-        group_name = name if isinstance(name, str) else '_'.join(map(str, name))
-        
-        # Extract X and y for this group
-        X_group = group[X_cols]
-        y_group = group[y]
-        
-        try:
-            # Run regress for this group
-            model, keep_cols, drop_cols, reasons, full_coefs = regress(
-                X_group, y_group, 
-                add_constant=add_constant, 
-                omit_collinear=drop_collinear,
-                return_full_coefs=True
-            )
-            
-            # Get indices of this group in the original DataFrame
-            group_indices = group.index
-            
-            # Fill in results for all observations in this group
-            for idx in group_indices:
-                df_position = df.index.get_loc(idx)
-                
-                # Fill stats
-                result_dict['_Nobs'][df_position] = model.nobs
-                result_dict['_R2'][df_position] = model.rsquared
-                result_dict['_adjR2'][df_position] = model.rsquared_adj
-                result_dict['_sigma'][df_position] = np.sqrt(model.mse_resid)
-                
-                # Fill coefficients
-                for col in X_cols:
-                    if col in full_coefs.index:
-                        result_dict[f'_b_{col}'][df_position] = full_coefs.loc[col, 'coefficient']
-                    else:
-                        result_dict[f'_b_{col}'][df_position] = 0.0  # Omitted due to collinearity
-                
-                # Fill constant
-                if add_constant:
-                    result_dict['_b_cons'][df_position] = model.params.get('const', np.nan)
-                
-                # Fill SEs and t-stats if requested
-                if compute_se:
-                    for col in X_cols:
-                        if col in full_coefs.index:
-                            result_dict[f'_se_{col}'][df_position] = full_coefs.loc[col, 'std_err']
-                            if full_coefs.loc[col, 'std_err'] > 0:
-                                result_dict[f'_t_{col}'][df_position] = (
-                                    full_coefs.loc[col, 'coefficient'] / full_coefs.loc[col, 'std_err']
-                                )
-                        else:
-                            result_dict[f'_se_{col}'][df_position] = np.nan
-                            result_dict[f'_t_{col}'][df_position] = np.nan
-                    
-                    if add_constant:
-                        const_se = model.bse.get('const', np.nan)
-                        const_coef = model.params.get('const', np.nan)
-                        result_dict['_se_cons'][df_position] = const_se
-                        if const_se > 0:
-                            result_dict['_t_cons'][df_position] = const_coef / const_se
-                        else:
-                            result_dict['_t_cons'][df_position] = np.nan
-            
-        except Exception as e:
-            print(f"Error processing group {group_name}: {e}")
-            import traceback
-            traceback.print_exc()
-    
-    # Convert to DataFrame
-    results_df = pd.DataFrame(result_dict, index=df.index)
-    
-    return results_df[all_cols]
-
+# --------------------------------------------------------------------------------------
+# New: asreg (lean, Stata-like)
+# --------------------------------------------------------------------------------------
 
 def asreg(
     df: pd.DataFrame,
@@ -593,27 +462,18 @@ def asreg(
     compute_se: bool = False,      # Conventional (non-robust) SEs and t-stats
     method: str = "auto",          # kept for future use; currently cholesky→lstsq
     rtol: float | None = None,
-    cross_sectional: bool = False,  # If True: separate regression per group (like "bys group: asreg")
 ) -> pd.DataFrame:
     """
-    Stata-like rolling OLS over a panel/time index, or cross-sectional regressions by group.
+    Stata-like rolling OLS over a panel/time index.
 
     Behavior
     --------
-    If cross_sectional=False (default):
-      - Sorts by [by..., time] (if provided).
-      - Right-aligned rolling window over *valid* rows (listwise within y and X).
-      - On a row where valid_obs < max(min_obs, p+1), outputs NaNs.
-      
-    If cross_sectional=True:
-      - Runs separate regression for each group in 'by' (like "bys group: asreg").
-      - All observations in each group get the same regression coefficients.
-      - Ignores 'time', 'window', 'expanding' parameters.
-      
-    Common behavior:
-      - If a window/group is rank-deficient and drop_collinear=True, outputs NaNs for that row/group.
-      - Stats: _Nobs, _R2, _adjR2, _sigma; Coefs: _b_<var>, (_b_cons if add_constant).
-      - If compute_se=True: _se_<var>, _t_<var> (and _se_cons/_t_cons if applicable).
+    - Sorts by [by..., time] (if provided).
+    - Right-aligned rolling window over *valid* rows (listwise within y and X).
+    - On a row where valid_obs < max(min_obs, p+1), outputs NaNs.
+    - If a window is rank-deficient and drop_collinear=True, outputs NaNs for that row.
+    - Stats: _Nobs, _R2, _adjR2, _sigma; Coefs: _b_<var>, (_b_cons if add_constant).
+      If compute_se=True: _se_<var>, _t_<var> (and _se_cons/_t_cons if applicable).
 
     Parameters
     ----------
@@ -621,7 +481,7 @@ def asreg(
     y  : str name of dependent variable.
     X  : list[str] or pattern string (supports wildcards like "A_*", or "A_* B_*").
     by : panel keys (list or single str) or None for single-group time series.
-    time : time column; required for deterministic ordering (ignored if cross_sectional=True).
+    time : time column; required for deterministic ordering.
     window : size in valid rows (if expanding=False) or ignored for expanding windows (uses all rows so far).
     min_obs : minimum valid rows needed to compute estimates for a row.
     expanding : use an expanding window from the first valid row (True) or a fixed-size rolling window (False).
@@ -630,18 +490,11 @@ def asreg(
     compute_se : compute conventional SEs and t-stats (slower).
     method : reserved; the solver auto-falls back from Cholesky to lstsq.
     rtol : optional tolerance forwarded to lstsq fallback.
-    cross_sectional : if True, run separate regression for each group in 'by' (like Stata "bys group: asreg").
 
     Returns
     -------
     DataFrame aligned to df.index with Stata-like column names.
     """
-    # Handle cross-sectional case
-    if cross_sectional:
-        return _asreg_cross_sectional(
-            df, y, X, by, add_constant, drop_collinear, compute_se, rtol
-        )
-    
     if time is None:
         raise ValueError("`time` column must be provided for rolling alignment.")
     if isinstance(by, str):
@@ -691,8 +544,9 @@ def asreg(
         groups = gdf.groupby(gkey, sort=False, group_keys=False)
 
     for _, g in groups:
-        # Get positional indices within the sorted df (gdf)
-        pos = gdf.index.get_indexer(g.index)  # positions of this group's indices in gdf
+        # Use positional indices within the sorted df
+        pos = g.index.get_indexer(g.index)  # trivial, but keeps shape
+        pos = g.index.to_numpy()            # absolute positions in gdf (i.e., df after sorting)
         # Extract arrays
         X_block = X_df.loc[g.index].to_numpy(dtype=float, copy=False)  # (n, p_raw)
         y_block = y_s.loc[g.index].to_numpy(dtype=float, copy=False)   # (n,)
@@ -833,3 +687,4 @@ def asreg(
             ordered_cols += ["_t_cons"]
 
     return out_df[ordered_cols]
+```
