@@ -19,22 +19,22 @@ This document analyzes the relationship between predictor test failures (precisi
 ## Failing Predictors Analysis Table
 **⚠️ CORRECTED**: Based on Stata .do file analysis (Python translations can mask original function usage)
 
-| py_script                                           | predictor           | precision1_failure | precision2_failure             | asreg | asrol | notes                                      |
-|-----------------------------------------------------|---------------------|-------------------|-------------------------------|-------|-------|--------------------------------------------|
-| TrendFactor.py                                      | TrendFactor         | ❌ (97.14%)        | ❌ (99.900th diff 2.9E+00)     | ✅     | ✅     | **CRITICAL**: Both functions, highest rate |
-| ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py | PredictedFE         | ❌ (85.27%)        | ❌ (99.900th diff 3.1E-01)     | ✅     | ❌     | **CRITICAL**: asreg only, very high       |
-| ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py    | AbnormalAccruals    | ❌ (29.28%)        | ❌ (99.900th diff 9.7E-01)     | ✅     | ❌     | **HIGH**: asreg only, superset failure    |
-| MS.py                                               | MS                  | ❌ (19.57%)        | ❌ (99.900th diff 2.6E+00)     | ❌     | ✅     | **HIGH**: asrol only (CORRECTED)         |
-| ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py| PriceDelayTstat     | ❌ (19.38%)        | ❌ (99.900th diff 5.7E+00)     | ✅     | ❌     | **HIGH**: asreg only (CORRECTED)         |
-| PS.py                                               | PS                  | ❌ (17.93%)        | ❌ (99.900th diff 2.4E+00)     | ❌     | ❌     | **HIGH**: No special functions            |
-| ZZ2_BetaFP.py                                       | BetaFP              | ❌ (6.26%)         | ❌ (99.900th diff 8.8E-01)     | ✅     | ✅     | **MEDIUM**: Both functions (CORRECTED)   |
-| CitationsRD.py                                      | CitationsRD         | ❌ (6.16%)         | ❌ (99.900th diff 2.4E+00)     | ❌     | ✅     | **MEDIUM**: asrol only, superset failure  |
-| RDAbility.py                                        | RDAbility           | ❌ (4.34%)         | ❌ (99.900th diff 2.2E+00)     | ✅     | ✅     | **MEDIUM**: Both functions                |
-| ZZ1_ResidualMomentum6m_ResidualMomentum.py         | ResidualMomentum    | ❌ (2.85%)         | ❌ (99.900th diff 9.2E-01)     | ✅     | ✅     | **MEDIUM**: Both functions (CORRECTED)   |
-| ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py          | ReturnSkew3F        | ❌ (2.57%)         | ❌ (99.900th diff 1.4E+00)     | ✅     | ❌     | **MEDIUM**: asreg only                    |
-| ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py| PriceDelayRsq       | ❌ (1.21%)         | ❌ (99.900th diff 1.9E+00)     | ✅     | ❌     | **LOW**: asreg only (CORRECTED)          |
-| DivSeason.py                                        | DivSeason           | ✅ (0.99%)         | ❌ (99.900th diff 2.0E+00)     | ❌     | ✅     | **LOW**: asrol only, precision2 only      |
-| VolumeTrend.py                                      | VolumeTrend         | ✅ (0.96%)         | ❌ (99.900th diff 1.5E+00)     | ✅     | ✅     | **LOW**: Both functions (CORRECTED)      |
+| py_script                                           | predictor           | precision1 | precision2    | asreg | asrol | notes                                      |
+|-----------------------------------------------------|---------------------|------------|--------------- |-------|-------|--------------------------------------------|
+| TrendFactor.py                                      | TrendFactor         | ❌ (97.14%) | ❌ ( 2.9E+00) | ✅     | ✅     | **CRITICAL**: Both functions, highest rate |
+| ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py | PredictedFE          | ❌ (85.27%) | ❌ ( 3.1E-01) | ✅     | ❌     | **CRITICAL**: asreg only, very high       |
+| ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py    | AbnormalAccruals     | ❌ (29.28%) | ❌ ( 9.7E-01) | ✅     | ❌     | **HIGH**: asreg only, superset failure    |
+| ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py| PriceDelayTstat     | ❌ (19.38%) | ❌ ( 5.7E+00) | ✅     | ❌     | **HIGH**: asreg only (CORRECTED)         |
+| ZZ2_BetaFP.py                                       | BetaFP              | ❌ (6.26%)  | ❌ ( 8.8E-01)  | ✅     | ✅     | **MEDIUM**: Both functions (CORRECTED)   |
+| RDAbility.py                                        | RDAbility           | ❌ (4.34%)  | ❌ ( 2.2E+00)  | ✅     | ✅     | **MEDIUM**: Both functions                |
+| ZZ1_ResidualMomentum6m_ResidualMomentum.py         | ResidualMomentum    | ❌ (2.85%)   | ❌ ( 9.2E-01)  | ✅     | ✅     | **MEDIUM**: Both functions (CORRECTED)   |
+| ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py          | ReturnSkew3F        | ❌ (2.57%)   | ❌ ( 1.4E+00)  | ✅     | ❌     | **MEDIUM**: asreg only                    |
+| ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py| PriceDelayRsq       | ❌ (1.21%)  | ❌ ( 1.9E+00)  | ✅     | ❌     | **LOW**: asreg only (CORRECTED)          |
+| VolumeTrend.py                                      | VolumeTrend         | ✅ (0.96%)  | ❌ ( 1.5E+00)  | ✅     | ✅     | **LOW**: Both functions (CORRECTED)      |
+| DivSeason.py                                        | DivSeason           | ✅ (0.99%)  | ❌ ( 2.0E+00)  | ❌     | ✅     | **LOW**: asrol only, precision2 only      |
+| CitationsRD.py                                      | CitationsRD         | ❌ (6.16%)  | ❌ ( 2.4E+00)  | ❌     | ✅     | **MEDIUM**: asrol only, superset failure  |
+| MS.py                                               | MS                  | ❌ (19.57%) | ❌ ( 2.6E+00) | ❌     | ✅     | **HIGH**: asrol only (CORRECTED)         |
+| PS.py                                               | PS                  | ❌ (17.93%) | ❌ ( 2.4E+00)  | ❌     | ❌     | **HIGH**: No special functions            |
 
 ## Function Usage by Script
 

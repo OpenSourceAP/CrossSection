@@ -95,7 +95,6 @@ def stata_regress_to_df(log_file_path):
     return df
 
 
-
 def compare_results(python_df, stata_df):
     """
     Compare Python and Stata regression results.
@@ -184,10 +183,9 @@ print(f"Variables compared: {len(comparison)}")
 print(f"Max coefficient difference: {comparison['diff'].abs().max():.8f}")
 
 # Filter for coefficient and std_err differences separately
-coef_diff = comparison[comparison['variable'] == 'coefficient']['diff']
-se_diff = comparison[comparison['variable'] == 'std_err']['diff']
+coef_diff = comparison[comparison["variable"] == "coefficient"]["diff"]
+se_diff = comparison[comparison["variable"] == "std_err"]["diff"]
 print(f"Max coefficient difference: {coef_diff.abs().max():.8f}")
 print(f"Max std error difference: {se_diff.abs().max():.8f}")
 
-#%%
-
+# %%

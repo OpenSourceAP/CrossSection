@@ -231,41 +231,37 @@ def regress(X, y, add_constant=True, omit_collinear=True, return_full_coefs=True
     if return_full_coefs:
         # Create full coefficient DataFrame with zeros for omitted variables
         full_coefs = {}
-        
+
         # Add coefficients for kept variables using parameter names from model
         for var in keep_cols:
             if var in model.params.index:
                 full_coefs[var] = {
-                    'coefficient': model.params[var],
-                    'std_err': model.bse[var],
-                    'omitted': False
+                    "coefficient": model.params[var],
+                    "std_err": model.bse[var],
+                    "omitted": False,
                 }
-        
+
         # Add zeros for dropped variables
         for var in drop_cols:
-            full_coefs[var] = {
-                'coefficient': 0.0,
-                'std_err': np.nan,
-                'omitted': True
-            }
-        
+            full_coefs[var] = {"coefficient": 0.0, "std_err": np.nan, "omitted": True}
+
         # Add constant if it was included
-        if add_constant and 'const' in model.params.index:
-            full_coefs['_cons'] = {
-                'coefficient': model.params['const'],
-                'std_err': model.bse['const'],
-                'omitted': False
+        if add_constant and "const" in model.params.index:
+            full_coefs["_cons"] = {
+                "coefficient": model.params["const"],
+                "std_err": model.bse["const"],
+                "omitted": False,
             }
-        
+
         # Create DataFrame in original variable order, then add constant
         original_vars = list(X.columns)
         ordered_vars = [var for var in original_vars if var in full_coefs]
         if add_constant:
-            ordered_vars.append('_cons')
-        
+            ordered_vars.append("_cons")
+
         ordered_results = {var: full_coefs[var] for var in ordered_vars}
-        full_coefficients = pd.DataFrame.from_dict(ordered_results, orient='index')
-        
+        full_coefficients = pd.DataFrame.from_dict(ordered_results, orient="index")
+
         return model, keep_cols, drop_cols, reasons, full_coefficients
     else:
         return model, keep_cols, drop_cols, reasons
@@ -348,7 +344,9 @@ def _solve_ols_from_crossmoments(
             "tss": tss,
             "r2": r2,
             "adj_r2": adj_r2,
-            "sigma": float(np.sqrt(sigma2)) if sigma2 == sigma2 else np.nan,  # sqrt if finite
+            "sigma": (
+                float(np.sqrt(sigma2)) if sigma2 == sigma2 else np.nan
+            ),  # sqrt if finite
         }
         return beta, se, meta
     except np.linalg.LinAlgError:
@@ -430,7 +428,9 @@ def _expand_columns(df: pd.DataFrame, X: str | Sequence[str]) -> List[str]:
         return [c for c in df.columns if c in name_set]
 
 
-def _ensure_sorted(df: pd.DataFrame, by: List[str] | None, time: Optional[str]) -> pd.DataFrame:
+def _ensure_sorted(
+    df: pd.DataFrame, by: List[str] | None, time: Optional[str]
+) -> pd.DataFrame:
     """
     Sort by keys then time (if provided). Returns a new DataFrame.
     """
@@ -441,7 +441,9 @@ def _ensure_sorted(df: pd.DataFrame, by: List[str] | None, time: Optional[str]) 
     return g
 
 
-def _coerce_numeric_block(df: pd.DataFrame, cols: List[str], ycol: str) -> Tuple[pd.DataFrame, pd.Series]:
+def _coerce_numeric_block(
+    df: pd.DataFrame, cols: List[str], ycol: str
+) -> Tuple[pd.DataFrame, pd.Series]:
     """
     Ensure numeric dtypes; coerce non-numeric to float (NaN if fails) with a warning.
     """
@@ -449,10 +451,14 @@ def _coerce_numeric_block(df: pd.DataFrame, cols: List[str], ycol: str) -> Tuple
     y = df[ycol].copy()
     for c in cols:
         if not pd.api.types.is_numeric_dtype(X[c]):
-            warnings.warn(f"Column {c} is not numeric; coercing with pd.to_numeric(..., errors='coerce').")
+            warnings.warn(
+                f"Column {c} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
+            )
             X[c] = pd.to_numeric(X[c], errors="coerce")
     if not pd.api.types.is_numeric_dtype(y):
-        warnings.warn(f"y column {ycol} is not numeric; coercing with pd.to_numeric(..., errors='coerce').")
+        warnings.warn(
+            f"y column {ycol} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
+        )
         y = pd.to_numeric(y, errors="coerce")
     return X, y
 
@@ -470,112 +476,131 @@ def _asreg_cross_sectional(
     """
     Cross-sectional asreg: Run separate regressions for each group.
     This mimics Stata's "bys group_var: asreg y x_vars" behavior.
+    Returns one row per group with regression results.
     """
     # Expand X column patterns
     if isinstance(X, str):
         X_cols = _expand_columns(df, X)
     else:
         X_cols = X
-    
+
     # Group handling
     if isinstance(by, str):
-        by = [by]
-    
-    if not by:
-        raise ValueError("cross_sectional=True requires 'by' parameter to specify groups")
-    
-    # Initialize results with NaN
-    result_dict = {}
-    stat_cols = ['_Nobs', '_R2', '_adjR2', '_sigma']
-    coef_cols = [f'_b_{col}' for col in X_cols]
-    if add_constant:
-        coef_cols.append('_b_cons')
-    
-    if compute_se:
-        se_cols = [f'_se_{col}' for col in X_cols]
-        t_cols = [f'_t_{col}' for col in X_cols]
-        if add_constant:
-            se_cols.append('_se_cons')
-            t_cols.append('_t_cons')
-        all_cols = stat_cols + coef_cols + se_cols + t_cols
+        by_list = [by]
+        single_by = True
     else:
-        all_cols = stat_cols + coef_cols
-    
-    for col in all_cols:
-        result_dict[col] = np.full(len(df), np.nan, dtype=float)
-    
-    # Process each group
-    for name, group in df.groupby(by):
-        group_name = name if isinstance(name, str) else '_'.join(map(str, name))
-        
+        by_list = by
+        single_by = False
+
+    if not by_list:
+        raise ValueError(
+            "cross_sectional=True requires 'by' parameter to specify groups"
+        )
+
+    # Prepare column names
+    stat_cols = ["_Nobs", "_R2", "_adjR2", "_sigma"]
+    coef_cols = [f"_b_{col}" for col in X_cols]
+    if add_constant:
+        coef_cols.append("_b_cons")
+
+    if compute_se:
+        se_cols = [f"_se_{col}" for col in X_cols]
+        t_cols = [f"_t_{col}" for col in X_cols]
+        if add_constant:
+            se_cols.append("_se_cons")
+            t_cols.append("_t_cons")
+        all_result_cols = stat_cols + coef_cols + se_cols + t_cols
+    else:
+        all_result_cols = stat_cols + coef_cols
+
+    # List to store results for each group
+    results_list = []
+
+    # Process each group (use original by for groupby to get correct name format)
+    for name, group in df.groupby(by if single_by else by_list):
+        group_name = name if isinstance(name, (str, int, float)) else "_".join(map(str, name))
+
         # Extract X and y for this group
         X_group = group[X_cols]
         y_group = group[y]
+
+        # Initialize result row for this group
+        result_row = {}
         
+        # Add group identifier(s)
+        if single_by:
+            # For single grouping column, name is a scalar
+            result_row[by_list[0]] = name
+        else:
+            # For multiple grouping columns, name is a tuple
+            for i, col in enumerate(by_list):
+                result_row[col] = name[i]
+
         try:
             # Run regress for this group
             model, keep_cols, drop_cols, reasons, full_coefs = regress(
-                X_group, y_group, 
-                add_constant=add_constant, 
+                X_group,
+                y_group,
+                add_constant=add_constant,
                 omit_collinear=drop_collinear,
-                return_full_coefs=True
+                return_full_coefs=True,
             )
-            
-            # Get indices of this group in the original DataFrame
-            group_indices = group.index
-            
-            # Fill in results for all observations in this group
-            for idx in group_indices:
-                df_position = df.index.get_loc(idx)
-                
-                # Fill stats
-                result_dict['_Nobs'][df_position] = model.nobs
-                result_dict['_R2'][df_position] = model.rsquared
-                result_dict['_adjR2'][df_position] = model.rsquared_adj
-                result_dict['_sigma'][df_position] = np.sqrt(model.mse_resid)
-                
-                # Fill coefficients
+
+            # Fill stats
+            result_row["_Nobs"] = model.nobs
+            result_row["_R2"] = model.rsquared
+            result_row["_adjR2"] = model.rsquared_adj
+            result_row["_sigma"] = np.sqrt(model.mse_resid)
+
+            # Fill coefficients
+            for col in X_cols:
+                if col in full_coefs.index:
+                    result_row[f"_b_{col}"] = full_coefs.loc[col, "coefficient"]
+                else:
+                    result_row[f"_b_{col}"] = 0.0  # Omitted due to collinearity
+
+            # Fill constant
+            if add_constant:
+                result_row["_b_cons"] = model.params.get("const", np.nan)
+
+            # Fill SEs and t-stats if requested
+            if compute_se:
                 for col in X_cols:
                     if col in full_coefs.index:
-                        result_dict[f'_b_{col}'][df_position] = full_coefs.loc[col, 'coefficient']
+                        result_row[f"_se_{col}"] = full_coefs.loc[col, "std_err"]
+                        if full_coefs.loc[col, "std_err"] > 0:
+                            result_row[f"_t_{col}"] = (
+                                full_coefs.loc[col, "coefficient"]
+                                / full_coefs.loc[col, "std_err"]
+                            )
+                        else:
+                            result_row[f"_t_{col}"] = np.nan
                     else:
-                        result_dict[f'_b_{col}'][df_position] = 0.0  # Omitted due to collinearity
-                
-                # Fill constant
+                        result_row[f"_se_{col}"] = np.nan
+                        result_row[f"_t_{col}"] = np.nan
+
                 if add_constant:
-                    result_dict['_b_cons'][df_position] = model.params.get('const', np.nan)
-                
-                # Fill SEs and t-stats if requested
-                if compute_se:
-                    for col in X_cols:
-                        if col in full_coefs.index:
-                            result_dict[f'_se_{col}'][df_position] = full_coefs.loc[col, 'std_err']
-                            if full_coefs.loc[col, 'std_err'] > 0:
-                                result_dict[f'_t_{col}'][df_position] = (
-                                    full_coefs.loc[col, 'coefficient'] / full_coefs.loc[col, 'std_err']
-                                )
-                        else:
-                            result_dict[f'_se_{col}'][df_position] = np.nan
-                            result_dict[f'_t_{col}'][df_position] = np.nan
-                    
-                    if add_constant:
-                        const_se = model.bse.get('const', np.nan)
-                        const_coef = model.params.get('const', np.nan)
-                        result_dict['_se_cons'][df_position] = const_se
-                        if const_se > 0:
-                            result_dict['_t_cons'][df_position] = const_coef / const_se
-                        else:
-                            result_dict['_t_cons'][df_position] = np.nan
-            
+                    const_se = model.bse.get("const", np.nan)
+                    const_coef = model.params.get("const", np.nan)
+                    result_row["_se_cons"] = const_se
+                    if const_se > 0:
+                        result_row["_t_cons"] = const_coef / const_se
+                    else:
+                        result_row["_t_cons"] = np.nan
+
         except Exception as e:
             print(f"Error processing group {group_name}: {e}")
-            import traceback
-            traceback.print_exc()
-    
+            # Fill with NaN for this group if regression fails
+            for col in all_result_cols:
+                result_row[col] = np.nan
+
+        results_list.append(result_row)
+
     # Convert to DataFrame
-    results_df = pd.DataFrame(result_dict, index=df.index)
+    results_df = pd.DataFrame(results_list)
     
-    return results_df[all_cols]
+    # Return with group columns first, then regression results
+    return results_df[by_list + all_result_cols]
 
 
 def asreg(
@@ -589,9 +614,9 @@ def asreg(
     min_obs: int = 10,
     expanding: bool = False,
     add_constant: bool = True,
-    drop_collinear: bool = True,   # If a window is rank-deficient → emit NaNs for that row
-    compute_se: bool = False,      # Conventional (non-robust) SEs and t-stats
-    method: str = "auto",          # kept for future use; currently cholesky→lstsq
+    drop_collinear: bool = True,  # If a window is rank-deficient → emit NaNs for that row
+    compute_se: bool = False,  # Conventional (non-robust) SEs and t-stats
+    method: str = "auto",  # kept for future use; currently cholesky→lstsq
     rtol: float | None = None,
     cross_sectional: bool = False,  # If True: separate regression per group (like "bys group: asreg")
 ) -> pd.DataFrame:
@@ -604,12 +629,12 @@ def asreg(
       - Sorts by [by..., time] (if provided).
       - Right-aligned rolling window over *valid* rows (listwise within y and X).
       - On a row where valid_obs < max(min_obs, p+1), outputs NaNs.
-      
+
     If cross_sectional=True:
       - Runs separate regression for each group in 'by' (like "bys group: asreg").
       - All observations in each group get the same regression coefficients.
       - Ignores 'time', 'window', 'expanding' parameters.
-      
+
     Common behavior:
       - If a window/group is rank-deficient and drop_collinear=True, outputs NaNs for that row/group.
       - Stats: _Nobs, _R2, _adjR2, _sigma; Coefs: _b_<var>, (_b_cons if add_constant).
@@ -641,7 +666,7 @@ def asreg(
         return _asreg_cross_sectional(
             df, y, X, by, add_constant, drop_collinear, compute_se, rtol
         )
-    
+
     if time is None:
         raise ValueError("`time` column must be provided for rolling alignment.")
     if isinstance(by, str):
@@ -695,7 +720,7 @@ def asreg(
         pos = gdf.index.get_indexer(g.index)  # positions of this group's indices in gdf
         # Extract arrays
         X_block = X_df.loc[g.index].to_numpy(dtype=float, copy=False)  # (n, p_raw)
-        y_block = y_s.loc[g.index].to_numpy(dtype=float, copy=False)   # (n,)
+        y_block = y_s.loc[g.index].to_numpy(dtype=float, copy=False)  # (n,)
 
         n_g = X_block.shape[0]
         p = p_raw + (1 if add_constant else 0)
@@ -757,8 +782,14 @@ def asreg(
                 min_needed = max(min_obs, p + 1)  # require >p DOF for stable OLS/SEs
                 if n_valid >= min_needed:
                     beta, se, meta = _solve_ols_from_crossmoments(
-                        Sxx, Sxy, Syy, Sy, n_valid,
-                        compute_se=compute_se, add_constant=add_constant, rtol=rtol
+                        Sxx,
+                        Sxy,
+                        Syy,
+                        Sy,
+                        n_valid,
+                        compute_se=compute_se,
+                        add_constant=add_constant,
+                        rtol=rtol,
                     )
                     # If rank-deficient and we want to drop collinear windows -> NaNs
                     if beta is None or (drop_collinear and int(meta["rank"]) < p):
@@ -795,7 +826,9 @@ def asreg(
                                 out_cols[f"_se_{name}"][pos[i]] = float(se_rhs[j])
                                 # Guard div-by-zero
                                 if se_rhs[j] > 0:
-                                    out_cols[f"_t_{name}"][pos[i]] = float(b_rhs[j] / se_rhs[j])
+                                    out_cols[f"_t_{name}"][pos[i]] = float(
+                                        b_rhs[j] / se_rhs[j]
+                                    )
                                 else:
                                     out_cols[f"_t_{name}"][pos[i]] = np.nan
                             if add_constant:
