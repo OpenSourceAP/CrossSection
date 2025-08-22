@@ -159,61 +159,30 @@ def compare_results(python_df, stata_df):
     Returns
     -------
     pd.DataFrame
-        Comparison DataFrame with columns: name, coef, se, stata, python, diff
+        Comparison DataFrame with columns: name, variable, python, stata, diff
     """
-    # Get union of all variable names
-    all_vars = list(set(python_df.index.tolist() + stata_df.index.tolist()))
+    py_long = pd.melt(
+        python_df[["coefficient", "std_err"]],
+        var_name="variable",
+        value_name="python",
+        ignore_index=False,
+    ).reset_index()
 
-    comparison_data = []
+    st_long = pd.melt(
+        stata_df[["coefficient", "std_err"]],
+        var_name="variable",
+        value_name="stata",
+        ignore_index=False,
+    ).reset_index()
 
-    for var in all_vars:
-        # Get Python results
-        if var in python_df.index:
-            py_coef = python_df.loc[var, "coefficient"]
-            py_se = python_df.loc[var, "std_err"]
-        else:
-            py_coef = np.nan
-            py_se = np.nan
+    both = (
+        pd.merge(py_long, st_long, on=["index", "variable"], how="outer")
+        .rename(columns={"index": "name"})
+        .sort_values(["variable", "name"])
+        .assign(diff=lambda x: x["python"] - x["stata"])
+    )
 
-        # Get Stata results
-        if var in stata_df.index:
-            st_coef = stata_df.loc[var, "coefficient"]
-            st_se = stata_df.loc[var, "std_err"]
-        else:
-            st_coef = np.nan
-            st_se = np.nan
-
-        # Calculate coefficient difference
-        if pd.notna(py_coef) and pd.notna(st_coef):
-            coef_diff = py_coef - st_coef
-        else:
-            coef_diff = np.nan
-
-        # Calculate standard error difference
-        if pd.notna(py_se) and pd.notna(st_se):
-            se_diff = py_se - st_se
-        else:
-            se_diff = np.nan
-
-        comparison_data.append(
-            {
-                "name": var,
-                "coef_python": py_coef,
-                "coef_stata": st_coef,
-                "coef_diff": coef_diff,
-                "se_python": py_se,
-                "se_stata": st_se,
-                "se_diff": se_diff,
-            }
-        )
-
-    # Create DataFrame
-    result_df = pd.DataFrame(comparison_data)
-
-    # Sort by variable name for consistent output
-    result_df = result_df.sort_values("name").reset_index(drop=True)
-
-    return result_df
+    return both
 
 
 # %%
@@ -255,8 +224,6 @@ python_results = regress_out_to_df(model, keep_cols, drop_cols, x_cols)
 stata_results = stata_regress_to_df(f"mwe/tf_mwe{MWE_NUM}.log")
 
 # Compare results
-
-# Test the function
 comparison = compare_results(python_results, stata_results)
 print("Comparison Results:")
 print("=" * 80)
@@ -266,33 +233,10 @@ print("\n")
 # Summary statistics
 print("Summary:")
 print(f"Variables compared: {len(comparison)}")
-print(f"Max coefficient difference: {comparison['coef_diff'].abs().max():.8f}")
-print(f"Max std error difference: {comparison['se_diff'].abs().max():.8f}")
+print(f"Max coefficient difference: {comparison['diff'].abs().max():.8f}")
 
-
-#%%
-
-# sketch of new comparison function
-
-py_long = pd.melt(
-    python_results[["coefficient", "std_err"]],
-    var_name="variable",
-    value_name="python",
-    ignore_index=False,
-).reset_index()
-
-st_long = pd.melt(
-    stata_results[["coefficient", "std_err"]],
-    var_name="variable",
-    value_name="stata",
-    ignore_index=False,
-).reset_index()
-
-both = (
-    pd.merge(py_long, st_long, on=["index", "variable"], how="outer")
-    .rename(columns={"index": "name"})
-    .sort_values(["variable", "name"])
-    .assign(diff=lambda x: x["python"] - x["stata"])
-)
-
-print(both)
+# Filter for coefficient and std_err differences separately
+coef_diff = comparison[comparison['variable'] == 'coefficient']['diff']
+se_diff = comparison[comparison['variable'] == 'std_err']['diff']
+print(f"Max coefficient difference: {coef_diff.abs().max():.8f}")
+print(f"Max std error difference: {se_diff.abs().max():.8f}")
