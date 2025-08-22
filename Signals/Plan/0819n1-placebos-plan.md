@@ -4,6 +4,8 @@
 
 Translate every Stata `.do` file in `Code/Placebos/` to Python scripts in `pyCode/Placebos/`, ensure outputs match Stata results, and integrate into the project’s run + test pipelines.
 
+Do NOT make any changes to code which generates intermediate data files or predictors. 
+
 ## Action Items
 
 1. **Inventory**

@@ -54,22 +54,39 @@ df = df.with_columns([
     pl.col('lct').shift(12).over('permno').alias('l12_lct')
 ])
 
-# Calculate current and lagged quick ratios
+# Calculate current and lagged quick ratios (handle division by zero)
 df = df.with_columns([
-    ((pl.col('act') - pl.col('invt')) / pl.col('lct')).alias('current_quick'),
-    ((pl.col('l12_act') - pl.col('l12_invt')) / pl.col('l12_lct')).alias('lag_quick')
+    pl.when(pl.col('lct') == 0)
+    .then(None)
+    .otherwise((pl.col('act') - pl.col('invt')) / pl.col('lct'))
+    .alias('current_quick'),
+    pl.when(pl.col('l12_lct') == 0)
+    .then(None)
+    .otherwise((pl.col('l12_act') - pl.col('l12_invt')) / pl.col('l12_lct'))
+    .alias('lag_quick')
 ])
 
-# Calculate percent change
+# Calculate percent change (handle division by zero)
 df = df.with_columns(
-    ((pl.col('current_quick') - pl.col('lag_quick')) / pl.col('lag_quick')).alias('pchquick')
+    pl.when(pl.col('lag_quick') == 0)
+    .then(None)
+    .otherwise((pl.col('current_quick') - pl.col('lag_quick')) / pl.col('lag_quick'))
+    .alias('pchquick')
 )
 
 # replace pchquick = 0 if pchquick ==. & l12.pchquick ==.
-# Note: This seems to reference l12.pchquick which doesn't exist yet. 
-# The Stata logic appears incomplete, so we'll implement the direct calculation
-print("Computing pchquick (special missing value handling)...")
-# The original Stata logic seems to have an issue - implementing direct calculation
+# This means: set pchquick to 0 if both current calculation is missing AND lagged calculation would be missing
+print("Applying Stata's special missing value logic...")
+df = df.with_columns(
+    pl.col('pchquick').shift(12).over('permno').alias('l12_pchquick')
+)
+
+df = df.with_columns(
+    pl.when((pl.col('pchquick').is_null()) & (pl.col('l12_pchquick').is_null()))
+    .then(0.0)
+    .otherwise(pl.col('pchquick'))
+    .alias('pchquick')
+)
 
 print(f"Generated pchquick for {len(df)} observations")
 

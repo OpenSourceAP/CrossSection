@@ -59,20 +59,37 @@ print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen tempaccrual_level = (actq-l12.actq - (cheq-l12.cheq)) - ( (lctq-l12.lctq)- (dlcq-l12.dlcq)-(txpq-l12.txpq)-dpq )
-print("Computing 12-month lags...")
-df = df.with_columns([
-    pl.col('actq').shift(12).over('permno').alias('l12_actq'),
-    pl.col('cheq').shift(12).over('permno').alias('l12_cheq'),
-    pl.col('lctq').shift(12).over('permno').alias('l12_lctq'),
-    pl.col('dlcq').shift(12).over('permno').alias('l12_dlcq'),
-    pl.col('txpq').shift(12).over('permno').alias('l12_txpq')
-])
+print("Computing 12-month calendar-based lags...")
+
+# Convert to pandas for calendar-based lag operations (polars merge approach is more complex)
+df_pd = df.to_pandas()
+
+# Create 12-month lag date
+df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create lag data for merging
+lag_vars = ['actq', 'cheq', 'lctq', 'dlcq', 'txpq']
+lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
+lag_data.columns = ['permno', 'time_lag12'] + [f'l12_{var}' for var in lag_vars]
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 print("Computing tempaccrual_level...")
+# Handle missing values in differences: if current value is missing, treat as 0 for the difference
+# This matches Stata's handling where missing current values don't propagate NaN through the calculation
+df = df.with_columns([
+    # If current value is null, use 0 in the difference calculation
+    pl.when(pl.col('dlcq').is_null()).then(0.0 - pl.col('l12_dlcq')).otherwise(pl.col('dlcq') - pl.col('l12_dlcq')).alias('dlcq_diff'),
+    pl.when(pl.col('txpq').is_null()).then(0.0 - pl.col('l12_txpq')).otherwise(pl.col('txpq') - pl.col('l12_txpq')).alias('txpq_diff')
+])
+
 df = df.with_columns(
     ((pl.col('actq') - pl.col('l12_actq') - (pl.col('cheq') - pl.col('l12_cheq'))) - 
-     ((pl.col('lctq') - pl.col('l12_lctq')) - (pl.col('dlcq') - pl.col('l12_dlcq')) - 
-      (pl.col('txpq') - pl.col('l12_txpq')) - pl.col('dpq'))).alias('tempaccrual_level')
+     ((pl.col('lctq') - pl.col('l12_lctq')) - pl.col('dlcq_diff') - pl.col('txpq_diff') - pl.col('dpq'))).alias('tempaccrual_level')
 )
 
 # gen cfpq =(ibq - tempaccrual_level )/ mve_c
