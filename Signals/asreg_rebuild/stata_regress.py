@@ -13,9 +13,9 @@ def drop_collinear(
     sample_mask: pd.Series | np.ndarray | None = None,
     *,
     rtol: float | None = None,
-    method: str = "qr",          # "qr" (fast, needs SciPy) or "greedy" (no deps)
-    scale: bool = True,          # column-normalize for numerics (improves stability)
-    return_reduced_X: bool = True
+    method: str = "qr",  # "qr" (fast, needs SciPy) or "greedy" (no deps)
+    scale: bool = True,  # column-normalize for numerics (improves stability)
+    return_reduced_X: bool = True,
 ):
     """
     Identify and drop RHS columns that cause rank deficiency (Stata rmcoll-like).
@@ -81,7 +81,7 @@ def drop_collinear(
 
     # --- 2) Quick constant-column screening (gives clear reasons, also speeds the rank step) ---
     ptp = np.ptp(A, axis=0)  # max-min per column
-    is_const = (ptp == 0)
+    is_const = ptp == 0
     reasons = {}
     const_idx = np.where(is_const)[0].tolist()
     for j in const_idx:
@@ -113,10 +113,15 @@ def drop_collinear(
     if method == "qr":
         try:
             from scipy.linalg import qr as scipy_qr  # noqa
+
             Q, R, piv = scipy_qr(A_test, mode="economic", pivoting=True)
             diagR = np.abs(np.diag(R))
             # Set default tolerance if not provided
-            tol = (rtol if rtol is not None else (eps * max(n, A_test.shape[1]) * diagR.max()))
+            tol = (
+                rtol
+                if rtol is not None
+                else (eps * max(n, A_test.shape[1]) * diagR.max())
+            )
             rank = int((diagR > tol).sum())
             piv = np.asarray(piv)
             indep_local = piv[:rank].tolist()
@@ -128,7 +133,7 @@ def drop_collinear(
     if method == "greedy":
         # Greedy: keep earliest independent columns (in A_pre's order).
         # At each step, test if new col is in span(kept); if yes → dependent.
-        tol = (rtol if rtol is not None else (eps * max(n, A_test.shape[1])))
+        tol = rtol if rtol is not None else (eps * max(n, A_test.shape[1]))
         indep_local = []
         dep_local = []
         for j in range(A_test.shape[1]):
@@ -158,7 +163,11 @@ def drop_collinear(
 
     # Reconstitute full keep/drop *in original column order*
     keep_set = set(keep_cols_preorder)
-    keep_cols = [c for c in cols if (c in keep_set) and (c not in reasons or reasons[c] != "constant")]
+    keep_cols = [
+        c
+        for c in cols
+        if (c in keep_set) and (c not in reasons or reasons[c] != "constant")
+    ]
     # Everything else is dropped either as constant or collinear
     drop_cols = [c for c in cols if c not in keep_cols]
 
@@ -168,10 +177,10 @@ def drop_collinear(
         return keep_cols, drop_cols, reasons, None
 
 
-def regress(X, y, add_constant=True, drop_collinear_vars=True):
+def regress(X, y, add_constant=True, omit_collinear=True, return_full_coefs=True):
     """
     Replicate Stata's regress command with collinearity handling.
-    
+
     Parameters
     ----------
     X : pd.DataFrame
@@ -180,9 +189,11 @@ def regress(X, y, add_constant=True, drop_collinear_vars=True):
         The dependent variable
     add_constant : bool
         Whether to add a constant term (default: True)
-    drop_collinear_vars : bool
+    omit_collinear : bool
         Whether to drop collinear variables (default: True)
-    
+    return_full_coefs : bool
+        Whether to return full coefficients with zeros for omitted vars (default: True)
+
     Returns
     -------
     model : statsmodels regression results
@@ -191,58 +202,65 @@ def regress(X, y, add_constant=True, drop_collinear_vars=True):
         Variables kept in the model
     dropped_vars : list
         Variables dropped due to collinearity
+    reasons : dict
+        Reasons for dropping variables
+    full_coefficients : pd.DataFrame (if return_full_coefs=True)
+        Complete coefficient table with zeros for omitted variables
     """
-    if drop_collinear_vars:
+    if omit_collinear:
         keep_cols, drop_cols, reasons, X_reduced = drop_collinear(X, y=y)
     else:
         X_reduced = X
         keep_cols = list(X.columns)
         drop_cols = []
         reasons = {}
-    
+
     if add_constant:
         X_with_const = sm.add_constant(X_reduced)
     else:
         X_with_const = X_reduced
-    
+
     # Run regression
     model = sm.OLS(y.loc[X_reduced.index], X_with_const).fit()
-    
-    return model, keep_cols, drop_cols, reasons
 
-
-def format_regression_output(model, X_vars, omitted_vars):
-    """Format regression output to match Stata style"""
-    
-    print("-" * 75)
-    print(f"{'Variable':<12} {'Coefficient':<13} {'Std. err.':<11} {'t':<7} {'P>|t|':<7} {'[95% Conf. Interval]':<24}")
-    print("-" * 75)
-    
-    # Print coefficients for included variables
-    for i, var in enumerate(X_vars):
-        coef = model.params[i]
-        se = model.bse[i]
-        t_stat = model.tvalues[i]
-        p_val = model.pvalues[i]
-        conf_low = model.conf_int()[0][i]
-        conf_high = model.conf_int()[1][i]
+    if return_full_coefs:
+        # Create full coefficient DataFrame with zeros for omitted variables
+        full_coefs = {}
         
-        print(f"{var:<12} {coef:>13.7f} {se:>11.7f} {t_stat:>7.2f} {p_val:>7.3f} {conf_low:>12.7f} , {conf_high:<11.7f}")
-        print()
-    
-    # Print omitted variables
-    for var in omitted_vars:
-        print(f"{var:<12} {'0':<13} {'(omitted)':<11}")
-        print()
-    
-    # Print constant
-    const_idx = len(X_vars)
-    coef = model.params[const_idx]
-    se = model.bse[const_idx]
-    t_stat = model.tvalues[const_idx]
-    p_val = model.pvalues[const_idx]
-    conf_low = model.conf_int()[0][const_idx]
-    conf_high = model.conf_int()[1][const_idx]
-    
-    print(f"{'_cons':<12} {coef:>13.7f} {se:>11.7f} {t_stat:>7.2f} {p_val:>7.3f} {conf_low:>12.7f} , {conf_high:<11.7f}")
-    print("-" * 75)
+        # Add coefficients for kept variables using parameter names from model
+        for var in keep_cols:
+            if var in model.params.index:
+                full_coefs[var] = {
+                    'coefficient': model.params[var],
+                    'std_err': model.bse[var],
+                    'omitted': False
+                }
+        
+        # Add zeros for dropped variables
+        for var in drop_cols:
+            full_coefs[var] = {
+                'coefficient': 0.0,
+                'std_err': np.nan,
+                'omitted': True
+            }
+        
+        # Add constant if it was included
+        if add_constant and 'const' in model.params.index:
+            full_coefs['_cons'] = {
+                'coefficient': model.params['const'],
+                'std_err': model.bse['const'],
+                'omitted': False
+            }
+        
+        # Create DataFrame in original variable order, then add constant
+        original_vars = list(X.columns)
+        ordered_vars = [var for var in original_vars if var in full_coefs]
+        if add_constant:
+            ordered_vars.append('_cons')
+        
+        ordered_results = {var: full_coefs[var] for var in ordered_vars}
+        full_coefficients = pd.DataFrame.from_dict(ordered_results, orient='index')
+        
+        return model, keep_cols, drop_cols, reasons, full_coefficients
+    else:
+        return model, keep_cols, drop_cols, reasons
