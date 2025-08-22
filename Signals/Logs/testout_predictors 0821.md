@@ -1,6 +1,6 @@
 # Predictor Validation Results
 
-**Generated**: 2025-08-17 09:15:01
+**Generated**: 2025-08-21 21:19:11
 
 **Configuration**:
 - TOL_SUPERSET: 1.0%
@@ -17,37 +17,36 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |
 |---------------------------|------------|----------|-----------|--------------|-------------------------|
 | AgeIPO                    | ✅         | ❌       | NA          | NA           | NA                      |
-| DivSeason_gpt5_test       | ✅         | ❌       | NA          | NA           | NA                      |
 | IndIPO                    | ✅         | ❌       | NA          | NA           | NA                      |
 | RDIPO                     | ✅         | ❌       | NA          | NA           | NA                      |
-| Recomm_ShortInterest      | ✅         | ✅       | ❌ (47.99%)  | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
-| Mom6mJunk                 | ✅         | ✅       | ❌ (18.09%)  | ✅ (0.28%)    | ❌ (99.900th diff 5.8E-01) |
+| Recomm_ShortInterest*     | ✅         | ✅       | ❌ (61.03%)  | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
+| Mom6mJunk*                | ✅         | ✅       | ❌ (12.51%)  | ✅ (0.28%)    | ❌ (99.900th diff 5.6E-01) |
+| AbnormalAccruals          | ✅         | ✅       | ❌ (10.58%)  | ❌ (29.28%)   | ❌ (99.900th diff 9.7E-01) |
 | CitationsRD               | ✅         | ✅       | ❌ (4.69%)   | ❌ (6.16%)    | ❌ (99.900th diff 2.4E+00) |
 | RIO_Volatility            | ✅         | ✅       | ❌ (1.86%)   | ✅ (0.14%)    | ❌ (99.900th diff 7.5E-01) |
 | TrendFactor               | ✅         | ✅       | ✅ (0.12%)   | ❌ (97.14%)   | ❌ (99.900th diff 2.9E+00) |
 | PredictedFE*              | ✅         | ✅       | ✅ (0.27%)   | ❌ (85.27%)   | ❌ (99.900th diff 3.1E-01) |
-| AbnormalAccruals          | ✅         | ✅       | ✅ (0.68%)   | ❌ (27.95%)   | ❌ (99.900th diff 1.0E+00) |
 | MS                        | ✅         | ✅       | ✅ (0.00%)   | ❌ (19.57%)   | ❌ (99.900th diff 2.6E+00) |
 | PriceDelayTstat*          | ✅         | ✅       | ✅ (0.00%)   | ❌ (19.38%)   | ❌ (99.900th diff 5.7E+00) |
 | PS                        | ✅         | ✅       | ✅ (0.00%)   | ❌ (17.93%)   | ❌ (99.900th diff 2.4E+00) |
-| RDAbility                 | ✅         | ✅       | ✅ (0.02%)   | ❌ (10.90%)   | ❌ (99.900th diff 4.2E+00) |
-| OrgCap                    | ✅         | ✅       | ✅ (0.00%)   | ❌ (8.87%)    | ❌ (99.900th diff 3.6E-01) |
 | BetaFP                    | ✅         | ✅       | ✅ (0.24%)   | ❌ (6.26%)    | ❌ (99.900th diff 8.8E-01) |
+| RDAbility                 | ✅         | ✅       | ✅ (0.02%)   | ❌ (4.34%)    | ❌ (99.900th diff 2.2E+00) |
 | ResidualMomentum          | ✅         | ✅       | ✅ (0.00%)   | ❌ (2.85%)    | ❌ (99.900th diff 9.2E-01) |
 | ReturnSkew3F              | ✅         | ✅       | ✅ (0.00%)   | ❌ (2.57%)    | ❌ (99.900th diff 1.4E+00) |
 | PriceDelayRsq             | ✅         | ✅       | ✅ (0.00%)   | ❌ (1.21%)    | ❌ (99.900th diff 1.9E+00) |
 | DivSeason                 | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.99%)    | ❌ (99.900th diff 2.0E+00) |
 | VolumeTrend               | ✅         | ✅       | ✅ (0.04%)   | ✅ (0.96%)    | ❌ (99.900th diff 1.5E+00) |
-| CredRatDG                 | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.94%)    | ❌ (99.900th diff 6.6E+00) |
 | retConglomerate           | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.89%)    | ✅ (99.900th diff 7.6E-02) |
 | HerfAsset                 | ✅         | ✅       | ✅ (0.63%)   | ✅ (0.66%)    | ❌ (99.900th diff 2.3E-01) |
 | PriceDelaySlope           | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.58%)    | ✅ (99.900th diff 7.0E-02) |
 | Tax                       | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.36%)    | ✅ (99.900th diff 5.3E-02) |
+| CredRatDG*                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.34%)    | ❌ (99.900th diff 6.6E+00) |
 | BetaLiquidityPS           | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.31%)    | ✅ (99.900th diff 1.5E-02) |
 | Investment                | ✅         | ✅       | ✅ (0.86%)   | ✅ (0.29%)    | ❌ (99.900th diff 1.1E-01) |
 | AnalystValue              | ✅         | ✅       | ✅ (0.22%)   | ✅ (0.26%)    | ✅ (99.900th diff 3.1E-02) |
 | Herf                      | ✅         | ✅       | ✅ (0.20%)   | ✅ (0.19%)    | ✅ (99.900th diff 6.2E-02) |
-| REV6                      | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.17%)    | ✅ (99.900th diff 1.8E-02) |
+| OrgCap                    | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.19%)    | ✅ (99.900th diff 1.4E-02) |
+| REV6                      | ✅         | ✅       | ✅ (0.17%)   | ✅ (0.16%)    | ✅ (99.900th diff 1.7E-02) |
 | MomOffSeason16YrPlus      | ✅         | ✅       | ✅ (0.20%)   | ✅ (0.16%)    | ✅ (99.900th diff 9.8E-02) |
 | IntanEP                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.15%)    | ✅ (99.900th diff 8.1E-02) |
 | EarnSupBig                | ✅         | ✅       | ✅ (0.16%)   | ✅ (0.15%)    | ❌ (99.900th diff 1.5E+00) |
@@ -70,8 +69,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | ChangeInRecommendation    | ✅         | ✅       | ✅ (0.23%)   | ✅ (0.05%)    | ✅ (99.900th diff 2.5E-07) |
 | OptionVolume2             | ✅         | ✅       | ✅ (0.72%)   | ✅ (0.05%)    | ✅ (99.900th diff 1.5E-07) |
 | ExchSwitch                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.05%)    | ✅ (99.900th diff 0.0E+00) |
-| grcapx                    | ✅         | ✅       | ✅ (0.74%)   | ✅ (0.04%)    | ✅ (99.900th diff 2.8E-03) |
 | skew1                     | ✅         | ✅       | ✅ (0.71%)   | ✅ (0.04%)    | ✅ (99.900th diff 3.6E-07) |
+| grcapx                    | ✅         | ✅       | ✅ (0.74%)   | ✅ (0.04%)    | ✅ (99.900th diff 2.7E-03) |
 | dVolPut                   | ✅         | ✅       | ✅ (0.71%)   | ✅ (0.04%)    | ✅ (99.900th diff 3.8E-07) |
 | OptionVolume1             | ✅         | ✅       | ✅ (0.72%)   | ✅ (0.04%)    | ✅ (99.900th diff 4.7E-07) |
 | dVolCall                  | ✅         | ✅       | ✅ (0.71%)   | ✅ (0.04%)    | ✅ (99.900th diff 3.8E-07) |
@@ -108,8 +107,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | hire                      | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99.900th diff 3.0E-07) |
 | GrLTNOA                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99.900th diff 1.1E-07) |
 | ChNNCOA                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99.900th diff 1.7E-07) |
-| EarningsStreak            | ✅         | ✅       | ✅ (0.19%)   | ✅ (0.01%)    | ✅ (99.900th diff 6.4E-08) |
 | roaq                      | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99.900th diff 9.6E-08) |
+| EarningsStreak            | ✅         | ✅       | ✅ (0.19%)   | ✅ (0.01%)    | ✅ (99.900th diff 6.4E-08) |
 | ChNAnalyst                | ✅         | ✅       | ✅ (0.11%)   | ✅ (0.01%)    | ✅ (99.900th diff 0.0E+00) |
 | CustomerMomentum          | ✅         | ✅       | ✅ (0.04%)   | ✅ (0.01%)    | ✅ (99.900th diff 1.8E-07) |
 | CompositeDebtIssuance     | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99.900th diff 2.0E-07) |
@@ -154,7 +153,6 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | cfp                       | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 1.8E-07) |
 | NetPayoutYield            | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 1.6E-07) |
 | RD                        | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 9.7E-08) |
-| grcapx3y                  | ✅         | ✅       | ✅ (0.75%)   | ✅ (0.00%)    | ✅ (99.900th diff 9.3E-20) |
 | MeanRankRevGrowth         | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 6.4E-04) |
 | Coskewness                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 2.7E-03) |
 | InvGrowth                 | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 7.2E-06) |
@@ -219,8 +217,9 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | RealizedVol               | ✅         | ✅       | ✅ (0.13%)   | ✅ (0.00%)    | ✅ (99.900th diff 2.7E-15) |
 | IndRetBig                 | ✅         | ✅       | ✅ (0.21%)   | ✅ (0.00%)    | ✅ (99.900th diff 2.4E-15) |
 | Mom12mOffSeason           | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 1.4E-15) |
+| grcapx3y                  | ✅         | ✅       | ✅ (0.76%)   | ✅ (0.00%)    | ✅ (99.900th diff 9.3E-20) |
 | AccrualsBM                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
-| Activism1                 | ✅         | ✅       | ✅ (0.46%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
+| Activism1                 | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
 | DebtIssuance              | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
 | FirmAge                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
 | Governance                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
@@ -230,10 +229,10 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | ShareVol                  | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
 | Spinoff                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99.900th diff 0.0E+00) |
 
-**Overall**: 186/213 available predictors passed validation
-  - Natural passes: 184
-  - Overridden passes: 2
-**Python CSVs**: 213/213 predictors have Python implementation
+**Overall**: 190/212 available predictors passed validation
+  - Natural passes: 185
+  - Overridden passes: 5
+**Python CSVs**: 212/212 predictors have Python implementation
 \* = Manual override applied (see Predictors/overrides.yaml for details)
 
 ## Detailed Results
@@ -346,7 +345,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 271908 Stata observations)
 - Test 3 - Precision1 check: ❌ FAILED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -354,40 +353,55 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,570,664
-- Python: 2,567,830
-- Common: 2,553,227
+- Python: 2,311,196
+- Common: 2,298,756
 
-**Precision1**: 27.951% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 29.278% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 1.03e+00 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 9.73e-01 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
-| count      |       2.55e+06 |       2.55e+06 |       2.55e+06 |       2.55e+06 |
-| mean       |       6.08e-05 |       2.43e-04 |       1.82e-04 |         0.0011 |
-| std        |         0.1607 |         0.1612 |         0.0139 |         0.0862 |
-| min        |        -8.2957 |        -8.2790 |        -0.8799 |        -5.4744 |
-| 25%        |        -0.0405 |        -0.0407 |      -2.45e-04 |        -0.0015 |
-| 50%        |         0.0069 |         0.0068 |      -3.53e-10 |      -2.20e-09 |
-| 75%        |         0.0526 |         0.0526 |       3.53e-05 |       2.20e-04 |
-| max        |         2.8119 |         2.8119 |         0.8710 |         5.4185 |
+| count      |       2.30e+06 |       2.30e+06 |       2.30e+06 |       2.30e+06 |
+| mean       |       1.08e-04 |       1.23e-04 |       1.48e-05 |       9.76e-05 |
+| std        |         0.1514 |         0.1515 |         0.0132 |         0.0873 |
+| min        |        -8.2957 |        -8.2790 |        -1.2879 |        -8.5051 |
+| 25%        |        -0.0407 |        -0.0407 |      -2.46e-04 |        -0.0016 |
+| 50%        |         0.0064 |         0.0063 |      -2.66e-10 |      -1.76e-09 |
+| 75%        |         0.0515 |         0.0514 |       5.76e-05 |       3.80e-04 |
+| max        |         2.7043 |         2.7040 |         1.4356 |         9.4807 |
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = 0.0002 + 0.9990 * stata
-- **R-squared**: 0.9926
-- **N observations**: 2,553,227
+- **Model**: python = 0.0000 + 0.9966 * stata
+- **R-squared**: 0.9924
+- **N observations**: 2,298,756
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |     1.83e-04 |     8.67e-06 |     21.0518 |     0.000 |
-| Slope       |       0.9990 |     5.39e-05 |  18520.6724 |     0.000 |
+| Intercept   |     1.51e-05 |     8.71e-06 |      1.7385 |     0.082 |
+| Slope       |       0.9966 |     5.75e-05 |  17326.6438 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  AbnormalAccruals
+     0   10001  199812         -0.020354
+     1   10001  199901         -0.020354
+     2   10001  199902         -0.020354
+     3   10001  199903         -0.020354
+     4   10001  199904         -0.020354
+     5   10001  199905         -0.020354
+     6   10001  199906         -0.020354
+     7   10001  199907         -0.020354
+     8   10001  199908         -0.020354
+     9   10001  199909         -0.020354
+```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 713656/2553227 (27.951%)
-- Stata standard deviation: 1.61e-01
+- Num observations with std_diff >= TOL_DIFF_1: 673031/2298756 (29.278%)
+- Stata standard deviation: 1.51e-01
 
 **Most Recent Bad Observations**:
 ```
@@ -406,17 +420,22 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Largest Differences**:
 ```
-   permno  yyyymm    python    stata      diff
-0   79702  201712 -2.383081 -1.50314 -0.879941
-1   79702  201801 -2.383081 -1.50314 -0.879941
-2   79702  201802 -2.383081 -1.50314 -0.879941
-3   79702  201803 -2.383081 -1.50314 -0.879941
-4   79702  201804 -2.383081 -1.50314 -0.879941
-5   79702  201805 -2.383081 -1.50314 -0.879941
-6   79702  201806 -2.383081 -1.50314 -0.879941
-7   79702  201807 -2.383081 -1.50314 -0.879941
-8   79702  201808 -2.383081 -1.50314 -0.879941
-9   79702  201809 -2.383081 -1.50314 -0.879941
+   permno  yyyymm    python     stata      diff
+0   84005  200106  0.148008 -1.287609  1.435617
+1   84005  200107  0.148008 -1.287609  1.435617
+2   84005  200108  0.148008 -1.287609  1.435617
+3   85712  200103  0.237234  1.525127 -1.287893
+4   85712  200104  0.237234  1.525127 -1.287893
+5   85712  200105  0.237234  1.525127 -1.287893
+6   77649  199709 -0.307171  0.603173 -0.910344
+7   77649  199710 -0.307171  0.603173 -0.910344
+8   77649  199711 -0.307171  0.603173 -0.910344
+9   77649  199712 -0.307171  0.603173 -0.910344
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -435,7 +454,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,259,701
-- Python: 3,276,202
+- Python: 3,276,154
 - Common: 3,259,701
 
 **Precision1**: 0.009% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -537,8 +556,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  108,733
-- Python: 234,591
-- Common: 108,234
+- Python: 235,090
+- Common: 108,733
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
@@ -548,9 +567,9 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
-| count      |    108234.0000 |    108234.0000 |    108234.0000 |    108234.0000 |
-| mean       |        14.8872 |        14.8872 |         0.0000 |         0.0000 |
-| std        |         2.7238 |         2.7238 |         0.0000 |         0.0000 |
+| count      |    108733.0000 |    108733.0000 |    108733.0000 |    108733.0000 |
+| mean       |        14.8865 |        14.8865 |         0.0000 |         0.0000 |
+| std        |         2.7243 |         2.7243 |         0.0000 |         0.0000 |
 | min        |         6.0000 |         6.0000 |         0.0000 |         0.0000 |
 | 25%        |        13.0000 |        13.0000 |         0.0000 |         0.0000 |
 | 50%        |        15.0000 |        15.0000 |         0.0000 |         0.0000 |
@@ -559,17 +578,17 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = -0.0000 + 1.0000 * stata
+- **Model**: python = 0.0000 + 1.0000 * stata
 - **R-squared**: 1.0000
-- **N observations**: 108,234
+- **N observations**: 108,733
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |    -1.58e-12 |     5.34e-15 |   -295.6895 |     0.000 |
-| Slope       |       1.0000 |     3.53e-16 |    2.83e+15 |     0.000 |
+| Intercept   |     7.68e-13 |     2.68e-15 |    286.4583 |     0.000 |
+| Slope       |       1.0000 |     1.77e-16 |    5.64e+15 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/108234 (0.000%)
+- Num observations with std_diff >= TOL_DIFF_1: 0/108733 (0.000%)
 - Stata standard deviation: 2.72e+00
 
 ---
@@ -690,7 +709,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,920,473
-- Python: 1,923,490
+- Python: 1,920,793
 - Common: 1,917,427
 
 **Precision1**: 0.038% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -894,7 +913,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,715,090
-- Python: 2,715,252
+- Python: 2,715,204
 - Common: 2,715,090
 
 **Precision1**: 0.032% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -1098,12 +1117,12 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,794,018
-- Python: 4,156,070
-- Common: 3,784,843
+- Python: 4,156,049
+- Common: 3,784,837
 
 **Precision1**: 6.256% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 8.78e-01 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 8.77e-01 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
@@ -1130,7 +1149,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | Slope       |       0.9976 |     3.08e-05 |  32422.5473 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 236776/3784843 (6.256%)
+- Num observations with std_diff >= TOL_DIFF_1: 236770/3784837 (6.256%)
 - Stata standard deviation: 6.41e-01
 
 **Most Recent Bad Observations**:
@@ -1151,16 +1170,31 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 **Largest Differences**:
 ```
    permno  yyyymm    python     stata      diff
-0   78301  198510       NaN  0.000378       NaN
-1   78301  198511       NaN  0.000365       NaN
-2   78301  198512       NaN  0.000359       NaN
-3   78301  198601       NaN  0.000377       NaN
-4   78301  198602       NaN  0.000447       NaN
-5   78301  198603       NaN  0.000468       NaN
-6   11453  199312  7.664115  2.870236  4.793879
-7   65622  199401  0.593349  4.575622 -3.982273
-8   65622  199402  0.930784  4.732967 -3.802183
-9   65622  199312  0.867006  4.276299 -3.409292
+0   11453  199312  7.664115  2.870236  4.793879
+1   65622  199401  0.593349  4.575622 -3.982273
+2   65622  199402  0.930784  4.732967 -3.802183
+3   65622  199312  0.867006  4.276299 -3.409292
+4   10872  199403  0.647807  4.045698 -3.397891
+5   10216  199301  0.659991  4.034531 -3.374539
+6   10872  199404  0.422160  3.782309 -3.360148
+7   10216  199304  0.823704  4.174334 -3.350630
+8   10216  199212  0.615237  3.899257 -3.284020
+9   10872  199405  0.912626  4.134042 -3.221416
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm    python     stata      diff
+0   14269  194112  4.258444  5.277860 -1.019417
+1   13389  194108  3.766282  2.927140  0.839142
+2   14269  194201  3.999881  4.830401 -0.830520
+3   11797  193702  2.478371  1.648720  0.829651
+4   11252  194112  4.024742  4.843852 -0.819109
+5   20271  194408  1.522680  2.332971 -0.810292
+6   18649  193710  1.339925  2.143693 -0.803768
+7   11797  193701  2.275098  1.506865  0.768232
+8   12677  192910  0.713803  1.460106 -0.746303
+9   14269  194202  4.036062  4.760625 -0.724563
 ```
 
 ---
@@ -1383,7 +1417,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  485,304
-- Python: 509,472
+- Python: 508,848
 - Common: 485,304
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -1638,7 +1672,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,002,825
-- Python: 3,038,208
+- Python: 3,002,827
 - Common: 3,002,825
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -1689,7 +1723,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,503,228
-- Python: 2,517,970
+- Python: 2,517,886
 - Common: 2,503,228
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -1995,7 +2029,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,246,170
-- Python: 3,262,618
+- Python: 3,262,498
 - Common: 3,246,170
 
 **Precision1**: 0.007% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -2097,7 +2131,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,827,726
-- Python: 3,146,764
+- Python: 2,828,377
 - Common: 2,827,667
 
 **Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -2279,6 +2313,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   10010  199303     0.0      1  -1.0
 ```
 
+**Largest Differences Before 1950**:
+```
+No data before 1950
+```
+
 ---
 
 ### CompEquIss
@@ -2346,7 +2385,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,898,755
-- Python: 2,157,897
+- Python: 1,914,946
 - Common: 1,898,755
 
 **Precision1**: 0.006% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -2589,7 +2628,12 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 ### CredRatDG
 
-**Status**: ❌ FAILED
+**Status**: ✅ PASSED (with override)
+
+**Override Applied**:
+- Reviewed on: 2025-08-20
+- Reviewed by: ac
+- Details: The sample deviations are all downgrades found in Python but not in Stata. I manually checked a few and found these all have CIQ downgrades. This is likely an improvement due to patching the CIQ deduplication bugs in the Stata DataDownloads code.
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
@@ -2601,10 +2645,10 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,559,713
-- Python: 2,559,715
+- Python: 3,041,661
 - Common: 2,559,713
 
-**Precision1**: 0.941% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 0.342% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
 **Precision2**: 100th percentile diff = 6.63e+00 (tolerance: < 1.00e-01)
 
@@ -2613,8 +2657,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |       2.56e+06 |       2.56e+06 |       2.56e+06 |       2.56e+06 |
-| mean       |         0.0233 |         0.0155 |        -0.0077 |        -0.0514 |
-| std        |         0.1508 |         0.1237 |         0.0967 |         0.6412 |
+| mean       |         0.0233 |         0.0266 |         0.0033 |         0.0221 |
+| std        |         0.1508 |         0.1610 |         0.0584 |         0.3873 |
 | min        |         0.0000 |         0.0000 |        -1.0000 |        -6.6310 |
 | 25%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
 | 50%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
@@ -2623,47 +2667,52 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = 0.0009 + 0.6308 * stata
-- **R-squared**: 0.5915
+- **Model**: python = 0.0035 + 0.9945 * stata
+- **R-squared**: 0.8683
 - **N observations**: 2,559,713
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |     8.52e-04 |     5.00e-05 |     17.0407 |     0.000 |
-| Slope       |       0.6308 |     3.28e-04 |   1925.2210 |     0.000 |
+| Intercept   |       0.0035 |     3.69e-05 |     93.5730 |     0.000 |
+| Slope       |       0.9945 |     2.42e-04 |   4108.6788 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 24086/2559713 (0.941%)
+- Num observations with std_diff >= TOL_DIFF_1: 8761/2559713 (0.342%)
 - Stata standard deviation: 1.51e-01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm  python  stata  diff
-0   11990  202412     0.0      1  -1.0
-1   13103  202412     0.0      1  -1.0
-2   14328  202412     0.0      1  -1.0
-3   15395  202412     0.0      1  -1.0
-4   16086  202412     0.0      1  -1.0
-5   16554  202412     0.0      1  -1.0
-6   17672  202412     0.0      1  -1.0
-7   18046  202412     0.0      1  -1.0
-8   18048  202412     0.0      1  -1.0
-9   18368  202412     0.0      1  -1.0
+0   17956  202412     1.0      0   1.0
+1   18144  202412     1.0      0   1.0
+2   22174  202412     1.0      0   1.0
+3   38703  202412     1.0      0   1.0
+4   47896  202412     1.0      0   1.0
+5   58318  202412     1.0      0   1.0
+6   66157  202412     1.0      0   1.0
+7   70519  202412     1.0      0   1.0
+8   88284  202412     1.0      0   1.0
+9   89199  202412     1.0      0   1.0
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm  python  stata  diff
-0   10006  198312     1.0      0   1.0
-1   10006  198401     1.0      0   1.0
-2   10006  198402     1.0      0   1.0
-3   10006  198403     1.0      0   1.0
-4   10006  198404     1.0      0   1.0
-5   10006  198405     1.0      0   1.0
-6   10025  200906     0.0      1  -1.0
-7   10025  200907     0.0      1  -1.0
-8   10025  200908     0.0      1  -1.0
-9   10025  200909     0.0      1  -1.0
+0   10026  198911     1.0      0   1.0
+1   10026  198912     1.0      0   1.0
+2   10026  199001     1.0      0   1.0
+3   10026  199002     1.0      0   1.0
+4   10026  199003     1.0      0   1.0
+5   10026  199004     1.0      0   1.0
+6   10047  199311     1.0      0   1.0
+7   10047  199312     1.0      0   1.0
+8   10047  199401     1.0      0   1.0
+9   10047  199402     1.0      0   1.0
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -2886,7 +2935,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,259,701
-- Python: 3,276,202
+- Python: 3,276,154
 - Common: 3,259,701
 
 **Precision1**: 0.006% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -2988,7 +3037,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,194,475
-- Python: 3,195,504
+- Python: 3,195,456
 - Common: 3,194,475
 
 **Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -3039,7 +3088,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,250,876
-- Python: 3,251,941
+- Python: 3,251,905
 - Common: 3,250,876
 
 **Precision1**: 0.006% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -3141,7 +3190,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,250,876
-- Python: 3,251,941
+- Python: 3,251,905
 - Common: 3,250,876
 
 **Precision1**: 0.009% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -3257,6 +3306,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   10056  199501       0      1    -1
 ```
 
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm  python  stata  diff
+0   10372  193609       0      1    -1
+1   10372  193610       0      1    -1
+2   10372  193611       0      1    -1
+3   10372  193612       0      1    -1
+4   10372  193701       0      1    -1
+5   10372  193702       0      1    -1
+6   10751  193511       0      1    -1
+7   10751  193512       0      1    -1
+8   10751  193601       0      1    -1
+9   10751  193602       0      1    -1
+```
+
 ---
 
 ### DivOmit
@@ -3324,7 +3388,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,775,339
-- Python: 1,971,365
+- Python: 1,775,673
 - Common: 1,775,335
 
 **Precision1**: 0.992% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -3387,6 +3451,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   10002  199803       0      1    -1
 8   10014  193501       0      1    -1
 9   10014  193504       0      1    -1
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm  python  stata  diff
+0   10014  193501       0      1    -1
+1   10014  193504       0      1    -1
+2   10014  193507       0      1    -1
+3   10014  193510       0      1    -1
+4   10022  194305       0      1    -1
+5   10022  194308       0      1    -1
+6   10022  194311       0      1    -1
+7   10022  194402       0      1    -1
+8   10057  193706       0      1    -1
+9   10057  193709       0      1    -1
 ```
 
 ---
@@ -3456,7 +3535,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  4,640,493
-- Python: 4,650,572
+- Python: 4,640,493
 - Common: 4,640,493
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -3725,6 +3804,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   17523  197308  0.451178  3.580440e+14 -3.580440e+14
 ```
 
+**Largest Differences Before 1950**:
+```
+No data before 1950
+```
+
 ---
 
 ### EarningsConsistency
@@ -3843,8 +3927,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,225,060
-- Python: 1,225,437
-- Common: 1,222,769
+- Python: 1,225,413
+- Common: 1,222,767
 
 **Precision1**: 0.007% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
@@ -3855,27 +3939,27 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |       1.22e+06 |       1.22e+06 |       1.22e+06 |       1.22e+06 |
-| mean       |        -0.0014 |            inf |            inf |            inf |
-| std        |         3.1638 |            N/A |            N/A |            N/A |
+| mean       |        -0.0014 |        -0.0015 |      -3.55e-06 |      -1.12e-06 |
+| std        |         3.1638 |         3.1638 |         0.0022 |       6.81e-04 |
 | min        |      -154.1053 |      -154.1053 |        -0.4182 |        -0.1322 |
 | 25%        |        -0.0024 |        -0.0024 |      -4.35e-11 |      -1.38e-11 |
 | 50%        |       5.09e-04 |       5.09e-04 |         0.0000 |         0.0000 |
 | 75%        |         0.0025 |         0.0025 |       4.51e-11 |       1.43e-11 |
-| max        |       915.0000 |            inf |            inf |            inf |
+| max        |       915.0000 |       915.0000 |         1.3338 |         0.4216 |
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = inf + inf * stata
-- **R-squared**: nan
-- **N observations**: 1,222,769
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 1,222,767
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |          nan |          nan |         nan |       nan |
-| Slope       |          nan |          nan |         nan |       nan |
+| Intercept   |    -3.55e-06 |     1.95e-06 |     -1.8211 |     0.069 |
+| Slope       |       1.0000 |     6.16e-07 |    1.62e+06 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 84/1222769 (0.007%)
+- Num observations with std_diff >= TOL_DIFF_1: 82/1222767 (0.007%)
 - Stata standard deviation: 3.16e+00
 
 ---
@@ -3945,7 +4029,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,407,850
-- Python: 2,408,497
+- Python: 2,407,843
 - Common: 2,407,843
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -4353,7 +4437,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,616,983
-- Python: 1,620,034
+- Python: 1,617,348
 - Common: 1,614,371
 
 **Precision1**: 0.070% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -4455,7 +4539,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,970,775
-- Python: 2,972,251
+- Python: 2,972,227
 - Common: 2,970,775
 
 **Precision1**: 0.006% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -4557,7 +4641,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  898,855
-- Python: 905,831
+- Python: 902,079
 - Common: 898,855
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -4608,7 +4692,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,219,259
-- Python: 3,235,740
+- Python: 3,235,620
 - Common: 3,219,235
 
 **Precision1**: 0.008% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -4877,6 +4961,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   76977  199604  0.158597  0.607345 -0.448748
 ```
 
+**Largest Differences Before 1950**:
+```
+No data before 1950
+```
+
 ---
 
 ### HerfBE
@@ -4995,7 +5084,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  8,842
-- Python: 3,051,307
+- Python: 8,842
 - Common: 8,842
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -5556,7 +5645,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,973,756
-- Python: 1,996,001
+- Python: 1,973,910
 - Common: 1,973,744
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -5721,6 +5810,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   86990  202001     0.0   9.993940  -9.993940
 8   16705  202308     0.0   9.000000  -9.000000
 9   91186  201208     0.0   9.000000  -9.000000
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -5955,6 +6049,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   76023  199910       6      1     5
 8   76023  199911       6      1     5
 9   76023  199912       6      1     5
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -6216,11 +6315,16 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 ### Mom6mJunk
 
-**Status**: ❌ FAILED
+**Status**: ✅ PASSED (with override)
+
+**Override Applied**:
+- Reviewed on: 2025-08-21
+- Reviewed by: ac
+- Details: Python is missing permno 10026 (gvkey 12825) in 198907. This is because the CIQ security rating has "NR" in 1989-07, which means that it should be excluded (see Avramov et al 2007 JF Table 3). We want only not-investment-grade stocks, excluding not-rated stocks. The old CIQ data likely missed this due to the poor deduplication code. The original paper only used SP ratings, so it's unclear what to do here. But the long-short portfolio t-stat and mean return match the OP quite well, so I'm accepting this.
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 70860 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 48991 Stata observations)
 - Test 3 - Precision1 check: ✅ PASSED
 - Test 4 - Precision2 check: ❌ FAILED
 
@@ -6228,55 +6332,55 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  391,738
-- Python: 328,709
-- Common: 320,878
+- Python: 346,566
+- Common: 342,747
 
-**Precision1**: 0.281% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 0.282% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 5.77e-01 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 5.64e-01 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
-| count      |    320878.0000 |    320878.0000 |    320878.0000 |    320878.0000 |
-| mean       |         0.0545 |         0.0544 |      -1.69e-04 |      -4.38e-04 |
-| std        |         0.3852 |         0.3855 |         0.0174 |         0.0452 |
-| min        |        -0.9947 |        -0.9947 |        -1.1543 |        -2.9969 |
-| 25%        |        -0.1332 |        -0.1335 |      -2.99e-09 |      -7.76e-09 |
-| 50%        |         0.0332 |         0.0333 |       9.17e-15 |       2.38e-14 |
-| 75%        |         0.2000 |         0.2000 |       2.99e-09 |       7.77e-09 |
-| max        |        47.6527 |        47.6527 |         1.2493 |         3.2436 |
+| count      |    342747.0000 |    342747.0000 |    342747.0000 |    342747.0000 |
+| mean       |         0.0549 |         0.0548 |      -1.63e-04 |      -4.27e-04 |
+| std        |         0.3822 |         0.3826 |         0.0172 |         0.0450 |
+| min        |        -0.9947 |        -0.9947 |        -1.1543 |        -3.0200 |
+| 25%        |        -0.1348 |        -0.1351 |      -3.00e-09 |      -7.85e-09 |
+| 50%        |         0.0326 |         0.0327 |       1.31e-14 |       3.42e-14 |
+| 75%        |         0.2011 |         0.2013 |       3.02e-09 |       7.90e-09 |
+| max        |        47.6527 |        47.6527 |         1.5000 |         3.9245 |
 
 **Regression Analysis** (Python ~ Stata):
 
 - **Model**: python = -0.0002 + 0.9999 * stata
 - **R-squared**: 0.9980
-- **N observations**: 320,878
+- **N observations**: 342,747
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |    -1.63e-04 |     3.11e-05 |     -5.2579 |     0.000 |
-| Slope       |       0.9999 |     7.98e-05 |  12523.5442 |     0.000 |
+| Intercept   |    -1.59e-04 |     2.97e-05 |     -5.3608 |     0.000 |
+| Slope       |       0.9999 |     7.69e-05 |  13001.7151 |     0.000 |
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  Mom6mJunk
-     0   10026  201509   0.071515
-     1   10026  201510   0.096434
-     2   10026  201511   0.146379
-     3   10026  201512   0.057645
-     4   10026  201601  -0.007851
-     5   10026  201602  -0.046296
-     6   10026  201603  -0.021993
-     7   10026  201604  -0.112035
-     8   10026  201605  -0.127242
-     9   10026  201606  -0.092484
+     0   10026  198907   0.279570
+     1   10026  198908   0.516855
+     2   10026  198909   0.354839
+     3   10026  198910   0.057692
+     4   10026  201509   0.071515
+     5   10026  201510   0.096434
+     6   10026  201511   0.146379
+     7   10026  201512   0.057645
+     8   10026  201601  -0.007851
+     9   10026  201602  -0.046296
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 903/320878 (0.281%)
-- Stata standard deviation: 3.85e-01
+- Num observations with std_diff >= TOL_DIFF_1: 967/342747 (0.282%)
+- Stata standard deviation: 3.82e-01
 
 **Most Recent Bad Observations**:
 ```
@@ -6285,20 +6389,20 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 1   90979  202312 -0.190532  0.065445 -0.255977
 2   90979  202311 -0.348997 -0.103403 -0.245594
 3   90353  202310  0.379207  0.206912  0.172295
-4   90756  202310  0.153710  0.297667 -0.143957
-5   90979  202310 -0.478251 -0.271199 -0.207052
+4   90979  202310 -0.478251 -0.271199 -0.207052
+5   93338  202310  0.035490  0.263470 -0.227979
 6   90353  202309  0.537673  0.248826  0.288847
-7   90756  202309  0.434465  0.411892  0.022573
-8   90979  202309 -0.290354 -0.240253 -0.050101
+7   90979  202309 -0.290354 -0.240253 -0.050101
+8   93338  202309  0.500335  0.372355  0.127980
 9   90353  202308  0.491526  0.339849  0.151677
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm    python     stata      diff
-0   10342  200001  1.736612  0.487289  1.249323
-1   86360  200106 -0.469291  0.685000 -1.154291
-2   69075  199304 -0.312500  0.833333 -1.145833
+0   67969  199207  1.499999  0.000000  1.499999
+1   10342  200001  1.736612  0.487289  1.249323
+2   86360  200106 -0.469291  0.685000 -1.154291
 3   90352  201210 -0.685484  0.426830 -1.112313
 4   80658  200110  1.066668  0.000000  1.066668
 5   48565  199307  1.333332  0.272727  1.060605
@@ -6306,6 +6410,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   67126  199002  1.821039  0.829268  0.991771
 8   83161  200409  0.763565 -0.222222  0.985787
 9   79338  200206  0.933027 -0.043428  0.976455
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -6885,7 +6994,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,196,825
-- Python: 3,213,348
+- Python: 3,213,240
 - Common: 3,196,825
 
 **Precision1**: 0.003% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -7191,7 +7300,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,607,726
-- Python: 3,609,010
+- Python: 3,608,854
 - Common: 3,607,726
 
 **Precision1**: 0.003% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -7293,7 +7402,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,407,636
-- Python: 1,714,647
+- Python: 1,714,592
 - Common: 1,407,636
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -7344,7 +7453,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,097,471
-- Python: 2,389,629
+- Python: 2,389,617
 - Common: 2,097,471
 
 **Precision1**: 0.003% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -7446,7 +7555,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  843,512
-- Python: 841,828
+- Python: 841,390
 - Common: 837,442
 
 **Precision1**: 0.047% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -7587,82 +7696,52 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 ### OrgCap
 
-**Status**: ❌ FAILED
+**Status**: ✅ PASSED
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
 - Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
 
 **Columns**: ['OrgCap']
 
 **Observations**:
 - Stata:  1,243,383
-- Python: 1,252,708
+- Python: 1,243,528
 - Common: 1,243,383
 
-**Precision1**: 8.873% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 0.186% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 3.57e-01 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 1.37e-02 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |       1.24e+06 |       1.24e+06 |       1.24e+06 |       1.24e+06 |
-| mean       |       2.37e-10 |      -6.65e-05 |      -6.65e-05 |      -6.69e-05 |
-| std        |         0.9941 |         0.9935 |         0.0265 |         0.0266 |
-| min        |        -2.3446 |        -2.3446 |        -2.0942 |        -2.1067 |
-| 25%        |        -0.6402 |        -0.6403 |      -1.02e-04 |      -1.03e-04 |
-| 50%        |        -0.2736 |        -0.2732 |      -7.40e-09 |      -7.45e-09 |
-| 75%        |         0.3358 |         0.3365 |       2.18e-05 |       2.19e-05 |
-| max        |        10.1323 |        10.0896 |         0.4947 |         0.4976 |
+| mean       |       2.37e-10 |       2.76e-05 |       2.76e-05 |       2.78e-05 |
+| std        |         0.9941 |         0.9941 |         0.0010 |         0.0010 |
+| min        |        -2.3446 |        -2.3446 |        -0.1559 |        -0.1569 |
+| 25%        |        -0.6402 |        -0.6402 |      -4.24e-08 |      -4.26e-08 |
+| 50%        |        -0.2736 |        -0.2736 |       6.01e-10 |       6.05e-10 |
+| 75%        |         0.3358 |         0.3359 |       4.52e-08 |       4.54e-08 |
+| max        |        10.1323 |        10.1323 |         0.0870 |         0.0875 |
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = -0.0001 + 0.9991 * stata
-- **R-squared**: 0.9993
+- **Model**: python = 0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
 - **N observations**: 1,243,383
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |    -6.65e-05 |     2.37e-05 |     -2.8049 |     0.005 |
-| Slope       |       0.9991 |     2.39e-05 |  41878.7291 |     0.000 |
+| Intercept   |     2.76e-05 |     9.26e-07 |     29.8506 |     0.000 |
+| Slope       |       1.0000 |     9.32e-07 |    1.07e+06 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 110331/1243383 (8.873%)
+- Num observations with std_diff >= TOL_DIFF_1: 2310/1243383 (0.186%)
 - Stata standard deviation: 9.94e-01
-
-**Most Recent Bad Observations**:
-```
-   permno  yyyymm    python     stata      diff
-0   13812  202412  7.091372  7.070940  0.020431
-1   14862  202412  3.955176  3.943561  0.011615
-2   14925  202412  7.091372  7.070940  0.020431
-3   19149  202412  3.370339  3.360368  0.009971
-4   22086  202412  4.403185  4.390310  0.012875
-5   22096  202412 -0.202175 -0.159532 -0.042643
-6   24087  202412  7.091372  7.070940  0.020431
-7   84184  202412  3.861126  3.849776  0.011350
-8   89698  202412  7.091372  7.070940  0.020431
-9   89941  202412  3.678960  3.668122  0.010838
-```
-
-**Largest Differences**:
-```
-   permno  yyyymm    python     stata      diff
-0   76898  199207  2.477671  4.571839 -2.094168
-1   76898  199208  2.481080  4.555767 -2.074686
-2   76898  199206  2.450915  4.502881 -2.051966
-3   40970  199212  1.979459  3.987595 -2.008136
-4   40970  199301  1.983445  3.989190 -2.005744
-5   40970  199304  1.986478  3.988038 -2.001560
-6   40970  199302  1.985842  3.964456 -1.978614
-7   40970  199303  1.988200  3.956984 -1.968785
-8   40970  199210  1.959450  3.918732 -1.959282
-9   40970  199211  1.978161  3.918732 -1.940571
-```
 
 ---
 
@@ -7743,6 +7822,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   11538  199101     0.0      5  -5.0
 8   11538  199102     0.0      5  -5.0
 9   11538  199103     0.0      5  -5.0
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -7914,7 +7998,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,412,359
-- Python: 2,413,703
+- Python: 2,413,499
 - Common: 2,412,359
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -8033,6 +8117,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   91575  202201  0.008267  0.051235 -0.042968
 8   91575  202202  0.008267  0.051235 -0.042968
 9   91575  202203  0.008267  0.051235 -0.042968
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -8165,6 +8254,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   10066  199102  0.990682  0.033295  0.957386
 8   10066  199103  0.990682  0.033295  0.957386
 9   10066  199104  0.990682  0.033295  0.957386
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm    python     stata      diff
+0   17283  193007  0.995758  0.236111  0.759647
+1   17283  193008  0.995758  0.236111  0.759647
+2   17283  193009  0.995758  0.236111  0.759647
+3   17283  193010  0.995758  0.236111  0.759647
+4   17283  193011  0.995758  0.236111  0.759647
+5   17283  193012  0.995758  0.236111  0.759647
+6   17283  193101  0.995758  0.236111  0.759647
+7   17283  193102  0.995758  0.236111  0.759647
+8   17283  193103  0.995758  0.236111  0.759647
+9   17283  193104  0.995758  0.236111  0.759647
 ```
 
 ---
@@ -8304,6 +8408,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   20677  195504  6.913496 -3.855832  10.769328
 ```
 
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm    python     stata       diff
+0   17726  194607  6.742584 -3.977883  10.720467
+1   17726  194608  6.742584 -3.977883  10.720467
+2   17726  194609  6.742584 -3.977883  10.720467
+3   17726  194610  6.742584 -3.977883  10.720467
+4   17726  194611  6.742584 -3.977883  10.720467
+5   17726  194612  6.742584 -3.977883  10.720467
+6   17726  194701  6.742584 -3.977883  10.720467
+7   17726  194702  6.742584 -3.977883  10.720467
+8   17726  194703  6.742584 -3.977883  10.720467
+9   17726  194704  6.742584 -3.977883  10.720467
+```
+
 ---
 
 ### ProbInformedTrading
@@ -8422,69 +8541,74 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  173,266
-- Python: 193,767
+- Python: 180,944
 - Common: 173,240
 
-**Precision1**: 10.903% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 4.336% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 4.23e+00 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 2.17e+00 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |    173240.0000 |    173240.0000 |    173240.0000 |    173240.0000 |
-| mean       |         0.4685 |         0.4185 |        -0.0499 |        -0.0093 |
-| std        |         5.3534 |         5.6919 |         2.4820 |         0.4636 |
-| min        |      -170.7315 |      -184.0284 |      -192.6819 |       -35.9922 |
-| 25%        |        -0.2961 |        -0.3121 |      -2.33e-07 |      -4.35e-08 |
-| 50%        |         0.4038 |         0.3748 |      -2.09e-09 |      -3.91e-10 |
-| 75%        |         1.3891 |         1.3350 |       1.73e-07 |       3.23e-08 |
-| max        |        83.8592 |        83.8592 |        81.7174 |        15.2645 |
+| mean       |         0.4685 |         0.4644 |        -0.0040 |      -7.50e-04 |
+| std        |         5.3534 |         5.2908 |         0.7769 |         0.1451 |
+| min        |      -170.7315 |      -170.7315 |       -25.1031 |        -4.6892 |
+| 25%        |        -0.2961 |        -0.2951 |      -1.56e-07 |      -2.91e-08 |
+| 50%        |         0.4038 |         0.4001 |       5.57e-10 |       1.04e-10 |
+| 75%        |         1.3891 |         1.3673 |       1.58e-07 |       2.94e-08 |
+| max        |        83.8592 |        83.8592 |        35.2219 |         6.5793 |
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = -0.0302 + 0.9578 * stata
-- **R-squared**: 0.8114
+- **Model**: python = 0.0064 + 0.9778 * stata
+- **R-squared**: 0.9789
 - **N observations**: 173,240
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |      -0.0302 |       0.0060 |     -5.0587 |     0.000 |
-| Slope       |       0.9578 |       0.0011 |    863.4230 |     0.000 |
+| Intercept   |       0.0064 |       0.0019 |      3.4395 |     0.001 |
+| Slope       |       0.9778 |     3.45e-04 |   2837.9578 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 18888/173240 (10.903%)
+- Num observations with std_diff >= TOL_DIFF_1: 7512/173240 (4.336%)
 - Stata standard deviation: 5.35e+00
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm    python     stata      diff
-0   14033  202608  0.502601  0.192091  0.310510
-1   14033  202607  0.502601  0.192091  0.310510
-2   14033  202606  0.502601  0.192091  0.310510
-3   16968  202606  2.676225  4.362977 -1.686752
-4   13159  202605  0.510686  0.628990 -0.118303
-5   13918  202605  0.010309  0.838733 -0.828424
-6   14033  202605  0.502601  0.192091  0.310510
-7   14051  202605  0.131522  0.408131 -0.276609
-8   14245  202605  0.943359  0.997209 -0.053850
-9   14272  202605  0.272244  0.369297 -0.097053
+0   14033  202608  0.379405  0.192091  0.187314
+1   14033  202607  0.379405  0.192091  0.187314
+2   14033  202606  0.379405  0.192091  0.187314
+3   14033  202605  0.379405  0.192091  0.187314
+4   14245  202605  0.943359  0.997209 -0.053850
+5   14432  202605  0.304188  0.448311 -0.144123
+6   14668  202605  0.619375  0.359465  0.259910
+7   15059  202605  0.805267 -4.663055  5.468322
+8   16533  202605 -0.130891 -0.232203  0.101312
+9   82670  202605  0.300767  0.394679 -0.093913
 ```
 
 **Largest Differences**:
 ```
-   permno  yyyymm      python     stata       diff
-0   86597  199512 -184.028411  8.653519 -192.68193
-1   86597  199601 -184.028411  8.653519 -192.68193
-2   86597  199602 -184.028411  8.653519 -192.68193
-3   86597  199603 -184.028411  8.653519 -192.68193
-4   86597  199604 -184.028411  8.653519 -192.68193
-5   86597  199605 -184.028411  8.653519 -192.68193
-6   86597  199606 -184.028411  8.653519 -192.68193
-7   86597  199607 -184.028411  8.653519 -192.68193
-8   86597  199608 -184.028411  8.653519 -192.68193
-9   86597  199609 -184.028411  8.653519 -192.68193
+   permno  yyyymm     python      stata       diff
+0   79283  200206 -24.396323 -59.618244  35.221921
+1   79283  200207 -24.396323 -59.618244  35.221921
+2   79283  200208 -24.396323 -59.618244  35.221921
+3   79283  200209 -24.396323 -59.618244  35.221921
+4   79283  200210 -24.396323 -59.618244  35.221921
+5   79283  200211 -24.396323 -59.618244  35.221921
+6   79283  200212 -24.396323 -59.618244  35.221921
+7   79283  200301 -24.396323 -59.618244  35.221921
+8   79283  200302 -24.396323 -59.618244  35.221921
+9   79283  200303 -24.396323 -59.618244  35.221921
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -8554,7 +8678,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  517,737
-- Python: 1,403,949
+- Python: 1,403,877
 - Common: 517,652
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -8605,40 +8729,40 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  1,762,090
-- Python: 4,003,555
-- Common: 1,762,090
+- Python: 1,762,915
+- Common: 1,759,158
 
-**Precision1**: 0.166% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 0.164% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 1.76e-02 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 1.74e-02 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |       1.76e+06 |       1.76e+06 |       1.76e+06 |       1.76e+06 |
-| mean       |        -0.0684 |        -0.0644 |         0.0040 |       6.21e-05 |
-| std        |        64.8335 |        65.3305 |         8.3361 |         0.1286 |
-| min        |    -58190.5590 |    -58190.5598 |     -3284.2074 |       -50.6560 |
-| 25%        |        -0.0119 |        -0.0122 |      -9.78e-10 |      -1.51e-11 |
-| 50%        |         0.0016 |         0.0016 |         0.0000 |         0.0000 |
-| 75%        |         0.0124 |         0.0126 |       9.76e-10 |       1.50e-11 |
-| max        |     32747.2600 |     32748.0882 |      8424.1383 |       129.9349 |
+| mean       |        -0.0685 |        -0.0645 |         0.0040 |       6.18e-05 |
+| std        |        64.8875 |        65.3849 |         8.3431 |         0.1286 |
+| min        |    -58190.5590 |    -58190.5598 |     -3284.2074 |       -50.6138 |
+| 25%        |        -0.0119 |        -0.0122 |      -9.71e-10 |      -1.50e-11 |
+| 50%        |         0.0016 |         0.0017 |         0.0000 |         0.0000 |
+| 75%        |         0.0124 |         0.0126 |       9.70e-10 |       1.49e-11 |
+| max        |     32747.2600 |     32748.0882 |      8424.1383 |       129.8267 |
 
 **Regression Analysis** (Python ~ Stata):
 
 - **Model**: python = 0.0040 + 0.9994 * stata
 - **R-squared**: 0.9837
-- **N observations**: 1,762,090
+- **N observations**: 1,759,158
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |       0.0040 |       0.0063 |      0.6348 |     0.526 |
-| Slope       |       0.9994 |     9.69e-05 |  10318.2292 |     0.000 |
+| Intercept   |       0.0040 |       0.0063 |      0.6313 |     0.528 |
+| Slope       |       0.9994 |     9.69e-05 |  10309.6465 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 2923/1762090 (0.166%)
-- Stata standard deviation: 6.48e+01
+- Num observations with std_diff >= TOL_DIFF_1: 2888/1759158 (0.164%)
+- Stata standard deviation: 6.49e+01
 
 ---
 
@@ -8719,6 +8843,11 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   10192  199007     5.0      4   1.0
 8   10258  199104     5.0      4   1.0
 9   10258  201705     5.0      4   1.0
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
 ```
 
 ---
@@ -8853,6 +8982,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   10083  198705     4.0      3   1.0
 ```
 
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm  python  stata  diff
+0   10022  192809     5.0      4   1.0
+1   10022  192901     5.0      4   1.0
+2   10057  193607     5.0      4   1.0
+3   10057  193609     5.0      4   1.0
+4   10057  194101     4.0      3   1.0
+5   10137  194602     3.0      2   1.0
+6   10137  194703     3.0      2   1.0
+7   10233  193204     2.0      1   1.0
+8   10559  194405     5.0      4   1.0
+9   10671  192705     3.0      2   1.0
+```
+
 ---
 
 ### RIO_Volatility
@@ -8947,6 +9091,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   10166  199002     5.0      4   1.0
 8   10233  193204     2.0      1   1.0
 9   10258  199104     5.0      4   1.0
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm  python  stata  diff
+0   10137  194308     4.0      3   1.0
+1   10137  194602     3.0      2   1.0
+2   10233  193204     2.0      1   1.0
+3   10284  192910     3.0      2   1.0
+4   10559  194405     5.0      4   1.0
+5   10591  193704     3.0      2   1.0
+6   10671  192705     3.0      2   1.0
+7   10698  194503     5.0      4   1.0
+8   10823  194908     4.0      3   1.0
+9   11148  193810     5.0      4   1.0
 ```
 
 ---
@@ -9055,11 +9214,18 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 ### Recomm_ShortInterest
 
-**Status**: ❌ FAILED
+**Status**: ✅ PASSED (with override)
+
+**Override Applied**:
+- Reviewed on: 2025-08-20
+- Reviewed by: ac
+- Details: The do file was using asrol with stat(first) to fill in missing values. This method is not used anywhere else. Also, this method does not work properly. I really don't understand what it's doing See https://github.com/OpenSourceAP/CrossSection/issues/178. 
+
+I wrote Recomm_ShortInterest.py from scratch to fill in the missing values properly. It results in far more observations than the do file. I checked a few of the Stata observations that are missing in Python and they all should be missing. They had ConsRecomm scores of around 3.0, which should not be an extreme quintile and therefore should be dropped.
 
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
-- Test 2 - Superset check: ❌ FAILED (Python missing 16614 Stata observations)
+- Test 2 - Superset check: ❌ FAILED (Python missing 21128 Stata observations)
 - Test 3 - Precision1 check: ✅ PASSED
 - Test 4 - Precision2 check: ✅ PASSED
 
@@ -9067,8 +9233,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  34,619
-- Python: 31,491
-- Common: 18,005
+- Python: 48,367
+- Common: 13,491
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
@@ -9078,9 +9244,9 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
-| count      |     18005.0000 |     18005.0000 |     18005.0000 |     18005.0000 |
-| mean       |         0.6187 |         0.6187 |         0.0000 |         0.0000 |
-| std        |         0.4857 |         0.4857 |         0.0000 |         0.0000 |
+| count      |     13491.0000 |     13491.0000 |     13491.0000 |     13491.0000 |
+| mean       |         0.5014 |         0.5014 |         0.0000 |         0.0000 |
+| std        |         0.5000 |         0.5000 |         0.0000 |         0.0000 |
 | min        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
 | 25%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
 | 50%        |         1.0000 |         1.0000 |         0.0000 |         0.0000 |
@@ -9091,31 +9257,31 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 - **Model**: python = 0.0000 + 1.0000 * stata
 - **R-squared**: 1.0000
-- **N observations**: 18,005
+- **N observations**: 13,491
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |     2.30e-14 |     2.13e-16 |    108.0043 |     0.000 |
-| Slope       |       1.0000 |     2.71e-16 |    3.69e+15 |     0.000 |
+| Intercept   |     2.12e-14 |     2.56e-16 |     82.8886 |     0.000 |
+| Slope       |       1.0000 |     3.61e-16 |    2.77e+15 |     0.000 |
 
 **Missing Observations Sample**:
 ```
  index  permno  yyyymm  Recomm_ShortInterest
-     0   10044  201201                     1
-     1   10044  201202                     1
-     2   10044  201203                     1
-     3   10044  201204                     1
-     4   10051  200704                     1
-     5   10104  200903                     1
-     6   10104  200904                     1
-     7   10104  200906                     1
+     0   10051  200704                     1
+     1   10104  200607                     1
+     2   10104  200807                     1
+     3   10104  200808                     1
+     4   10104  200903                     1
+     5   10104  200904                     1
+     6   10104  200906                     1
+     7   10104  201402                     1
      8   10104  201507                     1
      9   10104  201508                     1
 ```
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 0/18005 (0.000%)
-- Stata standard deviation: 4.86e-01
+- Num observations with std_diff >= TOL_DIFF_1: 0/13491 (0.000%)
+- Stata standard deviation: 5.00e-01
 
 ---
 
@@ -9196,6 +9362,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   43880  199303  0.941700 -0.449004  1.390704
 8   84351  200603 -0.964103  0.425841 -1.389944
 9   85570  200712  0.155851  1.525028 -1.369177
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm    python     stata      diff
+0   13725  193509 -0.456978 -1.085686  0.628708
+1   13725  193508 -0.570527 -1.109849  0.539321
+2   13725  193506 -0.562432 -1.099878  0.537445
+3   13725  193504 -0.451700 -0.988842  0.537142
+4   13725  193505 -0.572521 -1.096676  0.524155
+5   13725  193507 -0.594041 -1.081490  0.487448
+6   13725  193503 -0.363179 -0.843710  0.480531
+7   13725  193501 -0.504955 -0.972825  0.467870
+8   13725  193502 -0.470708 -0.929486  0.458779
+9   13725  193512 -0.732965 -1.179525  0.446559
 ```
 
 ---
@@ -9330,6 +9511,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   15545  198212 -4.364358  4.364358 -8.728716
 ```
 
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm    python     stata      diff
+0   10284  193108 -0.043656 -4.694855  4.651200
+1   15632  192904 -0.366716 -4.800000  4.433284
+2   15923  193809  0.684782  4.694855 -4.010073
+3   20431  194502 -4.129483 -0.185154 -3.944329
+4   11738  192802 -0.664669 -4.364358  3.699689
+5   15923  194208  0.000000  3.175426 -3.175426
+6   15632  192903 -1.812385 -4.587317  2.774932
+7   21717  194307  1.559323 -1.205178  2.764501
+8   10903  193303  0.000000  2.715344 -2.715344
+9   13899  193303  0.000000  2.715344 -2.715344
+```
+
 ---
 
 ### RevenueSurprise
@@ -9397,7 +9593,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,527,662
-- Python: 3,528,982
+- Python: 3,528,790
 - Common: 3,527,662
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -9550,7 +9746,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,517,326
-- Python: 3,517,511
+- Python: 3,517,326
 - Common: 3,517,326
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -9601,7 +9797,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,507,320
-- Python: 2,508,021
+- Python: 2,507,320
 - Common: 2,507,320
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -9805,7 +10001,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  4,029,130
-- Python: 4,029,252
+- Python: 4,029,130
 - Common: 4,029,130
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -10060,7 +10256,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,141,468
-- Python: 3,157,473
+- Python: 3,157,365
 - Common: 3,141,468
 
 **Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -10111,7 +10307,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,058,231
-- Python: 2,056,304
+- Python: 2,056,292
 - Common: 2,055,856
 
 **Precision1**: 97.137% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -10174,6 +10370,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 7   91040  201711  1.758396  0.145073  1.613322
 8   66800  200907  3.200631  1.620982  1.579649
 9   91040  201709  0.771731 -0.776422  1.548153
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm  python     stata      diff
+0   15683  192802     0.0  0.624997 -0.624997
+1   25486  192802     0.0  0.585620 -0.585620
+2   14787  192602     0.0  0.580582 -0.580582
+3   19123  192802     0.0  0.571866 -0.571866
+4   11690  192802     0.0  0.571848 -0.571848
+5   12722  192802     0.0  0.570393 -0.570393
+6   16598  192802     0.0  0.561133 -0.561133
+7   13856  192808     0.0  0.554285 -0.554285
+8   10057  192802     0.0  0.553838 -0.553838
+9   10751  192802     0.0  0.553429 -0.553429
 ```
 
 ---
@@ -10294,7 +10505,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  4,359,237
-- Python: 4,361,398
+- Python: 4,359,149
 - Common: 4,358,313
 
 **Precision1**: 0.008% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -10461,6 +10672,21 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 9   91893  201812  0.045865 -0.056252  0.102117
 ```
 
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm    python     stata      diff
+0   11236  193311  0.047995 -0.056055  0.104049
+1   12204  193601  0.034243 -0.043529  0.077773
+2   12204  193602  0.038615 -0.035225  0.073840
+3   11236  193402  0.043748 -0.029915  0.073663
+4   11236  193405  0.038874 -0.033670  0.072544
+5   11236  193406  0.035866 -0.035042  0.070907
+6   11236  193403  0.038988 -0.030381  0.069369
+7   12204  193512  0.015191 -0.051513  0.066704
+8   11236  193404  0.034604 -0.030765  0.065369
+9   11180  193309  0.009934 -0.054339  0.064272
+```
+
 ---
 
 ### XFIN
@@ -10477,7 +10703,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  3,022,290
-- Python: 3,023,550
+- Python: 3,023,466
 - Common: 3,022,290
 
 **Precision1**: 0.002% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -10885,39 +11111,39 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,425,711
-- Python: 2,444,969
-- Common: 2,407,863
+- Python: 2,429,220
+- Common: 2,407,796
 
-**Precision1**: 0.045% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+**Precision1**: 0.042% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
-**Precision2**: 100th percentile diff = 2.85e-03 (tolerance: < 1.00e-01)
+**Precision2**: 100th percentile diff = 2.73e-03 (tolerance: < 1.00e-01)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |       2.41e+06 |       2.41e+06 |       2.41e+06 |       2.41e+06 |
-| mean       |         3.7307 |            inf |            inf |            inf |
-| std        |       394.4875 |            N/A |            N/A |            N/A |
-| min        |     -9061.0000 |     -9061.0000 |    -91202.9468 |      -231.1935 |
+| mean       |         3.7290 |         3.4938 |        -0.2352 |      -5.96e-04 |
+| std        |       394.4922 |       367.2597 |       144.0547 |         0.3652 |
+| min        |     -9061.0000 |     -9061.0000 |    -91202.9468 |      -231.1908 |
 | 25%        |        -0.3587 |        -0.3588 |      -9.08e-09 |      -2.30e-11 |
 | 50%        |         0.1307 |         0.1308 |         0.0000 |         0.0000 |
-| 75%        |         0.8916 |         0.8919 |       9.27e-09 |       2.35e-11 |
-| max        |    141782.2000 |            inf |            inf |            inf |
+| 75%        |         0.8916 |         0.8918 |       9.27e-09 |       2.35e-11 |
+| max        |    141782.2000 |    141782.2000 |      1490.2660 |         3.7777 |
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = inf + nan * stata
-- **R-squared**: nan
-- **N observations**: 2,407,863
+- **Model**: python = 0.2619 + 0.8667 * stata
+- **R-squared**: 0.8667
+- **N observations**: 2,407,796
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |          nan |          nan |         nan |       nan |
-| Slope       |          nan |          nan |         nan |       nan |
+| Intercept   |       0.2619 |       0.0864 |      3.0306 |     0.002 |
+| Slope       |       0.8667 |     2.19e-04 |   3955.8852 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 1081/2407863 (0.045%)
+- Num observations with std_diff >= TOL_DIFF_1: 1014/2407796 (0.042%)
 - Stata standard deviation: 3.94e+02
 
 ---
@@ -10936,8 +11162,8 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,214,095
-- Python: 2,236,619
-- Common: 2,197,381
+- Python: 2,234,287
+- Common: 2,197,378
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
 
@@ -10948,27 +11174,27 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
 | count      |       2.20e+06 |       2.20e+06 |       2.20e+06 |       2.20e+06 |
-| mean       |      -4.24e+10 |            N/A |            N/A |            N/A |
-| std        |       4.50e+13 |            N/A |            N/A |            N/A |
-| min        |      -2.57e+16 |           -inf |           -inf |           -inf |
+| mean       |      -4.24e+10 |      -4.24e+10 |      -553.6178 |      -1.23e-11 |
+| std        |       4.50e+13 |       4.50e+13 |    248482.1794 |       5.52e-09 |
+| min        |      -2.57e+16 |      -2.57e+16 |      -1.92e+08 |      -4.27e-06 |
 | 25%        |         0.6523 |         0.6522 |      -1.95e-08 |      -4.32e-22 |
 | 50%        |         1.0687 |         1.0686 |         0.0000 |         0.0000 |
 | 75%        |         1.6003 |         1.6003 |       1.93e-08 |       4.28e-22 |
-| max        |       1.44e+16 |            inf |            inf |            inf |
+| max        |       1.44e+16 |       1.44e+16 |       1.50e+07 |       3.34e-07 |
 
 **Regression Analysis** (Python ~ Stata):
 
-- **Model**: python = nan + nan * stata
-- **R-squared**: nan
-- **N observations**: 2,197,381
+- **Model**: python = -513.4838 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 2,197,378
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
-| Intercept   |          nan |          nan |         nan |       nan |
-| Slope       |          nan |          nan |         nan |       nan |
+| Intercept   |    -513.4838 |     165.2024 |     -3.1082 |     0.002 |
+| Slope       |       1.0000 |     3.67e-12 |    2.72e+11 |     0.000 |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 3/2197381 (0.000%)
+- Num observations with std_diff >= TOL_DIFF_1: 0/2197378 (0.000%)
 - Stata standard deviation: 4.50e+13
 
 ---
@@ -11242,7 +11468,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  2,490,858
-- Python: 2,714,809
+- Python: 2,714,774
 - Common: 2,490,858
 
 **Precision1**: 0.007% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -11548,7 +11774,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  4,342,889
-- Python: 4,661,610
+- Python: 4,345,044
 - Common: 4,342,889
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -11599,7 +11825,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  4,680,231
-- Python: 5,077,699
+- Python: 4,682,859
 - Common: 4,680,231
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -11650,7 +11876,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 **Observations**:
 - Stata:  4,530,678
-- Python: 4,885,711
+- Python: 4,533,091
 - Common: 4,530,678
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
@@ -11702,25 +11928,6 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 **Observations**:
 - Stata:  0
 - Python: 353,486
-- Common: 0
-
----
-
-### DivSeason_gpt5_test
-
-**Status**: ❌ FAILED
-
-**Test Results**:
-- Test 1 - Column names: ❌ FAILED
-- Test 2 - Superset check: ❌ FAILED (Python missing 0 Stata observations)
-- Test 3 - Precision1 check: ❌ FAILED
-- Test 4 - Precision2 check: ❌ FAILED
-
-**Columns**: []
-
-**Observations**:
-- Stata:  0
-- Python: 1,981,491
 - Common: 0
 
 ---
