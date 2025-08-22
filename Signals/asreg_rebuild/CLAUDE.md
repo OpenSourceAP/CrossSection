@@ -21,3 +21,7 @@ These examples were created by `mwe/debug_trendfactor.do`
 
 Virtual environment:
     - `source ../pyCode/.venv/bin/activate`
+
+Programming philosophy:
+    - Be minimalistic.
+    - Don't worry about trailing whitespace linting errors.

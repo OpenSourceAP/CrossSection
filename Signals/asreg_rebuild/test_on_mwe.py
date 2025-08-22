@@ -1,7 +1,7 @@
 # %%
 
 # ABOUTME: Test script for stata_regress module using MWE data
-# ABOUTME: Runs regression with collinearity detection on MWE 1-3
+# ABOUTME: Tests regress function that returns full coefficients with zeros for omitted vars
 
 # Inputs: mwe/tf_mwe1.csv, mwe/tf_mwe2.csv, mwe/tf_mwe3.csv
 # Outputs: Regression results matching Stata format
@@ -95,55 +95,6 @@ def stata_regress_to_df(log_file_path):
     return df
 
 
-def regress_out_to_df(model, kept_vars, dropped_vars, original_vars):
-    """
-    Convert regress output to DataFrame format matching Stata coefficient table.
-
-    Parameters
-    ----------
-    model : statsmodels regression results
-        The fitted model from regress()
-    kept_vars : list
-        Variables kept in the model
-    dropped_vars : list
-        Variables dropped due to collinearity
-    original_vars : list
-        Original variable names in order
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with columns: coefficient, std_err, omitted
-        Index contains variable names including _cons
-    """
-    results = {}
-    # Process kept variables (have actual coefficients)
-    for i, var in enumerate(kept_vars):
-        results[var] = {
-            "coefficient": model.params.iloc[i],
-            "std_err": model.bse.iloc[i],
-            "omitted": False,
-        }
-
-    # Process dropped variables (omitted due to collinearity)
-    for var in dropped_vars:
-        results[var] = {"coefficient": 0.000000, "std_err": np.nan, "omitted": True}
-
-    # Add constant term
-    const_idx = len(kept_vars)  # Constant is last in statsmodels
-    results["_cons"] = {
-        "coefficient": model.params.iloc[const_idx],
-        "std_err": model.bse.iloc[const_idx],
-        "omitted": False,
-    }
-
-    # Create DataFrame in original variable order, then add _cons
-    ordered_vars = [var for var in original_vars if var in results] + ["_cons"]
-    ordered_results = {var: results[var] for var in ordered_vars}
-
-    df = pd.DataFrame.from_dict(ordered_results, orient="index")
-    return df
-
 
 def compare_results(python_df, stata_df):
     """
@@ -189,7 +140,7 @@ def compare_results(python_df, stata_df):
 
 # Main
 
-MWE_NUM = 1
+MWE_NUM = 3
 
 """Test a specific standard regression MWE dataset."""
 # Load test data from CSV
@@ -211,14 +162,11 @@ print(f"MWE {MWE_NUM} - Regression Output")
 print(f"{'='*70}\n")
 
 # Run regression with collinearity detection
-model, keep_cols, drop_cols, reasons = regress(x, y)
+model, keep_cols, drop_cols, reasons, python_results = regress(x, y)
 
 print(f"Kept columns: {keep_cols}")
 print(f"Dropped columns: {drop_cols}")
 print(f"Reasons: {reasons}\n")
-
-# Convert Python results to DataFrame
-python_results = regress_out_to_df(model, keep_cols, drop_cols, x_cols)
 
 # Load and parse Stata results
 stata_results = stata_regress_to_df(f"mwe/tf_mwe{MWE_NUM}.log")
@@ -240,3 +188,6 @@ coef_diff = comparison[comparison['variable'] == 'coefficient']['diff']
 se_diff = comparison[comparison['variable'] == 'std_err']['diff']
 print(f"Max coefficient difference: {coef_diff.abs().max():.8f}")
 print(f"Max std error difference: {se_diff.abs().max():.8f}")
+
+#%%
+
