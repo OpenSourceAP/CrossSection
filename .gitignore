@@ -14,6 +14,7 @@
 # Data
 Results/
 Portfolios/Data/*
+Portfolios/pyData/*
 Signals/Data/*
 Signals/pyData/*
 
