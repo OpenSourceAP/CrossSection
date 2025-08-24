@@ -1,0 +1,661 @@
+#!/usr/bin/env python3
+# ABOUTME: Module containing utility functions for replicating Stata-specific behaviors
+# ABOUTME: Includes stata_quantile for Stata-style quantiles and asreg_collinear for collinear-aware regressions
+
+import numpy as np
+import pandas as pd
+from collections import deque
+from typing import List, Dict, Tuple, Optional, Sequence
+import fnmatch
+import warnings
+
+
+def stata_quantile(x, qs):
+    """
+    Compute Stata-style quantiles for a 1D array-like using only NumPy.
+
+    Parameters
+    ----------
+    x : array-like
+        Data (numeric). NaNs are ignored.
+    qs : float or sequence of floats
+        Quantiles requested. May be in [0,100] (percent) or [0,1] (fractions).
+
+    Returns
+    -------
+    float or np.ndarray
+        Scalar if one quantile requested, else array of quantiles.
+    """
+    arr = np.asarray(x, dtype=float)
+    arr = arr[~np.isnan(arr)]  # drop NaNs
+    arr.sort(kind="mergesort")  # stable sort like Stata
+    n = arr.size
+
+    if n == 0:
+        return np.nan if np.isscalar(qs) else np.full(len(np.atleast_1d(qs)), np.nan)
+
+    qs = np.atleast_1d(qs).astype(float)
+    if np.all((qs >= 0) & (qs <= 1)):
+        qs = qs * 100.0
+
+    P = (qs / 100.0) * n
+    out = np.empty_like(P, dtype=float)
+
+    for j, p in enumerate(P):
+        if p <= 0:
+            out[j] = arr[0]
+        elif p >= n:
+            out[j] = arr[-1]
+        else:
+            # first rank > p
+            idx = np.searchsorted(np.arange(1, n + 1), p, side="right")
+            val = arr[idx]
+            k = int(np.floor(p + 1e-12))
+            if abs(p - k) < 1e-12 and 1 <= k < n:
+                val = (arr[k - 1] + arr[k]) / 2
+            out[j] = val
+
+    return float(out[0]) if out.size == 1 else out
+
+
+def _expand_columns(df: pd.DataFrame, X: str | Sequence[str]) -> List[str]:
+    """
+    Expand a list of RHS columns. If X is a string with wildcards, match df columns.
+    Keeps the DataFrame's column order.
+    """
+    if isinstance(X, str):
+        # Allow comma or whitespace separated patterns; simplest is a single pattern
+        patterns = [p for p in [t.strip() for t in X.replace(",", " ").split()] if p]
+        if not patterns:
+            raise ValueError("X pattern is empty.")
+        out: List[str] = []
+        for col in df.columns:
+            if any(fnmatch.fnmatch(col, pat) for pat in patterns):
+                out.append(col)
+        if not out:
+            raise ValueError(f"No columns match pattern(s): {patterns}")
+        return out
+    else:
+        # Respect DF order for provided names
+        name_set = set(X)
+        return [c for c in df.columns if c in name_set]
+
+
+def _solve_ols_from_crossmoments(
+    Sxx: np.ndarray,
+    Sxy: np.ndarray,
+    Syy: float,
+    Sy: float,
+    nobs: int,
+    *,
+    compute_se: bool,
+    add_constant: bool,
+    rtol: float | None = None,
+) -> Tuple[np.ndarray | None, np.ndarray | None, Dict[str, float | int]]:
+    """
+    Solve OLS given cross-moments for a single window.
+
+    Parameters
+    ----------
+    Sxx : (p,p) ndarray = X'X
+    Sxy : (p,)  ndarray = X'y
+    Syy : scalar           sum(y^2)
+    Sy  : scalar           sum(y)
+    nobs : int             number of observations in the window
+    compute_se : bool      whether to compute conventional SEs (needs invertible Sxx)
+    add_constant : bool    whether X included a constant column (affects TSS/R^2)
+    rtol : float | None    tolerance for rank (used in lstsq fallback)
+
+    Returns
+    -------
+    beta : (p,) or None
+    se   : (p,) or None
+    meta : dict with rank, rss, tss, r2, adj_r2, sigma
+    """
+    p = Sxx.shape[0]
+    beta = None
+    se = None
+
+    # Try fast Cholesky first (requires SPD -> full column rank)
+    rank = p
+    try:
+        L = np.linalg.cholesky(Sxx)
+        # Solve Sxx * beta = Sxy via two triangular solves
+        beta = np.linalg.solve(L.T, np.linalg.solve(L, Sxy))
+
+        # RSS via identity: RSS = Syy - 2*b'Sxy + b'Sxx b
+        rss = float(Syy - 2.0 * beta.dot(Sxy) + beta.dot(Sxx.dot(beta)))
+        if rss < 0 and rss > -1e-10:  # guard tiny negatives
+            rss = 0.0
+
+        # TSS around the mean when constant is present; else around zero
+        if add_constant and nobs > 0:
+            tss = float(Syy - (Sy * Sy) / nobs)
+            if tss < 0 and tss > -1e-10:
+                tss = 0.0
+        else:
+            tss = float(Syy)
+
+        if compute_se:
+            # Inverse via Cholesky (solve for identity)
+            I = np.eye(p, dtype=Sxx.dtype)
+            Sxx_inv = np.linalg.solve(L.T, np.linalg.solve(L, I))
+            dof = max(nobs - rank, 0)
+            sigma2 = float(rss / dof) if dof > 0 else np.nan
+            se = np.sqrt(np.maximum(np.diag(Sxx_inv), 0.0) * sigma2)
+        else:
+            dof = max(nobs - rank, 0)
+            sigma2 = float(rss / dof) if dof > 0 else np.nan
+
+        r2 = np.nan if tss <= 0 else (1.0 - rss / tss)
+        adj_r2 = np.nan
+        if nobs > 1 and nobs > rank and tss > 0:
+            adj_r2 = 1.0 - (1.0 - r2) * (nobs - 1) / (nobs - rank)
+
+        meta = {
+            "rank": rank,
+            "rss": rss,
+            "tss": tss,
+            "r2": r2,
+            "adj_r2": adj_r2,
+            "sigma": (
+                float(np.sqrt(sigma2)) if sigma2 == sigma2 else np.nan
+            ),  # sqrt if finite
+        }
+        return beta, se, meta
+    except np.linalg.LinAlgError:
+        # Fall back to SVD-based least squares (works for singular Sxx too)
+        pass
+
+    # LSTSQ fallback (may be rank-deficient)
+    rcond = rtol if rtol is not None else None  # let numpy choose default
+    beta_lstsq, resid, fallback_rank, svals = np.linalg.lstsq(Sxx, Sxy, rcond=rcond)
+    rank = int(fallback_rank)
+
+    # If not full column rank, treat as unusable for asreg (Stata-like conservative)
+    # Caller will decide to output NaNs for the window when rank < p.
+    # Compute RSS anyway (for completeness), using the same identity:
+    rss = float(Syy - 2.0 * beta_lstsq.dot(Sxy) + beta_lstsq.dot(Sxx.dot(beta_lstsq)))
+    if rss < 0 and rss > -1e-10:
+        rss = 0.0
+
+    if add_constant and nobs > 0:
+        tss = float(Syy - (Sy * Sy) / nobs)
+        if tss < 0 and tss > -1e-10:
+            tss = 0.0
+    else:
+        tss = float(Syy)
+
+    r2 = np.nan if tss <= 0 else (1.0 - rss / tss)
+    adj_r2 = np.nan
+    if nobs > 1 and nobs > rank and tss > 0:
+        adj_r2 = 1.0 - (1.0 - r2) * (nobs - 1) / (nobs - rank)
+
+    meta = {
+        "rank": rank,
+        "rss": rss,
+        "tss": tss,
+        "r2": r2,
+        "adj_r2": adj_r2,
+        "sigma": np.nan,  # not defined if rank<p (we won't compute SEs)
+    }
+
+    if rank < p:
+        return None, None, meta  # signal rank deficiency to caller
+    else:
+        # Full rank via lstsq; can produce SEs if requested
+        beta = beta_lstsq
+        if compute_se:
+            # Use pseudoinverse: (X'X)^(-1) = V S^{-2} V'
+            # Build from SVD of Sxx: Sxx = U S V'  => inv = V S^{-1} U'
+            # For symmetric Sxx, U≈V, but we use full pseudoinverse for safety.
+            U, S, Vt = np.linalg.svd(Sxx, full_matrices=False)
+            inv_s = np.diag(1.0 / S)
+            Sxx_inv = Vt.T @ inv_s @ U.T
+            dof = max(nobs - rank, 0)
+            sigma2 = float(rss / dof) if dof > 0 else np.nan
+            se = np.sqrt(np.maximum(np.diag(Sxx_inv), 0.0) * sigma2)
+            meta["sigma"] = float(np.sqrt(sigma2)) if sigma2 == sigma2 else np.nan
+        return beta, se, meta
+
+
+def _asreg_cross_sectional(
+    df: pd.DataFrame,
+    y: str,
+    X: List[str] | str,
+    by: List[str] | str | None,
+    add_constant: bool,
+    drop_collinear: bool,
+    compute_se: bool,
+    rtol: float | None,
+) -> pd.DataFrame:
+    """
+    Run separate regressions for each group using all available data.
+    This mimics Stata's "bys group_var: asreg y x_vars" behavior.
+    Returns one row per group with regression results.
+    """
+    # Import here to avoid circular dependencies
+    import statsmodels.api as sm
+    # We need the drop_collinear and regress functions from asreg_rebuild
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+    from asreg_rebuild.stata_regress import regress
+    
+    # Expand X column patterns
+    if isinstance(X, str):
+        X_cols = _expand_columns(df, X)
+    else:
+        X_cols = X
+
+    # Group handling
+    if isinstance(by, str):
+        by_list = [by]
+        single_by = True
+    else:
+        by_list = by
+        single_by = False
+
+    if not by_list:
+        raise ValueError(
+            "window=None requires 'by' parameter to specify groups"
+        )
+
+    # Prepare column names
+    stat_cols = ["_Nobs", "_R2", "_adjR2", "_sigma"]
+    coef_cols = [f"_b_{col}" for col in X_cols]
+    if add_constant:
+        coef_cols.append("_b_cons")
+
+    if compute_se:
+        se_cols = [f"_se_{col}" for col in X_cols]
+        t_cols = [f"_t_{col}" for col in X_cols]
+        if add_constant:
+            se_cols.append("_se_cons")
+            t_cols.append("_t_cons")
+        all_result_cols = stat_cols + coef_cols + se_cols + t_cols
+    else:
+        all_result_cols = stat_cols + coef_cols
+
+    # List to store results for each group
+    results_list = []
+
+    # Process each group (use original by for groupby to get correct name format)
+    for name, group in df.groupby(by if single_by else by_list):
+        # Handle different types of group names
+        if isinstance(name, (str, int, float)):
+            group_name = name
+        elif hasattr(name, '__iter__') and not isinstance(name, str):
+            # name is a tuple for multi-column groupby
+            group_name = "_".join(map(str, name))
+        else:
+            # name is likely a Timestamp or other single object
+            group_name = str(name)
+
+        # Extract X and y for this group
+        X_group = group[X_cols]
+        y_group = group[y]
+
+        # Initialize result row for this group
+        result_row = {}
+        
+        # Add group identifier(s)
+        if single_by:
+            # For single grouping column, name is a scalar
+            result_row[by_list[0]] = name
+        else:
+            # For multiple grouping columns, name is a tuple
+            for i, col in enumerate(by_list):
+                result_row[col] = name[i]
+
+        try:
+            # Run regress for this group
+            model, keep_cols, drop_cols, reasons, full_coefs = regress(
+                X_group,
+                y_group,
+                add_constant=add_constant,
+                omit_collinear=drop_collinear,
+                return_full_coefs=True,
+            )
+
+            # Fill stats
+            result_row["_Nobs"] = model.nobs
+            result_row["_R2"] = model.rsquared
+            result_row["_adjR2"] = model.rsquared_adj
+            result_row["_sigma"] = np.sqrt(model.mse_resid)
+
+            # Fill coefficients
+            for col in X_cols:
+                if col in full_coefs.index:
+                    result_row[f"_b_{col}"] = full_coefs.loc[col, "coefficient"]
+                else:
+                    result_row[f"_b_{col}"] = 0.0  # Omitted due to collinearity
+
+            # Fill constant
+            if add_constant:
+                result_row["_b_cons"] = model.params.get("const", np.nan)
+
+            # Fill SEs and t-stats if requested
+            if compute_se:
+                for col in X_cols:
+                    if col in full_coefs.index:
+                        result_row[f"_se_{col}"] = full_coefs.loc[col, "std_err"]
+                        if full_coefs.loc[col, "std_err"] > 0:
+                            result_row[f"_t_{col}"] = (
+                                full_coefs.loc[col, "coefficient"]
+                                / full_coefs.loc[col, "std_err"]
+                            )
+                        else:
+                            result_row[f"_t_{col}"] = np.nan
+                    else:
+                        result_row[f"_se_{col}"] = np.nan
+                        result_row[f"_t_{col}"] = np.nan
+
+                if add_constant:
+                    const_se = model.bse.get("const", np.nan)
+                    const_coef = model.params.get("const", np.nan)
+                    result_row["_se_cons"] = const_se
+                    if const_se > 0:
+                        result_row["_t_cons"] = const_coef / const_se
+                    else:
+                        result_row["_t_cons"] = np.nan
+
+        except Exception as e:
+            print(f"Error processing group {group_name}: {e}")
+            # Fill with NaN for this group if regression fails
+            for col in all_result_cols:
+                result_row[col] = np.nan
+
+        results_list.append(result_row)
+
+    # Convert to DataFrame
+    results_df = pd.DataFrame(results_list)
+    
+    # Return with group columns first, then regression results
+    return results_df[by_list + all_result_cols]
+
+
+def asreg_collinear(
+    df: pd.DataFrame,
+    y: str,
+    X: List[str] | str,
+    *,
+    by: List[str] | str | None = None,
+    time: str | None = None,
+    window: int | None = None,
+    min_obs: int = 10,
+    expanding: bool = False,
+    add_constant: bool = True,
+    drop_collinear: bool = True,  # If a window is rank-deficient → emit NaNs for that row
+    compute_se: bool = False,  # Conventional (non-robust) SEs and t-stats
+    method: str = "auto",  # kept for future use; currently cholesky→lstsq
+    rtol: float | None = None,
+) -> pd.DataFrame:
+    """
+    Stata-like rolling OLS over a panel/time index, or cross-sectional regressions by group.
+
+    Behavior
+    --------
+    If window is None:
+      - Runs separate regression for each group in 'by' using all data (like "bys group: asreg").
+      - All observations in each group get the same regression coefficients.
+      - Ignores 'time' and 'expanding' parameters.
+
+    If window is an int:
+      - Sorts by [by..., time] (if provided).
+      - Right-aligned rolling window over *valid* rows (listwise within y and X).
+      - On a row where valid_obs < max(min_obs, p+1), outputs NaNs.
+
+    Common behavior:
+      - If a window/group is rank-deficient and drop_collinear=True, outputs NaNs for that row/group.
+      - Stats: _Nobs, _R2, _adjR2, _sigma; Coefs: _b_<var>, (_b_cons if add_constant).
+      - If compute_se=True: _se_<var>, _t_<var> (and _se_cons/_t_cons if applicable).
+
+    Parameters
+    ----------
+    df : DataFrame containing y, X, by, and time columns.
+    y  : str name of dependent variable.
+    X  : list[str] or pattern string (supports wildcards like "A_*", or "A_* B_*").
+    by : panel keys (list or single str) or None for single-group time series.
+    time : time column; required for deterministic ordering when window is not None.
+    window : None for cross-sectional (all data per group), or int for rolling window size.
+    min_obs : minimum valid rows needed to compute estimates for a row.
+    expanding : use an expanding window from the first valid row (True) or a fixed-size rolling window (False).
+              Only applies when window is an int.
+    add_constant : include an intercept in each window.
+    drop_collinear : if True, windows with rank < p are marked NaN.
+    compute_se : compute conventional SEs and t-stats (slower).
+    method : reserved; the solver auto-falls back from Cholesky to lstsq.
+    rtol : optional tolerance forwarded to lstsq fallback.
+
+    Returns
+    -------
+    DataFrame aligned to df.index with Stata-like column names.
+    """
+    # Handle cross-sectional case (window=None)
+    if window is None:
+        return _asreg_cross_sectional(
+            df, y, X, by, add_constant, drop_collinear, compute_se, rtol
+        )
+
+    # Rolling window case - validate parameters
+    if time is None:
+        raise ValueError("`time` column must be provided for rolling window regressions.")
+    if not isinstance(window, int) or window <= 0:
+        raise ValueError("`window` must be a positive integer for rolling window regressions.")
+    if isinstance(by, str):
+        by = [by]
+    by = list(by) if by is not None else []
+
+    rhs = _expand_columns(df, X)
+    p_raw = len(rhs)
+    if p_raw == 0:
+        raise ValueError("No RHS columns found.")
+
+    # Prepare and sort
+    gdf = df.copy()
+    # Sort by keys then time
+    if time is not None:
+        keys = (by or []) + [time]
+        gdf = gdf.sort_values(keys, kind="mergesort")  # stable
+    
+    # Coerce numeric
+    X_df = gdf[rhs].copy()
+    y_s = gdf[y].copy()
+    for c in rhs:
+        if not pd.api.types.is_numeric_dtype(X_df[c]):
+            warnings.warn(
+                f"Column {c} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
+            )
+            X_df[c] = pd.to_numeric(X_df[c], errors="coerce")
+    if not pd.api.types.is_numeric_dtype(y_s):
+        warnings.warn(
+            f"y column {y} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
+        )
+        y_s = pd.to_numeric(y_s, errors="coerce")
+    
+    idx = gdf.index.to_numpy()
+
+    # Augment with constant if requested
+    aug_names: List[str] = rhs[:]
+    if add_constant:
+        aug_names = aug_names + ["_cons"]
+
+    # Pre-allocate output arrays
+    n_all = len(gdf)
+    out_cols: Dict[str, np.ndarray] = {
+        "_Nobs": np.full(n_all, np.nan, dtype=float),
+        "_R2": np.full(n_all, np.nan, dtype=float),
+        "_adjR2": np.full(n_all, np.nan, dtype=float),
+        "_sigma": np.full(n_all, np.nan, dtype=float),
+    }
+    for name in rhs:
+        out_cols[f"_b_{name}"] = np.full(n_all, np.nan, dtype=float)
+        if compute_se:
+            out_cols[f"_se_{name}"] = np.full(n_all, np.nan, dtype=float)
+            out_cols[f"_t_{name}"] = np.full(n_all, np.nan, dtype=float)
+    if add_constant:
+        out_cols["_b_cons"] = np.full(n_all, np.nan, dtype=float)
+        if compute_se:
+            out_cols["_se_cons"] = np.full(n_all, np.nan, dtype=float)
+            out_cols["_t_cons"] = np.full(n_all, np.nan, dtype=float)
+
+    # Work group-by-group
+    if by:
+        groups = gdf.groupby(by, sort=False, group_keys=False, dropna=False)
+    else:
+        # single implicit group
+        gkey = pd.Series(0, index=gdf.index)
+        groups = gdf.groupby(gkey, sort=False, group_keys=False)
+
+    for _, g in groups:
+        # Get positional indices within the sorted df (gdf)
+        pos = gdf.index.get_indexer(g.index)  # positions of this group's indices in gdf
+        # Extract arrays
+        X_block = X_df.loc[g.index].to_numpy(dtype=float, copy=False)  # (n, p_raw)
+        y_block = y_s.loc[g.index].to_numpy(dtype=float, copy=False)  # (n,)
+
+        n_g = X_block.shape[0]
+        p = p_raw + (1 if add_constant else 0)
+
+        # Valid row mask (listwise): finite y and finite X row
+        valid = np.isfinite(y_block) & np.isfinite(X_block).all(axis=1)
+
+        # Rolling state
+        Sxx = np.zeros((p, p), dtype=float)
+        Sxy = np.zeros((p,), dtype=float)
+        Sy = 0.0
+        Syy = 0.0
+        n_valid = 0
+
+        # Store most recent window rows for subtraction (fixed window only)
+        q: deque[Tuple[np.ndarray, float]] = deque()
+
+        # Helper to add/remove a row vector
+        def _add_row(x_aug: np.ndarray, y_val: float) -> None:
+            nonlocal Sxx, Sxy, Sy, Syy, n_valid
+            Sxx += np.outer(x_aug, x_aug)
+            Sxy += x_aug * y_val
+            Sy += y_val
+            Syy += y_val * y_val
+            n_valid += 1
+
+        def _sub_row(x_aug: np.ndarray, y_val: float) -> None:
+            nonlocal Sxx, Sxy, Sy, Syy, n_valid
+            Sxx -= np.outer(x_aug, x_aug)
+            Sxy -= x_aug * y_val
+            Sy -= y_val
+            Syy -= y_val * y_val
+            n_valid -= 1
+
+        # Main scan
+        for i in range(n_g):
+            if valid[i]:
+                # Build augmented x row
+                if add_constant:
+                    x_aug = np.empty((p,), dtype=float)
+                    x_aug[:-1] = X_block[i, :]
+                    x_aug[-1] = 1.0
+                else:
+                    x_aug = X_block[i, :]
+
+                y_val = float(y_block[i])
+
+                # Add current row to window
+                _add_row(x_aug, y_val)
+                q.append((x_aug, y_val))
+
+                # If fixed window, trim to `window` valid rows
+                if not expanding:
+                    while n_valid > window:
+                        x_old, y_old = q.popleft()
+                        _sub_row(x_old, y_old)
+
+                # Check sample size threshold
+                min_needed = max(min_obs, p + 1)  # require >p DOF for stable OLS/SEs
+                if n_valid >= min_needed:
+                    beta, se, meta = _solve_ols_from_crossmoments(
+                        Sxx,
+                        Sxy,
+                        Syy,
+                        Sy,
+                        n_valid,
+                        compute_se=compute_se,
+                        add_constant=add_constant,
+                        rtol=rtol,
+                    )
+                    # If rank-deficient and we want to drop collinear windows -> NaNs
+                    if beta is None or (drop_collinear and int(meta["rank"]) < p):
+                        # leave NaNs in outputs for this row
+                        pass
+                    else:
+                        # Write stats
+                        out_cols["_Nobs"][pos[i]] = float(n_valid)
+                        out_cols["_R2"][pos[i]] = float(meta["r2"])
+                        out_cols["_adjR2"][pos[i]] = float(meta["adj_r2"])
+                        out_cols["_sigma"][pos[i]] = float(meta["sigma"])
+
+                        # Coefficients map: [rhs..., _cons?]
+                        if add_constant:
+                            b_rhs = beta[:-1]
+                            b_c = float(beta[-1])
+                        else:
+                            b_rhs = beta
+                            b_c = None
+
+                        for j, name in enumerate(rhs):
+                            out_cols[f"_b_{name}"][pos[i]] = float(b_rhs[j])
+                        if add_constant:
+                            out_cols["_b_cons"][pos[i]] = b_c
+
+                        if compute_se and se is not None:
+                            if add_constant:
+                                se_rhs = se[:-1]
+                                se_c = float(se[-1])
+                            else:
+                                se_rhs = se
+                                se_c = None
+                            for j, name in enumerate(rhs):
+                                out_cols[f"_se_{name}"][pos[i]] = float(se_rhs[j])
+                                # Guard div-by-zero
+                                if se_rhs[j] > 0:
+                                    out_cols[f"_t_{name}"][pos[i]] = float(
+                                        b_rhs[j] / se_rhs[j]
+                                    )
+                                else:
+                                    out_cols[f"_t_{name}"][pos[i]] = np.nan
+                            if add_constant:
+                                out_cols["_se_cons"][pos[i]] = se_c
+                                if se_c is not None and se_c > 0:
+                                    out_cols["_t_cons"][pos[i]] = float(b_c / se_c)
+                                else:
+                                    out_cols["_t_cons"][pos[i]] = np.nan
+                else:
+                    # Not enough obs yet: leave NaNs
+                    pass
+            else:
+                # Current row invalid → keep window as-is; emit NaNs for this row
+                # (Design choice: we do NOT reuse last coefficients on invalid rows.)
+                pass
+
+    # Assemble output DataFrame (aligned to original df index order)
+    out_df = pd.DataFrame(out_cols, index=gdf.index)
+    # Reindex back to the input df's original order
+    out_df = out_df.reindex(df.index)
+
+    # Column order: stats first, then coefficients (and optional SE/t grouped)
+    ordered_cols: List[str] = ["_Nobs", "_R2", "_adjR2", "_sigma"]
+    # Coefs
+    ordered_cols += [f"_b_{c}" for c in rhs]
+    if add_constant:
+        ordered_cols += ["_b_cons"]
+    # SE and t (if requested)
+    if compute_se:
+        ordered_cols += [f"_se_{c}" for c in rhs]
+        if add_constant:
+            ordered_cols += ["_se_cons"]
+        ordered_cols += [f"_t_{c}" for c in rhs]
+        if add_constant:
+            ordered_cols += ["_t_cons"]
+
+    return out_df[ordered_cols]

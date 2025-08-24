@@ -15,58 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from utils.savepredictor import save_predictor
 from utils.stata_ineq import stata_ineq_pl
 from utils.asrol import asrol
-
-# new custom (need to integrate)
-from asreg_rebuild.stata_regress import asreg
-from Human.gpt5_quantiles_pd import stata_quantile
-
-
-def gpt5_quantiles(x, qs):
-    """
-    Compute Stata-style quantiles for a 1D array-like using only NumPy.
-
-    Parameters
-    ----------
-    x : array-like
-        Data (numeric). NaNs are ignored.
-    qs : float or sequence of floats
-        Quantiles requested. May be in [0,100] (percent) or [0,1] (fractions).
-
-    Returns
-    -------
-    float or np.ndarray
-        Scalar if one quantile requested, else array of quantiles.
-    """
-    arr = np.asarray(x, dtype=float)
-    arr = arr[~np.isnan(arr)]  # drop NaNs
-    arr.sort(kind="mergesort")  # stable sort like Stata
-    n = arr.size
-
-    if n == 0:
-        return np.nan if np.isscalar(qs) else np.full(len(np.atleast_1d(qs)), np.nan)
-
-    qs = np.atleast_1d(qs).astype(float)
-    if np.all((qs >= 0) & (qs <= 1)):
-        qs = qs * 100.0
-
-    P = (qs / 100.0) * n
-    out = np.empty_like(P, dtype=float)
-
-    for j, p in enumerate(P):
-        if p <= 0:
-            out[j] = arr[0]
-        elif p >= n:
-            out[j] = arr[-1]
-        else:
-            # first rank > p
-            idx = np.searchsorted(np.arange(1, n + 1), p, side="right")
-            val = arr[idx]
-            k = int(np.floor(p + 1e-12))
-            if abs(p - k) < 1e-12 and 1 <= k < n:
-                val = (arr[k - 1] + arr[k]) / 2
-            out[j] = val
-
-    return float(out[0]) if out.size == 1 else out
+from utils.stata_replication import stata_quantile, asreg_collinear
 
 
 # %%
@@ -169,7 +118,7 @@ reg_input = pl.read_parquet(
 
 print("🎯 Computing size deciles based on NYSE stocks...")
 
-# new, using gpt5-created quantile function
+# new, using stata_quantile function
 qu10_data = reg_input.filter(pl.col("exchcd") == 1).to_pandas()
 qu10_data = (
     qu10_data.groupby("time_avail_m")
@@ -223,13 +172,13 @@ reg_input = reg_input.join(templead, on=["permno", "time_avail_m"], how="left").
 
 # %%
 
-print("🔧 asreg regressions with stata_regress.py")
+print("🔧 asreg regressions with asreg_collinear")
 
 # bys time_avail_m: asreg fRet A_*
-# Run cross-sectional regression by time_avail_m using utils/asreg.py helper
+# Run cross-sectional regression by time_avail_m using asreg_collinear helper
 feature_cols = [f"A_{L}" for L in lag_lengths]
 
-betas_by_month = asreg(
+betas_by_month = asreg_collinear(
     reg_input.to_pandas(),
     y="fRet",
     X="A_*",  # Will be expanded to all A_* columns
