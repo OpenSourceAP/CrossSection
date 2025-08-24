@@ -26,6 +26,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
+from utils.forward_fill import apply_quarterly_fill_to_compustat
 
 print("Starting fgr5yrNoLag.py")
 
@@ -50,6 +51,11 @@ df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 df = df.select(['permno', 'time_avail_m', 'ceq', 'ib', 'txdi', 'dv', 'sale', 'ni', 'dp'])
 
 print(f"After loading m_aCompustat: {len(df)} rows")
+
+print("Applying forward-fill for missing annual values...")
+# m_aCompustat doesn't have gvkey, so use permno as the group column
+from utils.forward_fill import forward_fill_quarterly
+df = forward_fill_quarterly(df, ['ceq', 'ib', 'txdi', 'dv', 'sale', 'ni', 'dp'], group_col='permno')
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(tickerIBES)
 print("Loading SignalMasterTable...")

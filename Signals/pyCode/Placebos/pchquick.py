@@ -24,6 +24,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
+from utils.forward_fill import apply_quarterly_fill_to_compustat
 
 print("Starting pchquick.py")
 
@@ -34,6 +35,9 @@ df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 df = df.select(['gvkey', 'permno', 'time_avail_m', 'act', 'invt', 'lct'])
 
 print(f"After loading: {len(df)} rows")
+
+print("Applying forward-fill for missing annual values...")
+df = apply_quarterly_fill_to_compustat(df, quarterly_columns=['act', 'invt', 'lct'])
 
 # SIGNAL CONSTRUCTION
 # bysort permno time_avail_m: keep if _n == 1  // deletes a few observations

@@ -25,6 +25,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
+from utils.forward_fill import apply_quarterly_fill_to_compustat
 
 print("Starting NetPayoutYield_q.py")
 
@@ -47,6 +48,9 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'dvpsxq', 'cshoq', 'ajexq', 'prst
 # Convert gvkey to same type for join
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
+
+print("Applying forward-fill for missing quarterly values...")
+qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dvpsxq', 'cshoq', 'ajexq', 'prstkcyq', 'pstkq', 'sstkyq'])
 
 print("Merging with m_QCompustat...")
 df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')

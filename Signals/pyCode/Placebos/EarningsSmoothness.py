@@ -80,13 +80,16 @@ df = pl.from_pandas(df_pd)
 
 # * Expand to monthly
 print("Expanding to monthly data...")
-# Create 12 copies of each row
+# Create 12 copies of each row, following Stata's logic:
+# bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1 
+# This adds 0, 1, 2, ..., 11 months to each original time_avail_m
 df_expanded_list = []
 for month in range(12):
     df_month = df.clone()
-    df_month = df_month.with_columns(
-        (pl.col('time_avail_m') + pl.duration(days=30*month)).alias('time_avail_m')
-    )
+    # Convert to pandas to add months properly, then back to polars
+    df_pd_temp = df_month.to_pandas()
+    df_pd_temp['time_avail_m'] = df_pd_temp['time_avail_m'] + pd.DateOffset(months=month)
+    df_month = pl.from_pandas(df_pd_temp)
     df_expanded_list.append(df_month)
 
 df_expanded = pl.concat(df_expanded_list)
@@ -94,11 +97,18 @@ df_expanded = pl.concat(df_expanded_list)
 # bysort gvkey time_avail_m (datadate): keep if _n == _N
 print("Keeping latest datadate for each gvkey-time_avail_m...")
 df_expanded = df_expanded.sort(['gvkey', 'time_avail_m', 'datadate'])
-df_expanded = df_expanded.group_by(['gvkey', 'time_avail_m']).last()
+# Convert to pandas for more precise control over deduplication
+df_pd_dedup = df_expanded.to_pandas()
+# Keep the last row for each gvkey-time_avail_m combination (matching Stata's keep if _n == _N)
+df_pd_dedup = df_pd_dedup.groupby(['gvkey', 'time_avail_m']).last().reset_index()
 
 # bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
 print("Dropping duplicates by permno-time_avail_m...")
-df_expanded = df_expanded.unique(subset=['permno', 'time_avail_m'], keep='first')
+# Keep the first row for each permno-time_avail_m combination (matching Stata's keep if _n == 1)
+df_pd_dedup = df_pd_dedup.groupby(['permno', 'time_avail_m']).first().reset_index()
+
+# Convert back to polars
+df_expanded = pl.from_pandas(df_pd_dedup)
 
 print(f"Generated EarningsSmoothness for {len(df_expanded)} observations")
 

@@ -23,6 +23,7 @@ Do NOT make any changes to code which generates intermediate data files or predi
 
    * Use `utils/test_placebos.py` to compare Python outputs with Stata outputs (schema, rows, values).
    * Mark status: `todo → first-pass → green`.
+   * Acceptable tolerance for missing observations (subset test) is 0 missing observations.
 
 4. **Debugging**
 

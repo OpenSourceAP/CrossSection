@@ -113,13 +113,27 @@ df = df.with_columns(
 )
 
 # Complex conditional for tempdypos - replace tempdypos = . if multiple conditions
+# Fixed: In Stata, missing values in conditions evaluate to FALSE, not TRUE
+# We need to explicitly check for non-null values before applying <= 0 conditions
 print("Computing tempdypos...")
 df = df.with_columns(
     pl.when(
-        ((pl.col('temp') <= 0) & (pl.col('l1_temp') <= 0) & (pl.col('l2_temp') <= 0)) |
-        ((pl.col('l3_temp') <= 0) & (pl.col('l4_temp') <= 0) & (pl.col('l5_temp') <= 0)) |
-        ((pl.col('l6_temp') <= 0) & (pl.col('l7_temp') <= 0) & (pl.col('l8_temp') <= 0)) |
-        ((pl.col('l9_temp') <= 0) & (pl.col('l10_temp') <= 0) & (pl.col('l11_temp') <= 0))
+        # Condition 1: All three values must be non-null AND <= 0
+        ((pl.col('temp').is_not_null() & (pl.col('temp') <= 0)) & 
+         (pl.col('l1_temp').is_not_null() & (pl.col('l1_temp') <= 0)) & 
+         (pl.col('l2_temp').is_not_null() & (pl.col('l2_temp') <= 0))) |
+        # Condition 2: All three values must be non-null AND <= 0
+        ((pl.col('l3_temp').is_not_null() & (pl.col('l3_temp') <= 0)) & 
+         (pl.col('l4_temp').is_not_null() & (pl.col('l4_temp') <= 0)) & 
+         (pl.col('l5_temp').is_not_null() & (pl.col('l5_temp') <= 0))) |
+        # Condition 3: All three values must be non-null AND <= 0
+        ((pl.col('l6_temp').is_not_null() & (pl.col('l6_temp') <= 0)) & 
+         (pl.col('l7_temp').is_not_null() & (pl.col('l7_temp') <= 0)) & 
+         (pl.col('l8_temp').is_not_null() & (pl.col('l8_temp') <= 0))) |
+        # Condition 4: All three values must be non-null AND <= 0
+        ((pl.col('l9_temp').is_not_null() & (pl.col('l9_temp') <= 0)) & 
+         (pl.col('l10_temp').is_not_null() & (pl.col('l10_temp') <= 0)) & 
+         (pl.col('l11_temp').is_not_null() & (pl.col('l11_temp') <= 0)))
     )
     .then(None)
     .otherwise(pl.col('tempdy'))

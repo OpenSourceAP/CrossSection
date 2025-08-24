@@ -25,6 +25,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
+from utils.forward_fill import apply_quarterly_fill_to_compustat
 
 print("Starting AMq.py")
 
@@ -43,6 +44,10 @@ print(f"After filtering for non-null gvkey: {len(df)} rows")
 print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'atq'])
+
+# Apply forward-fill logic to match Stata's handling of missing quarterly data
+print("Applying forward-fill for missing atq values...")
+qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['atq'])
 
 # Convert gvkey to same type for join
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))

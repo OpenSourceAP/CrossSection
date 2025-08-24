@@ -1,0 +1,1111 @@
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/pandas/core/nanops.py:1016: RuntimeWarning: invalid value encountered in subtract
+  sqr = _ensure_numeric((avg - values) ** 2)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/pandas/core/nanops.py:1016: RuntimeWarning: invalid value encountered in subtract
+  sqr = _ensure_numeric((avg - values) ** 2)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/pandas/core/nanops.py:1016: RuntimeWarning: invalid value encountered in subtract
+  sqr = _ensure_numeric((avg - values) ** 2)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/statsmodels/regression/linear_model.py:1733: RuntimeWarning: invalid value encountered in subtract
+  return np.sum(weights * (model.endog - mean)**2)
+Validating 58 placebos: ['AMq', 'AssetGrowth_q', 'AssetLiquidityBook', 'AssetLiquidityBookQuart', 'AssetLiquidityMarket', 'AssetLiquidityMarketQuart', 'AssetTurnover', 'AssetTurnover_q', 'BMq', 'BookLeverageQuarterly', 'CBOperProfLagAT', 'CBOperProfLagAT_q', 'CFq', 'CapTurnover', 'CapTurnover_q', 'ChNCOA', 'ChNCOL', 'ChangeRoA', 'ChangeRoE', 'DelSTI', 'DivYield', 'DivYieldAnn', 'EBM_q', 'EPq', 'ETR', 'EarningsSmoothness', 'EntMult_q', 'LaborforceEfficiency', 'Leverage_q', 'NetDebtPrice_q', 'NetPayoutYield_q', 'OPLeverage_q', 'PM_q', 'PayoutYield_q', 'RD_q', 'RetNOA_q', 'SP_q', 'Tax_q', 'ZScore', 'ZScore_q', 'cashdebt', 'cfpq', 'depr', 'fgr5yrNoLag', 'pchdepr', 'pchquick', 'quick', 'rd_sale', 'rd_sale_q', 'roic', 'salecash', 'saleinv', 'salerec', 'secured', 'securedind', 'sgr', 'sgr_q', 'tang_q']
+Including 56 missing Python CSVs in summary: ['AbnormalAccrualsPercent', 'AccrualQuality', 'AccrualQualityJune', 'BetaBDLeverage', 'BetaDimson', 'BetaSquared', 'BidAskTAQ', 'BrandCapital', 'ChPM', 'DelayAcct', 'DelayNonAcct', 'DownsideBeta', 'EarningsConservatism', 'EarningsPersistence', 'EarningsPredictability', 'EarningsTimeliness', 'EarningsValueRelevance', 'FRbook', 'FailureProbability', 'FailureProbabilityJune', 'ForecastDispersionLT', 'GPlag', 'GPlag_q', 'GrGMToGrSales', 'GrSaleToGrReceivables', 'IdioVolCAPM', 'IdioVolQF', 'IntrinsicValue', 'KZ', 'KZ_q', 'OScore_q', 'OperProfLag', 'OperProfLag_q', 'OperProfRDLagAT', 'OperProfRDLagAT_q', 'OrgCapNoAdj', 'PM', 'PS_q', 'ResidualMomentum6m', 'RetNOA', 'ReturnSkewCAPM', 'ReturnSkewQF', 'WW', 'WW_Q', 'betaCC', 'betaCR', 'betaNet', 'betaRC', 'betaRR', 'currat', 'grcapx1y', 'nanalyst', 'pchcurrat', 'pchgm_pchsale', 'pchsaleinv', 'roavol']
+
+=== Validating AMq ===
+  Loaded Stata: 2584378 rows, Python: 2669375 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.92e-08 < 1.00e+00)
+  ✅ AMq PASSED
+
+=== Validating AssetGrowth_q ===
+  Loaded Stata: 2303961 rows, Python: 2303943 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 49 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  AssetGrowth_q
+     0   10515  199604       0.039085
+     1   10515  199605       0.039085
+     2   10515  199606       0.039085
+     3   10515  199704      -0.161325
+     4   10515  199705      -0.161325
+     5   10515  199706      -0.161325
+     6   11545  199706       1.051804
+     7   11545  199707       1.051804
+     8   11545  199708       1.051804
+     9   11545  199806       0.729125
+  ✅ Test 3 - Precision1 check: PASSED (0.002% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.89e-08 < 1.00e+00)
+  ❌ AssetGrowth_q FAILED
+    Bad observations: 36/2303912 (0.002%)
+
+=== Validating AssetLiquidityBook ===
+  Loaded Stata: 3595932 rows, Python: 3596807 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.48e-08 < 1.00e+00)
+  ✅ AssetLiquidityBook PASSED
+
+=== Validating AssetLiquidityBookQuart ===
+  Loaded Stata: 2538807 rows, Python: 2538801 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 44 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  AssetLiquidityBookQuart
+     0   10515  199604                 0.816307
+     1   10515  199605                 0.781849
+     2   10515  199606                 0.781849
+     3   11545  199706                 0.818928
+     4   11545  199707                 0.777539
+     5   11545  199708                 0.777539
+     6   12750  198212                 0.666923
+     7   12750  198301                 0.695176
+     8   12750  198302                 0.695176
+     9   12750  198303                 0.943752
+  ✅ Test 3 - Precision1 check: PASSED (0.003% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.44e-08 < 1.00e+00)
+  ❌ AssetLiquidityBookQuart FAILED
+    Bad observations: 67/2538763 (0.003%)
+
+=== Validating AssetLiquidityMarket ===
+  Loaded Stata: 3476318 rows, Python: 3477044 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.65e-07 < 1.00e+00)
+  ✅ AssetLiquidityMarket PASSED
+
+=== Validating AssetLiquidityMarketQuart ===
+  Loaded Stata: 2503163 rows, Python: 2503127 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 50 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  AssetLiquidityMarketQuart
+     0   10515  199604                   0.819677
+     1   10515  199605                   0.833838
+     2   10515  199606                   0.833838
+     3   11545  199706                   0.363298
+     4   11545  199707                   0.407572
+     5   11545  199708                   0.407572
+     6   12750  198212                   0.349204
+     7   12750  198301                   0.398642
+     8   12750  198302                   0.398642
+     9   12750  198303                   0.541186
+  ✅ Test 3 - Precision1 check: PASSED (0.003% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.49e-07 < 1.00e+00)
+  ❌ AssetLiquidityMarketQuart FAILED
+    Bad observations: 84/2503113 (0.003%)
+
+=== Validating AssetTurnover ===
+  Loaded Stata: 2796921 rows, Python: 2797974 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 24 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  AssetTurnover
+     0   12373  202406       0.145598
+     1   12373  202407       0.145598
+     2   12373  202408       0.145598
+     3   12373  202409       0.145598
+     4   12373  202410       0.145598
+     5   12373  202411       0.145598
+     6   12373  202412       0.145598
+     7   12373  202501       0.145598
+     8   12373  202502       0.145598
+     9   12373  202503       0.145598
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.94e-09 < 1.00e+00)
+  ❌ AssetTurnover FAILED
+    Bad observations: 24/2796897 (0.001%)
+
+=== Validating AssetTurnover_q ===
+  Loaded Stata: 1963604 rows, Python: 2066032 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 14 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  AssetTurnover_q
+     0   23033  202406         0.594178
+     1   23033  202407         0.594178
+     2   23033  202408         0.594178
+     3   23033  202409         4.538462
+     4   23033  202410         4.538462
+     5   23033  202411         4.538462
+     6   88316  200212         0.000000
+     7   88316  200301         0.000000
+     8   88316  200302         0.000000
+     9   88316  200304         0.000000
+  ✅ Test 3 - Precision1 check: PASSED (0.002% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 5.49e-09 < 1.00e+00)
+  ❌ AssetTurnover_q FAILED
+    Bad observations: 41/1963590 (0.002%)
+
+=== Validating BMq ===
+  Loaded Stata: 2568885 rows, Python: 2717113 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.003% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.24e-07 < 1.00e+00)
+  ✅ BMq PASSED
+
+=== Validating BookLeverageQuarterly ===
+  Loaded Stata: 2572594 rows, Python: 2670966 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 4.13e-13 < 1.00e+00)
+  ✅ BookLeverageQuarterly PASSED
+
+=== Validating CBOperProfLagAT ===
+  Loaded Stata: 2103518 rows, Python: 2171034 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 6.60e-08 < 1.00e+00)
+  ✅ CBOperProfLagAT PASSED
+
+=== Validating CBOperProfLagAT_q ===
+  Loaded Stata: 1911489 rows, Python: 1978664 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 35 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  CBOperProfLagAT_q
+     0   10515  199604           0.019881
+     1   10515  199605           0.019881
+     2   10515  199606           0.019881
+     3   11545  199706           0.062512
+     4   11545  199707           0.062512
+     5   11545  199708           0.062512
+     6   12750  198212          -0.046107
+     7   12750  198301          -0.046107
+     8   12750  198302          -0.046107
+     9   12750  198303          -0.021716
+  ✅ Test 3 - Precision1 check: PASSED (0.018% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.53e-08 < 1.00e+00)
+  ❌ CBOperProfLagAT_q FAILED
+    Bad observations: 351/1911454 (0.018%)
+
+=== Validating CFq ===
+  Loaded Stata: 2797878 rows, Python: 2797875 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 31 observations)
+  Sample of missing observations:
+   index  permno  yyyymm      CFq
+     0   11545  199706 0.013777
+     1   11545  199707 0.011884
+     2   11545  199708 0.010663
+     3   12837  198004 0.027496
+     4   12837  198005 0.016803
+     5   16965  201812 0.096766
+     6   16965  201901 0.083703
+     7   16965  201902 0.078968
+     8   21346  197001 0.026762
+     9   21346  197002 0.025521
+  ✅ Test 3 - Precision1 check: PASSED (0.007% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.50e-08 < 1.00e+00)
+  ❌ CFq FAILED
+    Bad observations: 200/2797847 (0.007%)
+
+=== Validating CapTurnover ===
+  Loaded Stata: 2985685 rows, Python: 2986378 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.50e-08 < 1.00e+00)
+  ✅ CapTurnover PASSED
+
+=== Validating CapTurnover_q ===
+  Loaded Stata: 2486325 rows, Python: 2486315 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 48 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  CapTurnover_q
+     0   10515  199607       0.068358
+     1   10515  199608       0.068358
+     2   10515  199609       0.068358
+     3   11545  199706       0.209439
+     4   11545  199707       0.209439
+     5   11545  199708       0.209439
+     6   12750  198303       0.359559
+     7   12750  198304       0.359559
+     8   12750  198305       0.359559
+     9   12837  198004       0.328576
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.01e-08 < 1.00e+00)
+  ❌ CapTurnover_q FAILED
+    Bad observations: 93/2486277 (0.004%)
+
+=== Validating ChNCOA ===
+  Loaded Stata: 3295125 rows, Python: 3295872 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.003% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.48e-08 < 1.00e+00)
+  ✅ ChNCOA PASSED
+
+=== Validating ChNCOL ===
+  Loaded Stata: 3249290 rows, Python: 3250061 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 5.79e-08 < 1.00e+00)
+  ✅ ChNCOL PASSED
+
+=== Validating ChangeRoA ===
+  Loaded Stata: 2296769 rows, Python: 2296739 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 65 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  ChangeRoA
+     0   10515  199604  -0.004968
+     1   10515  199605  -0.004968
+     2   10515  199606  -0.004968
+     3   10515  199704  -0.004280
+     4   10515  199705  -0.004280
+     5   10515  199706  -0.004280
+     6   11545  199706  -0.018291
+     7   11545  199707  -0.018291
+     8   11545  199708  -0.018291
+     9   11545  199806   0.009021
+  ✅ Test 3 - Precision1 check: PASSED (0.008% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 6.60e-08 < 1.00e+00)
+  ❌ ChangeRoA FAILED
+    Bad observations: 183/2296704 (0.008%)
+
+=== Validating ChangeRoE ===
+  Loaded Stata: 2360217 rows, Python: 2360248 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 70 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  ChangeRoE
+     0   10515  199604  -0.006004
+     1   10515  199605  -0.006004
+     2   10515  199606  -0.006004
+     3   10515  199704  -0.005122
+     4   10515  199705  -0.005122
+     5   10515  199706  -0.005122
+     6   11545  199706  -0.054672
+     7   11545  199707  -0.054672
+     8   11545  199708  -0.054672
+     9   11545  199806   0.021011
+  ✅ Test 3 - Precision1 check: PASSED (0.002% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.18e-09 < 1.00e+00)
+  ❌ ChangeRoE FAILED
+    Bad observations: 36/2360147 (0.002%)
+
+=== Validating DelSTI ===
+  Loaded Stata: 3295155 rows, Python: 3295872 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.003% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.04e-07 < 1.00e+00)
+  ✅ DelSTI PASSED
+
+=== Validating DivYield ===
+  Loaded Stata: 421384 rows, Python: 421370 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 59 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  DivYield
+     0   11470  199209  0.017391
+     1   11470  199212  0.014371
+     2   11470  199303  0.017391
+     3   11748  201504  0.022488
+     4   11748  201505  0.022927
+     5   11748  201506  0.023354
+     6   11748  201507  0.023612
+     7   11748  201508  0.023176
+     8   11748  201509  0.025351
+     9   11748  201510  0.023389
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.24e-08 < 1.00e+00)
+  ❌ DivYield FAILED
+    Bad observations: 16/421325 (0.004%)
+
+=== Validating DivYieldAnn ===
+  Loaded Stata: 3878713 rows, Python: 3883930 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.032% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.07e-08 < 1.00e+00)
+  ✅ DivYieldAnn PASSED
+
+=== Validating EBM_q ===
+  Loaded Stata: 2497505 rows, Python: 2497500 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 54 observations)
+  Sample of missing observations:
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/numpy/_core/_methods.py:52: RuntimeWarning: invalid value encountered in reduce
+  return umr_sum(a, axis, dtype, out, keepdims, initial, where)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/numpy/_core/_methods.py:52: RuntimeWarning: invalid value encountered in reduce
+  return umr_sum(a, axis, dtype, out, keepdims, initial, where)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/numpy/_core/_methods.py:52: RuntimeWarning: invalid value encountered in reduce
+  return umr_sum(a, axis, dtype, out, keepdims, initial, where)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/numpy/_core/_methods.py:52: RuntimeWarning: invalid value encountered in reduce
+  return umr_sum(a, axis, dtype, out, keepdims, initial, where)
+   index  permno  yyyymm    EBM_q
+     0   10515  199604 1.030155
+     1   10515  199605 1.891978
+     2   10515  199606 1.808921
+     3   11545  199706 0.477123
+     4   11545  199707 0.421310
+     5   11545  199708 0.383889
+     6   12750  198212 0.099635
+     7   12750  198301 0.103646
+     8   12750  198302 0.095039
+     9   12837  198004 1.263025
+  ✅ Test 3 - Precision1 check: PASSED (0.002% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.39e-08 < 1.00e+00)
+  ❌ EBM_q FAILED
+    Bad observations: 44/2497451 (0.002%)
+
+=== Validating EPq ===
+  Loaded Stata: 1893938 rows, Python: 1908337 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 101 observations)
+  Sample of missing observations:
+   index  permno  yyyymm      EPq
+     0   10198  198709 0.005705
+     1   10515  199604 0.005181
+     2   10515  199605 0.005181
+     3   10515  199606 0.005181
+     4   11321  199406 0.041526
+     5   11545  199706 0.014092
+     6   11545  199707 0.014227
+     7   11545  199708 0.014227
+     8   11651  198902 0.000409
+     9   11843  198803 0.040014
+  ✅ Test 3 - Precision1 check: PASSED (0.740% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.92e-03 < 1.00e+00)
+  ❌ EPq FAILED
+    Bad observations: 14015/1893837 (0.740%)
+
+=== Validating ETR ===
+  Loaded Stata: 2657230 rows, Python: 2658445 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 6.20e-12 < 1.00e+00)
+  ✅ ETR PASSED
+
+=== Validating EarningsSmoothness ===
+  Loaded Stata: 1482823 rows, Python: 1538785 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.005% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.06e-07 < 1.00e+00)
+  ✅ EarningsSmoothness PASSED
+
+=== Validating EntMult_q ===
+  Loaded Stata: 1689737 rows, Python: 1691109 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 94 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  EntMult_q
+     0   11545  199706  47.009804
+     1   11545  199707  56.398899
+     2   11545  199708  64.223152
+     3   12373  202403  52.285816
+     4   12373  202404  49.820324
+     5   12373  202405  50.198395
+     6   12750  198212 143.219590
+     7   12750  198301 138.307430
+     8   12750  198302 149.359800
+     9   16564  199506  26.425295
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 4.67e-09 < 1.00e+00)
+  ❌ EntMult_q FAILED
+    Bad observations: 19/1689643 (0.001%)
+
+=== Validating LaborforceEfficiency ===
+  Loaded Stata: 2974260 rows, Python: 3073530 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 4.28e-09 < 1.00e+00)
+  ✅ LaborforceEfficiency PASSED
+
+=== Validating Leverage_q ===
+  Loaded Stata: 2571833 rows, Python: 2571800 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 67 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  Leverage_q
+     0   10515  199604    0.207634
+     1   10515  199605    0.534574
+     2   10515  199606    0.492051
+     3   11545  199706    0.042305
+     4   11545  199707    0.036492
+     5   11545  199708    0.032743
+     6   12750  198212    0.127148
+     7   12750  198301    0.131946
+     8   12750  198302    0.121620
+     9   12837  198004    0.933059
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 4.47e-08 < 1.00e+00)
+  ❌ Leverage_q FAILED
+    Bad observations: 3/2571766 (0.000%)
+
+=== Validating NetDebtPrice_q ===
+  Loaded Stata: 1178409 rows, Python: 1219765 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 40 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  NetDebtPrice_q
+     0   10515  199604       -0.342635
+     1   10515  199605       -0.882147
+     2   10515  199606       -0.811976
+     3   12837  198004        0.438865
+     4   23033  202412       -0.213396
+     5   23792  202412        0.499986
+     6   23863  202412       -0.402767
+     7   25786  198806       -1.045119
+     8   25786  198807       -1.081157
+     9   25786  198808       -1.119770
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 4.85e-08 < 1.00e+00)
+  ❌ NetDebtPrice_q FAILED
+    Bad observations: 6/1178369 (0.001%)
+
+=== Validating NetPayoutYield_q ===
+  Loaded Stata: 2520037 rows, Python: 2520050 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 256 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  NetPayoutYield_q
+     0   10443  201703          0.003178
+     1   10443  201704          0.002977
+     2   10443  201705          0.003019
+     3   10515  199604         -0.003985
+     4   10515  199605         -0.010261
+     5   10515  199606         -0.009444
+     6   11545  199706         -0.213346
+     7   11545  199707         -0.184031
+     8   11545  199708         -0.165124
+     9   11843  198809          0.000000
+  ✅ Test 3 - Precision1 check: PASSED (0.013% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.52e-08 < 1.00e+00)
+  ❌ NetPayoutYield_q FAILED
+    Bad observations: 318/2519781 (0.013%)
+
+=== Validating OPLeverage_q ===
+  Loaded Stata: 2546734 rows, Python: 2546725 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 65 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  OPLeverage_q
+     0   10515  199604      0.205151
+     1   10515  199605      0.205151
+     2   10515  199606      0.205151
+     3   11545  199706      0.157832
+     4   11545  199707      0.157832
+     5   11545  199708      0.157832
+     6   12750  198212      0.294411
+     7   12750  198301      0.294411
+     8   12750  198302      0.294411
+     9   12837  198004      0.584828
+  ✅ Test 3 - Precision1 check: PASSED (0.009% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 7.72e-08 < 1.00e+00)
+  ❌ OPLeverage_q FAILED
+    Bad observations: 235/2546669 (0.009%)
+
+=== Validating PM_q ===
+  Loaded Stata: 2492083 rows, Python: 2551862 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 44 observations)
+  Sample of missing observations:
+   index  permno  yyyymm     PM_q
+     0   11545  199706 0.146023
+     1   11545  199707 0.146023
+     2   11545  199708 0.146023
+     3   12837  198004 0.040997
+     4   12837  198005 0.040997
+     5   16965  201812 1.705921
+     6   16965  201901 1.705921
+     7   16965  201902 1.705921
+     8   21346  197001 0.006683
+     9   21346  197002 0.006683
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.85e-09 < 1.00e+00)
+  ❌ PM_q FAILED
+    Bad observations: 31/2492039 (0.001%)
+
+=== Validating PayoutYield_q ===
+  Loaded Stata: 1310000 rows, Python: 1309994 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 83 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  PayoutYield_q
+     0   14548  201703       0.054862
+     1   14548  201704       0.051537
+     2   14548  201705       0.051008
+     3   16564  199506       0.002486
+     4   16564  199507       0.002983
+     5   16564  199508       0.003277
+     6   17929  199306       0.061052
+     7   17929  199307       0.065801
+     8   17929  199308       0.062337
+     9   19749  199903       0.001771
+  ✅ Test 3 - Precision1 check: PASSED (0.014% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.45e-08 < 1.00e+00)
+  ❌ PayoutYield_q FAILED
+    Bad observations: 182/1309917 (0.014%)
+
+=== Validating RD_q ===
+  Loaded Stata: 833583 rows, Python: 833614 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 35 observations)
+  Sample of missing observations:
+   index  permno  yyyymm     RD_q
+     0   11874  199706 0.008630
+     1   11874  199707 0.007477
+     2   11874  199708 0.006426
+     3   15203  199708 0.029732
+     4   15203  199709 0.020131
+     5   15203  199710 0.024157
+     6   23792  202412 0.036093
+     7   23863  202412 0.015423
+     8   77671  199903 0.012925
+     9   77671  199904 0.014587
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 5.18e-08 < 1.00e+00)
+  ❌ RD_q FAILED
+    Bad observations: 34/833548 (0.004%)
+
+=== Validating RetNOA_q ===
+  Loaded Stata: 2413581 rows, Python: 2413603 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 69 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  RetNOA_q
+     0   10515  199607  0.013844
+     1   10515  199608  0.013844
+     2   10515  199609  0.013844
+     3   11545  199706  0.085007
+     4   11545  199707  0.085007
+     5   11545  199708  0.085007
+     6   12750  198303  0.020093
+     7   12750  198304  0.020093
+     8   12750  198305  0.020093
+     9   12837  198007  0.040307
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.84e-11 < 1.00e+00)
+  ❌ RetNOA_q FAILED
+    Bad observations: 6/2413512 (0.000%)
+
+=== Validating SP_q ===
+  Loaded Stata: 2790383 rows, Python: 2790383 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 31 observations)
+  Sample of missing observations:
+   index  permno  yyyymm     SP_q
+     0   11545  199706 0.082241
+     1   11545  199707 0.070940
+     2   11545  199708 0.063652
+     3   12837  198004 0.717490
+     4   12837  198005 0.438482
+     5   21346  197001 4.004309
+     6   21346  197002 3.818679
+     7   21346  197003 4.271263
+     8   23792  202412 6.755312
+     9   23863  202412 0.866520
+  ✅ Test 3 - Precision1 check: PASSED (0.005% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 7.95e-08 < 1.00e+00)
+  ❌ SP_q FAILED
+    Bad observations: 127/2790352 (0.005%)
+
+=== Validating Tax_q ===
+  Loaded Stata: 1906647 rows, Python: 1906650 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 52 observations)
+  Sample of missing observations:
+   index  permno  yyyymm    Tax_q
+     0   10515  199604 1.604096
+     1   10515  199605 1.604096
+     2   10515  199606 1.604096
+     3   11545  199706 1.449165
+     4   11545  199707 1.449165
+     5   11545  199708 1.449165
+     6   11843  198803 0.940294
+     7   11843  198804 0.940294
+     8   11843  198805 0.940294
+     9   12837  198004 1.881661
+  ✅ Test 3 - Precision1 check: PASSED (0.002% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.61e-09 < 1.00e+00)
+  ❌ Tax_q FAILED
+    Bad observations: 40/1906595 (0.002%)
+
+=== Validating ZScore ===
+  Loaded Stata: 1669459 rows, Python: 1669861 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.31e-08 < 1.00e+00)
+  ✅ ZScore PASSED
+
+=== Validating ZScore_q ===
+  Loaded Stata: 1214174 rows, Python: 1214167 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 76 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  ZScore_q
+     0   12750  198212  4.570435
+     1   12750  198301  4.398838
+     2   12750  198302  4.784932
+     3   12837  198004  2.131237
+     4   12837  198005  2.540409
+     5   22912  198104  1.229052
+     6   22912  198105  1.220418
+     7   24897  198812  1.279029
+     8   24897  198901  1.249439
+     9   24897  198902  1.171763
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 7.14e-08 < 1.00e+00)
+  ❌ ZScore_q FAILED
+    Bad observations: 10/1214098 (0.001%)
+
+=== Validating cashdebt ===
+  Loaded Stata: 3267782 rows, Python: 3284937 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.21e-09 < 1.00e+00)
+  ✅ cashdebt PASSED
+
+=== Validating cfpq ===
+  Loaded Stata: 2252622 rows, Python: 2268677 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 108 observations)
+  Sample of missing observations:
+   index  permno  yyyymm      cfpq
+     0   11545  199706  0.005822
+     1   11545  199707  0.005022
+     2   11545  199708  0.004506
+     3   12750  198312  0.063750
+     4   12750  198401  0.057955
+     5   12750  198402  0.057212
+     6   12837  198004  0.174127
+     7   12837  198005  0.106415
+     8   13014  201403 -0.042416
+     9   13014  201404 -0.041711
+  ✅ Test 3 - Precision1 check: PASSED (0.018% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.70e-08 < 1.00e+00)
+  ❌ cfpq FAILED
+    Bad observations: 416/2252514 (0.018%)
+
+=== Validating depr ===
+  Loaded Stata: 3462713 rows, Python: 3547200 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 24 observations)
+  Sample of missing observations:
+   index  permno  yyyymm     depr
+     0   12373  202406 0.029963
+     1   12373  202407 0.029963
+     2   12373  202408 0.029963
+     3   12373  202409 0.029963
+     4   12373  202410 0.029963
+     5   12373  202411 0.029963
+     6   12373  202412 0.029963
+     7   12373  202501 0.029963
+     8   12373  202502 0.029963
+     9   12373  202503 0.029963
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.67e-09 < 1.00e+00)
+  ❌ depr FAILED
+    Bad observations: 36/3462689 (0.001%)
+
+=== Validating fgr5yrNoLag ===
+  Loaded Stata: 996237 rows, Python: 996104 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.21% > 0.0% threshold, 2116 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  fgr5yrNoLag
+     0   11406  199204         20.0
+     1   11406  199205         15.0
+     2   11406  199206         15.0
+     3   11406  199207         15.0
+     4   11406  199208         15.0
+     5   11406  199209         15.0
+     6   11406  199210         15.0
+     7   11406  199211         15.0
+     8   11406  199212         15.0
+     9   11406  199301         15.0
+  ✅ Test 3 - Precision1 check: PASSED (0.075% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.43e-07 < 1.00e+00)
+  ❌ fgr5yrNoLag FAILED
+    Bad observations: 750/994121 (0.075%)
+
+=== Validating pchdepr ===
+  Loaded Stata: 3050498 rows, Python: 3235524 rows
+  ✅ Test 1 - Column names: PASSED
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/pandas/core/nanops.py:1016: RuntimeWarning: invalid value encountered in subtract
+  sqr = _ensure_numeric((avg - values) ** 2)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/pandas/core/nanops.py:1016: RuntimeWarning: invalid value encountered in subtract
+  sqr = _ensure_numeric((avg - values) ** 2)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/pandas/core/nanops.py:1016: RuntimeWarning: invalid value encountered in subtract
+  sqr = _ensure_numeric((avg - values) ** 2)
+/Users/idrees/Desktop/CrossSection/Signals/pyCode/.venv/lib/python3.11/site-packages/statsmodels/regression/linear_model.py:1733: RuntimeWarning: invalid value encountered in subtract
+  return np.sum(weights * (model.endog - mean)**2)
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 24 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  pchdepr
+     0   12373  202406 0.091209
+     1   12373  202407 0.091209
+     2   12373  202408 0.091209
+     3   12373  202409 0.091209
+     4   12373  202410 0.091209
+     5   12373  202411 0.091209
+     6   12373  202412 0.091209
+     7   12373  202501 0.091209
+     8   12373  202502 0.091209
+     9   12373  202503 0.091209
+  ✅ Test 3 - Precision1 check: PASSED (0.002% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.31e-09 < 1.00e+00)
+  ❌ pchdepr FAILED
+    Bad observations: 48/3050474 (0.002%)
+
+=== Validating pchquick ===
+  Loaded Stata: 3339639 rows, Python: 3619047 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 273 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  pchquick
+     0   10281  199711       0.0
+     1   10281  199712       0.0
+     2   10281  199801       0.0
+     3   10281  199802       0.0
+     4   10281  199803       0.0
+     5   10281  199804       0.0
+     6   10281  199805       0.0
+     7   11396  199406       0.0
+     8   11396  199407       0.0
+     9   11396  199408       0.0
+  ✅ Test 3 - Precision1 check: PASSED (0.238% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.76e-09 < 1.00e+00)
+  ❌ pchquick FAILED
+    Bad observations: 7959/3339366 (0.238%)
+
+=== Validating quick ===
+  Loaded Stata: 3065278 rows, Python: 3625095 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.06e-08 < 1.00e+00)
+  ✅ quick PASSED
+
+=== Validating rd_sale ===
+  Loaded Stata: 1207848 rows, Python: 1254467 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 4.06e-09 < 1.00e+00)
+  ✅ rd_sale PASSED
+
+=== Validating rd_sale_q ===
+  Loaded Stata: 566115 rows, Python: 598403 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 20 observations)
+  Sample of missing observations:
+   index  permno  yyyymm  rd_sale_q
+     0   11874  199806   0.008565
+     1   11874  199807   0.008565
+     2   11874  199808   0.008565
+     3   15203  199808   0.065449
+     4   15203  199809   0.065449
+     5   15203  199810   0.065449
+     6   77671  200003   0.039044
+     7   77671  200004   0.039044
+     8   77671  200005   0.039044
+     9   79117  199803   0.056410
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 6.67e-09 < 1.00e+00)
+  ❌ rd_sale_q FAILED
+    Bad observations: 3/566095 (0.001%)
+
+=== Validating roic ===
+  Loaded Stata: 3409380 rows, Python: 3410772 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.014% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.38e-23 < 1.00e+00)
+  ✅ roic PASSED
+
+=== Validating salecash ===
+  Loaded Stata: 3583392 rows, Python: 3616983 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 6.55e-09 < 1.00e+00)
+  ✅ salecash PASSED
+
+=== Validating saleinv ===
+  Loaded Stata: 2730607 rows, Python: 3616983 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.000% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.12e-09 < 1.00e+00)
+  ✅ saleinv PASSED
+
+=== Validating salerec ===
+  Loaded Stata: 3451784 rows, Python: 3616983 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.005% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 2.11e-08 < 1.00e+00)
+  ✅ salerec PASSED
+Error loading ../Data/Placebos/secured.csv: could not parse `.79500121` as dtype `i64` at column 'secured' (column number 3)
+
+The current offset in the file is 15898 bytes.
+
+You might want to try:
+- increasing `infer_schema_length` (e.g. `infer_schema_length=10000`),
+- specifying correct dtype with the `schema_overrides` argument
+- setting `ignore_errors` to `True`,
+- adding `.79500121` to the `null_values` list.
+
+Original error: ```remaining bytes non-empty```
+Might be because the signals look like integers but are actually floats
+Trying with schema overrides for mixed int/float columns
+Successfully loaded ../Data/Placebos/secured.csv with schema overrides
+
+=== Validating secured ===
+  Loaded Stata: 3624363 rows, Python: 3625095 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 8.39e-08 < 1.00e+00)
+  ✅ secured PASSED
+
+=== Validating securedind ===
+  Loaded Stata: 3624363 rows, Python: 3625095 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.004% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 0.00e+00 < 1.00e+00)
+  ✅ securedind PASSED
+
+=== Validating sgr ===
+  Loaded Stata: 3231761 rows, Python: 3303855 rows
+  ✅ Test 1 - Column names: PASSED
+  ✅ Test 2 - Superset check: PASSED (Missing 0.00% <= 0.0% threshold)
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.88e-09 < 1.00e+00)
+  ✅ sgr PASSED
+
+=== Validating sgr_q ===
+  Loaded Stata: 2457701 rows, Python: 2465942 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.00% > 0.0% threshold, 17 observations)
+  Sample of missing observations:
+   index  permno  yyyymm     sgr_q
+     0   11545  199806  1.767560
+     1   11545  199807  1.767560
+     2   11545  199808  1.767560
+     3   21346  197101  0.072523
+     4   21346  197102  0.072523
+     5   21346  197103  0.072523
+     6   28855  197608 -0.145659
+     7   64717  199305  7.151463
+     8   79352  199806  0.654237
+     9   79352  199807  0.654237
+  ✅ Test 3 - Precision1 check: PASSED (0.001% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 3.03e-10 < 1.00e+00)
+  ❌ sgr_q FAILED
+    Bad observations: 30/2457684 (0.001%)
+
+=== Validating tang_q ===
+  Loaded Stata: 1675098 rows, Python: 1675074 rows
+  ✅ Test 1 - Column names: PASSED
+  ❌ Test 2 - Superset check: FAILED (Missing 0.01% > 0.0% threshold, 84 observations)
+  Sample of missing observations:
+   index  permno  yyyymm   tang_q
+     0   11545  199706 0.812887
+     1   11545  199707 0.812887
+     2   11545  199708 0.812887
+     3   12373  202306 0.611982
+     4   12373  202307 0.611982
+     5   12373  202308 0.611982
+     6   12373  202309 0.610183
+     7   12373  202310 0.610183
+     8   12373  202311 0.610183
+     9   12373  202312 0.620340
+  ✅ Test 3 - Precision1 check: PASSED (0.005% obs with std_diff >= 1.00e-02 < 10%)
+  ✅ Test 4 - Precision2 check: PASSED (99th percentile diff = 1.54e-07 < 1.00e+00)
+  ❌ tang_q FAILED
+    Bad observations: 84/1675014 (0.005%)
+
+=== AbnormalAccrualsPercent ===
+  ❌ Python CSV missing: ../pyData/Placebos/AbnormalAccrualsPercent.csv
+
+=== AccrualQuality ===
+  ❌ Python CSV missing: ../pyData/Placebos/AccrualQuality.csv
+
+=== AccrualQualityJune ===
+  ❌ Python CSV missing: ../pyData/Placebos/AccrualQualityJune.csv
+
+=== BetaBDLeverage ===
+  ❌ Python CSV missing: ../pyData/Placebos/BetaBDLeverage.csv
+
+=== BetaDimson ===
+  ❌ Python CSV missing: ../pyData/Placebos/BetaDimson.csv
+
+=== BetaSquared ===
+  ❌ Python CSV missing: ../pyData/Placebos/BetaSquared.csv
+
+=== BidAskTAQ ===
+  ❌ Python CSV missing: ../pyData/Placebos/BidAskTAQ.csv
+
+=== BrandCapital ===
+  ❌ Python CSV missing: ../pyData/Placebos/BrandCapital.csv
+
+=== ChPM ===
+  ❌ Python CSV missing: ../pyData/Placebos/ChPM.csv
+
+=== DelayAcct ===
+  ❌ Python CSV missing: ../pyData/Placebos/DelayAcct.csv
+
+=== DelayNonAcct ===
+  ❌ Python CSV missing: ../pyData/Placebos/DelayNonAcct.csv
+
+=== DownsideBeta ===
+  ❌ Python CSV missing: ../pyData/Placebos/DownsideBeta.csv
+
+=== EarningsConservatism ===
+  ❌ Python CSV missing: ../pyData/Placebos/EarningsConservatism.csv
+
+=== EarningsPersistence ===
+  ❌ Python CSV missing: ../pyData/Placebos/EarningsPersistence.csv
+
+=== EarningsPredictability ===
+  ❌ Python CSV missing: ../pyData/Placebos/EarningsPredictability.csv
+
+=== EarningsTimeliness ===
+  ❌ Python CSV missing: ../pyData/Placebos/EarningsTimeliness.csv
+
+=== EarningsValueRelevance ===
+  ❌ Python CSV missing: ../pyData/Placebos/EarningsValueRelevance.csv
+
+=== FRbook ===
+  ❌ Python CSV missing: ../pyData/Placebos/FRbook.csv
+
+=== FailureProbability ===
+  ❌ Python CSV missing: ../pyData/Placebos/FailureProbability.csv
+
+=== FailureProbabilityJune ===
+  ❌ Python CSV missing: ../pyData/Placebos/FailureProbabilityJune.csv
+
+=== ForecastDispersionLT ===
+  ❌ Python CSV missing: ../pyData/Placebos/ForecastDispersionLT.csv
+
+=== GPlag ===
+  ❌ Python CSV missing: ../pyData/Placebos/GPlag.csv
+
+=== GPlag_q ===
+  ❌ Python CSV missing: ../pyData/Placebos/GPlag_q.csv
+
+=== GrGMToGrSales ===
+  ❌ Python CSV missing: ../pyData/Placebos/GrGMToGrSales.csv
+
+=== GrSaleToGrReceivables ===
+  ❌ Python CSV missing: ../pyData/Placebos/GrSaleToGrReceivables.csv
+
+=== IdioVolCAPM ===
+  ❌ Python CSV missing: ../pyData/Placebos/IdioVolCAPM.csv
+
+=== IdioVolQF ===
+  ❌ Python CSV missing: ../pyData/Placebos/IdioVolQF.csv
+
+=== IntrinsicValue ===
+  ❌ Python CSV missing: ../pyData/Placebos/IntrinsicValue.csv
+
+=== KZ ===
+  ❌ Python CSV missing: ../pyData/Placebos/KZ.csv
+
+=== KZ_q ===
+  ❌ Python CSV missing: ../pyData/Placebos/KZ_q.csv
+
+=== OScore_q ===
+  ❌ Python CSV missing: ../pyData/Placebos/OScore_q.csv
+
+=== OperProfLag ===
+  ❌ Python CSV missing: ../pyData/Placebos/OperProfLag.csv
+
+=== OperProfLag_q ===
+  ❌ Python CSV missing: ../pyData/Placebos/OperProfLag_q.csv
+
+=== OperProfRDLagAT ===
+  ❌ Python CSV missing: ../pyData/Placebos/OperProfRDLagAT.csv
+
+=== OperProfRDLagAT_q ===
+  ❌ Python CSV missing: ../pyData/Placebos/OperProfRDLagAT_q.csv
+
+=== OrgCapNoAdj ===
+  ❌ Python CSV missing: ../pyData/Placebos/OrgCapNoAdj.csv
+
+=== PM ===
+  ❌ Python CSV missing: ../pyData/Placebos/PM.csv
+
+=== PS_q ===
+  ❌ Python CSV missing: ../pyData/Placebos/PS_q.csv
+
+=== ResidualMomentum6m ===
+  ❌ Python CSV missing: ../pyData/Placebos/ResidualMomentum6m.csv
+
+=== RetNOA ===
+  ❌ Python CSV missing: ../pyData/Placebos/RetNOA.csv
+
+=== ReturnSkewCAPM ===
+  ❌ Python CSV missing: ../pyData/Placebos/ReturnSkewCAPM.csv
+
+=== ReturnSkewQF ===
+  ❌ Python CSV missing: ../pyData/Placebos/ReturnSkewQF.csv
+
+=== WW ===
+  ❌ Python CSV missing: ../pyData/Placebos/WW.csv
+
+=== WW_Q ===
+  ❌ Python CSV missing: ../pyData/Placebos/WW_Q.csv
+
+=== betaCC ===
+  ❌ Python CSV missing: ../pyData/Placebos/betaCC.csv
+
+=== betaCR ===
+  ❌ Python CSV missing: ../pyData/Placebos/betaCR.csv
+
+=== betaNet ===
+  ❌ Python CSV missing: ../pyData/Placebos/betaNet.csv
+
+=== betaRC ===
+  ❌ Python CSV missing: ../pyData/Placebos/betaRC.csv
+
+=== betaRR ===
+  ❌ Python CSV missing: ../pyData/Placebos/betaRR.csv
+
+=== currat ===
+  ❌ Python CSV missing: ../pyData/Placebos/currat.csv
+
+=== grcapx1y ===
+  ❌ Python CSV missing: ../pyData/Placebos/grcapx1y.csv
+
+=== nanalyst ===
+  ❌ Python CSV missing: ../pyData/Placebos/nanalyst.csv
+
+=== pchcurrat ===
+  ❌ Python CSV missing: ../pyData/Placebos/pchcurrat.csv
+
+=== pchgm_pchsale ===
+  ❌ Python CSV missing: ../pyData/Placebos/pchgm_pchsale.csv
+
+=== pchsaleinv ===
+  ❌ Python CSV missing: ../pyData/Placebos/pchsaleinv.csv
+
+=== roavol ===
+  ❌ Python CSV missing: ../pyData/Placebos/roavol.csv
+
+Detailed results written to: ../Logs/testout_placebos.md
+
+=== SUMMARY ===
+Available placebos tested: 58
+Missing Python CSVs included: 56
+Python-only CSVs included: 0
+Passed validation: 25
+Failed validation: 33
+❌ SOME TESTS FAILED
