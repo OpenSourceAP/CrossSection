@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.asreg import asreg
+from utils.stata_replication import asreg_polars as asreg
 from utils.asrol import asrol
 
 print("=" * 80)

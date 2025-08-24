@@ -4,9 +4,9 @@
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from asreg import asreg
-from savepredictor import save_predictor
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import asreg_polars as asreg
+from utils.savepredictor import save_predictor
 
 
 # Data load
