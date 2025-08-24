@@ -1,13 +1,75 @@
+# %%
 # ABOUTME: TrendFactor predictor using daily data with 11 moving averages and cross-sectional regressions
 # ABOUTME: Usage: python3 TrendFactor.py (run from pyCode/ directory)
+# inputs: dailyCRSP.parquet, SignalMasterTable.parquet
+# outputs: TrendFactor.csv
 
+import pandas as pd
 import polars as pl
+from polars import coalesce, col, lit  # for convenience
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from utils.savepredictor import save_predictor
 from utils.stata_ineq import stata_ineq_pl
 from utils.asrol import asrol
+
+# new custom (need to integrate)
+from asreg_rebuild.stata_regress import asreg
+from Human.gpt5_quantiles_pd import stata_quantile
+
+
+def gpt5_quantiles(x, qs):
+    """
+    Compute Stata-style quantiles for a 1D array-like using only NumPy.
+
+    Parameters
+    ----------
+    x : array-like
+        Data (numeric). NaNs are ignored.
+    qs : float or sequence of floats
+        Quantiles requested. May be in [0,100] (percent) or [0,1] (fractions).
+
+    Returns
+    -------
+    float or np.ndarray
+        Scalar if one quantile requested, else array of quantiles.
+    """
+    arr = np.asarray(x, dtype=float)
+    arr = arr[~np.isnan(arr)]  # drop NaNs
+    arr.sort(kind="mergesort")  # stable sort like Stata
+    n = arr.size
+
+    if n == 0:
+        return np.nan if np.isscalar(qs) else np.full(len(np.atleast_1d(qs)), np.nan)
+
+    qs = np.atleast_1d(qs).astype(float)
+    if np.all((qs >= 0) & (qs <= 1)):
+        qs = qs * 100.0
+
+    P = (qs / 100.0) * n
+    out = np.empty_like(P, dtype=float)
+
+    for j, p in enumerate(P):
+        if p <= 0:
+            out[j] = arr[0]
+        elif p >= n:
+            out[j] = arr[-1]
+        else:
+            # first rank > p
+            idx = np.searchsorted(np.arange(1, n + 1), p, side="right")
+            val = arr[idx]
+            k = int(np.floor(p + 1e-12))
+            if abs(p - k) < 1e-12 and 1 <= k < n:
+                val = (arr[k - 1] + arr[k]) / 2
+            out[j] = val
+
+    return float(out[0]) if out.size == 1 else out
+
+
+# %%
 
 print("=" * 80)
 print("🏗️  TrendFactor.py")
@@ -19,16 +81,19 @@ print("📊 Loading daily CRSP data...")
 # 1. Compute moving averages
 # use permno time_d prc cfacpr using "$pathDataIntermediate/dailyCRSP", clear
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+
+# convert time_d to datetime[D]
+# tbc: should standardize in DataDownloads
+daily_crsp = daily_crsp.with_columns(col("time_d").cast(pl.Date).alias("time_d"))
+
 df_daily = daily_crsp.select(["permno", "time_d", "prc", "cfacpr"])
 print(f"Daily CRSP data: {len(df_daily):,} observations")
 
 print("🔄 Computing adjusted prices and time variables...")
 
 # Adjust prices for splits etc
-# gen P = abs(prc)/cfacpr 
-df_daily = df_daily.with_columns(
-    (pl.col("prc").abs() / pl.col("cfacpr")).alias("P")
-)
+# gen P = abs(prc)/cfacpr
+df_daily = df_daily.with_columns((pl.col("prc").abs() / pl.col("cfacpr")).alias("P"))
 
 # Generate time variable without trading day gaps for simplicity and generate month variable for sorting
 # bys permno (time_d): gen time_temp = _n
@@ -49,7 +114,6 @@ print("📈 Computing moving averages for 11 different lags...")
 lag_lengths = [3, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
 
 # Convert to pandas for asrol_legacy operations
-import pandas as pd
 df_daily_pd = df_daily.to_pandas()
 
 for L in lag_lengths:
@@ -57,17 +121,19 @@ for L in lag_lengths:
     # asrol P, window(time_temp `L') stat(mean) by(permno) gen(A_`L')
     df_daily_pd = asrol(
         df_daily_pd,
-        group_col='permno',
-        time_col='time_temp',
-        value_col='P',
+        group_col="permno",
+        time_col="time_temp",
+        value_col="P",
         window=L,
-        stat='mean',
-        new_col_name=f'A_{L}',
-        min_periods=1  # Allow partial windows like Stata default
+        stat="mean",
+        new_col_name=f"A_{L}",
+        min_periods=1,  # Allow partial windows like Stata default
     )
 
 # Convert back to polars
-df_daily = pl.from_pandas(df_daily_pd)
+df_daily = pl.from_pandas(df_daily_pd).with_columns(
+    col("time_avail_m").cast(pl.Date).alias("time_avail_m")
+)
 
 print("📅 Keeping only end-of-month observations...")
 
@@ -88,132 +154,153 @@ for L in lag_lengths:
 moving_avg_cols = [f"A_{L}" for L in lag_lengths]
 temp_ma = df_monthly.select(["permno", "time_avail_m"] + moving_avg_cols)
 
-print("📊 Loading monthly data for cross-sectional regressions...")
+# %%
+
+print(
+    "📊 Creating monthly data with future returns and moving averages for regressions"
+)
 
 # 2. Run cross-sectional regressions on monthly data
 # use permno time_avail_m ret prc exchcd shrcd mve_c using "$pathDataIntermediate/SignalMasterTable", clear
-signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = signal_master.select(["permno", "time_avail_m", "ret", "prc", "exchcd", "shrcd", "mve_c"])
-print(f"SignalMasterTable: {len(df):,} observations")
+reg_input = pl.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet",
+    columns=["permno", "time_avail_m", "ret", "prc", "exchcd", "shrcd", "mve_c"],
+).with_columns(col("time_avail_m").cast(pl.Date).alias("time_avail_m"))
 
 print("🎯 Computing size deciles based on NYSE stocks...")
 
-# Calculate size deciles based on NYSE stocks only
-nyse_data = df.filter(pl.col("exchcd") == 1)
-qu10_data = (nyse_data
-    .group_by("time_avail_m")
-    .agg(pl.col("mve_c").quantile(0.1).alias("qu10"))
+# new, using gpt5-created quantile function
+qu10_data = reg_input.filter(pl.col("exchcd") == 1).to_pandas()
+qu10_data = (
+    qu10_data.groupby("time_avail_m")
+    .agg(qu10=("mve_c", lambda x: stata_quantile(x, 0.10)))
+    .reset_index()
+)
+qu10_data = pl.from_pandas(qu10_data).with_columns(
+    col("time_avail_m").cast(pl.Date).alias("time_avail_m")
 )
 
 # Merge back
-df = df.join(qu10_data, on="time_avail_m", how="left")
+reg_input = reg_input.join(qu10_data, on="time_avail_m", how="left")
+
 
 print("🔍 Applying filters for regression sample...")
 
 # Filters need to be imposed here rather than at portfolio stage
-df = df.filter(
-    ((pl.col("exchcd") == 1) | (pl.col("exchcd") == 2) | (pl.col("exchcd") == 3)) &
-    ((pl.col("shrcd") == 10) | (pl.col("shrcd") == 11)) &
-    (pl.col("prc").abs() >= 5) &
-    stata_ineq_pl(pl.col("mve_c"), ">", pl.col("qu10"))
-)
+reg_input = reg_input.filter(
+    ((pl.col("exchcd") == 1) | (pl.col("exchcd") == 2) | (pl.col("exchcd") == 3))
+    & ((pl.col("shrcd") == 10) | (pl.col("shrcd") == 11))
+    & stata_ineq_pl(pl.col("prc").abs(), ">=", 5)
+    & stata_ineq_pl(pl.col("mve_c"), ">=", pl.col("qu10"))
+).drop(["exchcd", "shrcd", "qu10", "mve_c", "prc"])
 
-print(f"After applying filters: {len(df):,} observations")
+print(f"After applying filters: {len(reg_input):,} observations")
 
 # Merge moving averages
-df = df.join(temp_ma, on=["permno", "time_avail_m"], how="inner")
-print(f"After merging moving averages: {len(df):,} observations")
+reg_input = reg_input.join(temp_ma, on=["permno", "time_avail_m"], how="inner")
 
-print("📊 Running cross-sectional regressions...")
+print(f"After merging moving averages: {len(reg_input):,} observations")
 
-# Cross-sectional regression of returns on trend signals in month t-1
-# xtset permno time_avail_m
-df = df.sort(["permno", "time_avail_m"])
 
-# gen fRet = f.ret  // Lead the return instead of lagging all moving averages
-df = df.with_columns(
-    pl.col("ret").shift(-1).over("permno").alias("fRet")
+print("Preparing for cross-sectional regression...")
+
+print("Carefully creating fRet with left join")
+# the cast(pl.Date) is important to ensure the merge works
+reg_input = reg_input.sort(["permno", "time_avail_m"])
+templead = (
+    reg_input.with_columns(
+        col("time_avail_m").dt.offset_by("-1mo").cast(pl.Date).alias("time_avail_m")
+    )
+    .rename({"ret": "fRet"})
+    .select(["permno", "time_avail_m", "fRet"])
 )
 
+# left merge the fRet back into the original data
+reg_input = reg_input.join(templead, on=["permno", "time_avail_m"], how="left").sort(
+    ["time_avail_m", "permno"]
+)
+
+
+# %%
+
+print("🔧 asreg regressions with stata_regress.py")
 
 # bys time_avail_m: asreg fRet A_*
 # Run cross-sectional regression by time_avail_m using utils/asreg.py helper
 feature_cols = [f"A_{L}" for L in lag_lengths]
 
-print("🔧 Using asreg helper for cross-sectional regressions...")
-from utils.asreg import asreg
-
-df_with_betas = asreg(
-    df, 
+betas_by_month = asreg(
+    reg_input.to_pandas(),
     y="fRet",
-    X=feature_cols,
-    by=["time_avail_m"], 
-    mode="group",
-    add_intercept=True,
-    outputs=("coef",),
-    coef_prefix="_b_",
-    null_policy="drop",
-    min_samples=1,  # Allow all samples to match Stata behavior (was 12)
-    solve_method="lu",  # Use LU decomposition for numerical stability
-    collect=False  # Keep as LazyFrame for continued processing
-).collect()  # Collect after asreg processing
+    X="A_*",  # Will be expanded to all A_* columns
+    by="time_avail_m",
+    window=None,  # None means use all data per group (cross-sectional)
+    add_constant=True,
+    drop_collinear=True,
+)
+betas_by_month = pl.from_pandas(betas_by_month).with_columns(
+    pl.col("time_avail_m").cast(pl.Date)
+)
+
+# %%
 
 print("📊 Computing 12-month rolling averages of beta coefficients...")
-
-# Take 12-month rolling average of MA beta coefficients
-# Create time-level dataset with betas
-time_level_data = (df_with_betas
-    .group_by("time_avail_m", maintain_order=True)
-    .first()
-    .sort("time_avail_m")
-)
 
 # For each lag length, compute rolling mean of beta coefficients
 # asrol _b_A_`L', window(time_avail_m -13 -1) stat(mean) gen(EBeta_`L')
 # This excludes the current month (uses months t-13 to t-1)
 # Use min_samples=1 to allow partial windows in early periods (matches Stata default behavior)
 for L in lag_lengths:
-    time_level_data = time_level_data.with_columns(
+    betas_by_month = betas_by_month.with_columns(
         pl.col(f"_b_A_{L}")
-        .shift(1)  # Exclude current month  
-        .rolling_mean(window_size=12, min_samples=1)  # Allow partial windows to match Stata
+        .shift(1)  # Exclude current month
+        .rolling_mean(
+            window_size=12, min_samples=1
+        )  # Allow partial windows to match Stata
         .alias(f"EBeta_{L}")
     )
 
 
 # Keep only time and expected betas
 ebeta_cols = [f"EBeta_{L}" for L in lag_lengths]
-temp_beta = time_level_data.select(["time_avail_m"] + ebeta_cols)
+temp_beta = betas_by_month.select(["time_avail_m"] + ebeta_cols)
 
-# Merge back to main data
-df_final = df_with_betas.join(temp_beta, on="time_avail_m", how="left")
+# %%
 
-print("🎯 Computing TrendFactor...")
+print("🎯 Computing TrendFactor as the smoothed regression model predictions")
 
-# Calculate expected return E[r] = \sum E[\beta_i]A_L_i
-trend_terms = []
-for L in lag_lengths:
-    trend_terms.append(pl.col(f"EBeta_{L}") * pl.col(f"A_{L}"))
-
-df_final = df_final.with_columns(
-    pl.sum_horizontal(trend_terms).alias("TrendFactor")
+# grab the moving averages for each permno-month and make long
+cols_A = [col for col in reg_input.columns if col.startswith("A_")]
+df_final = (
+    reg_input.select(["permno", "time_avail_m"] + cols_A)
+    .unpivot(index=["time_avail_m", "permno"], variable_name="name", value_name="MA")
+    .with_columns(col("name").str.replace("A_", "").cast(pl.Int64).alias("lag"))
+    .select(["permno", "time_avail_m", "lag", "MA"])
 )
 
-# Select final result
-result = df_final.select(["permno", "time_avail_m", "TrendFactor"])
+# convert smoothed betas to long
+beta_long = betas_by_month.unpivot(
+    index="time_avail_m", variable_name="name", value_name="EBeta"
+).filter(col("name").str.starts_with("EBeta_")).with_columns(
+    col("name").str.replace("EBeta_", "").cast(pl.Int64).alias("lag")
+).select(
+    ["time_avail_m", "lag", "EBeta"]
+)
 
-print(f"Generated TrendFactor values: {len(result):,} observations")
-valid_trend = result.filter(pl.col("TrendFactor").is_not_null())
-print(f"Non-null TrendFactor: {len(valid_trend):,} observations")
+# join the betas to the moving averages and compute the trend factor
+# if there are NAs, TrendFactor is null (not zero!)
+df_final = df_final.join(beta_long, on=["time_avail_m", "lag"], how="left").with_columns(
+    EBeta_MA = pl.col("EBeta") * pl.col("MA")
+).group_by(["permno", "time_avail_m"]).agg(
+    TrendFactor = col('EBeta_MA').sum(),
+    N_MA_used = col('EBeta_MA').is_not_null().sum() # required since python sum of nulls is zero
+).filter(col('N_MA_used') == 11) # 11 is the number of MA used in the regression
 
-if len(valid_trend) > 0:
-    print(f"TrendFactor summary stats:")
-    print(f"  Mean: {valid_trend['TrendFactor'].mean():.6f}")
-    print(f"  Std: {valid_trend['TrendFactor'].std():.6f}")
-    print(f"  Min: {valid_trend['TrendFactor'].min():.6f}")
-    print(f"  Max: {valid_trend['TrendFactor'].max():.6f}")
+print(f"Generated TrendFactor values: {len(df_final):,} observations")
+
+#%%
 
 print("💾 Saving TrendFactor predictor...")
-save_predictor(result, "TrendFactor")
+save_predictor(df_final, "TrendFactor")
 print("✅ TrendFactor.csv saved successfully")
 print("🎉 TrendFactor computation completed!")
