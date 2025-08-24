@@ -25,7 +25,7 @@ import os
 
 # Add parent directory to path for any shared utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.asrol import asrol
+from utils.stata_asreg_asrol import asrol
 
 def main():
     print("Starting MomOffSeason11YrPlus predictor translation...")

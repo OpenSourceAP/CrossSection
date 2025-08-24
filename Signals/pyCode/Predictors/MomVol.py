@@ -7,7 +7,7 @@ import os
 sys.path.append('.')
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.asrol import asrol
+from utils.stata_asreg_asrol import asrol
 
 # Data load
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")

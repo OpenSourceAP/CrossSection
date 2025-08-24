@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
-from utils.asrol import asrol
+from utils.stata_asreg_asrol import asrol
 
 # DATA LOAD with early filtering for performance
 print("Loading SignalMasterTable...")
