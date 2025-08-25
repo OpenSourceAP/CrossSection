@@ -514,12 +514,12 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     # Test 5: T-stat check
     test5 = results.get('test_5_passed', None)
-    if test5 is True:
+    if test5 == True:
         current_tstat = results.get('current_tstat', 0)
         old_tstat = results.get('old_tstat', 0)
         tstat_diff_signed = results.get('tstat_diff_signed', 0)
         print(f"  ✅ Test 5 - T-stat check: PASSED ({current_tstat:.2f} - {old_tstat:.2f} = {tstat_diff_signed:+.2f}, |{tstat_diff_signed:.2f}| < {TOL_TSTAT})")
-    elif test5 is False:
+    elif test5 == False:
         current_tstat = results.get('current_tstat', 0)
         old_tstat = results.get('old_tstat', 0)
         tstat_diff_signed = results.get('tstat_diff_signed', 0)
@@ -580,7 +580,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
     test2_status = "✅ PASSED" if results.get('test_2_passed', False) else "❌ FAILED"
     test3_status = "✅ PASSED" if results.get('test_3_passed', False) else "❌ FAILED"
     test4_status = "✅ PASSED" if results.get('test_4_passed', False) else "❌ FAILED"
-    test5_status = "✅ PASSED" if results.get('test_5_passed', False) else ("❌ FAILED" if results.get('test_5_passed', None) is not None else "NA")
+    test5_status = "✅ PASSED" if results.get('test_5_passed', None) is True else ("❌ FAILED" if results.get('test_5_passed', None) is False else "NA")
     
     # Add missing count information for Test 1 (Superset)
     if results.get('test_1_passed', False):
