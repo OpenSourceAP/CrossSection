@@ -12,7 +12,18 @@ tsfill
 * fill tickerIBES
 bys tempID (time_avail_m): replace tickerIBES = tickerIBES[_n-1] if mi(tickerIBES) & _n >1
 
-asrol ireccd, gen(ireccd12) by(tempID) stat(first) window(time_avail_m 12) min(1) 
+bysort tempID (time_avail_m): gen _last_time     = time_avail_m if !mi(ireccd)
+bysort tempID (time_avail_m): replace _last_time = _last_time[_n-1] if missing(_last_time)
+
+bysort tempID (time_avail_m): gen _last_val      = ireccd if !mi(ireccd) 
+bysort tempID (time_avail_m): replace _last_val  = _last_val[_n-1]  if missing(_last_val)
+
+* Compute how far back that last non-missing value is
+gen _lag_len = time_avail_m - _last_time
+
+* Use the carried value only if it's ≤ 12 periods old
+gen ireccd12     = ireccd
+replace ireccd12 = _last_val if missing(ireccd12) & _lag_len <= 12
 
 * collapse down to firm-month
 gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)  
