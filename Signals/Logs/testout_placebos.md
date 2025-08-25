@@ -1,6 +1,6 @@
 # Placebo Validation Results
 
-**Generated**: 2025-08-25 00:00:13
+**Generated**: 2025-08-25 09:47:54
 
 **Configuration**:
 - TOL_SUPERSET: 0.0%
@@ -76,8 +76,9 @@
 | KZ                        | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.0E-09)   |
 | tang_q                    | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 1.5E-07)   |
 | RetNOA                    | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.4E-19)   |
-| pchcurrat                 | ✅         | ✅       | ✅ (0.00%)   | ❌ (15.54%)   | ❌ (99th diff NAN)       |
 | BrandCapital              | ✅         | ✅       | ✅ (0.00%)   | ✅ (5.88%)    | ✅ (99th diff 8.2E-02)   |
+| BetaBDLeverage            | ✅         | ✅       | ✅ (0.00%)   | ✅ (2.21%)    | ✅ (99th diff 2.3E-01)   |
+| pchcurrat                 | ✅         | ✅       | ✅ (0.00%)   | ✅ (1.04%)    | ❌ (99th diff INF)       |
 | GrGMToGrSales             | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.04%)    | ✅ (99th diff 4.5E-09)   |
 | DivYieldAnn               | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.03%)    | ✅ (99th diff 2.1E-08)   |
 | NetPayoutYield_q          | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.02%)    | ✅ (99th diff 3.5E-08)   |
@@ -116,7 +117,6 @@
 | PM                        | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.3E-09)   |
 | pchsaleinv                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.7E-09)   |
 | AbnormalAccrualsPercent   | ❌         | NA      | NA          | NA           | NA                      |
-| BetaBDLeverage            | ❌         | NA      | NA          | NA           | NA                      |
 | BetaDimson                | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsConservatism      | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsPersistence       | ❌         | NA      | NA          | NA           | NA                      |
@@ -129,8 +129,8 @@
 | ResidualMomentum6m        | ❌         | NA      | NA          | NA           | NA                      |
 | grcapx1y                  | ❌         | NA      | NA          | NA           | NA                      |
 
-**Overall**: 38/101 available placebos passed validation
-**Python CSVs**: 101/114 placebos have Python implementation
+**Overall**: 39/102 available placebos passed validation
+**Python CSVs**: 102/114 placebos have Python implementation
 
 ## Detailed Results
 
@@ -860,6 +860,57 @@
 
 ---
 
+### BetaBDLeverage
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['BetaBDLeverage']
+
+**Observations**:
+- Stata:  2,116,539
+- Python: 2,130,495
+- Common: 2,116,539
+
+**Precision1**: 2.206% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 2.31e-01 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.12e+06 |       2.12e+06 |       2.12e+06 |       2.12e+06 |
+| mean       |         0.2175 |         0.2194 |         0.0019 |         0.0019 |
+| std        |         0.9765 |         0.9681 |         0.1224 |         0.1254 |
+| min        |       -29.5917 |       -29.5915 |        -5.8416 |        -5.9822 |
+| 25%        |        -0.1353 |        -0.1334 |      -5.38e-06 |      -5.51e-06 |
+| 50%        |         0.2846 |         0.2856 |       4.28e-05 |       4.38e-05 |
+| 75%        |         0.6641 |         0.6649 |       7.60e-05 |       7.78e-05 |
+| max        |        25.2977 |        25.2978 |        16.0268 |        16.4126 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0054 + 0.9836 * stata
+- **R-squared**: 0.9843
+- **N observations**: 2,116,539
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |       0.0054 |     8.55e-05 |     63.7187 |     0.000 |
+| Slope       |       0.9836 |     8.54e-05 |  11514.0790 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 46683/2116539 (2.206%)
+- Stata standard deviation: 9.76e-01
+
+---
+
 ### BetaSquared
 
 **Status**: ✅ PASSED
@@ -1480,7 +1531,7 @@
 
 **Observations**:
 - Stata:  3,222,277
-- Python: 3,303,855
+- Python: 3,288,060
 - Common: 3,222,277
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
@@ -3477,7 +3528,7 @@
 
 **Observations**:
 - Stata:  3,547,773
-- Python: 3,616,983
+- Python: 3,616,815
 - Common: 3,547,773
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
@@ -4666,7 +4717,7 @@
 
 **Observations**:
 - Stata:  3,065,278
-- Python: 3,625,095
+- Python: 3,069,214
 - Common: 3,065,278
 
 **Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
@@ -4908,7 +4959,7 @@
 **Test Results**:
 - Test 1 - Column names: ✅ PASSED
 - Test 2 - Superset check: ✅ PASSED
-- Test 3 - Precision1 check: ❌ FAILED
+- Test 3 - Precision1 check: ✅ PASSED
 - Test 4 - Precision2 check: ❌ FAILED
 
 **Columns**: ['pchcurrat']
@@ -4918,28 +4969,28 @@
 - Python: 3,625,095
 - Common: 3,624,363
 
-**Precision1**: 15.542% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+**Precision1**: 1.042% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
 
-**Precision2**: 99th percentile diff = nan (tolerance: < 1.00e+00)
+**Precision2**: 99th percentile diff = inf (tolerance: < 1.00e+00)
 
 **Summary Statistics** (Common Observations):
 
 | Statistic  |          Stata |         Python |     Difference | Std Difference |
 |------------|----------------|----------------|----------------|----------------|
-| count      |       3.62e+06 |       3.07e+06 |       3.07e+06 |       3.07e+06 |
+| count      |       3.62e+06 |       3.59e+06 |       3.59e+06 |       3.59e+06 |
 | mean       |         0.1878 |            inf |            inf |            inf |
 | std        |        20.4050 |            N/A |            N/A |            N/A |
-| min        |        -1.0000 |        -1.0000 |        -1.0000 |        -0.0490 |
-| 25%        |        -0.1194 |        -0.1581 |      -2.87e-08 |      -1.41e-09 |
+| min        |        -1.0000 |        -1.0000 |        -0.1094 |        -0.0054 |
+| 25%        |        -0.1194 |        -0.1217 |      -2.16e-08 |      -1.06e-09 |
 | 50%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
-| 75%        |         0.0786 |         0.1213 |       2.87e-08 |       1.41e-09 |
+| 75%        |         0.0786 |         0.0814 |       2.16e-08 |       1.06e-09 |
 | max        |      8289.6123 |            inf |            inf |            inf |
 
 **Regression Analysis** (Python ~ Stata):
 
 - **Model**: python = inf + -inf * stata
 - **R-squared**: nan
-- **N observations**: 3,072,640
+- **N observations**: 3,588,349
 
 | Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
 |-------------|--------------|--------------|-------------|----------|
@@ -4947,37 +4998,37 @@
 | Slope       |          nan |          nan |         nan |       nan |
 
 **Feedback**:
-- Num observations with std_diff >= TOL_DIFF_1: 563297/3624363 (15.542%)
+- Num observations with std_diff >= TOL_DIFF_1: 37772/3624363 (1.042%)
 - Stata standard deviation: 2.04e+01
 
 **Most Recent Bad Observations**:
 ```
    permno  yyyymm  python  stata  diff
-0   12385  202608     NaN    0.0   NaN
-1   15623  202608     NaN    0.0   NaN
-2   16632  202608     NaN    0.0   NaN
-3   19655  202608     NaN    0.0   NaN
-4   21259  202608     NaN    0.0   NaN
-5   77114  202608     NaN    0.0   NaN
-6   81073  202608     NaN    0.0   NaN
-7   86349  202608     NaN    0.0   NaN
-8   89056  202608     NaN    0.0   NaN
-9   89256  202608     NaN    0.0   NaN
+0   15735  202605     NaN    0.0   NaN
+1   62391  202605     NaN    0.0   NaN
+2   62922  202605     NaN    0.0   NaN
+3   75069  202605     NaN    0.0   NaN
+4   77895  202605     NaN    0.0   NaN
+5   15735  202604     NaN    0.0   NaN
+6   62391  202604     NaN    0.0   NaN
+7   62922  202604     NaN    0.0   NaN
+8   75069  202604     NaN    0.0   NaN
+9   77895  202604     NaN    0.0   NaN
 ```
 
 **Largest Differences**:
 ```
    permno  yyyymm  python  stata  diff
-0   10002  199506     NaN    0.0   NaN
-1   10002  199507     NaN    0.0   NaN
-2   10002  199508     NaN    0.0   NaN
-3   10002  199509     NaN    0.0   NaN
-4   10002  199510     NaN    0.0   NaN
-5   10002  199511     NaN    0.0   NaN
-6   10002  199512     NaN    0.0   NaN
-7   10002  199601     NaN    0.0   NaN
-8   10002  199602     NaN    0.0   NaN
-9   10002  199603     NaN    0.0   NaN
+0   10055  198910     NaN    0.0   NaN
+1   10055  198911     NaN    0.0   NaN
+2   10055  198912     NaN    0.0   NaN
+3   10055  199001     NaN    0.0   NaN
+4   10055  199002     NaN    0.0   NaN
+5   10055  199003     NaN    0.0   NaN
+6   10055  199004     NaN    0.0   NaN
+7   10055  199005     NaN    0.0   NaN
+8   10055  199006     NaN    0.0   NaN
+9   10055  199007     NaN    0.0   NaN
 ```
 
 ---
@@ -5936,14 +5987,6 @@
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Placebos/AbnormalAccrualsPercent.csv
-
----
-
-### BetaBDLeverage
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/BetaBDLeverage.csv
 
 ---
 

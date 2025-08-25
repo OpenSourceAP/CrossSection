@@ -118,9 +118,10 @@ print(f"After adding FF48 industries: {len(df_pandas)} rows")
 print("Running year-industry regressions...")
 df_pandas['tempResid'] = np.nan
 
-# Group by year and industry to run regressions
+# Group by year and industry to run regressions (matching Stata's approach)
 for (year, industry), group in df_pandas.groupby(['fyear', 'FF48']):
-    if len(group) >= 20:  # At least 20 observations required
+    # Attempt regression for all groups (like Stata), but will nullify small groups later
+    if len(group) >= 10:  # Minimum threshold for attempting regression
         # Prepare regression variables (handle missing values)
         y = group['tempCAcc']
         X = group[['l1_tempCFO', 'tempCFO', 'f1_tempCFO', 'tempDelRev', 'tempPPE']]
@@ -128,7 +129,7 @@ for (year, industry), group in df_pandas.groupby(['fyear', 'FF48']):
         # Remove rows with any missing values
         valid_mask = y.notna() & X.notna().all(axis=1)
         
-        if valid_mask.sum() >= 10:  # Need sufficient observations for regression
+        if valid_mask.sum() >= 6:  # Need minimum observations for regression
             y_valid = y[valid_mask]
             X_valid = X[valid_mask]
             
@@ -148,6 +149,12 @@ for (year, industry), group in df_pandas.groupby(['fyear', 'FF48']):
                 df_pandas.loc[group.index, 'tempResid'] = residuals
             except:
                 pass  # Skip if regression fails
+
+# Apply the 20-observation threshold after regression (matching Stata line 33)
+print("Applying 20-observation threshold...")
+for (year, industry), group in df_pandas.groupby(['fyear', 'FF48']):
+    if len(group) < 20:
+        df_pandas.loc[group.index, 'tempResid'] = np.nan
 
 # Compute rolling standard deviation of residuals
 print("Computing rolling standard deviation of residuals...")
@@ -181,57 +188,56 @@ df_pandas_final['AccrualQuality'] = df_pandas_final.groupby('gvkey')['AQ'].shift
 
 print(f"Generated AccrualQuality for {len(df_pandas_final)} annual observations")
 
-# Expand to monthly data
+# Expand to monthly data (replicating Stata's exact logic)
 print("Expanding to monthly data...")
-expanded_data = []
 
-for _, row in df_pandas_final.iterrows():
-    if pd.notna(row['time_avail_m']) and pd.notna(row['AccrualQuality']):
-        base_date = row['time_avail_m']
-        for month_offset in range(12):
-            new_row = row.copy()
-            new_date = base_date + pd.DateOffset(months=month_offset)
-            new_row['time_avail_m'] = new_date
-            expanded_data.append(new_row)
+# Create 12 copies of each row (equivalent to Stata's expand 12)
+df_expanded = pd.concat([df_pandas_final] * 12, ignore_index=True)
 
-if expanded_data:
-    df_expanded = pd.DataFrame(expanded_data)
-    
-    # Keep latest datadate for each gvkey-time combination
-    df_expanded = df_expanded.sort_values(['gvkey', 'time_avail_m', 'datadate'])
-    df_expanded = df_expanded.groupby(['gvkey', 'time_avail_m']).tail(1)
-    
-    # Remove duplicates by permno-time
-    df_expanded = df_expanded.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
-    
-    # Create June version (AccrualQualityJune)
-    df_expanded['AccrualQualityJune'] = np.where(
-        df_expanded['time_avail_m'].dt.month == 6, 
-        df_expanded['AccrualQuality'], 
-        np.nan
-    )
-    
-    # Forward fill AccrualQualityJune within each permno
-    df_expanded = df_expanded.sort_values(['permno', 'time_avail_m'])
-    df_expanded['AccrualQualityJune'] = df_expanded.groupby('permno')['AccrualQualityJune'].fillna(method='ffill')
-    
-    print(f"After monthly expansion: {len(df_expanded)} observations")
-    
-    # Convert back to polars for saving
-    df_final = pl.from_pandas(df_expanded[['permno', 'time_avail_m', 'AccrualQuality', 'AccrualQualityJune']])
-    
-    # Split for separate saves
-    df_accrual = df_final.select(['permno', 'time_avail_m', 'AccrualQuality'])
-    df_accrual_june = df_final.select(['permno', 'time_avail_m', 'AccrualQualityJune'])
-    
-    # SAVE
-    save_placebo(df_accrual, 'AccrualQuality')
-    save_placebo(df_accrual_june, 'AccrualQualityJune')
-    
-    print(f"Generated {len(df_accrual)} AccrualQuality observations")
-    print(f"Generated {len(df_accrual_june)} AccrualQualityJune observations")
-    
-else:
-    print("No valid data for expansion")
+# Add month offsets (equivalent to Stata's _n - 1 logic)
+df_expanded = df_expanded.sort_values(['gvkey', 'time_avail_m', 'datadate'])
+df_expanded['month_offset'] = df_expanded.groupby(['gvkey', 'time_avail_m', 'datadate']).cumcount()
+
+# Update time_avail_m by adding months (equivalent to Stata's time_avail_m + _n - 1)
+df_expanded['time_avail_m'] = df_expanded.apply(
+    lambda row: row['time_avail_m'] + pd.DateOffset(months=int(row['month_offset'])), axis=1
+)
+
+# Drop the temporary column
+df_expanded = df_expanded.drop('month_offset', axis=1)
+
+# Keep latest datadate for each permno-time combination (equivalent to Stata's bysort permno time_avail_m (datadate): keep if _n == _N)
+df_expanded = df_expanded.sort_values(['permno', 'time_avail_m', 'datadate'])
+df_expanded = df_expanded.groupby(['permno', 'time_avail_m']).tail(1)
+
+# Filter out rows with missing AccrualQuality
+df_expanded = df_expanded[df_expanded['AccrualQuality'].notna()]
+
+# Create June version (AccrualQualityJune)
+df_expanded['AccrualQualityJune'] = np.where(
+    df_expanded['time_avail_m'].dt.month == 6, 
+    df_expanded['AccrualQuality'], 
+    np.nan
+)
+
+# Forward fill AccrualQualityJune within each permno
+df_expanded = df_expanded.sort_values(['permno', 'time_avail_m'])
+df_expanded['AccrualQualityJune'] = df_expanded.groupby('permno')['AccrualQualityJune'].ffill()
+
+print(f"After monthly expansion: {len(df_expanded)} observations")
+
+# Convert back to polars for saving
+df_final = pl.from_pandas(df_expanded[['permno', 'time_avail_m', 'AccrualQuality', 'AccrualQualityJune']])
+
+# Split for separate saves
+df_accrual = df_final.select(['permno', 'time_avail_m', 'AccrualQuality'])
+df_accrual_june = df_final.select(['permno', 'time_avail_m', 'AccrualQualityJune'])
+
+# SAVE
+save_placebo(df_accrual, 'AccrualQuality')
+save_placebo(df_accrual_june, 'AccrualQualityJune')
+
+print(f"Generated {len(df_accrual)} AccrualQuality observations")
+print(f"Generated {len(df_accrual_june)} AccrualQualityJune observations")
 
 print("ZZ2_AccrualQuality_AccrualQualityJune.py completed")

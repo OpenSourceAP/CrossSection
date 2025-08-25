@@ -77,11 +77,25 @@ df = df.with_columns([
 ])
 
 # gen pchcurrat = (currat - l12.currat)/(l12.currat)
-print("Computing pchcurrat with 12-month lag...")
-df = df.with_columns([
-    pl.col('currat').shift(12).over('permno').alias('l12_currat')
-])
+print("Computing pchcurrat with 12-month calendar-based lag...")
 
+# Convert to pandas for calendar-based lag operations
+df_pandas = df.to_pandas()
+
+# Create 12-month lag date
+df_pandas['time_lag12'] = df_pandas['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create lag data for merging
+lag_data = df_pandas[['permno', 'time_avail_m', 'currat']].copy()
+lag_data.columns = ['permno', 'time_lag12', 'l12_currat']
+
+# Merge to get lagged values (calendar-based)
+df_pandas = df_pandas.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
+
+# Compute pchcurrat
 df = df.with_columns([
     ((pl.col('currat') - pl.col('l12_currat')) / pl.col('l12_currat')).alias('pchcurrat')
 ])

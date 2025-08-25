@@ -49,8 +49,9 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'dlttq', 'dlcq', 'pstkq', 'cheq',
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
-print("Applying forward-fill for missing quarterly values...")
-qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dlttq', 'dlcq', 'pstkq', 'cheq', 'oibdpq', 'ceqq'])
+# Remove forward-fill to match Stata behavior exactly
+# print("Applying forward-fill for missing quarterly values...")
+# qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dlttq', 'dlcq', 'pstkq', 'cheq', 'oibdpq', 'ceqq'])
 
 print("Merging with m_QCompustat...")
 df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')

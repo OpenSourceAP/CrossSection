@@ -58,28 +58,25 @@ df = df.with_columns([
 print("Sorting by permno, year, qtr, time...")
 df = df.sort(['permno', 'year', 'qtr', 'time_avail_m'])
 
-# Convert to pandas for complex quarterly return calculation
-print("Converting to pandas for quarterly return calculation...")
-df_pandas = df.to_pandas()
-
-# bys permno year qtr (time_avail_m): gen RetQ = (1+ret)*(1+ret[_n+1])*(1+ret[_n+2]) - 1 if _n == 1
+# Compute quarterly returns directly in Polars for efficiency
 print("Computing quarterly returns...")
-def compute_quarterly_returns(group):
-    if len(group) >= 3:
-        ret_vals = group['ret'].values
-        # Take first month as base, compound with next 2 months
-        retq = (1 + ret_vals[0]) * (1 + ret_vals[1]) * (1 + ret_vals[2]) - 1
-        group.loc[group.index[0], 'RetQ'] = retq
-    return group
+df_grouped = df.group_by(['permno', 'year', 'qtr']).agg([
+    pl.col('ret').sort_by('time_avail_m').alias('ret_sorted'),
+    pl.len().alias('n_months')
+])
 
-df_pandas['RetQ'] = np.nan
-df_pandas = df_pandas.groupby(['permno', 'year', 'qtr']).apply(compute_quarterly_returns)
+# Only keep quarters with exactly 3 months of data
+df_grouped = df_grouped.filter(pl.col('n_months') == 3)
 
-# keep if !mi(RetQ)
-df_pandas = df_pandas.dropna(subset=['RetQ'])
+# Compute quarterly return: (1+ret1)*(1+ret2)*(1+ret3) - 1
+df_quarterly = df_grouped.with_columns([
+    ((1 + pl.col('ret_sorted').list.get(0)) * 
+     (1 + pl.col('ret_sorted').list.get(1)) * 
+     (1 + pl.col('ret_sorted').list.get(2)) - 1).alias('RetQ')
+]).select(['permno', 'year', 'qtr', 'RetQ'])
 
-# keep permno year qtr RetQ
-df_quarterly = df_pandas[['permno', 'year', 'qtr', 'RetQ']].copy()
+# Remove any NaN quarterly returns
+df_quarterly = df_quarterly.filter(pl.col('RetQ').is_not_null())
 
 print(f"After quarterly aggregation: {len(df_quarterly)} rows")
 
@@ -88,38 +85,37 @@ print(f"After quarterly aggregation: {len(df_quarterly)} rows")
 print("Loading broker leverage data...")
 broker_lev = pl.read_parquet("../pyData/Intermediate/brokerLev.parquet")
 broker_lev = broker_lev.select(['year', 'qtr', 'levfac'])
-broker_lev_pandas = broker_lev.to_pandas()
 
 print("Merging with broker leverage...")
-df_quarterly = df_quarterly.merge(broker_lev_pandas, on=['year', 'qtr'], how='left')
+df_quarterly = df_quarterly.join(broker_lev, on=['year', 'qtr'], how='inner')
 
 # merge m:1 year qtr using "$pathDataIntermediate/TBill3M", keep(master match) nogenerate
 print("Loading T-bill data...")
 tbill = pl.read_parquet("../pyData/Intermediate/TBill3M.parquet")
 tbill = tbill.select(['year', 'qtr', 'TbillRate3M'])
-tbill_pandas = tbill.to_pandas()
 
 print("Merging with T-bill data...")
-df_quarterly = df_quarterly.merge(tbill_pandas, on=['year', 'qtr'], how='left')
+df_quarterly = df_quarterly.join(tbill, on=['year', 'qtr'], how='inner')
 
 print(f"After merging external data: {len(df_quarterly)} rows")
 
 # * Prepare and run regression
 # replace RetQ = RetQ - TbillRate3M
 print("Converting to excess returns...")
-df_quarterly['RetQ'] = df_quarterly['RetQ'] - df_quarterly['TbillRate3M']
+df_quarterly = df_quarterly.with_columns([
+    (pl.col('RetQ') - pl.col('TbillRate3M')).alias('RetQ')
+])
 
 # gen tempTime = yq(year, qtr)
 print("Creating quarterly time variable...")
-df_quarterly['tempTime'] = df_quarterly['year'] * 4 + df_quarterly['qtr'] - 1
-
-# Convert back to polars for asreg
-df_quarterly_pl = pl.from_pandas(df_quarterly)
+df_quarterly = df_quarterly.with_columns([
+    (pl.col('year') * 4 + pl.col('qtr') - 1).alias('tempTime')
+])
 
 # asreg RetQ levfac, window(tempTime 40) min(20) by(permno)
 print("Running rolling regressions with 40-quarter window...")
 df_regression = asreg(
-    df_quarterly_pl, 
+    df_quarterly, 
     y="RetQ", 
     X=["levfac"], 
     by=["permno"], 
@@ -127,7 +123,7 @@ df_regression = asreg(
     mode="rolling", 
     window_size=40, 
     min_samples=20,
-    outputs=["coeff"]
+    outputs=["coef"]
 )
 
 # * Lag by one quarter to make sure that beta is available
@@ -135,7 +131,7 @@ df_regression = asreg(
 print("Creating lagged beta...")
 df_regression = df_regression.sort(['permno', 'tempTime'])
 df_regression = df_regression.with_columns([
-    pl.col('levfac_coeff').shift(1).over('permno').alias('BetaBDLeverage')
+    pl.col('coef').struct.field('levfac').shift(1).over('permno').alias('BetaBDLeverage')
 ])
 
 # keep permno year qtr BetaBDLeverage
@@ -167,7 +163,7 @@ final_df = monthly_df.join(regression_result, on=['permno', 'year', 'qtr'], how=
 print("Filtering by firm age...")
 final_df = final_df.sort(['permno', 'time_avail_m'])
 final_df = final_df.with_columns([
-    pl.int_range(1, pl.count() + 1).over('permno').alias('age')
+    pl.int_range(1, pl.len() + 1).over('permno').alias('age')
 ])
 
 min_age_months = int(20/4*12)  # 20 quarters in months = 60 months

@@ -83,14 +83,25 @@ df_regression = asreg(
     mode="rolling", 
     window_size=20, 
     min_samples=15,
-    outputs=["coeff"]
+    outputs=["coef"]
 )
 
 # gen BetaDimson = _b_tempMktLead + _b_mktrf + _b_tempMktLag
 print("Computing BetaDimson...")
-df_regression = df_regression.with_columns([
-    (pl.col('b_tempMktLead') + pl.col('b_mktrf') + pl.col('b_tempMktLag')).alias('BetaDimson')
-])
+print(f"Columns in df_regression: {df_regression.columns}")
+
+# Check if coef struct exists, otherwise use individual coefficient columns
+try:
+    df_regression = df_regression.with_columns([
+        (pl.col('coef').struct.field('tempMktLead') + 
+         pl.col('coef').struct.field('mktrf') + 
+         pl.col('coef').struct.field('tempMktLag')).alias('BetaDimson')
+    ])
+except:
+    # Fallback: use individual coefficient columns with prefix
+    df_regression = df_regression.with_columns([
+        (pl.col('b_tempMktLead') + pl.col('b_mktrf') + pl.col('b_tempMktLag')).alias('BetaDimson')
+    ])
 
 # gen time_avail_m = mofd(time_d)
 df_regression = df_regression.with_columns([

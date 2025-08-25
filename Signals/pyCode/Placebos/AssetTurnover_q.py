@@ -45,9 +45,9 @@ print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'rectq', 'invtq', 'acoq', 'ppentq', 'intanq', 'apq', 'lcoq', 'loq', 'saleq'])
 
-# Apply forward-fill logic to match Stata's handling of missing quarterly data
-print("Applying forward-fill for missing quarterly values...")
-qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['rectq', 'invtq', 'acoq', 'ppentq', 'intanq', 'apq', 'lcoq', 'loq', 'saleq'])
+# Remove forward-fill to match Stata behavior exactly
+# print("Applying forward-fill for missing quarterly values...")
+# qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['rectq', 'invtq', 'acoq', 'ppentq', 'intanq', 'apq', 'lcoq', 'loq', 'saleq'])
 
 # Convert gvkey to same type for join
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
@@ -64,13 +64,29 @@ print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen temp = (rectq + invtq + acoq + ppentq + intanq - apq - lcoq - loq)
+# Fill nulls with 0 to match Stata's implicit behavior in arithmetic operations
 print("Computing temp variable...")
+df = df.with_columns([
+    pl.col('rectq').fill_null(0.0),
+    pl.col('invtq').fill_null(0.0),
+    pl.col('acoq').fill_null(0.0),
+    pl.col('ppentq').fill_null(0.0),
+    pl.col('intanq').fill_null(0.0),
+    pl.col('apq').fill_null(0.0),
+    pl.col('lcoq').fill_null(0.0),
+    pl.col('loq').fill_null(0.0)
+])
+
 df = df.with_columns(
     (pl.col('rectq') + pl.col('invtq') + pl.col('acoq') + pl.col('ppentq') + 
      pl.col('intanq') - pl.col('apq') - pl.col('lcoq') - pl.col('loq')).alias('temp')
 )
 
 # gen AssetTurnover_q = saleq/((temp + l12.temp)/2)
+# First filter out observations where saleq is null to match Stata's implicit behavior
+print("Filtering for non-null saleq...")
+df = df.filter(pl.col('saleq').is_not_null())
+
 print("Computing 12-month calendar-based lag and AssetTurnover_q...")
 
 # Convert to pandas for calendar-based lag operations (same approach as rd_sale_q.py)
@@ -95,9 +111,12 @@ df = df.with_columns(
 )
 
 # replace AssetTurnover_q = . if AssetTurnover_q < 0
-print("Setting negative AssetTurnover_q to null...")
+# Also filter out infinite and null values to match Stata's implicit behavior
+print("Setting negative, infinite, and null AssetTurnover_q to null...")
 df = df.with_columns(
-    pl.when(pl.col('AssetTurnover_q') < 0)
+    pl.when((pl.col('AssetTurnover_q') < 0) | 
+            pl.col('AssetTurnover_q').is_infinite() |
+            pl.col('AssetTurnover_q').is_null())
     .then(None)
     .otherwise(pl.col('AssetTurnover_q'))
     .alias('AssetTurnover_q')
