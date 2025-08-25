@@ -27,6 +27,7 @@ import sys
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
+from stata_replication import stata_multi_lag
 
 
 #%%
@@ -86,7 +87,7 @@ ym_list = df['time_avail_m'].unique() # let's make this cleaner
 
 # 're-index' the df to make a balanced panel with lots of missing values
 full_idx = pd.MultiIndex.from_product([permno_list, ym_list], names=['permno', 'time_avail_m'])
-df_balanced = df.set_index(['permno', 'time_avail_m']).reindex(full_idx2).reset_index()\
+df_balanced = df.set_index(['permno', 'time_avail_m']).reindex(full_idx).reset_index()\
     .sort_values(['permno', 'time_avail_m'])
 
 # keep only the observations that are within the range of the original df
@@ -109,12 +110,8 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # ac: this interacts with the missing gvkey drop above
 df.loc[df['ret'].isna(), 'ret'] = 0
 
-# Calculate 6-month momentum using lags
-df['ret_lag1'] = df.groupby('permno')['ret'].shift(1)
-df['ret_lag2'] = df.groupby('permno')['ret'].shift(2)
-df['ret_lag3'] = df.groupby('permno')['ret'].shift(3)
-df['ret_lag4'] = df.groupby('permno')['ret'].shift(4)
-df['ret_lag5'] = df.groupby('permno')['ret'].shift(5)
+# Calculate 6-month momentum using stata_multi_lag for calendar validation
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
 
 # Calculate 6-month momentum (geometric return)
 df['Mom6m'] = ((1 + df['ret_lag1']) * 

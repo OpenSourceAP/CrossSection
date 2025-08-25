@@ -7,6 +7,12 @@
 
 import pandas as pd
 import numpy as np
+import sys
+import os
+
+# Add parent directory to path for any shared utilities
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
@@ -20,20 +26,9 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['ret'] = df['ret'].fillna(0)
 
 # Generate MomSeasonShort = l11.ret (11-month lag of ret)
-# Use calendar-based lag (11 months back) instead of positional lag
-# This matches Stata's l11. operator which uses calendar-based lags
-df['time_lag11'] = pd.to_datetime(df['time_avail_m']) - pd.DateOffset(months=11)
-
-# Create lag data for merging  
-lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
-lag_data['time_avail_m'] = pd.to_datetime(lag_data['time_avail_m'])
-lag_data.columns = ['permno', 'time_lag11', 'ret_lag11']
-
-# Convert time_lag11 to datetime for consistent merging
-df['time_lag11'] = pd.to_datetime(df['time_lag11'])
-
-# Merge to get lagged values
-df = df.merge(lag_data, on=['permno', 'time_lag11'], how='left')
+# Use stata_multi_lag to create 11-month lag efficiently
+print("Creating 11-month lag using stata_multi_lag...")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [11])
 
 # Assign MomSeasonShort from the calendar-based lag
 df['MomSeasonShort'] = df['ret_lag11']

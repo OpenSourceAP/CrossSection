@@ -25,6 +25,7 @@ import os
 
 # Add parent directory to path for any shared utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
 
 def main():
     print("Starting MomOffSeason predictor translation...")
@@ -49,29 +50,17 @@ def main():
     print("Replaced missing returns with 0")
     
     
-    # Create seasonal lag variables (equivalent to: foreach n of numlist 23(12)59)
+    # Create seasonal lag variables using stata_multi_lag for calendar validation
     # This creates lags for seasonal returns: 23, 35, 47, 59 months
-    lag_periods = list(range(23, 60, 12))  # 23, 35, 47, 59
+    lag_periods = [23, 35, 47, 59]
     print(f"Creating seasonal lags for periods: {lag_periods}")
     
-    # Create time-based lag variables (equivalent to: gen temp`n' = l`n'.ret)
-    # Stata lags are time-based, not position-based
-    print("Creating time-based seasonal lags...")
+    # Use stata_multi_lag for calendar-validated seasonal lags
+    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
     
+    # Rename lag columns to match original temp variable names
     for n in lag_periods:
-        print(f"Creating temp{n} (lag {n} months)...")
-        # Create a lagged time column
-        df[f'lag_time_{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
-        
-        # Create a helper dataframe for the lag merge
-        lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
-        lag_data.columns = ['permno', f'lag_time_{n}', f'temp{n}']
-        
-        # Merge to get the lagged values
-        df = df.merge(lag_data, on=['permno', f'lag_time_{n}'], how='left')
-        
-        # Clean up the temporary time column
-        df = df.drop(f'lag_time_{n}', axis=1)
+        df[f'temp{n}'] = df[f'ret_lag{n}']
     
     
     # Create list of temporary variable names for row operations
@@ -93,13 +82,10 @@ def main():
     # Calculate momentum base using 48-month rolling window
     print("Creating momentum base with 48-month rolling window...")
     
-    # Create retLagTemp = l12.ret (12-month lagged returns)
+    # Create retLagTemp = l12.ret using stata_multi_lag
     print("Creating retLagTemp (lag 12 months)...")
-    df['lag_time_12'] = df['time_avail_m'] - pd.DateOffset(months=12)
-    lag_data_12 = df[['permno', 'time_avail_m', 'ret']].copy()
-    lag_data_12.columns = ['permno', 'lag_time_12', 'retLagTemp']
-    df = df.merge(lag_data_12, on=['permno', 'lag_time_12'], how='left')
-    df = df.drop('lag_time_12', axis=1)
+    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [12])
+    df['retLagTemp'] = df['ret_lag12']
     
     
     # Create 48-month rolling sum and count of retLagTemp using calendar-based approach
