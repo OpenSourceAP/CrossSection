@@ -32,9 +32,7 @@ How to interpret various variable types found in pyData/Intermediate/
 ### Precision requirements:
 **IMPORTANT**: Precision requirements are checked by running `python3 utils/test_predictors.py`. This script outputs `Logs/testout_predictors.md`. Here, 'common observations' are observations that are in both Stata and Python.
 
-1. Columns: Column names and order match exactly
-  - This is trivial if the indexes match
-2. Superset: Python observations are a superset of Stata observations
+1. Superset: Python observations are a superset of Stata observations
   - All Stata observations should be found in the Python data
   - Data source differences typically cannot explain a failure in this test
   - ***IMPORTANT: data availability issues and historical data differences rarely explain a failure in this test***
@@ -45,6 +43,7 @@ How to interpret various variable types found in pyData/Intermediate/
           - [m_CIQ_creditratings](#mciqcreditratings) (228480)
           - [InputOutputMomentumProcessed](#inputoutputmomentumprocessed) (12)
           - [customerMom](#customermom) (138)      
+2. NumRows: The number of rows in the Python data exceeds the number of rows in the Stata data by at most a few percent.
 3. Precision1: For common observations, the percentage for which std_diff >= TOL_DIFF_1 is less than TOL_OBS_1. std_diff is the difference between the python and stata values, divided by the standard deviation of all stata values.
 4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
 
