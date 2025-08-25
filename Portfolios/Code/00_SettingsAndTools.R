@@ -3,10 +3,11 @@
 options(dplyr.summarise.inform = FALSE)
 
 #### PATHS
-pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
-pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
-pathCRSPPredictors = paste0(pathProject, 'Signals/Data/CRSPPredictors/')
-pathtemp = paste0(pathProject, 'Signals/Data/temp/')
+signalDataFolder = ifelse(SignalSource == "Python", "pyData", "Data")
+pathPredictors = paste0(pathProject, 'Signals/', signalDataFolder, '/Predictors/')
+pathPlacebos = paste0(pathProject, 'Signals/', signalDataFolder, '/Placebos/')
+pathCRSPPredictors = paste0(pathProject, 'Signals/', signalDataFolder, '/CRSPPredictors/')
+pathtemp = paste0(pathProject, 'Signals/', signalDataFolder, '/temp/')
 
 pathCode = paste0(pathProject, 'Portfolios/Code/')
 pathDataIntermediate = paste0(pathProject, 'Portfolios/Data/Intermediate/')
@@ -22,8 +23,8 @@ dir.create(paste0(pathProject, 'Portfolios/Data'))
 dir.create(paste0(pathDataPortfolios))
 dir.create(paste0(pathDataIntermediate))
 
-# Signals/Data/ paths
-dir.create(paste0(pathProject,'Signals/Data/'))
+# Signals paths (Data/ or pyData/)
+dir.create(paste0(pathProject,'Signals/', signalDataFolder, '/'))
 dir.create(paste0(pathPredictors))
 dir.create(paste0(pathPlacebos))
 dir.create(paste0(pathtemp))
@@ -155,8 +156,8 @@ checkSignals = function(docs = alldocumentation, pathProj = pathProject) {
     pull(signalname)
 
   # Created signals
-  flsPredictors = list.files(paste0(pathProj, 'Signals/Data/Predictors/'))
-  flsPlacebos = list.files(paste0(pathProj, 'Signals/Data/Placebos/'))
+  flsPredictors = list.files(paste0(pathProj, 'Signals/', signalDataFolder, '/Predictors/'))
+  flsPlacebos = list.files(paste0(pathProj, 'Signals/', signalDataFolder, '/Placebos/'))
 
   # Predictor in Data/Predictor?
   predNotInData = c()
