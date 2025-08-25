@@ -43,3 +43,80 @@ Successfully consolidated all asreg functions into a single, organized `utils/st
 - No duplicate code to maintain
 - All predictor files continue to work exactly as before
 
+# Other utils links
+
+ere's the comprehensive list
+  organized by utility module:
+
+  utils/asrol.py (17 scripts):
+
+  - CitationsRD.py
+  - DivInit.py
+  - DivOmit.py
+  - DivSeason.py
+  - Herf.py
+  - HerfAsset.py
+  - HerfBE.py
+  - Investment.py
+  - MomOffSeason06YrPlus.py
+  - MomOffSeason11YrPlus.py
+  - MomOffSeason16YrPlus.py
+  - MomVol.py
+  - RDAbility.py
+  - Recomm_ShortInterest.py
+  - TrendFactor.py
+  - VarCF.py
+  - ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+
+  utils/asrol_pedantic.py (0 scripts):
+
+  - No scripts currently use this module
+
+  utils/stata_fastxtile.py (25 scripts):
+
+  - AccrualsBM.py
+  - ChForecastAccrual.py
+  - ChNAnalyst.py
+  - CitationsRD.py
+  - DivYieldST.py
+  - FirmAgeMom.py
+  - GrAdExp.py
+  - MomRev.py
+  - MomVol.py
+  - MS.py
+  - NetDebtPrice.py
+  - OperProf.py
+  - OScore.py
+  - PatentsRD.py
+  - ProbInformedTrading.py
+  - PS.py
+  - RDAbility.py
+  - RDcap.py
+  - Recomm_ShortInterest.py
+  - sfe.py
+  - std_turn.py
+  - tang.py
+  - ZZ1_Activism1_Activism2.py
+  - ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+  - ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+
+  utils/stata_ineq.py (5 scripts):
+
+  - DivSeason.py
+  - MS.py
+  - retConglomerate.py
+  - ShareVol.py
+  - TrendFactor.py
+
+  utils/winsor2.py (5 scripts):
+
+  - VolumeTrend.py
+  - ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+  - ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
+  - ZZ1_OrgCap_OrgCapNoAdj.py
+  - ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+
+  Summary:
+  - Total unique scripts using these utilities: 34 scripts
+  - Most used utility: stata_fastxtile.py (25 scripts)
+  - Least used utility: asrol_pedantic.py (0 scripts)
