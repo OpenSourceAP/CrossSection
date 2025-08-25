@@ -10,6 +10,9 @@ import fnmatch
 import warnings
 import polars as pl
 
+# Import stata_quantile from the consolidated stata_replication module
+from .stata_replication import stata_quantile
+
 try:
     import polars_ols as pls  # registers .least_squares on pl.Expr
 except ImportError:
@@ -21,53 +24,8 @@ Mode = Literal["rolling", "expanding", "group"]
 # HELPER FUNCTIONS
 # =============================================================================
 
-def stata_quantile(x, qs):
-    """
-    Compute Stata-style quantiles for a 1D array-like using only NumPy.
-
-    Parameters
-    ----------
-    x : array-like
-        Data (numeric). NaNs are ignored.
-    qs : float or sequence of floats
-        Quantiles requested. May be in [0,100] (percent) or [0,1] (fractions).
-
-    Returns
-    -------
-    float or np.ndarray
-        Scalar if one quantile requested, else array of quantiles.
-    """
-    arr = np.asarray(x, dtype=float)
-    arr = arr[~np.isnan(arr)]  # drop NaNs
-    arr.sort(kind="mergesort")  # stable sort like Stata
-    n = arr.size
-
-    if n == 0:
-        return np.nan if np.isscalar(qs) else np.full(len(np.atleast_1d(qs)), np.nan)
-
-    qs = np.atleast_1d(qs).astype(float)
-    if np.all((qs >= 0) & (qs <= 1)):
-        qs = qs * 100.0
-
-    P = (qs / 100.0) * n
-    out = np.empty_like(P, dtype=float)
-
-    for j, p in enumerate(P):
-        if p <= 0:
-            out[j] = arr[0]
-        elif p >= n:
-            out[j] = arr[-1]
-        else:
-            # first rank > p
-            idx = np.searchsorted(np.arange(1, n + 1), p, side="right")
-            val = arr[idx]
-            k = int(np.floor(p + 1e-12))
-            if abs(p - k) < 1e-12 and 1 <= k < n:
-                val = (arr[k - 1] + arr[k]) / 2
-            out[j] = val
-
-    return float(out[0]) if out.size == 1 else out
-
+# stata_quantile is now imported from stata_replication.py
+# The original function definition has been moved there
 
 def _expand_columns(df: pd.DataFrame, X: str | Sequence[str]) -> List[str]:
     """
