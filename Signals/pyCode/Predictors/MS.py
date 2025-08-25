@@ -38,7 +38,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.stata_ineq import stata_ineq_pl
+from utils.stata_replication import stata_ineq_pl
 
 print("=" * 80)
 print("🏗️  MS.py")

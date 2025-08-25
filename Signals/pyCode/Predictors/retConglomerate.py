@@ -27,7 +27,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
-from stata_ineq import stata_ineq_pd
+from stata_replication import stata_ineq_pd
 
 def main():
     print("Starting retConglomerate predictor (rewritten from scratch)...")

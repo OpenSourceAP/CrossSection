@@ -6,7 +6,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
 from savepredictor import save_predictor
-from stata_ineq import stata_ineq_pl
+from stata_replication import stata_ineq_pl
 
 # DATA LOAD
 # use permno time_avail_m sicCRSP exchcd using "$pathDataIntermediate/SignalMasterTable", clear
