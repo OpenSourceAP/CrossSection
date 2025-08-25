@@ -24,8 +24,7 @@ import sys
 import os
 
 # Add parent directory to path for any shared utilities
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_replication import stata_multi_lag
+sys.path.append('..')
 
 def main():
     print("Starting MomSeason06YrPlus predictor translation...")
@@ -55,12 +54,27 @@ def main():
     lag_periods = list(range(71, 121, 12))  # 71, 83, 95, 107, 119
     print(f"Creating lags for periods: {lag_periods}")
     
-    # Use stata_multi_lag to create multiple lags efficiently
-    print("Creating time-based lags using stata_multi_lag...")
-    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
+    # Create time-based lag variables (equivalent to: gen temp`n' = l`n'.ret)
+    # Stata lags are time-based, not position-based
+    print("Creating time-based lags...")
+    
+    for n in lag_periods:
+        print(f"Creating temp{n} (lag {n} months)...")
+        # Create a lagged time column
+        df[f'lag_time_{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
+        
+        # Create a helper dataframe for the lag merge
+        lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
+        lag_data.columns = ['permno', f'lag_time_{n}', f'temp{n}']
+        
+        # Merge to get the lagged values
+        df = df.merge(lag_data, on=['permno', f'lag_time_{n}'], how='left')
+        
+        # Clean up the temporary time column
+        df = df.drop(f'lag_time_{n}', axis=1)
     
     # Create list of temporary variable names for row operations
-    temp_vars = [f'ret_lag{n}' for n in lag_periods]
+    temp_vars = [f'temp{n}' for n in lag_periods]
     
     # Calculate row total (equivalent to: egen retTemp1 = rowtotal(temp*), missing)
     # The 'missing' option means if all values are missing, return missing (not 0)

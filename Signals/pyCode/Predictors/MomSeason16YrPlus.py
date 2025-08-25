@@ -3,12 +3,7 @@
 
 import pandas as pd
 import numpy as np
-import sys
 import os
-
-# Add parent directory to path for any shared utilities
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
@@ -23,14 +18,33 @@ df['ret'] = df['ret'].fillna(0)
 
 # Create time-based lags for months 191(12)240 (191, 203, 215, 227, 239)
 # This matches Stata's numlist pattern 191(12)240 which generates 191, 191+12=203, 191+24=215, 191+36=227, 191+48=239
-# Use stata_multi_lag to create multiple lags efficiently
-lag_periods = [191, 203, 215, 227, 239]
-print(f"Creating time-based lags for periods: {lag_periods}")
-print("Using stata_multi_lag...")
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
+# Use time-based lags instead of position-based to handle gaps in data correctly
+for n in [191, 203, 215, 227, 239]:
+    temp_col = f'temp{n}'
+    
+    # Create time-based lag by merging with shifted time periods
+    df['time_lag'] = pd.to_datetime(df['time_avail_m']) - pd.DateOffset(months=n)
+    
+    # Create lag data to merge
+    lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
+    lag_data.columns = ['permno', 'time_lag', temp_col]
+    lag_data['time_lag'] = pd.to_datetime(lag_data['time_lag'])
+    
+    # Merge to get lagged values
+    df['time_avail_m_dt'] = pd.to_datetime(df['time_avail_m'])
+    df = df.merge(lag_data[['permno', 'time_lag', temp_col]], 
+                  left_on=['permno', 'time_lag'], 
+                  right_on=['permno', 'time_lag'], 
+                  how='left')
+    
+    # Clean up temporary columns
+    df = df.drop(['time_lag'], axis=1)
+
+# Clean up the datetime column
+df = df.drop(['time_avail_m_dt'], axis=1)
 
 # Get list of temp columns
-temp_cols = [f'ret_lag{n}' for n in lag_periods]
+temp_cols = [f'temp{n}' for n in [191, 203, 215, 227, 239]]
 
 # Calculate row total and row non-missing count (equivalent to Stata egen commands)
 # egen retTemp1 = rowtotal(temp*), missing
