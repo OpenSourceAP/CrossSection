@@ -7,6 +7,10 @@
 
 import pandas as pd
 import numpy as np
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
@@ -19,12 +23,8 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Replace missing returns with 0
 df['ret'] = df['ret'].fillna(0)
 
-# Calculate lags
-df['ret_lag1'] = df.groupby('permno')['ret'].shift(1)
-df['ret_lag2'] = df.groupby('permno')['ret'].shift(2)
-df['ret_lag3'] = df.groupby('permno')['ret'].shift(3)
-df['ret_lag4'] = df.groupby('permno')['ret'].shift(4)
-df['ret_lag5'] = df.groupby('permno')['ret'].shift(5)
+# Calculate lags using stata_multi_lag for calendar validation
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
 
 # Calculate 6-month momentum (geometric return)
 df['Mom6m'] = ((1 + df['ret_lag1']) * 
