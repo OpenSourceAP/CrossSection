@@ -4,6 +4,9 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
+sys.path.append('.')
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
@@ -16,42 +19,18 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Replace missing returns with 0 (equivalent to Stata: replace ret = 0 if mi(ret))
 df['ret'] = df['ret'].fillna(0)
 
-# Create temp columns for each lag using calendar-based lookups
-# foreach n of numlist 23(12)59 { gen temp`n' = l`n'.ret }
-temp_columns = []
-for n in [23, 35, 47, 59]:
-    col_name = f'temp{n}'
-    temp_columns.append(col_name)
-    
-    # Calculate target date (n months before each observation)
-    df['target_date'] = df['time_avail_m'] - pd.DateOffset(months=n)
-    
-    # Create lookup table for lagged returns
-    lag_lookup = df[['permno', 'time_avail_m', 'ret']].rename(columns={
-        'time_avail_m': 'lag_date',
-        'ret': 'lag_ret'
-    })
-    
-    # Merge to get lagged values (equivalent to Stata's l23.ret, l35.ret, etc.)
-    merged = df.merge(
-        lag_lookup,
-        left_on=['permno', 'target_date'],
-        right_on=['permno', 'lag_date'],
-        how='left'
-    )
-    
-    # Store the lagged return (NaN if no data available for that exact date)
-    df[col_name] = merged['lag_ret']
-    
-    # Clean up temporary columns
-    df = df.drop(columns=['target_date'])
+# Use stata_multi_lag for calendar-validated lag operations
+# Create lags for 23, 35, 47, 59 months (equivalent to foreach n of numlist 23(12)59)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [23, 35, 47, 59])
 
-# Calculate row totals and counts like Stata
+# Calculate row totals and counts like Stata using the lagged columns
+lag_columns = ['ret_lag23', 'ret_lag35', 'ret_lag47', 'ret_lag59']
+
 # egen retTemp1 = rowtotal(temp*), missing
-df['retTemp1'] = df[temp_columns].sum(axis=1, skipna=True)
+df['retTemp1'] = df[lag_columns].sum(axis=1, skipna=True)
 
 # egen retTemp2 = rownonmiss(temp*)
-df['retTemp2'] = df[temp_columns].notna().sum(axis=1)
+df['retTemp2'] = df[lag_columns].notna().sum(axis=1)
 
 # Generate MomSeason = retTemp1/retTemp2
 df['MomSeason'] = df['retTemp1'] / df['retTemp2']

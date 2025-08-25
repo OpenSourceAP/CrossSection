@@ -12,6 +12,7 @@ import os
 import sys
 sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 # use permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable", clear
@@ -24,24 +25,20 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # replace ret = 0 if mi(ret)
 df.loc[df['ret'].isna(), 'ret'] = 0
 
-# Create lag variables for momentum calculations
-# gen Mom6m = ( (1+l.ret)*(1+l2.ret)*(1+l3.ret)*(1+l4.ret)*(1+l5.ret)) - 1
-for i in range(1, 6):
-    df[f'l{i}_ret'] = df.groupby('permno')['ret'].shift(i)
+# Create lag variables using stata_multi_lag for calendar validation
+# Mom6m uses lags 1-5
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
 
-df['Mom6m'] = ((1 + df['l1_ret']) * (1 + df['l2_ret']) * (1 + df['l3_ret']) * 
-               (1 + df['l4_ret']) * (1 + df['l5_ret'])) - 1
+df['Mom6m'] = ((1 + df['ret_lag1']) * (1 + df['ret_lag2']) * (1 + df['ret_lag3']) * 
+               (1 + df['ret_lag4']) * (1 + df['ret_lag5'])) - 1
 
-# gen Mom36m = (   (1+l13.ret)*(1+l14.ret)*(1+l15.ret)*(1+l16.ret)*(1+l17.ret)*(1+l18.ret)   * ///
-#     (1+l19.ret)*(1+l20.ret)*(1+l21.ret)*(1+l22.ret)*(1+l23.ret)*(1+l24.ret)* ///
-#     (1+l25.ret)*(1+l26.ret)*(1+l27.ret)*(1+l28.ret)*(1+l29.ret)*(1+l30.ret)     * ///
-#     (1+l31.ret)*(1+l32.ret)*(1+l33.ret)*(1+l34.ret)*(1+l35.ret)*(1+l36.ret)  ) - 1
-for i in range(13, 37):
-    df[f'l{i}_ret'] = df.groupby('permno')['ret'].shift(i)
+# Mom36m uses lags 13-36
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', list(range(13, 37)))
 
+# Calculate Mom36m using lag columns with new naming convention
 mom36m_product = 1
 for i in range(13, 37):
-    mom36m_product *= (1 + df[f'l{i}_ret'])
+    mom36m_product *= (1 + df[f'ret_lag{i}'])
 df['Mom36m'] = mom36m_product - 1
 
 

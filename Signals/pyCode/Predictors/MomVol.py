@@ -8,6 +8,7 @@ sys.path.append('.')
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.stata_asreg_asrol import asrol
+from utils.stata_replication import stata_multi_lag
 
 # Data load
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -37,7 +38,7 @@ df = df.with_columns([
     pl.col("ret").fill_null(0)
 ])
 
-# Calculate 6-month momentum using calendar-based lags (like Stata l.ret, l2.ret, etc.)
+# Calculate 6-month momentum using stata_multi_lag for calendar validation
 # Convert to pandas for calendar-based lag operations
 import pandas as pd
 import numpy as np
@@ -45,26 +46,16 @@ import numpy as np
 df_pd = df.to_pandas()
 df_pd = df_pd.sort_values(['permno', 'time_avail_m'])
 
-# Create calendar-based lag values like Stata l.ret, l2.ret, etc.
-lag_dfs = []
-for lag in range(1, 6):  # l.ret through l5.ret
-    lag_df = df_pd[['permno', 'time_avail_m', 'ret']].copy()
-    lag_df['time_avail_m'] = lag_df['time_avail_m'] + pd.DateOffset(months=lag)
-    lag_df = lag_df.rename(columns={'ret': f'l{lag}_ret'})
-    lag_dfs.append(lag_df)
-
-# Merge all lag values
-for lag_df in lag_dfs:
-    df_pd = df_pd.merge(lag_df, on=['permno', 'time_avail_m'], how='left')
+# Use stata_multi_lag for calendar-validated lag operations
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
 
 # Calculate 6-month momentum: (1+l.ret)*(1+l2.ret)*...*(1+l5.ret) - 1
-# Don't fill missing values - let pandas handle missing propagation naturally
 df_pd['Mom6m'] = (
-    (1 + df_pd['l1_ret']) *
-    (1 + df_pd['l2_ret']) *
-    (1 + df_pd['l3_ret']) *
-    (1 + df_pd['l4_ret']) *
-    (1 + df_pd['l5_ret']) - 1
+    (1 + df_pd['ret_lag1']) *
+    (1 + df_pd['ret_lag2']) *
+    (1 + df_pd['ret_lag3']) *
+    (1 + df_pd['ret_lag4']) *
+    (1 + df_pd['ret_lag5']) - 1
 )
 
 
@@ -119,7 +110,7 @@ df = df.with_columns([
 
 
 # Drop temporary columns (including new lag columns)
-df = df.drop(["l1_ret", "l2_ret", "l3_ret", "l4_ret", "l5_ret", "obs_num", "temp", "catMom", "catVol"])
+df = df.drop(["ret_lag1", "ret_lag2", "ret_lag3", "ret_lag4", "ret_lag5", "obs_num", "temp", "catMom", "catVol"])
 
 # Select final data
 result = df.select(["permno", "time_avail_m", "MomVol"])
