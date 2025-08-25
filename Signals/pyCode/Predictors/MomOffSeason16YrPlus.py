@@ -24,9 +24,7 @@ import sys
 import os
 
 # Add parent directory to path for any shared utilities
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_replication import stata_multi_lag
-from utils.stata_asreg_asrol import asrol
+sys.path.append('..')
 
 def main():
     print("Starting MomOffSeason16YrPlus predictor translation...")
@@ -55,12 +53,27 @@ def main():
     lag_periods = list(range(191, 240, 12))  # 191, 203, 215, 227, 239
     print(f"Creating seasonal lags for periods: {lag_periods}")
     
-    # Use stata_multi_lag to create multiple lags efficiently
-    print("Creating time-based seasonal lags using stata_multi_lag...")
-    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
+    # Create time-based lag variables (equivalent to: gen temp`n' = l`n'.ret)
+    # Stata lags are time-based, not position-based
+    print("Creating time-based seasonal lags...")
     
-    # Create list of temporary variable names for row operations  
-    temp_vars = [f'ret_lag{n}' for n in lag_periods]
+    for n in lag_periods:
+        print(f"Creating temp{n} (lag {n} months)...")
+        # Create a lagged time column
+        df[f'lag_time_{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
+        
+        # Create a helper dataframe for the lag merge
+        lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
+        lag_data.columns = ['permno', f'lag_time_{n}', f'temp{n}']
+        
+        # Merge to get the lagged values
+        df = df.merge(lag_data, on=['permno', f'lag_time_{n}'], how='left')
+        
+        # Clean up the temporary time column
+        df = df.drop(f'lag_time_{n}', axis=1)
+    
+    # Create list of temporary variable names for row operations
+    temp_vars = [f'temp{n}' for n in lag_periods]
     
     # Calculate seasonal row total (equivalent to: egen retTemp1 = rowtotal(temp*), missing)
     # The 'missing' option means if all values are missing, return missing (not 0)
@@ -78,20 +91,27 @@ def main():
     print("Creating momentum base with 60-month rolling window...")
     
     # Create retLagTemp = l180.ret (180-month lagged returns, i.e., 15 years ago)
-    print("Creating retLagTemp (lag 180 months) using stata_multi_lag...")
-    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [180])
-    # Rename to match expected name
-    df['ret_LagTemp_180'] = df['ret_lag180']
-    df = df.drop('ret_lag180', axis=1)
+    print("Creating retLagTemp (lag 180 months)...")
+    df['lag_time_180'] = df['time_avail_m'] - pd.DateOffset(months=180)
+    lag_data_180 = df[['permno', 'time_avail_m', 'ret']].copy()
+    lag_data_180.columns = ['permno', 'lag_time_180', 'retLagTemp']
+    df = df.merge(lag_data_180, on=['permno', 'lag_time_180'], how='left')
+    df = df.drop('lag_time_180', axis=1)
     
     # Create 60-month rolling sum and count of retLagTemp (equivalent to asrol)
     # Note: This variant requires minimum 36 observations (vs 1 in other variants)
     print("Calculating 60-month rolling sum and count (minimum 36 observations)...")
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Use asrol for 60-month rolling sum and count with minimum 36 periods
-    df = asrol(df, 'permno', 'time_avail_m', 'ret_LagTemp_180', 60, stat='sum', new_col_name='sum60_retLagTemp', min_periods=36)
-    df = asrol(df, 'permno', 'time_avail_m', 'ret_LagTemp_180', 60, stat='count', new_col_name='count60_retLagTemp', min_periods=36)
+    # Rolling sum (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(sum) minimum(36))
+    df['sum60_retLagTemp'] = df.groupby('permno')['retLagTemp'].transform(
+        lambda x: x.rolling(window=60, min_periods=36).sum()
+    )
+    
+    # Rolling count (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(count) minimum(36))
+    df['count60_retLagTemp'] = df.groupby('permno')['retLagTemp'].transform(
+        lambda x: x.notna().rolling(window=60, min_periods=36).sum()
+    )
     
     print("Calculated 60-month rolling momentum base")
     

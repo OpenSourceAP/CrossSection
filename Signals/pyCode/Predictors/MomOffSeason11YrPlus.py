@@ -24,8 +24,7 @@ import sys
 import os
 
 # Add parent directory to path for any shared utilities
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_replication import stata_multi_lag
+sys.path.append('..')
 
 def main():
     print("Starting MomOffSeason11YrPlus predictor translation...")
@@ -49,19 +48,32 @@ def main():
     df['ret'] = df['ret'].fillna(0)
     print("Replaced missing returns with 0")
     
-    
     # Create seasonal lag variables (equivalent to: foreach n of numlist 131(12)179)
     # This creates lags for seasonal returns from years 11-15: 131, 143, 155, 167, 179 months
     lag_periods = list(range(131, 180, 12))  # 131, 143, 155, 167, 179
     print(f"Creating seasonal lags for periods: {lag_periods}")
     
-    # Use stata_multi_lag to create multiple lags efficiently
-    print("Creating time-based seasonal lags using stata_multi_lag...")
-    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
+    # Create time-based lag variables (equivalent to: gen temp`n' = l`n'.ret)
+    # Stata lags are time-based, not position-based
+    print("Creating time-based seasonal lags...")
     
+    for n in lag_periods:
+        print(f"Creating temp{n} (lag {n} months)...")
+        # Create a lagged time column
+        df[f'lag_time_{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
+        
+        # Create a helper dataframe for the lag merge
+        lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
+        lag_data.columns = ['permno', f'lag_time_{n}', f'temp{n}']
+        
+        # Merge to get the lagged values
+        df = df.merge(lag_data, on=['permno', f'lag_time_{n}'], how='left')
+        
+        # Clean up the temporary time column
+        df = df.drop(f'lag_time_{n}', axis=1)
     
-    # Create list of temporary variable names for row operations  
-    temp_vars = [f'ret_lag{n}' for n in lag_periods]
+    # Create list of temporary variable names for row operations
+    temp_vars = [f'temp{n}' for n in lag_periods]
     
     # Calculate seasonal row total (equivalent to: egen retTemp1 = rowtotal(temp*), missing)
     # The 'missing' option means if all values are missing, return missing (not 0)
@@ -75,72 +87,32 @@ def main():
     df['retTemp2'] = df[temp_vars].notna().sum(axis=1)
     print("Calculated retTemp2 (seasonal row non-missing count)")
     
-    
     # Calculate momentum base using 60-month rolling window
     print("Creating momentum base with 60-month rolling window...")
     
     # Create retLagTemp = l120.ret (120-month lagged returns, i.e., 10 years ago)
-    print("Creating retLagTemp (lag 120 months) using stata_multi_lag...")
-    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [120])
-    # Rename to match expected name
-    df['ret_LagTemp_120'] = df['ret_lag120']
-    df = df.drop('ret_lag120', axis=1)
+    print("Creating retLagTemp (lag 120 months)...")
+    df['lag_time_120'] = df['time_avail_m'] - pd.DateOffset(months=120)
+    lag_data_120 = df[['permno', 'time_avail_m', 'ret']].copy()
+    lag_data_120.columns = ['permno', 'lag_time_120', 'retLagTemp']
+    df = df.merge(lag_data_120, on=['permno', 'lag_time_120'], how='left')
+    df = df.drop('lag_time_120', axis=1)
     
-    # Create 60-month rolling sum and count of retLagTemp using calendar-based approach
-    print("Calculating 60-month calendar-based rolling sum and count...")
+    # Create 60-month rolling sum and count of retLagTemp (equivalent to asrol)
+    print("Calculating 60-month rolling sum and count...")
     df = df.sort_values(['permno', 'time_avail_m'])
     
-    # Convert to yyyymm integer for efficient calendar arithmetic
-    df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+    # Rolling sum (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(sum))
+    df['retLagTemp_sum60'] = df.groupby('permno')['retLagTemp'].transform(
+        lambda x: x.rolling(window=60, min_periods=1).sum()
+    )
     
-    def calculate_calendar_rolling_60m(group):
-        group = group.sort_values('yyyymm').reset_index(drop=True)
-        n_obs = len(group)
-        sum_values = np.full(n_obs, np.nan)
-        count_values = np.full(n_obs, np.nan)
-        
-        # Pre-compute all yyyymm values for efficient comparison
-        yyyymm_values = group['yyyymm'].values
-        retLagTemp_values = group['ret_LagTemp_120'].values
-        
-        for i in range(n_obs):
-            current_yyyymm = yyyymm_values[i]
-            
-            # Calculate 60-month calendar window start (59 months back, including current)
-            current_year = current_yyyymm // 100
-            current_month = current_yyyymm % 100
-            
-            start_month = current_month - 59
-            start_year = current_year
-            while start_month <= 0:
-                start_month += 12
-                start_year -= 1
-            
-            window_start_yyyymm = start_year * 100 + start_month
-            
-            # Find observations in 60-month calendar window (including focal)
-            window_mask = (
-                (yyyymm_values >= window_start_yyyymm) & 
-                (yyyymm_values <= current_yyyymm)
-            )
-            
-            # Calculate sum and count (including NaN handling like Stata minimum(1))
-            window_values = retLagTemp_values[window_mask]
-            non_missing_values = window_values[~pd.isna(window_values)]
-            
-            if len(non_missing_values) >= 1:  # minimum(1) like in Stata
-                sum_values[i] = np.sum(non_missing_values)
-                count_values[i] = len(non_missing_values)
-        
-        group['retLagTemp_sum60'] = sum_values
-        group['retLagTemp_count60'] = count_values
-        return group
-
-    print("Processing groups for calendar-based rolling (this may take time for 60-month windows)...")
-    df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_60m)
+    # Rolling count (equivalent to: asrol retLagTemp, window(time_avail_m 60) stat(count))
+    df['retLagTemp_count60'] = df.groupby('permno')['retLagTemp'].transform(
+        lambda x: x.notna().rolling(window=60, min_periods=1).sum()
+    )
     
     print("Calculated 60-month rolling momentum base")
-    
     
     # Calculate final predictor (equivalent to: gen MomOffSeason11YrPlus = (retLagTemp_sum60 - retTemp1)/(retLagTemp_count60 - retTemp2))
     df['MomOffSeason11YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
@@ -148,8 +120,9 @@ def main():
     df.loc[(df['retLagTemp_count60'] - df['retTemp2']) == 0, 'MomOffSeason11YrPlus'] = np.nan
     print("Calculated MomOffSeason11YrPlus predictor")
     
-    
-    # yyyymm column already created earlier for calendar-based rolling
+    # Create yyyymm column from time_avail_m 
+    # Convert datetime to yyyymm integer format (e.g. 199112 for Dec 1991)
+    df['yyyymm'] = (df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month).astype(int)
     
     # SAVE - Keep only required output columns
     output_df = df[['permno', 'yyyymm', 'MomOffSeason11YrPlus']].copy()
