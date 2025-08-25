@@ -16,6 +16,9 @@ gcollapse (firstnm) shortint shortintadj, by(gvkey time_avail_m)  // Data report
 			        	                                         // Rapach et al. (2016). As they do, we use the mid-month observation to make sure 
                                                                  // Data would be available in real time
 
+replace shortint = shortint/10^6  // for consistency as we also use shares outstanding in millions of shares (see I_CRSPmonthly.do)
+replace shortintadj = shortintadj/10^6																 
+																 
 destring gvkey, replace
 compress
 save "$pathDataIntermediate/monthlyShortInterest", replace

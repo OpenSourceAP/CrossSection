@@ -1,0 +1,22 @@
+# SSC requirements
+
+egenmore
+fastxtile >= 1.22.0
+gtools >= 1.10.1
+tscollap >= 1.0.3
+mdesc >= 2.1.0
+winsor2 >= 1.1.0
+freduse >= 2.0.0
+fsum >= 2.6.0
+asrol >= 4.6.0
+asreg >= 4.8.0
+astile >= 3.2.2
+_gwtmean >= 2.0.0
+egenmisc >= 1.2.14
+ftools >= 2.49.1
+moremata >= 1.1.1
+relrank >= 1.0.3
+fs >= 1.0.5
+filelist >= 2.0.7
+rscript >= 1.1.1
+sicff
