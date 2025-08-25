@@ -16,10 +16,11 @@ There are four main legs of the project:
 The `pyCode/` folder contains the Python equivalents of the Stata code.
 The `pyData/` folder contains the Python data files.
 
-## Files
+## Folder Structure
 
-Check @~/.claude/openap-instructions.md for full path of `Signals/`
-- If this file does not exist, ask user to create an md file pointing to `Signals/`'s full path.
+Check the user's `~/.claude/CLAUDE.md` for full path of `Signals`
+- search for "SIGNALSPATH"
+- if "SIGNALSPATH" is not found, ask the user to add it to `~/.claude/CLAUDE.md`
 
 ```
 Signals/
@@ -58,7 +59,7 @@ Signals/
 
 ## Working Directory
 - **All Python scripts must be executed from `pyCode/`**
-  - Check @~/.claude/openap-instructions.md for full path of `Signals/pyCode/`
+  - Check SIGNALSPATH for full path of `Signals/pyCode/`
 - **Virtual environment is located at `pyCode/.venv/`**
   - Do not create any new virtual environments.
 - **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
