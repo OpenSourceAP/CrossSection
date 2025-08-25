@@ -20,7 +20,7 @@ df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 
 # Merge with SignalMasterTable (keep master match like Stata)
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-df = df.merge(smt[['permno', 'time_avail_m', 'mve_c']], on=['permno', 'time_avail_m'], how='left')
+df = df.merge(smt[['permno', 'time_avail_m', 'mve_c']], on=['permno', 'time_avail_m'], how='inner')
 
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])

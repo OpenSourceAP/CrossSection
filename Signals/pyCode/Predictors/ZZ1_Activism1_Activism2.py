@@ -45,7 +45,7 @@ tr13f = pl.read_parquet("../pyData/Intermediate/TR_13F.parquet").select([
     'permno', 'time_avail_m', 'maxinstown_perc'
 ])
 
-df = df.join(tr13f, on=['permno', 'time_avail_m'], how='left')
+df = df.join(tr13f, on=['permno', 'time_avail_m'], how='inner')
 print(f"After TR_13F merge: {df.shape[0]} rows")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(shrcls)
@@ -54,7 +54,7 @@ mcrsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet").select([
     'permno', 'time_avail_m', 'shrcls'
 ])
 
-df = df.join(mcrsp, on=['permno', 'time_avail_m'], how='left')
+df = df.join(mcrsp, on=['permno', 'time_avail_m'], how='inner')
 print(f"After monthlyCRSP merge: {df.shape[0]} rows")
 
 # * Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
@@ -74,7 +74,7 @@ print(f"Records without ticker: {temp_missing_ticker.shape[0]}")
 # drop if mi(ticker)
 # merge m:1 ticker time_avail_m using "$pathDataIntermediate/GovIndex", keep(master match) nogenerate
 gov = pl.read_parquet("../pyData/Intermediate/GovIndex.parquet")
-df = df.join(gov, on=['ticker', 'time_avail_m'], how='left')
+df = df.join(gov, on=['ticker', 'time_avail_m'], how='inner')
 
 # append using "$pathtemp/temp"
 # Need to add the missing columns from GovIndex to temp_missing_ticker with null values

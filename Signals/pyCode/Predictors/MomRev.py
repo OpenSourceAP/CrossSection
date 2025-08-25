@@ -55,9 +55,8 @@ df['tempMom36'] = fastxtile(df, 'Mom36m_clean', by='time_avail_m', n=5)
 
 
 # gen MomRev = 1 if tempMom6 == 5 & tempMom36 == 1
-# Note: Stata assigns MomRev=1 to tempMom6=5 & tempMom36<=2 cases (not just ==1)
 df['MomRev'] = np.nan
-df.loc[(df['tempMom6'] == 5) & (df['tempMom36'] <= 2), 'MomRev'] = 1
+df.loc[(df['tempMom6'] == 5) & (df['tempMom36'] == 1), 'MomRev'] = 1
 
 # replace MomRev = 0 if tempMom6 == 1 & tempMom36 == 5
 df.loc[(df['tempMom6'] == 1) & (df['tempMom36'] == 5), 'MomRev'] = 0

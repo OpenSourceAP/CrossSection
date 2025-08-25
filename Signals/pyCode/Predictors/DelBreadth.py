@@ -16,7 +16,7 @@ df = df[['permno', 'time_avail_m', 'exchcd', 'mve_c']].copy()
 tr_13f = pd.read_parquet('../pyData/Intermediate/TR_13F.parquet')
 tr_13f = tr_13f[['permno', 'time_avail_m', 'dbreadth']].copy()
 
-df = df.merge(tr_13f, on=['permno', 'time_avail_m'], how='left')
+df = df.merge(tr_13f, on=['permno', 'time_avail_m'], how='inner')
 
 # Forward-fill TR_13F data within each permno (quarterly data -> monthly)
 df = df.sort_values(['permno', 'time_avail_m'])
