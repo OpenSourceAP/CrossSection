@@ -25,6 +25,14 @@ def run_portcheck(signalcur):
     signaldoc0 = pd.read_csv('../DocsForClaude/SignalDoc-Copy.csv')
     signaldoc = signaldoc0[['Acronym', 'SampleStartYear','SampleEndYear','Cat.Form','Stock Weight','LS Quantile','Test in OP','T-Stat']]
 
+    # Read old t-statistics from PredictorSummaryOld.xlsx
+    try:
+        sumold = pd.read_excel('../DocsForClaude/PredictorSummaryOld.xlsx')
+        old_tstat_dict = dict(zip(sumold['signalname'], sumold['tstat']))
+        old_tstat = old_tstat_dict.get(signalcur, None)
+    except:
+        old_tstat = None
+
     # Assume EW, 0.10, if missing
     signaldoc.loc[signaldoc['Stock Weight'].isna(), 'Stock Weight'] = 'EW'
     signaldoc.loc[signaldoc['LS Quantile'].isna(), 'LS Quantile'] = 0.10
@@ -132,6 +140,7 @@ def run_portcheck(signalcur):
         'T': stats['T'],
         'tstat': round(tstat, 2),
         'tstat_op': doccur['T-Stat'],
+        'tstat_old': old_tstat,
         'sample_start': sample_period['min'],
         'sample_end': sample_period['max'],
         'nlong': int(round(nstocks['nlong'])),
@@ -160,7 +169,11 @@ def main():
         print(f"  Volatility:      {results['vol']:8.4f}%")
         print(f"  Observations:    {results['T']:8.0f}")
         print(f"  T-Statistic:     {results['tstat']:8.2f}")
-        print(f"  T-Stat (OP):     {results['tstat_op']:8.2f}")
+        if results['tstat_old'] is not None:
+            print(f"  T-Stat (Old):    {results['tstat_old']:8.2f}")
+        else:
+            print(f"  T-Stat (Old):         N/A")
+        print(f"  T-Stat (OP):     {results['tstat_op']:8.2f}")            
         
         print(f"\nSample Period:")
         print(f"  Start:           {results['sample_start'].strftime('%Y-%m-%d')}")
