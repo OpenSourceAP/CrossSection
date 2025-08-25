@@ -18,6 +18,7 @@ Do NOT make any changes to code which generates intermediate data files or predi
    * Port logic line-by-line from each `.do`.
    * Use Python equivalents for Stata lags/leads, merges, and by-group ops.
    * Save outputs to `../pyData/Placebos/`.
+   * Check @DocsForClaude/  and if there exists a utils python veresion of stata functions that we have use that version of the stata function. 
 
 3. **Validation**
 

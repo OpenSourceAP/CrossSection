@@ -114,6 +114,22 @@ def validate_precision_requirements(stata_df, python_df, placebo_name):
             results['error'] = f'Missing index columns: {col}'
             return False, results
     
+    # Ensure consistent data types for index columns before any join operations
+    try:
+        # Cast both permno and yyyymm to consistent types (Int64 for both)
+        stata_df = stata_df.with_columns([
+            pl.col("permno").cast(pl.Int64, strict=False),
+            pl.col("yyyymm").cast(pl.Int64, strict=False)
+        ])
+        python_df = python_df.with_columns([
+            pl.col("permno").cast(pl.Int64, strict=False),
+            pl.col("yyyymm").cast(pl.Int64, strict=False)
+        ])
+    except Exception as e:
+        print(f"  ❌ Error casting index columns to consistent types: {e}")
+        results['error'] = f'Error casting index columns to consistent types: {e}'
+        return False, results
+    
     # 1. Column names and order match exactly
     # Get data columns (excluding index columns)
     stata_data_cols = [col for col in stata_cols if col not in INDEX_COLS]

@@ -1,6 +1,6 @@
 # Placebo Validation Results
 
-**Generated**: 2025-08-24 00:43:02
+**Generated**: 2025-08-25 00:00:13
 
 **Configuration**:
 - TOL_SUPERSET: 0.0%
@@ -14,12 +14,37 @@
 
 | Placebo                   | Python CSV | Columns  | Superset  | Precision1   | Precision2              |
 |---------------------------|------------|----------|-----------|--------------|-------------------------|
+| DelayAcct                 | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| DelayNonAcct              | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| DownsideBeta              | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| IdioVolCAPM               | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| IdioVolQF                 | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| ReturnSkewCAPM            | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| ReturnSkewQF              | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| betaCC                    | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| betaCR                    | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| betaNet                   | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| betaRC                    | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| betaRR                    | ✅         | ✅       | ❌ (100.00%) | ❌ (0.00%)    | ❌ (99th diff 0.0E+00)   |
+| AccrualQualityJune        | ✅         | ✅       | ❌ (3.88%)   | ❌ (60.03%)   | ✅ (99th diff 5.6E-01)   |
+| AccrualQuality            | ✅         | ✅       | ❌ (0.96%)   | ❌ (59.96%)   | ✅ (99th diff 4.1E-01)   |
+| FailureProbability        | ✅         | ✅       | ❌ (0.69%)   | ✅ (0.11%)    | ✅ (99th diff 3.2E-06)   |
+| OScore_q                  | ✅         | ✅       | ❌ (0.36%)   | ✅ (0.00%)    | ✅ (99th diff 0.0E+00)   |
+| FailureProbabilityJune    | ✅         | ✅       | ❌ (0.26%)   | ✅ (0.26%)    | ✅ (99th diff 3.6E-06)   |
+| ForecastDispersionLT      | ✅         | ✅       | ❌ (0.21%)   | ✅ (0.09%)    | ✅ (99th diff 1.5E-07)   |
 | fgr5yrNoLag               | ✅         | ✅       | ❌ (0.21%)   | ✅ (0.08%)    | ✅ (99th diff 1.4E-07)   |
+| nanalyst                  | ✅         | ✅       | ❌ (0.03%)   | ✅ (0.26%)    | ✅ (99th diff 0.0E+00)   |
+| PS_q                      | ✅         | ✅       | ❌ (0.02%)   | ❌ (53.97%)   | ❌ (99th diff 3.2E+00)   |
 | DivYield                  | ✅         | ✅       | ❌ (0.01%)   | ✅ (0.00%)    | ✅ (99th diff 1.2E-08)   |
+| KZ_q                      | ✅         | ✅       | ❌ (0.01%)   | ✅ (0.00%)    | ✅ (99th diff 3.1E-09)   |
 | pchquick                  | ✅         | ✅       | ❌ (0.01%)   | ✅ (0.24%)    | ✅ (99th diff 2.8E-09)   |
+| OperProfRDLagAT_q         | ✅         | ✅       | ❌ (0.01%)   | ✅ (0.02%)    | ✅ (99th diff 6.6E-08)   |
+| OperProfLag               | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 1.5E-08)   |
 | cfpq                      | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.02%)    | ✅ (99th diff 3.7E-08)   |
 | EPq                       | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.74%)    | ✅ (99th diff 2.9E-03)   |
 | RD_q                      | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 5.2E-08)   |
+| WW                        | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 4.7E-10)   |
+| GPlag_q                   | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 1.8E-08)   |
 | rd_sale_q                 | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 6.7E-09)   |
 | NetDebtPrice_q            | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 4.8E-08)   |
 | PayoutYield_q             | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 3.4E-08)   |
@@ -29,11 +54,14 @@
 | Tax_q                     | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.6E-09)   |
 | Leverage_q                | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 4.5E-08)   |
 | OPLeverage_q              | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 7.7E-08)   |
+| OperProfRDLagAT           | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.3E-08)   |
+| OperProfLag_q             | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 9.2E-13)   |
 | EBM_q                     | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 3.4E-08)   |
 | AssetGrowth_q             | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.9E-08)   |
 | AssetLiquidityMarketQuart | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.5E-07)   |
 | CapTurnover_q             | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.0E-08)   |
 | CBOperProfLagAT_q         | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.02%)    | ✅ (99th diff 8.5E-08)   |
+| WW_Q                      | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.6E-07)   |
 | PM_q                      | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.9E-09)   |
 | AssetLiquidityBookQuart   | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.4E-08)   |
 | SP_q                      | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.0E-08)   |
@@ -44,10 +72,18 @@
 | EntMult_q                 | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 4.7E-09)   |
 | depr                      | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.7E-09)   |
 | sgr_q                     | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 3.0E-10)   |
+| roavol                    | ✅         | ✅       | ❌ (0.00%)   | ✅ (4.52%)    | ✅ (99th diff 7.5E-02)   |
+| KZ                        | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.0E-09)   |
 | tang_q                    | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 1.5E-07)   |
+| RetNOA                    | ✅         | ✅       | ❌ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.4E-19)   |
+| pchcurrat                 | ✅         | ✅       | ✅ (0.00%)   | ❌ (15.54%)   | ❌ (99th diff NAN)       |
+| BrandCapital              | ✅         | ✅       | ✅ (0.00%)   | ✅ (5.88%)    | ✅ (99th diff 8.2E-02)   |
+| GrGMToGrSales             | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.04%)    | ✅ (99th diff 4.5E-09)   |
 | DivYieldAnn               | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.03%)    | ✅ (99th diff 2.1E-08)   |
 | NetPayoutYield_q          | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.02%)    | ✅ (99th diff 3.5E-08)   |
 | roic                      | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 3.4E-23)   |
+| GrSaleToGrReceivables     | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 8.0E-10)   |
+| GPlag                     | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.01%)    | ✅ (99th diff 5.6E-08)   |
 | EarningsSmoothness        | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 3.1E-07)   |
 | salerec                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.1E-08)   |
 | secured                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.4E-08)   |
@@ -61,6 +97,7 @@
 | AssetLiquidityMarket      | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.7E-07)   |
 | AssetLiquidityBook        | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.5E-08)   |
 | ETR                       | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 6.2E-12)   |
+| pchgm_pchsale             | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.6E-09)   |
 | sgr                       | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.9E-09)   |
 | BookLeverageQuarterly     | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 4.1E-13)   |
 | AMq                       | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 3.9E-08)   |
@@ -68,69 +105,32 @@
 | CapTurnover               | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.5E-08)   |
 | salecash                  | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 6.5E-09)   |
 | ZScore                    | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.3E-08)   |
+| BidAskTAQ                 | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 8.0E-08)   |
+| BetaSquared               | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 7.0E-08)   |
+| currat                    | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.4E-08)   |
 | quick                     | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.1E-08)   |
+| ChPM                      | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 5.2E-09)   |
 | rd_sale                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 4.1E-09)   |
 | cashdebt                  | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 3.2E-09)   |
 | saleinv                   | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 3.1E-09)   |
+| PM                        | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 2.3E-09)   |
+| pchsaleinv                | ✅         | ✅       | ✅ (0.00%)   | ✅ (0.00%)    | ✅ (99th diff 1.7E-09)   |
 | AbnormalAccrualsPercent   | ❌         | NA      | NA          | NA           | NA                      |
-| AccrualQuality            | ❌         | NA      | NA          | NA           | NA                      |
-| AccrualQualityJune        | ❌         | NA      | NA          | NA           | NA                      |
 | BetaBDLeverage            | ❌         | NA      | NA          | NA           | NA                      |
 | BetaDimson                | ❌         | NA      | NA          | NA           | NA                      |
-| BetaSquared               | ❌         | NA      | NA          | NA           | NA                      |
-| BidAskTAQ                 | ❌         | NA      | NA          | NA           | NA                      |
-| BrandCapital              | ❌         | NA      | NA          | NA           | NA                      |
-| ChPM                      | ❌         | NA      | NA          | NA           | NA                      |
-| DelayAcct                 | ❌         | NA      | NA          | NA           | NA                      |
-| DelayNonAcct              | ❌         | NA      | NA          | NA           | NA                      |
-| DownsideBeta              | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsConservatism      | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsPersistence       | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsPredictability    | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsTimeliness        | ❌         | NA      | NA          | NA           | NA                      |
 | EarningsValueRelevance    | ❌         | NA      | NA          | NA           | NA                      |
 | FRbook                    | ❌         | NA      | NA          | NA           | NA                      |
-| FailureProbability        | ❌         | NA      | NA          | NA           | NA                      |
-| FailureProbabilityJune    | ❌         | NA      | NA          | NA           | NA                      |
-| ForecastDispersionLT      | ❌         | NA      | NA          | NA           | NA                      |
-| GPlag                     | ❌         | NA      | NA          | NA           | NA                      |
-| GPlag_q                   | ❌         | NA      | NA          | NA           | NA                      |
-| GrGMToGrSales             | ❌         | NA      | NA          | NA           | NA                      |
-| GrSaleToGrReceivables     | ❌         | NA      | NA          | NA           | NA                      |
-| IdioVolCAPM               | ❌         | NA      | NA          | NA           | NA                      |
-| IdioVolQF                 | ❌         | NA      | NA          | NA           | NA                      |
 | IntrinsicValue            | ❌         | NA      | NA          | NA           | NA                      |
-| KZ                        | ❌         | NA      | NA          | NA           | NA                      |
-| KZ_q                      | ❌         | NA      | NA          | NA           | NA                      |
-| OScore_q                  | ❌         | NA      | NA          | NA           | NA                      |
-| OperProfLag               | ❌         | NA      | NA          | NA           | NA                      |
-| OperProfLag_q             | ❌         | NA      | NA          | NA           | NA                      |
-| OperProfRDLagAT           | ❌         | NA      | NA          | NA           | NA                      |
-| OperProfRDLagAT_q         | ❌         | NA      | NA          | NA           | NA                      |
 | OrgCapNoAdj               | ❌         | NA      | NA          | NA           | NA                      |
-| PM                        | ❌         | NA      | NA          | NA           | NA                      |
-| PS_q                      | ❌         | NA      | NA          | NA           | NA                      |
 | ResidualMomentum6m        | ❌         | NA      | NA          | NA           | NA                      |
-| RetNOA                    | ❌         | NA      | NA          | NA           | NA                      |
-| ReturnSkewCAPM            | ❌         | NA      | NA          | NA           | NA                      |
-| ReturnSkewQF              | ❌         | NA      | NA          | NA           | NA                      |
-| WW                        | ❌         | NA      | NA          | NA           | NA                      |
-| WW_Q                      | ❌         | NA      | NA          | NA           | NA                      |
-| betaCC                    | ❌         | NA      | NA          | NA           | NA                      |
-| betaCR                    | ❌         | NA      | NA          | NA           | NA                      |
-| betaNet                   | ❌         | NA      | NA          | NA           | NA                      |
-| betaRC                    | ❌         | NA      | NA          | NA           | NA                      |
-| betaRR                    | ❌         | NA      | NA          | NA           | NA                      |
-| currat                    | ❌         | NA      | NA          | NA           | NA                      |
 | grcapx1y                  | ❌         | NA      | NA          | NA           | NA                      |
-| nanalyst                  | ❌         | NA      | NA          | NA           | NA                      |
-| pchcurrat                 | ❌         | NA      | NA          | NA           | NA                      |
-| pchgm_pchsale             | ❌         | NA      | NA          | NA           | NA                      |
-| pchsaleinv                | ❌         | NA      | NA          | NA           | NA                      |
-| roavol                    | ❌         | NA      | NA          | NA           | NA                      |
 
-**Overall**: 27/58 available placebos passed validation
-**Python CSVs**: 58/114 placebos have Python implementation
+**Overall**: 38/101 available placebos passed validation
+**Python CSVs**: 101/114 placebos have Python implementation
 
 ## Detailed Results
 
@@ -182,6 +182,198 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 13/2584378 (0.001%)
 - Stata standard deviation: 2.33e+01
+
+---
+
+### AccrualQuality
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 16721 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['AccrualQuality']
+
+**Observations**:
+- Stata:  1,740,065
+- Python: 1,772,372
+- Common: 1,723,344
+
+**Precision1**: 59.956% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 4.11e-01 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.72e+06 |       1.72e+06 |       1.72e+06 |       1.72e+06 |
+| mean       |         0.0460 |         0.0463 |       3.24e-04 |         0.0065 |
+| std        |         0.0495 |         0.0498 |         0.0053 |         0.1061 |
+| min        |       4.17e-04 |       4.58e-04 |        -0.1265 |        -2.5557 |
+| 25%        |         0.0179 |         0.0180 |      -6.90e-04 |        -0.0139 |
+| 50%        |         0.0316 |         0.0318 |       7.99e-10 |       1.61e-08 |
+| 75%        |         0.0562 |         0.0567 |       9.51e-04 |         0.0192 |
+| max        |         1.6265 |         1.6229 |         0.5466 |        11.0413 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0003 + 1.0008 * stata
+- **R-squared**: 0.9889
+- **N observations**: 1,723,344
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     2.85e-04 |     5.46e-06 |     52.2289 |     0.000 |
+| Slope       |       1.0008 |     8.08e-05 |  12389.1528 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  AccrualQuality
+     0   10080  200006        0.026711
+     1   10080  200007        0.026711
+     2   10080  200008        0.026711
+     3   10080  200009        0.026711
+     4   10080  200010        0.026711
+     5   10080  200011        0.026711
+     6   10080  200012        0.026711
+     7   10080  200101        0.026711
+     8   10080  200102        0.026711
+     9   10080  200103        0.026711
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 1033246/1723344 (59.956%)
+- Stata standard deviation: 4.95e-02
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm    python     stata      diff
+0   10104  202610  0.017492  0.018274 -0.000782
+1   10104  202609  0.017492  0.018274 -0.000782
+2   42585  202609  0.021855  0.041185 -0.019330
+3   60097  202609  0.020834  0.019858  0.000976
+4   82598  202609  0.014516  0.015714 -0.001199
+5   10104  202608  0.017492  0.018274 -0.000782
+6   12082  202608  0.086767  0.085591  0.001176
+7   12783  202608  0.031212  0.031918 -0.000707
+8   13142  202608  0.018200  0.017444  0.000756
+9   14888  202608  0.020935  0.019089  0.001846
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm    python     stata      diff
+0   11665  199807  0.708231  0.161608  0.546622
+1   11665  199808  0.708231  0.161608  0.546622
+2   11665  199809  0.708231  0.161608  0.546622
+3   11665  199810  0.708231  0.161608  0.546622
+4   11665  199811  0.708231  0.161608  0.546622
+5   11665  199812  0.708231  0.161608  0.546622
+6   11665  199901  0.708231  0.161608  0.546622
+7   11665  199902  0.708231  0.161608  0.546622
+8   11665  199903  0.708231  0.161608  0.546622
+9   11665  199904  0.708231  0.161608  0.546622
+```
+
+---
+
+### AccrualQualityJune
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 69316 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['AccrualQualityJune']
+
+**Observations**:
+- Stata:  1,784,388
+- Python: 1,744,543
+- Common: 1,715,072
+
+**Precision1**: 60.028% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 5.56e-01 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.72e+06 |       1.72e+06 |       1.72e+06 |       1.72e+06 |
+| mean       |         0.0462 |         0.0467 |       5.01e-04 |         0.0100 |
+| std        |         0.0500 |         0.0506 |         0.0095 |         0.1905 |
+| min        |       4.17e-04 |       4.58e-04 |        -0.5295 |       -10.5847 |
+| 25%        |         0.0179 |         0.0180 |      -6.93e-04 |        -0.0138 |
+| 50%        |         0.0316 |         0.0319 |       8.58e-10 |       1.71e-08 |
+| 75%        |         0.0565 |         0.0571 |       9.77e-04 |         0.0195 |
+| max        |         1.6265 |         1.6229 |         0.5466 |        10.9260 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0008 + 0.9938 * stata
+- **R-squared**: 0.9646
+- **N observations**: 1,715,072
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     7.86e-04 |     9.90e-06 |     79.4311 |     0.000 |
+| Slope       |       0.9938 |     1.45e-04 |   6837.5039 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  AccrualQualityJune
+     0   10025  201104            0.026843
+     1   10025  201105            0.026843
+     2   10025  201106            0.026843
+     3   10025  201107            0.026843
+     4   10025  201108            0.026843
+     5   10025  201109            0.026843
+     6   10025  201110            0.026843
+     7   10025  201111            0.026843
+     8   10025  201112            0.026843
+     9   10025  201201            0.026843
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 1029517/1715072 (60.028%)
+- Stata standard deviation: 5.00e-02
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm    python     stata      diff
+0   10104  202610  0.017492  0.018274 -0.000782
+1   10104  202609  0.017492  0.018274 -0.000782
+2   42585  202609  0.021855  0.041185 -0.019330
+3   60097  202609  0.020834  0.019858  0.000976
+4   82598  202609  0.014516  0.015714 -0.001199
+5   10104  202608  0.017492  0.018274 -0.000782
+6   12082  202608  0.086767  0.085591  0.001176
+7   12783  202608  0.031212  0.031918 -0.000707
+8   13142  202608  0.018200  0.017444  0.000756
+9   14888  202608  0.020935  0.019089  0.001846
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm    python     stata      diff
+0   11665  199906  0.708231  0.161608  0.546622
+1   11665  199907  0.708231  0.161608  0.546622
+2   11665  199908  0.708231  0.161608  0.546622
+3   11665  199909  0.708231  0.161608  0.546622
+4   11665  199910  0.708231  0.161608  0.546622
+5   11665  199911  0.708231  0.161608  0.546622
+6   11665  199912  0.708231  0.161608  0.546622
+7   11665  200001  0.708231  0.161608  0.546622
+8   11665  200002  0.708231  0.161608  0.546622
+9   11665  200003  0.708231  0.161608  0.546622
+```
 
 ---
 
@@ -668,6 +860,108 @@
 
 ---
 
+### BetaSquared
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['BetaSquared']
+
+**Observations**:
+- Stata:  4,285,574
+- Python: 4,353,773
+- Common: 4,285,574
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 7.04e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       4.29e+06 |       4.29e+06 |       4.29e+06 |       4.29e+06 |
+| mean       |         1.5351 |         1.5351 |       7.77e-09 |       1.17e-09 |
+| std        |         6.6568 |         6.6568 |       4.67e-07 |       7.02e-08 |
+| min        |       5.10e-13 |       5.13e-13 |      -4.38e-05 |      -6.58e-06 |
+| 25%        |         0.2920 |         0.2920 |      -1.62e-08 |      -2.43e-09 |
+| 50%        |         0.8168 |         0.8168 |       4.33e-10 |       6.51e-11 |
+| 75%        |         1.7846 |         1.7846 |       2.33e-08 |       3.50e-09 |
+| max        |      2770.3259 |      2770.3261 |       3.03e-04 |       4.55e-05 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 4,285,574
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -6.95e-08 |     1.61e-10 |   -430.8821 |     0.000 |
+| Slope       |       1.0000 |     2.36e-11 |    4.24e+10 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/4285574 (0.000%)
+- Stata standard deviation: 6.66e+00
+
+---
+
+### BidAskTAQ
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['BidAskTAQ']
+
+**Observations**:
+- Stata:  3,262,927
+- Python: 3,262,927
+- Common: 3,262,927
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 7.96e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.26e+06 |       3.26e+06 |       3.26e+06 |       3.26e+06 |
+| mean       |         1.5559 |         1.5559 |      -7.71e-12 |      -3.07e-12 |
+| std        |         2.5110 |         2.5110 |       4.90e-08 |       1.95e-08 |
+| min        |         0.0000 |         0.0000 |      -2.00e-06 |      -7.96e-07 |
+| 25%        |         0.1774 |         0.1774 |         0.0000 |         0.0000 |
+| 50%        |         0.6136 |         0.6136 |         0.0000 |         0.0000 |
+| 75%        |         1.8032 |         1.8032 |         0.0000 |         0.0000 |
+| max        |        39.9582 |        39.9582 |       2.00e-06 |       7.96e-07 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 3,262,927
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -1.86e-12 |     3.19e-11 |     -0.0584 |     0.953 |
+| Slope       |       1.0000 |     1.08e-11 |    9.26e+10 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/3262927 (0.000%)
+- Stata standard deviation: 2.51e+00
+
+---
+
 ### BookLeverageQuarterly
 
 **Status**: ✅ PASSED
@@ -716,6 +1010,57 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 18/2572594 (0.001%)
 - Stata standard deviation: 3.67e+06
+
+---
+
+### BrandCapital
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['BrandCapital']
+
+**Observations**:
+- Stata:  1,231,460
+- Python: 1,280,000
+- Common: 1,231,460
+
+**Precision1**: 5.877% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 8.25e-02 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.23e+06 |       1.23e+06 |       1.23e+06 |       1.23e+06 |
+| mean       |         0.0642 |         0.0656 |         0.0014 |         0.0040 |
+| std        |         0.3504 |         0.3545 |         0.0239 |         0.0683 |
+| min        |        -0.0066 |        -0.0066 |        -0.0211 |        -0.0603 |
+| 25%        |         0.0043 |         0.0045 |      -1.01e-10 |      -2.88e-10 |
+| 50%        |         0.0228 |         0.0238 |       2.62e-10 |       7.47e-10 |
+| 75%        |         0.0651 |         0.0669 |       1.75e-07 |       5.00e-07 |
+| max        |        86.0362 |        86.0362 |         6.8422 |        19.5254 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0008 + 1.0094 * stata
+- **R-squared**: 0.9955
+- **N observations**: 1,231,460
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     8.07e-04 |     2.17e-05 |     37.1912 |     0.000 |
+| Slope       |       1.0094 |     6.09e-05 |  16562.8102 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 72379/1231460 (5.877%)
+- Stata standard deviation: 3.50e-01
 
 ---
 
@@ -1121,6 +1466,57 @@
 
 ---
 
+### ChPM
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['ChPM']
+
+**Observations**:
+- Stata:  3,222,277
+- Python: 3,303,855
+- Common: 3,222,277
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 5.23e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.22e+06 |       3.22e+06 |       3.22e+06 |       3.22e+06 |
+| mean       |        -0.3833 |        -0.3833 |      -4.11e-08 |      -2.71e-10 |
+| std        |       151.4586 |       151.4586 |       7.13e-04 |       4.71e-06 |
+| min        |    -30903.6450 |    -30903.6451 |        -0.2284 |        -0.0015 |
+| 25%        |        -0.0312 |        -0.0312 |      -2.22e-09 |      -1.47e-11 |
+| 50%        |      -1.17e-04 |      -1.17e-04 |       6.86e-12 |       4.53e-14 |
+| 75%        |         0.0251 |         0.0251 |       2.23e-09 |       1.48e-11 |
+| max        |     24410.3810 |     24410.3806 |         0.2069 |         0.0014 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 3,222,277
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -4.21e-08 |     3.97e-07 |     -0.1059 |     0.916 |
+| Slope       |       1.0000 |     2.62e-09 |    3.81e+08 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/3222277 (0.000%)
+- Stata standard deviation: 1.51e+02
+
+---
+
 ### ChangeRoA
 
 **Status**: ❌ FAILED
@@ -1304,6 +1700,74 @@
 
 ---
 
+### DelayAcct
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 674090 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['DelayAcct']
+
+**Observations**:
+- Stata:  674,090
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  DelayAcct
+     0   10001  199212   0.307460
+     1   10001  199301   0.329167
+     2   10001  199302   0.293849
+     3   10001  199303   0.308783
+     4   10001  199304   0.314104
+     5   10001  199305   0.313442
+     6   10001  199309   0.339221
+     7   10001  199310   0.334278
+     8   10001  199311   0.336795
+     9   10001  199312   0.363150
+```
+
+---
+
+### DelayNonAcct
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 674090 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['DelayNonAcct']
+
+**Observations**:
+- Stata:  674,090
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  DelayNonAcct
+     0   10001  199212      0.539160
+     1   10001  199301      0.517452
+     2   10001  199302      0.552770
+     3   10001  199303      0.537836
+     4   10001  199304      0.532516
+     5   10001  199305      0.533177
+     6   10001  199309      0.659154
+     7   10001  199310      0.664098
+     8   10001  199311      0.661581
+     9   10001  199312      0.635226
+```
+
+---
+
 ### DivYield
 
 **Status**: ❌ FAILED
@@ -1418,6 +1882,40 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 1247/3878713 (0.032%)
 - Stata standard deviation: 2.07e-01
+
+---
+
+### DownsideBeta
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 4848559 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['DownsideBeta']
+
+**Observations**:
+- Stata:  4,848,559
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  DownsideBeta
+     0   10000  198606      1.107329
+     1   10000  198607      1.720590
+     2   10000  198608      1.294280
+     3   10000  198609      1.466464
+     4   10000  198610      1.333412
+     5   10000  198611      1.000356
+     6   10000  198612      0.970582
+     7   10000  198701      0.946452
+     8   10000  198702      0.946339
+     9   10000  198703      0.864751
+```
 
 ---
 
@@ -1721,6 +2219,620 @@
 
 ---
 
+### FailureProbability
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 13426 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['FailureProbability']
+
+**Observations**:
+- Stata:  1,958,798
+- Python: 2,235,710
+- Common: 1,945,372
+
+**Precision1**: 0.105% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 3.17e-06 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.95e+06 |       1.95e+06 |       1.95e+06 |       1.95e+06 |
+| mean       |       1.08e+06 |       1.10e+06 |     12854.8334 |       6.00e-04 |
+| std        |       2.14e+07 |       4.98e+07 |       4.48e+07 |         2.0904 |
+| min        |       -10.0057 |       -10.1657 |      -6.77e+08 |       -31.5742 |
+| 25%        |        -5.9321 |         2.5649 |         7.7889 |       3.63e-07 |
+| 50%        |        -4.5454 |         7.8521 |        11.8532 |       5.53e-07 |
+| 75%        |        -2.1108 |        16.1749 |        18.1207 |       8.46e-07 |
+| max        |       6.77e+08 |       1.05e+10 |       9.83e+09 |       458.7189 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -7819.8276 + 1.0191 * stata
+- **R-squared**: 0.1920
+- **N observations**: 1,945,372
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |   -7819.8276 |   32159.1322 |     -0.2432 |     0.808 |
+| Slope       |       1.0191 |       0.0015 |    679.9809 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  FailureProbability
+     0   10001  198711           -3.110158
+     1   10005  198805           -2.359228
+     2   10007  198711            2.222355
+     3   10008  198802           -2.768568
+     4   10010  198803           -2.333784
+     5   10012  198810           -2.782152
+     6   10015  198505           -2.312654
+     7   10016  198805           -6.327080
+     8   10017  198712           -2.855397
+     9   10018  198803           -3.369524
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 2049/1945372 (0.105%)
+- Stata standard deviation: 2.14e+07
+
+---
+
+### FailureProbabilityJune
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 5397 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['FailureProbabilityJune']
+
+**Observations**:
+- Stata:  2,090,935
+- Python: 2,255,542
+- Common: 2,085,538
+
+**Precision1**: 0.258% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 3.58e-06 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.09e+06 |       2.09e+06 |       2.09e+06 |       2.09e+06 |
+| mean       |       1.03e+06 |       1.07e+06 |     40599.5039 |         0.0020 |
+| std        |       2.07e+07 |       5.00e+07 |       4.53e+07 |         2.1878 |
+| min        |        -9.7055 |        -9.2736 |      -6.77e+08 |       -32.6970 |
+| 25%        |        -5.9405 |         2.6210 |         7.8772 |       3.81e-07 |
+| 50%        |        -4.5904 |         7.9704 |        12.0623 |       5.83e-07 |
+| 75%        |        -2.2199 |        16.4387 |        18.5606 |       8.97e-07 |
+| max        |       6.77e+08 |       1.05e+10 |       9.83e+09 |       475.0311 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 19485.6769 + 1.0204 * stata
+- **R-squared**: 0.1787
+- **N observations**: 2,085,538
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |   19485.6769 |   31388.6013 |      0.6208 |     0.535 |
+| Slope       |       1.0204 |       0.0015 |    673.6121 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  FailureProbabilityJune
+     0   10077  198806               -3.205529
+     1   10077  198807               -3.205529
+     2   10077  198808               -3.205529
+     3   10077  198809               -3.205529
+     4   10077  198810               -3.205529
+     5   10077  198811               -3.205529
+     6   10077  198812               -3.205529
+     7   10077  198901               -3.205529
+     8   10077  198902               -3.205529
+     9   10077  198903               -3.205529
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 5372/2085538 (0.258%)
+- Stata standard deviation: 2.07e+07
+
+---
+
+### ForecastDispersionLT
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 1774 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['ForecastDispersionLT']
+
+**Observations**:
+- Stata:  828,578
+- Python: 828,784
+- Common: 826,804
+
+**Precision1**: 0.087% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 1.49e-07 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |    826804.0000 |    826804.0000 |    826804.0000 |    826804.0000 |
+| mean       |         4.5453 |         4.5451 |      -1.46e-04 |      -2.17e-05 |
+| std        |         6.7281 |         6.7286 |         0.1312 |         0.0195 |
+| min        |         0.0000 |         0.0000 |       -18.1600 |        -2.6991 |
+| 25%        |         1.7100 |         1.7100 |         0.0000 |         0.0000 |
+| 50%        |         3.0000 |         3.0000 |         0.0000 |         0.0000 |
+| 75%        |         5.2000 |         5.2000 |       2.00e-08 |       2.97e-09 |
+| max        |       623.7400 |       623.7400 |        41.1800 |         6.1206 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0004 + 0.9999 * stata
+- **R-squared**: 0.9996
+- **N observations**: 826,804
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     3.70e-04 |     1.74e-04 |      2.1263 |     0.033 |
+| Slope       |       0.9999 |     2.14e-05 |  46632.5512 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  ForecastDispersionLT
+     0   11406  199609                  1.41
+     1   11406  199610                  1.41
+     2   12473  201012                  5.13
+     3   12473  201101                  6.10
+     4   12473  201710                  6.83
+     5   12473  201711                  4.03
+     6   12473  201712                  4.03
+     7   12473  201801                  6.77
+     8   12473  201802                  7.78
+     9   12473  201803                  7.75
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 717/826804 (0.087%)
+- Stata standard deviation: 6.73e+00
+
+---
+
+### GPlag
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['GPlag']
+
+**Observations**:
+- Stata:  3,281,500
+- Python: 3,297,874
+- Common: 3,281,500
+
+**Precision1**: 0.006% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 5.55e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.28e+06 |       3.28e+06 |       3.28e+06 |       3.28e+06 |
+| mean       |         0.3420 |         0.3420 |      -2.68e-07 |      -2.36e-07 |
+| std        |         1.1339 |         1.1339 |         0.0020 |         0.0018 |
+| min        |       -28.7301 |       -28.7301 |        -0.2811 |        -0.2479 |
+| 25%        |         0.0981 |         0.0981 |      -4.83e-09 |      -4.26e-09 |
+| 50%        |         0.2774 |         0.2774 |         0.0000 |         0.0000 |
+| 75%        |         0.4978 |         0.4978 |       4.90e-09 |       4.32e-09 |
+| max        |       282.3216 |       282.3216 |         0.8837 |         0.7794 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 3,281,500
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     2.14e-06 |     1.17e-06 |      1.8357 |     0.066 |
+| Slope       |       1.0000 |     9.85e-07 |    1.02e+06 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 192/3281500 (0.006%)
+- Stata standard deviation: 1.13e+00
+
+---
+
+### GPlag_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 81 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['GPlag_q']
+
+**Observations**:
+- Stata:  2,216,580
+- Python: 2,236,734
+- Common: 2,216,499
+
+**Precision1**: 0.015% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 1.78e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.22e+06 |       2.22e+06 |       2.22e+06 |       2.22e+06 |
+| mean       |         0.0808 |         0.0808 |      -2.46e-07 |      -3.47e-07 |
+| std        |         0.7089 |         0.7089 |         0.0017 |         0.0025 |
+| min        |        -9.0482 |        -9.0482 |        -0.5642 |        -0.7959 |
+| 25%        |         0.0314 |         0.0314 |      -1.36e-09 |      -1.92e-09 |
+| 50%        |         0.0731 |         0.0731 |         0.0000 |         0.0000 |
+| 75%        |         0.1240 |         0.1240 |       1.36e-09 |       1.92e-09 |
+| max        |       598.7442 |       598.7442 |         0.7397 |         1.0434 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 2,216,499
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -7.93e-08 |     1.18e-06 |     -0.0672 |     0.946 |
+| Slope       |       1.0000 |     1.65e-06 | 604773.0311 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm   GPlag_q
+     0   10031  198607  0.248821
+     1   10515  199607  0.024224
+     2   10515  199608  0.024224
+     3   10515  199609  0.024224
+     4   10535  198805 -0.034978
+     5   10536  199707  0.064386
+     6   10824  198606  0.210711
+     7   11362  199412  0.022848
+     8   11545  199706  0.043206
+     9   11545  199707  0.043206
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 325/2216499 (0.015%)
+- Stata standard deviation: 7.09e-01
+
+---
+
+### GrGMToGrSales
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['GrGMToGrSales']
+
+**Observations**:
+- Stata:  3,229,675
+- Python: 3,294,865
+- Common: 3,229,675
+
+**Precision1**: 0.036% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 4.50e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.23e+06 |       3.23e+06 |       3.23e+06 |       3.23e+06 |
+| mean       |        -1.0320 |            inf |            inf |            inf |
+| std        |       213.3399 |            N/A |            N/A |            N/A |
+| min        |    -90231.3050 |    -89952.2742 |     -4992.8331 |       -23.4032 |
+| 25%        |        -0.0941 |        -0.0941 |      -2.51e-08 |      -1.18e-10 |
+| 50%        |        -0.0024 |        -0.0024 |         0.0000 |         0.0000 |
+| 75%        |         0.0784 |         0.0787 |       2.50e-08 |       1.17e-10 |
+| max        |      7383.3198 |            inf |            inf |            inf |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = inf + nan * stata
+- **R-squared**: nan
+- **N observations**: 3,229,675
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |          nan |          nan |         nan |       nan |
+| Slope       |          nan |          nan |         nan |       nan |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 1161/3229675 (0.036%)
+- Stata standard deviation: 2.13e+02
+
+---
+
+### GrSaleToGrReceivables
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['GrSaleToGrReceivables']
+
+**Observations**:
+- Stata:  3,134,552
+- Python: 3,303,855
+- Common: 3,134,552
+
+**Precision1**: 0.012% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 8.03e-10 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.13e+06 |       3.13e+06 |       3.13e+06 |       3.13e+06 |
+| mean       |        -0.7276 |        -0.7208 |         0.0068 |       2.50e-05 |
+| std        |       272.2844 |       272.2685 |         2.4935 |         0.0092 |
+| min        |    -93814.8910 |    -93814.8917 |      -122.8291 |        -0.4511 |
+| 25%        |        -0.1435 |        -0.1435 |      -2.75e-09 |      -1.01e-11 |
+| 50%        |         0.0056 |         0.0057 |       1.92e-12 |       7.06e-15 |
+| 75%        |         0.1566 |         0.1568 |       2.77e-09 |       1.02e-11 |
+| max        |     51770.8950 |     51770.8949 |      1176.6455 |         4.3214 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0067 + 0.9999 * stata
+- **R-squared**: 0.9999
+- **N observations**: 3,134,552
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |       0.0067 |       0.0014 |      4.7865 |     0.000 |
+| Slope       |       0.9999 |     5.17e-06 | 193323.0863 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 364/3134552 (0.012%)
+- Stata standard deviation: 2.72e+02
+
+---
+
+### IdioVolCAPM
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 5026821 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['IdioVolCAPM']
+
+**Observations**:
+- Stata:  5,026,821
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  IdioVolCAPM
+     0   10000  198601     0.061439
+     1   10000  198602     0.031004
+     2   10000  198603     0.044539
+     3   10000  198604     0.011246
+     4   10000  198605     0.038560
+     5   10000  198606     0.019216
+     6   10000  198607     0.046018
+     7   10000  198608     0.096259
+     8   10000  198609     0.047863
+     9   10000  198610     0.040414
+```
+
+---
+
+### IdioVolQF
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3986461 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['IdioVolQF']
+
+**Observations**:
+- Stata:  3,986,461
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  IdioVolQF
+     0   10000  198601   0.060926
+     1   10000  198602   0.029838
+     2   10000  198603   0.042672
+     3   10000  198604   0.010589
+     4   10000  198605   0.037976
+     5   10000  198606   0.018890
+     6   10000  198607   0.043929
+     7   10000  198608   0.089077
+     8   10000  198609   0.046870
+     9   10000  198610   0.038371
+```
+
+---
+
+### KZ
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 7 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['KZ']
+
+**Observations**:
+- Stata:  2,630,499
+- Python: 2,653,592
+- Common: 2,630,492
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 2.04e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.63e+06 |       2.63e+06 |       2.63e+06 |       2.63e+06 |
+| mean       |       -34.2551 |       -34.2551 |      -4.85e-05 |      -1.56e-08 |
+| std        |      3118.1808 |      3118.1808 |         0.0315 |       1.01e-05 |
+| min        |      -1.23e+06 |      -1.23e+06 |       -19.2429 |        -0.0062 |
+| 25%        |        -5.2581 |        -5.2582 |      -4.09e-08 |      -1.31e-11 |
+| 50%        |        -0.6982 |        -0.6982 |       1.23e-11 |       3.95e-15 |
+| 75%        |         1.0179 |         1.0179 |       4.08e-08 |       1.31e-11 |
+| max        |    205925.8400 |    205925.8463 |         3.3978 |         0.0011 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 2,630,492
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -4.85e-05 |     1.94e-05 |     -2.4938 |     0.013 |
+| Slope       |       1.0000 |     6.23e-09 |    1.60e+08 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm       KZ
+     0   12373  202406 2.156376
+     1   12373  202407 2.170212
+     2   12373  202408 2.171770
+     3   12373  202409 2.175051
+     4   12373  202410 2.172988
+     5   12373  202411 2.188620
+     6   12373  202412 2.174071
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/2630492 (0.000%)
+- Stata standard deviation: 3.12e+03
+
+---
+
+### KZ_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 255 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['KZ_q']
+
+**Observations**:
+- Stata:  1,936,942
+- Python: 1,953,037
+- Common: 1,936,687
+
+**Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 3.12e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.94e+06 |       1.94e+06 |       1.94e+06 |       1.94e+06 |
+| mean       |       -26.0737 |       -26.0742 |      -5.17e-04 |      -2.91e-07 |
+| std        |      1776.1958 |      1776.1958 |         0.3830 |       2.16e-04 |
+| min        |      -1.23e+06 |      -1.23e+06 |      -256.0814 |        -0.1442 |
+| 25%        |        -4.8604 |        -4.8607 |      -3.96e-08 |      -2.23e-11 |
+| 50%        |        -0.2486 |        -0.2486 |      -5.06e-12 |      -2.85e-15 |
+| 75%        |         1.2951 |         1.2951 |       3.94e-08 |       2.22e-11 |
+| max        |     26732.3870 |     26732.3858 |       130.4051 |         0.0734 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0005 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 1,936,687
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -5.18e-04 |     2.75e-04 |     -1.8810 |     0.060 |
+| Slope       |       1.0000 |     1.55e-07 |    6.45e+06 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm      KZ_q
+     0   10515  199604 -4.790903
+     1   10515  199605 -4.929575
+     2   10515  199606 -4.921965
+     3   10986  199008  8.309092
+     4   10994  199204  5.937374
+     5   10994  199205  6.358468
+     6   11212  199008 -1.955831
+     7   11545  199612 -1.467011
+     8   11545  199701 -1.472400
+     9   11545  199702 -1.472400
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 20/1936687 (0.001%)
+- Stata standard deviation: 1.78e+03
+
+---
+
 ### LaborforceEfficiency
 
 **Status**: ✅ PASSED
@@ -2021,6 +3133,387 @@
 
 ---
 
+### OScore_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3198 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['OScore_q']
+
+**Observations**:
+- Stata:  877,922
+- Python: 886,880
+- Common: 874,724
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 0.00e+00 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |    874724.0000 |    874724.0000 |    874724.0000 |    874724.0000 |
+| mean       |         0.1226 |         0.1226 |         0.0000 |         0.0000 |
+| std        |         0.3280 |         0.3280 |         0.0000 |         0.0000 |
+| min        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 25%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 50%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 75%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| max        |         1.0000 |         1.0000 |         0.0000 |         0.0000 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 874,724
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     1.16e-13 |     3.64e-16 |    318.9745 |     0.000 |
+| Slope       |       1.0000 |     1.04e-15 |    9.62e+14 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  OScore_q
+     0   10012  199303         1
+     1   10028  200109         1
+     2   10028  201906         0
+     3   10028  201912         0
+     4   10031  198610         0
+     5   10035  200108         0
+     6   10042  198806         0
+     7   10051  199703         1
+     8   10062  199309         1
+     9   10074  198911         1
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/874724 (0.000%)
+- Stata standard deviation: 3.28e-01
+
+---
+
+### OperProfLag
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 64 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['OperProfLag']
+
+**Observations**:
+- Stata:  1,292,263
+- Python: 1,297,970
+- Common: 1,292,199
+
+**Precision1**: 0.009% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 1.45e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.29e+06 |       1.29e+06 |       1.29e+06 |       1.29e+06 |
+| mean       |         0.2731 |         0.2727 |      -4.19e-04 |      -5.99e-05 |
+| std        |         6.9921 |         6.9710 |         0.5401 |         0.0772 |
+| min        |     -1594.7000 |     -1594.7000 |      -609.1517 |       -87.1201 |
+| 25%        |         0.1432 |         0.1432 |      -5.76e-09 |      -8.24e-10 |
+| 50%        |         0.2804 |         0.2804 |       3.33e-16 |       4.76e-17 |
+| 75%        |         0.4266 |         0.4266 |       5.79e-09 |       8.28e-10 |
+| max        |      1096.4845 |      1096.4845 |        66.9652 |         9.5773 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0012 + 0.9940 * stata
+- **R-squared**: 0.9940
+- **N observations**: 1,292,199
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |       0.0012 |     4.74e-04 |      2.5684 |     0.010 |
+| Slope       |       0.9940 |     6.77e-05 |  14671.7650 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  OperProfLag
+     0   10264  198803    -0.553213
+     1   10517  202106     1.199436
+     2   10517  202107     1.199436
+     3   10517  202108     1.199436
+     4   10517  202109     1.199436
+     5   10517  202110     1.199436
+     6   10517  202111     1.199436
+     7   10517  202112     1.199436
+     8   10517  202201     1.199436
+     9   10517  202202     1.199436
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 117/1292199 (0.009%)
+- Stata standard deviation: 6.99e+00
+
+---
+
+### OperProfLag_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 52 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['OperProfLag_q']
+
+**Observations**:
+- Stata:  2,395,707
+- Python: 2,407,547
+- Common: 2,395,655
+
+**Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 9.22e-13 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.40e+06 |       2.40e+06 |       2.40e+06 |       2.40e+06 |
+| mean       |       -70.1493 |            N/A |            N/A |            N/A |
+| std        |    252627.2555 |            N/A |            N/A |            N/A |
+| min        |      -3.48e+08 |           -inf |           -inf |           -inf |
+| 25%        |        -0.0048 |        -0.0048 |      -6.83e-09 |      -2.70e-14 |
+| 50%        |         0.0444 |         0.0444 |         0.0000 |         0.0000 |
+| 75%        |         0.0849 |         0.0849 |       6.85e-09 |       2.71e-14 |
+| max        |       9.52e+07 |            inf |            inf |            inf |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = nan + nan * stata
+- **R-squared**: nan
+- **N observations**: 2,395,655
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |          nan |          nan |         nan |       nan |
+| Slope       |          nan |          nan |         nan |       nan |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  OperProfLag_q
+     0   10515  199604       0.002818
+     1   10515  199605       0.002818
+     2   10515  199606       0.002818
+     3   11545  199706       0.044945
+     4   11545  199707       0.044945
+     5   11545  199708       0.044945
+     6   12750  198212       0.014304
+     7   12750  198301       0.014304
+     8   12750  198302       0.014304
+     9   12837  198004      -0.470808
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 12/2395655 (0.001%)
+- Stata standard deviation: 2.53e+05
+
+---
+
+### OperProfRDLagAT
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 60 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['OperProfRDLagAT']
+
+**Observations**:
+- Stata:  2,742,767
+- Python: 2,756,887
+- Common: 2,742,707
+
+**Precision1**: 0.003% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 2.29e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.74e+06 |       2.74e+06 |       2.74e+06 |       2.74e+06 |
+| mean       |         0.1294 |         0.1294 |      -5.41e-07 |      -4.56e-07 |
+| std        |         1.1878 |         1.1878 |       2.24e-04 |       1.89e-04 |
+| min        |      -200.7273 |      -200.7273 |        -0.0766 |        -0.0645 |
+| 25%        |         0.0319 |         0.0319 |      -2.70e-09 |      -2.27e-09 |
+| 50%        |         0.1280 |         0.1281 |      -3.79e-12 |      -3.19e-12 |
+| 75%        |         0.2154 |         0.2154 |       2.68e-09 |       2.26e-09 |
+| max        |       226.5365 |       226.5365 |         0.0170 |         0.0143 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 2,742,707
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -5.99e-07 |     1.36e-07 |     -4.4054 |     0.000 |
+| Slope       |       1.0000 |     1.14e-07 |    8.78e+06 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  OperProfRDLagAT
+     0   10517  202106         0.631911
+     1   10517  202107         0.631911
+     2   10517  202108         0.631911
+     3   10517  202109         0.631911
+     4   10517  202110         0.631911
+     5   10517  202111         0.631911
+     6   10517  202112         0.631911
+     7   10517  202201         0.631911
+     8   10517  202202         0.631911
+     9   10517  202203         0.631911
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 72/2742707 (0.003%)
+- Stata standard deviation: 1.19e+00
+
+---
+
+### OperProfRDLagAT_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 144 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['OperProfRDLagAT_q']
+
+**Observations**:
+- Stata:  1,800,025
+- Python: 1,816,859
+- Common: 1,799,881
+
+**Precision1**: 0.019% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 6.60e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       1.80e+06 |       1.80e+06 |       1.80e+06 |       1.80e+06 |
+| mean       |         0.0249 |         0.0249 |       6.70e-07 |       5.09e-06 |
+| std        |         0.1317 |         0.1317 |         0.0014 |         0.0107 |
+| min        |       -10.0000 |       -10.0000 |        -0.4914 |        -3.7306 |
+| 25%        |         0.0110 |         0.0110 |      -7.24e-10 |      -5.50e-09 |
+| 50%        |         0.0317 |         0.0317 |         0.0000 |         0.0000 |
+| 75%        |         0.0522 |         0.0522 |       7.22e-10 |       5.48e-09 |
+| max        |        54.3953 |        54.3953 |         0.6825 |         5.1816 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0000 + 0.9999 * stata
+- **R-squared**: 0.9999
+- **N observations**: 1,799,881
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     3.19e-06 |     1.07e-06 |      2.9886 |     0.003 |
+| Slope       |       0.9999 |     7.97e-06 | 125428.7784 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  OperProfRDLagAT_q
+     0   10031  198607           0.030236
+     1   10515  199607           0.007740
+     2   10515  199608           0.007740
+     3   10515  199609           0.007740
+     4   10517  202006           0.168328
+     5   10517  202007           0.168328
+     6   10517  202008           0.168328
+     7   10517  202009           0.160288
+     8   10517  202010           0.160288
+     9   10517  202011           0.160288
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 345/1799881 (0.019%)
+- Stata standard deviation: 1.32e-01
+
+---
+
+### PM
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['PM']
+
+**Observations**:
+- Stata:  3,547,773
+- Python: 3,616,983
+- Common: 3,547,773
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 2.31e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.55e+06 |       3.55e+06 |       3.55e+06 |       3.55e+06 |
+| mean       |        -4.0283 |        -4.0283 |      -1.02e-06 |      -4.83e-09 |
+| std        |       211.9918 |       211.9919 |       4.41e-04 |       2.08e-06 |
+| min        |    -84221.6640 |    -84221.6667 |        -0.1893 |      -8.93e-04 |
+| 25%        |        -0.0177 |        -0.0177 |      -1.41e-09 |      -6.64e-12 |
+| 50%        |         0.0398 |         0.0398 |         0.0000 |         0.0000 |
+| 75%        |         0.0957 |         0.0957 |       1.42e-09 |       6.69e-12 |
+| max        |     10418.0800 |     10418.0800 |         0.0391 |       1.85e-04 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 3,547,773
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -9.60e-07 |     2.34e-07 |     -4.1007 |     0.000 |
+| Slope       |       1.0000 |     1.10e-09 |    9.05e+08 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/3547773 (0.000%)
+- Stata standard deviation: 2.12e+02
+
+---
+
 ### PM_q
 
 **Status**: ❌ FAILED
@@ -2084,6 +3577,102 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 31/2492039 (0.001%)
 - Stata standard deviation: 1.71e+02
+
+---
+
+### PS_q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 60 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['PS_q']
+
+**Observations**:
+- Stata:  310,650
+- Python: 310,826
+- Common: 310,590
+
+**Precision1**: 53.974% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 3.16e+00 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |    310590.0000 |    310590.0000 |    310590.0000 |    310590.0000 |
+| mean       |         5.2219 |         4.7472 |        -0.4747 |        -0.3003 |
+| std        |         1.5810 |         1.7853 |         1.4651 |         0.9267 |
+| min        |         1.0000 |         1.0000 |        -6.0000 |        -3.7951 |
+| 25%        |         4.0000 |         3.0000 |        -1.0000 |        -0.6325 |
+| 50%        |         5.0000 |         5.0000 |         0.0000 |         0.0000 |
+| 75%        |         6.0000 |         6.0000 |         0.0000 |         0.0000 |
+| max        |         9.0000 |         9.0000 |         4.0000 |         2.5301 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 1.0490 + 0.7082 * stata
+- **R-squared**: 0.3933
+- **N observations**: 310,590
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |       1.0490 |       0.0086 |    121.8142 |     0.000 |
+| Slope       |       0.7082 |       0.0016 |    448.7187 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  PS_q
+     0   10515  199604     5
+     1   10515  199605     6
+     2   10515  199606     6
+     3   11394  201803     5
+     4   11394  201804     5
+     5   11394  201805     5
+     6   11874  199706     5
+     7   11874  199707     5
+     8   11874  199708     5
+     9   14011  201703     5
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 167637/310590 (53.974%)
+- Stata standard deviation: 1.58e+00
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm  python  stata  diff
+0   11174  202412     2.0      3  -1.0
+1   11593  202412     8.0      7   1.0
+2   11701  202412     5.0      6  -1.0
+3   11775  202412     6.0      7  -1.0
+4   11790  202412     4.0      5  -1.0
+5   12880  202412     5.0      6  -1.0
+6   13116  202412     6.0      5   1.0
+7   13124  202412     6.0      5   1.0
+8   13337  202412     4.0      5  -1.0
+9   13583  202412     3.0      8  -5.0
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm  python  stata  diff
+0   10005  198706     1.0      7  -6.0
+1   10005  198707     1.0      7  -6.0
+2   10005  198708     1.0      7  -6.0
+3   10005  198709     1.0      7  -6.0
+4   10005  198710     1.0      7  -6.0
+5   10005  198711     1.0      7  -6.0
+6   10005  198712     2.0      8  -6.0
+7   10005  198801     2.0      8  -6.0
+8   10005  198802     2.0      8  -6.0
+9   10005  198803     1.0      7  -6.0
+```
 
 ---
 
@@ -2219,6 +3808,63 @@
 
 ---
 
+### RetNOA
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 1 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['RetNOA']
+
+**Observations**:
+- Stata:  2,892,942
+- Python: 2,921,223
+- Common: 2,892,941
+
+**Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 1.40e-19 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.89e+06 |       2.89e+06 |       2.89e+06 |       2.89e+06 |
+| mean       |       2.31e+11 |            inf |            inf |            inf |
+| std        |       1.27e+14 |            N/A |            N/A |            N/A |
+| min        |      -5.90e+15 |      -5.90e+15 |      -1.75e+09 |      -1.37e-05 |
+| 25%        |        -0.0320 |        -0.0320 |      -6.74e-09 |      -5.29e-23 |
+| 50%        |         0.1203 |         0.1203 |      -1.19e-12 |      -9.33e-27 |
+| 75%        |         0.2648 |         0.2648 |       6.73e-09 |       5.28e-23 |
+| max        |       6.23e+16 |            inf |            inf |            inf |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = inf + inf * stata
+- **R-squared**: nan
+- **N observations**: 2,892,941
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |          nan |          nan |         nan |       nan |
+| Slope       |          nan |          nan |         nan |       nan |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm   RetNOA
+     0   23800  196507 0.041734
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 24/2892941 (0.001%)
+- Stata standard deviation: 1.27e+14
+
+---
+
 ### RetNOA_q
 
 **Status**: ❌ FAILED
@@ -2282,6 +3928,74 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 6/2413512 (0.000%)
 - Stata standard deviation: 4.61e+04
+
+---
+
+### ReturnSkewCAPM
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 4997359 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['ReturnSkewCAPM']
+
+**Observations**:
+- Stata:  4,997,359
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  ReturnSkewCAPM
+     0   10000  198601        2.244703
+     1   10000  198602       -0.730520
+     2   10000  198603        1.687384
+     3   10000  198604       -0.274580
+     4   10000  198605        1.245450
+     5   10000  198606       -0.110014
+     6   10000  198607        0.877926
+     7   10000  198608       -1.039173
+     8   10000  198609        0.639478
+     9   10000  198610       -1.519597
+```
+
+---
+
+### ReturnSkewQF
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3985016 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['ReturnSkewQF']
+
+**Observations**:
+- Stata:  3,985,016
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  ReturnSkewQF
+     0   10000  198601      2.136304
+     1   10000  198602     -0.730719
+     2   10000  198603      1.318269
+     3   10000  198604      0.291021
+     4   10000  198605      1.151838
+     5   10000  198606     -0.198608
+     6   10000  198607      0.503765
+     7   10000  198608     -0.426768
+     8   10000  198609      0.589325
+     9   10000  198610     -1.740994
+```
 
 ---
 
@@ -2417,6 +4131,138 @@
 
 ---
 
+### WW
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 101 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['WW']
+
+**Observations**:
+- Stata:  2,702,805
+- Python: 2,758,348
+- Common: 2,702,704
+
+**Precision1**: 0.002% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 4.65e-10 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.70e+06 |       2.70e+06 |       2.70e+06 |       2.70e+06 |
+| mean       |        -0.1112 |            inf |            inf |            inf |
+| std        |        54.8169 |            N/A |            N/A |            N/A |
+| min        |      -111.6833 |      -111.6833 |        -4.4987 |        -0.0821 |
+| 25%        |        -0.3470 |        -0.3470 |      -5.05e-09 |      -9.20e-11 |
+| 50%        |        -0.2572 |        -0.2572 |       7.59e-12 |       1.39e-13 |
+| 75%        |        -0.1745 |        -0.1745 |       5.05e-09 |       9.21e-11 |
+| max        |     76241.1800 |            inf |            inf |            inf |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = inf + inf * stata
+- **R-squared**: nan
+- **N observations**: 2,702,704
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |          nan |          nan |         nan |       nan |
+| Slope       |          nan |          nan |         nan |       nan |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm        WW
+     0   10193  198803 -0.070419
+     1   10193  198804 -0.071916
+     2   10264  198803 -0.070417
+     3   10274  198806  0.199467
+     4   10274  198807  0.195080
+     5   10274  198808  0.197029
+     6   10274  198809  0.194967
+     7   10535  198902 -0.057308
+     8   10544  198811 -0.114865
+     9   10544  198812 -0.114869
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 41/2702704 (0.002%)
+- Stata standard deviation: 5.48e+01
+
+---
+
+### WW_Q
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 44 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['WW_Q']
+
+**Observations**:
+- Stata:  2,406,602
+- Python: 2,493,801
+- Common: 2,406,558
+
+**Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 2.62e-07 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.41e+06 |       2.41e+06 |       2.41e+06 |       2.41e+06 |
+| mean       |        -0.0942 |           -inf |           -inf |           -inf |
+| std        |        80.9101 |            N/A |            N/A |            N/A |
+| min        |     -1099.2520 |           -inf |           -inf |           -inf |
+| 25%        |        -0.3578 |        -0.3578 |      -6.01e-09 |      -7.42e-11 |
+| 50%        |        -0.2663 |        -0.2663 |      -3.11e-12 |      -3.84e-14 |
+| 75%        |        -0.1791 |        -0.1791 |       6.00e-09 |       7.41e-11 |
+| max        |     75674.3520 |     75674.3568 |        15.5945 |         0.1927 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -inf + inf * stata
+- **R-squared**: nan
+- **N observations**: 2,406,551
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |          nan |          nan |         nan |       nan |
+| Slope       |          nan |          nan |         nan |       nan |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm      WW_Q
+     0   10515  199604 -0.192867
+     1   10515  199605 -0.198629
+     2   10515  199606 -0.190664
+     3   10535  198805  0.097225
+     4   11545  199706 -0.169969
+     5   11545  199707 -0.161824
+     6   11545  199708 -0.155090
+     7   12750  198212 -0.038403
+     8   12750  198301 -0.042673
+     9   12750  198302 -0.043110
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 33/2406558 (0.001%)
+- Stata standard deviation: 8.09e+01
+
+---
+
 ### ZScore
 
 **Status**: ✅ PASSED
@@ -2516,6 +4362,176 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 38/1214174 (0.003%)
 - Stata standard deviation: 3.43e+01
+
+---
+
+### betaCC
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3459006 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['betaCC']
+
+**Observations**:
+- Stata:  3,459,006
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm    betaCC
+     0   10001  198912 96.556709
+     1   10001  199001 78.446892
+     2   10001  199002 81.491409
+     3   10001  199003 77.058983
+     4   10001  199004 69.123657
+     5   10001  199005 65.499115
+     6   10001  199006 62.682751
+     7   10001  199007 54.436337
+     8   10001  199008 59.355011
+     9   10001  199009 56.830456
+```
+
+---
+
+### betaCR
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3459006 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['betaCR']
+
+**Observations**:
+- Stata:  3,459,006
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm    betaCR
+     0   10001  198912 -4.462341
+     1   10001  199001  7.927080
+     2   10001  199002 10.556782
+     3   10001  199003 10.227539
+     4   10001  199004 17.441637
+     5   10001  199005 14.496083
+     6   10001  199006  7.174622
+     7   10001  199007  8.668968
+     8   10001  199008 -8.670435
+     9   10001  199009 -8.461947
+```
+
+---
+
+### betaNet
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3420591 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['betaNet']
+
+**Observations**:
+- Stata:  3,420,591
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm    betaNet
+     0   10001  198912 101.080060
+     1   10001  199001  70.609283
+     2   10001  199002  71.023659
+     3   10001  199003  66.917381
+     4   10001  199004  51.771923
+     5   10001  199005  51.066372
+     6   10001  199006  55.570599
+     7   10001  199007  45.826405
+     8   10001  199008  68.131134
+     9   10001  199009  65.379723
+```
+
+---
+
+### betaRC
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3421560 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['betaRC']
+
+**Observations**:
+- Stata:  3,421,560
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm    betaRC
+     0   10001  198912 -0.037640
+     1   10001  199001 -0.049183
+     2   10001  199002 -0.051516
+     3   10001  199003 -0.049271
+     4   10001  199004 -0.050521
+     5   10001  199005 -0.039892
+     6   10001  199006 -0.039184
+     7   10001  199007 -0.036623
+     8   10001  199008 -0.052458
+     9   10001  199009 -0.042971
+```
+
+---
+
+### betaRR
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 3421560 Stata observations)
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['betaRR']
+
+**Observations**:
+- Stata:  3,421,560
+- Python: 0
+- Common: 0
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm   betaRR
+     0   10001  198912 0.023374
+     1   10001  199001 0.040286
+     2   10001  199002 0.037514
+     3   10001  199003 0.036667
+     4   10001  199004 0.039381
+     5   10001  199005 0.023447
+     6   10001  199006 0.023286
+     7   10001  199007 0.022415
+     8   10001  199008 0.053231
+     9   10001  199009 0.044351
+```
 
 ---
 
@@ -2633,6 +4649,57 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 416/2252514 (0.018%)
 - Stata standard deviation: 7.18e-01
+
+---
+
+### currat
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['currat']
+
+**Observations**:
+- Stata:  3,065,278
+- Python: 3,625,095
+- Common: 3,065,278
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 1.40e-08 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.07e+06 |       3.07e+06 |       3.07e+06 |       3.07e+06 |
+| mean       |         3.3803 |         3.3803 |      -1.95e-06 |      -3.44e-08 |
+| std        |        56.6989 |        56.6989 |       9.85e-04 |       1.74e-05 |
+| min        |         0.0000 |         0.0000 |        -0.4978 |        -0.0088 |
+| 25%        |         1.2859 |         1.2859 |      -5.02e-08 |      -8.85e-10 |
+| 50%        |         2.0125 |         2.0125 |         0.0000 |         0.0000 |
+| 75%        |         3.1813 |         3.1813 |       5.05e-08 |       8.91e-10 |
+| max        |     25204.0000 |     25204.0000 |       1.67e-04 |       2.94e-06 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 3,065,278
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -1.95e-06 |     5.64e-07 |     -3.4584 |     0.001 |
+| Slope       |       1.0000 |     9.92e-09 |    1.01e+08 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/3065278 (0.000%)
+- Stata standard deviation: 5.67e+01
 
 ---
 
@@ -2768,6 +4835,153 @@
 
 ---
 
+### nanalyst
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 716 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['nanalyst']
+
+**Observations**:
+- Stata:  2,700,302
+- Python: 2,699,967
+- Common: 2,699,586
+
+**Precision1**: 0.259% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 0.00e+00 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.70e+06 |       2.70e+06 |       2.70e+06 |       2.70e+06 |
+| mean       |         5.1507 |         5.1529 |         0.0022 |       3.29e-04 |
+| std        |         6.7165 |         6.7171 |         0.5838 |         0.0869 |
+| min        |         0.0000 |         0.0000 |       -29.0000 |        -4.3177 |
+| 25%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 50%        |         3.0000 |         3.0000 |         0.0000 |         0.0000 |
+| 75%        |         7.0000 |         7.0000 |         0.0000 |         0.0000 |
+| max        |        62.0000 |        62.0000 |        35.0000 |         5.2111 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0212 + 0.9963 * stata
+- **R-squared**: 0.9925
+- **N observations**: 2,699,586
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |       0.0212 |     4.47e-04 |     47.3288 |     0.000 |
+| Slope       |       0.9963 |     5.29e-05 |  18848.5715 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm  nanalyst
+     0   19289  197807         1
+     1   19289  197808         1
+     2   19289  197809         1
+     3   19289  197810         1
+     4   19289  197811         1
+     5   19289  197812         1
+     6   19289  197901         1
+     7   19289  197902         1
+     8   19289  197903         1
+     9   19289  197904         1
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 6994/2699586 (0.259%)
+- Stata standard deviation: 6.72e+00
+
+---
+
+### pchcurrat
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ❌ FAILED
+- Test 4 - Precision2 check: ❌ FAILED
+
+**Columns**: ['pchcurrat']
+
+**Observations**:
+- Stata:  3,624,363
+- Python: 3,625,095
+- Common: 3,624,363
+
+**Precision1**: 15.542% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = nan (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.62e+06 |       3.07e+06 |       3.07e+06 |       3.07e+06 |
+| mean       |         0.1878 |            inf |            inf |            inf |
+| std        |        20.4050 |            N/A |            N/A |            N/A |
+| min        |        -1.0000 |        -1.0000 |        -1.0000 |        -0.0490 |
+| 25%        |        -0.1194 |        -0.1581 |      -2.87e-08 |      -1.41e-09 |
+| 50%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 75%        |         0.0786 |         0.1213 |       2.87e-08 |       1.41e-09 |
+| max        |      8289.6123 |            inf |            inf |            inf |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = inf + -inf * stata
+- **R-squared**: nan
+- **N observations**: 3,072,640
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |          nan |          nan |         nan |       nan |
+| Slope       |          nan |          nan |         nan |       nan |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 563297/3624363 (15.542%)
+- Stata standard deviation: 2.04e+01
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm  python  stata  diff
+0   12385  202608     NaN    0.0   NaN
+1   15623  202608     NaN    0.0   NaN
+2   16632  202608     NaN    0.0   NaN
+3   19655  202608     NaN    0.0   NaN
+4   21259  202608     NaN    0.0   NaN
+5   77114  202608     NaN    0.0   NaN
+6   81073  202608     NaN    0.0   NaN
+7   86349  202608     NaN    0.0   NaN
+8   89056  202608     NaN    0.0   NaN
+9   89256  202608     NaN    0.0   NaN
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm  python  stata  diff
+0   10002  199506     NaN    0.0   NaN
+1   10002  199507     NaN    0.0   NaN
+2   10002  199508     NaN    0.0   NaN
+3   10002  199509     NaN    0.0   NaN
+4   10002  199510     NaN    0.0   NaN
+5   10002  199511     NaN    0.0   NaN
+6   10002  199512     NaN    0.0   NaN
+7   10002  199601     NaN    0.0   NaN
+8   10002  199602     NaN    0.0   NaN
+9   10002  199603     NaN    0.0   NaN
+```
+
+---
+
 ### pchdepr
 
 **Status**: ❌ FAILED
@@ -2834,6 +5048,57 @@
 
 ---
 
+### pchgm_pchsale
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['pchgm_pchsale']
+
+**Observations**:
+- Stata:  3,222,544
+- Python: 3,294,865
+- Common: 3,222,544
+
+**Precision1**: 0.001% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 2.59e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.22e+06 |       3.22e+06 |       3.22e+06 |       3.22e+06 |
+| mean       |        -0.7243 |        -0.7243 |       9.70e-06 |       1.23e-07 |
+| std        |        78.7275 |        78.7275 |         0.0038 |       4.82e-05 |
+| min        |    -27624.8850 |    -27624.8841 |        -0.4564 |        -0.0058 |
+| 25%        |        -0.0812 |        -0.0812 |      -1.27e-09 |      -1.62e-11 |
+| 50%        |        -0.0029 |        -0.0029 |         0.0000 |         0.0000 |
+| 75%        |         0.0636 |         0.0636 |       1.29e-09 |       1.63e-11 |
+| max        |      5139.5205 |      5139.5206 |         1.4141 |         0.0180 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 3,222,544
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     9.69e-06 |     2.12e-06 |      4.5821 |     0.000 |
+| Slope       |       1.0000 |     2.69e-08 |    3.72e+07 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 24/3222544 (0.001%)
+- Stata standard deviation: 7.87e+01
+
+---
+
 ### pchquick
 
 **Status**: ❌ FAILED
@@ -2897,6 +5162,57 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 7959/3339366 (0.238%)
 - Stata standard deviation: 4.29e+01
+
+---
+
+### pchsaleinv
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ✅ PASSED
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['pchsaleinv']
+
+**Observations**:
+- Stata:  2,465,425
+- Python: 3,303,855
+- Common: 2,465,425
+
+**Precision1**: 0.000% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 1.66e-09 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.47e+06 |       2.47e+06 |       2.47e+06 |       2.47e+06 |
+| mean       |         0.7658 |         0.7658 |       9.89e-08 |       1.35e-09 |
+| std        |        73.4020 |        73.4020 |       4.81e-05 |       6.55e-07 |
+| min        |     -3126.2041 |     -3126.2041 |      -6.97e-04 |      -9.50e-06 |
+| 25%        |        -0.1224 |        -0.1224 |      -2.63e-09 |      -3.59e-11 |
+| 50%        |         0.0114 |         0.0114 |       1.70e-12 |       2.31e-14 |
+| 75%        |         0.1759 |         0.1759 |       2.67e-09 |       3.63e-11 |
+| max        |     28764.0310 |     28764.0303 |         0.0218 |       2.97e-04 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0000 + 1.0000 * stata
+- **R-squared**: 1.0000
+- **N observations**: 2,465,425
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     1.17e-07 |     3.06e-08 |      3.8251 |     0.000 |
+| Slope       |       1.0000 |     4.17e-10 |    2.40e+09 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 0/2465425 (0.000%)
+- Stata standard deviation: 7.34e+01
 
 ---
 
@@ -3065,6 +5381,71 @@
 **Feedback**:
 - Num observations with std_diff >= TOL_DIFF_1: 3/566095 (0.001%)
 - Stata standard deviation: 1.83e+02
+
+---
+
+### roavol
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Column names: ✅ PASSED
+- Test 2 - Superset check: ❌ FAILED (Python missing 9 Stata observations)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+
+**Columns**: ['roavol']
+
+**Observations**:
+- Stata:  2,039,901
+- Python: 2,058,816
+- Common: 2,039,892
+
+**Precision1**: 4.523% obs with std_diff >= 1.00e-02 (tolerance: < 10%)
+
+**Precision2**: 99th percentile diff = 7.54e-02 (tolerance: < 1.00e+00)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.04e+06 |       2.04e+06 |       2.04e+06 |       2.04e+06 |
+| mean       |         0.0305 |         0.0314 |       9.42e-04 |         0.0062 |
+| std        |         0.1527 |         0.1699 |         0.0757 |         0.4955 |
+| min        |       3.49e-05 |       3.49e-05 |        -0.7907 |        -5.1792 |
+| 25%        |         0.0056 |         0.0056 |      -1.96e-10 |      -1.28e-09 |
+| 50%        |         0.0124 |         0.0125 |      -5.37e-12 |      -3.52e-11 |
+| 75%        |         0.0295 |         0.0298 |       1.36e-10 |       8.91e-10 |
+| max        |        49.8304 |        49.8304 |        21.5355 |       141.0592 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0011 + 0.9963 * stata
+- **R-squared**: 0.8016
+- **N observations**: 2,039,772
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |       0.0011 |     5.40e-05 |     19.5295 |     0.000 |
+| Slope       |       0.9963 |     3.47e-04 |   2870.9738 |     0.000 |
+
+**Missing Observations Sample**:
+```
+ index  permno  yyyymm   roavol
+     0   16965  202011 0.020348
+     1   16965  202012 0.019920
+     2   16965  202101 0.019519
+     3   44580  197607 0.008090
+     4   48013  197702 0.003290
+     5   50518  197609 0.009734
+     6   52572  197710 0.039755
+     7   52572  197711 0.039759
+     8   52572  197712 0.039723
+```
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 92257/2039892 (4.523%)
+- Stata standard deviation: 1.53e-01
 
 ---
 
@@ -3558,22 +5939,6 @@
 
 ---
 
-### AccrualQuality
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/AccrualQuality.csv
-
----
-
-### AccrualQualityJune
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/AccrualQualityJune.csv
-
----
-
 ### BetaBDLeverage
 
 **Status**: ❌ MISSING PYTHON CSV
@@ -3587,62 +5952,6 @@
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Placebos/BetaDimson.csv
-
----
-
-### BetaSquared
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/BetaSquared.csv
-
----
-
-### BidAskTAQ
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/BidAskTAQ.csv
-
----
-
-### BrandCapital
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/BrandCapital.csv
-
----
-
-### ChPM
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/ChPM.csv
-
----
-
-### DelayAcct
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/DelayAcct.csv
-
----
-
-### DelayNonAcct
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/DelayNonAcct.csv
-
----
-
-### DownsideBeta
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/DownsideBeta.csv
 
 ---
 
@@ -3694,139 +6003,11 @@
 
 ---
 
-### FailureProbability
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/FailureProbability.csv
-
----
-
-### FailureProbabilityJune
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/FailureProbabilityJune.csv
-
----
-
-### ForecastDispersionLT
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/ForecastDispersionLT.csv
-
----
-
-### GPlag
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/GPlag.csv
-
----
-
-### GPlag_q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/GPlag_q.csv
-
----
-
-### GrGMToGrSales
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/GrGMToGrSales.csv
-
----
-
-### GrSaleToGrReceivables
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/GrSaleToGrReceivables.csv
-
----
-
-### IdioVolCAPM
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/IdioVolCAPM.csv
-
----
-
-### IdioVolQF
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/IdioVolQF.csv
-
----
-
 ### IntrinsicValue
 
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Placebos/IntrinsicValue.csv
-
----
-
-### KZ
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/KZ.csv
-
----
-
-### KZ_q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/KZ_q.csv
-
----
-
-### OScore_q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/OScore_q.csv
-
----
-
-### OperProfLag
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/OperProfLag.csv
-
----
-
-### OperProfLag_q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/OperProfLag_q.csv
-
----
-
-### OperProfRDLagAT
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/OperProfRDLagAT.csv
-
----
-
-### OperProfRDLagAT_q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/OperProfRDLagAT_q.csv
 
 ---
 
@@ -3838,22 +6019,6 @@
 
 ---
 
-### PM
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/PM.csv
-
----
-
-### PS_q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/PS_q.csv
-
----
-
 ### ResidualMomentum6m
 
 **Status**: ❌ MISSING PYTHON CSV
@@ -3862,139 +6027,11 @@
 
 ---
 
-### RetNOA
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/RetNOA.csv
-
----
-
-### ReturnSkewCAPM
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/ReturnSkewCAPM.csv
-
----
-
-### ReturnSkewQF
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/ReturnSkewQF.csv
-
----
-
-### WW
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/WW.csv
-
----
-
-### WW_Q
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/WW_Q.csv
-
----
-
-### betaCC
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/betaCC.csv
-
----
-
-### betaCR
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/betaCR.csv
-
----
-
-### betaNet
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/betaNet.csv
-
----
-
-### betaRC
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/betaRC.csv
-
----
-
-### betaRR
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/betaRR.csv
-
----
-
-### currat
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/currat.csv
-
----
-
 ### grcapx1y
 
 **Status**: ❌ MISSING PYTHON CSV
 
 **Error**: Python CSV file not found: ../pyData/Placebos/grcapx1y.csv
-
----
-
-### nanalyst
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/nanalyst.csv
-
----
-
-### pchcurrat
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/pchcurrat.csv
-
----
-
-### pchgm_pchsale
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/pchgm_pchsale.csv
-
----
-
-### pchsaleinv
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/pchsaleinv.csv
-
----
-
-### roavol
-
-**Status**: ❌ MISSING PYTHON CSV
-
-**Error**: Python CSV file not found: ../pyData/Placebos/roavol.csv
 
 ---
 
