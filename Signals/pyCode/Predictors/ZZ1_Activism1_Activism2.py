@@ -29,6 +29,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.savepredictor import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 print("Loading SignalMasterTable...")
@@ -45,7 +46,7 @@ tr13f = pl.read_parquet("../pyData/Intermediate/TR_13F.parquet").select([
     'permno', 'time_avail_m', 'maxinstown_perc'
 ])
 
-df = df.join(tr13f, on=['permno', 'time_avail_m'], how='inner')
+df = df.join(tr13f, on=['permno', 'time_avail_m'], how='left')
 print(f"After TR_13F merge: {df.shape[0]} rows")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(shrcls)
@@ -54,7 +55,7 @@ mcrsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet").select([
     'permno', 'time_avail_m', 'shrcls'
 ])
 
-df = df.join(mcrsp, on=['permno', 'time_avail_m'], how='inner')
+df = df.join(mcrsp, on=['permno', 'time_avail_m'], how='left')
 print(f"After monthlyCRSP merge: {df.shape[0]} rows")
 
 # * Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
@@ -74,7 +75,7 @@ print(f"Records without ticker: {temp_missing_ticker.shape[0]}")
 # drop if mi(ticker)
 # merge m:1 ticker time_avail_m using "$pathDataIntermediate/GovIndex", keep(master match) nogenerate
 gov = pl.read_parquet("../pyData/Intermediate/GovIndex.parquet")
-df = df.join(gov, on=['ticker', 'time_avail_m'], how='inner')
+df = df.join(gov, on=['ticker', 'time_avail_m'], how='left')
 
 # append using "$pathtemp/temp"
 # Need to add the missing columns from GovIndex to temp_missing_ticker with null values
@@ -97,11 +98,10 @@ df = df.with_columns(tempBLOCK.alias('tempBLOCK'))
 
 # egen tempBLOCKQuant = fastxtile(tempBLOCK), n(4) by(time_avail_m)
 print("Calculating block holding quartiles by time_avail_m...")
-# Use polars qcut with proper 1-based indexing to match Stata fastxtile behavior
-df = df.with_columns(
-    (pl.col('tempBLOCK').qcut(4, allow_duplicates=True).over('time_avail_m').cast(pl.Int32) + 1)
-    .alias('tempBLOCKQuant')
-)
+# Convert to pandas for fastxtile, then back to polars
+df_pandas = df.to_pandas()
+df_pandas['tempBLOCKQuant'] = fastxtile(df_pandas, 'tempBLOCK', by='time_avail_m', n=4)
+df = pl.from_pandas(df_pandas)
 
 # gen tempEXT = 24 - G
 # replace tempEXT = . if G == . 
