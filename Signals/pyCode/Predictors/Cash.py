@@ -37,29 +37,42 @@ def main():
     
     print(f"Loaded {len(qcompustat_df):,} quarterly Compustat observations")
     
-    # Drop duplicates and filter data (equivalent to Stata deduplication logic)
+    # Drop duplicates and filter data (exact Stata deduplication logic)
     print("Processing quarterly data...")
     
-    # Remove missing gvkey and atq
-    qcompustat_df = qcompustat_df.dropna(subset=['gvkey', 'atq'])
-    
-    # Sort by gvkey rdq and keep first occurrence (equivalent to keep if dup == 1)
+    # Sort by gvkey rdq (matching Stata: sort gvkey rdq)
     qcompustat_df = qcompustat_df.sort_values(['gvkey', 'rdq'])
-    qcompustat_df = qcompustat_df.drop_duplicates(['gvkey', 'rdq'], keep='first')
+    
+    # Generate dup variable (matching Stata: quietly by gvkey rdq: gen dup = cond(_N==1,0,_n))
+    qcompustat_df['group_size'] = qcompustat_df.groupby(['gvkey', 'rdq'])['gvkey'].transform('count')
+    qcompustat_df['obs_num'] = qcompustat_df.groupby(['gvkey', 'rdq']).cumcount() + 1
+    qcompustat_df['dup'] = np.where(qcompustat_df['group_size'] == 1, 0, qcompustat_df['obs_num'])
+    
+    # Apply exact Stata filter: keep if !mi(gvkey) & dup == 1 & !mi(atq)
+    qcompustat_df = qcompustat_df[
+        qcompustat_df['gvkey'].notna() & 
+        (qcompustat_df['dup'] == 1) & 
+        qcompustat_df['atq'].notna()
+    ]
+    
+    # Clean up temporary columns
+    qcompustat_df = qcompustat_df.drop(['group_size', 'obs_num', 'dup'], axis=1)
     
     print(f"After deduplication: {len(qcompustat_df):,} observations")
     
     # Define time_avail_m (equivalent to gen time_avail_m = mofd(rdq))
     qcompustat_df['time_avail_m'] = pd.to_datetime(qcompustat_df['rdq']).dt.to_period('M').dt.to_timestamp()
     
-    # Expand back to monthly (equivalent to expand 3 logic) - vectorized approach
+    # Expand back to monthly (equivalent to Stata expand 3 logic)
     print("Expanding quarterly data to monthly...")
     
-    # Create 3 copies of the data with different month offsets
+    # Replicate each row 3 times, then adjust time_avail_m for each copy
+    # This matches Stata's: expand 3; replace time_avail_m = time_avail_m + _n - 1
     expanded_dfs = []
-    for month_offset in range(3):  # 0, 1, 2 months
+    for n in range(1, 4):  # _n goes from 1 to 3 in Stata
         df_copy = qcompustat_df.copy()
-        df_copy['time_avail_m'] = df_copy['time_avail_m'] + pd.DateOffset(months=month_offset)
+        # Add (_n - 1) months to each observation
+        df_copy['time_avail_m'] = df_copy['time_avail_m'] + pd.DateOffset(months=n-1)
         expanded_dfs.append(df_copy)
     
     expanded_df = pd.concat(expanded_dfs, ignore_index=True)
@@ -82,17 +95,10 @@ def main():
     print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
     
     # Merge quarterly data with SignalMasterTable
+    # Use inner join to match Stata's "keep(match)" behavior
     print("Merging with SignalMasterTable...")
     df = pd.merge(signal_master, expanded_df[['gvkey', 'time_avail_m', 'atq', 'cheq', 'rdq']], 
-                  on=['gvkey', 'time_avail_m'], how='left')
-    
-    # Forward fill missing quarterly data within each gvkey (to match Stata's gap-bridging behavior)
-    print("Forward filling quarterly data across gaps...")
-    df = df.sort_values(['gvkey', 'time_avail_m'])
-    df[['atq', 'cheq', 'rdq']] = df.groupby('gvkey')[['atq', 'cheq', 'rdq']].ffill()
-    
-    # Keep only rows where quarterly data is available (after forward fill)
-    df = df.dropna(subset=['atq', 'cheq'])
+                  on=['gvkey', 'time_avail_m'], how='inner')
     
     print(f"After merge: {len(df):,} observations")
     
