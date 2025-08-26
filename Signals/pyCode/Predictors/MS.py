@@ -554,80 +554,109 @@ df = df.with_columns(
 
 #%%
 
+# SIGNAL CONSTRUCTION
 print("💰 Constructing the 8 Mohanram G-score components...")
 
-# Calculate denominators for profitability ratios
-df = df.with_columns([
-    # Average total assets for current and lagged quarters
-    ((pl.col("atq") + pl.col("atq").shift(3).over("permno")) / 2).alias("atdenom"),
-    # Lagged quarterly assets for intensity ratios  
-    pl.col("atq").shift(3).over("permno").alias("atdenom2")
-])
+# ================================================================
+# PROFITABILITY AND CASH FLOW SIGNALS (following MS.do lines 54-68)
+# ================================================================
+print("  Phase 1: Profitability and cash flow signals...")
 
-# Calculate the 8 component ratios step by step to avoid window expression issues
-print("  Computing profitability ratios...")
+# Calculate atdenom for profitability ratios (MS.do line 56)
+df = df.with_columns(
+    ((pl.col("atq") + pl.col("atq").shift(3).over("permno")) / 2).alias("atdenom")
+)
+
+# Calculate profitability ratios (MS.do lines 58-59)
 df = df.with_columns([
-    # Profitability measures
     (pl.col("niqsum") / pl.col("atdenom")).alias("roa"),
-    (pl.col("oancfqsum") / pl.col("atdenom")).alias("cfroa"),
-    
-    # Investment intensity measures
-    (pl.col("xrdqsum") / pl.col("atdenom2")).alias("xrdint"),
-    (pl.col("capxqsum") / pl.col("atdenom2")).alias("capxint"),
-    (pl.col("xad") / pl.col("atdenom2")).alias("xadint")
+    (pl.col("oancfqsum") / pl.col("atdenom")).alias("cfroa")
 ])
 
-print("  Computing volatility measures...")
-# Calculate quarterly ratios first, then time-based rolling volatility
+# Calculate industry medians for profitability ratios (MS.do lines 60-62)
+for col in ["roa", "cfroa"]:
+    df = df.with_columns(
+        pl.col(col).median().over(["sic2D", "time_avail_m"]).alias(f"md_{col}")
+    )
+
+# Create profitability binary indicators m1, m2, m3 (MS.do lines 63-68)
+df = df.with_columns([
+    # M1: ROA > industry median
+    pl.when(stata_ineq_pl(pl.col("roa"), ">", pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
+    # M2: CF-ROA > industry median  
+    pl.when(stata_ineq_pl(pl.col("cfroa"), ">", pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
+    # M3: Operating cash flow > net income
+    pl.when(stata_ineq_pl(pl.col("oancfqsum"), ">", pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3")
+])
+
+# ================================================================  
+# "NAIVE EXTRAPOLATION" SIGNALS (following MS.do lines 70-83)
+# ================================================================
+print("  Phase 2: Naive extrapolation (volatility) signals...")
+
+# Calculate quarterly ratios (MS.do lines 72-73)
 df = df.with_columns([
     (pl.col("niq") / pl.col("atq")).alias("roaq"),
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
-# Calculate 48-month rolling volatility using fast asrol_fast function
-print("    Calculating time-based 48-month rolling volatility...")
-
-# Use fast asrol_fast function to compute 48-month rolling standard deviation
+# Calculate 48-month rolling volatility (MS.do lines 74-75)
 df = asrol_fast(df, 'permno', 'time_avail_m', 'roaq', 48, "monthly", 'std', 'niVol', 18)
 df = asrol_fast(df, 'permno', 'time_avail_m', 'sg', 48, "monthly", 'std', 'revVol', 18)
 
-print("🏭 Computing industry medians...")
-
-# Calculate industry medians for all ratios by sic2D-time_avail_m
-median_cols = ["roa", "cfroa", "niVol", "revVol", "xrdint", "capxint", "xadint"]
-for col in median_cols:
+# Calculate industry medians for volatility measures (MS.do lines 77-79)
+for col in ["niVol", "revVol"]:
     df = df.with_columns(
         pl.col(col).median().over(["sic2D", "time_avail_m"]).alias(f"md_{col}")
     )
 
-
-
-print("🎯 Creating binary indicators...")
-
-# Create the 8 binary Mohanram G-score components
-# Following Stata logic: gen m_x = 0, replace m_x = 1 if condition
-# Using Stata-compatible inequality operators that treat missing as positive infinity
+# Create volatility binary indicators m4, m5 (MS.do lines 80-83)
 df = df.with_columns([
-    # M1: ROA > industry median (missing ROA treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("roa"), ">", pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
-    # M2: CF-ROA > industry median (missing CFROA treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("cfroa"), ">", pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
-    # M3: Operating cash flow > net income (missing treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("oancfqsum"), ">", pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
-    # M4: Earnings volatility < industry median (missing volatility treated as infinity)
+    # M4: Earnings volatility < industry median
     pl.when(stata_ineq_pl(pl.col("niVol"), "<", pl.col("md_niVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
-    # M5: Revenue volatility < industry median (missing volatility treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("revVol"), "<", pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
-    # M6: R&D intensity > industry median (missing R&D treated as infinity)
+    # M5: Revenue volatility < industry median
+    pl.when(stata_ineq_pl(pl.col("revVol"), "<", pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5")
+])
+
+# ================================================================
+# "CONSERVATISM" SIGNALS (following MS.do lines 85-99) 
+# ================================================================
+print("  Phase 3: Conservatism (investment intensity) signals...")
+
+# Calculate atdenom2 for intensity ratios (MS.do line 87)
+df = df.with_columns(
+    pl.col("atq").shift(3).over("permno").alias("atdenom2")
+)
+
+# Calculate investment intensity ratios (MS.do lines 88-90)
+df = df.with_columns([
+    (pl.col("xrdqsum") / pl.col("atdenom2")).alias("xrdint"),
+    (pl.col("capxqsum") / pl.col("atdenom2")).alias("capxint"),
+    (pl.col("xad") / pl.col("atdenom2")).alias("xadint")
+])
+
+# Calculate industry medians for intensity measures (MS.do lines 91-93)
+for col in ["xrdint", "capxint", "xadint"]:
+    df = df.with_columns(
+        pl.col(col).median().over(["sic2D", "time_avail_m"]).alias(f"md_{col}")
+    )
+
+# Create intensity binary indicators m6, m7, m8 (MS.do lines 94-99)
+df = df.with_columns([
+    # M6: R&D intensity > industry median
     pl.when(stata_ineq_pl(pl.col("xrdint"), ">", pl.col("md_xrdint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
-    # M7: Capex intensity > industry median (missing capex treated as infinity)
+    # M7: Capex intensity > industry median
     pl.when(stata_ineq_pl(pl.col("capxint"), ">", pl.col("md_capxint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
-    # M8: Advertising intensity > industry median (missing advertising treated as infinity)
+    # M8: Advertising intensity > industry median  
     pl.when(stata_ineq_pl(pl.col("xadint"), ">", pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
 ])
 
+# ================================================================
+# FINAL MOHANRAM G-SCORE (following MS.do lines 101-113)
+# ================================================================
+print("  Phase 4: Final G-score calculation...")
 
-# Sum the 8 components to get tempMS
+# Sum the 8 components to get tempMS (MS.do line 101)
 df = df.with_columns(
     (pl.col("m1") + pl.col("m2") + pl.col("m3") + pl.col("m4") + 
      pl.col("m5") + pl.col("m6") + pl.col("m7") + pl.col("m8")).alias("tempMS")
