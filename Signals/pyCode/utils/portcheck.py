@@ -7,6 +7,7 @@ import sys
 import argparse
 import numpy as np
 import pandas as pd
+import gc
 
 # Change to pyCode directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/..')
@@ -45,12 +46,13 @@ def run_portcheck(signalcur):
     signal['time_avail_m'] = pd.to_datetime(signal['yyyymm'], format='%Y%m')
     signal.rename(columns={signalcur: 'signal'}, inplace=True)
 
-    # Read monthly CRSP data
-    crsp0 = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet')
+    # Read monthly CRSP data - only load columns we need
+    needed_columns = ['permno', 'time_avail_m', 'ret', 'mve_c', 'exchcd']
+    crsp0 = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet', 
+                           columns=needed_columns)
     
-    # Also need exchcd for NYSE filtering
-    crsp_exchcd = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet', 
-                                  columns=['permno', 'time_avail_m', 'exchcd'])
+    # Extract exchcd for NYSE filtering from already loaded data
+    crsp_exchcd = crsp0[['permno', 'time_avail_m', 'exchcd']].copy()
 
     print('Processing portfolio assignments...')
     crsp = crsp0.copy()
@@ -86,9 +88,10 @@ def run_portcheck(signalcur):
         signal_df = signal_df.copy()
         
         # Apply quantile filter (e.g., NYSE only)
-        tempbreak = signal_df.copy()
         if not pd.isna(q_filt) and q_filt == 'NYSE':
-            tempbreak = tempbreak[tempbreak['exchcd'] == 1]
+            tempbreak = signal_df[signal_df['exchcd'] == 1].copy()
+        else:
+            tempbreak = signal_df
         
         # Create breakpoint list
         if q_cut <= 1/3:
@@ -132,6 +135,10 @@ def run_portcheck(signalcur):
         
         # Drop breakpoint columns
         signal_df = signal_df.drop(columns=[c for c in signal_df.columns if c.startswith('break')])
+        
+        # Clean up intermediate breakpoint data
+        del breaklist
+        gc.collect()
         
         return signal_df
 
@@ -217,6 +224,10 @@ def run_portcheck(signalcur):
         signal_lag[['permno', 'time_avail_m', 'signal_lag', 'port_lag']], 
         on=['permno', 'time_avail_m'], how='left')
     crsp = crsp.dropna(subset=['signal_lag', 'port_lag', 'ret', 'me_lag'])
+    
+    # Clean up intermediate data to free memory
+    del signal_lag, temp_lag, crsp0, crsp_exchcd, signal0
+    gc.collect()
 
     # Use the port assignments that were already calculated and lagged
     crsp['port'] = crsp['port_lag']
@@ -270,7 +281,8 @@ def run_portcheck(signalcur):
     
     nstocks = ls_samp[['nlong', 'nshort']].mean()
     
-    return {
+    # Prepare results
+    results = {
         'signal': signalcur,
         'rbar': stats['rbar'],
         'vol': stats['vol'],
@@ -283,6 +295,22 @@ def run_portcheck(signalcur):
         'nlong': int(round(nstocks['nlong'])),
         'nshort': int(round(nstocks['nshort']))
     }
+    
+    # Final cleanup to free memory before returning
+    del crsp, port, long, short, ls, ls_samp, signal, signaldoc0, signaldoc
+    del doccur, stats, sample_period, nstocks
+    if 'sumold' in locals():
+        del sumold
+    if 'old_tstat_dict' in locals():
+        del old_tstat_dict
+    
+    # More aggressive cleanup
+    gc.disable()  # Temporarily disable to avoid overhead during cleanup
+    gc.collect()
+    gc.collect()  # Run twice to catch reference cycles
+    gc.enable()
+    
+    return results
 
 def main():
     """Main function with command line interface"""
