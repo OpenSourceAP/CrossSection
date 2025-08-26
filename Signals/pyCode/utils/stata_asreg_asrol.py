@@ -856,27 +856,32 @@ def asrol_fast(
     time_col: str, 
     value_col: str, 
     window: int, 
+    freq: Literal["daily", "monthly", "annual"],
     stat: str = 'mean', 
     new_col_name: Optional[str] = None, 
-    min_periods: int = 1,
-    consecutive_only: bool = True
+    min_periods: int = 1
 ) -> Union[pl.DataFrame, pd.DataFrame]:
     """
-    Fast Polars implementation of rolling statistics with consecutive period support
+    Calendar-based rolling statistics matching Stata's asrol behavior
     
     Parameters:
     - df: DataFrame (Polars or pandas)
     - group_col: grouping variable (like permno)
-    - time_col: time variable (like time_avail_m) 
+    - time_col: time variable (like time_avail_m) - must be Date or Datetime
     - value_col: variable to calculate rolling statistic on
     - window: window size (number of periods)
+    - freq: frequency ('daily', 'monthly', 'annual') - determines calendar offset
     - stat: statistic to calculate ('mean', 'sum', 'std', 'count', 'min', 'max')
     - new_col_name: name for new column (default: f'{stat}{window}_{value_col}')
     - min_periods: minimum observations required (default: 1)
-    - consecutive_only: if True, only use consecutive periods like Stata (default: True)
     
     Returns:
     - DataFrame with new rolling statistic column added (same type as input)
+    
+    Note:
+    Uses strict calendar-based windows. For 12-month window, requires observations
+    at exactly T, T-1month, T-2months, ..., T-11months. Missing any required
+    period results in null, matching Stata's asrol behavior.
     """
     # Determine input type for return
     is_pandas_input = isinstance(df, pd.DataFrame)
@@ -887,6 +892,15 @@ def asrol_fast(
     else:
         df_pl = df.clone()
     
+    # Validate time column is a date/datetime type
+    time_dtype = df_pl[time_col].dtype
+    if time_dtype not in [pl.Date, pl.Datetime]:
+        raise ValueError(
+            f"Time column '{time_col}' must be Date or Datetime type, got {time_dtype}. "
+            "Integer time columns (fyear, time_temp) are not supported. "
+            "Use proper date columns for calendar-based rolling windows."
+        )
+    
     # Default column name
     if new_col_name is None:
         new_col_name = f'{stat}{window}_{value_col}'
@@ -894,12 +908,8 @@ def asrol_fast(
     # Sort by group and time for proper processing
     df_pl = df_pl.sort([group_col, time_col])
     
-    if not consecutive_only:
-        # Simple rolling without gap detection (faster path)
-        result_pl = _simple_rolling(df_pl, group_col, value_col, window, stat, new_col_name, min_periods)
-    else:
-        # Stata-compatible rolling with gap detection
-        result_pl = _stata_rolling(df_pl, group_col, time_col, value_col, window, stat, new_col_name, min_periods)
+    # Use calendar-based rolling
+    result_pl = _calendar_rolling(df_pl, group_col, time_col, value_col, window, freq, stat, new_col_name, min_periods)
     
     # Return same type as input
     if is_pandas_input:
@@ -942,92 +952,122 @@ def _simple_rolling(
     return result
 
 
-def _stata_rolling(
+def _calendar_rolling(
     df_pl: pl.DataFrame,
     group_col: str,
     time_col: str,
     value_col: str,
     window: int,
+    freq: str,
     stat: str,
     new_col_name: str,
     min_periods: int
 ) -> pl.DataFrame:
-    """Stata-compatible rolling with consecutive period detection"""
+    """Calendar-based rolling statistics matching Stata's asrol behavior"""
     
-    # Add gap detection columns
-    # Check if time column is integer (like fyear, time_temp) or datetime
-    time_dtype = df_pl[time_col].dtype
-    if time_dtype in [pl.Int16, pl.Int32, pl.Int64, pl.UInt16, pl.UInt32, pl.UInt64]:
-        # Integer time column - use simple difference for gap detection
-        df_with_gaps = df_pl.with_columns([
-            pl.col(time_col).diff().over(group_col).alias("_days_diff"),
-            pl.lit(0).alias("_segment_id")
-        ])
-        gap_threshold = 1  # Gap if difference > 1 for integer time
-    else:
-        # DateTime time column - use days difference
-        df_with_gaps = df_pl.with_columns([
-            pl.col(time_col).diff().dt.total_days().over(group_col).alias("_days_diff"),
-            pl.lit(0).alias("_segment_id")
-        ])
-        gap_threshold = 90  # Gap if difference > 90 days for datetime
-    
-    # Identify breaks and create segment IDs
-    df_with_gaps = df_with_gaps.with_columns([
-        # Mark where gaps occur using dynamic threshold
-        pl.when(pl.col("_days_diff") > gap_threshold)
-        .then(1)
-        .otherwise(0)
-        .alias("_is_break")
-    ])
-    
-    # Create cumulative segment IDs within each group
-    df_with_gaps = df_with_gaps.with_columns([
-        pl.col("_is_break").cum_sum().over(group_col).alias("_segment_id")
-    ])
-    
-    # Create combined grouping key: (group_col, segment_id)
-    df_with_gaps = df_with_gaps.with_columns([
-        pl.concat_str([
-            pl.col(group_col).cast(pl.Utf8),
-            pl.lit("_seg_"),
-            pl.col("_segment_id").cast(pl.Utf8)
-        ]).alias("_group_segment")
-    ])
-    
-    # Rolling function mapping
-    rolling_funcs = {
-        'mean': lambda col: col.rolling_mean(window_size=window, min_periods=min_periods),
-        'sum': lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
-        'std': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
-        'sd': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),  # Alias for std
-        'count': lambda col: col.is_not_null().cast(pl.Int32).rolling_sum(window_size=window, min_periods=min_periods),
-        'min': lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
-        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
-        'first': lambda col: col.first()
+    # Map frequency to offset strings
+    freq_offsets = {
+        "daily": "d",
+        "monthly": "mo", 
+        "annual": "y"
     }
     
-    if stat not in rolling_funcs:
-        raise ValueError(f"Unsupported statistic: {stat}")
+    if freq not in freq_offsets:
+        raise ValueError(f"Unsupported frequency: {freq}. Use 'daily', 'monthly', or 'annual'.")
     
-    # Apply rolling function to consecutive segments
-    result = df_with_gaps.with_columns(
-        rolling_funcs[stat](pl.col(value_col)).over("_group_segment").alias(new_col_name)
+    offset = freq_offsets[freq]
+    
+    # For each row, generate all required calendar periods in the window
+    # We'll use a cross-join approach to check for existence of all required periods
+    
+    # First, create a helper table with all required offsets for the window
+    offsets_df = pl.DataFrame({
+        "_offset": list(range(window))
+    })
+    
+    # Cross join each row with all required offsets
+    df_with_offsets = df_pl.join(
+        offsets_df, how="cross"
+    ).with_columns([
+        # Calculate required calendar period for each offset
+        pl.col(time_col).dt.offset_by(
+            pl.concat_str([pl.lit("-"), pl.col("_offset").cast(pl.Utf8), pl.lit(offset)])
+        ).alias("_required_period")
+    ])
+    
+    # Self-join to check if required period exists for this group
+    # This creates a flag indicating if the required period has data
+    df_period_check = df_with_offsets.join(
+        df_pl.select([group_col, time_col, value_col]).rename({time_col: "_required_period", value_col: "_period_value"}),
+        on=[group_col, "_required_period"],
+        how="left"
+    ).with_columns([
+        # Mark if this required period exists and has non-null value
+        pl.col("_period_value").is_not_null().alias("_period_exists")
+    ])
+    
+    # Group by original row (group_col + original time_col) and check if ALL required periods exist  
+    # First calculate the aggregated statistics
+    stats_result = df_period_check.group_by([group_col, time_col]).agg([
+        # Check if ALL required periods exist
+        pl.col("_period_exists").all().alias("_all_periods_exist"),
+        # Get the count of existing periods for min_periods check
+        pl.col("_period_exists").sum().alias("_existing_count"),
+        # Calculate the statistic directly within the aggregation
+        _calculate_stat(pl.col("_period_value"), stat).alias("_calculated_stat")
+    ])
+    
+    # Apply the conditional logic
+    result = stats_result.with_columns([
+        # Use calculated statistic only if we have all required periods AND meet min_periods
+        pl.when(
+            pl.col("_all_periods_exist") & (pl.col("_existing_count") >= min_periods)
+        ).then(
+            pl.col("_calculated_stat")
+        ).otherwise(pl.lit(None, dtype=pl.Float64)).alias(new_col_name)
+    ]).drop(["_all_periods_exist", "_existing_count", "_calculated_stat"])
+    
+    # Join back to original dataframe to preserve order and other columns
+    final_result = df_pl.join(
+        result.select([group_col, time_col, new_col_name]),
+        on=[group_col, time_col],
+        how="left"
     )
     
-    # Clean up temporary columns
-    result = result.drop(["_days_diff", "_is_break", "_segment_id", "_group_segment"])
+    return final_result
+
+
+def _calculate_stat(col_expr: pl.Expr, stat: str) -> pl.Expr:
+    """Helper to calculate statistics on period values"""
+    stat_funcs = {
+        'mean': lambda c: c.mean(),
+        'sum': lambda c: c.sum(),
+        'std': lambda c: c.std(),
+        'sd': lambda c: c.std(),
+        'count': lambda c: c.count(),
+        'min': lambda c: c.min(),
+        'max': lambda c: c.max(),
+        'first': lambda c: c.first()
+    }
     
-    return result
+    if stat not in stat_funcs:
+        raise ValueError(f"Unsupported statistic: {stat}")
+    
+    return stat_funcs[stat](col_expr)
 
 
 # Backward compatibility aliases
 def asrol(*args, **kwargs):
-    """Alias for asrol_fast for backward compatibility"""
+    """Alias for asrol_fast for backward compatibility
+    
+    Note: Now requires freq parameter. For monthly data, use freq='monthly'.
+    """
     return asrol_fast(*args, **kwargs)
 
 
 def stata_asrol(*args, **kwargs):
-    """Alias for asrol_fast with consecutive_only=True"""
-    kwargs['consecutive_only'] = True
+    """Alias for asrol_fast with calendar-based rolling
+    
+    Note: Now requires freq parameter. For monthly data, use freq='monthly'.
+    """
     return asrol_fast(*args, **kwargs)
