@@ -314,74 +314,16 @@ df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo',
 
 # temp_check3.dta passed!
 
-#%% ddd
-
-# temp_check3.dta placeholder
-
-print('compare with stata')
-
-col_to_check = ['permno','gvkey','time_avail_m','oancfqsum']
-id_cols = ['permno','gvkey','time_avail_m']
-
-stata = pd.read_stata('../Human/temp_check3.dta')
-stata = pl.from_pandas(stata).with_columns(
-    cc('time_avail_m').cast(pl.Date)
-).select(col_to_check)
-
-stata_long = stata.unpivot(
-    index = id_cols,
-    variable_name = 'name',
-    value_name = 'stata'
-)
-
-# make df that matches stata_long
-df_long = df.with_columns(
-    pl.col('time_avail_m').cast(pl.Date)
-).select(col_to_check).unpivot(
-    index = id_cols,
-    variable_name = 'name',
-    value_name = 'python'
-)
-
-# merge
-both = stata_long.join(
-    df_long, on = ['permno','gvkey','time_avail_m','name'], how = 'full', coalesce = True
-).with_columns(
-    pl.when(cc('stata').is_null() & cc('python').is_null()).then(0)
-    .when(cc('stata').is_not_null() & cc('python').is_not_null()).then(cc('stata') - cc('python'))
-    .otherwise(pl.lit(float('inf')))
-    .alias('diff')
-).sort(
-    cc('diff').abs(), descending=True
-)
-
-print(f'rows where diff is inf, out of {len(both)}')
-print(
-    both.filter(
-        cc('diff').is_infinite()
-    ).sort(
-        cc('diff').abs(), descending=True
-    )
-)
-
-#%% ddd
-
-print('focus on selected obs')
-
-permno = 10011
-dateref = pl.date(1994,4,1)
-
-print(
-    df.filter(
-        cc('permno') == permno, cc('time_avail_m') <= dateref, cc('time_avail_m') >= dateref - pl.duration(days=365*1)
-    ).sort('time_avail_m').select(
-        ['permno','gvkey','time_avail_m','oancfq','oancfqsum']
-    )
-)
 #%%
 
 
-# Handle special case for early years (endnote 3): Use fopt - wcapch for oancfqsum before 1988
+# multiply the means by 4 to convert to sums
+for col in ['niqsum', 'xrdqsum', 'oancfqsum', 'capxqsum']:
+    df = df.with_columns(
+        pl.col(col) * 4
+    )
+
+# Handle special case for early years (endnote 3)
 df = df.with_columns(
     pl.when(pl.col("datadate").dt.year() <= 1988)
     .then(pl.col("fopt") - pl.col("wcapch"))
@@ -389,38 +331,61 @@ df = df.with_columns(
     .alias("oancfqsum")
 )
 
-print("💰 Constructing the 8 Mohanram G-score components...")
+# ================================================================
+# SIGNAL CONSTRUCTION
+# ================================================================
 
-# Calculate denominators for profitability ratios
+print("🎯 Constructing Mohanram G-score components...")
+
+# ----------------------------------------------------------------
+# PROFITABILITY AND CASH FLOW SIGNALS
+# ----------------------------------------------------------------
+print("  Computing profitability and cash flow signals...")
+
+# OP uses annualized financials, but shouldn't much difference...
+# atdenom needs to be done later?
 df = df.with_columns([
-    # Average total assets for current and lagged quarters
-    ((pl.col("atq") + pl.col("atq").shift(3).over("permno")) / 2).alias("atdenom"),
-    # Lagged quarterly assets for intensity ratios  
-    pl.col("atq").shift(3).over("permno").alias("atdenom2")
+    ((pl.col("atq") + pl.col("atq").shift(3).over("permno")) / 2).alias("atdenom")
 ])
 
-# Calculate the 8 component ratios step by step to avoid window expression issues
-print("  Computing profitability ratios...")
+# Calculate ROA and CF-ROA
 df = df.with_columns([
-    # Profitability measures
     (pl.col("niqsum") / pl.col("atdenom")).alias("roa"),
-    (pl.col("oancfqsum") / pl.col("atdenom")).alias("cfroa"),
-    
-    # Investment intensity measures
-    (pl.col("xrdqsum") / pl.col("atdenom2")).alias("xrdint"),
-    (pl.col("capxqsum") / pl.col("atdenom2")).alias("capxint"),
-    (pl.col("xad") / pl.col("atdenom2")).alias("xadint")
+    (pl.col("oancfqsum") / pl.col("atdenom")).alias("cfroa")
 ])
 
-print("  Computing volatility measures...")
-# Calculate quarterly ratios first, then time-based rolling volatility
+# Calculate industry medians for profitability measures
+for v in ["roa", "cfroa"]:
+    df = df.with_columns(
+        pl.col(v).median().over(["sic2D", "time_avail_m"]).alias(f"md_{v}")
+    )
+
+# Create binary indicators m1, m2, m3
+df = df.with_columns([
+    pl.lit(0).alias("m1"),
+    pl.lit(0).alias("m2"),
+    pl.lit(0).alias("m3")
+])
+
+df = df.with_columns([
+    pl.when(stata_ineq_pl(pl.col("roa"), ">", pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.col("m1")).alias("m1"),
+    pl.when(stata_ineq_pl(pl.col("cfroa"), ">", pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.col("m2")).alias("m2"),
+    pl.when(stata_ineq_pl(pl.col("oancfqsum"), ">", pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.col("m3")).alias("m3")
+])
+
+# ----------------------------------------------------------------
+# "NAIVE EXTRAPOLATION" ACCORDING TO OP
+# ----------------------------------------------------------------
+print("  Computing naive extrapolation (volatility) measures...")
+
+# Quarterly is used here
 df = df.with_columns([
     (pl.col("niq") / pl.col("atq")).alias("roaq"),
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
 # Convert to pandas for time-based volatility calculations (48-month rolling)
-print("    Calculating time-based 48-month rolling volatility...")
+print("    Calculating 48-month rolling volatility...")
 df_pd_vol = df.to_pandas().set_index('time_avail_m').sort_index()
 
 def apply_stata_volatility_rolling(group):
@@ -440,40 +405,57 @@ df_pd_vol = df_pd_vol.groupby('permno', group_keys=False).apply(apply_stata_vola
 # Convert back to polars
 df = pl.from_pandas(df_pd_vol.reset_index())
 
-print("🏭 Computing industry medians...")
-
-# Calculate industry medians for all ratios by sic2D-time_avail_m
-median_cols = ["roa", "cfroa", "niVol", "revVol", "xrdint", "capxint", "xadint"]
-for col in median_cols:
+# Calculate industry medians for volatility measures
+for v in ["niVol", "revVol"]:
     df = df.with_columns(
-        pl.col(col).median().over(["sic2D", "time_avail_m"]).alias(f"md_{col}")
+        pl.col(v).median().over(["sic2D", "time_avail_m"]).alias(f"md_{v}")
     )
 
-
-print("🎯 Creating binary indicators...")
-
-# Create the 8 binary Mohanram G-score components
-# Following Stata logic: gen m_x = 0, replace m_x = 1 if condition
-# Using Stata-compatible inequality operators that treat missing as positive infinity
+# Create binary indicators m4, m5
 df = df.with_columns([
-    # M1: ROA > industry median (missing ROA treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("roa"), ">", pl.col("md_roa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m1"),
-    # M2: CF-ROA > industry median (missing CFROA treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("cfroa"), ">", pl.col("md_cfroa"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m2"),
-    # M3: Operating cash flow > net income (missing treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("oancfqsum"), ">", pl.col("niqsum"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m3"),
-    # M4: Earnings volatility < industry median (missing volatility treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("niVol"), "<", pl.col("md_niVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m4"),
-    # M5: Revenue volatility < industry median (missing volatility treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("revVol"), "<", pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m5"),
-    # M6: R&D intensity > industry median (missing R&D treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("xrdint"), ">", pl.col("md_xrdint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m6"),
-    # M7: Capex intensity > industry median (missing capex treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("capxint"), ">", pl.col("md_capxint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m7"),
-    # M8: Advertising intensity > industry median (missing advertising treated as infinity)
-    pl.when(stata_ineq_pl(pl.col("xadint"), ">", pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.lit(0)).alias("m8")
+    pl.lit(0).alias("m4"),
+    pl.lit(0).alias("m5")
 ])
 
+df = df.with_columns([
+    pl.when(stata_ineq_pl(pl.col("niVol"), "<", pl.col("md_niVol"))).then(pl.lit(1)).otherwise(pl.col("m4")).alias("m4"),
+    pl.when(stata_ineq_pl(pl.col("revVol"), "<", pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.col("m5")).alias("m5")
+])
+
+# ----------------------------------------------------------------
+# "CONSERVATISM" ACCORDING TO OP
+# ----------------------------------------------------------------
+print("  Computing conservatism (intensity) measures...")
+
+# OP also uses annualized financials here
+df = df.with_columns([
+    pl.col("atq").shift(3).over("permno").alias("atdenom2")  # (OP p5)
+])
+
+df = df.with_columns([
+    (pl.col("xrdqsum") / pl.col("atdenom2")).alias("xrdint"),
+    (pl.col("capxqsum") / pl.col("atdenom2")).alias("capxint"),
+    (pl.col("xad") / pl.col("atdenom2")).alias("xadint")  # I can't find xadq or xady
+])
+
+# Calculate industry medians for intensity measures
+for v in ["xrdint", "capxint", "xadint"]:
+    df = df.with_columns(
+        pl.col(v).median().over(["sic2D", "time_avail_m"]).alias(f"md_{v}")
+    )
+
+# Create binary indicators m6, m7, m8
+df = df.with_columns([
+    pl.lit(0).alias("m6"),
+    pl.lit(0).alias("m7"),
+    pl.lit(0).alias("m8")
+])
+
+df = df.with_columns([
+    pl.when(stata_ineq_pl(pl.col("xrdint"), ">", pl.col("md_xrdint"))).then(pl.lit(1)).otherwise(pl.col("m6")).alias("m6"),
+    pl.when(stata_ineq_pl(pl.col("capxint"), ">", pl.col("md_capxint"))).then(pl.lit(1)).otherwise(pl.col("m7")).alias("m7"),
+    pl.when(stata_ineq_pl(pl.col("xadint"), ">", pl.col("md_xadint"))).then(pl.lit(1)).otherwise(pl.col("m8")).alias("m8")
+])
 
 # Sum the 8 components to get tempMS
 df = df.with_columns(
@@ -575,40 +557,58 @@ print('but the python code lacks this requirement.')
 
 # %%
 
+# ================================================================
+# TIMING LOGIC
+# ================================================================
 print("📅 Applying timing logic...")
 
 # Fix tempMS at most recent data release for entire year
-# Complex timing logic: only keep if month matches (datadate + 6 months) mod 12
-df = df.with_columns([
-    # Calculate expected release month
-    ((pl.col("datadate").dt.month() + 6) % 12).alias("expected_month"),
-    # Current month
-    pl.col("time_avail_m").dt.month().alias("current_month")
-]).with_columns([
-    # Set tempMS to null if not in expected release month
-    pl.when(pl.col("current_month") != pl.col("expected_month"))
-    .then(pl.lit(None))
-    .otherwise(pl.col("tempMS"))
-    .alias("tempMS")
-])
+# Timing is confusing compared to OP because of the mix of annual and quarterly
+# data with different lags. This approach gets t-stats closest to op
+for v in ["tempMS"]:
+    # Replace tempMS with None if month doesn't match (datadate + 6 months) mod 12
+    df = df.with_columns([
+        pl.when(pl.col("time_avail_m").dt.month() != ((pl.col("datadate").dt.month() + 6) % 12))
+        .then(pl.lit(None))
+        .otherwise(pl.col(v))
+        .alias(v)
+    ])
+    
+    # Forward fill tempMS within permno groups
+    df = df.with_columns(
+        pl.col(v).forward_fill().over("permno").alias(v)
+    )
 
-# Forward fill tempMS within permno groups
+# Create final MS score
 df = df.with_columns(
-    pl.col("tempMS").forward_fill().over("permno").alias("tempMS")
+    pl.col("tempMS").alias("MS")
 )
 
-# Create final MS score - fix missing upper bound condition
-df_final = df.with_columns([
+# Apply upper and lower bounds
+df = df.with_columns([
     pl.when((pl.col("tempMS") >= 6) & (pl.col("tempMS") <= 8))
     .then(pl.lit(6))
-    .when(pl.col("tempMS") <= 1) 
-    .then(pl.lit(1))
-    .otherwise(pl.col("tempMS"))
+    .otherwise(pl.col("MS"))
     .alias("MS")
 ])
 
+df = df.with_columns([
+    pl.when(pl.col("tempMS") <= 1)
+    .then(pl.lit(1))
+    .otherwise(pl.col("MS"))
+    .alias("MS")
+])
 
-df_final = df_final.select(["permno", "time_avail_m", "MS"]).filter(
+# Label variable (comment for documentation)
+# MS: "Mohanram G-score"
+
+
+# ================================================================
+# FINAL OUTPUT
+# ================================================================
+
+# Select final columns
+df_final = df.select(["permno", "time_avail_m", "MS"]).filter(
     pl.col("MS").is_not_null()
 )
 
