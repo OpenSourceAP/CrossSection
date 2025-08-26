@@ -1,3 +1,56 @@
+# %%
+# debug
+import os
+os.chdir(os.path.join(os.path.dirname(__file__), '..'))
+
+# # goal is to fix:
+# **Largest Differences**:
+# ```
+#    permno  yyyymm  python  stata  diff
+# 0   49016  199201       1      6    -5
+# 1   49016  199202       1      6    -5
+# 2   49016  199204       1      6    -5
+# 3   76023  199906       6      1     5
+# 4   76023  199907       6      1     5
+# 5   76023  199908       6      1     5
+# 6   76023  199909       6      1     5
+# 7   76023  199910       6      1     5
+# 8   76023  199911       6      1     5
+# 9   76023  199912       6      1     5
+# ```
+
+pl.Config.set_tbl_cols(1000)
+pl.Config.set_tbl_rows(24)
+
+from polars import col as cc
+
+debug_datemax = pl.date(2000, 1, 1) # for speed
+
+import polars as pl
+
+def diff_with_nulls(a: str | pl.Expr, b: str | pl.Expr, *, inf: float = float("inf")) -> pl.Expr:
+    """
+    Compute a - b with custom null rules:
+      • +inf if exactly one of (a, b) is null
+      • 0.0  if both are null
+      • a - b otherwise
+    Returns a Polars expression.
+    """
+    a_expr = pl.col(a) if isinstance(a, str) else a
+    b_expr = pl.col(b) if isinstance(b, str) else b
+
+    a_null = a_expr.is_null()
+    b_null = b_expr.is_null()
+
+    return (
+        pl.when(a_null & b_null).then(pl.lit(0.0))
+        .when(a_null | b_null).then(pl.lit(inf))
+        .otherwise(a_expr - b_expr)
+    )
+
+
+# %%
+
 # ABOUTME: MS.py - generates Mohanram G-score predictor using 8 financial metrics
 # ABOUTME: Python translation of MS.do with industry median comparisons and quarterly aggregation
 
@@ -156,37 +209,98 @@ df = df.with_columns([
 print("📈 Computing quarterly aggregations...")
 
 # Aggregate quarterly data using time-based rolling to match Stata's asrol behavior
-# Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations 
+# Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations
 # spanning 12 calendar months, not just 12 consecutive data points
 
-# Convert to pandas for time-based rolling calculations
-df_pd = df.to_pandas()
-df_pd = df_pd.set_index('time_avail_m').sort_index()
 
-# Use pandas' built-in rolling with time window to match Stata's asrol behavior
-# This is much faster than the custom loop approach
-print("  Calculating time-based rolling means (matching Stata's asrol)...")
+# === old code ===
 
-# Group by permno for rolling calculations
-def apply_stata_rolling(group):
-    """Apply Stata-like rolling aggregation to a permno group"""
-    # Ensure data is sorted by time
-    group = group.sort_index()
+# # Convert to pandas for time-based rolling calculations
+# df_pd = df.to_pandas()
+# df_pd = df_pd.set_index('time_avail_m').sort_index()
+
+# # Use pandas' built-in rolling with time window to match Stata's asrol behavior
+# # This is much faster than the custom loop approach
+# print("  Calculating time-based rolling means (matching Stata's asrol)...")
+
+# # Group by permno for rolling calculations
+# def apply_stata_rolling(group):
+#     """Apply Stata-like rolling aggregation to a permno group"""
+#     # Ensure data is sorted by time
+#     group = group.sort_index()
     
-    # Use exact 12-month window to match Stata's asrol window(time_avail_m 12) min(12)
-    # 365D can be slightly off due to leap years, use 366D to be safe
-    group['niqsum'] = group['niq'].rolling('366D', min_periods=12).mean() * 4
-    group['xrdqsum'] = group['xrdq'].rolling('366D', min_periods=12).mean() * 4
-    group['oancfqsum'] = group['oancfq'].rolling('366D', min_periods=12).mean() * 4
-    group['capxqsum'] = group['capxq'].rolling('366D', min_periods=12).mean() * 4
+#     # Use exact 12-month window to match Stata's asrol window(time_avail_m 12) min(12)
+#     # 365D can be slightly off due to leap years, use 366D to be safe
+#     group['niqsum'] = group['niq'].rolling('366D', min_periods=12).mean() * 4
+#     group['xrdqsum'] = group['xrdq'].rolling('366D', min_periods=12).mean() * 4
+#     group['oancfqsum'] = group['oancfq'].rolling('366D', min_periods=12).mean() * 4
+#     group['capxqsum'] = group['capxq'].rolling('366D', min_periods=12).mean() * 4
     
-    return group
+#     return group
 
-# Apply rolling calculations by permno
-df_pd = df_pd.groupby('permno', group_keys=False).apply(apply_stata_rolling)
+# # Apply rolling calculations by permno
+# df_pd = df_pd.groupby('permno', group_keys=False).apply(apply_stata_rolling)
 
-# Convert back to polars
-df = pl.from_pandas(df_pd.reset_index())
+#%%
+
+# === new code ===
+
+def asrol_polars_rolling(
+    df: pl.DataFrame, 
+    group_col: str, 
+    date_col: str, 
+    value_col: str, 
+    stat: str = 'mean',
+    window: str = '12mo', 
+    min_obs: int = 1,
+    ) -> pl.DataFrame:
+    """
+    hand built polars asrol that 
+      - constructs windows based a date duration
+      - replaces with na if there are not enough observations in the window
+    input: polars dataframe
+    output: polars dataframe with a new column
+    """
+
+    # grab the stat function
+    stat_dict = {'mean': pl.mean, 'std': pl.std, 'min': pl.min, 'max': pl.max}
+    stat_fun = stat_dict[stat]
+
+    return df.sort(
+        pl.col([group_col, date_col])
+        ).with_columns(
+            pl.col([group_col, date_col]).set_sorted()
+        ).rolling(index_column=date_col, period=window, group_by=group_col).agg(
+            [
+                pl.last(value_col).alias(value_col),
+                stat_fun(value_col).alias(f'{value_col}_{stat}'),
+                pl.count(value_col).alias(f'{value_col}_obs')
+            ]
+        ).with_columns(
+            pl.when(cc(f'{value_col}_obs') >= min_obs).then(cc(f'{value_col}_mean'))
+            .otherwise(pl.lit(None))
+            .alias(f'{value_col}_mean')
+        ).drop(f'{value_col}_obs')
+
+dateref = pl.date(1999,6,1)
+permnolist = [76023, 38295]
+
+
+df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
+    .rename({'niq_mean':'niqsum'})
+
+# temp_check1.dta passed!
+
+
+df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
+    .rename({'xrdq_mean':'xrdqsum'})
+df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
+    .rename({'oancfq_mean':'oancfqsum'})
+df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
+    .rename({'capxq_mean':'capxqsum'})
+
+# temp_check3.dta placeholder
+
 
 # Handle special case for early years (endnote 3): Use fopt - wcapch for oancfqsum before 1988
 df = df.with_columns(
@@ -257,7 +371,6 @@ for col in median_cols:
     )
 
 
-
 print("🎯 Creating binary indicators...")
 
 # Create the 8 binary Mohanram G-score components
@@ -288,6 +401,100 @@ df = df.with_columns(
     (pl.col("m1") + pl.col("m2") + pl.col("m3") + pl.col("m4") + 
      pl.col("m5") + pl.col("m6") + pl.col("m7") + pl.col("m8")).alias("tempMS")
 )
+
+# %%
+
+# ================================================================
+# DEBUG CHECKPOINT 7
+# ================================================================
+
+print('debug temp_check7.dta')
+
+# load temp_check7.dta
+stata = pd.read_stata('../Human/temp_check7.dta')
+stata = pl.from_pandas(stata).with_columns(
+    cc('time_avail_m').cast(pl.Date)
+)
+
+# %%
+
+print('check on permno 76023 in 1999-06')
+
+print('python')
+print(
+df.filter(
+        (pl.col('permno') == 76023), 
+        pl.col('time_avail_m') == pl.date(1999,6,1)
+    ).sort('time_avail_m').select(
+        ['permno','time_avail_m','m1','m2','m3','m4','m5','m6','m7','m8','tempMS']
+    )
+)
+print('stata')
+print(
+stata.filter(
+    cc('permno') == 76023,
+    cc('time_avail_m') == pl.date(1999,6,1)
+).sort('time_avail_m').select(
+    ['permno','time_avail_m','m1','m2','m3','m4','m5','m6','m7','m8','tempMS']
+)
+)
+
+print('python m1 through m3 = 1, but stata has all zeros')
+
+# %%
+
+print('m1 to m3 are about roa, cfroa, and oancfqsum, where oancfqsum comes from oancfq')
+
+print('python')
+print(
+    df.filter(
+        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1999,1,1)
+    ).sort('time_avail_m').select(
+        ['permno','gvkey','time_avail_m','roa','cfroa','oancfqsum','oancfq']
+    )
+)
+
+print('stata')
+print(
+    stata.filter(
+        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1999,1,1)
+    ).sort('time_avail_m').select(
+        ['permno','gvkey','time_avail_m','roa','cfroa','oancfqsum','oancfq']
+    )
+)
+
+print('roa and cfroa are missing in stata but not in python')
+print('roa and cfroa come from niqsum and oancfqsum, whcich in turn come from asrol on niq and oancfq')
+
+# %%
+
+print('checking on niq and oancfq for permno == 76023')
+
+print('python')
+print(
+    df.filter(
+        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1998,6,1)
+    ).sort('time_avail_m').select(
+        ['permno','gvkey','time_avail_m','niq','oancfq']
+    )
+)
+
+print('stata')
+print(
+    stata.filter(
+        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1998,6,1)
+    ).sort('time_avail_m').select(
+        ['permno','gvkey','time_avail_m','niq','oancfq']
+    )
+)
+
+print('XXX: for this particular difference, we have a solution')
+print('the problem here is that the stata asrol requires all 12 months to be present ')
+print('when bys permno: asrol niq, gen(niqsum) stat(mean) window(time_avail_m 12) min(12)')
+print('but the python code lacks this requirement.')
+
+
+# %%
 
 print("📅 Applying timing logic...")
 
