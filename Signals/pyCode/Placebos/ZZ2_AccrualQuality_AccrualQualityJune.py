@@ -210,19 +210,20 @@ df_expanded = df_expanded.drop('month_offset', axis=1)
 df_expanded = df_expanded.sort_values(['permno', 'time_avail_m', 'datadate'])
 df_expanded = df_expanded.groupby(['permno', 'time_avail_m']).tail(1)
 
-# Filter out rows with missing AccrualQuality
-df_expanded = df_expanded[df_expanded['AccrualQuality'].notna()]
-
-# Create June version (AccrualQualityJune)
+# Create June version (AccrualQualityJune) BEFORE filtering missing AccrualQuality
 df_expanded['AccrualQualityJune'] = np.where(
     df_expanded['time_avail_m'].dt.month == 6, 
     df_expanded['AccrualQuality'], 
     np.nan
 )
 
-# Forward fill AccrualQualityJune within each permno
+# Forward fill AccrualQualityJune within each permno (do this BEFORE filtering)
 df_expanded = df_expanded.sort_values(['permno', 'time_avail_m'])
 df_expanded['AccrualQualityJune'] = df_expanded.groupby('permno')['AccrualQualityJune'].ffill()
+
+# Now filter out rows with missing AccrualQuality (but preserve AccrualQualityJune forward-filled values)
+# Keep rows where either AccrualQuality OR AccrualQualityJune is not null
+df_expanded = df_expanded[df_expanded['AccrualQuality'].notna() | df_expanded['AccrualQualityJune'].notna()]
 
 print(f"After monthly expansion: {len(df_expanded)} observations")
 

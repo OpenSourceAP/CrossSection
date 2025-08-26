@@ -72,14 +72,47 @@ print(f"After merges: {len(df)} rows")
 # SIGNAL CONSTRUCTION
 print("Computing failure probability components...")
 
-# Sort for rolling calculations
-df = df.sort(['permno', 'time_avail_m'])
+# SIGMA CALCULATION (matching Stata's approach)
+print("Computing SIGMA from daily returns...")
 
-# SIMPLIFIED SIGMA calculation using monthly returns (instead of daily)
-# Use 12-month rolling standard deviation of monthly returns as proxy
-df = df.with_columns([
-    pl.col('ret').fill_null(0).rolling_std(12, min_periods=3).over('permno').alias('SIGMA')
+# Load daily CRSP data
+daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+daily_crsp = daily_crsp.select(['permno', 'time_d', 'ret'])
+daily_crsp = daily_crsp.filter(pl.col('time_d') >= pd.to_datetime('1960-12-31'))
+
+# Sort for rolling calculations
+daily_crsp = daily_crsp.sort(['permno', 'time_d'])
+
+# Create time sequence for asrol equivalent (rolling window based on trading days)
+daily_crsp = daily_crsp.with_columns([
+    pl.int_range(pl.len()).over('permno').alias('time_temp')
 ])
+
+# Compute 3-month rolling standard deviation (60 business days, min 10 observations)
+daily_crsp = daily_crsp.with_columns([
+    pl.col('ret').rolling_std(60, min_periods=10).over('permno').alias('SIGMA')
+])
+
+# Drop missing SIGMA
+daily_crsp = daily_crsp.filter(pl.col('SIGMA').is_not_null())
+
+# Create monthly time_avail_m
+daily_crsp = daily_crsp.with_columns([
+    pl.col('time_d').dt.truncate('1mo').alias('time_avail_m')
+])
+
+# Keep last observation per permno-month (equivalent to gcollapse lastnm)
+sigma_df = daily_crsp.sort(['permno', 'time_avail_m', 'time_d']).group_by(['permno', 'time_avail_m']).tail(1)
+sigma_df = sigma_df.select(['permno', 'time_avail_m', 'SIGMA'])
+
+print(f"Generated SIGMA for {len(sigma_df)} permno-months")
+
+# Merge SIGMA back to main dataframe
+print("Merging SIGMA with main data...")
+df = df.join(sigma_df, on=['permno', 'time_avail_m'], how='left')
+
+# Sort main dataframe for subsequent calculations
+df = df.sort(['permno', 'time_avail_m'])
 
 # Market value
 df = df.with_columns([
@@ -155,26 +188,30 @@ df = df.with_columns([
 print("Computing exponentially weighted averages...")
 rho = 2**(-1/3)
 
-# Create lags for NIMTA and EXRET
-for lag in [1, 2, 3, 6, 9, 12]:
+# Create lags for NIMTA and EXRET (all 12 lags as in Stata)
+for lag in range(1, 13):  # 1 through 12
     df = df.with_columns([
         pl.col('tempNIMTA').shift(lag).over('permno').alias(f'l{lag}_tempNIMTA'),
         pl.col('tempEXRET').shift(lag).over('permno').alias(f'l{lag}_tempEXRET')
     ])
 
-# Compute weighted averages
+# Compute weighted averages (matching Stata exactly)
 df = df.with_columns([
-    # NIMTAAVG - simplified 4-quarter weighted average
+    # NIMTAAVG - 4-quarter weighted average (Stata lines 58)
     ((1 - rho**3) / (1 - rho**12) * (
         pl.col('tempNIMTA') + rho**3 * pl.col('l3_tempNIMTA') + 
         rho**6 * pl.col('l6_tempNIMTA') + rho**9 * pl.col('l9_tempNIMTA')
     )).alias('tempNIMTAAVG'),
     
-    # EXRETAVG - simplified 12-month weighted average  
+    # EXRETAVG - full 12-month weighted average (Stata lines 59-61)
     ((1 - rho) / (1 - rho**12) * (
-        pl.col('tempEXRET') + rho * pl.col('l1_tempEXRET') + rho**2 * pl.col('l2_tempEXRET') +
-        rho**3 * pl.col('l3_tempEXRET') + rho**6 * pl.col('l6_tempEXRET') + 
-        rho**9 * pl.col('l9_tempEXRET') + rho**12 * pl.col('l12_tempEXRET')
+        pl.col('tempEXRET') + 
+        rho**1 * pl.col('l1_tempEXRET') + rho**2 * pl.col('l2_tempEXRET') +
+        rho**3 * pl.col('l3_tempEXRET') + rho**4 * pl.col('l4_tempEXRET') + 
+        rho**5 * pl.col('l5_tempEXRET') + rho**6 * pl.col('l6_tempEXRET') +
+        rho**7 * pl.col('l7_tempEXRET') + rho**8 * pl.col('l8_tempEXRET') +
+        rho**9 * pl.col('l9_tempEXRET') + rho**10 * pl.col('l10_tempEXRET') + 
+        rho**11 * pl.col('l11_tempEXRET')
     )).alias('tempEXRETAVG')
 ])
 

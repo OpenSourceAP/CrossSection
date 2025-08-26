@@ -71,7 +71,7 @@ df = df.with_columns([
 # gen tempOL = at - tempdlc - tempdltt - tempmib - temppstk - ceq
 print("Computing tempOL...")
 df = df.with_columns([
-    (pl.col('at') - pl.col('tempdlc') - pl.col('tempdltt') - pl.col('tempmib') - pl.col('temppstk') - pl.col('ceq')).alias('tempOL')
+    (pl.col('at') - pl.col('tempdlc') - pl.col('tempdltt') - pl.col('tempmib') - pl.col('temppstk') - pl.col('ceq').fill_null(0)).alias('tempOL')
 ])
 
 # Create lags

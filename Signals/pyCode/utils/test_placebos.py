@@ -394,7 +394,7 @@ def output_placebo_results(placebo_name, results, overall_passed):
     elif test2 is False:
         missing_count = results.get('missing_count', 0)
         missing_pct = results.get('missing_percentage', 0)
-        print(f"  ❌ Test 2 - Superset check: FAILED (Missing {missing_pct:.2f}% > {TOL_SUPERSET}% threshold, {missing_count} observations)")
+        print(f"  ❌ Test 2 - Superset check: FAILED (Missing {missing_count} observations, {missing_pct:.2f}% > {TOL_SUPERSET}% threshold)")
         
         # Show sample of missing observations
         if 'missing_observations_sample' in results:

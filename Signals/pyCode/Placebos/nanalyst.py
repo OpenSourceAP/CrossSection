@@ -70,11 +70,32 @@ df = df.with_columns(
 
 print(f"Generated nanalyst for {len(df)} observations")
 
-# Keep only required columns for output
+# Keep only required columns for output  
+# IMPORTANT: Do NOT drop null nanalyst values - keep all observations like Stata
 df_final = df.select(['permno', 'time_avail_m', 'nanalyst'])
 
+print(f"Final observations before save: {len(df_final)}")
+print(f"Non-null nanalyst values: {df_final.filter(pl.col('nanalyst').is_not_null()).shape[0]}")
+print(f"Null nanalyst values: {df_final.filter(pl.col('nanalyst').is_null()).shape[0]}")
+
 # SAVE
-# do "$pathCode/saveplacebo" nanalyst
-save_placebo(df_final, 'nanalyst')
+# SPECIAL HANDLING: Unlike other placebos, nanalyst keeps null values for pre-1989 observations
+# Cannot use save_placebo() which drops nulls - do manual save like Stata
+print("Manual save to preserve null values for pre-1989 observations...")
+
+# Convert to CSV format manually (replicating save_placebo logic but keeping nulls)
+df_save = df_final.with_columns(
+    (pl.col("time_avail_m").dt.year() * 100 + pl.col("time_avail_m").dt.month()).alias("yyyymm")
+)
+
+# Keep only required columns: permno yyyymm nanalyst (including nulls!)
+df_save = df_save.select(['permno', 'yyyymm', 'nanalyst'])
+
+# Save as CSV
+import os
+os.makedirs("../pyData/Placebos", exist_ok=True)
+df_save.write_csv("../pyData/Placebos/nanalyst.csv")
+
+print(f"Saved {len(df_save)} rows to ../pyData/Placebos/nanalyst.csv (including nulls)")
 
 print("nanalyst.py completed")

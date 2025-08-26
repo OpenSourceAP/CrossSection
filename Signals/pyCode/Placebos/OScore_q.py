@@ -93,14 +93,28 @@ df = df.with_columns([
     (
         -1.32 
         - 0.407 * (pl.col('atq') / pl.col('gnpdefl')).log()
-        + 6.03 * (pl.col('ltq') / pl.col('atq'))
-        - 1.43 * ((pl.col('actq') - pl.col('lctq')) / pl.col('atq'))
-        + 0.076 * (pl.col('lctq') / pl.col('actq'))
+        + 6.03 * pl.when(pl.col('atq') == 0)
+                 .then(0)
+                 .otherwise(pl.col('ltq') / pl.col('atq'))
+        - 1.43 * pl.when(pl.col('atq') == 0)
+                 .then(0)
+                 .otherwise((pl.col('actq') - pl.col('lctq')) / pl.col('atq'))
+        + 0.076 * pl.when(pl.col('actq') == 0)
+                  .then(0)
+                  .otherwise(pl.col('lctq') / pl.col('actq'))
         - 1.72 * (pl.col('ltq') > pl.col('atq')).cast(pl.Float64)
-        - 2.37 * (pl.col('ibq') / pl.col('atq'))
-        - 1.83 * (pl.col('foptyq') / pl.col('ltq'))
-        + 0.285 * ((pl.col('ibq') + pl.col('l12_ibq')) < 0).cast(pl.Float64)
-        - 0.521 * ((pl.col('ibq') - pl.col('l12_ibq')) / (pl.col('ibq').abs() + pl.col('l12_ibq').abs()))
+        - 2.37 * pl.when(pl.col('atq') == 0)
+                 .then(0)
+                 .otherwise(pl.col('ibq') / pl.col('atq'))
+        - 1.83 * pl.when(pl.col('foptyq').is_null() | pl.col('ltq').is_null() | (pl.col('ltq') == 0))
+                 .then(0)
+                 .otherwise(pl.col('foptyq') / pl.col('ltq'))
+        + 0.285 * pl.when(pl.col('l12_ibq').is_null())
+                  .then((pl.col('ibq') < 0).cast(pl.Float64))
+                  .otherwise(((pl.col('ibq') + pl.col('l12_ibq')) < 0).cast(pl.Float64))
+        - 0.521 * pl.when(pl.col('l12_ibq').is_null())
+                  .then(0)
+                  .otherwise((pl.col('ibq') - pl.col('l12_ibq')) / (pl.col('ibq').abs() + pl.col('l12_ibq').abs()))
     ).alias('OScore_q')
 ])
 
@@ -117,26 +131,33 @@ df = df.with_columns([
 print("Converting to pandas for fastxtile...")
 df_pandas = df.to_pandas()
 
-# * form LS following Tab 5
-# egen tempsort = fastxtile(OScore), by(time_avail_m) n(10)
-print("Computing OScore deciles...")
-df_pandas['tempsort'] = fastxtile(df_pandas, 'OScore_q', by='time_avail_m', n=10)
+# Filter out infinite values before fastxtile (like Stata filters missing values)
+print("Filtering out infinite OScore_q values...")
+valid_mask = df_pandas['OScore_q'].notna() & np.isfinite(df_pandas['OScore_q'])
+df_valid = df_pandas[valid_mask].copy()
+print(f"Valid observations for fastxtile: {len(df_valid)} (filtered out {len(df_pandas) - len(df_valid)} infinite/null values)")
 
-# replace OScore = .
-# replace OScore = 1 if tempsort == 10
-# replace OScore = 0 if tempsort <= 7  & tempsort >= 1
+# * form LS following Tab 5  
+# NOTE: Stata code has 'fastxtile(OScore)' but variable is 'OScore_q' - assuming this means OScore_q
+# egen tempsort = fastxtile(OScore_q), by(time_avail_m) n(10)
+print("Computing OScore deciles...")
+df_valid['tempsort'] = fastxtile(df_valid, 'OScore_q', by='time_avail_m', n=10)
+
+# replace OScore_q = .
+# replace OScore_q = 1 if tempsort == 10  
+# replace OScore_q = 0 if tempsort <= 7  & tempsort >= 1
 print("Converting to binary signal...")
-df_pandas['OScore_q_new'] = np.nan
-df_pandas.loc[df_pandas['tempsort'] == 10, 'OScore_q_new'] = 1
-df_pandas.loc[(df_pandas['tempsort'] >= 1) & (df_pandas['tempsort'] <= 7), 'OScore_q_new'] = 0
+df_valid['OScore_q_new'] = np.nan
+df_valid.loc[df_valid['tempsort'] == 10, 'OScore_q_new'] = 1
+df_valid.loc[(df_valid['tempsort'] >= 1) & (df_valid['tempsort'] <= 7), 'OScore_q_new'] = 0
 
 # Replace the original OScore_q with the new binary version
-df_pandas['OScore_q'] = df_pandas['OScore_q_new']
+df_valid['OScore_q'] = df_valid['OScore_q_new']
 
-print(f"Generated OScore_q for {len(df_pandas)} observations")
+print(f"Generated OScore_q for {len(df_valid)} observations")
 
-# Convert back to polars and keep only required columns
-df_final = pl.from_pandas(df_pandas[['permno', 'time_avail_m', 'OScore_q']])
+# Convert back to polars and keep only required columns  
+df_final = pl.from_pandas(df_valid[['permno', 'time_avail_m', 'OScore_q']])
 
 # SAVE
 # do "$pathCode/saveplacebo" OScore_q
