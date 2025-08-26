@@ -24,8 +24,7 @@ lag_cols = []
 for i in range(13, 37):
     lag_col = f'ret_lag{i}'
     df[lag_col] = df.groupby('permno')['ret'].shift(i)
-    # Fill missing lagged returns with 0 (to match Stata's behavior for insufficient history)
-    df[lag_col] = df[lag_col].fillna(0)
+    # Don't fill missing values - keep as NaN to match Stata's behavior
     lag_cols.append(lag_col)
 
 # Calculate long-term reversal (geometric return over months 13-36)
