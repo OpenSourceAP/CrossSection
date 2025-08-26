@@ -48,6 +48,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_ineq_pl
+from utils.stata_asreg_asrol import asrol_fast
 
 print("=" * 80)
 print("🏗️  MS.py")
@@ -339,6 +340,11 @@ print(
 
 print('differences are tiny, seems like tiny data updates')
 
+#%%
+
+# debug: create MWE
+
+df.write_parquet('../Human/mwe_input.parquet')
 
 
 #%%
@@ -349,34 +355,194 @@ print("📈 Computing quarterly aggregations...")
 # Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations 
 # spanning 12 calendar months, not just 12 consecutive data points
 
-# Convert to pandas for time-based rolling calculations
-df_pd = df.to_pandas()
-df_pd = df_pd.set_index('time_avail_m').sort_index()
-
-# Use pandas' built-in rolling with time window to match Stata's asrol behavior
-# This is much faster than the custom loop approach
 print("  Calculating time-based rolling means (matching Stata's asrol)...")
 
-# Group by permno for rolling calculations
-def apply_stata_rolling(group):
-    """Apply Stata-like rolling aggregation to a permno group"""
-    # Ensure data is sorted by time
-    group = group.sort_index()
-    
-    # Use exact 12-month window to match Stata's asrol window(time_avail_m 12) min(12)
-    # 365D can be slightly off due to leap years, use 366D to be safe
-    group['niqsum'] = group['niq'].rolling('366D', min_periods=12).mean() * 4
-    group['xrdqsum'] = group['xrdq'].rolling('366D', min_periods=12).mean() * 4
-    group['oancfqsum'] = group['oancfq'].rolling('366D', min_periods=12).mean() * 4
-    group['capxqsum'] = group['capxq'].rolling('366D', min_periods=12).mean() * 4
-    
-    return group
+# Use fast asrol_fast function to compute 12-month rolling means
+df = asrol_fast(df, 'permno', 'time_avail_m', 'niq', 12, "monthly", 'mean', 'niqsum', 12)
 
-# Apply rolling calculations by permno
-df_pd = df_pd.groupby('permno', group_keys=False).apply(apply_stata_rolling)
 
-# Convert back to polars
-df = pl.from_pandas(df_pd.reset_index())
+#%%
+
+# debug temp_check2.dta
+print('debug temp_check2.dta')
+
+debug_datemax = pl.date(1976, 1, 1) # for speed
+
+# load temp_check2.dta
+stata = pd.read_stata('../Human/temp_check2.dta')
+stata = pl.from_pandas(stata).with_columns(
+    col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(stata.columns, stata.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32)]
+cols = [c for c in cols if c != "permno"]
+
+stata = stata.select(['permno','time_avail_m'] + cols)
+
+stata_long = stata.unpivot(
+    index = ['permno','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'stata'
+)  
+
+
+# make df that matches stata_long
+df_long = df.with_columns(
+    pl.col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(df_long.columns, df_long.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32)]
+cols = [c for c in cols if c != "permno"]
+
+df_long = df_long.select(['permno','time_avail_m'] + cols)
+
+df_long = df_long.unpivot(
+    index = ['permno','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'python'
+).with_columns(
+    pl.col('python').cast(pl.Float64)
+)
+
+both = stata_long.join(
+    df_long, on = ['permno','time_avail_m','name'], how = 'full', coalesce = True
+).filter(
+    col('time_avail_m') < pl.date(1990, 1, 1)
+)
+
+both = (
+    both.with_columns(
+        pl.when(col('stata').is_null() & col('python').is_null())
+        .then(0)
+        .when(col('stata').is_not_null() & col('python').is_not_null())
+        .then(col('stata') - col('python'))
+        .otherwise(pl.lit(float("inf")))
+        .alias("diff")
+    )
+    .sort(col("diff").abs(), descending=True)
+)
+
+print('rows where abs(diff) > tiny')
+print(
+    both.filter(
+        col('diff').abs() > 1e-6
+    ).sort(
+        col('diff').abs(), descending=True
+    )
+)
+
+
+
+
+#%%
+
+
+df = asrol_fast(df, 'permno', 'time_avail_m', 'xrdq', 12, "monthly", 'mean', 'xrdqsum', 12)  
+df = asrol_fast(df, 'permno', 'time_avail_m', 'oancfq', 12, "monthly", 'mean', 'oancfqsum', 12)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'capxq', 12, "monthly", 'mean', 'capxqsum', 12)
+
+
+
+#%%
+
+# debug temp_check3.dta
+print('debug temp_check3.dta')
+
+debug_datemax = pl.date(1976, 1, 1) # for speed
+
+# load temp_check3.dta
+stata = pd.read_stata('../Human/temp_check3.dta')
+stata = pl.from_pandas(stata).with_columns(
+    col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(stata.columns, stata.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32)]
+cols = [c for c in cols if c not in ['permno','gvkey','time_avail_m']]
+
+stata = stata.select(['permno','gvkey','time_avail_m'] + cols)
+
+stata_long = stata.unpivot(
+    index = ['permno','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'stata'
+)  
+
+# make df that matches stata_long
+df_long = df.with_columns(
+    pl.col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(df_long.columns, df_long.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32)]
+cols = [c for c in cols if c not in ['permno','gvkey','time_avail_m']]
+
+df_long = df_long.select(['permno','gvkey','time_avail_m'] + cols)
+
+df_long = df_long.unpivot(
+    index = ['permno','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'python'
+).with_columns(
+    pl.col('python').cast(pl.Float64)
+)
+
+both = stata_long.join(
+    df_long, on = ['permno','time_avail_m','name'], how = 'full', coalesce = True
+).filter(
+    col('time_avail_m') < pl.date(1990, 1, 1)
+)
+
+both = (
+    both.with_columns(
+        pl.when(col('stata').is_null() & col('python').is_null())
+        .then(0)
+        .when(col('stata').is_not_null() & col('python').is_not_null())
+        .then(col('stata') - col('python'))
+        .otherwise(pl.lit(float("inf")))
+        .alias("diff")
+    )
+    .sort(col("diff").abs(), descending=True)
+)
+
+print('rows where abs(diff) > tiny')
+print(
+    both.filter(
+        col('diff').abs() > 1e-6
+    ).sort(
+        col('diff').abs(), descending=True
+    )
+)
+
+print('very few differences')
+
+#%%
+
+print('double checking the asrol outputs')
+
+print(
+    both.filter(
+        col('name').is_in(['niqsum','xrdqsum','oancfqsum','capxqsum'])
+    ).sort(
+        col('diff').abs(), descending=True
+    ).filter(
+        col('diff').abs() > 1e-6
+    )
+)
+
+print('looks good')
+
+#%%
+
+# Annualize the quarterly means by multiplying by 4
+df = df.with_columns([
+    (pl.col("niqsum") * 4).alias("niqsum"),
+    (pl.col("xrdqsum") * 4).alias("xrdqsum"), 
+    (pl.col("oancfqsum") * 4).alias("oancfqsum"),
+    (pl.col("capxqsum") * 4).alias("capxqsum")
+])
 
 # Handle special case for early years (endnote 3): Use fopt - wcapch for oancfqsum before 1988
 df = df.with_columns(
@@ -385,6 +551,8 @@ df = df.with_columns(
     .otherwise(pl.col("oancfqsum"))
     .alias("oancfqsum")
 )
+
+#%%
 
 print("💰 Constructing the 8 Mohanram G-score components...")
 
@@ -416,26 +584,12 @@ df = df.with_columns([
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
-# Convert to pandas for time-based volatility calculations (48-month rolling)
+# Calculate 48-month rolling volatility using fast asrol_fast function
 print("    Calculating time-based 48-month rolling volatility...")
-df_pd_vol = df.to_pandas().set_index('time_avail_m').sort_index()
 
-def apply_stata_volatility_rolling(group):
-    """Apply Stata-like 48-month rolling volatility calculations"""
-    group = group.sort_index()
-    
-    # Use 48-month (4 years) time window with min_periods=18 to match Stata's asrol
-    # 48 months ≈ 1460 days, use 1470D to be safe with leap years
-    group['niVol'] = group['roaq'].rolling('1470D', min_periods=18).std()
-    group['revVol'] = group['sg'].rolling('1470D', min_periods=18).std()
-    
-    return group
-
-# Apply volatility rolling calculations by permno
-df_pd_vol = df_pd_vol.groupby('permno', group_keys=False).apply(apply_stata_volatility_rolling)
-
-# Convert back to polars
-df = pl.from_pandas(df_pd_vol.reset_index())
+# Use fast asrol_fast function to compute 48-month rolling standard deviation
+df = asrol_fast(df, 'permno', 'time_avail_m', 'roaq', 48, "monthly", 'std', 'niVol', 18)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'sg', 48, "monthly", 'std', 'revVol', 18)
 
 print("🏭 Computing industry medians...")
 
