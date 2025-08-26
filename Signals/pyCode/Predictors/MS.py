@@ -1,3 +1,12 @@
+#%%
+
+# debug
+import os
+from polars import col
+
+from statsmodels.datasets.danish_data.data import variable_names
+os.chdir(os.path.dirname(os.path.abspath(__file__))+'/..')
+
 # ABOUTME: MS.py - generates Mohanram G-score predictor using 8 financial metrics
 # ABOUTME: Python translation of MS.do with industry median comparisons and quarterly aggregation
 
@@ -63,8 +72,10 @@ print(f"After deduplication: {len(compustat):,} observations")
 # Load SignalMasterTable for market value and SIC codes
 print("Loading SignalMasterTable.parquet...")
 smt = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select([
-    "permno", "time_avail_m", "mve_c", "sicCRSP"
-])
+    "permno", "gvkey", "time_avail_m", "mve_c", "sicCRSP"
+]).with_columns(
+    pl.col('gvkey').cast(pl.Int32)
+)
 print(f"Loaded SignalMasterTable: {len(smt):,} observations")
 
 # Load quarterly Compustat data
@@ -78,11 +89,110 @@ print(f"Loaded m_QCompustat: {len(qcompustat):,} observations")
 # MERGE DATA
 print("🔗 Merging datasets...")
 df = (compustat
-    .join(smt, on=["permno", "time_avail_m"], how="inner")
+    .join(smt, on=["permno", "gvkey", "time_avail_m"], how="inner")
     .join(qcompustat, on=["gvkey", "time_avail_m"], how="left")
     .sort(["permno", "time_avail_m"])
 )
 print(f"After merging: {len(df):,} observations")
+
+#%%
+
+# debug
+
+debug_datemax = pl.date(1970, 1, 1) # for speed
+
+# load temp_check*.dta
+stata = pd.read_stata('../Human/temp_check0.dta')
+stata = pl.from_pandas(stata).with_columns(
+    col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(stata.columns, stata.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32, pl.Int16)]
+cols = [c for c in cols if c not in ['permno','gvkey']]
+
+stata = stata.select(['permno','gvkey','time_avail_m'] + cols)
+
+stata_long = stata.unpivot(
+    index = ['permno','gvkey','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'stata'
+)  
+
+# make df that matches stata_long
+df_long = df.with_columns(
+    pl.col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(df_long.columns, df_long.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32, pl.Int16)]
+cols = [c for c in cols if c not in ['permno','gvkey']]
+
+df_long = df_long.select(['permno','gvkey','time_avail_m'] + cols)
+
+df_long = df_long.unpivot(
+    index = ['permno','gvkey','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'python'
+).with_columns(
+    pl.col('python').cast(pl.Float64)
+)
+
+# merge
+both = stata_long.join(
+    df_long, on = ['permno','gvkey','time_avail_m','name'], how = 'full', coalesce = True
+)
+
+both = (
+    both.with_columns(
+        pl.when(col('stata').is_null() & col('python').is_null())
+        .then(0)
+        .when(col('stata').is_not_null() & col('python').is_not_null())
+        .then(col('stata') - col('python'))
+        .otherwise(pl.lit(float("inf")))
+        .alias("diff")
+    )
+    .sort(col("diff").abs(), descending=True)
+)
+
+print('rows where abs(diff) > tiny')
+print(
+    both.filter(
+        col('diff').abs() > 1e-6
+    ).sort(
+        col('diff').abs(), descending=True
+    )
+)
+
+#%%
+print('why is stata missing niq for permno 32508 gvkey 5337 in 1968?')
+
+# read Data/Intermediate/m_qCompustat.dta
+stataraw = pd.read_stata('../Data/Intermediate/m_qCompustat.dta', columns=['gvkey','time_avail_m','niq'])
+
+print('Data/Intermediate/m_qCompustat.dta')
+print(
+    pl.from_pandas(stataraw).filter(
+        col('gvkey') == 5337, col('time_avail_m') >= pl.date(1968, 1, 1), col('time_avail_m') < pl.date(1969, 1, 1) 
+    ).sort(col('time_avail_m'))
+)
+
+#%%
+
+pythonraw = pl.read_parquet('../pyData/Intermediate/m_QCompustat.parquet', columns=['gvkey','time_avail_m','niq'])
+print('pyData/Intermediate/m_QCompustat.parquet')
+print(
+    pythonraw.filter(
+        col('gvkey') == 5337, col('time_avail_m') >= pl.date(1968, 1, 1), col('time_avail_m') < pl.date(1969, 1, 1) 
+    ).sort(col('time_avail_m'))
+)
+
+print('the difference seems ok. just 96 rows of expanded data (more like 20 obs )')
+print('looks like the python data is more updated.')
+
+
+
+#%%
 
 # SAMPLE SELECTION
 print("🎯 Applying sample selection criteria...")
@@ -100,15 +210,18 @@ print("Calculating BM quintiles with enhanced fastxtile...")
 df_pd = df.to_pandas()
 
 # Clean infinite BM values explicitly (following successful PS pattern)
-df_pd['BM_clean'] = df_pd['BM'].replace([np.inf, -np.inf], np.nan)
+df_pd['BM'] = df_pd['BM'].replace([np.inf, -np.inf], np.nan)
 
 # Use enhanced fastxtile for quintile assignment
-df_pd['BM_quintile'] = fastxtile(df_pd, 'BM_clean', by='time_avail_m', n=5)
+df_pd['BM_quintile'] = fastxtile(df_pd, 'BM', by='time_avail_m', n=5)
 
 # Convert back to polars and filter for lowest quintile
 df = pl.from_pandas(df_pd).filter(
     pl.col("BM_quintile") == 1  # Keep only lowest BM quintile (growth firms)
+).drop(
+    'BM_quintile'
 )
+
 
 
 print(f"After BM quintile filter: {len(df):,} observations")
@@ -152,6 +265,83 @@ df = df.with_columns([
     .otherwise(pl.lit(None))
     .alias("oancfq")
 ])
+
+#%%
+
+# debug 
+print('debug temp_check1.dta')
+
+debug_datemax = pl.date(1976, 1, 1) # for speed
+
+# load temp_check1.dta
+stata = pd.read_stata('../Human/temp_check1.dta')
+stata = pl.from_pandas(stata).with_columns(
+    col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(stata.columns, stata.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32)]
+cols = [c for c in cols if c != "permno"]
+
+stata = stata.select(['permno','time_avail_m'] + cols)
+
+stata_long = stata.unpivot(
+    index = ['permno','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'stata'
+)  
+
+# make df that matches stata_long
+df_long = df.with_columns(
+    pl.col('time_avail_m').cast(pl.Date)
+).filter(
+    col('time_avail_m') < debug_datemax
+)
+cols = [c for c, dtype in zip(df_long.columns, df_long.dtypes) if dtype in (pl.Int64, pl.Float64, pl.Int32, pl.Float32)]
+cols = [c for c in cols if c != "permno"]
+
+df_long = df_long.select(['permno','time_avail_m'] + cols)
+
+df_long = df_long.unpivot(
+    index = ['permno','time_avail_m'],
+    variable_name = 'name',
+    value_name = 'python'
+).with_columns(
+    pl.col('python').cast(pl.Float64)
+)
+
+both = stata_long.join(
+    df_long, on = ['permno','time_avail_m','name'], how = 'full', coalesce = True
+).filter(
+    col('time_avail_m') < pl.date(1990, 1, 1)
+)
+
+both = (
+    both.with_columns(
+        pl.when(col('stata').is_null() & col('python').is_null())
+        .then(0)
+        .when(col('stata').is_not_null() & col('python').is_not_null())
+        .then(col('stata') - col('python'))
+        .otherwise(pl.lit(float("inf")))
+        .alias("diff")
+    )
+    .sort(col("diff").abs(), descending=True)
+)
+
+print('rows where abs(diff) > tiny')
+print(
+    both.filter(
+        col('diff').abs() > 1e-6
+    ).sort(
+        col('diff').abs(), descending=True
+    )
+)
+
+print('differences are tiny, seems like tiny data updates')
+
+
+
+#%%
 
 print("📈 Computing quarterly aggregations...")
 
