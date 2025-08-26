@@ -241,8 +241,6 @@ print("📈 Computing quarterly aggregations...")
 # # Apply rolling calculations by permno
 # df_pd = df_pd.groupby('permno', group_keys=False).apply(apply_stata_rolling)
 
-#%%
-
 # === new code ===
 
 def asrol_polars_rolling(
@@ -266,21 +264,30 @@ def asrol_polars_rolling(
     stat_dict = {'mean': pl.mean, 'std': pl.std, 'min': pl.min, 'max': pl.max}
     stat_fun = stat_dict[stat]
 
-    return df.sort(
+    df_addition =  df.sort(
         pl.col([group_col, date_col])
         ).with_columns(
             pl.col([group_col, date_col]).set_sorted()
         ).rolling(index_column=date_col, period=window, group_by=group_col).agg(
             [
-                pl.last(value_col).alias(value_col),
+                pl.last(value_col).alias(f'{value_col}_last'),
                 stat_fun(value_col).alias(f'{value_col}_{stat}'),
                 pl.count(value_col).alias(f'{value_col}_obs')
             ]
         ).with_columns(
-            pl.when(cc(f'{value_col}_obs') >= min_obs).then(cc(f'{value_col}_mean'))
+            pl.when(cc(f'{value_col}_obs') >= min_obs).then(cc(f'{value_col}_{stat}'))
             .otherwise(pl.lit(None))
-            .alias(f'{value_col}_mean')
-        ).drop(f'{value_col}_obs')
+            .alias(f'{value_col}_{stat}')
+        )
+
+    return df.join(
+        df_addition.select([group_col, date_col, f'{value_col}_{stat}']),
+        on=[group_col, date_col],
+        how='left',
+        coalesce=True
+    )
+
+    
 
 dateref = pl.date(1999,6,1)
 permnolist = [76023, 38295]
@@ -289,7 +296,11 @@ permnolist = [76023, 38295]
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
     .rename({'niq_mean':'niqsum'})
 
-# temp_check1.dta passed!
+#%% ddd
+
+# temp_check2.dta passed!
+
+#%%
 
 
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
@@ -299,7 +310,75 @@ df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo'
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
     .rename({'capxq_mean':'capxqsum'})
 
+#%% ddd
+
+# temp_check3.dta passed!
+
+#%% ddd
+
 # temp_check3.dta placeholder
+
+print('compare with stata')
+
+col_to_check = ['permno','gvkey','time_avail_m','oancfqsum']
+id_cols = ['permno','gvkey','time_avail_m']
+
+stata = pd.read_stata('../Human/temp_check3.dta')
+stata = pl.from_pandas(stata).with_columns(
+    cc('time_avail_m').cast(pl.Date)
+).select(col_to_check)
+
+stata_long = stata.unpivot(
+    index = id_cols,
+    variable_name = 'name',
+    value_name = 'stata'
+)
+
+# make df that matches stata_long
+df_long = df.with_columns(
+    pl.col('time_avail_m').cast(pl.Date)
+).select(col_to_check).unpivot(
+    index = id_cols,
+    variable_name = 'name',
+    value_name = 'python'
+)
+
+# merge
+both = stata_long.join(
+    df_long, on = ['permno','gvkey','time_avail_m','name'], how = 'full', coalesce = True
+).with_columns(
+    pl.when(cc('stata').is_null() & cc('python').is_null()).then(0)
+    .when(cc('stata').is_not_null() & cc('python').is_not_null()).then(cc('stata') - cc('python'))
+    .otherwise(pl.lit(float('inf')))
+    .alias('diff')
+).sort(
+    cc('diff').abs(), descending=True
+)
+
+print(f'rows where diff is inf, out of {len(both)}')
+print(
+    both.filter(
+        cc('diff').is_infinite()
+    ).sort(
+        cc('diff').abs(), descending=True
+    )
+)
+
+#%% ddd
+
+print('focus on selected obs')
+
+permno = 10011
+dateref = pl.date(1994,4,1)
+
+print(
+    df.filter(
+        cc('permno') == permno, cc('time_avail_m') <= dateref, cc('time_avail_m') >= dateref - pl.duration(days=365*1)
+    ).sort('time_avail_m').select(
+        ['permno','gvkey','time_avail_m','oancfq','oancfqsum']
+    )
+)
+#%%
 
 
 # Handle special case for early years (endnote 3): Use fopt - wcapch for oancfqsum before 1988
