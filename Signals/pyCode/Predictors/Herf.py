@@ -10,7 +10,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_asreg_asrol import asrol
+from utils.stata_asreg_asrol import asrol_fast
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -81,7 +81,7 @@ for permno in [10006, 11406, 12473]:
         print(f"permno {permno}, 2007m4: sale={row['sale']}, temp={row['temp']}, tempHerf={row['tempHerf']}")
 
 # Take 3-year moving average using asrol
-df = asrol(df, 'permno', 'time_avail_m', 'tempHerf', 36, 'mean', min_periods=12)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'tempHerf', 36, "monthly", stat='mean', new_col_name='mean36_tempHerf', min_periods=12)
 df = df.rename(columns={'mean36_tempHerf': 'Herf'})
 
 # CHECKPOINT 6: Check after asrol moving average

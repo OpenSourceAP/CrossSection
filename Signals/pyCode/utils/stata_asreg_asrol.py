@@ -892,13 +892,14 @@ def asrol_fast(
     else:
         df_pl = df.clone()
     
-    # Validate time column is a date/datetime type
+    # Check time column type to determine rolling method
     time_dtype = df_pl[time_col].dtype
-    if time_dtype not in [pl.Date, pl.Datetime]:
+    is_integer_time = time_dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64]
+    is_date_time = time_dtype in [pl.Date, pl.Datetime]
+    
+    if not (is_integer_time or is_date_time):
         raise ValueError(
-            f"Time column '{time_col}' must be Date or Datetime type, got {time_dtype}. "
-            "Integer time columns (fyear, time_temp) are not supported. "
-            "Use proper date columns for calendar-based rolling windows."
+            f"Time column '{time_col}' must be Date, Datetime, or Integer type, got {time_dtype}."
         )
     
     # Default column name
@@ -908,8 +909,13 @@ def asrol_fast(
     # Sort by group and time for proper processing
     df_pl = df_pl.sort([group_col, time_col])
     
-    # Use calendar-based rolling
-    result_pl = _calendar_rolling(df_pl, group_col, time_col, value_col, window, freq, stat, new_col_name, min_periods)
+    # Choose rolling method based on time column type
+    if is_integer_time:
+        # For integer time columns, use simple position-based rolling
+        result_pl = _simple_rolling(df_pl, group_col, value_col, window, stat, new_col_name, min_periods)
+    else:
+        # For date/datetime columns, use calendar-based rolling
+        result_pl = _calendar_rolling(df_pl, group_col, time_col, value_col, window, freq, stat, new_col_name, min_periods)
     
     # Return same type as input
     if is_pandas_input:

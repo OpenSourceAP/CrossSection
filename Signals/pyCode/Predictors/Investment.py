@@ -12,7 +12,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_asreg_asrol import asrol
+from utils.stata_asreg_asrol import asrol_fast
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -32,7 +32,7 @@ df['Investment'] = df['capx'] / df['revt']
 
 
 # Calculate rolling mean over 36 months (minimum 24)
-df = asrol(df, 'permno', 'time_avail_m', 'Investment', 36, stat='mean', new_col_name='tempMean', min_periods=24)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'Investment', 36, "monthly", stat='mean', new_col_name='tempMean', min_periods=24)
 
 
 # Normalize by rolling mean

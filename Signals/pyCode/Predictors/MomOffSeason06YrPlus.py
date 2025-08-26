@@ -25,7 +25,7 @@ import os
 
 # Add parent directory to path for any shared utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_asreg_asrol import asrol
+from utils.stata_asreg_asrol import asrol_fast
 from utils.stata_replication import stata_multi_lag
 
 def main():
