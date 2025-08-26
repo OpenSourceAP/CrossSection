@@ -24,7 +24,7 @@ def run_portcheck(signalcur):
     # Read signaldoc and extract settings for selected signal
     signaldoc0 = pd.read_csv('../DocsForClaude/SignalDoc-Copy.csv')
     signaldoc = signaldoc0[['Acronym', 'SampleStartYear','SampleEndYear','Cat.Form','Stock Weight','LS Quantile',
-                           'Quantile Filter','Portfolio Period','Start Month','Test in OP','T-Stat']]
+                           'Quantile Filter','Portfolio Period','Start Month','Test in OP','T-Stat','Sign']]
 
     # Read old t-statistics from PredictorSummaryOld.xlsx
     try:
@@ -68,6 +68,17 @@ def run_portcheck(signalcur):
         doccur['Portfolio Period'] = 1
     if pd.isna(doccur.get('Start Month')):
         doccur['Start Month'] = 6
+    
+    # Extract sign value, default to 1 if missing
+    sign_value = doccur.get('Sign', 1)
+    if pd.isna(sign_value):
+        sign_value = 1
+    print(f'Signal sign from SignalDoc: {sign_value}')
+    
+    # Apply sign correction before portfolio formation
+    # This ensures signals with negative predictability (Sign = -1) are flipped
+    # so that higher values always predict higher returns
+    signal['signal'] = signal['signal'] * sign_value
         
     # Helper function to assign portfolios using breakpoints
     def assign_portfolios_with_breakpoints(signal_df, q_cut, q_filt):
