@@ -10,7 +10,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_asreg_asrol import asrol_fast
+from utils.stata_asreg_asrol import asrol
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -59,7 +59,7 @@ df['temp'] = (df['tempBE'] / df['indequity']) ** 2
 df['tempHerf'] = df.groupby(['sic3D', 'time_avail_m'])['temp'].transform('sum')
 
 # Take 3-year moving average using asrol
-df = asrol_fast(df, 'permno', 'time_avail_m', 'tempHerf', 36, "monthly", stat='mean', new_col_name='mean36_tempHerf', min_periods=12)
+df = asrol(df, 'permno', 'time_avail_m', 'tempHerf', 36, 'mean', min_periods=12)
 df = df.rename(columns={'mean36_tempHerf': 'HerfBE'})
 
 # Set to missing if not common stock

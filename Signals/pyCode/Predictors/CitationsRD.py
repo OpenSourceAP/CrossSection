@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
-from utils.stata_asreg_asrol import asrol_fast
+from utils.stata_asreg_asrol import asrol
 
 # DATA LOAD with early filtering for performance
 print("Loading SignalMasterTable...")
@@ -111,11 +111,11 @@ print("Creating calendar-based rolling sums...")
 
 print("  Computing 48-month calendar rolling XRD sums...")
 # asrol xrd_lag, window(time_avail_m 48) stat(sum) by(permno)
-df = asrol_fast(df, 'permno', 'time_avail_m', 'xrd_lag', 48, "monthly", stat='sum', new_col_name='sum_xrd')
+df = asrol(df, 'permno', 'time_avail_m', 'xrd_lag', 48, stat='sum', new_col_name='sum_xrd')
 
 print("  Computing 48-month calendar rolling citation sums...")
 # asrol ncitscale, window(time_avail_m 48) stat(sum) by(permno)
-df = asrol_fast(df, 'permno', 'time_avail_m', 'ncitscale', 48, "monthly", stat='sum', new_col_name='sum_ncit')
+df = asrol(df, 'permno', 'time_avail_m', 'ncitscale', 48, stat='sum', new_col_name='sum_ncit')
 
 
 # Create temporary CitationsRD signal
