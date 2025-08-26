@@ -1056,18 +1056,3 @@ def _calculate_stat(col_expr: pl.Expr, stat: str) -> pl.Expr:
     return stat_funcs[stat](col_expr)
 
 
-# Backward compatibility aliases
-def asrol(*args, **kwargs):
-    """Alias for asrol_fast for backward compatibility
-    
-    Note: Now requires freq parameter. For monthly data, use freq='monthly'.
-    """
-    return asrol_fast(*args, **kwargs)
-
-
-def stata_asrol(*args, **kwargs):
-    """Alias for asrol_fast with calendar-based rolling
-    
-    Note: Now requires freq parameter. For monthly data, use freq='monthly'.
-    """
-    return asrol_fast(*args, **kwargs)

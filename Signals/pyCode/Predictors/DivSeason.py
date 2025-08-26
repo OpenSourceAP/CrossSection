@@ -14,7 +14,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_asreg_asrol import asrol
+from utils.stata_asreg_asrol import asrol_fast
 from utils.stata_replication import stata_ineq_pd
 
 # PREP DISTRIBUTIONS DATA
@@ -87,7 +87,7 @@ df = df[df['cd3'] < 6]
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
 # Use fast asrol for 12-month rolling sum of dividend payments
-df = asrol(df, 'permno', 'time_avail_m', 'divpaid', 12, stat='sum', new_col_name='div12', min_periods=1)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'divpaid', 12, "monthly", stat='sum', new_col_name='div12', min_periods=1)
 
 # Initialize DivSeason: 0 if had dividends in last 12 months, otherwise missing (NaN)
 # This exactly replicates Stata's: gen DivSeason = 0 if div12 > 0
