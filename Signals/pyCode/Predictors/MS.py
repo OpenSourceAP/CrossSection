@@ -3,50 +3,32 @@
 import os
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 
-# # goal is to fix:
+# # # goal is to fix:
 # **Largest Differences**:
 # ```
 #    permno  yyyymm  python  stata  diff
-# 0   49016  199201       1      6    -5
-# 1   49016  199202       1      6    -5
-# 2   49016  199204       1      6    -5
-# 3   76023  199906       6      1     5
-# 4   76023  199907       6      1     5
-# 5   76023  199908       6      1     5
-# 6   76023  199909       6      1     5
-# 7   76023  199910       6      1     5
-# 8   76023  199911       6      1     5
-# 9   76023  199912       6      1     5
+# 0   11600  200906       1      5    -4
+# 1   11600  200907       1      5    -4
+# 2   11600  200908       1      5    -4
+# 3   11600  200909       1      5    -4
+# 4   11600  200910       1      5    -4
+# 5   11600  201603       1      5    -4
+# 6   11600  201604       1      5    -4
+# 7   11600  201605       1      5    -4
+# 8   12169  200306       2      6    -4
+# 9   12169  200307       2      6    -4
 # ```
+
+import polars as pl
 
 pl.Config.set_tbl_cols(1000)
 pl.Config.set_tbl_rows(24)
 
-from polars import col as cc
+from polars import col as cc, date
 
 debug_datemax = pl.date(2000, 1, 1) # for speed
 
 import polars as pl
-
-def diff_with_nulls(a: str | pl.Expr, b: str | pl.Expr, *, inf: float = float("inf")) -> pl.Expr:
-    """
-    Compute a - b with custom null rules:
-      • +inf if exactly one of (a, b) is null
-      • 0.0  if both are null
-      • a - b otherwise
-    Returns a Polars expression.
-    """
-    a_expr = pl.col(a) if isinstance(a, str) else a
-    b_expr = pl.col(b) if isinstance(b, str) else b
-
-    a_null = a_expr.is_null()
-    b_null = b_expr.is_null()
-
-    return (
-        pl.when(a_null & b_null).then(pl.lit(0.0))
-        .when(a_null | b_null).then(pl.lit(inf))
-        .otherwise(a_expr - b_expr)
-    )
 
 
 # %%
@@ -288,21 +270,9 @@ def asrol_polars_rolling(
     )
 
     
-
-dateref = pl.date(1999,6,1)
-permnolist = [76023, 38295]
-
-
+# compute rolling means (be strict on windows)
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
     .rename({'niq_mean':'niqsum'})
-
-#%% ddd
-
-# temp_check2.dta passed!
-
-#%%
-
-
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
     .rename({'xrdq_mean':'xrdqsum'})
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
@@ -310,20 +280,13 @@ df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo'
 df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
     .rename({'capxq_mean':'capxqsum'})
 
-#%% ddd
-
-# temp_check3.dta passed!
-
-#%%
-
-
-# multiply the means by 4 to convert to sums
+# multiply the means by 4 to convert to sums (to match stata)
 for col in ['niqsum', 'xrdqsum', 'oancfqsum', 'capxqsum']:
     df = df.with_columns(
         pl.col(col) * 4
     )
 
-# Handle special case for early years (endnote 3)
+# Handle special case for early years (see OP endnote 3)
 df = df.with_columns(
     pl.when(pl.col("datadate").dt.year() <= 1988)
     .then(pl.col("fopt") - pl.col("wcapch"))
@@ -422,6 +385,7 @@ df = df.with_columns([
     pl.when(stata_ineq_pl(pl.col("revVol"), "<", pl.col("md_revVol"))).then(pl.lit(1)).otherwise(pl.col("m5")).alias("m5")
 ])
 
+
 # ----------------------------------------------------------------
 # "CONSERVATISM" ACCORDING TO OP
 # ----------------------------------------------------------------
@@ -463,99 +427,6 @@ df = df.with_columns(
      pl.col("m5") + pl.col("m6") + pl.col("m7") + pl.col("m8")).alias("tempMS")
 )
 
-# %%
-
-# ================================================================
-# DEBUG CHECKPOINT 7
-# ================================================================
-
-print('debug temp_check7.dta')
-
-# load temp_check7.dta
-stata = pd.read_stata('../Human/temp_check7.dta')
-stata = pl.from_pandas(stata).with_columns(
-    cc('time_avail_m').cast(pl.Date)
-)
-
-# %%
-
-print('check on permno 76023 in 1999-06')
-
-print('python')
-print(
-df.filter(
-        (pl.col('permno') == 76023), 
-        pl.col('time_avail_m') == pl.date(1999,6,1)
-    ).sort('time_avail_m').select(
-        ['permno','time_avail_m','m1','m2','m3','m4','m5','m6','m7','m8','tempMS']
-    )
-)
-print('stata')
-print(
-stata.filter(
-    cc('permno') == 76023,
-    cc('time_avail_m') == pl.date(1999,6,1)
-).sort('time_avail_m').select(
-    ['permno','time_avail_m','m1','m2','m3','m4','m5','m6','m7','m8','tempMS']
-)
-)
-
-print('python m1 through m3 = 1, but stata has all zeros')
-
-# %%
-
-print('m1 to m3 are about roa, cfroa, and oancfqsum, where oancfqsum comes from oancfq')
-
-print('python')
-print(
-    df.filter(
-        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1999,1,1)
-    ).sort('time_avail_m').select(
-        ['permno','gvkey','time_avail_m','roa','cfroa','oancfqsum','oancfq']
-    )
-)
-
-print('stata')
-print(
-    stata.filter(
-        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1999,1,1)
-    ).sort('time_avail_m').select(
-        ['permno','gvkey','time_avail_m','roa','cfroa','oancfqsum','oancfq']
-    )
-)
-
-print('roa and cfroa are missing in stata but not in python')
-print('roa and cfroa come from niqsum and oancfqsum, whcich in turn come from asrol on niq and oancfq')
-
-# %%
-
-print('checking on niq and oancfq for permno == 76023')
-
-print('python')
-print(
-    df.filter(
-        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1998,6,1)
-    ).sort('time_avail_m').select(
-        ['permno','gvkey','time_avail_m','niq','oancfq']
-    )
-)
-
-print('stata')
-print(
-    stata.filter(
-        cc('permno') == 76023, cc('time_avail_m') <= pl.date(1999,6,1), cc('time_avail_m') >= pl.date(1998,6,1)
-    ).sort('time_avail_m').select(
-        ['permno','gvkey','time_avail_m','niq','oancfq']
-    )
-)
-
-print('XXX: for this particular difference, we have a solution')
-print('the problem here is that the stata asrol requires all 12 months to be present ')
-print('when bys permno: asrol niq, gen(niqsum) stat(mean) window(time_avail_m 12) min(12)')
-print('but the python code lacks this requirement.')
-
-
-# %%
 
 # ================================================================
 # TIMING LOGIC
@@ -598,6 +469,74 @@ df = df.with_columns([
     .otherwise(pl.col("MS"))
     .alias("MS")
 ])
+
+#%% ddd
+
+# temp_check8.dta
+
+print('compare with stata')
+
+col_to_check = ['permno','gvkey','time_avail_m','MS']
+id_cols = ['permno','gvkey','time_avail_m']
+
+stata0 = pd.read_stata('../Human/temp_check8.dta')
+stata0 = pl.from_pandas(stata0).with_columns(
+    cc('time_avail_m').cast(pl.Date)
+)
+
+stata = stata0.select(col_to_check)
+
+stata_long = stata.unpivot(
+    index = id_cols,
+    variable_name = 'name',
+    value_name = 'stata'
+)
+
+# make df that matches stata_long
+df_long = df.with_columns(
+    pl.col('time_avail_m').cast(pl.Date)
+).select(col_to_check).unpivot(
+    index = id_cols,
+    variable_name = 'name',
+    value_name = 'python'
+)
+
+# merge 
+both = stata_long.join(
+    df_long, on = ['permno','gvkey','time_avail_m','name'], how = 'full', coalesce = True
+).with_columns(
+    pl.when(cc('stata').is_null() & cc('python').is_null()).then(0)
+    .when(cc('stata').is_not_null() & cc('python').is_not_null()).then(cc('stata') - cc('python'))
+    .otherwise(pl.lit(float('inf')))
+    .alias('diff')
+).sort(
+    cc('diff').abs(), descending=True
+)
+
+print(f'rows where diff is inf, out of {len(both)}')
+print(
+    both.filter(
+        cc('diff').is_infinite()
+    ).sort(
+        cc('diff').abs(), descending=True
+    )
+)
+
+print(f'rows where diff is not inf but is large')
+
+print(
+    both.filter(
+        cc('diff').is_finite(), cc('diff').abs() > 1
+    ).sort(
+        cc('diff').abs(), descending=True
+    )
+)
+
+
+#%% resume
+
+
+
 
 # Label variable (comment for documentation)
 # MS: "Mohanram G-score"
