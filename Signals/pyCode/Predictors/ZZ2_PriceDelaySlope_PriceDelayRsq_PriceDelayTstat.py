@@ -191,21 +191,6 @@ df_results = df_results.with_columns([
     pl.col("_stats_unrestricted").struct.field("r2").alias("_R2")
 ])
 
-# - CHECKPOINT 1: Check R2Restricted for bad observations
-bad_permnos = [17283, 10066]
-bad_times = [
-    pl.datetime(1930, 7, 1), pl.datetime(1930, 8, 1), pl.datetime(1930, 9, 1), pl.datetime(1930, 10, 1),
-    pl.datetime(1990, 7, 1), pl.datetime(1990, 8, 1), pl.datetime(1990, 9, 1), pl.datetime(1990, 10, 1)
-]
-checkpoint1_data = df_results.filter(
-    pl.col("permno").is_in(bad_permnos) & pl.col("time_avail_m").is_in(bad_times)
-).select(["permno", "time_avail_m", "R2Restricted"])
-if len(checkpoint1_data) > 0:
-    print("\n🔍 CHECKPOINT 1: R2Restricted for bad observations")
-    print(checkpoint1_data)
-else:
-    print("\n🔍 CHECKPOINT 1: No matching bad observations found yet")
-
 # Extract coefficients
 coeff_extracts = [pl.col("_b_coeffs").struct.field("mktrf").alias("_b_mktrf")]
 for n in range(1, nlag + 1):
@@ -222,16 +207,6 @@ for n in range(1, nlag + 1):
     df_results = df_results.with_columns(
         pl.col("_stats_unrestricted").struct.field("t_values").list.get(n).alias(f"_t_mktLag{n}")
     )
-
-# - CHECKPOINT 2: Check unrestricted R2 and coefficients for bad observations
-checkpoint2_data = df_results.filter(
-    pl.col("permno").is_in(bad_permnos) & pl.col("time_avail_m").is_in(bad_times)
-).select(["permno", "time_avail_m", "_R2", "_b_mktrf", "_b_mktLag1", "_b_mktLag2", "_b_mktLag3", "_b_mktLag4"])
-if len(checkpoint2_data) > 0:
-    print("\n🔍 CHECKPOINT 2: Unrestricted R2 and coefficients for bad observations")
-    print(checkpoint2_data)
-else:
-    print("\n🔍 CHECKPOINT 2: No matching bad observations found yet")
 
 print("📅 Filtering for valid results and June endpoints...")
 
@@ -263,16 +238,6 @@ print("🎯 Constructing price delay signals...")
 df_monthly = df_monthly.with_columns(
     (1 - pl.col("R2Restricted") / pl.col("_R2")).alias("PriceDelayRsq")
 )
-
-# - CHECKPOINT 3: Check PriceDelayRsq calculation for bad observations
-checkpoint3_data = df_monthly.filter(
-    pl.col("permno").is_in(bad_permnos) & pl.col("time_avail_m").is_in(bad_times)
-).select(["permno", "time_avail_m", "R2Restricted", "_R2", "PriceDelayRsq"])
-if len(checkpoint3_data) > 0:
-    print("\n🔍 CHECKPOINT 3: PriceDelayRsq calculation for bad observations")
-    print(checkpoint3_data)
-else:
-    print("\n🔍 CHECKPOINT 3: No matching bad observations found yet")
 
 # Construct D2: PriceDelaySlope
 weighted_terms_slope = []

@@ -1,53 +1,270 @@
 #!/usr/bin/env python3
-# ABOUTME: Consolidated module containing all asreg and asrol functions for Stata replication
-# ABOUTME: Combines fast polars implementations with pandas-based alternatives for complete coverage
+# ABOUTME: Module that replicates Stata's regress and asreg commands with collinearity handling
+# ABOUTME: Includes drop_collinear, regress, and asreg functions for Stata-like OLS analysis
+
+from collections import deque
+from typing import Iterable, Sequence, Tuple, Dict, List, Optional
+import fnmatch
+import warnings
 
 import numpy as np
 import pandas as pd
-from collections import deque
-from typing import List, Dict, Tuple, Optional, Sequence, Iterable, Literal, Union
-import fnmatch
-import warnings
-import polars as pl
+import statsmodels.api as sm
 
-# Import stata_quantile from the consolidated stata_replication module
-from .stata_replication import stata_quantile
 
-try:
-    import polars_ols as pls  # registers .least_squares on pl.Expr
-except ImportError:
-    pls = None
-
-Mode = Literal["rolling", "expanding", "group"]
-
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
-
-# stata_quantile is now imported from stata_replication.py
-# The original function definition has been moved there
-
-def _expand_columns(df: pd.DataFrame, X: str | Sequence[str]) -> List[str]:
+def drop_collinear(
+    X: pd.DataFrame,
+    y: pd.Series | np.ndarray | None = None,
+    sample_mask: pd.Series | np.ndarray | None = None,
+    *,
+    rtol: float | None = None,
+    method: str = "qr",  # "qr" (fast, needs SciPy) or "greedy" (no deps)
+    scale: bool = True,  # column-normalize for numerics (improves stability)
+    return_reduced_X: bool = True,
+):
     """
-    Expand a list of RHS columns. If X is a string with wildcards, match df columns.
-    Keeps the DataFrame's column order.
+    Identify and drop RHS columns that cause rank deficiency (Stata rmcoll-like).
+
+    Parameters
+    ----------
+    X : DataFrame of numeric regressors (no constant automatically added).
+    y : optional response; if given, the estimation sample uses rows finite in both X and y.
+    sample_mask : optional boolean array to define the estimation sample explicitly.
+                  If provided, it overrides y-based masking and is intersected with X finiteness.
+    rtol : optional relative tolerance for rank determination.
+           Default: eps * max(n, p) * largest_diag(R) for QR, or eps * max(n, p) * max(singular_value) for greedy.
+    method : "qr" uses SciPy's QR with column pivoting (fast & robust). Falls back to "greedy" if SciPy not available.
+    scale : if True, columns are L2-normalized before rank tests (recommended).
+    return_reduced_X : if True, return X with only kept columns (same row subset).
+
+    Returns
+    -------
+    keep_cols : list[str] in original order
+    drop_cols : list[str] in original order
+    reasons   : dict[col -> "constant" | "collinear"]
+    X_reduced : DataFrame with kept columns on the estimation sample (only if return_reduced_X=True)
+
+    Notes
+    -----
+    - This operates on the *current estimation sample* (Stata-like). Rows with any non-finite
+      value in the used columns (and optionally y) are excluded.
+    - Factor variables / dummies: including a full set of category dummies *plus* a constant will cause
+      one dummy to be flagged as collinear (which is expected).
+    - If you must preserve certain columns, pass them first in X's column order and use method="greedy",
+      which tends to keep earlier independent columns.
     """
-    if isinstance(X, str):
-        # Allow comma or whitespace separated patterns; simplest is a single pattern
-        patterns = [p for p in [t.strip() for t in X.replace(",", " ").split()] if p]
-        if not patterns:
-            raise ValueError("X pattern is empty.")
-        out: List[str] = []
-        for col in df.columns:
-            if any(fnmatch.fnmatch(col, pat) for pat in patterns):
-                out.append(col)
-        if not out:
-            raise ValueError(f"No columns match pattern(s): {patterns}")
-        return out
+    # --- 0) Basic validations ---
+    if not isinstance(X, pd.DataFrame):
+        raise TypeError("X must be a pandas DataFrame.")
+    non_num = [c for c in X.columns if not pd.api.types.is_numeric_dtype(X[c])]
+    if non_num:
+        raise TypeError(f"All columns must be numeric. Non-numeric columns: {non_num}")
+
+    cols = list(X.columns)
+
+    # --- 1) Build estimation sample mask (Stata does listwise deletion on current sample) ---
+    finite_X = np.isfinite(X.to_numpy(dtype=float, copy=False)).all(axis=1)
+    if sample_mask is not None:
+        mask = np.asarray(sample_mask, dtype=bool) & finite_X
+    elif y is not None:
+        y_arr = np.asarray(y)
+        if y_arr.ndim > 1:
+            y_arr = y_arr.squeeze()
+        mask = finite_X & np.isfinite(y_arr)
     else:
-        # Respect DF order for provided names
-        name_set = set(X)
-        return [c for c in df.columns if c in name_set]
+        mask = finite_X
+
+    Xs = X.loc[mask]
+    if Xs.shape[0] == 0:
+        raise ValueError("No rows left after applying estimation-sample mask.")
+
+    A = Xs.to_numpy(dtype=float, copy=False)  # n x p
+
+    n, p = A.shape
+    if p == 0:
+        return [], [], {}, (Xs if return_reduced_X else None)
+
+    # --- 2) Quick constant-column screening (gives clear reasons, also speeds the rank step) ---
+    ptp = np.ptp(A, axis=0)  # max-min per column
+    is_const = ptp == 0
+    reasons = {}
+    const_idx = np.where(is_const)[0].tolist()
+    for j in const_idx:
+        reasons[cols[j]] = "constant"
+
+    keep_mask_pre = ~is_const
+    cols_pre = [c for k, c in enumerate(cols) if keep_mask_pre[k]]
+    A_pre = A[:, keep_mask_pre]
+    if A_pre.shape[1] == 0:
+        keep_cols = []
+        drop_cols = cols[:]  # all constants
+        if return_reduced_X:
+            return keep_cols, drop_cols, reasons, Xs[keep_cols]
+        else:
+            return keep_cols, drop_cols, reasons, None
+
+    # Optionally scale columns to unit norm (improves numerical stability of rank tests)
+    if scale:
+        norms = np.linalg.norm(A_pre, axis=0)
+        # Norms should be >0 here (we removed constants), but guard anyway:
+        norms[norms == 0] = 1.0
+        A_test = A_pre / norms
+    else:
+        A_test = A_pre
+
+    # --- 3) Rank-revealing step: QR w/ pivoting (fast) or greedy fallback ---
+    # Determine tolerance (relative to the largest scale in the factorization)
+    eps = np.finfo(A_test.dtype).eps
+    if method == "qr":
+        try:
+            from scipy.linalg import qr as scipy_qr  # noqa
+
+            Q, R, piv = scipy_qr(A_test, mode="economic", pivoting=True)
+            diagR = np.abs(np.diag(R))
+            # Set default tolerance if not provided
+            tol = (
+                rtol
+                if rtol is not None
+                else (eps * max(n, A_test.shape[1]) * diagR.max())
+            )
+            rank = int((diagR > tol).sum())
+            piv = np.asarray(piv)
+            indep_local = piv[:rank].tolist()
+            dep_local = piv[rank:].tolist()
+        except Exception:
+            # SciPy not available or failed: fall back to greedy
+            method = "greedy"
+
+    if method == "greedy":
+        # Greedy: keep earliest independent columns (in A_pre's order).
+        # At each step, test if new col is in span(kept); if yes → dependent.
+        tol = rtol if rtol is not None else (eps * max(n, A_test.shape[1]))
+        indep_local = []
+        dep_local = []
+        for j in range(A_test.shape[1]):
+            if not indep_local:
+                # If this column has nonzero norm, keep it
+                if np.linalg.norm(A_test[:, j]) > tol:
+                    indep_local.append(j)
+                else:
+                    dep_local.append(j)
+                continue
+            # Project A_test[:, j] onto columns in indep_local, then check residual norm
+            Aj = A_test[:, j]
+            Akeep = A_test[:, indep_local]
+            # Solve least squares Akeep * b ≈ Aj
+            b, *_ = np.linalg.lstsq(Akeep, Aj, rcond=None)
+            resid = Aj - Akeep @ b
+            if np.linalg.norm(resid) > tol:
+                indep_local.append(j)
+            else:
+                dep_local.append(j)
+
+    # indep_local/dep_local are indices in A_pre/cols_pre space; map back to original columns
+    keep_cols_preorder = [cols_pre[k] for k in indep_local]
+    drop_cols_preorder = [cols_pre[k] for k in dep_local]
+    for c in drop_cols_preorder:
+        reasons[c] = "collinear"
+
+    # Reconstitute full keep/drop *in original column order*
+    keep_set = set(keep_cols_preorder)
+    keep_cols = [
+        c
+        for c in cols
+        if (c in keep_set) and (c not in reasons or reasons[c] != "constant")
+    ]
+    # Everything else is dropped either as constant or collinear
+    drop_cols = [c for c in cols if c not in keep_cols]
+
+    if return_reduced_X:
+        return keep_cols, drop_cols, reasons, Xs[keep_cols]
+    else:
+        return keep_cols, drop_cols, reasons, None
+
+
+def regress(X, y, add_constant=True, omit_collinear=True, return_full_coefs=True):
+    """
+    Replicate Stata's regress command with collinearity handling.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The independent variables
+    y : pd.Series or array-like
+        The dependent variable
+    add_constant : bool
+        Whether to add a constant term (default: True)
+    omit_collinear : bool
+        Whether to drop collinear variables (default: True)
+    return_full_coefs : bool
+        Whether to return full coefficients with zeros for omitted vars (default: True)
+
+    Returns
+    -------
+    model : statsmodels regression results
+        The fitted model
+    kept_vars : list
+        Variables kept in the model
+    dropped_vars : list
+        Variables dropped due to collinearity
+    reasons : dict
+        Reasons for dropping variables
+    full_coefficients : pd.DataFrame (if return_full_coefs=True)
+        Complete coefficient table with zeros for omitted variables
+    """
+    if omit_collinear:
+        keep_cols, drop_cols, reasons, X_reduced = drop_collinear(X, y=y)
+    else:
+        X_reduced = X
+        keep_cols = list(X.columns)
+        drop_cols = []
+        reasons = {}
+
+    if add_constant:
+        X_with_const = sm.add_constant(X_reduced)
+    else:
+        X_with_const = X_reduced
+
+    # Run regression
+    model = sm.OLS(y.loc[X_reduced.index], X_with_const).fit()
+
+    if return_full_coefs:
+        # Create full coefficient DataFrame with zeros for omitted variables
+        full_coefs = {}
+
+        # Add coefficients for kept variables using parameter names from model
+        for var in keep_cols:
+            if var in model.params.index:
+                full_coefs[var] = {
+                    "coefficient": model.params[var],
+                    "std_err": model.bse[var],
+                    "omitted": False,
+                }
+
+        # Add zeros for dropped variables
+        for var in drop_cols:
+            full_coefs[var] = {"coefficient": 0.0, "std_err": np.nan, "omitted": True}
+
+        # Add constant if it was included
+        if add_constant and "const" in model.params.index:
+            full_coefs["_cons"] = {
+                "coefficient": model.params["const"],
+                "std_err": model.bse["const"],
+                "omitted": False,
+            }
+
+        # Create DataFrame in original variable order, then add constant
+        original_vars = list(X.columns)
+        ordered_vars = [var for var in original_vars if var in full_coefs]
+        if add_constant:
+            ordered_vars.append("_cons")
+
+        ordered_results = {var: full_coefs[var] for var in ordered_vars}
+        full_coefficients = pd.DataFrame.from_dict(ordered_results, orient="index")
+
+        return model, keep_cols, drop_cols, reasons, full_coefficients
+    else:
+        return model, keep_cols, drop_cols, reasons
 
 
 def _solve_ols_from_crossmoments(
@@ -188,6 +405,64 @@ def _solve_ols_from_crossmoments(
         return beta, se, meta
 
 
+def _expand_columns(df: pd.DataFrame, X: str | Sequence[str]) -> List[str]:
+    """
+    Expand a list of RHS columns. If X is a string with wildcards, match df columns.
+    Keeps the DataFrame's column order.
+    """
+    if isinstance(X, str):
+        # Allow comma or whitespace separated patterns; simplest is a single pattern
+        patterns = [p for p in [t.strip() for t in X.replace(",", " ").split()] if p]
+        if not patterns:
+            raise ValueError("X pattern is empty.")
+        out: List[str] = []
+        for col in df.columns:
+            if any(fnmatch.fnmatch(col, pat) for pat in patterns):
+                out.append(col)
+        if not out:
+            raise ValueError(f"No columns match pattern(s): {patterns}")
+        return out
+    else:
+        # Respect DF order for provided names
+        name_set = set(X)
+        return [c for c in df.columns if c in name_set]
+
+
+def _ensure_sorted(
+    df: pd.DataFrame, by: List[str] | None, time: Optional[str]
+) -> pd.DataFrame:
+    """
+    Sort by keys then time (if provided). Returns a new DataFrame.
+    """
+    if time is None:
+        return df.copy()
+    keys = (by or []) + [time]
+    g = df.sort_values(keys, kind="mergesort")  # stable
+    return g
+
+
+def _coerce_numeric_block(
+    df: pd.DataFrame, cols: List[str], ycol: str
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Ensure numeric dtypes; coerce non-numeric to float (NaN if fails) with a warning.
+    """
+    X = df[cols].copy()
+    y = df[ycol].copy()
+    for c in cols:
+        if not pd.api.types.is_numeric_dtype(X[c]):
+            warnings.warn(
+                f"Column {c} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
+            )
+            X[c] = pd.to_numeric(X[c], errors="coerce")
+    if not pd.api.types.is_numeric_dtype(y):
+        warnings.warn(
+            f"y column {ycol} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
+        )
+        y = pd.to_numeric(y, errors="coerce")
+    return X, y
+
+
 def _asreg_cross_sectional(
     df: pd.DataFrame,
     y: str,
@@ -203,14 +478,6 @@ def _asreg_cross_sectional(
     This mimics Stata's "bys group_var: asreg y x_vars" behavior.
     Returns one row per group with regression results.
     """
-    # Import here to avoid circular dependencies
-    import statsmodels.api as sm
-    # We need the drop_collinear and regress functions from asreg_rebuild
-    import sys
-    import os
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
-    from utils.stata_regress import regress
-    
     # Expand X column patterns
     if isinstance(X, str):
         X_cols = _expand_columns(df, X)
@@ -251,15 +518,10 @@ def _asreg_cross_sectional(
 
     # Process each group (use original by for groupby to get correct name format)
     for name, group in df.groupby(by if single_by else by_list):
-        # Handle different types of group names
-        if isinstance(name, (str, int, float)):
+        if isinstance(name, (str, int, float, pd.Timestamp, pd.Period)):
             group_name = name
-        elif hasattr(name, '__iter__') and not isinstance(name, str):
-            # name is a tuple for multi-column groupby
-            group_name = "_".join(map(str, name))
         else:
-            # name is likely a Timestamp or other single object
-            group_name = str(name)
+            group_name = "_".join(map(str, name))
 
         # Extract X and y for this group
         X_group = group[X_cols]
@@ -330,7 +592,7 @@ def _asreg_cross_sectional(
                         result_row["_t_cons"] = np.nan
 
         except Exception as e:
-            print(f"Error processing group {group_name}: {e}")
+            print(f"Warning: could not process group {group_name}: {e}")
             # Fill with NaN for this group if regression fails
             for col in all_result_cols:
                 result_row[col] = np.nan
@@ -343,11 +605,8 @@ def _asreg_cross_sectional(
     # Return with group columns first, then regression results
     return results_df[by_list + all_result_cols]
 
-# =============================================================================
-# ASREG FUNCTIONS
-# =============================================================================
 
-def asreg_collinear(
+def asreg(
     df: pd.DataFrame,
     y: str,
     X: List[str] | str,
@@ -425,27 +684,8 @@ def asreg_collinear(
         raise ValueError("No RHS columns found.")
 
     # Prepare and sort
-    gdf = df.copy()
-    # Sort by keys then time
-    if time is not None:
-        keys = (by or []) + [time]
-        gdf = gdf.sort_values(keys, kind="mergesort")  # stable
-    
-    # Coerce numeric
-    X_df = gdf[rhs].copy()
-    y_s = gdf[y].copy()
-    for c in rhs:
-        if not pd.api.types.is_numeric_dtype(X_df[c]):
-            warnings.warn(
-                f"Column {c} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
-            )
-            X_df[c] = pd.to_numeric(X_df[c], errors="coerce")
-    if not pd.api.types.is_numeric_dtype(y_s):
-        warnings.warn(
-            f"y column {y} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
-        )
-        y_s = pd.to_numeric(y_s, errors="coerce")
-    
+    gdf = _ensure_sorted(df, by, time)
+    X_df, y_s = _coerce_numeric_block(gdf, rhs, y)
     idx = gdf.index.to_numpy()
 
     # Augment with constant if requested
@@ -631,403 +871,3 @@ def asreg_collinear(
             ordered_cols += ["_t_cons"]
 
     return out_df[ordered_cols]
-
-
-def _valid_mask_polars(y: str, X: Sequence[str]) -> pl.Expr:
-    """Row-wise validity mask: True where y and all X are non-null."""
-    m = pl.col(y).is_not_null()
-    for x in X:
-        m = m & pl.col(x).is_not_null()
-    return m
-
-
-def _agg_sum_polars(expr: pl.Expr, *, mode: Mode, over: Sequence[str], window_size: Optional[int], min_samples: int) -> pl.Expr:
-    """Aggregate `expr` according to mode (rolling/expanding/group) and groups `over`."""
-    if mode == "rolling":
-        return expr.rolling_sum(window_size, min_periods=min_samples).over(over)
-    elif mode == "expanding":
-        return expr.cumsum().over(over)
-    else:
-        # group mode: sum per group, broadcast back to rows
-        return expr.sum().over(over)
-
-
-def asreg_polars(
-    df: pl.DataFrame | pl.LazyFrame,
-    *,
-    y: str,
-    X: Sequence[str],
-    by: Optional[Sequence[str]] = None,
-    t: Optional[str] = None,
-    mode: Mode = "rolling",
-    window_size: Optional[int] = None,
-    min_samples: Optional[int] = None,
-    add_intercept: bool = True,
-    outputs: Iterable[str] = ("coef",),
-    coef_prefix: str = "b_",
-    collect: bool = True,
-    null_policy: str = "drop",
-    solve_method: str = "svd",
-) -> pl.DataFrame | pl.LazyFrame:
-    """Multi-purpose OLS over groups/windows using polars (fast, no collinearity handling).
-
-    Args:
-        df: Input DataFrame or LazyFrame
-        y: Dependent variable column name
-        X: Independent variable column names
-        by: Grouping columns (e.g., ["permno"] for by-permno regressions)
-        t: Time/order column for rolling/expanding windows
-        mode: "rolling", "expanding", or "group"
-        window_size: Number of observations for rolling windows
-        min_samples: Minimum observations required per regression (>= number of parameters)
-        add_intercept: Whether to include an intercept term
-        outputs: Any of "coef", "yhat", "resid", "rmse"
-        coef_prefix: Prefix for coefficient columns (only used when materializing separate coef cols)
-        collect: Whether to collect LazyFrame to DataFrame
-        null_policy: Passed to polars-ols (e.g., "drop"); controls how nulls are handled in estimation
-        solve_method: Numerical solver hint (e.g., "svd", "qr")
-
-    Returns:
-        DataFrame/LazyFrame with requested regression outputs
-    """
-    if pls is None:
-        raise ImportError("polars-ols is required for asreg_polars. Install with: pip install polars-ols")
-    
-    lf = df.lazy() if isinstance(df, pl.DataFrame) else df
-    over = list(by or [])
-
-    # Parameter counts
-    k = len(X) + (1 if add_intercept else 0)
-    min_samples = max(min_samples or k, 1)
-
-    # Ordering
-    if mode != "group" and t is None:
-        raise ValueError("t= (time/order column) is required for rolling/expanding")
-    if mode == "rolling" and window_size is None:
-        raise ValueError("window_size is required for rolling")
-    if mode != "group":
-        lf = lf.sort([*over, t])  # deterministic window order
-
-    # Build base expressions
-    yexpr = pl.col(y).least_squares
-    Xexprs = [pl.col(c) for c in X]
-
-    # Coefficients
-    if mode == "group":
-        if set(outputs) == {"resid"}:
-            # Fast path: compute residuals directly without materializing coefficients
-            residuals = yexpr.ols(
-                *Xexprs,
-                add_intercept=add_intercept,
-                mode="residuals",
-                null_policy=null_policy,
-                solve_method=solve_method,
-            ).over(over)
-            # enforce min_samples at group level
-            if over and min_samples > 1:
-                n_eff_grp = _valid_mask_polars(y, X).cast(pl.Int64).sum().over(over)
-                residuals = pl.when(n_eff_grp >= min_samples).then(residuals).otherwise(None)
-            lf = lf.with_columns(resid=residuals)
-            return lf.collect() if collect else lf
-        # standard coefficients
-        coef = yexpr.ols(
-            *Xexprs,
-            add_intercept=add_intercept,
-            mode="coefficients",
-            null_policy=null_policy,
-            solve_method=solve_method,
-        ).over(over)
-        if over and min_samples > 1:
-            n_eff_grp = _valid_mask_polars(y, X).cast(pl.Int64).sum().over(over)
-            coef = pl.when(n_eff_grp >= min_samples).then(coef).otherwise(None)
-    elif mode == "rolling":
-        coef = yexpr.rolling_ols(
-            *Xexprs,
-            window_size=window_size,
-            min_periods=min_samples,
-            add_intercept=add_intercept,
-            mode="coefficients",
-            null_policy=null_policy,
-        ).over(over)
-    else:  # expanding
-        coef = yexpr.expanding_ols(
-            *Xexprs,
-            min_periods=min_samples,
-            add_intercept=add_intercept,
-            mode="coefficients",
-            null_policy=null_policy,
-        ).over(over)
-
-    lf = lf.with_columns(coef=coef)
-
-    # Materialize named coefficient columns when needed by outputs
-    need_coef_cols = any(o in {"coef", "yhat", "resid", "rmse"} for o in outputs)
-    if need_coef_cols:
-        coef_cols: list[pl.Expr] = []
-        if add_intercept:
-            coef_cols.append(pl.col("coef").struct.field("const").alias(f"{coef_prefix}const"))
-        coef_cols += [pl.col("coef").struct.field(x).alias(f"{coef_prefix}{x}") for x in X]
-        lf = lf.with_columns(coef_cols)
-
-    # yhat / resid via manual calculation to avoid polars-ols predict issues
-    if any(o in {"yhat", "resid", "rmse"} for o in outputs):
-        yhat = (pl.col(f"{coef_prefix}const") if add_intercept else pl.lit(0.0))
-        for x in X:
-            yhat = yhat + pl.col(f"{coef_prefix}{x}") * pl.col(x)
-        lf = lf.with_columns(yhat.alias("yhat"))
-
-    if any(o in {"resid", "rmse"} for o in outputs):
-        lf = lf.with_columns(resid=(pl.col(y) - pl.col("yhat")).alias("resid"))
-
-    # RMSE with correct SSE and DOF per window/group
-    if "rmse" in outputs:
-        valid = _valid_mask_polars(y, X)
-
-        def z_expr(name: str) -> pl.Expr:
-            return pl.lit(1.0) if name == "__const__" else pl.col(name)
-
-        # names of design columns Z (include intercept as "__const__")
-        Z_names = (["__const__"] if add_intercept else []) + list(X)
-
-        # Helper to mask invalid rows (skip nulls)
-        def mask(expr: pl.Expr) -> pl.Expr:
-            return pl.when(valid).then(expr).otherwise(None)
-
-        # Aggregate builders (per mode)
-        agg = lambda e: _agg_sum_polars(mask(e), mode=mode, over=over, window_size=window_size, min_samples=min_samples)
-
-        # Moment sums
-        yy = agg(pl.col(y) * pl.col(y)).cast(pl.Float64)
-
-        zy = {zi: agg(z_expr(zi) * pl.col(y)).cast(pl.Float64) for zi in Z_names}
-
-        zz = {}
-        for i, zi in enumerate(Z_names):
-            for j, zj in enumerate(Z_names[i:]):
-                zz[(zi, Z_names[i + j])] = agg(z_expr(zi) * z_expr(Z_names[i + j])).cast(pl.Float64)
-
-        # Access coefficient fields from the struct (uses "const" for intercept)
-        def b_field(zi: str) -> pl.Expr:
-            if zi == "__const__":
-                return pl.col("coef").struct.field("const").cast(pl.Float64)
-            return pl.col("coef").struct.field(zi).cast(pl.Float64)
-
-        # term2 = 2 * b' (Z'Y)
-        t2 = None
-        for zi in Z_names:
-            contrib = b_field(zi) * zy[zi]
-            t2 = contrib if t2 is None else (t2 + contrib)
-        term2 = 2.0 * t2 if t2 is not None else pl.lit(None, dtype=pl.Float64)
-
-        # term3 = b' (Z'Z) b  [double the off-diagonals]
-        t3 = None
-        for i, zi in enumerate(Z_names):
-            bi = b_field(zi)
-            for j, zj in enumerate(Z_names[i:]):
-                zj_name = Z_names[i + j]
-                bj = b_field(zj_name)
-                factor = pl.lit(1.0) if j == 0 else pl.lit(2.0)  # j==0 => zi==zj
-                contrib = factor * bi * bj * zz[(zi, zj_name)]
-                t3 = contrib if t3 is None else (t3 + contrib)
-
-        SSE = yy - term2 + t3
-
-        # Effective sample size & DOF
-        n_eff = _agg_sum_polars(valid.cast(pl.Int64), mode=mode, over=over, window_size=window_size, min_samples=min_samples)
-        dof = (n_eff - k)
-
-        rmse_expr = pl.when((dof > 0) & SSE.is_not_null())
-        rmse_expr = rmse_expr.then((SSE / dof.cast(pl.Float64)).sqrt()).otherwise(None)
-        lf = lf.with_columns(rmse=rmse_expr)
-
-    # Drop struct unless explicitly requested
-    if "coef" not in outputs:
-        lf = lf.drop("coef")
-
-    return lf.collect() if collect else lf
-
-# =============================================================================
-# ASROL FUNCTIONS  
-# =============================================================================
-
-def asrol_fast(
-    df: Union[pl.DataFrame, pd.DataFrame], 
-    group_col: str, 
-    time_col: str, 
-    value_col: str, 
-    window: int, 
-    stat: str = 'mean', 
-    new_col_name: Optional[str] = None, 
-    min_periods: int = 1,
-    consecutive_only: bool = True
-) -> Union[pl.DataFrame, pd.DataFrame]:
-    """
-    Fast Polars implementation of rolling statistics with consecutive period support
-    
-    Parameters:
-    - df: DataFrame (Polars or pandas)
-    - group_col: grouping variable (like permno)
-    - time_col: time variable (like time_avail_m) 
-    - value_col: variable to calculate rolling statistic on
-    - window: window size (number of periods)
-    - stat: statistic to calculate ('mean', 'sum', 'std', 'count', 'min', 'max')
-    - new_col_name: name for new column (default: f'{stat}{window}_{value_col}')
-    - min_periods: minimum observations required (default: 1)
-    - consecutive_only: if True, only use consecutive periods like Stata (default: True)
-    
-    Returns:
-    - DataFrame with new rolling statistic column added (same type as input)
-    """
-    # Determine input type for return
-    is_pandas_input = isinstance(df, pd.DataFrame)
-    
-    # Convert to Polars if needed
-    if is_pandas_input:
-        df_pl = pl.from_pandas(df)
-    else:
-        df_pl = df.clone()
-    
-    # Default column name
-    if new_col_name is None:
-        new_col_name = f'{stat}{window}_{value_col}'
-    
-    # Sort by group and time for proper processing
-    df_pl = df_pl.sort([group_col, time_col])
-    
-    if not consecutive_only:
-        # Simple rolling without gap detection (faster path)
-        result_pl = _simple_rolling(df_pl, group_col, value_col, window, stat, new_col_name, min_periods)
-    else:
-        # Stata-compatible rolling with gap detection
-        result_pl = _stata_rolling(df_pl, group_col, time_col, value_col, window, stat, new_col_name, min_periods)
-    
-    # Return same type as input
-    if is_pandas_input:
-        return result_pl.to_pandas()
-    else:
-        return result_pl
-
-
-def _simple_rolling(
-    df_pl: pl.DataFrame,
-    group_col: str,
-    value_col: str,
-    window: int,
-    stat: str,
-    new_col_name: str,
-    min_periods: int
-) -> pl.DataFrame:
-    """Fast rolling without gap detection using native Polars"""
-    
-    # Rolling function mapping
-    rolling_funcs = {
-        'mean': lambda col: col.rolling_mean(window_size=window, min_periods=min_periods),
-        'sum': lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
-        'std': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
-        'sd': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),  # Alias for std
-        'count': lambda col: col.is_not_null().cast(pl.Int32).rolling_sum(window_size=window, min_periods=min_periods),
-        'min': lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
-        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
-        'first': lambda col: col.first()
-    }
-    
-    if stat not in rolling_funcs:
-        raise ValueError(f"Unsupported statistic: {stat}")
-    
-    # Apply rolling function grouped by group_col
-    result = df_pl.with_columns(
-        rolling_funcs[stat](pl.col(value_col)).over(group_col).alias(new_col_name)
-    )
-    
-    return result
-
-
-def _stata_rolling(
-    df_pl: pl.DataFrame,
-    group_col: str,
-    time_col: str,
-    value_col: str,
-    window: int,
-    stat: str,
-    new_col_name: str,
-    min_periods: int
-) -> pl.DataFrame:
-    """Stata-compatible rolling with consecutive period detection"""
-    
-    # Add gap detection columns
-    # Check if time column is integer (like fyear, time_temp) or datetime
-    time_dtype = df_pl[time_col].dtype
-    if time_dtype in [pl.Int16, pl.Int32, pl.Int64, pl.UInt16, pl.UInt32, pl.UInt64]:
-        # Integer time column - use simple difference for gap detection
-        df_with_gaps = df_pl.with_columns([
-            pl.col(time_col).diff().over(group_col).alias("_days_diff"),
-            pl.lit(0).alias("_segment_id")
-        ])
-        gap_threshold = 1  # Gap if difference > 1 for integer time
-    else:
-        # DateTime time column - use days difference
-        df_with_gaps = df_pl.with_columns([
-            pl.col(time_col).diff().dt.total_days().over(group_col).alias("_days_diff"),
-            pl.lit(0).alias("_segment_id")
-        ])
-        gap_threshold = 90  # Gap if difference > 90 days for datetime
-    
-    # Identify breaks and create segment IDs
-    df_with_gaps = df_with_gaps.with_columns([
-        # Mark where gaps occur using dynamic threshold
-        pl.when(pl.col("_days_diff") > gap_threshold)
-        .then(1)
-        .otherwise(0)
-        .alias("_is_break")
-    ])
-    
-    # Create cumulative segment IDs within each group
-    df_with_gaps = df_with_gaps.with_columns([
-        pl.col("_is_break").cum_sum().over(group_col).alias("_segment_id")
-    ])
-    
-    # Create combined grouping key: (group_col, segment_id)
-    df_with_gaps = df_with_gaps.with_columns([
-        pl.concat_str([
-            pl.col(group_col).cast(pl.Utf8),
-            pl.lit("_seg_"),
-            pl.col("_segment_id").cast(pl.Utf8)
-        ]).alias("_group_segment")
-    ])
-    
-    # Rolling function mapping
-    rolling_funcs = {
-        'mean': lambda col: col.rolling_mean(window_size=window, min_periods=min_periods),
-        'sum': lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
-        'std': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
-        'sd': lambda col: col.rolling_std(window_size=window, min_periods=min_periods),  # Alias for std
-        'count': lambda col: col.is_not_null().cast(pl.Int32).rolling_sum(window_size=window, min_periods=min_periods),
-        'min': lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
-        'max': lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
-        'first': lambda col: col.first()
-    }
-    
-    if stat not in rolling_funcs:
-        raise ValueError(f"Unsupported statistic: {stat}")
-    
-    # Apply rolling function to consecutive segments
-    result = df_with_gaps.with_columns(
-        rolling_funcs[stat](pl.col(value_col)).over("_group_segment").alias(new_col_name)
-    )
-    
-    # Clean up temporary columns
-    result = result.drop(["_days_diff", "_is_break", "_segment_id", "_group_segment"])
-    
-    return result
-
-
-# Backward compatibility aliases
-def asrol(*args, **kwargs):
-    """Alias for asrol_fast for backward compatibility"""
-    return asrol_fast(*args, **kwargs)
-
-
-def stata_asrol(*args, **kwargs):
-    """Alias for asrol_fast with consecutive_only=True"""
-    kwargs['consecutive_only'] = True
-    return asrol_fast(*args, **kwargs)
