@@ -1,12 +1,5 @@
 #%%
 
-# debug
-import os
-os.chdir(os.path.join(os.path.dirname(__file__), '..'))
-print('debug')
-print(os.getcwd())
-
-
 # ABOUTME: PS.py - calculates Piotroski F-score (within highest BM quintile)
 # ABOUTME: Nine-factor profitability, efficiency, and leverage score restricted to highest book-to-market quintile
 
@@ -67,15 +60,15 @@ lag_vars = ['ib', 'at', 'dltt', 'act', 'lct', 'sale', 'shrout']
 for var in lag_vars:
     df = stata_multi_lag(df, 'permno', 'time_avail_m', var, [12], prefix='l', fill_gaps=False)
 
-#%%
-
 # to replicate stata, we need to do some painful handling of 
 #   1: division by zero
 #   2: inequality tests with missing values
 # These interact in a ridiculous way here
 # Do we want to replicate all this? I'm not sure.
-# But let's do it for now.
-# Let's define a function to handle all of this and try to make the code readable
+# But let's do it for now. Let's prove this point.
+# My point is that I can effing do this.
+
+# The logic here is likely specific to the Piotroski score. So the function is internal.
 
 def handle_stata_edges(
     metric: pd.Series
@@ -162,76 +155,3 @@ df.loc[(df['BM_quintile'] != 5), 'PS'] = np.nan
 
 # save
 save_predictor(df, 'PS')
-
-#%% debug
-
-# read in stata csv
-stata0 = pd.read_csv('../Data/Predictors/PS.csv').rename(columns={'PS': 'stata'})
-
-# merge on to df
-testdat = df.copy()
-testdat = testdat.assign(
-    yyyymm = lambda x: (x['time_avail_m'].dt.year * 100 + x['time_avail_m'].dt.month).astype(int)
-)
-testdat = testdat.merge(stata0, on=['permno', 'yyyymm'], how='left').assign(
-    diff = lambda x: abs(x['PS'] - x['stata'])
-)
-
-#%% debug
-
-print(f'rows with differences out of {len(testdat)} rows')
-print(
-    testdat[['permno', 'yyyymm', 'PS', 'stata', 'diff']].query(
-        'diff > 0'
-    ).sort_values('diff', ascending=False)
-)
-
-"""
-         permno  yyyymm   PS  stata  diff
-341       10001  201503  7.0    8.0   1.0
-1767796   65306  199505  4.0    5.0   1.0
-1768836   65315  198503  6.0    7.0   1.0
-1768835   65315  198502  6.0    7.0   1.0
-"""
-
-# from stata details we can see
-# permno 65315, yyyymm 198503: p3 and p6 are zero
-
-#%% debug
-
-print(
-    testdat[
-        ['permno', 'yyyymm'] 
-        + ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'PS']
-    ].query('permno == 65315 & yyyymm == 198503')
-)
-
-# p9 is zero, unlike stata.
-
-#%% debug
-
-print('check on p9')
-
-print(
-    testdat[
-        ['permno', 'yyyymm']
-        + ['p9','shrout','l12_shrout']
-    ].assign(
-        temp = lambda x: x['shrout'] <= x['l12_shrout']
-    ).query('permno == 65315 & yyyymm == 198503')
-)
-
-# it's a division by zero issue. l12_lct is zero, making the test -Inf > 0. in python, this is false. in stata, I guess this is true?
-
-#%% debug
-
-print('check on p7')
-
-print(
-    testdat[
-        ['permno', 'yyyymm']
-        + ['p7','tempebit','sale','l12_sale']
-    ].query('permno == 77790 & yyyymm == 199904')
-)
-
-# also a division by zero issue.
