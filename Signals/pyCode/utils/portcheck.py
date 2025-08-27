@@ -14,7 +14,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/..')
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from stata_replication import stata_lag
 
 def run_portcheck(signalcur):
     """Run portfolio check for given signal and return results"""
