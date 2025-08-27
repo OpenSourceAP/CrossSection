@@ -52,10 +52,11 @@ with @"Logs/" testout_predictors 0826n1.md" to make sure the fix is an improveme
 - Illiquidity: fixed
 - OperProfRD: fixed
 - IntMom: fixed
-- EarningsConsistency: TBC
-- BetaFP: TBC
-- roaq: TBC
-- FirmAgeMom: TBC
+- EarningsConsistency: attempted
+    - needs human intervention
+- BetaFP: NumRows fixed (9.5% -> -0.37%), precision issues remain
+- roaq: NumRows fixed (+8.99% -> -0.00%), removed incorrect ffill
+- FirmAgeMom: fixed
 
 ## common issues
 - remove incorrect fillna(0) calls

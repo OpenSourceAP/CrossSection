@@ -11,6 +11,7 @@ import sys
 sys.path.append('.')
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 # use permno time_avail_m ret prc using "$pathDataIntermediate/SignalMasterTable", clear
@@ -33,16 +34,11 @@ price_condition = (df['prc'].abs() >= 5) | df['prc'].isna()
 df = df[price_condition & (df['tempage'] >= 12)].copy()
 
 # gen FirmAgeMom = ( (1+l.ret)*(1+l2.ret)*(1+l3.ret)*(1+l4.ret)*(1+l5.ret)) - 1
-# Create lagged returns - Stata uses position-based lags within groups
-df = df.sort_values(['permno', 'time_avail_m'])
-df['l_ret'] = df.groupby('permno')['ret'].shift(1)
-df['l2_ret'] = df.groupby('permno')['ret'].shift(2)
-df['l3_ret'] = df.groupby('permno')['ret'].shift(3)
-df['l4_ret'] = df.groupby('permno')['ret'].shift(4)
-df['l5_ret'] = df.groupby('permno')['ret'].shift(5)
+# Create lagged returns using calendar-based lags (matching Stata behavior)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5], prefix='l')
 
 # Calculate FirmAgeMom
-df['FirmAgeMom'] = ((1 + df['l_ret']) * 
+df['FirmAgeMom'] = ((1 + df['l1_ret']) * 
                     (1 + df['l2_ret']) * 
                     (1 + df['l3_ret']) * 
                     (1 + df['l4_ret']) * 
