@@ -30,15 +30,8 @@ signal_master = signal_master[~signal_master['gvkey'].isna()].copy()
 qcompustat = pd.read_parquet("../pyData/Intermediate/m_QCompustat.parquet", 
                             columns=['gvkey', 'time_avail_m', 'atq', 'ibq'])
 
-# CRITICAL FIX: Forward-fill quarterly data within each gvkey BEFORE merging
-# This ensures that gvkey mapping gaps don't prevent access to historical quarterly data
-# Stata's quarterly expansion logic forward-fills both ibq and atq within each gvkey
-qcompustat['atq_filled'] = qcompustat.groupby('gvkey')['atq'].ffill()
-qcompustat['ibq_filled'] = qcompustat.groupby('gvkey')['ibq'].ffill()
-
-# Merge with forward-filled quarterly data
-df = pd.merge(signal_master, qcompustat[['gvkey', 'time_avail_m', 'atq_filled', 'ibq_filled']], 
-              on=['gvkey', 'time_avail_m'], how='inner')
+# Merge quarterly data - only keep observations that match in both datasets (like Stata's keep(match))
+df = pd.merge(signal_master, qcompustat, on=['gvkey', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
 # Sort for proper lagging (equivalent to Stata's xtset permno time_avail_m)
@@ -49,13 +42,13 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['time_lag3'] = df['time_avail_m'] - pd.DateOffset(months=3)
 
 # Self-merge to get 3-month lagged values
-df_lag = df[['permno', 'time_avail_m', 'atq_filled']].copy()
+df_lag = df[['permno', 'time_avail_m', 'atq']].copy()
 df_lag.columns = ['permno', 'time_lag3', 'atq_lag3']
 
 df = pd.merge(df, df_lag, on=['permno', 'time_lag3'], how='left')
 
-# Calculate roaq using forward-filled data (matching Stata's quarterly expansion logic)
-df['roaq'] = df['ibq_filled'] / df['atq_lag3']
+# Calculate roaq (matching Stata's ibq/l3.atq)
+df['roaq'] = df['ibq'] / df['atq_lag3']
 
 # Drop missing values
 df = df.dropna(subset=['roaq'])
