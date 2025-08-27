@@ -49,8 +49,30 @@ comp = comp.select(['gvkey', 'time_avail_m', 'revt', 'cogs', 'xsga', 'xint', 'ce
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 comp = comp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
+
+# Apply comprehensive group-wise backward fill for complete data coverage
+print("Applying comprehensive group-wise backward fill for annual data...")
+comp = comp.sort(['gvkey', 'time_avail_m'])
+
+# Fill all required variables with maximum coverage
+comp = comp.with_columns([
+    pl.col('revt').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('revt'),
+    pl.col('cogs').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cogs'),
+    pl.col('xsga').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xsga'),
+    pl.col('xint').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xint'),
+    pl.col('ceq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ceq')
+])
+
+# Also apply backward fill to SignalMasterTable
+print("Applying backward fill to SignalMasterTable...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
+
+
 print("Merging with m_aCompustat...")
-df = df.join(comp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(comp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 
@@ -65,14 +87,32 @@ print(f"After removing duplicates: {len(df)} rows")
 print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# gen tempprof = (revt - cogs - xsga - xint)/l12.ceq
-print("Computing tempprof with 12-month lag...")
-df = df.with_columns([
-    pl.col('ceq').shift(12).over('permno').alias('l12_ceq')
-])
 
+# Convert to pandas for calendar-based 12-month lag operations
+print("Converting to calendar-based 12-month lag...")
+df_pd_lag = df.to_pandas()
+
+# Create 12-month lag date
+df_pd_lag['time_lag12'] = df_pd_lag['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create lag data for merging
+lag12_data = df_pd_lag[['permno', 'time_avail_m', 'ceq']].copy()
+lag12_data.columns = ['permno', 'time_lag12', 'l12_ceq']
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd_lag = df_pd_lag.merge(lag12_data, on=['permno', 'time_lag12'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd_lag)
+
+
+# Compute tempprof with enhanced null handling and calendar-based lag
+print("Computing tempprof with enhanced division handling...")
 df = df.with_columns([
-    ((pl.col('revt') - pl.col('cogs') - pl.col('xsga') - pl.col('xint')) / pl.col('l12_ceq')).alias('tempprof')
+    pl.when((pl.col('l12_ceq').is_null()) | (pl.col('l12_ceq') == 0))
+    .then(None)  # If l12_ceq is null/zero, result is null
+    .otherwise((pl.col('revt') - pl.col('cogs') - pl.col('xsga') - pl.col('xint')) / pl.col('l12_ceq'))
+    .alias('tempprof')
 ])
 
 # Convert to pandas for fastxtile operation

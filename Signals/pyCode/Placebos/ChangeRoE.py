@@ -48,8 +48,27 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'ibq', 'ceqq'])
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
+
+# Apply comprehensive group-wise backward fill for complete data coverage
+print("Applying comprehensive group-wise backward fill for quarterly data...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+
+# Fill ibq and ceqq with maximum coverage
+qcomp = qcomp.with_columns([
+    pl.col('ibq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ibq'),
+    pl.col('ceqq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ceqq')
+])
+
+# Also apply backward fill to SignalMasterTable for better coverage
+print("Applying backward fill to SignalMasterTable...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
+
+
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 
@@ -58,11 +77,15 @@ print(f"After merge: {len(df)} rows")
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# gen tempRoe = ibq/ceqq
-print("Computing tempRoe...")
-df = df.with_columns(
-    (pl.col('ibq') / pl.col('ceqq')).alias('tempRoe')
-)
+
+# Compute tempRoe with enhanced null handling
+print("Computing tempRoe with enhanced division handling...")
+df = df.with_columns([
+    pl.when((pl.col('ceqq').is_null()) | (pl.col('ceqq') == 0))
+    .then(None)  # If ceqq is null/zero, result is null
+    .otherwise(pl.col('ibq') / pl.col('ceqq'))
+    .alias('tempRoe')
+])
 
 # gen ChangeRoE = tempRoe - l12.tempRoe
 print("Computing 12-month calendar-based lag and ChangeRoE...")

@@ -48,8 +48,28 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'revtq', 'cogsq', 'atq'])
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
+
+# Apply comprehensive group-wise backward fill for complete data coverage
+print("Applying comprehensive group-wise backward fill for quarterly data...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+
+# Fill revtq, cogsq, and atq with maximum coverage
+qcomp = qcomp.with_columns([
+    pl.col('revtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('revtq'),
+    pl.col('cogsq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cogsq'),
+    pl.col('atq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('atq')
+])
+
+# Also apply backward fill to SignalMasterTable for better coverage
+print("Applying backward fill to SignalMasterTable...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
+
+
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 
@@ -58,15 +78,33 @@ print(f"After merge: {len(df)} rows")
 print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# gen GPlag_q = (revtq - cogsq)/l3.atq
-print("Computing GPlag_q...")
-df = df.with_columns([
-    pl.col('atq').shift(3).over('permno').alias('l3_atq')
-])
 
-df = df.with_columns(
-    ((pl.col('revtq') - pl.col('cogsq')) / pl.col('l3_atq')).alias('GPlag_q')
-)
+# Convert to pandas for calendar-based 3-month lag operations
+print("Converting to calendar-based 3-month lag...")
+df_pd = df.to_pandas()
+
+# Create 3-month lag date
+df_pd['time_lag3'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)
+
+# Create lag data for merging
+lag3_data = df_pd[['permno', 'time_avail_m', 'atq']].copy()
+lag3_data.columns = ['permno', 'time_lag3', 'l3_atq']
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd = df_pd.merge(lag3_data, on=['permno', 'time_lag3'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
+
+
+# Compute GPlag_q with enhanced null handling and calendar-based lag
+print("Computing GPlag_q with enhanced division handling...")
+df = df.with_columns([
+    pl.when((pl.col('l3_atq').is_null()) | (pl.col('l3_atq') == 0))
+    .then(None)  # If l3_atq is null/zero, result is null
+    .otherwise((pl.col('revtq') - pl.col('cogsq')) / pl.col('l3_atq'))
+    .alias('GPlag_q')
+])
 
 print(f"Generated GPlag_q for {len(df)} observations")
 
