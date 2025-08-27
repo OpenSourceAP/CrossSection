@@ -1,3 +1,11 @@
+# %%
+
+# debug
+import os
+os.chdir(os.path.join(os.path.dirname(__file__), '..'))
+print('debug')
+print(os.getcwd())
+
 # ABOUTME: Translates EarningsConsistency.do from Stata to Python
 # ABOUTME: Calculates earnings consistency measure based on standardized earnings changes
 
@@ -23,42 +31,67 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet',
 # Sort data (equivalent to xtset permno time_avail_m)
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 12-month and 24-month lags of epspx using multi_lag
+# Generate earnings growth (called temp in Stata)
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'epspx', [12, 24], prefix='l', fill_gaps=True)
-
-# Calculate temp variable: (epspx - l12.epspx)/(.5*(abs(l12.epspx) + abs(l24.epspx)))
-# Handle division by zero and missing lagged values like Stata (set to missing)
-denominator = 0.5 * (abs(df['l12_epspx']) + abs(df['l24_epspx']))
-# If any required values are missing, result should be missing (like Stata)
-missing_condition = df['epspx'].isna() | df['l12_epspx'].isna() | df['l24_epspx'].isna()
-df['temp'] = np.where(
-    missing_condition | (denominator == 0), 
-    np.nan, 
-    (df['epspx'] - df['l12_epspx']) / denominator
+df = df.assign(
+    egrowth = lambda x: (x['epspx'] - x['l12_epspx']) / (0.5 * (abs(x['l12_epspx']) + abs(x['l24_epspx'])))
 )
 
-# Create lagged versions of temp for 12, 24, 36, 48 months using multi_lag
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'temp', [12, 24, 36, 48], prefix='temp', fill_gaps=True)
+# replace infs (from division by zero) with nans
+df['egrowth'] = df['egrowth'].replace([np.inf, -np.inf], np.nan)
 
-# Calculate EarningsConsistency as row mean of temp variables
-temp_cols = ['temp', 'temp12_temp', 'temp24_temp', 'temp36_temp', 'temp48_temp']
-df['EarningsConsistency'] = df[temp_cols].mean(axis=1)
+# Generate earnings consistency = the mean earnings growth from 48 months ago to now, with some exceptions
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'egrowth', [12, 24, 36, 48], prefix='l', fill_gaps=True)
+temp_cols = ['egrowth', 'l12_egrowth', 'l24_egrowth', 'l36_egrowth', 'l48_egrowth']
+df['EarningsConsistency'] = df[temp_cols].mean(axis=1,skipna=True) # important to skipna=True
 
-# Create 12-month lag of temp for filtering (already created by multi_lag as temp12_temp)
-df['l12_temp'] = df['temp12_temp']
-
-# Apply filters: set EarningsConsistency to missing if:
-# 1. abs(epspx/l12.epspx) > 6 OR
-# 2. (temp > 0 & l12.temp < 0 & !mi(temp)) OR (temp < 0 & l12.temp > 0 & !mi(temp))
-# Handle division by zero in filter condition
-epspx_ratio = np.where(df['l12_epspx'] == 0, np.nan, abs(df['epspx'] / df['l12_epspx']))
-filter_condition = (
-    (epspx_ratio > 6) |
-    ((df['temp'] > 0) & (df['l12_temp'] < 0) & df['temp'].notna()) |
-    ((df['temp'] < 0) & (df['l12_temp'] > 0) & df['temp'].notna())
+# exceptions: ignore the following settings
+df = df.assign(
+    exception=lambda x: (
+        (
+            x["epspx"].isna()
+            | x["l12_epspx"].isna()  # missing earnings this year or last
+        )
+        | (abs(x["epspx"] / x["l12_epspx"]) > 6)  # absurdly high growth
+        | (
+            (x["egrowth"] > 0)
+            & (x["l12_egrowth"] < 0)
+            & x["egrowth"].notna()  # sign change this year
+        )
+        | (
+            (x["egrowth"] < 0)
+            & ((x["l12_egrowth"] > 0) | x["l12_egrowth"].isna())
+            & x["egrowth"].notna()  # sign change this year
+        )
+    ) # end lambda
 )
+df.loc[df["exception"], "EarningsConsistency"] = np.nan
 
-df.loc[filter_condition, 'EarningsConsistency'] = np.nan
-
-# save predictor
+# Save the predictor
 save_predictor(df, 'EarningsConsistency')
+
+# %% debug
+
+# read in stata csv
+stata0 = pd.read_csv('../Data/Predictors/EarningsConsistency.csv').rename(columns={'EarningsConsistency': 'stata'})
+
+# merge on to df
+testdat = df.copy()
+testdat = testdat.assign(
+    yyyymm = lambda x: (x['time_avail_m'].dt.year * 100 + x['time_avail_m'].dt.month).astype(int)
+)
+testdat = testdat.merge(stata0, on=['permno', 'yyyymm'], how='left')
+
+# %% debug
+
+print('in stata but not python')
+print(testdat.query('stata.notna() & EarningsConsistency.isna()'))
+
+print('in python but not stata')
+print(testdat.query('EarningsConsistency.notna() & stata.isna()'))
+
+
+
+# %% debug
+
+aa = testdat.query('permno == 10001')

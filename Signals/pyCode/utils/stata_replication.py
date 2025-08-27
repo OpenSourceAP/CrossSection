@@ -98,93 +98,8 @@ def stata_quantile(x, qs):
     return float(out[0]) if out.size == 1 else out
 
 
-def stata_lag(df, group_col, time_col, value_col, lag_periods, freq='M', suffix=None, fill_gaps=False):
-    """
-    Create a single Stata-style lag using shift + date validation.
-    Matches Stata's l. operator behavior with calendar-based validation.
-    
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    group_col : str
-        Column to group by (e.g., 'permno')
-    time_col : str
-        Time column (e.g., 'time_avail_m')
-    value_col : str
-        Column to lag
-    lag_periods : int
-        Number of periods to lag
-    freq : str, default 'M'
-        Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
-    suffix : str, optional
-        Custom suffix for the output column name. If None, uses f'_lag{lag_periods}'
-    fill_gaps : bool, default False
-        Whether to fill date gaps before lagging. When True, creates balanced panel
-        to ensure proper calendar-based lag alignment.
-    
-    Returns
-    -------
-    pd.Series
-        Lagged values with NaN where date validation fails
-    
-    Examples
-    --------
-    >>> df['ret_lag12'] = stata_lag(df, 'permno', 'time_avail_m', 'ret', 12)
-    >>> df['at_l12'] = stata_lag(df, 'permno', 'time_avail_m', 'at', 12, suffix='_l12')
-    >>> df['ret_lag6'] = stata_lag(df, 'permno', 'time_avail_m', 'ret', 6, fill_gaps=True)
-    """
-    # Fill date gaps if requested
-    if fill_gaps:
-        df = fill_date_gaps(df, group_col, time_col)
-    
-    # Sort by group and time to ensure correct ordering
-    df_sorted = df.sort_values([group_col, time_col])
-    
-    # Create lagged value using shift
-    lagged_value = df_sorted.groupby(group_col)[value_col].shift(lag_periods)
-    
-    # Create lagged date using shift
-    lagged_date = df_sorted.groupby(group_col)[time_col].shift(lag_periods)
-    
-    # Calculate expected date based on frequency
-    time_series = pd.to_datetime(df_sorted[time_col])
-    
-    if freq == 'M':
-        expected_date = time_series - pd.DateOffset(months=lag_periods)
-    elif freq == 'D':
-        expected_date = time_series - pd.DateOffset(days=lag_periods)
-    elif freq == 'Q':
-        expected_date = time_series - pd.DateOffset(months=lag_periods * 3)
-    elif freq == 'Y':
-        expected_date = time_series - pd.DateOffset(years=lag_periods)
-    else:
-        raise ValueError(f"Unsupported frequency: {freq}")
-    
-    # Convert lagged_date to datetime for comparison
-    lagged_date = pd.to_datetime(lagged_date)
-    
-    # For monthly/quarterly/yearly frequency, compare at month level
-    if freq in ['M', 'Q', 'Y']:
-        # Compare year-month only (ignore day component)
-        lagged_period = lagged_date.dt.to_period('M')
-        expected_period = expected_date.dt.to_period('M')
-        valid_mask = lagged_period == expected_period
-    else:
-        # For daily, compare exact dates
-        valid_mask = lagged_date == expected_date
-    
-    # Set invalid lags to NaN
-    result = lagged_value.where(valid_mask)
-    
-    # Restore original index order
-    result.index = df_sorted.index
-    result = result.reindex(df.index)
-    
-    return result
-
-
-def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', prefix='', fill_gaps=False):
+def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', 
+                    prefix='', fill_gaps=False):
     """
     Create multiple Stata-style lags efficiently.
     
@@ -203,7 +118,7 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', pref
     freq : str, default 'M'
         Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
     prefix : str, default ''
-        Optional prefix for column names (e.g., 'l' to create 'l1_ret' instead of 'ret_lag1')
+        Optional prefix for column names (e.g., 'l' creates 'l12_at')
     fill_gaps : bool, default False
         Whether to fill date gaps before lagging. When True, creates balanced panel
         to ensure proper calendar-based lag alignment.
@@ -220,33 +135,10 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', pref
     
     >>> df = stata_multi_lag(df, 'permno', 'time_avail_m', 'at', [12], prefix='l')
     >>> # Creates column: l12_at
-    
-    >>> df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [6, 12], fill_gaps=True)
-    >>> # Creates columns with gap filling: ret_lag6, ret_lag12
     """
-    df_result = df.copy()
-    
-    # Fill date gaps if requested
-    if fill_gaps:
-        df_result = fill_date_gaps(df_result, group_col, time_col)
-    
-    # Sort once for efficiency
-    df_sorted = df_result.sort_values([group_col, time_col])
-    sorted_index = df_sorted.index
-    
-    # Convert time column to datetime once
-    time_series = pd.to_datetime(df_sorted[time_col])
-    
-    # Pre-compute all shifts at once for efficiency
-    value_series = df_sorted.groupby(group_col)[value_col]
-    time_group = df_sorted.groupby(group_col)[time_col]
-    
-    for lag in lag_list:
-        # Create lagged value and date
-        lagged_value = value_series.shift(lag)
-        lagged_date = pd.to_datetime(time_group.shift(lag))
-        
-        # Calculate expected date
+    def _validate_lag_dates(lagged_date, time_series, lag, freq):
+        """Helper function to validate lag dates using calendar-based logic."""
+        # Calculate expected date based on frequency
         if freq == 'M':
             expected_date = time_series - pd.DateOffset(months=lag)
         elif freq == 'D':
@@ -258,74 +150,53 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', pref
         else:
             raise ValueError(f"Unsupported frequency: {freq}")
         
-        # Validate dates
+        # Convert lagged_date to datetime for comparison
+        lagged_date = pd.to_datetime(lagged_date)
+        
+        # For monthly/quarterly/yearly frequency, compare at month level
         if freq in ['M', 'Q', 'Y']:
             lagged_period = lagged_date.dt.to_period('M')
             expected_period = expected_date.dt.to_period('M')
             valid_mask = lagged_period == expected_period
         else:
+            # For daily, compare exact dates
             valid_mask = lagged_date == expected_date
+        
+        return valid_mask
+
+    out = df.copy()
+    
+    # Fill date gaps if requested
+    if fill_gaps:
+        out = fill_date_gaps(out, group_col, time_col)
+    
+    time_series = pd.to_datetime(out[time_col])
+    
+    # Pre-compute groupby objects for efficiency
+    grouped_value = out.groupby(group_col)[value_col]
+    grouped_time = out.groupby(group_col)[time_col]
+    
+    # Create all lag columns
+    for lag in lag_list:
+        # Create lagged value and date
+        lagged_value = grouped_value.shift(lag)
+        lagged_date = grouped_time.shift(lag)
+        
+        # Validate dates using helper function
+        valid_mask = _validate_lag_dates(lagged_date, time_series, lag, freq)
         
         # Set invalid lags to NaN
         result = lagged_value.where(valid_mask)
         
-        # Restore original index order
-        result.index = sorted_index
-        result = result.reindex(df.index)
-        
-        # Choose column name based on prefix
-        if prefix == 'l':
-            col_name = f'l{lag}_{value_col}'
-        elif prefix:
+        # Generate column name
+        if prefix:
             col_name = f'{prefix}{lag}_{value_col}'
         else:
             col_name = f'{value_col}_lag{lag}'
         
-        df_result[col_name] = result
+        out[col_name] = result
     
-    return df_result
-
-
-def validate_lag_requirements(df, group_col, time_col, value_col):
-    """
-    Validate that the dataframe meets requirements for lag operations.
-    
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    group_col : str
-        Column to group by
-    time_col : str
-        Time column
-    value_col : str
-        Column to lag
-    
-    Raises
-    ------
-    ValueError
-        If any requirements are not met
-    """
-    # Check columns exist
-    missing_cols = []
-    for col in [group_col, time_col, value_col]:
-        if col not in df.columns:
-            missing_cols.append(col)
-    
-    if missing_cols:
-        raise ValueError(f"Missing columns: {missing_cols}")
-    
-    # Check time column can be converted to datetime
-    try:
-        pd.to_datetime(df[time_col])
-    except:
-        raise ValueError(f"Cannot convert {time_col} to datetime")
-    
-    # Check for duplicate time periods within groups
-    duplicates = df.groupby([group_col, time_col]).size()
-    if (duplicates > 1).any():
-        dup_groups = duplicates[duplicates > 1].index.tolist()[:5]
-        raise ValueError(f"Duplicate time periods found for groups (showing first 5): {dup_groups}")
+    return out.sort_values([group_col, time_col])
 
 
 # ================================
@@ -407,7 +278,9 @@ def stata_ineq_pl(e: pl.Expr, op: str, rhs) -> pl.Expr:
     - Supports RHS 'missing' via '.', '.a'..'.z', None, or NaN.
     - Handles both scalar RHS and expression RHS that might be null.
     """
-    op = {"=": "==", "~=": "!=", "^=": "!=", **{k: k for k in (">", ">=", "<", "<=", "==", "!=")}}.get(op, op)
+    op_map = {"=": "==", "~=": "!=", "^=": "!=", 
+              **{k: k for k in (">", ">=", "<", "<=", "==", "!=")}}
+    op = op_map.get(op, op)
     if op not in {">", ">=", "<", "<=", "==", "!="}:
         raise ValueError(f"Unsupported operator: {op}")
 
@@ -432,29 +305,37 @@ def stata_ineq_pl(e: pl.Expr, op: str, rhs) -> pl.Expr:
 
     if op == "==":
         # Both sides must be non-null and equal
-        return e.eq(rhs) & e.is_not_null() & (rhs.is_not_null() if hasattr(rhs, 'is_not_null') else pl.lit(True))
+        rhs_check = (rhs.is_not_null() if hasattr(rhs, 'is_not_null') 
+                     else pl.lit(True))
+        return e.eq(rhs) & e.is_not_null() & rhs_check
     if op == "!=":
         # If either side is null, return True (Stata behavior)
-        return e.ne(rhs) | e.is_null() | (rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False))
+        rhs_null = (rhs.is_null() if hasattr(rhs, 'is_null') 
+                    else pl.lit(False))
+        return e.ne(rhs) | e.is_null() | rhs_null
     if op == ">":
         return e_inf > rhs_inf
     if op == ">=":
         return e_inf >= rhs_inf
     if op == "<":
         # Handle the complex Stata logic for less-than with nulls
-        return pl.when(e.is_null() & (rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False)))\
-                 .then(pl.lit(False))\
-                 .when(e.is_null())\
-                 .then(pl.lit(False))\
-                 .when(rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False))\
-                 .then(pl.lit(True))\
-                 .otherwise(e < rhs)
+        rhs_null = (rhs.is_null() if hasattr(rhs, 'is_null') 
+                    else pl.lit(False))
+        return (pl.when(e.is_null() & rhs_null)
+                .then(pl.lit(False))
+                .when(e.is_null())
+                .then(pl.lit(False))
+                .when(rhs_null)
+                .then(pl.lit(True))
+                .otherwise(e < rhs))
     if op == "<=":
         # Handle the complex Stata logic for less-than-equal with nulls
-        return pl.when(e.is_null() & (rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False)))\
-                 .then(pl.lit(False))\
-                 .when(e.is_null())\
-                 .then(pl.lit(False))\
-                 .when(rhs.is_null() if hasattr(rhs, 'is_null') else pl.lit(False))\
-                 .then(pl.lit(True))\
-                 .otherwise(e <= rhs)
+        rhs_null = (rhs.is_null() if hasattr(rhs, 'is_null') 
+                    else pl.lit(False))
+        return (pl.when(e.is_null() & rhs_null)
+                .then(pl.lit(False))
+                .when(e.is_null())
+                .then(pl.lit(False))
+                .when(rhs_null)
+                .then(pl.lit(True))
+                .otherwise(e <= rhs))
