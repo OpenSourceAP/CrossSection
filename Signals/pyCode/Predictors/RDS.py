@@ -37,19 +37,22 @@ df = compustat_df.merge(pensions_df, on=['gvkey', 'year'], how='left')
 # Sort data for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Replace missing recta with 0 (matching Stata line 9: replace recta = 0 if recta == .)
-df['recta'] = df['recta'].fillna(0)
+# Track which values were originally missing to handle edge cases
+df['recta_orig_missing'] = df['recta'].isna()
+df['msa_orig_missing'] = df['msa'].isna()
 
-# Also handle missing msa as 0 to match Stata behavior for edge cases
+# Replace missing recta and msa with 0 (matching Stata line 9: replace recta = 0 if recta == .)
+df['recta'] = df['recta'].fillna(0)
 df['msa'] = df['msa'].fillna(0)
 
 # Create 12-month lags using time-based approach
 df['time_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)
 
-# Create lag data for merge
+# Create lag data for merge (include missing flags)
 lag_vars = ['msa', 'recta', 'pcupsu', 'paddml', 'ceq', 'csho']
-lag_data = df[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag12'] + [f'l12_{var}' for var in lag_vars]
+lag_data = df[['permno', 'time_avail_m'] + lag_vars + ['recta_orig_missing', 'msa_orig_missing']].copy()
+lag_data.columns = (['permno', 'time_lag12'] + [f'l12_{var}' for var in lag_vars] + 
+                   ['l12_recta_orig_missing', 'l12_msa_orig_missing'])
 
 # Merge to get lagged values
 df = df.merge(lag_data, on=['permno', 'time_lag12'], how='left')
@@ -65,6 +68,8 @@ def stata_min_pension(pcupsu, paddml):
 pension_current = df.apply(lambda row: stata_min_pension(row['pcupsu'], row['paddml']), axis=1)
 pension_lag = df.apply(lambda row: stata_min_pension(row['l12_pcupsu'], row['l12_paddml']), axis=1)
 
+# Note: msa and recta are already filled with 0 above for current values
+# But we should NOT fill lag values - let NaN propagate as Stata does
 df['DS'] = ((df['msa'] - df['l12_msa']) + 
             (df['recta'] - df['l12_recta']) + 
             0.65 * (pension_current - pension_lag))
@@ -72,6 +77,16 @@ df['DS'] = ((df['msa'] - df['l12_msa']) +
 # Calculate RDS
 df['RDS'] = ((df['ceq'] - df['l12_ceq']) - df['DS'] - (df['ni'] - df['dvp']) + 
              df['dvc'] - df['prcc_f'] * (df['csho'] - df['l12_csho']))
+
+# Filter out observations where both current and lagged msa/recta were originally missing
+# This prevents meaningless 0-0=0 calculations
+both_missing_mask = (
+    (df['recta_orig_missing'] & df['l12_recta_orig_missing'].fillna(True)) &
+    (df['msa_orig_missing'] & df['l12_msa_orig_missing'].fillna(True))
+)
+
+# Set RDS to missing for these problematic cases
+df.loc[both_missing_mask, 'RDS'] = np.nan
 
 # Drop missing values
 df = df.dropna(subset=['RDS'])
