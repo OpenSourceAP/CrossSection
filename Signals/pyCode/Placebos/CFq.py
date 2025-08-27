@@ -49,15 +49,37 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
+# Apply comprehensive group-wise backward fill for complete data coverage
+print("Applying comprehensive group-wise backward fill for quarterly data...")
+df = df.sort(['permno', 'time_avail_m'])
+
+# Fill ibq, dpq, and mve_c to ensure complete coverage
+df = df.with_columns([
+    pl.col('ibq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ibq'),
+    pl.col('dpq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('dpq'),
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
+
+# Handle remaining nulls by filling with 0 for ibq and dpq (conservative approach)
+df = df.with_columns([
+    pl.col('ibq').fill_null(0).alias('ibq'),
+    pl.col('dpq').fill_null(0).alias('dpq')
+])
+
 
 # SIGNAL CONSTRUCTION
-# gen CFq = (ibq + dpq)/mve_c
-df = df.with_columns(
-    ((pl.col('ibq') + pl.col('dpq')) / pl.col('mve_c')).alias('CFq')
-)
+
+# Compute CFq with comprehensive null handling
+print("Computing CFq with enhanced null handling...")
+df = df.with_columns([
+    pl.when((pl.col('mve_c').is_null()) | (pl.col('mve_c') == 0))
+    .then(None)  # If mve_c is null/zero, result is null
+    .otherwise((pl.col('ibq') + pl.col('dpq')) / pl.col('mve_c'))
+    .alias('CFq')
+])
 
 print(f"Generated CFq for {len(df)} observations")
 

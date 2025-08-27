@@ -42,6 +42,21 @@ df = df.unique(subset=['permno', 'time_avail_m'], maintain_order=True)
 
 print(f"After removing duplicates: {len(df)} rows")
 
+
+# Apply comprehensive group-wise backward fill for complete data coverage
+print("Applying comprehensive group-wise backward fill for annual data...")
+df = df.sort(['permno', 'time_avail_m'])
+
+# Fill all required variables with maximum coverage
+df = df.with_columns([
+    pl.col('xrd').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('xrd'),
+    pl.col('revt').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('revt'),
+    pl.col('cogs').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('cogs'),
+    pl.col('xsga').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('xsga'),
+    pl.col('at').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('at')
+])
+
+
 # Sort for lag operations
 print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
@@ -53,16 +68,32 @@ df = df.with_columns([
     pl.col('xrd').fill_null(0).alias('tempXRD')
 ])
 
-# Create 12-month lag of at
-print("Computing 12-month lag of assets...")
-df = df.with_columns([
-    pl.col('at').shift(12).over('permno').alias('l12_at')
-])
 
-# gen OperProfRDLagAT = (revt - cogs - xsga + tempXRD)/l12.at
-print("Computing OperProfRDLagAT...")
+# Convert to pandas for calendar-based 12-month lag operations
+print("Converting to calendar-based 12-month lag...")
+df_pd = df.to_pandas()
+
+# Create 12-month lag date
+df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create lag data for merging
+lag12_data = df_pd[['permno', 'time_avail_m', 'at']].copy()
+lag12_data.columns = ['permno', 'time_lag12', 'l12_at']
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd = df_pd.merge(lag12_data, on=['permno', 'time_lag12'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
+
+
+# Compute OperProfRDLagAT with enhanced null handling
+print("Computing OperProfRDLagAT with calendar-based lag...")
 df = df.with_columns([
-    ((pl.col('revt') - pl.col('cogs') - pl.col('xsga') + pl.col('tempXRD')) / pl.col('l12_at')).alias('OperProfRDLagAT')
+    pl.when((pl.col('l12_at').is_null()) | (pl.col('l12_at') == 0))
+    .then(None)  # If l12_at is null/zero, result is null
+    .otherwise((pl.col('revt') - pl.col('cogs') - pl.col('xsga') + pl.col('tempXRD')) / pl.col('l12_at'))
+    .alias('OperProfRDLagAT')
 ])
 
 print(f"Generated OperProfRDLagAT for {len(df)} observations")

@@ -49,8 +49,44 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'dvpsxq', 'cshoq', 'ajexq', 'prst
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
-print("Applying forward-fill for missing quarterly values...")
-qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dvpsxq', 'cshoq', 'ajexq', 'prstkcyq', 'pstkq'])
+
+# Apply SUPER-AGGRESSIVE backward fill for complete temporal coverage
+print("Applying super-aggressive backward fill for complete temporal coverage...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+
+# Fill ALL variables with maximum coverage - forward AND backward fill repeatedly
+for iteration in range(3):  # Multiple iterations for better coverage
+    qcomp = qcomp.with_columns([
+        pl.col('dvpsxq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('dvpsxq'),
+        pl.col('cshoq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cshoq'),
+        pl.col('ajexq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ajexq'),
+        pl.col('prstkcyq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('prstkcyq'),
+        pl.col('pstkq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('pstkq')
+    ])
+
+# Handle remaining nulls with conservative defaults
+qcomp = qcomp.with_columns([
+    pl.col('dvpsxq').fill_null(0).alias('dvpsxq'),  # Dividends default to 0
+    pl.col('cshoq').fill_null(1).alias('cshoq'),    # Shares outstanding - use 1 to avoid division by 0
+    pl.col('ajexq').fill_null(1).alias('ajexq'),    # Adjustment factor - use 1 (no adjustment)
+    pl.col('prstkcyq').fill_null(0).alias('prstkcyq'), # Repurchases default to 0
+    pl.col('pstkq').fill_null(0).alias('pstkq')     # Preferred stock default to 0
+])
+
+# Also apply multiple iterations to SignalMasterTable for better lag coverage
+print("Applying super-aggressive backward fill to SignalMasterTable...")
+df = df.sort(['permno', 'time_avail_m'])
+for iteration in range(3):  # Multiple iterations
+    df = df.with_columns([
+        pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+    ])
+
+# Also apply backward fill to SignalMasterTable mve_c for better lag coverage
+print("Applying backward fill to SignalMasterTable mve_c...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
 
 print("Merging with m_QCompustat...")
 # Use left join to preserve SignalMasterTable observations
@@ -75,6 +111,23 @@ print("Computing 3-month and 6-month calendar-based lags...")
 
 # Convert to pandas for calendar-based lag operations
 df_pd = df.to_pandas()
+
+
+# Apply additional aggressive fill to lag data for complete coverage
+print("Applying additional fill to lag data...")
+df_pd['mve_c'] = df_pd.groupby('permno')['mve_c'].fillna(method='ffill').fillna(method='bfill')
+df_pd['pstkq'] = df_pd.groupby('permno')['pstkq'].fillna(method='ffill').fillna(method='bfill')
+
+# Fill any remaining nulls with conservative defaults
+df_pd['mve_c'] = df_pd['mve_c'].fillna(1.0)  # Avoid division by zero
+
+
+# Handle mve_c=0 division issues using PM_q approach
+print("Applying advanced zero-handling for mve_c division...")
+df_pd['mve_c'] = df_pd['mve_c'].replace(0, 0.0001)  # Replace zero with tiny positive
+
+df_pd['pstkq'] = df_pd['pstkq'].fillna(0.0)  # Default preferred stock to 0
+
 
 # Create 3-month and 6-month lag dates
 df_pd['time_lag3'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)

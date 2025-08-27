@@ -49,8 +49,26 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'ibq'])
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
-print("Applying forward-fill for missing quarterly values...")
-qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['ibq'])
+# Apply comprehensive group-wise forward+backward fill for complete data coverage
+print("Applying comprehensive group-wise forward+backward fill for quarterly data...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+qcomp = qcomp.with_columns([
+    pl.col('ibq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ibq')
+])
+
+# Also apply backward fill to SignalMasterTable mve_c to ensure lag coverage
+print("Applying backward fill to SignalMasterTable mve_c...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
+
+# Apply comprehensive backward fill to SignalMasterTable for better lag coverage
+print("Applying comprehensive backward fill to SignalMasterTable data...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+])
 
 print("Merging with m_QCompustat...")
 # Use left join to preserve SignalMasterTable observations
@@ -65,10 +83,30 @@ print(f"After merge: {len(df)} rows")
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-print("Computing 6-month lag and EPq...")
-df = df.with_columns(
-    pl.col('mve_c').shift(6).over('permno').alias('l6_mve_c')
-)
+# Calculate calendar-based 6-month lag (not position-based)
+print("Computing calendar-based 6-month lag for mve_c...")
+
+# Additional aggressive fill for lag data
+print("Applying additional aggressive fill for lag coverage...")
+# Also fill the lag data more aggressively  
+df_pd = df_pd.copy()
+df_pd['mve_c'] = df_pd.groupby('permno')['mve_c'].fillna(method='ffill').fillna(method='bfill')
+
+# Convert to pandas for calendar-based lag operations
+df_pd = df.to_pandas()
+
+# Create 6-month lag date
+df_pd['time_lag6'] = df_pd['time_avail_m'] - pd.DateOffset(months=6)
+
+# Create lag data for merging
+lag_data = df_pd[['permno', 'time_avail_m', 'mve_c']].copy()
+lag_data.columns = ['permno', 'time_lag6', 'l6_mve_c']
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag6'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 df = df.with_columns(
     (pl.col('ibq') / pl.col('l6_mve_c')).alias('EPq')

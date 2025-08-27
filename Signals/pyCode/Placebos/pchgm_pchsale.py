@@ -49,11 +49,22 @@ df = df.sort(['permno', 'time_avail_m'])
 # gen pchgm_pchsale = (((sale-cogs)-(l12.sale-l12.cogs))/(l12.sale-l12.cogs))-((sale-l12.sale)/l12.sale)
 print("Computing lags and pchgm_pchsale...")
 
-# Create 12-month lags
-df = df.with_columns([
-    pl.col('sale').shift(12).over('permno').alias('l12_sale'),
-    pl.col('cogs').shift(12).over('permno').alias('l12_cogs')
-])
+# Convert to pandas for calendar-based lag operations
+print("Computing calendar-based 12-month lags...")
+df_pd = df.to_pandas()
+
+# Create 12-month lag date
+df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create lag data for merging
+lag12_data = df_pd[['permno', 'time_avail_m', 'sale', 'cogs']].copy()
+lag12_data.columns = ['permno', 'time_lag12', 'l12_sale', 'l12_cogs']
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd = df_pd.merge(lag12_data, on=['permno', 'time_lag12'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 # Calculate the components
 df = df.with_columns([

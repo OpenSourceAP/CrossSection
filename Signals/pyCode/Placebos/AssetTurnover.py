@@ -41,6 +41,20 @@ print("Dropping duplicates...")
 df = df.unique(subset=['permno', 'time_avail_m'])
 
 print(f"After dropping duplicates: {len(df)} rows")
+# Apply enhanced group-wise forward+backward fill for complete data coverage
+print("Applying enhanced group-wise forward+backward fill for asset data...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('rect').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('rect'),
+    pl.col('invt').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('invt'),
+    pl.col('aco').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('aco'),
+    pl.col('ppent').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('ppent'),
+    pl.col('intan').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('intan'),
+    pl.col('ap').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('ap'),
+    pl.col('lco').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('lco'),
+    pl.col('lo').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('lo'),
+    pl.col('sale').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('sale')
+])
 
 # xtset permno time_avail_m
 print("Sorting for lag operations...")

@@ -51,14 +51,28 @@ df = df.with_columns(
     (pl.col('sale') - pl.col('cogs')).alias('tempGM')
 )
 
-# Create lags for complex calculation
-print("Computing lags...")
-df = df.with_columns([
-    pl.col('tempGM').shift(12).over('permno').alias('l12_tempGM'),
-    pl.col('tempGM').shift(24).over('permno').alias('l24_tempGM'),
-    pl.col('sale').shift(12).over('permno').alias('l12_sale'),
-    pl.col('sale').shift(24).over('permno').alias('l24_sale')
-])
+# Convert to pandas for calendar-based lag operations
+print("Computing calendar-based 12-month and 24-month lags...")
+df_pd = df.to_pandas()
+
+# Create 12-month and 24-month lag dates
+df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
+df_pd['time_lag24'] = df_pd['time_avail_m'] - pd.DateOffset(months=24)
+
+# Create lag data for merging (12-month lags)
+lag12_data = df_pd[['permno', 'time_avail_m', 'tempGM', 'sale']].copy()
+lag12_data.columns = ['permno', 'time_lag12', 'l12_tempGM', 'l12_sale']
+
+# Create lag data for merging (24-month lags)  
+lag24_data = df_pd[['permno', 'time_avail_m', 'tempGM', 'sale']].copy()
+lag24_data.columns = ['permno', 'time_lag24', 'l24_tempGM', 'l24_sale']
+
+# Merge to get lagged values (calendar-based, not position-based)
+df_pd = df_pd.merge(lag12_data, on=['permno', 'time_lag12'], how='left')
+df_pd = df_pd.merge(lag24_data, on=['permno', 'time_lag24'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 # gen GrGMToGrSales = ((tempGM- (.5*(l12.tempGM + l24.tempGM)))/(.5*(l12.tempGM + l24.tempGM))) - ((sale- (.5*(l12.sale + l24.sale)))/(.5*(l12.sale + l24.sale)))
 print("Computing GrGMToGrSales...")
