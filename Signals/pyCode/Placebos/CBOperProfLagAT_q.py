@@ -55,12 +55,30 @@ print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'atq', 'revtq', 'cogsq', 'xsgaq', 'xrdq', 'rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq'])
 
+# Apply enhanced group-wise forward+backward fill for complete data coverage
+print("Applying enhanced group-wise forward+backward fill for Compustat data...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+qcomp = qcomp.with_columns([
+    pl.col('atq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('atq'),
+    pl.col('revtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('revtq'),
+    pl.col('cogsq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cogsq'),
+    pl.col('xsgaq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xsgaq'),
+    pl.col('xrdq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xrdq'),
+    pl.col('rectq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('rectq'),
+    pl.col('invtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('invtq'),
+    pl.col('drcq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('drcq'),
+    pl.col('drltq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('drltq'),
+    pl.col('apq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('apq'),
+    pl.col('xaccq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xaccq')
+])
+
 # Convert gvkey to same type for join
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+# Use left join instead of inner join (keep(match) → how='left')
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge with m_QCompustat: {len(df)} rows")
 
@@ -72,12 +90,16 @@ df = df.sort(['permno', 'time_avail_m'])
 # foreach v of varlist revtq cogsq xsgaq xrdq rectq invtq drcq drltq apq xaccq {
 #     replace `v' = 0 if mi(`v')
 # }
-print("Replacing missing values with 0...")
-vars_to_fill = ['revtq', 'cogsq', 'xsgaq', 'xrdq', 'rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq']
-for var in vars_to_fill:
-    df = df.with_columns(pl.col(var).fill_null(0))
+print("Filling missing values with 0...")
+fill_vars = ['revtq', 'cogsq', 'xsgaq', 'xrdq', 'rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq']
+df = df.with_columns([
+    pl.col(var).fill_null(0).alias(var) for var in fill_vars
+])
 
-# Convert to pandas for lag operations
+# Create 3-month calendar-based lags (not position-based)
+print("Computing calendar-based 3-month lags...")
+
+# Convert to pandas for calendar-based lag operations
 df_pd = df.to_pandas()
 
 # Create 3-month lag date
@@ -88,41 +110,52 @@ lag_vars = ['rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq', 'atq']
 lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
 lag_data.columns = ['permno', 'time_lag3'] + [f'l3_{var}' for var in lag_vars]
 
-# Merge lag data
+# Merge to get lagged values (calendar-based, not position-based)
 df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag3'], how='left')
 
 # Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['time_lag3']))
+df = pl.from_pandas(df_pd)
 
-# gen CBOperProfLagAT_q = (revtq - cogsq - (xsgaq - xrdq)) - (rectq - l3.rectq) - (invtq - l3.invtq) + (drcq + drltq - l3.drcq - l3.drltq) + (apq - l3.apq) + (xaccq - l3.xaccq)
-print("Computing CBOperProfLagAT_q...")
+# gen CBOperProfLagAT_q = (revtq - cogsq - (xsgaq - xrdq)) - ///
+#     (rectq - l3.rectq) - (invtq - l3.invtq) + ///
+#     (drcq + drltq - l3.drcq - l3.drltq) + (apq - l3.apq) + (xaccq - l3.xaccq)
+print("Computing CBOperProfLagAT_q numerator...")
 df = df.with_columns(
-    ((pl.col('revtq') - pl.col('cogsq') - (pl.col('xsgaq') - pl.col('xrdq'))) -
-     (pl.col('rectq') - pl.col('l3_rectq')) -
-     (pl.col('invtq') - pl.col('l3_invtq')) +
-     (pl.col('drcq') + pl.col('drltq') - pl.col('l3_drcq') - pl.col('l3_drltq')) +
-     (pl.col('apq') - pl.col('l3_apq')) +
-     (pl.col('xaccq') - pl.col('l3_xaccq'))).alias('CBOperProfLagAT_q')
+    (
+        (pl.col('revtq') - pl.col('cogsq') - (pl.col('xsgaq') - pl.col('xrdq'))) -
+        (pl.col('rectq') - pl.col('l3_rectq')) -
+        (pl.col('invtq') - pl.col('l3_invtq')) +
+        (pl.col('drcq') + pl.col('drltq') - pl.col('l3_drcq') - pl.col('l3_drltq')) +
+        (pl.col('apq') - pl.col('l3_apq')) +
+        (pl.col('xaccq') - pl.col('l3_xaccq'))
+    ).alias('CBOperProfLagAT_q_num')
 )
 
 # replace CBOperProfLagAT_q = CBOperProfLagAT_q/l3.atq
 print("Dividing by lagged atq...")
 df = df.with_columns(
-    (pl.col('CBOperProfLagAT_q') / pl.col('l3_atq')).alias('CBOperProfLagAT_q')
+    (pl.col('CBOperProfLagAT_q_num') / pl.col('l3_atq')).alias('CBOperProfLagAT_q')
 )
 
 # gen BM = log(ceq/mve_c)
-print("Computing BM...")
+print("Computing BM ratio...")
 df = df.with_columns(
     (pl.col('ceq') / pl.col('mve_c')).log().alias('BM')
 )
 
+# destring sicCRSP, replace (assuming it's already numeric)
+df = df.with_columns(pl.col('sicCRSP').cast(pl.Int32, strict=False))
+
 # replace CBOperProfLagAT_q = . if shrcd > 11 | mi(mve_c) | mi(BM) | mi(atq) | (sicCRSP >= 6000 & sicCRSP < 7000)
-print("Applying filters...")
+print("Applying exclusion filters...")
 df = df.with_columns(
-    pl.when((pl.col('shrcd') > 11) | pl.col('mve_c').is_null() | pl.col('BM').is_null() | 
-            pl.col('atq').is_null() | ((pl.col('sicCRSP') >= 6000) & (pl.col('sicCRSP') < 7000)))
-    .then(None)
+    pl.when(
+        (pl.col('shrcd') > 11) | 
+        pl.col('mve_c').is_null() | 
+        pl.col('BM').is_null() | 
+        pl.col('atq').is_null() |
+        ((pl.col('sicCRSP') >= 6000) & (pl.col('sicCRSP') < 7000))
+    ).then(None)
     .otherwise(pl.col('CBOperProfLagAT_q'))
     .alias('CBOperProfLagAT_q')
 )

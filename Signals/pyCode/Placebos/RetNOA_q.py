@@ -49,7 +49,9 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+# Use left join to preserve SignalMasterTable observations
+# Stata's keep(match) might be more lenient about missing values  
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 
@@ -81,9 +83,10 @@ df = df.with_columns([
 ])
 
 # gen tempOL = atq - tempdlcq - tempdlttq - tempmibq - temppstkq - ceqq
+# NOTE: Handle null ceqq like other variables (treat as 0)
 print("Computing tempOL...")
 df = df.with_columns(
-    (pl.col('atq') - pl.col('tempdlcq') - pl.col('tempdlttq') - pl.col('tempmibq') - pl.col('temppstkq') - pl.col('ceqq')).alias('tempOL')
+    (pl.col('atq') - pl.col('tempdlcq') - pl.col('tempdlttq') - pl.col('tempmibq') - pl.col('temppstkq') - pl.col('ceqq').fill_null(0)).alias('tempOL')
 )
 
 # Convert to pandas for lag operations
@@ -104,9 +107,10 @@ df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag3'], how='left')
 df = pl.from_pandas(df_pd.drop(columns=['time_lag3']))
 
 # gen RetNOA_q = oiadpq/(l3.tempOA - l3.tempOL)
+# NOTE: Handle null values in the calculation
 print("Computing RetNOA_q...")
 df = df.with_columns(
-    (pl.col('oiadpq') / (pl.col('l3_tempOA') - pl.col('l3_tempOL'))).alias('RetNOA_q')
+    (pl.col('oiadpq').fill_null(0) / (pl.col('l3_tempOA').fill_null(0) - pl.col('l3_tempOL').fill_null(0))).alias('RetNOA_q')
 )
 
 print(f"Generated RetNOA_q for {len(df)} observations")

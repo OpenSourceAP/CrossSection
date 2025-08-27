@@ -48,7 +48,7 @@ signal = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 signal = signal.select(['permno', 'time_avail_m', 'sicCRSP'])
 
 print("Merging with SignalMasterTable...")
-df = df.join(signal, on=['permno', 'time_avail_m'], how='inner')
+df = df.join(signal, on=['permno', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 

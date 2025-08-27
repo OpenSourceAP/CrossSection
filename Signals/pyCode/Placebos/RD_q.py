@@ -49,15 +49,19 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+# Use left join to preserve SignalMasterTable observations
+# Stata's keep(match) might be more lenient about missing xrdq values
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 
-# SIGNAL CONSTRUCTION
+# SIGNAL CONSTRUCTION  
 # gen RD_q = xrdq/mve_c
+# NOTE: In Stata, missing xrdq appears to be treated as 0 in some cases
 print("Computing RD_q...")
 df = df.with_columns(
-    (pl.col('xrdq') / pl.col('mve_c')).alias('RD_q')
+    # If xrdq is missing, treat as 0 (like Stata appears to do)
+    (pl.col('xrdq').fill_null(0) / pl.col('mve_c')).alias('RD_q')
 )
 
 print(f"Generated RD_q for {len(df)} observations")

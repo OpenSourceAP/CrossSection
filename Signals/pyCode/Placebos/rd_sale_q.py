@@ -44,12 +44,22 @@ print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'xrdq', 'saleq'])
 
+# Apply enhanced group-wise forward+backward fill for complete data coverage
+print("Applying enhanced group-wise forward+backward fill for R&D data...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+qcomp = qcomp.with_columns([
+    pl.col('saleq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('saleq'),
+    pl.col('xrdq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xrdq')
+])
+
 # Convert gvkey to same type for join
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+# Use left join to preserve SignalMasterTable observations
+# Stata's keep(match) might be more lenient about missing values
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 

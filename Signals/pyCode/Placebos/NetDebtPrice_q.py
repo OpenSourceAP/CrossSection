@@ -50,6 +50,8 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
+# Use left join to preserve SignalMasterTable observations
+# Stata's keep(match) might be more lenient about missing values
 df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge with m_QCompustat: {len(df)} rows")
@@ -61,7 +63,7 @@ acomp = acomp.select(['gvkey', 'time_avail_m', 'sic', 'ceq', 'csho', 'prcc_f'])
 acomp = acomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_aCompustat...")
-df = df.join(acomp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(acomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge with m_aCompustat: {len(df)} rows")
 

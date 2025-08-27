@@ -53,7 +53,9 @@ print("Applying forward-fill for missing quarterly values...")
 qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['ibq'])
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+# Use left join to preserve SignalMasterTable observations
+# Stata's keep(match) might be more lenient about missing values
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 

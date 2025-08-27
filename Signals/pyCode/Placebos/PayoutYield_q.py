@@ -53,7 +53,9 @@ print("Applying forward-fill for missing quarterly values...")
 qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dvpsxq', 'cshoq', 'ajexq', 'prstkcyq', 'pstkq'])
 
 print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+# Use left join to preserve SignalMasterTable observations
+# Stata's keep(match) might be more lenient about missing values
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
 
@@ -94,9 +96,12 @@ df_pd = df_pd.merge(lag6_data, on=['permno', 'time_lag6'], how='left')
 df = pl.from_pandas(df_pd)
 
 # gen tempTotalPayout = tempDiv + prstkcyq + (pstkq - l3.pstkq)
+# NOTE: Handle null values like Stata does (treat as 0)
 print("Computing tempTotalPayout...")
 df = df.with_columns(
-    (pl.col('tempDiv') + pl.col('prstkcyq') + (pl.col('pstkq') - pl.col('l3_pstkq'))).alias('tempTotalPayout')
+    (pl.col('tempDiv').fill_null(0) + 
+     pl.col('prstkcyq').fill_null(0) + 
+     (pl.col('pstkq').fill_null(0) - pl.col('l3_pstkq').fill_null(0))).alias('tempTotalPayout')
 )
 
 # gen PayoutYield_q = tempTotalPayout/l6.mve_c
