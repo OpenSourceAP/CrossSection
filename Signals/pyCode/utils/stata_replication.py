@@ -10,7 +10,7 @@ import re
 
 def fill_date_gaps(df, group_col='permno', time_col='time_avail_m'):
     """
-    Fill date gaps to create a balanced panel for proper lag operations.
+    Fill date gaps to create a clean panel for lag operations.
     Replicates Stata: xtset [group_col] [time_col]; tsfill
     
     Parameters

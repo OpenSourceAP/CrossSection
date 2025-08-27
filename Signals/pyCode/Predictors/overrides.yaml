@@ -57,3 +57,12 @@ MS:
     This is a complicated predictor with many many places for deviations to begin. Best I could do is get a Precision1 failure rate of 15.7%. The deviations seem to come from (1) tiny differences in the Compustat quarterly data that may be related to the deduplication in the DataDownloads code, and (2) bizarre edge behavior of Stata's asrol function that I could not make heads or tails of despite many hours of debugging. The first case we may want to fix: basically we may want to make sure when we deduplicate that we keep the row with more observations, or at least do something more systematic. The second case I think we should abandon. There are rare instances where Stata asrol decides to return Null despite there being enough observations in the window.
 
     These tiny differences accumulate in the complicated algorithm, which involves using many large rolling windows. I looked at many of the largest deviations and found all of them were linked to either problem (1) or (2). Most of them seemed to be due to problem (1). 
+
+CompEquIss:
+  status: accepted
+  reviewed_on: 2025-08-26
+  reviewed_by: ac
+  details: |
+    The predictor is failing the NumRows check: it has 16.6% more rows than Stata. But it passes all other tests very nicely. Precision1 and 2 are near perfect. I eyeballed several of the obs that are missing from the Stata file and it seems like the Python code is correct. These observations have valid lagged mve_c, and that's pretty much what is required for this predictor. 
+    
+    This predictor also has a T-stat that is a _lot_ larger than Stata. Which counts as a failure but maybe the Stata T-stat was too small.
