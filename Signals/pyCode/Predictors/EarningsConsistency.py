@@ -41,11 +41,11 @@ df['temp'] = np.where(
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'temp', [12, 24, 36, 48], prefix='temp', fill_gaps=True)
 
 # Calculate EarningsConsistency as row mean of temp variables
-temp_cols = ['temp', 'temp12', 'temp24', 'temp36', 'temp48']
+temp_cols = ['temp', 'temp12_temp', 'temp24_temp', 'temp36_temp', 'temp48_temp']
 df['EarningsConsistency'] = df[temp_cols].mean(axis=1)
 
-# Create 12-month lag of temp for filtering (already created by multi_lag as temp12)
-df['l12_temp'] = df['temp12']
+# Create 12-month lag of temp for filtering (already created by multi_lag as temp12_temp)
+df['l12_temp'] = df['temp12_temp']
 
 # Apply filters: set EarningsConsistency to missing if:
 # 1. abs(epspx/l12.epspx) > 6 OR
