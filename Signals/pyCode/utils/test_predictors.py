@@ -976,10 +976,10 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             # Format precision2 column with diff value information  
             if test4 == True:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"✅ ({EXTREME_Q*100:.1f}th diff {pth_diff:.1E})"
+                col4 = f"✅ ({pth_diff:.1E})"
             elif test4 == False:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"❌ ({EXTREME_Q*100:.1f}th diff {pth_diff:.1E})"
+                col4 = f"❌ ({pth_diff:.1E})"
             else:
                 col4 = "NA"
             
