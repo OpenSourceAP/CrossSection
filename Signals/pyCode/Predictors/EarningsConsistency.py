@@ -1,11 +1,3 @@
-# %%
-
-# debug
-import os
-os.chdir(os.path.join(os.path.dirname(__file__), '..'))
-print('debug')
-print(os.getcwd())
-
 # ABOUTME: Translates EarningsConsistency.do from Stata to Python
 # ABOUTME: Calculates earnings consistency measure based on standardized earnings changes
 
@@ -69,29 +61,3 @@ df.loc[df["exception"], "EarningsConsistency"] = np.nan
 
 # Save the predictor
 save_predictor(df, 'EarningsConsistency')
-
-# %% debug
-
-# read in stata csv
-stata0 = pd.read_csv('../Data/Predictors/EarningsConsistency.csv').rename(columns={'EarningsConsistency': 'stata'})
-
-# merge on to df
-testdat = df.copy()
-testdat = testdat.assign(
-    yyyymm = lambda x: (x['time_avail_m'].dt.year * 100 + x['time_avail_m'].dt.month).astype(int)
-)
-testdat = testdat.merge(stata0, on=['permno', 'yyyymm'], how='left')
-
-# %% debug
-
-print('in stata but not python')
-print(testdat.query('stata.notna() & EarningsConsistency.isna()'))
-
-print('in python but not stata')
-print(testdat.query('EarningsConsistency.notna() & stata.isna()'))
-
-
-
-# %% debug
-
-aa = testdat.query('permno == 10001')
