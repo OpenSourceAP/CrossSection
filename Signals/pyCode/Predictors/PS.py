@@ -67,49 +67,80 @@ lag_vars = ['ib', 'at', 'dltt', 'act', 'lct', 'sale', 'shrout']
 for var in lag_vars:
     df = stata_multi_lag(df, 'permno', 'time_avail_m', var, [12], prefix='l', fill_gaps=False)
 
+#%%
+
+# to replicate stata, we need to do some painful handling of 
+#   1: division by zero
+#   2: inequality tests with missing values
+# These interact in a ridiculous way here
+# Do we want to replicate all this? I'm not sure.
+# But let's do it for now.
+# Let's define a function to handle all of this and try to make the code readable
+
+def handle_stata_edges(
+    metric: pd.Series
+):
+    """    
+    This function handles division by zero and missing values for inequality tests
+    example: df['metric'] = handle_stata_edges(df['ib']/df['at'] - df['l12_ib']/df['l12_at'])
+    output: 
+        - pd.Series of 0s and 1s
+    """
+
+    # in python, we get infs from division by zero. stata forces these to nan
+    metric = metric.replace([np.inf, -np.inf], np.nan)
+
+    # in stata, for some crazy reason nan is treated as inf in inequality tests
+    metric = metric.replace(np.nan, np.inf)
+
+    return metric
+
+    
 # Calculate individual Piotroski components
 # p1: Positive net income
+metric = handle_stata_edges(df['ib'])
 df['p1'] = 0
-df.loc[stata_ineq_pd(df['ib'], ">", 0), 'p1'] = 1
+df.loc[metric > 0, 'p1'] = 1
 
 # p2: Positive operating cash flow
 df['p2'] = 0
-df.loc[stata_ineq_pd(df['fopt'], ">", 0), 'p2'] = 1
+metric = handle_stata_edges(df['fopt'])
+df.loc[metric > 0, 'p2'] = 1
 
 # p3: Improvement in ROA
 df['p3'] = 0
-condition = stata_ineq_pd(df['ib']/df['at'] - df['l12_ib']/df['l12_at'], ">", 0)
-df.loc[condition, 'p3'] = 1
+metric = handle_stata_edges(df['ib']/df['at'] - df['l12_ib']/df['l12_at'])
+df.loc[metric > 0, 'p3'] = 1
 
 # p4: Cash flow exceeds net income
 df['p4'] = 0
-df.loc[stata_ineq_pd(df['fopt'] - df['ib'], ">", 0), 'p4'] = 1
+metric = handle_stata_edges(df['fopt'] - df['ib'])
+df.loc[metric > 0, 'p4'] = 1
 
 # p5: Reduction in leverage
 df['p5'] = 0
-condition = stata_ineq_pd(df['dltt']/df['at'] - df['l12_dltt']/df['l12_at'], "<", 0)
-df.loc[condition, 'p5'] = 1
+metric = handle_stata_edges(df['dltt']/df['at'] - df['l12_dltt']/df['l12_at'])
+df.loc[metric < 0, 'p5'] = 1
 
 # p6: Improvement in current ratio
 df['p6'] = 0
-condition = stata_ineq_pd(df['act']/df['lct'] - df['l12_act']/df['l12_lct'], ">", 0)
-df.loc[condition, 'p6'] = 1
+metric = handle_stata_edges(df['act']/df['lct'] - df['l12_act']/df['l12_lct'])
+df.loc[metric > 0, 'p6'] = 1
 
 # p7: Improvement in gross margin - exact Stata replication (tempebit/sale - tempebit/l12.sale)
 df['p7'] = 0
-condition = stata_ineq_pd(df['tempebit']/df['sale'] - df['tempebit']/df['l12_sale'], ">", 0)
-df.loc[condition, 'p7'] = 1
+metric = handle_stata_edges(df['tempebit']/df['sale'] - df['tempebit']/df['l12_sale'])
+df.loc[metric > 0, 'p7'] = 1
 
 # p8: Improvement in asset turnover
 df['p8'] = 0
-condition = stata_ineq_pd(df['sale']/df['at'] - df['l12_sale']/df['l12_at'], ">", 0)
-df.loc[condition, 'p8'] = 1
+metric = handle_stata_edges(df['sale']/df['at'] - df['l12_sale']/df['l12_at'])
+df.loc[metric > 0, 'p8'] = 1
 
 # p9: No increase in shares outstanding
 df['p9'] = 0
-condition = stata_ineq_pd(df['shrout'], "<=", df['l12_shrout'])
-df.loc[condition, 'p9'] = 1
-
+metric = handle_stata_edges(df['l12_shrout'] - df['shrout']) # we want that if l12_shrout is missing, this evaluate sto true, to replicate the stata shrout <= l12.shrout test
+df.loc[metric >= 0, 'p9'] = 1
 
 # Sum all components
 df['PS'] = df['p1'] + df['p2'] + df['p3'] + df['p4'] + df['p5'] + df['p6'] + df['p7'] + df['p8'] + df['p9']
@@ -148,7 +179,7 @@ testdat = testdat.merge(stata0, on=['permno', 'yyyymm'], how='left').assign(
 
 #%% debug
 
-print(f'rows with large differences out of {len(testdat)} rows')
+print(f'rows with differences out of {len(testdat)} rows')
 print(
     testdat[['permno', 'yyyymm', 'PS', 'stata', 'diff']].query(
         'diff > 0'
@@ -157,13 +188,14 @@ print(
 
 """
          permno  yyyymm   PS  stata  diff
-2144821   77790  199904  6.0    8.0   2.0
-2144812   77790  199807  5.0    7.0   2.0
-2144820   77790  199903  6.0    8.0   2.0
+341       10001  201503  7.0    8.0   1.0
+1767796   65306  199505  4.0    5.0   1.0
+1768836   65315  198503  6.0    7.0   1.0
+1768835   65315  198502  6.0    7.0   1.0
 """
 
 # from stata details we can see
-# permno 77790, yyyymm 199904: all ps are 1 except p5
+# permno 65315, yyyymm 198503: p3 and p6 are zero
 
 #%% debug
 
@@ -171,20 +203,22 @@ print(
     testdat[
         ['permno', 'yyyymm'] 
         + ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'PS']
-    ].query('permno == 77790 & yyyymm == 199904')
+    ].query('permno == 65315 & yyyymm == 198503')
 )
 
-# p6 and p7 are zero, unlike stata.
+# p9 is zero, unlike stata.
 
 #%% debug
 
-print('check on p6')
+print('check on p9')
 
 print(
     testdat[
         ['permno', 'yyyymm']
-        + ['p6','act','lct','l12_act','l12_lct']
-    ].query('permno == 77790 & yyyymm == 199904')
+        + ['p9','shrout','l12_shrout']
+    ].assign(
+        temp = lambda x: x['shrout'] <= x['l12_shrout']
+    ).query('permno == 65315 & yyyymm == 198503')
 )
 
 # it's a division by zero issue. l12_lct is zero, making the test -Inf > 0. in python, this is false. in stata, I guess this is true?
