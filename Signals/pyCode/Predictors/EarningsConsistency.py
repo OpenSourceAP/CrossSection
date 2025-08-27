@@ -8,6 +8,13 @@
 import pandas as pd
 import numpy as np
 
+# set path for utils
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.savepredictor import save_predictor
+from utils.stata_replication import stata_multi_lag
+
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                      columns=['permno', 'time_avail_m', 'epspx'])
@@ -16,37 +23,29 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet',
 # Sort data (equivalent to xtset permno time_avail_m)
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 12-month and 24-month lags of epspx using merge-based calendar approach
-def create_calendar_lag_merge(df, column, lag_months):
-    """Create calendar-based lag using merge approach (faster)"""
-    df_copy = df[['permno', 'time_avail_m', column]].copy()
-    df_copy['lag_time'] = df_copy['time_avail_m'] + pd.DateOffset(months=lag_months)
-    df_copy = df_copy.rename(columns={column: f'lag{lag_months}_{column}'})
-    
-    result = df.merge(df_copy[['permno', 'lag_time', f'lag{lag_months}_{column}']], 
-                     left_on=['permno', 'time_avail_m'], 
-                     right_on=['permno', 'lag_time'], 
-                     how='left')
-    return result[f'lag{lag_months}_{column}']
-
-df['l12_epspx'] = create_calendar_lag_merge(df, 'epspx', 12)
-df['l24_epspx'] = create_calendar_lag_merge(df, 'epspx', 24)
+# Create 12-month and 24-month lags of epspx using multi_lag
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'epspx', [12, 24], prefix='l', fill_gaps=True)
 
 # Calculate temp variable: (epspx - l12.epspx)/(.5*(abs(l12.epspx) + abs(l24.epspx)))
-# Handle division by zero like Stata (set to missing)
+# Handle division by zero and missing lagged values like Stata (set to missing)
 denominator = 0.5 * (abs(df['l12_epspx']) + abs(df['l24_epspx']))
-df['temp'] = np.where(denominator == 0, np.nan, (df['epspx'] - df['l12_epspx']) / denominator)
+# If any required values are missing, result should be missing (like Stata)
+missing_condition = df['epspx'].isna() | df['l12_epspx'].isna() | df['l24_epspx'].isna()
+df['temp'] = np.where(
+    missing_condition | (denominator == 0), 
+    np.nan, 
+    (df['epspx'] - df['l12_epspx']) / denominator
+)
 
-# Create lagged versions of temp for 12, 24, 36, 48 months using calendar-based approach
-for n in [12, 24, 36, 48]:
-    df[f'temp{n}'] = create_calendar_lag_merge(df, 'temp', n)
+# Create lagged versions of temp for 12, 24, 36, 48 months using multi_lag
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'temp', [12, 24, 36, 48], prefix='temp', fill_gaps=True)
 
 # Calculate EarningsConsistency as row mean of temp variables
 temp_cols = ['temp', 'temp12', 'temp24', 'temp36', 'temp48']
 df['EarningsConsistency'] = df[temp_cols].mean(axis=1)
 
-# Create 12-month lag of temp for filtering using calendar-based approach
-df['l12_temp'] = create_calendar_lag_merge(df, 'temp', 12)
+# Create 12-month lag of temp for filtering (already created by multi_lag as temp12)
+df['l12_temp'] = df['temp12']
 
 # Apply filters: set EarningsConsistency to missing if:
 # 1. abs(epspx/l12.epspx) > 6 OR
@@ -61,11 +60,5 @@ filter_condition = (
 
 df.loc[filter_condition, 'EarningsConsistency'] = np.nan
 
-# Create yyyymm variable
-df['yyyymm'] = (df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month).astype(int)
-
-# Keep only required columns and remove missing values
-result = df[['permno', 'yyyymm', 'EarningsConsistency']].dropna()
-
-# Save the predictor
-result.to_csv('../pyData/Predictors/EarningsConsistency.csv', index=False)
+# save predictor
+save_predictor(df, 'EarningsConsistency')
