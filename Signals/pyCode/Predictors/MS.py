@@ -26,8 +26,6 @@ pl.Config.set_tbl_rows(24)
 
 from polars import col as cc, date
 
-debug_datemax = pl.date(2000, 1, 1) # for speed
-
 import polars as pl
 
 
@@ -79,6 +77,50 @@ print("=" * 80)
 print("🏗️  MS.py")
 print("Generating Mohanram G-score predictor")
 print("=" * 80)
+
+def asrol_custom(
+    df: pl.DataFrame, 
+    group_col: str, 
+    date_col: str, 
+    value_col: str, 
+    stat: str = 'mean',
+    window: str = '12mo', 
+    min_obs: int = 1,
+    ) -> pl.DataFrame:
+    """
+    hand built polars asrol that 
+      - constructs windows based a date duration
+      - replaces with na if there are not enough observations in the window
+    input: polars dataframe
+    output: polars dataframe with a new column
+    """
+
+    # grab the stat function
+    stat_dict = {'mean': pl.mean, 'std': pl.std, 'min': pl.min, 'max': pl.max}
+    stat_fun = stat_dict[stat]
+
+    df_addition =  df.sort(
+        pl.col([group_col, date_col])
+        ).with_columns(
+            pl.col([group_col, date_col]).set_sorted()
+        ).rolling(index_column=date_col, period=window, group_by=group_col).agg(
+            [
+                pl.last(value_col).alias(f'{value_col}_last'),
+                stat_fun(value_col).alias(f'{value_col}_{stat}'),
+                pl.count(value_col).alias(f'{value_col}_obs')
+            ]
+        ).with_columns(
+            pl.when(cc(f'{value_col}_obs') >= min_obs).then(cc(f'{value_col}_{stat}'))
+            .otherwise(pl.lit(None))
+            .alias(f'{value_col}_{stat}')
+        )
+
+    return df.join(
+        df_addition.select([group_col, date_col, f'{value_col}_{stat}']),
+        on=[group_col, date_col],
+        how='left',
+        coalesce=True
+    )
 
 # DATA LOAD
 print("📊 Loading Compustat and SignalMasterTable data...")
@@ -194,90 +236,14 @@ print("📈 Computing quarterly aggregations...")
 # Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations
 # spanning 12 calendar months, not just 12 consecutive data points
 
-
-# === old code ===
-
-# # Convert to pandas for time-based rolling calculations
-# df_pd = df.to_pandas()
-# df_pd = df_pd.set_index('time_avail_m').sort_index()
-
-# # Use pandas' built-in rolling with time window to match Stata's asrol behavior
-# # This is much faster than the custom loop approach
-# print("  Calculating time-based rolling means (matching Stata's asrol)...")
-
-# # Group by permno for rolling calculations
-# def apply_stata_rolling(group):
-#     """Apply Stata-like rolling aggregation to a permno group"""
-#     # Ensure data is sorted by time
-#     group = group.sort_index()
-    
-#     # Use exact 12-month window to match Stata's asrol window(time_avail_m 12) min(12)
-#     # 365D can be slightly off due to leap years, use 366D to be safe
-#     group['niqsum'] = group['niq'].rolling('366D', min_periods=12).mean() * 4
-#     group['xrdqsum'] = group['xrdq'].rolling('366D', min_periods=12).mean() * 4
-#     group['oancfqsum'] = group['oancfq'].rolling('366D', min_periods=12).mean() * 4
-#     group['capxqsum'] = group['capxq'].rolling('366D', min_periods=12).mean() * 4
-    
-#     return group
-
-# # Apply rolling calculations by permno
-# df_pd = df_pd.groupby('permno', group_keys=False).apply(apply_stata_rolling)
-
-# === new code ===
-
-def asrol_polars_rolling(
-    df: pl.DataFrame, 
-    group_col: str, 
-    date_col: str, 
-    value_col: str, 
-    stat: str = 'mean',
-    window: str = '12mo', 
-    min_obs: int = 1,
-    ) -> pl.DataFrame:
-    """
-    hand built polars asrol that 
-      - constructs windows based a date duration
-      - replaces with na if there are not enough observations in the window
-    input: polars dataframe
-    output: polars dataframe with a new column
-    """
-
-    # grab the stat function
-    stat_dict = {'mean': pl.mean, 'std': pl.std, 'min': pl.min, 'max': pl.max}
-    stat_fun = stat_dict[stat]
-
-    df_addition =  df.sort(
-        pl.col([group_col, date_col])
-        ).with_columns(
-            pl.col([group_col, date_col]).set_sorted()
-        ).rolling(index_column=date_col, period=window, group_by=group_col).agg(
-            [
-                pl.last(value_col).alias(f'{value_col}_last'),
-                stat_fun(value_col).alias(f'{value_col}_{stat}'),
-                pl.count(value_col).alias(f'{value_col}_obs')
-            ]
-        ).with_columns(
-            pl.when(cc(f'{value_col}_obs') >= min_obs).then(cc(f'{value_col}_{stat}'))
-            .otherwise(pl.lit(None))
-            .alias(f'{value_col}_{stat}')
-        )
-
-    return df.join(
-        df_addition.select([group_col, date_col, f'{value_col}_{stat}']),
-        on=[group_col, date_col],
-        how='left',
-        coalesce=True
-    )
-
-    
 # compute rolling means (be strict on windows)
-df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
+df = asrol_custom(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
     .rename({'niq_mean':'niqsum'})
-df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
+df = asrol_custom(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
     .rename({'xrdq_mean':'xrdqsum'})
-df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
+df = asrol_custom(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
     .rename({'oancfq_mean':'oancfqsum'})
-df = asrol_polars_rolling(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
+df = asrol_custom(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
     .rename({'capxq_mean':'capxqsum'})
 
 # multiply the means by 4 to convert to sums (to match stata)
@@ -347,26 +313,12 @@ df = df.with_columns([
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
-# Convert to pandas for time-based volatility calculations (48-month rolling)
+# Calculate 48-month rolling volatility using asrol_custom
 print("    Calculating 48-month rolling volatility...")
-df_pd_vol = df.to_pandas().set_index('time_avail_m').sort_index()
-
-def apply_stata_volatility_rolling(group):
-    """Apply Stata-like 48-month rolling volatility calculations"""
-    group = group.sort_index()
-    
-    # Use 48-month (4 years) time window with min_periods=18 to match Stata's asrol
-    # 48 months ≈ 1460 days, use 1470D to be safe with leap years
-    group['niVol'] = group['roaq'].rolling('1470D', min_periods=18).std()
-    group['revVol'] = group['sg'].rolling('1470D', min_periods=18).std()
-    
-    return group
-
-# Apply volatility rolling calculations by permno
-df_pd_vol = df_pd_vol.groupby('permno', group_keys=False).apply(apply_stata_volatility_rolling)
-
-# Convert back to polars
-df = pl.from_pandas(df_pd_vol.reset_index())
+df = asrol_custom(df, 'permno', 'time_avail_m', 'roaq', 'std', '1470d', 18)\
+    .rename({'roaq_std': 'niVol'})
+df = asrol_custom(df, 'permno', 'time_avail_m', 'sg', 'std', '1470d', 18)\
+    .rename({'sg_std': 'revVol'})
 
 # Calculate industry medians for volatility measures
 for v in ["niVol", "revVol"]:
