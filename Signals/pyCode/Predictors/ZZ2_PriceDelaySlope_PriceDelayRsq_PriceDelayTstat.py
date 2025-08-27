@@ -7,12 +7,19 @@ import polars_ols  # registers .least_squares namespace
 import sys
 import os
 import argparse
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.savepredictor import save_predictor
 
 # Parse command line arguments
-parser = argparse.ArgumentParser(description='Generate price delay predictors using daily data regressions')
-parser.add_argument('--test-permnos', type=int, help='Run on first N permnos for testing (default: all permnos)')
+parser = argparse.ArgumentParser(
+    description="Generate price delay predictors using daily data regressions"
+)
+parser.add_argument(
+    "--test-permnos",
+    type=int,
+    help="Run on first N permnos for testing (default: all permnos)",
+)
 args = parser.parse_args()
 
 print("=" * 80)
@@ -33,9 +40,7 @@ daily_ff = daily_ff.select(["time_d", "mktrf", "rf"]).sort("time_d")
 
 # Create market return lags
 for n in range(1, nlag + 1):
-    daily_ff = daily_ff.with_columns(
-        pl.col("mktrf").shift(n).alias(f"mktLag{n}")
-    )
+    daily_ff = daily_ff.with_columns(pl.col("mktrf").shift(n).alias(f"mktLag{n}"))
 
 print(f"Daily FF data with {nlag} lags: {len(daily_ff):,} observations")
 
@@ -50,9 +55,7 @@ print(f"Daily CRSP data: {len(df):,} observations")
 df = df.join(daily_ff, on="time_d", how="inner")
 
 # replace ret = ret - rf
-df = df.with_columns(
-    (pl.col("ret") - pl.col("rf")).alias("ret")
-)
+df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret"))
 
 print(f"After merging and adjusting returns: {len(df):,} observations")
 
@@ -62,8 +65,10 @@ if args.test_permnos:
     # Get first N permnos deterministically
     unique_permnos = df.select("permno").unique().sort("permno").head(args.test_permnos)
     test_permno_list = unique_permnos.to_series().to_list()
-    print(f"   Testing permnos: {test_permno_list[0]} to {test_permno_list[-1]} ({len(test_permno_list)} permnos)")
-    
+    print(
+        f"   Testing permnos: {test_permno_list[0]} to {test_permno_list[-1]} ({len(test_permno_list)} permnos)"
+    )
+
     # Filter data to test permnos only
     df = df.filter(pl.col("permno").is_in(test_permno_list))
     print(f"   After filtering to test permnos: {len(df):,} observations")
@@ -75,20 +80,15 @@ print("📅 Setting up time variables for June regressions...")
 # Set up for Regressions in each June
 # time_avail_m is the most next June after the obs
 # Stata logic: time_avail_m = mofd(mdy(6,30,year(dofm(time_m+6))))
-df = df.with_columns([
-    pl.col("time_d").dt.truncate("1mo").alias("time_m")
-])
+df = df.with_columns([pl.col("time_d").dt.truncate("1mo").alias("time_m")])
 
 # Add 6 months to time_m, then extract the year, then create June of that year
-df = df.with_columns(
-    pl.col("time_m").dt.offset_by("6mo").alias("time_m_plus_6")
-)
+df = df.with_columns(pl.col("time_m").dt.offset_by("6mo").alias("time_m_plus_6"))
 
 df = df.with_columns(
-    pl.datetime(
-        pl.col("time_m_plus_6").dt.year(),
-        6, 30
-    ).dt.truncate("1mo").alias("time_avail_m")
+    pl.datetime(pl.col("time_m_plus_6").dt.year(), 6, 30)
+    .dt.truncate("1mo")
+    .alias("time_avail_m")
 )
 
 print("🏃 Running regressions by group...")
@@ -99,40 +99,48 @@ df = df.sort(["time_avail_m", "permno", "time_d"])
 print("  Filtering groups with minimum 26 observations and data quality checks...")
 
 # Count observations per group and check data quality
-group_stats = df.group_by(["time_avail_m", "permno"]).agg([
-    pl.len().alias("group_count"),
-    pl.col("ret").var().alias("ret_var"),
-    pl.col("mktrf").var().alias("mktrf_var"),
-    pl.col("ret").count().alias("ret_non_null"),
-    pl.col("mktrf").count().alias("mktrf_non_null")
-])
+group_stats = df.group_by(["time_avail_m", "permno"]).agg(
+    [
+        pl.len().alias("group_count"),
+        pl.col("ret").var().alias("ret_var"),
+        pl.col("mktrf").var().alias("mktrf_var"),
+        pl.col("ret").count().alias("ret_non_null"),
+        pl.col("mktrf").count().alias("mktrf_non_null"),
+    ]
+)
 
 # Filter to groups that meet all quality criteria:
 # 1. >= 26 observations
 # 2. Non-zero variance in both ret and mktrf
 # 3. Sufficient non-null observations after dropna
 valid_groups = group_stats.filter(
-    (pl.col("group_count") >= 26) &
-    (pl.col("ret_var") > 0) &
-    (pl.col("mktrf_var") > 0) &
-    (pl.col("ret_non_null") >= 26) &
-    (pl.col("mktrf_non_null") >= 26) &
-    (pl.col("ret_var").is_not_null()) &
-    (pl.col("mktrf_var").is_not_null())
+    (pl.col("group_count") >= 26)
+    & (pl.col("ret_var") > 0)
+    & (pl.col("mktrf_var") > 0)
+    & (pl.col("ret_non_null") >= 26)
+    & (pl.col("mktrf_non_null") >= 26)
+    & (pl.col("ret_var").is_not_null())
+    & (pl.col("mktrf_var").is_not_null())
 )
 
 print(f"Groups before quality filtering: {len(group_stats):,}")
 print(f"Groups after quality filtering: {len(valid_groups):,}")
-print(f"  Filtered out {len(group_stats) - len(valid_groups):,} groups with data quality issues")
+print(
+    f"  Filtered out {len(group_stats) - len(valid_groups):,} groups with data quality issues"
+)
 
 # Ready for full dataset processing
 print("🚀 Processing all valid groups")
 
 # Keep only data for valid groups
-df = df.join(valid_groups.select(["time_avail_m", "permno"]), 
-             on=["time_avail_m", "permno"], 
-             how="inner")
-print(f"After filtering for minimum observations and data quality: {len(df):,} observations")
+df = df.join(
+    valid_groups.select(["time_avail_m", "permno"]),
+    on=["time_avail_m", "permno"],
+    how="inner",
+)
+print(
+    f"After filtering for minimum observations and data quality: {len(df):,} observations"
+)
 
 print("  Running regressions (one per group)...")
 
@@ -141,55 +149,59 @@ lag_features = [f"mktLag{n}" for n in range(1, nlag + 1)]
 
 # Run restricted regression for each group using SVD for numerical stability
 print(f"  Running restricted regressions on {len(valid_groups):,} groups...")
-restricted_results = (
-    df.group_by(["time_avail_m", "permno"], maintain_order=True)
-    .agg(
-        pl.col("ret").least_squares.ols(
-            "mktrf",
-            mode="statistics",
-            add_intercept=True,
-            null_policy="drop",
-            solve_method="svd"
-        ).alias("_stats_restricted")
+restricted_results = df.group_by(["time_avail_m", "permno"], maintain_order=True).agg(
+    pl.col("ret")
+    .least_squares.ols(
+        "mktrf",
+        mode="statistics",
+        add_intercept=True,
+        null_policy="drop",
+        solve_method="svd",
     )
+    .alias("_stats_restricted")
 )
 
 print(f"  Running unrestricted regressions on {len(valid_groups):,} groups...")
 # Run unrestricted regression for each group using SVD for numerical stability
-unrestricted_results = (
-    df.group_by(["time_avail_m", "permno"], maintain_order=True)
-    .agg([
-        pl.col("ret").least_squares.ols(
-            "mktrf", *lag_features,
+unrestricted_results = df.group_by(["time_avail_m", "permno"], maintain_order=True).agg(
+    [
+        pl.col("ret")
+        .least_squares.ols(
+            "mktrf",
+            *lag_features,
             mode="coefficients",
             add_intercept=True,
             null_policy="drop",
-            solve_method="svd"
-        ).alias("_b_coeffs"),
-        pl.col("ret").least_squares.ols(
-            "mktrf", *lag_features,
+            solve_method="svd",
+        )
+        .alias("_b_coeffs"),
+        pl.col("ret")
+        .least_squares.ols(
+            "mktrf",
+            *lag_features,
             mode="statistics",
             add_intercept=True,
             null_policy="drop",
-            solve_method="svd"
-        ).alias("_stats_unrestricted")
-    ])
+            solve_method="svd",
+        )
+        .alias("_stats_unrestricted"),
+    ]
 )
 
 # Combine results
 df_results = restricted_results.join(
-    unrestricted_results,
-    on=["time_avail_m", "permno"],
-    how="inner"
+    unrestricted_results, on=["time_avail_m", "permno"], how="inner"
 )
 
 print("📊 Extracting coefficients and R-squared values...")
 
 # Extract R-squared from statistics structures (field name is 'r2', not 'r_squared')
-df_results = df_results.with_columns([
-    pl.col("_stats_restricted").struct.field("r2").alias("R2Restricted"),
-    pl.col("_stats_unrestricted").struct.field("r2").alias("_R2")
-])
+df_results = df_results.with_columns(
+    [
+        pl.col("_stats_restricted").struct.field("r2").alias("R2Restricted"),
+        pl.col("_stats_unrestricted").struct.field("r2").alias("_R2"),
+    ]
+)
 
 # Extract coefficients
 coeff_extracts = [pl.col("_b_coeffs").struct.field("mktrf").alias("_b_mktrf")]
@@ -203,31 +215,32 @@ df_results = df_results.with_columns(coeff_extracts)
 # Extract t-statistics from the unrestricted statistics
 # The t_values field contains a list of t-statistics for each coefficient
 # Order: [mktrf, mktLag1, mktLag2, mktLag3, mktLag4, const]
+tstat_extracts = [
+    pl.col("_stats_unrestricted").struct.field("t_values").list.get(0).alias("_t_mktrf")
+]
 for n in range(1, nlag + 1):
-    df_results = df_results.with_columns(
-        pl.col("_stats_unrestricted").struct.field("t_values").list.get(n).alias(f"_t_mktLag{n}")
+    tstat_extracts.append(
+        pl.col("_stats_unrestricted")
+        .struct.field("t_values")
+        .list.get(n)
+        .alias(f"_t_mktLag{n}")
     )
+df_results = df_results.with_columns(tstat_extracts)
 
 print("📅 Filtering for valid results and June endpoints...")
 
 # Need to get the last observation date for each group to check if it's June
 # Join back with original data to get time_d info
-last_dates = (
-    df.group_by(["time_avail_m", "permno"], maintain_order=True)
-    .agg(pl.col("time_d").last().alias("last_time_d"))
+last_dates = df.group_by(["time_avail_m", "permno"], maintain_order=True).agg(
+    pl.col("time_d").last().alias("last_time_d")
 )
 
-df_results = df_results.join(
-    last_dates,
-    on=["time_avail_m", "permno"],
-    how="left"
-)
+df_results = df_results.join(last_dates, on=["time_avail_m", "permno"], how="left")
 
 # drop if _R2 == .
 # keep if month(time_d) == 6 // drop if last obs is not June
 df_monthly = df_results.filter(
-    (pl.col("_R2").is_not_null()) &
-    (pl.col("last_time_d").dt.month() == 6)
+    (pl.col("_R2").is_not_null()) & (pl.col("last_time_d").dt.month() == 6)
 )
 
 print(f"Monthly data after filtering: {len(df_monthly):,} observations")
@@ -254,7 +267,7 @@ df_monthly = df_monthly.with_columns(
     (temp_sum1_slope / (pl.col("_b_mktrf") + temp_sum2_slope)).alias("PriceDelaySlope")
 )
 
-# Construct D3: PriceDelayTstat  
+# Construct D3: PriceDelayTstat
 weighted_terms_tstat = []
 tstat_terms = []
 
@@ -266,7 +279,7 @@ temp_sum1_tstat = pl.sum_horizontal(weighted_terms_tstat)
 temp_sum2_tstat = pl.sum_horizontal(tstat_terms)
 
 df_monthly = df_monthly.with_columns(
-    (temp_sum1_tstat / (pl.col("_b_mktrf") + temp_sum2_tstat)).alias("PriceDelayTstat")
+    (temp_sum1_tstat / (pl.col("_t_mktrf") + temp_sum2_tstat)).alias("PriceDelayTstat")
 )
 
 print("📊 Applying winsorization and time adjustment...")
@@ -274,21 +287,6 @@ print("📊 Applying winsorization and time adjustment...")
 # replace time_avail_m = time_avail_m + 1 // Hou and Moskowitz skip one month
 df_monthly = df_monthly.with_columns(
     pl.col("time_avail_m").dt.offset_by("1mo").alias("time_avail_m")
-)
-
-# Winsorize PriceDelayTstat aggressively
-df_monthly = df_monthly.with_columns([
-    pl.col("PriceDelayTstat").quantile(0.1).over("time_avail_m").alias("tstat_p10"),
-    pl.col("PriceDelayTstat").quantile(0.9).over("time_avail_m").alias("tstat_p90")
-])
-
-df_monthly = df_monthly.with_columns(
-    pl.when(pl.col("PriceDelayTstat") < pl.col("tstat_p10"))
-    .then(pl.col("tstat_p10"))
-    .when(pl.col("PriceDelayTstat") > pl.col("tstat_p90"))
-    .then(pl.col("tstat_p90"))
-    .otherwise(pl.col("PriceDelayTstat"))
-    .alias("PriceDelayTstat")
 )
 
 print("📅 Forward-filling to monthly frequency...")
@@ -304,10 +302,12 @@ print(f"  Calculated values: {len(df_calc_values):,} observations")
 print("  Creating complete time series per permno (like Stata's tsfill)...")
 
 # Get min/max time_avail_m for each permno
-permno_ranges = df_calc_values.group_by("permno").agg([
-    pl.col("time_avail_m").min().alias("min_time"),
-    pl.col("time_avail_m").max().alias("max_time")
-])
+permno_ranges = df_calc_values.group_by("permno").agg(
+    [
+        pl.col("time_avail_m").min().alias("min_time"),
+        pl.col("time_avail_m").max().alias("max_time"),
+    ]
+)
 
 print(f"  Processing {len(permno_ranges)} permnos...")
 
@@ -321,27 +321,26 @@ total_permnos = len(permno_ranges)
 for batch_start in range(0, total_permnos, batch_size):
     batch_end = min(batch_start + batch_size, total_permnos)
     batch_ranges = permno_ranges.slice(batch_start, batch_end - batch_start)
-    
+
     if batch_start % 1000 == 0:  # Progress indicator
-        print(f"    Processing batch {batch_start//batch_size + 1}/{(total_permnos-1)//batch_size + 1}...")
-    
+        print(
+            f"    Processing batch {batch_start//batch_size + 1}/{(total_permnos-1)//batch_size + 1}..."
+        )
+
     for row in batch_ranges.iter_rows(named=True):
         permno = row["permno"]
-        min_time = row["min_time"]  
+        min_time = row["min_time"]
         max_time = row["max_time"]
-        
+
         try:
             # Create monthly date range for this permno
-            time_range = pl.date_range(
-                min_time, max_time, interval="1mo", eager=True
+            time_range = pl.date_range(min_time, max_time, interval="1mo", eager=True)
+
+            batch_data = pl.DataFrame(
+                {"permno": [permno] * len(time_range), "time_avail_m": time_range}
             )
-            
-            batch_data = pl.DataFrame({
-                "permno": [permno] * len(time_range),
-                "time_avail_m": time_range
-            })
             expanded_data.append(batch_data)
-            
+
         except Exception as e:
             print(f"    Warning: Could not create range for permno {permno}: {e}")
 
@@ -359,15 +358,15 @@ if expanded_data:
     )
 
     # Join calculated values onto complete grid
-    df_monthly = complete_grid.join(df_calc_values, on=["permno", "time_avail_m"], how="left")
+    df_monthly = complete_grid.join(
+        df_calc_values, on=["permno", "time_avail_m"], how="left"
+    )
 
     print("  Forward-filling missing values within each permno...")
     # Forward-fill missing values within each permno (like Stata's forward-fill)
     df_monthly = df_monthly.sort(["permno", "time_avail_m"])
     for col in price_delay_cols:
-        df_monthly = df_monthly.with_columns(
-            pl.col(col).forward_fill().over("permno")
-        )
+        df_monthly = df_monthly.with_columns(pl.col(col).forward_fill().over("permno"))
 
     print(f"  After forward-filling: {len(df_monthly):,} observations")
 else:
@@ -380,12 +379,12 @@ print("💾 Saving price delay predictors...")
 for predictor in price_delay_cols:
     result = df_monthly.select(["permno", "time_avail_m", predictor])
     valid_result = result.filter(pl.col(predictor).is_not_null())
-    
+
     print(f"Generated {predictor}: {len(valid_result):,} observations")
     if len(valid_result) > 0:
         print(f"  Mean: {valid_result[predictor].mean():.6f}")
         print(f"  Std: {valid_result[predictor].std():.6f}")
-    
+
     save_predictor(result, predictor)
     print(f"✅ {predictor}.csv saved successfully")
 
