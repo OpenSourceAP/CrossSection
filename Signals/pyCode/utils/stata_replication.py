@@ -99,7 +99,7 @@ def stata_quantile(x, qs):
 
 
 def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', 
-                    prefix='', fill_gaps=False):
+                    prefix='', fill_gaps=True):
     """
     Create multiple Stata-style lags efficiently.
     
@@ -122,6 +122,7 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M',
     fill_gaps : bool, default False
         Whether to fill date gaps before lagging. When True, creates balanced panel
         to ensure proper calendar-based lag alignment.
+        ac: the only time I can think of when we want to not fill gaps is to try to save time because the gaps have already been filled
     
     Returns
     -------

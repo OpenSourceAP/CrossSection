@@ -12,7 +12,8 @@ import yaml
 # =============================================================================
 # CONFIGURATION: Scripts to run (modify this list as needed)
 # =============================================================================
-PREDICTOR_SCRIPTS = "CitationsRD DivInit DivOmit DivSeason Herf HerfAsset HerfBE Investment MomOffSeason MomOffSeason06YrPlus MomOffSeason11YrPlus MomOffSeason16YrPlus MomVol RDAbility Recomm_ShortInterest TrendFactor VarCF ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility"
+
+PREDICTOR_SCRIPTS = "CompEquIss EarningsConsistency FirmAgeMom Mom12m Mom6m Mom6mJunk MomOffSeason MomOffSeason06YrPlus MomRev MomSeason MomSeasonShort MomVol PS RDcap"
 
 def load_predictor_mapping():
     """Load predictor mapping from YAML file and return the mapping dict"""

@@ -45,7 +45,7 @@ Successfully consolidated all asreg functions into a single, organized `utils/st
 
 # Other utils links
 
-ere's the comprehensive list
+Here's the comprehensive list
   organized by utility module:
 
   utils/asrol.py (17 scripts):
