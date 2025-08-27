@@ -22,13 +22,11 @@ df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 # Drop duplicates
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 
-# Handle missing R&D and other expense components (like Stata)
+# Handle missing R&D (like Stata, only fill xrd with 0)
 df['tempXRD'] = df['xrd'].fillna(0)
-df['tempXSGA'] = df['xsga'].fillna(0)
-df['tempCOGS'] = df['cogs'].fillna(0)
 
 # Calculate R&D-adjusted operating profitability
-df['OperProfRD'] = (df['revt'] - df['tempCOGS'] - df['tempXSGA'] + df['tempXRD']) / df['at']
+df['OperProfRD'] = (df['revt'] - df['cogs'] - df['xsga'] + df['tempXRD']) / df['at']
 
 # Apply filters
 df = df[

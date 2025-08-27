@@ -41,10 +41,8 @@ for months_back in range(7, 13):
     # Clean up temporary lag date column
     df = df.drop(f'lag_date_{months_back}', axis=1)
 
-# Handle missing lagged values by setting them to 0 (same as Stata: replace ret = 0 if mi(ret))
-lag_columns = [f'l{lag}_ret' for lag in range(7, 13)]
-for col in lag_columns:
-    df.loc[df[col].isna(), col] = 0
+# Do NOT fill missing lagged values - let them stay NaN so IntMom becomes NaN
+# This matches Stata behavior where missing lags result in missing IntMom
 
 # Calculate IntMom
 # Stata: gen IntMom = ( (1+l7.ret)*(1+l8.ret)*(1+l9.ret)*(1+l10.ret)*(1+l11.ret)*(1+l12.ret) ) - 1

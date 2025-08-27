@@ -33,20 +33,30 @@
 
 ## example task 
 
-try to fix the NumRows test failure in @pyCode/Predictors/LRreversal.py  . use                        │
-│   @pyCode/utils/test_predictors.py --predictors to compare with @"Logs/" testout_predictors 0826n1.md"  │
-│   to make sure the fix is an improvement. include the tstat test     
+try to fix the NumRows test failure in @pyCode/Predictors/LRreversal.py. 
+use @pyCode/utils/test_predictors.py --predictors to compare 
+with @"Logs/" testout_predictors 0826n1.md" to make sure the fix is an improvement. Include the tstat test     
 
 ## progress tracking
 
 - AccrualsBM: fixed
 - Activism1: fixed
-- RDcap: tried but failed
+- RDcap: fixed
+    - with new fill_gaps option in stata_multi_lag (also stata_lag)
 - LRreversal: fixed
 - Cash: partial fix
-- OperProf: tried but failed
-- CompEquIss: tried but failed
+- OperProf: fixed
+- CompEquIss: fixed
 - RDS: fixed
 - MRreversal: fixed
 - Illiquidity: fixed
+- OperProfRD: fixed
+- IntMom: fixed
+- EarningsConsistency: TBC
+- BetaFP: TBC
+- roaq: TBC
+- FirmAgeMom: TBC
 
+## common issues
+- remove incorrect fillna(0) calls
+- follow stata lag procedure using stata_lag or stata_multi_lag
