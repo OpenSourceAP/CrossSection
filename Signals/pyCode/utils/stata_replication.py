@@ -1,11 +1,53 @@
 # ABOUTME: Stata function replications for consistent behavior with Stata code
-# ABOUTME: Usage: from utils.stata_replication import stata_lag, stata_multi_lag, stata_quantile, stata_ineq_pd, stata_ineq_pl
+# ABOUTME: Usage: from utils.stata_replication import fill_date_gaps, stata_lag, stata_multi_lag, stata_quantile, stata_ineq_pd, stata_ineq_pl
 
 import pandas as pd
 import numpy as np
 import polars as pl
 import math
 import re
+
+
+def fill_date_gaps(df, group_col='permno', time_col='time_avail_m'):
+    """
+    Fill date gaps to create a balanced panel for proper lag operations.
+    Replicates Stata: xtset [group_col] [time_col]; tsfill
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    group_col : str, default 'permno'
+        Column to group by (e.g., 'permno', 'gvkey')
+    time_col : str, default 'time_avail_m'
+        Time column (e.g., 'time_avail_m', 'date')
+    
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with date gaps filled, creating a balanced panel
+        within each group's original date range
+    
+    Examples
+    --------
+    >>> df_filled = fill_date_gaps(df, 'permno', 'time_avail_m')
+    >>> df_filled = fill_date_gaps(df, 'gvkey', 'datadate')
+    """
+    # Get all unique groups and time periods
+    group_list = df[group_col].unique()
+    time_list = df[time_col].unique()
+    
+    # Create balanced panel with all combinations
+    full_idx = pd.MultiIndex.from_product([group_list, time_list], names=[group_col, time_col])
+    df_balanced = df.set_index([group_col, time_col]).reindex(full_idx).reset_index()\
+        .sort_values([group_col, time_col])
+    
+    # Keep only observations within each group's original date range
+    time_ranges = df.groupby(group_col)[time_col].agg(time_min='min', time_max='max').reset_index()
+    df_balanced = df_balanced.merge(time_ranges, on=group_col, how='left')
+    df_balanced = df_balanced.query(f'{time_col} >= time_min & {time_col} <= time_max').drop(columns=['time_min', 'time_max'])
+    
+    return df_balanced.sort_values([group_col, time_col])
 
 
 def stata_quantile(x, qs):
@@ -56,7 +98,7 @@ def stata_quantile(x, qs):
     return float(out[0]) if out.size == 1 else out
 
 
-def stata_lag(df, group_col, time_col, value_col, lag_periods, freq='M', suffix=None):
+def stata_lag(df, group_col, time_col, value_col, lag_periods, freq='M', suffix=None, fill_gaps=False):
     """
     Create a single Stata-style lag using shift + date validation.
     Matches Stata's l. operator behavior with calendar-based validation.
@@ -77,6 +119,9 @@ def stata_lag(df, group_col, time_col, value_col, lag_periods, freq='M', suffix=
         Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
     suffix : str, optional
         Custom suffix for the output column name. If None, uses f'_lag{lag_periods}'
+    fill_gaps : bool, default False
+        Whether to fill date gaps before lagging. When True, creates balanced panel
+        to ensure proper calendar-based lag alignment.
     
     Returns
     -------
@@ -87,7 +132,12 @@ def stata_lag(df, group_col, time_col, value_col, lag_periods, freq='M', suffix=
     --------
     >>> df['ret_lag12'] = stata_lag(df, 'permno', 'time_avail_m', 'ret', 12)
     >>> df['at_l12'] = stata_lag(df, 'permno', 'time_avail_m', 'at', 12, suffix='_l12')
+    >>> df['ret_lag6'] = stata_lag(df, 'permno', 'time_avail_m', 'ret', 6, fill_gaps=True)
     """
+    # Fill date gaps if requested
+    if fill_gaps:
+        df = fill_date_gaps(df, group_col, time_col)
+    
     # Sort by group and time to ensure correct ordering
     df_sorted = df.sort_values([group_col, time_col])
     
@@ -134,7 +184,7 @@ def stata_lag(df, group_col, time_col, value_col, lag_periods, freq='M', suffix=
     return result
 
 
-def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', prefix=''):
+def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', prefix='', fill_gaps=False):
     """
     Create multiple Stata-style lags efficiently.
     
@@ -154,6 +204,9 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', pref
         Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
     prefix : str, default ''
         Optional prefix for column names (e.g., 'l' to create 'l1_ret' instead of 'ret_lag1')
+    fill_gaps : bool, default False
+        Whether to fill date gaps before lagging. When True, creates balanced panel
+        to ensure proper calendar-based lag alignment.
     
     Returns
     -------
@@ -167,8 +220,15 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', pref
     
     >>> df = stata_multi_lag(df, 'permno', 'time_avail_m', 'at', [12], prefix='l')
     >>> # Creates column: l12_at
+    
+    >>> df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [6, 12], fill_gaps=True)
+    >>> # Creates columns with gap filling: ret_lag6, ret_lag12
     """
     df_result = df.copy()
+    
+    # Fill date gaps if requested
+    if fill_gaps:
+        df_result = fill_date_gaps(df_result, group_col, time_col)
     
     # Sort once for efficiency
     df_sorted = df_result.sort_values([group_col, time_col])
