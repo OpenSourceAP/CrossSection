@@ -90,7 +90,7 @@ print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 # winsor2 temp*, replace cuts(0.1 99.9) trim by(fyear)
 # Note: Modified to better match Stata's behavior - trim rows where ANY variable is extreme
 temp_cols = ["tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]
-df = winsor2(df, temp_cols, replace=True, trim=True, cuts=[0.1, 99.9])
+df = winsor2(df, temp_cols, replace=True, trim=True, cuts=[0.1, 99.9], by=["fyear"])
 
 print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
