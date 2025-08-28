@@ -97,16 +97,16 @@ def asrol_custom(
     if require_prev_obs:
         df_addition = df_addition.with_columns(
             pl.when(
-                (cc(f'{value_col}_obs') >= min_obs) & cc('has_valid_prev_obs')
-            ).then(cc(f'{value_col}_{stat}'))
+                (pl.col(f'{value_col}_obs') >= min_obs) & pl.col('has_valid_prev_obs')
+            ).then(pl.col(f'{value_col}_{stat}'))
             .otherwise(pl.lit(None))
             .alias(f'{value_col}_{stat}')
         )
     else:
         df_addition = df_addition.with_columns(
             pl.when(
-                cc(f'{value_col}_obs') >= min_obs
-            ).then(cc(f'{value_col}_{stat}'))
+                pl.col(f'{value_col}_obs') >= min_obs
+            ).then(pl.col(f'{value_col}_{stat}'))
             .otherwise(pl.lit(None))
             .alias(f'{value_col}_{stat}')
         )
@@ -114,7 +114,7 @@ def asrol_custom(
     return df.join(
         df_addition.select([group_col, date_col, f'{value_col}_{stat}']),
         on=[group_col, date_col],
-        how='left',
+        how='left', 
         coalesce=True
     )
 
