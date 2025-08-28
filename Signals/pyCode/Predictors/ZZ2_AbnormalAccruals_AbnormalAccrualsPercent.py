@@ -86,16 +86,6 @@ df = df.with_columns(
     (pl.col("ppegt") / pl.col("l_at")).alias("tempPPE")
 )
 
-# - CHECKPOINT 1: Check key variables after initial computation
-print("=== CHECKPOINT 1: After initial variable computation ===")
-checkpoint1_data = df.filter(
-    ((pl.col("permno") == 84005) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 85712) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 77649) & (pl.col("fyear") == 1997))
-)
-if len(checkpoint1_data) > 0:
-    print(checkpoint1_data.select(["gvkey", "permno", "fyear", "datadate", "tempCFO", "tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]))
-
 print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 
 # winsor2 temp*, replace cuts(0.1 99.9) trim by(fyear)
@@ -124,16 +114,6 @@ for year in df["fyear"].unique().to_list():
         .alias(c)
         for c in temp_cols
     ])
-
-# - CHECKPOINT 2: Check variables after winsorization
-print("=== CHECKPOINT 2: After winsorization ===")
-checkpoint2_data = df.filter(
-    ((pl.col("permno") == 84005) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 85712) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 77649) & (pl.col("fyear") == 1997))
-)
-if len(checkpoint2_data) > 0:
-    print(checkpoint2_data.select(["gvkey", "permno", "fyear", "datadate", "tempCFO", "tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]))
 
 print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
@@ -172,16 +152,6 @@ df_with_residuals = df_with_residuals.with_columns(
     pl.col("resid").alias("_residuals")
 ).drop("resid")
 
-# - CHECKPOINT 3: Check regression results and _Nobs before dropping
-print("=== CHECKPOINT 3: After regression, before dropping _Nobs < 6 ===")
-checkpoint3_data = df_with_residuals.filter(
-    ((pl.col("permno") == 84005) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 85712) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 77649) & (pl.col("fyear") == 1997))
-)
-if len(checkpoint3_data) > 0:
-    print(checkpoint3_data.select(["gvkey", "permno", "fyear", "sic2", "_Nobs", "_residuals"]))
-
 # drop if _Nobs < 6 // p 360
 df_with_residuals = df_with_residuals.filter(pl.col("_Nobs") >= 6)
 
@@ -202,15 +172,6 @@ df_with_residuals = df_with_residuals.with_columns(
 df_with_residuals = df_with_residuals.sort(["permno", "fyear"])
 df_with_residuals = df_with_residuals.group_by(["permno", "fyear"], maintain_order=True).first()
 
-# - CHECKPOINT 4: Check final AbnormalAccruals before monthly expansion
-print("=== CHECKPOINT 4: Final AbnormalAccruals values ===")
-checkpoint4_data = df_with_residuals.filter(
-    ((pl.col("permno") == 84005) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 85712) & (pl.col("fyear") == 2000)) |
-    ((pl.col("permno") == 77649) & (pl.col("fyear") == 1997))
-)
-if len(checkpoint4_data) > 0:
-    print(checkpoint4_data.select(["gvkey", "permno", "fyear", "datadate", "AbnormalAccruals"]))
 
 print(f"After cross-sectional regressions and filtering: {len(df_with_residuals):,} observations")
 
@@ -257,22 +218,6 @@ df_expanded = df_expanded.group_by(["permno", "time_avail_m"], maintain_order=Tr
 # Clean up columns
 df_expanded = df_expanded.drop(["month_offset"])
 
-# - CHECKPOINT 5: Check final monthly observations for problematic permnos
-print("=== CHECKPOINT 5: Final monthly data for problematic observations ===")
-# Filter for the problematic permnos and time range around their problem periods
-checkpoint5_data = df_expanded.filter(
-    ((pl.col("permno") == 84005) & 
-     (pl.col("time_avail_m") >= pl.datetime(2001, 1, 1)) &
-     (pl.col("time_avail_m") <= pl.datetime(2001, 12, 31))) |
-    ((pl.col("permno") == 85712) & 
-     (pl.col("time_avail_m") >= pl.datetime(2001, 1, 1)) &
-     (pl.col("time_avail_m") <= pl.datetime(2001, 12, 31))) |
-    ((pl.col("permno") == 77649) & 
-     (pl.col("time_avail_m") >= pl.datetime(1997, 6, 1)) &
-     (pl.col("time_avail_m") <= pl.datetime(1998, 6, 30)))
-)
-if len(checkpoint5_data) > 0:
-    print(checkpoint5_data.select(["permno", "time_avail_m", "AbnormalAccruals"]).sort(["permno", "time_avail_m"]))
 
 # Select and save AbnormalAccruals
 result_aa = df_expanded.select(["permno", "time_avail_m", "AbnormalAccruals"])
