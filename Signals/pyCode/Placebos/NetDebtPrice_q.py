@@ -50,8 +50,7 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-# Use left join to preserve SignalMasterTable observations
-# Stata's keep(match) might be more lenient about missing values
+# keep(master match) means left join - keep master + matches
 df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge with m_QCompustat: {len(df)} rows")
@@ -63,7 +62,7 @@ acomp = acomp.select(['gvkey', 'time_avail_m', 'sic', 'ceq', 'csho', 'prcc_f'])
 acomp = acomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_aCompustat...")
-df = df.join(acomp, on=['gvkey', 'time_avail_m'], how='left')
+df = df.join(acomp, on=['gvkey', 'time_avail_m'], how='inner')  # keep(match) means inner join
 
 print(f"After merge with m_aCompustat: {len(df)} rows")
 
@@ -112,7 +111,15 @@ df_pd = df.to_pandas()
 
 # egen tempsort = fastxtile(BM), by(time_avail_m) n(5)
 print("Computing BM quintiles by month...")
-df_pd['tempsort'] = df_pd.groupby('time_avail_m')['BM'].transform(lambda x: pd.qcut(x, 5, labels=False, duplicates='drop') + 1)
+def safe_qcut(x):
+    x = x.dropna()
+    if len(x) == 0:
+        return pd.Series(dtype=float, index=x.index)
+    try:
+        return pd.qcut(x, 5, labels=False, duplicates='drop') + 1
+    except ValueError:
+        return pd.Series(dtype=float, index=x.index)
+df_pd['tempsort'] = df_pd.groupby('time_avail_m')['BM'].transform(safe_qcut)
 
 # Convert back to polars
 df = pl.from_pandas(df_pd)

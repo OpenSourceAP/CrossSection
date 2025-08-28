@@ -70,9 +70,7 @@ df = df.with_columns(
 
 # bys permno: asrol roaq, gen(roavol) stat(sd) window(time_avail_m 48) min(24)
 print("Computing rolling standard deviation...")
-# Calculate rolling 48-observation standard deviation with min 24 observations
-# Using observation-based window instead of time-based due to irregular monthly data
-
+# Use position-based rolling window with 48 observations and min 24 periods
 df = df.with_columns(
     pl.col('roaq').rolling_std(window_size=48, min_periods=24).over('permno').alias('roavol')
 )

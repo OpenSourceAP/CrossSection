@@ -43,10 +43,34 @@ print(f"After filtering for non-null gvkey: {len(df)} rows")
 print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'piq', 'niq'])
-# Apply enhanced group-wise forward+backward fill for complete data coverage
-print("Applying enhanced group-wise forward+backward fill for quarterly data...")
-qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
-qcomp = qcomp.with_columns([
-    pl.col('piq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('piq'),
-    pl.col('niq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('niq')
-])
+
+# Convert gvkey to same type for join
+df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
+qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
+
+print("Merging with m_QCompustat...")
+# keep(match) means inner join
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
+
+print(f"After merge: {len(df)} rows")
+
+# SIGNAL CONSTRUCTION
+# gen Tax_q = piq/niq if piq >0 & niq >0
+print("Computing Tax_q...")
+df = df.with_columns(
+    pl.when((pl.col('piq') > 0) & (pl.col('niq') > 0))
+    .then(pl.col('piq') / pl.col('niq'))
+    .otherwise(None)
+    .alias('Tax_q')
+)
+
+print(f"Generated Tax_q for {len(df)} observations")
+
+# Keep only required columns for output
+df_final = df.select(['permno', 'time_avail_m', 'Tax_q'])
+
+# SAVE
+# do "$pathCode/saveplacebo" Tax_q
+save_placebo(df_final, 'Tax_q')
+
+print("Tax_q.py completed")

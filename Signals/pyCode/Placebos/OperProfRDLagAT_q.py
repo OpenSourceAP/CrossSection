@@ -48,8 +48,9 @@ comp = comp.select(['gvkey', 'time_avail_m', 'xrdq', 'revtq', 'cogsq', 'xsgaq', 
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 comp = comp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
+
 print("Merging with m_QCompustat...")
-df = df.join(comp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(comp, on=['gvkey', 'time_avail_m'], how='inner')  # keep(match)
 
 print(f"After merge: {len(df)} rows")
 
@@ -65,16 +66,18 @@ df = df.with_columns([
     pl.col('xrdq').fill_null(0).alias('tempXRD')
 ])
 
-# Create 3-quarter lag of atq (l3.atq)
-print("Computing 3-quarter lag of assets...")
+
+# Create 3-period lag using position-based approach (like Stata's l3.)
+print("Creating position-based 3-period lag of atq...")
 df = df.with_columns([
     pl.col('atq').shift(3).over('permno').alias('l3_atq')
 ])
 
-# gen OperProfRDLagAT_q = (revtq - cogsq - xsgaq + tempXRD)/l3.atq
+# Compute OperProfRDLagAT_q = (revtq - cogsq - xsgaq + tempXRD)/l3.atq
 print("Computing OperProfRDLagAT_q...")
 df = df.with_columns([
-    ((pl.col('revtq') - pl.col('cogsq') - pl.col('xsgaq') + pl.col('tempXRD')) / pl.col('l3_atq')).alias('OperProfRDLagAT_q')
+    ((pl.col('revtq') - pl.col('cogsq') - pl.col('xsgaq') + pl.col('tempXRD')) / pl.col('l3_atq'))
+    .alias('OperProfRDLagAT_q')
 ])
 
 print(f"Generated OperProfRDLagAT_q for {len(df)} observations")

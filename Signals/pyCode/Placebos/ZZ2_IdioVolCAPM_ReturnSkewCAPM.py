@@ -25,8 +25,10 @@ print("Loading daily CRSP in chunks...")
 chunk_size = 5000000  # 5M rows per chunk
 results = []
 
-# Read CRSP data in chunks
+# Read CRSP data in chunks, filter to FF overlap period
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+# Filter to periods where FF data exists (starts 1926-07-01)
+daily_crsp = daily_crsp.filter(pl.col('time_d') >= pl.datetime(1926, 7, 1))
 total_rows = len(daily_crsp)
 print(f"Total daily CRSP rows: {total_rows:,}")
 

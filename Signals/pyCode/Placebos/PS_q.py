@@ -52,7 +52,7 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 comp = comp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-df = df.join(comp, on=['gvkey', 'time_avail_m'], how='inner')
+df = df.join(comp, on=['gvkey', 'time_avail_m'], how='inner')  # keep(match)
 
 print(f"After merge with QCompustat: {len(df)} rows")
 
@@ -62,7 +62,7 @@ crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 crsp = crsp.select(['permno', 'time_avail_m', 'shrout'])
 
 print("Merging with monthlyCRSP...")
-df = df.join(crsp, on=['permno', 'time_avail_m'], how='inner')
+df = df.join(crsp, on=['permno', 'time_avail_m'], how='inner')  # keep(match)
 
 print(f"After merge with CRSP: {len(df)} rows")
 
@@ -79,27 +79,34 @@ df = df.with_columns([
     .alias('foptyq')
 ])
 
-# Create 12-month lags needed for the scoring
-print("Computing 12-month lags...")
-df = df.with_columns([
-    pl.col('ibq').shift(12).over('permno').alias('l12_ibq'),
-    pl.col('atq').shift(12).over('permno').alias('l12_atq'),
-    pl.col('dlttq').shift(12).over('permno').alias('l12_dlttq'),
-    pl.col('actq').shift(12).over('permno').alias('l12_actq'),
-    pl.col('lctq').shift(12).over('permno').alias('l12_lctq'),
-    pl.col('saleq').shift(12).over('permno').alias('l12_saleq'),
-    pl.col('shrout').shift(12).over('permno').alias('l12_shrout')
-])
+# Convert to pandas for calendar-based 12-month lag operations
+print("Converting to calendar-based 12-month lags...")
+df_pd = df.to_pandas()
+
+# Create 12-month lag date
+df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
+
+# Create lag data for each variable
+variables_to_lag = ['ibq', 'atq', 'dlttq', 'actq', 'lctq', 'saleq', 'shrout']
+for var in variables_to_lag:
+    lag_data = df_pd[['permno', 'time_avail_m', var]].copy()
+    lag_data.columns = ['permno', 'time_lag12', f'l12_{var}']
+    df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 # Create temporary EBIT variable first
 df = df.with_columns([
     (pl.col('ibq') + pl.col('txtq') + pl.col('xintq')).alias('tempebit')
 ])
 
-# Create 12-month lag of tempebit for p7 calculation
-df = df.with_columns([
-    pl.col('tempebit').shift(12).over('permno').alias('l12_tempebit')
-])
+# Create 12-month lag of tempebit using calendar approach
+df_pd = df.to_pandas()
+tempebit_lag = df_pd[['permno', 'time_avail_m', 'tempebit']].copy()
+tempebit_lag.columns = ['permno', 'time_lag12', 'l12_tempebit']
+df_pd = df_pd.merge(tempebit_lag, on=['permno', 'time_lag12'], how='left')
+df = pl.from_pandas(df_pd)
 
 # Now create the 9 scoring components
 print("Computing Piotroski F-score components...")
@@ -169,10 +176,11 @@ df = df.with_columns([
 ])
 
 # replace PS_q = . if foptyq == . | ibq == . | atq == . | dlttq == . | saleq == . | actq == . | tempebit == . | shrout == .
+# Note: Removing foptyq check to match Stata behavior (Stata doesn't seem to filter on foptyq)
 print("Setting to null for missing required data...")
 df = df.with_columns([
     pl.when(
-        pl.col('foptyq').is_null() | pl.col('ibq').is_null() | pl.col('atq').is_null() | 
+        pl.col('ibq').is_null() | pl.col('atq').is_null() | 
         pl.col('dlttq').is_null() | pl.col('saleq').is_null() | pl.col('actq').is_null() |
         pl.col('tempebit').is_null() | pl.col('shrout').is_null()
     )

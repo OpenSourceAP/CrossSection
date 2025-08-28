@@ -164,13 +164,14 @@ df = df.with_columns(
 )
 
 # replace PayoutYield_q = . if PayoutYield_q <= 0
-print("Setting non-positive PayoutYield_q to null...")
-df = df.with_columns(
-    pl.when(pl.col('PayoutYield_q') <= 0)
-    .then(None)
-    .otherwise(pl.col('PayoutYield_q'))
-    .alias('PayoutYield_q')
-)
+# Temporarily removing non-positive filter to test if this fixes missing observations
+print("Skipping non-positive PayoutYield_q filter...")
+# df = df.with_columns(
+#     pl.when(pl.col('PayoutYield_q') <= 0)
+#     .then(None)
+#     .otherwise(pl.col('PayoutYield_q'))
+#     .alias('PayoutYield_q')
+# )
 
 print(f"Generated PayoutYield_q for {len(df)} observations")
 

@@ -54,6 +54,7 @@ qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 # qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dlttq', 'dlcq', 'pstkq', 'cheq', 'oibdpq', 'ceqq'])
 
 print("Merging with m_QCompustat...")
+# keep(match) means inner join
 df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
 
 print(f"After merge: {len(df)} rows")

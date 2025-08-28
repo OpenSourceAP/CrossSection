@@ -79,18 +79,35 @@ df = df.with_columns(
 )
 
 # replace pchquick = 0 if pchquick ==. & l12.pchquick ==.
-# This means: set pchquick to 0 if both current calculation is missing AND lagged calculation would be missing
+# This is the key Stata logic that creates the 0.0 values that Python is missing
 print("Applying Stata's special missing value logic...")
-df = df.with_columns(
-    pl.col('pchquick').shift(12).over('permno').alias('l12_pchquick')
-)
 
-df = df.with_columns(
-    pl.when((pl.col('pchquick').is_null()) & (pl.col('l12_pchquick').is_null()))
-    .then(0.0)
-    .otherwise(pl.col('pchquick'))
-    .alias('pchquick')
-)
+# Convert to pandas for more precise control over the recursive logic
+df_pd = df.to_pandas()
+
+# Sort to ensure proper lag calculations
+df_pd = df_pd.sort_values(['permno', 'time_avail_m'])
+
+# Apply the rule iteratively until no more changes
+print("Applying Stata's special rule iteratively...")
+
+for pass_num in range(10):  # Allow multiple passes for full propagation
+    # Calculate 12-month lag of pchquick (position-based like Stata)
+    df_pd['l12_pchquick'] = df_pd.groupby('permno')['pchquick'].shift(12)
+    
+    # Identify observations where both pchquick and l12_pchquick are missing
+    both_missing = df_pd['pchquick'].isna() & df_pd['l12_pchquick'].isna()
+    changes = both_missing.sum()
+    
+    if changes > 0:
+        print(f"Pass {pass_num + 1}: {changes} observations being set to 0.0")
+        df_pd.loc[both_missing, 'pchquick'] = 0.0
+    else:
+        print(f"Pass {pass_num + 1}: No changes needed, stopping")
+        break
+
+# Convert back to polars
+df = pl.from_pandas(df_pd)
 
 print(f"Generated pchquick for {len(df)} observations")
 
