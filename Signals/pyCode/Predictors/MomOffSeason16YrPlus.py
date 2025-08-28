@@ -10,7 +10,7 @@ import numpy as np
 import sys
 sys.path.append('.')
 from utils.stata_replication import stata_multi_lag
-from utils.asrol import asrol
+from utils.asrol import asrol_fast
 from utils.savepredictor import save_predictor
 
 # DATA LOAD
@@ -40,10 +40,10 @@ df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [180])
 
 # asrol retLagTemp, by(permno) window(time_avail_m 60) stat(sum) minimum(36) gen(sum60_retLagTemp)
-df = asrol(df, 'permno', 'time_avail_m', 'ret_lag180', 60, 'sum', 'sum60_retLagTemp', min_periods=36)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'ret_lag180', 60, 'sum', 'sum60_retLagTemp', min_periods=36)
 
 # asrol retLagTemp, by(permno) window(time_avail_m 60) stat(count) minimum(36) gen(count60_retLagTemp)
-df = asrol(df, 'permno', 'time_avail_m', 'ret_lag180', 60, 'count', 'count60_retLagTemp', min_periods=36)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'ret_lag180', 60, 'count', 'count60_retLagTemp', min_periods=36)
 
 # gen MomOffSeason16YrPlus = (sum60_retLagTemp - retTemp1)/(count60_retLagTemp - retTemp2)
 df['MomOffSeason16YrPlus'] = (df['sum60_retLagTemp'] - df['retTemp1']) / (df['count60_retLagTemp'] - df['retTemp2'])

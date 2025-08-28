@@ -12,7 +12,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.asrol import asrol
+from utils.asrol import asrol_fast
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
@@ -39,7 +39,7 @@ df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
 df['divamt'] = df['divamt'].fillna(0)
 
 # Rolling 24-month sum of dividends using asrol
-df = asrol(df, 'permno', 'time_avail_m', 'divamt', 24, stat='sum', new_col_name='divsum')
+df = asrol_fast(df, 'permno', 'time_avail_m', 'divamt', 24, stat='sum', new_col_name='divsum')
 
 # Sort by permno and time_avail_m for lag calculation
 df = df.sort_values(['permno', 'time_avail_m'])
@@ -51,7 +51,7 @@ df['temp'] = (df['divamt'] > 0) & (df['divsum_lag1'] == 0)
 df['temp'] = df['temp'].fillna(False).astype(int)  # Convert boolean to numeric
 
 # Keep for 6 months using asrol
-df = asrol(df, 'permno', 'time_avail_m', 'temp', 6, stat='sum', new_col_name='initsum')
+df = asrol_fast(df, 'permno', 'time_avail_m', 'temp', 6, stat='sum', new_col_name='initsum')
 
 # Create final DivInit signal (initsum == 1)
 df['DivInit'] = (df['initsum'] == 1).astype(int)

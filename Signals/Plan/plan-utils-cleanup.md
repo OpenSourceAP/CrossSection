@@ -17,17 +17,20 @@ Basic IO (TBC: combine savepredictor and saveplacebo)
 - **stata_fastxtile.py**
   - `fastxtile`: Stata-equivalent percentile ranking
 
-TBC: separate asreg and asrol into different files
-- **stata_asreg_asrol.py**
-  - `asrol`: Rolling window statistics and regressions
-    - **IMPORTANT**: NEED TO RATIONALIZE WITH `asrol_custom` from `Predictors/MS.py`
+- **asreg.py**
   - `asreg_polars`: Rolling-window regressions using polars
   - `asreg_collinear`: Regression with collinearity handling (no rolling windows)
 
+- **asrol.py**
+  - `asrol_fast`: Rolling window statistics and regressions (polars)
+  - `asrol_calendar`: Rolling window statistics and regressions by date (polars)
+    - Not sure this is any slower than asrol_fast
+    - May need to add more options (e.g. stats)
+
+
 - **stata_regress.py**
   - `drop_collinear`: Drop collinear variables
-  - `regress`: OLS regression
-  - `asreg`: (**IMPORTANT**: NEED TO RATIONALIZE THIS WITH `asreg_polars` and `asreg_collinear`. where should this be deployed, if anywhere? should we just delete this?)
+  - `regress`: OLS regressionhis be deployed, if anywhere? should we just delete this?)
 
 - **stata_replication.py**
   - `stata_multi_lag`: Multi-period lagged variables
@@ -46,21 +49,13 @@ TBC: add to stata_replication.py
 - **winsor2.py**
   - `winsor2`: Data winsorization
 
-
-
-
 Extra:
 - `Predictors/MS.py`: asrol_custom()
    - Should consider systematically using this.
 
 ## Files that use asreg 
 
-**Current organization asreg-related utilities:**
-- all in `utils/stata_asreg_asrol.py`
-   - `asreg_collinear()`: for specifically dealing with collinearity problems in TrendFactor.py
-   - `asreg_polars()`: a fast asreg used everywhere else
-
-**Updated all 10 predictor files using polars asreg:**
+**Updated all 10 predictor files using `asreg_polars`:
    - ✅ Beta.py
    - ✅ BetaLiquidityPS.py  
    - ✅ BetaTailRisk.py
@@ -72,11 +67,17 @@ Extra:
    - ✅ ZZ2_betaVIX.py (also fixed sys.path import)
    - ✅ ZZ2_IdioVolAHT.py (also fixed sys.path import)
 
-**TrendFactor.py unchanged** - already uses `asreg_collinear()` 
+**TrendFactor.py unchanged** - already uses `asreg_collinear` 
+
+TBC: should we move any of these regressions to `asreg_collinear`?
 
 # Other utility modules
 
 ## utils/asrol.py (17 scripts)
+
+Almost all of these (if not all) are using `asrol_fast`, and just hiding behind the `asrol` wrapper. TBC: delete the `asrol` wrapper and just use `asrol_fast` directly.
+
+Also TBC: determine if we should use `asrol_custom` from `Predictors/MS.py` instead. We should make a pandas version of `asrol_custom`. 
 
 Group 1
 - DivInit.py
@@ -96,7 +97,8 @@ Group 3
 - MomVol.py
 
 Group 4
-- CitationsRD.py
+- CitationsRD.py: ✅ uses `asrol_calendar`
+- MS.py: ✅ uses `asrol_calendar`
 - RDAbility.py
 - Recomm_ShortInterest.py
 - TrendFactor.py

@@ -1,4 +1,4 @@
-Create Predictors Log - Started at 2025-08-26 23:53:37
+Create Predictors Log - Started at 2025-08-27 22:42:03
 ================================================================================
 
 
@@ -25,7 +25,7 @@ Final shape: 4047630 rows, 16 columns
 Column names: ['permno', 'ret', 'prc', 'shrcd', 'exchcd', 'sicCRSP', 'ticker', 'time_avail_m', 'mve_c', 'gvkey', 'sicCS', 'NYSE', 'bh1m', 'tickerIBES', 'secid', 'om_score']
 ============================================================
 ✅ Completed: SignalMasterTable.py
-Execution time: 4.92 seconds
+Execution time: 5.00 seconds
 
 
 🔄 Starting: AM.py
@@ -33,7 +33,7 @@ Execution time: 4.92 seconds
 AM predictor saved successfully
 ============================================================
 ✅ Completed: AM.py
-Execution time: 4.50 seconds
+Execution time: 4.45 seconds
 
 
 🔄 Starting: Accruals.py
@@ -52,7 +52,7 @@ Saved 3276202 rows to ../pyData/Predictors/Accruals.csv
 Accruals.py completed successfully
 ============================================================
 ✅ Completed: Accruals.py
-Execution time: 1.81 seconds
+Execution time: 1.80 seconds
 
 
 🔄 Starting: AccrualsBM.py
@@ -81,7 +81,7 @@ Saved 220635 rows to ../pyData/Predictors/AccrualsBM.csv
 AccrualsBM.py completed successfully
 ============================================================
 ✅ Completed: AccrualsBM.py
-Execution time: 4.83 seconds
+Execution time: 4.75 seconds
 
 
 🔄 Starting: AdExp.py
@@ -98,7 +98,7 @@ Saved 1049037 rows to ../pyData/Predictors/AdExp.csv
 AdExp.py completed successfully
 ============================================================
 ✅ Completed: AdExp.py
-Execution time: 1.88 seconds
+Execution time: 1.85 seconds
 
 
 🔄 Starting: AgeIPO.py
@@ -119,7 +119,7 @@ Saved 353486 rows to ../pyData/Predictors/AgeIPO.csv
 AgeIPO.py completed successfully
 ============================================================
 ✅ Completed: AgeIPO.py
-Execution time: 1.03 seconds
+Execution time: 1.04 seconds
 
 
 🔄 Starting: AnalystRevision.py
@@ -139,7 +139,7 @@ Saved 1923490 rows to ../pyData/Predictors/AnalystRevision.csv
 AnalystRevision.py completed successfully
 ============================================================
 ✅ Completed: AnalystRevision.py
-Execution time: 1.86 seconds
+Execution time: 1.88 seconds
 
 
 🔄 Starting: AssetGrowth.py
@@ -155,7 +155,7 @@ Saved 3311751 rows to ../pyData/Predictors/AssetGrowth.csv
 AssetGrowth.py completed successfully
 ============================================================
 ✅ Completed: AssetGrowth.py
-Execution time: 1.40 seconds
+Execution time: 1.36 seconds
 
 
 🔄 Starting: BM.py
@@ -166,7 +166,7 @@ Execution time: 1.40 seconds
   result = getattr(ufunc, method)(*inputs, **kwargs)
 ============================================================
 ✅ Completed: BM.py
-Execution time: 4.44 seconds
+Execution time: 4.56 seconds
 
 
 🔄 Starting: BMdec.py
@@ -187,7 +187,7 @@ Saved 2998697 rows to ../pyData/Predictors/BMdec.csv
 BMdec predictor completed successfully!
 ============================================================
 ✅ Completed: BMdec.py
-Execution time: 2.64 seconds
+Execution time: 2.78 seconds
 
 
 🔄 Starting: Beta.py
@@ -225,7 +225,7 @@ CAPM Beta predictor generated using polars asreg exact Stata replication
 ================================================================================
 ============================================================
 ✅ Completed: Beta.py
-Execution time: 6.62 seconds
+Execution time: 6.35 seconds
 
 
 🔄 Starting: BetaFP.py
@@ -234,7 +234,7 @@ saving BetaFP
 Saved 3779957 rows to ../pyData/Predictors/BetaFP.csv
 ============================================================
 ✅ Completed: BetaFP.py
-Execution time: 15.65 seconds
+Execution time: 16.96 seconds
 
 
 🔄 Starting: BetaLiquidityPS.py
@@ -271,7 +271,7 @@ Pastor-Stambaugh liquidity beta predictor generated using polars asreg exact Sta
 ================================================================================
 ============================================================
 ✅ Completed: BetaLiquidityPS.py
-Execution time: 10.20 seconds
+Execution time: 10.48 seconds
 
 
 🔄 Starting: BetaTailRisk.py
@@ -439,7 +439,7 @@ Tail risk beta predictor generated using polars asreg exact Stata replication
 ================================================================================
 ============================================================
 ✅ Completed: BetaTailRisk.py
-Execution time: 7.68 seconds
+Execution time: 7.88 seconds
 
 
 🔄 Starting: BidAskSpread.py
@@ -453,7 +453,7 @@ Saved 4481622 rows to ../pyData/Predictors/BidAskSpread.csv
 BidAskSpread.py completed successfully
 ============================================================
 ✅ Completed: BidAskSpread.py
-Execution time: 0.49 seconds
+Execution time: 0.51 seconds
 
 
 🔄 Starting: BookLeverage.py
@@ -472,7 +472,7 @@ Saved 3607287 rows to ../pyData/Predictors/BookLeverage.csv
 BookLeverage.py completed successfully
 ============================================================
 ✅ Completed: BookLeverage.py
-Execution time: 1.47 seconds
+Execution time: 1.52 seconds
 
 
 🔄 Starting: BrandInvest.py
@@ -496,7 +496,7 @@ Saved 509472 rows to ../pyData/Predictors/BrandInvest.csv
 BrandInvest predictor completed successfully!
 ============================================================
 ✅ Completed: BrandInvest.py
-Execution time: 31.62 seconds
+Execution time: 32.45 seconds
 
 
 🔄 Starting: CBOperProf.py
@@ -521,7 +521,7 @@ Saved 2283897 rows to ../pyData/Predictors/CBOperProf.csv
 CBOperProf predictor completed successfully!
 ============================================================
 ✅ Completed: CBOperProf.py
-Execution time: 5.85 seconds
+Execution time: 6.26 seconds
 
 
 🔄 Starting: CF.py
@@ -540,7 +540,7 @@ Saved 3053133 rows to ../pyData/Predictors/CF.csv
 CF.py completed successfully
 ============================================================
 ✅ Completed: CF.py
-Execution time: 2.10 seconds
+Execution time: 2.21 seconds
 
 
 🔄 Starting: CPVolSpread.py
@@ -583,7 +583,7 @@ Saved 2246763 rows to ../pyData/Predictors/Cash.csv
 Cash predictor completed successfully!
 ============================================================
 ✅ Completed: Cash.py
-Execution time: 3.23 seconds
+Execution time: 3.33 seconds
 
 
 🔄 Starting: CashProd.py
@@ -602,7 +602,7 @@ Saved 3038208 rows to ../pyData/Predictors/CashProd.csv
 CashProd.py completed successfully
 ============================================================
 ✅ Completed: CashProd.py
-Execution time: 2.01 seconds
+Execution time: 2.08 seconds
 
 
 🔄 Starting: ChAssetTurnover.py
@@ -627,7 +627,7 @@ Saved 3060165 rows to ../pyData/Predictors/ChEQ.csv
 ChEQ predictor completed successfully!
 ============================================================
 ✅ Completed: ChEQ.py
-Execution time: 0.77 seconds
+Execution time: 0.75 seconds
 
 
 🔄 Starting: ChForecastAccrual.py
@@ -635,7 +635,7 @@ Execution time: 0.77 seconds
 ChForecastAccrual predictor saved: 628490 observations
 ============================================================
 ✅ Completed: ChForecastAccrual.py
-Execution time: 7.46 seconds
+Execution time: 7.50 seconds
 
 
 🔄 Starting: ChInv.py
@@ -643,7 +643,7 @@ Execution time: 7.46 seconds
 ChInv predictor saved: 3311811 observations
 ============================================================
 ✅ Completed: ChInv.py
-Execution time: 3.30 seconds
+Execution time: 3.32 seconds
 
 
 🔄 Starting: ChInvIA.py
@@ -651,7 +651,7 @@ Execution time: 3.30 seconds
 ChInvIA predictor saved: 2678515 observations
 ============================================================
 ✅ Completed: ChInvIA.py
-Execution time: 5.39 seconds
+Execution time: 5.47 seconds
 
 
 🔄 Starting: ChNAnalyst.py
@@ -661,7 +661,7 @@ Execution time: 5.39 seconds
 ChNAnalyst predictor saved: 210931 observations
 ============================================================
 ✅ Completed: ChNAnalyst.py
-Execution time: 3.06 seconds
+Execution time: 2.92 seconds
 
 
 🔄 Starting: ChNNCOA.py
@@ -669,7 +669,7 @@ Execution time: 3.06 seconds
 ChNNCOA predictor saved: 3262618 observations
 ============================================================
 ✅ Completed: ChNNCOA.py
-Execution time: 3.52 seconds
+Execution time: 3.42 seconds
 
 
 🔄 Starting: ChNWC.py
@@ -686,7 +686,7 @@ Saved 3275986 rows to ../pyData/Predictors/ChNWC.csv
 ChNWC predictor completed successfully!
 ============================================================
 ✅ Completed: ChNWC.py
-Execution time: 0.88 seconds
+Execution time: 0.85 seconds
 
 
 🔄 Starting: ChTax.py
@@ -706,7 +706,7 @@ Saved 2828411 rows to ../pyData/Predictors/ChTax.csv
 ChTax predictor completed successfully!
 ============================================================
 ✅ Completed: ChTax.py
-Execution time: 2.22 seconds
+Execution time: 2.21 seconds
 
 
 🔄 Starting: ChangeInRecommendation.py
@@ -714,15 +714,13 @@ Execution time: 2.22 seconds
 ChangeInRecommendation predictor created with 450458 observations
 ============================================================
 ✅ Completed: ChangeInRecommendation.py
-Execution time: 12.62 seconds
+Execution time: 12.87 seconds
 
 
 🔄 Starting: CitationsRD.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/CitationsRD.py:133: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
-  df = df.groupby('gvkey').apply(lambda x: x.iloc[2:]).reset_index(drop=True)
 /Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/CitationsRD.py:173: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
-  df = df.groupby('time_avail_m').apply(calculate_size_breakpoints).reset_index(drop=True)
+  df = df.groupby('gvkey').apply(lambda x: x.iloc[2:]).reset_index(drop=True)
 Loading SignalMasterTable...
 After early date filter: (3481556, 6)
 Loading and merging Compustat...
@@ -731,99 +729,20 @@ After dropping missing gvkey: (2875781, 11)
 Loading and merging patent data...
 After patent merge: (2875781, 12)
 Creating calendar-based lags...
-After creating lags: (2875781, 13)
+After creating lags: (2936322, 13)
 Filtering to June observations...
-* CHECKPOINT 1: Before June filter
-      permno time_avail_m  year    gvkey  ncitscale
-999    10010   1992-01-01  1992  12622.0        0.0
-1000   10010   1992-02-01  1992  12622.0        0.0
-1001   10010   1992-03-01  1992  12622.0        0.0
-1002   10010   1992-04-01  1992  12622.0        0.0
-1003   10010   1992-05-01  1992  12622.0        0.0
-1004   10010   1992-06-01  1992  12622.0        0.0
-1005   10010   1992-07-01  1992  12622.0        0.0
-1006   10010   1992-08-01  1992  12622.0        0.0
-1007   10010   1992-09-01  1992  12622.0        0.0
-1008   10010   1992-10-01  1992  12622.0        0.0
-1009   10010   1992-11-01  1992  12622.0        0.0
-1010   10010   1992-12-01  1992  12622.0        0.0
-1011   10010   1993-01-01  1993  12622.0        0.0
-1012   10010   1993-02-01  1993  12622.0        0.0
-1013   10010   1993-03-01  1993  12622.0        0.0
-1014   10010   1993-04-01  1993  12622.0        0.0
-1015   10010   1993-05-01  1993  12622.0        0.0
-1016   10010   1993-06-01  1993  12622.0        0.0
-1017   10010   1993-07-01  1993  12622.0        0.0
-1018   10010   1993-08-01  1993  12622.0        0.0
-1019   10010   1993-09-01  1993  12622.0        0.0
-1020   10010   1993-10-01  1993  12622.0        0.0
-1021   10010   1993-11-01  1993  12622.0        0.0
-1022   10010   1993-12-01  1993  12622.0        0.0
-* CHECKPOINT 2: After June filter
-      permno time_avail_m  year    gvkey  ncitscale
-1004   10010   1992-06-01  1992  12622.0        0.0
-1016   10010   1993-06-01  1993  12622.0        0.0
-After June filter: (233208, 13)
+After June filter: (237996, 13)
 Creating calendar-based rolling sums...
   Computing 48-month calendar rolling XRD sums...
   Computing 48-month calendar rolling citation sums...
-* CHECKPOINT 3: Before gvkey filter
-    permno time_avail_m    gvkey  sum_xrd  sum_ncit  tempCitationsRD
-81   10010   1992-06-01  12622.0    0.863       0.0              0.0
-82   10010   1993-06-01  12622.0    0.967       0.0              0.0
-* CHECKPOINT 4: After gvkey filter
-       permno time_avail_m    gvkey  sum_xrd  sum_ncit  tempCitationsRD
-99997   10010   1992-06-01  12622.0    0.863       0.0              0.0
-99998   10010   1993-06-01  12622.0    0.967       0.0              0.0
-* CHECKPOINT 5: Size categories
-       permno time_avail_m      mve_c  sizecat
-49710   10010   1992-06-01  67.449997        1
-53035   10010   1993-06-01  62.425999        1
-NYSE median mve_c for 1992-06: 637.103759765625
-NYSE mve_c percentiles: count     1066.000000
-mean      2570.102539
-std       6710.757324
-min          1.780313
-25%        158.758560
-50%        637.103760
-75%       2043.680267
-max      76848.750000
-Name: mve_c, dtype: float64
-Creating tercile categories...
-* CHECKPOINT 6: Fastxtile results
-       permno time_avail_m  tempCitationsRD  sizecat  maincat
-49710   10010   1992-06-01              0.0        1      1.0
-53035   10010   1993-06-01              0.0        1      1.0
-tempCitationsRD summary for 1992-06:
-count    1502.000000
-mean        0.387288
-std         5.149831
-min         0.000000
-25%         0.000000
-50%         0.000000
-75%         0.088587
-max       159.253925
-Name: tempCitationsRD, dtype: float64
-maincat distribution:
-              min         max  count
-maincat
-1.0      0.000000    0.000000    979
-2.0      0.001636    0.016698     22
-3.0      0.016982  159.253925    501
-* CHECKPOINT 7: Final signal assignment
-       permno time_avail_m  sizecat  maincat  CitationsRD
-49710   10010   1992-06-01        1      1.0          0.0
-53035   10010   1993-06-01        1      1.0          0.0
-CitationsRD by sizecat for 1992-06:
-             mean  count
-sizecat
-1        0.253707   1214
-2             NaN      0
+Creating size categories...
+Creating CitationsRD tercile categories...
 Expanding to monthly observations...
-CitationsRD predictor saved successfully
+saving CitationsRD
+Saved 660084 rows to ../pyData/Predictors/CitationsRD.csv
 ============================================================
 ✅ Completed: CitationsRD.py
-Execution time: 6.16 seconds
+Execution time: 10.10 seconds
 
 
 🔄 Starting: CompEquIss.py
@@ -833,14 +752,14 @@ Loading SignalMasterTable...
 Loaded 4,047,630 SignalMasterTable observations
 Constructing CompEquIss signal...
 Creating 60-month lags with calendar validation...
-Generated CompEquIss values for 2,532,930 observations
+Generated CompEquIss values for 2,560,488 observations
 Saving predictor...
 saving CompEquIss
-Saved 2532930 rows to ../pyData/Predictors/CompEquIss.csv
+Saved 2560488 rows to ../pyData/Predictors/CompEquIss.csv
 CompEquIss predictor completed successfully!
 ============================================================
 ✅ Completed: CompEquIss.py
-Execution time: 2.66 seconds
+Execution time: 9.85 seconds
 
 
 🔄 Starting: CompositeDebtIssuance.py
@@ -862,7 +781,7 @@ Saved 2157897 rows to ../pyData/Predictors/CompositeDebtIssuance.csv
 CompositeDebtIssuance predictor completed successfully!
 ============================================================
 ✅ Completed: CompositeDebtIssuance.py
-Execution time: 1.34 seconds
+Execution time: 1.35 seconds
 
 
 🔄 Starting: ConsRecomm.py
@@ -883,7 +802,7 @@ Saved 134129 rows to ../pyData/Predictors/ConsRecomm.csv
 ConsRecomm predictor completed successfully!
 ============================================================
 ✅ Completed: ConsRecomm.py
-Execution time: 0.98 seconds
+Execution time: 0.97 seconds
 
 
 🔄 Starting: ConvDebt.py
@@ -901,7 +820,7 @@ Saved 3625491 rows to ../pyData/Predictors/ConvDebt.csv
 ConvDebt predictor completed successfully!
 ============================================================
 ✅ Completed: ConvDebt.py
-Execution time: 0.72 seconds
+Execution time: 0.71 seconds
 
 
 🔄 Starting: CoskewACX.py
@@ -976,7 +895,7 @@ Saving to CSV...
 CoskewACX translation complete!
 ============================================================
 ✅ Completed: CoskewACX.py
-Execution time: 79.78 seconds
+Execution time: 91.20 seconds
 
 
 🔄 Starting: Coskewness.py
@@ -1194,7 +1113,7 @@ Saving to CSV...
 Coskewness translation complete!
 ============================================================
 ✅ Completed: Coskewness.py
-Execution time: 14.30 seconds
+Execution time: 14.64 seconds
 
 
 🔄 Starting: CredRatDG.py
@@ -1214,7 +1133,7 @@ Saved 3041661 rows to ../pyData/Predictors/CredRatDG.csv
 CredRatDG predictor completed successfully!
 ============================================================
 ✅ Completed: CredRatDG.py
-Execution time: 1.78 seconds
+Execution time: 1.81 seconds
 
 
 🔄 Starting: CustomerMomentum.py
@@ -1230,7 +1149,7 @@ Saved 356510 rows to ../pyData/Predictors/CustomerMomentum.csv
 CustomerMomentum predictor completed successfully!
 ============================================================
 ✅ Completed: CustomerMomentum.py
-Execution time: 0.36 seconds
+Execution time: 0.35 seconds
 
 
 🔄 Starting: DebtIssuance.py
@@ -1254,7 +1173,7 @@ Saved 2726038 rows to ../pyData/Predictors/DebtIssuance.csv
 DebtIssuance predictor completed successfully!
 ============================================================
 ✅ Completed: DebtIssuance.py
-Execution time: 2.30 seconds
+Execution time: 2.23 seconds
 
 
 🔄 Starting: DelBreadth.py
@@ -1270,7 +1189,7 @@ Execution time: 2.30 seconds
 DelBreadth predictor saved successfully
 ============================================================
 ✅ Completed: DelBreadth.py
-Execution time: 3.16 seconds
+Execution time: 3.06 seconds
 
 
 🔄 Starting: DelCOA.py
@@ -1290,7 +1209,7 @@ Saved 3311811 rows to ../pyData/Predictors/DelCOA.csv
 DelCOA.py completed successfully
 ============================================================
 ✅ Completed: DelCOA.py
-Execution time: 1.58 seconds
+Execution time: 1.59 seconds
 
 
 🔄 Starting: DelCOL.py
@@ -1310,7 +1229,7 @@ Saved 3276202 rows to ../pyData/Predictors/DelCOL.csv
 DelCOL.py completed successfully
 ============================================================
 ✅ Completed: DelCOL.py
-Execution time: 1.60 seconds
+Execution time: 1.55 seconds
 
 
 🔄 Starting: DelDRC.py
@@ -1347,7 +1266,7 @@ Execution time: 3.80 seconds
 DelFINL: Saved 3,251,941 observations
 ============================================================
 ✅ Completed: DelFINL.py
-Execution time: 3.88 seconds
+Execution time: 3.93 seconds
 
 
 🔄 Starting: DelLTI.py
@@ -1355,7 +1274,7 @@ Execution time: 3.88 seconds
 DelLTI: Saved 3,296,136 observations
 ============================================================
 ✅ Completed: DelLTI.py
-Execution time: 3.39 seconds
+Execution time: 3.47 seconds
 
 
 🔄 Starting: DelNetFin.py
@@ -1363,7 +1282,7 @@ Execution time: 3.39 seconds
 DelNetFin: Saved 3,251,941 observations
 ============================================================
 ✅ Completed: DelNetFin.py
-Execution time: 3.95 seconds
+Execution time: 4.03 seconds
 
 
 🔄 Starting: DivInit.py
@@ -1371,7 +1290,7 @@ Execution time: 3.95 seconds
 DivInit predictor saved successfully
 ============================================================
 ✅ Completed: DivInit.py
-Execution time: 3.65 seconds
+Execution time: 3.86 seconds
 
 
 🔄 Starting: DivOmit.py
@@ -1379,7 +1298,7 @@ Execution time: 3.65 seconds
 DivOmit predictor saved successfully
 ============================================================
 ✅ Completed: DivOmit.py
-Execution time: 5.53 seconds
+Execution time: 5.61 seconds
 
 
 🔄 Starting: DivSeason.py
@@ -1391,7 +1310,7 @@ Execution time: 5.53 seconds
 DivSeason predictor saved successfully
 ============================================================
 ✅ Completed: DivSeason.py
-Execution time: 3.48 seconds
+Execution time: 3.65 seconds
 
 
 🔄 Starting: DivYieldST.py
@@ -1399,7 +1318,7 @@ Execution time: 3.48 seconds
 DivYieldST predictor saved successfully
 ============================================================
 ✅ Completed: DivYieldST.py
-Execution time: 4.45 seconds
+Execution time: 4.62 seconds
 
 
 🔄 Starting: DolVol.py
@@ -1409,7 +1328,7 @@ Execution time: 4.45 seconds
 DolVol predictor saved successfully
 ============================================================
 ✅ Completed: DolVol.py
-Execution time: 5.04 seconds
+Execution time: 5.03 seconds
 
 
 🔄 Starting: DownRecomm.py
@@ -1435,7 +1354,7 @@ CHECKPOINT 4 - After merge with SignalMasterTable:
 DownRecomm predictor created with 464223 observations
 ============================================================
 ✅ Completed: DownRecomm.py
-Execution time: 12.82 seconds
+Execution time: 12.50 seconds
 
 
 🔄 Starting: EP.py
@@ -1723,35 +1642,23 @@ Saved 2336093 rows to ../pyData/Predictors/EarnSupBig.csv
 EarnSupBig predictor saved successfully
 ============================================================
 ✅ Completed: EarnSupBig.py
-Execution time: 43.08 seconds
+Execution time: 43.09 seconds
 
 
 🔄 Starting: EarningsConsistency.py
 ============================================================
-Traceback (most recent call last):
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/EarningsConsistency.py", line 45, in <module>
-    df['EarningsConsistency'] = df[temp_cols].mean(axis=1)
-                                ~~^^^^^^^^^^^
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/frame.py", line 4108, in __getitem__
-    indexer = self.columns._get_indexer_strict(key, "columns")[1]
-              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/indexes/base.py", line 6200, in _get_indexer_strict
-    self._raise_if_missing(keyarr, indexer, axis_name)
-    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/indexes/base.py", line 6252, in _raise_if_missing
-    raise KeyError(f"{not_found} not in index")
-KeyError: "['temp12', 'temp24', 'temp36', 'temp48'] not in index"
+saving EarningsConsistency
+Saved 1387458 rows to ../pyData/Predictors/EarningsConsistency.csv
 ============================================================
-❌ ERROR in EarningsConsistency.py: Return code 1
-Error details: Script failed with return code 1
-Execution time: 6.59 seconds
+✅ Completed: EarningsConsistency.py
+Execution time: 6.81 seconds
 
 
 🔄 Starting: EarningsForecastDisparity.py
 ============================================================
 ============================================================
 ✅ Completed: EarningsForecastDisparity.py
-Execution time: 4.31 seconds
+Execution time: 4.30 seconds
 
 
 🔄 Starting: EarningsStreak.py
@@ -1760,7 +1667,7 @@ Warning: Dropped 817177 observations with missing EarningsStreak after forward-f
 EarningsStreak predictor created with 1225443 observations
 ============================================================
 ✅ Completed: EarningsStreak.py
-Execution time: 5.50 seconds
+Execution time: 5.45 seconds
 
 
 🔄 Starting: EarningsSurprise.py
@@ -1768,7 +1675,7 @@ Execution time: 5.50 seconds
 EarningsSurprise predictor created with 2324021 observations
 ============================================================
 ✅ Completed: EarningsSurprise.py
-Execution time: 11.23 seconds
+Execution time: 11.22 seconds
 
 
 🔄 Starting: EntMult.py
@@ -1776,7 +1683,7 @@ Execution time: 11.23 seconds
 EntMult predictor saved successfully
 ============================================================
 ✅ Completed: EntMult.py
-Execution time: 4.02 seconds
+Execution time: 4.03 seconds
 
 
 🔄 Starting: EquityDuration.py
@@ -1792,7 +1699,7 @@ Expanding to monthly observations...
 EquityDuration predictor saved successfully
 ============================================================
 ✅ Completed: EquityDuration.py
-Execution time: 7.09 seconds
+Execution time: 6.92 seconds
 
 
 🔄 Starting: ExchSwitch.py
@@ -1800,7 +1707,7 @@ Execution time: 7.09 seconds
 ExchSwitch predictor saved successfully
 ============================================================
 ✅ Completed: ExchSwitch.py
-Execution time: 4.22 seconds
+Execution time: 4.13 seconds
 
 
 🔄 Starting: ExclExp.py
@@ -1828,7 +1735,7 @@ Saved 1958211 rows to ../pyData/Predictors/FEPS.csv
 FEPS.py completed successfully
 ============================================================
 ✅ Completed: FEPS.py
-Execution time: 1.84 seconds
+Execution time: 1.86 seconds
 
 
 🔄 Starting: FirmAge.py
@@ -1836,17 +1743,17 @@ Execution time: 1.84 seconds
 FirmAge predictor saved successfully
 ============================================================
 ✅ Completed: FirmAge.py
-Execution time: 3.19 seconds
+Execution time: 3.09 seconds
 
 
 🔄 Starting: FirmAgeMom.py
 ============================================================
 saving FirmAgeMom
-Saved 550434 rows to ../pyData/Predictors/FirmAgeMom.csv
+Saved 569202 rows to ../pyData/Predictors/FirmAgeMom.csv
 FirmAgeMom predictor completed
 ============================================================
 ✅ Completed: FirmAgeMom.py
-Execution time: 3.03 seconds
+Execution time: 5.98 seconds
 
 
 🔄 Starting: ForecastDispersion.py
@@ -1865,7 +1772,7 @@ Saved 1620034 rows to ../pyData/Predictors/ForecastDispersion.csv
 ForecastDispersion.py completed successfully
 ============================================================
 ✅ Completed: ForecastDispersion.py
-Execution time: 1.88 seconds
+Execution time: 1.83 seconds
 
 
 🔄 Starting: Frontier.py
@@ -1875,55 +1782,55 @@ Loading data...
 Computing FF48 industry codes...
 Processing 889 time periods (starting from 1950-12)...
 Processed 151/889 periods (17.0%), stored 66 predictions for 1963-06
-  Elapsed: 0.7s, Est. remaining: 74.7s, Avg: 0.101s/period (last 7 periods)
+  Elapsed: 0.6s, Est. remaining: 61.0s, Avg: 0.083s/period (last 7 periods)
 Processed 181/889 periods (20.4%), stored 55 predictions for 1965-12
-  Elapsed: 1.2s, Est. remaining: 10.8s, Avg: 0.015s/period (last 30 periods)
+  Elapsed: 1.0s, Est. remaining: 10.9s, Avg: 0.015s/period (last 30 periods)
 Processed 211/889 periods (23.7%), stored 152 predictions for 1968-06
-  Elapsed: 1.8s, Est. remaining: 14.6s, Avg: 0.022s/period (last 30 periods)
+  Elapsed: 1.7s, Est. remaining: 14.9s, Avg: 0.022s/period (last 30 periods)
 Processed 241/889 periods (27.1%), stored 191 predictions for 1970-12
-  Elapsed: 2.7s, Est. remaining: 19.3s, Avg: 0.030s/period (last 30 periods)
+  Elapsed: 2.5s, Est. remaining: 18.2s, Avg: 0.028s/period (last 30 periods)
 Processed 271/889 periods (30.5%), stored 1230 predictions for 1973-06
-  Elapsed: 4.8s, Est. remaining: 42.4s, Avg: 0.069s/period (last 30 periods)
+  Elapsed: 4.5s, Est. remaining: 40.4s, Avg: 0.065s/period (last 30 periods)
 Processed 301/889 periods (33.9%), stored 1600 predictions for 1975-12
-  Elapsed: 9.0s, Est. remaining: 83.4s, Avg: 0.142s/period (last 30 periods)
+  Elapsed: 8.7s, Est. remaining: 81.8s, Avg: 0.139s/period (last 30 periods)
 Processed 331/889 periods (37.2%), stored 1487 predictions for 1978-06
-  Elapsed: 14.2s, Est. remaining: 96.8s, Avg: 0.173s/period (last 30 periods)
+  Elapsed: 13.9s, Est. remaining: 96.7s, Avg: 0.173s/period (last 30 periods)
 Processed 361/889 periods (40.6%), stored 1527 predictions for 1980-12
-  Elapsed: 19.5s, Est. remaining: 93.2s, Avg: 0.176s/period (last 30 periods)
+  Elapsed: 19.1s, Est. remaining: 92.6s, Avg: 0.175s/period (last 30 periods)
 Processed 391/889 periods (44.0%), stored 1714 predictions for 1983-06
-  Elapsed: 25.1s, Est. remaining: 92.8s, Avg: 0.186s/period (last 30 periods)
+  Elapsed: 24.8s, Est. remaining: 93.6s, Avg: 0.188s/period (last 30 periods)
 Processed 421/889 periods (47.4%), stored 2048 predictions for 1985-12
-  Elapsed: 31.3s, Est. remaining: 96.4s, Avg: 0.206s/period (last 30 periods)
+  Elapsed: 31.1s, Est. remaining: 97.9s, Avg: 0.209s/period (last 30 periods)
 Processed 451/889 periods (50.7%), stored 2144 predictions for 1988-06
-  Elapsed: 38.2s, Est. remaining: 101.2s, Avg: 0.231s/period (last 30 periods)
+  Elapsed: 38.0s, Est. remaining: 101.3s, Avg: 0.231s/period (last 30 periods)
 Processed 481/889 periods (54.1%), stored 2013 predictions for 1990-12
-  Elapsed: 45.3s, Est. remaining: 96.3s, Avg: 0.236s/period (last 30 periods)
+  Elapsed: 45.2s, Est. remaining: 97.4s, Avg: 0.239s/period (last 30 periods)
 Processed 511/889 periods (57.5%), stored 2244 predictions for 1993-06
-  Elapsed: 52.6s, Est. remaining: 91.7s, Avg: 0.243s/period (last 30 periods)
+  Elapsed: 52.2s, Est. remaining: 89.0s, Avg: 0.235s/period (last 30 periods)
 Processed 541/889 periods (60.9%), stored 2616 predictions for 1995-12
-  Elapsed: 60.3s, Est. remaining: 89.4s, Avg: 0.257s/period (last 30 periods)
+  Elapsed: 59.9s, Est. remaining: 89.1s, Avg: 0.256s/period (last 30 periods)
 Processed 571/889 periods (64.2%), stored 3163 predictions for 1998-06
-  Elapsed: 69.1s, Est. remaining: 93.9s, Avg: 0.295s/period (last 30 periods)
+  Elapsed: 68.9s, Est. remaining: 95.0s, Avg: 0.299s/period (last 30 periods)
 Processed 601/889 periods (67.6%), stored 2723 predictions for 2000-12
-  Elapsed: 78.3s, Est. remaining: 88.1s, Avg: 0.306s/period (last 30 periods)
+  Elapsed: 78.2s, Est. remaining: 89.5s, Avg: 0.311s/period (last 30 periods)
 Processed 631/889 periods (71.0%), stored 2437 predictions for 2003-06
-  Elapsed: 87.0s, Est. remaining: 74.5s, Avg: 0.289s/period (last 30 periods)
+  Elapsed: 86.8s, Est. remaining: 74.3s, Avg: 0.288s/period (last 30 periods)
 Processed 661/889 periods (74.4%), stored 2283 predictions for 2005-12
-  Elapsed: 94.7s, Est. remaining: 59.1s, Avg: 0.259s/period (last 30 periods)
+  Elapsed: 94.6s, Est. remaining: 59.1s, Avg: 0.259s/period (last 30 periods)
 Processed 691/889 periods (77.7%), stored 2180 predictions for 2008-06
-  Elapsed: 102.0s, Est. remaining: 48.1s, Avg: 0.243s/period (last 30 periods)
+  Elapsed: 102.5s, Est. remaining: 52.2s, Avg: 0.263s/period (last 30 periods)
 Processed 721/889 periods (81.1%), stored 1838 predictions for 2010-12
-  Elapsed: 108.8s, Est. remaining: 37.7s, Avg: 0.224s/period (last 30 periods)
+  Elapsed: 110.1s, Est. remaining: 42.3s, Avg: 0.252s/period (last 30 periods)
 Processed 751/889 periods (84.5%), stored 1667 predictions for 2013-06
-  Elapsed: 114.8s, Est. remaining: 27.8s, Avg: 0.201s/period (last 30 periods)
+  Elapsed: 116.3s, Est. remaining: 28.6s, Avg: 0.207s/period (last 30 periods)
 Processed 781/889 periods (87.9%), stored 1578 predictions for 2015-12
-  Elapsed: 120.3s, Est. remaining: 19.9s, Avg: 0.184s/period (last 30 periods)
+  Elapsed: 122.4s, Est. remaining: 22.0s, Avg: 0.204s/period (last 30 periods)
 Processed 811/889 periods (91.2%), stored 1409 predictions for 2018-06
-  Elapsed: 125.4s, Est. remaining: 13.2s, Avg: 0.169s/period (last 30 periods)
+  Elapsed: 127.7s, Est. remaining: 13.8s, Avg: 0.177s/period (last 30 periods)
 Processed 841/889 periods (94.6%), stored 1259 predictions for 2020-12
-  Elapsed: 130.1s, Est. remaining: 7.6s, Avg: 0.158s/period (last 30 periods)
+  Elapsed: 132.5s, Est. remaining: 7.7s, Avg: 0.161s/period (last 30 periods)
 Processed 871/889 periods (98.0%), stored 1296 predictions for 2023-06
-  Elapsed: 134.6s, Est. remaining: 2.7s, Avg: 0.149s/period (last 30 periods)
+  Elapsed: 137.0s, Est. remaining: 2.7s, Avg: 0.148s/period (last 30 periods)
 Total predictions generated: 1222287
 Before ceq filter: 2860911
 After ceq filter: 2695300
@@ -1931,12 +1838,12 @@ Before dropping NaN Frontier: 2695300
 Final output: 1221161 observations
 
 Timing Summary:
-Total execution time: 159.88 seconds (2.66 minutes)
-Processed 889 periods at 6.42 periods/second
+Total execution time: 162.04 seconds (2.70 minutes)
+Processed 889 periods at 6.32 periods/second
 Frontier predictor saved successfully
 ============================================================
 ✅ Completed: Frontier.py
-Execution time: 161.55 seconds
+Execution time: 163.35 seconds
 
 
 🔄 Starting: GP.py
@@ -1944,7 +1851,7 @@ Execution time: 161.55 seconds
 GP: Saved 2,972,251 observations
 ============================================================
 ✅ Completed: GP.py
-Execution time: 3.42 seconds
+Execution time: 3.37 seconds
 
 
 🔄 Starting: Governance.py
@@ -3800,7 +3707,7 @@ Saved 905831 rows to ../pyData/Predictors/GrAdExp.csv
 GrAdExp.py completed successfully
 ============================================================
 ✅ Completed: GrAdExp.py
-Execution time: 3.26 seconds
+Execution time: 3.08 seconds
 
 
 🔄 Starting: GrLTNOA.py
@@ -3818,7 +3725,7 @@ Saved 3235740 rows to ../pyData/Predictors/GrLTNOA.csv
 GrLTNOA.py completed successfully
 ============================================================
 ✅ Completed: GrLTNOA.py
-Execution time: 1.93 seconds
+Execution time: 1.87 seconds
 
 
 🔄 Starting: GrSaleToGrInv.py
@@ -3837,7 +3744,7 @@ Saved 2545662 rows to ../pyData/Predictors/GrSaleToGrInv.csv
 GrSaleToGrInv.py completed successfully
 ============================================================
 ✅ Completed: GrSaleToGrInv.py
-Execution time: 1.52 seconds
+Execution time: 1.61 seconds
 
 
 🔄 Starting: GrSaleToGrOverhead.py
@@ -3856,7 +3763,7 @@ Saved 2681589 rows to ../pyData/Predictors/GrSaleToGrOverhead.csv
 GrSaleToGrOverhead.py completed successfully
 ============================================================
 ✅ Completed: GrSaleToGrOverhead.py
-Execution time: 1.65 seconds
+Execution time: 1.66 seconds
 
 
 🔄 Starting: Herf.py
@@ -3875,7 +3782,7 @@ Final non-missing Herf observations: 3152103
 Herf predictor saved successfully
 ============================================================
 ✅ Completed: Herf.py
-Execution time: 7.08 seconds
+Execution time: 7.05 seconds
 
 
 🔄 Starting: HerfAsset.py
@@ -3931,7 +3838,7 @@ Final HerfAsset range: 0.016227 to 1.000000
 HerfAsset predictor saved successfully
 ============================================================
 ✅ Completed: HerfAsset.py
-Execution time: 5.85 seconds
+Execution time: 5.84 seconds
 
 
 🔄 Starting: HerfBE.py
@@ -3939,7 +3846,7 @@ Execution time: 5.85 seconds
 HerfBE predictor saved successfully
 ============================================================
 ✅ Completed: HerfBE.py
-Execution time: 6.06 seconds
+Execution time: 6.11 seconds
 
 
 🔄 Starting: High52.py
@@ -3952,7 +3859,7 @@ Final output: 4995429 observations
 High52.csv saved successfully
 ============================================================
 ✅ Completed: High52.py
-Execution time: 15.75 seconds
+Execution time: 16.15 seconds
 
 
 🔄 Starting: IO_ShortInterest.py
@@ -3963,7 +3870,7 @@ saving IO_ShortInterest
 Saved 8842 rows to ../pyData/Predictors/IO_ShortInterest.csv
 ============================================================
 ✅ Completed: IO_ShortInterest.py
-Execution time: 3.26 seconds
+Execution time: 3.21 seconds
 
 
 🔄 Starting: Illiquidity.py
@@ -3981,7 +3888,7 @@ Sample of final data:
 Saved to ../pyData/Predictors/Illiquidity.csv
 ============================================================
 ✅ Completed: Illiquidity.py
-Execution time: 12.66 seconds
+Execution time: 13.29 seconds
 
 
 🔄 Starting: IndIPO.py
@@ -3989,7 +3896,7 @@ Execution time: 12.66 seconds
 IndIPO predictor saved successfully
 ============================================================
 ✅ Completed: IndIPO.py
-Execution time: 2.71 seconds
+Execution time: 2.51 seconds
 
 
 🔄 Starting: IndMom.py
@@ -4048,7 +3955,7 @@ IndMom predictor saved with 4043138 observations
 Date range: 192605 to 202412
 ============================================================
 ✅ Completed: IndMom.py
-Execution time: 28.89 seconds
+Execution time: 28.59 seconds
 
 
 🔄 Starting: IndRetBig.py
@@ -4189,7 +4096,7 @@ Saved 2616695 rows to ../pyData/Predictors/IndRetBig.csv
 IndRetBig predictor saved successfully
 ============================================================
 ✅ Completed: IndRetBig.py
-Execution time: 28.56 seconds
+Execution time: 28.21 seconds
 
 
 🔄 Starting: IntMom.py
@@ -4197,7 +4104,7 @@ Execution time: 28.56 seconds
 Saved 3686625 observations to IntMom.csv
 ============================================================
 ✅ Completed: IntMom.py
-Execution time: 7.30 seconds
+Execution time: 7.20 seconds
 
 
 🔄 Starting: InvGrowth.py
@@ -4224,7 +4131,7 @@ Saved 1996001 rows to ../pyData/Predictors/InvGrowth.csv
 InvGrowth predictor completed successfully!
 ============================================================
 ✅ Completed: InvGrowth.py
-Execution time: 3.68 seconds
+Execution time: 3.63 seconds
 
 
 🔄 Starting: InvestPPEInv.py
@@ -4245,7 +4152,7 @@ Saved 2943499 rows to ../pyData/Predictors/InvestPPEInv.csv
 InvestPPEInv.py completed successfully
 ============================================================
 ✅ Completed: InvestPPEInv.py
-Execution time: 1.56 seconds
+Execution time: 1.52 seconds
 
 
 🔄 Starting: Investment.py
@@ -4253,7 +4160,7 @@ Execution time: 1.56 seconds
 Investment predictor saved successfully
 ============================================================
 ✅ Completed: Investment.py
-Execution time: 3.78 seconds
+Execution time: 3.70 seconds
 
 
 🔄 Starting: LRreversal.py
@@ -4261,7 +4168,7 @@ Execution time: 3.78 seconds
 LRreversal predictor saved successfully
 ============================================================
 ✅ Completed: LRreversal.py
-Execution time: 4.10 seconds
+Execution time: 3.88 seconds
 
 
 🔄 Starting: Leverage.py
@@ -4269,7 +4176,7 @@ Execution time: 4.10 seconds
 Leverage: Saved 3,014,667 observations
 ============================================================
 ✅ Completed: Leverage.py
-Execution time: 3.54 seconds
+Execution time: 3.41 seconds
 
 
 🔄 Starting: MRreversal.py
@@ -4289,7 +4196,7 @@ Execution time: 3.54 seconds
 MRreversal predictor saved successfully
 ============================================================
 ✅ Completed: MRreversal.py
-Execution time: 8.83 seconds
+Execution time: 8.42 seconds
 
 
 🔄 Starting: MS.py
@@ -4325,7 +4232,7 @@ NameError: name 'cc' is not defined
 ============================================================
 ❌ ERROR in MS.py: Return code 1
 Error details: Script failed with return code 1
-Execution time: 3.07 seconds
+Execution time: 2.96 seconds
 
 
 🔄 Starting: MaxRet.py
@@ -4333,7 +4240,7 @@ Execution time: 3.07 seconds
 MaxRet predictor saved successfully
 ============================================================
 ✅ Completed: MaxRet.py
-Execution time: 14.20 seconds
+Execution time: 13.92 seconds
 
 
 🔄 Starting: MeanRankRevGrowth.py
@@ -4341,274 +4248,168 @@ Execution time: 14.20 seconds
 MeanRankRevGrowth predictor saved successfully
 ============================================================
 ✅ Completed: MeanRankRevGrowth.py
-Execution time: 7.19 seconds
+Execution time: 6.81 seconds
 
 
 🔄 Starting: Mom12m.py
 ============================================================
-Mom12m predictor saved successfully
+saving Mom12m
+Saved 3715128 rows to ../pyData/Predictors/Mom12m.csv
 ============================================================
 ✅ Completed: Mom12m.py
-Execution time: 7.18 seconds
+Execution time: 6.94 seconds
 
 
 🔄 Starting: Mom12mOffSeason.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/Mom12mOffSeason.py:102: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
-  df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_fast)
-Starting Mom12mOffSeason predictor translation...
-Loading SignalMasterTable...
-Loaded 4047630 observations
-Data sorted by permno and time_avail_m
-Starting signal construction...
-Replaced missing returns with 0
-Computing 10-month calendar-based rolling statistics excluding focal return...
-Computing true calendar-based rolling statistics (this may take several minutes)...
-Processing groups (this will take time for large dataset)...
-Generated 3865561 valid Mom12mOffSeason observations
-Preparing output...
-Mom12mOffSeason predictor saved to ../pyData/Predictors/Mom12mOffSeason.csv
-Output shape: (3865561, 3)
-Summary statistics:
-  Mean: 0.011330
-  Std: 0.058189
-  Min: -0.575772
-  Max: 4.294254
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/Mom12mOffSeason.py", line 25, in <module>
+    df = asrol(df, 'permno', 'time_avail_m', 'ret', 10, 'mean', 'Mom12mOffSeason', min_periods=6, exclude_focal=True)
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/utils/asrol.py", line 184, in asrol
+    return asrol_fast(*args, **kwargs)
+TypeError: asrol_fast() got an unexpected keyword argument 'exclude_focal'
 ============================================================
-✅ Completed: Mom12mOffSeason.py
-Execution time: 28.70 seconds
+❌ ERROR in Mom12mOffSeason.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 0.50 seconds
 
 
 🔄 Starting: Mom6m.py
 ============================================================
-Mom6m predictor saved successfully
+saving Mom6m
+Saved 3895206 rows to ../pyData/Predictors/Mom6m.csv
 ============================================================
 ✅ Completed: Mom6m.py
-Execution time: 5.74 seconds
+Execution time: 5.22 seconds
 
 
 🔄 Starting: Mom6mJunk.py
 ============================================================
-left join with sp ratings, nrow = 3041661
-left join with ciq ratings, nrow = 3041661
-saving Mom6mJunk
-Saved 345553 rows to ../pyData/Predictors/Mom6mJunk.csv
-Mom6mJunk saved with 3041661 observations
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/indexes/base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'currentratingsymbol'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/Mom6mJunk.py", line 19, in <module>
+    df_ciq['currentratingsymbol'] = df_ciq['currentratingsymbol'].str.replace('pi', '')
+                                    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/indexes/base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'currentratingsymbol'
 ============================================================
-✅ Completed: Mom6mJunk.py
-Execution time: 5.38 seconds
+❌ ERROR in Mom6mJunk.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 0.34 seconds
 
 
 🔄 Starting: MomOffSeason.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MomOffSeason.py:142: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
-  df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_48m)
-Starting MomOffSeason predictor translation...
-Loading SignalMasterTable...
-Loaded 4047630 observations
-Data sorted by permno and time_avail_m
-Starting signal construction...
-Replaced missing returns with 0
-Creating seasonal lags for periods: [23, 35, 47, 59]
-Calculated retTemp1 (seasonal row total)
-Calculated retTemp2 (seasonal row non-missing count)
-Creating momentum base with 48-month rolling window...
-Creating retLagTemp (lag 12 months)...
-Calculating 48-month calendar-based rolling sum and count...
-Processing groups for calendar-based rolling (this may take time)...
-Calculated 48-month rolling momentum base
-Calculated MomOffSeason predictor
-Saved 3377115 observations to ../pyData/Predictors/MomOffSeason.csv
-MomOffSeason predictor translation completed successfully!
+saving MomOffSeason
+Saved 3436969 rows to ../pyData/Predictors/MomOffSeason.csv
 ============================================================
 ✅ Completed: MomOffSeason.py
-Execution time: 32.69 seconds
+Execution time: 10.41 seconds
 
 
 🔄 Starting: MomOffSeason06YrPlus.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MomOffSeason06YrPlus.py:142: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
-  df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_60m)
-Starting MomOffSeason06YrPlus predictor translation...
-Loading SignalMasterTable...
-Loaded 4047630 observations
-Data sorted by permno and time_avail_m
-Starting signal construction...
-Replaced missing returns with 0
-Creating seasonal lags for periods: [71, 83, 95, 107, 119]
-Calculated retTemp1 (seasonal row total)
-Calculated retTemp2 (seasonal row non-missing count)
-Creating momentum base with 60-month rolling window...
-Creating retLagTemp (lag 60 months)...
-Calculating 60-month calendar-based rolling sum and count...
-Processing groups for calendar-based rolling (this may take time)...
-Calculated 60-month rolling momentum base
-Calculated MomOffSeason06YrPlus predictor
-Saved 2381111 observations to ../pyData/Predictors/MomOffSeason06YrPlus.csv
-MomOffSeason06YrPlus predictor translation completed successfully!
+saving MomOffSeason06YrPlus
+Saved 2472210 rows to ../pyData/Predictors/MomOffSeason06YrPlus.csv
 ============================================================
 ✅ Completed: MomOffSeason06YrPlus.py
-Execution time: 30.19 seconds
+Execution time: 10.98 seconds
 
 
 🔄 Starting: MomOffSeason11YrPlus.py
 ============================================================
-Starting MomOffSeason11YrPlus predictor translation...
-Loading SignalMasterTable...
-Loaded 4047630 observations
-Data sorted by permno and time_avail_m
-Starting signal construction...
-Replaced missing returns with 0
-Creating seasonal lags for periods: [131, 143, 155, 167, 179]
-Creating time-based seasonal lags...
-Creating temp131 (lag 131 months)...
-Creating temp143 (lag 143 months)...
-Creating temp155 (lag 155 months)...
-Creating temp167 (lag 167 months)...
-Creating temp179 (lag 179 months)...
-Calculated retTemp1 (seasonal row total)
-Calculated retTemp2 (seasonal row non-missing count)
-Creating momentum base with 60-month rolling window...
-Creating retLagTemp (lag 120 months)...
-Calculating 60-month rolling sum and count...
-Calculated 60-month rolling momentum base
-Calculated MomOffSeason11YrPlus predictor
-Saved 1678292 observations to ../pyData/Predictors/MomOffSeason11YrPlus.csv
-MomOffSeason11YrPlus predictor translation completed successfully!
+saving MomOffSeason11YrPlus
+Saved 1707608 rows to ../pyData/Predictors/MomOffSeason11YrPlus.csv
 ============================================================
 ✅ Completed: MomOffSeason11YrPlus.py
-Execution time: 10.14 seconds
+Execution time: 10.74 seconds
 
 
 🔄 Starting: MomOffSeason16YrPlus.py
 ============================================================
-Starting MomOffSeason16YrPlus predictor translation...
-Loading SignalMasterTable...
-Loaded 4047630 observations
-Data sorted by permno and time_avail_m
-Starting signal construction...
-Replaced missing returns with 0
-Creating seasonal lags for periods: [191, 203, 215, 227, 239]
-Creating time-based seasonal lags...
-Creating temp191 (lag 191 months)...
-Creating temp203 (lag 203 months)...
-Creating temp215 (lag 215 months)...
-Creating temp227 (lag 227 months)...
-Creating temp239 (lag 239 months)...
-Calculated retTemp1 (seasonal row total)
-Calculated retTemp2 (seasonal row non-missing count)
-Creating momentum base with 60-month rolling window...
-Creating retLagTemp (lag 180 months)...
-Calculating 60-month rolling sum and count (minimum 36 observations)...
-Calculated 60-month rolling momentum base
-Calculated MomOffSeason16YrPlus predictor
-Saved 1029940 observations to ../pyData/Predictors/MomOffSeason16YrPlus.csv
-MomOffSeason16YrPlus predictor translation completed successfully!
+saving MomOffSeason16YrPlus
+Saved 1044703 rows to ../pyData/Predictors/MomOffSeason16YrPlus.csv
 ============================================================
 ✅ Completed: MomOffSeason16YrPlus.py
-Execution time: 10.43 seconds
+Execution time: 10.88 seconds
 
 
 🔄 Starting: MomRev.py
 ============================================================
-MomRev predictor saved to pyData/Predictors/MomRev.csv
-Output shape: (262365, 3)
-Sample output:
-     permno  yyyymm  MomRev
-93    10001  199205     0.0
-94    10001  199206     0.0
-249   10001  200505     1.0
-250   10001  200506     1.0
-251   10001  200507     1.0
+saving MomRev
+Saved 261618 rows to ../pyData/Predictors/MomRev.csv
 ============================================================
 ✅ Completed: MomRev.py
-Execution time: 13.40 seconds
+Execution time: 18.41 seconds
 
 
 🔄 Starting: MomSeason.py
 ============================================================
-MomSeason predictor saved to ../pyData/Predictors/MomSeason.csv
-Output shape: (3377115, 3)
-First few rows:
-    permno  yyyymm  MomSeason
-40   10001  198712   0.000000
-41   10001  198801   0.020408
-42   10001  198802   0.025200
-43   10001  198803   0.009901
-44   10001  198804  -0.009804
+saving MomSeason
+Saved 3437360 rows to ../pyData/Predictors/MomSeason.csv
 ============================================================
 ✅ Completed: MomSeason.py
-Execution time: 5.87 seconds
+Execution time: 5.31 seconds
 
 
 🔄 Starting: MomSeason06YrPlus.py
 ============================================================
-Starting MomSeason06YrPlus predictor translation...
-Loading SignalMasterTable...
-Loaded 4047630 observations
-Data sorted by permno and time_avail_m
-Starting signal construction...
-Replaced missing returns with 0
-Creating lags for periods: [71, 83, 95, 107, 119]
-Creating time-based lags...
-Creating temp71 (lag 71 months)...
-Creating temp83 (lag 83 months)...
-Creating temp95 (lag 95 months)...
-Creating temp107 (lag 107 months)...
-Creating temp119 (lag 119 months)...
-Calculated retTemp1 (row total)
-Calculated retTemp2 (row non-missing count)
-Calculated MomSeason06YrPlus predictor
-Saved 2432862 observations to ../pyData/Predictors/MomSeason06YrPlus.csv
-MomSeason06YrPlus predictor translation completed successfully!
+saving MomSeason06YrPlus
+Saved 2472493 rows to ../pyData/Predictors/MomSeason06YrPlus.csv
 ============================================================
 ✅ Completed: MomSeason06YrPlus.py
-Execution time: 7.34 seconds
+Execution time: 5.59 seconds
 
 
 🔄 Starting: MomSeason11YrPlus.py
 ============================================================
-Calculating calendar-based lags using merges...
-MomSeason11YrPlus predictor saved successfully
+saving MomSeason11YrPlus
+Saved 1707812 rows to ../pyData/Predictors/MomSeason11YrPlus.csv
 ============================================================
 ✅ Completed: MomSeason11YrPlus.py
-Execution time: 6.32 seconds
+Execution time: 5.55 seconds
 
 
 🔄 Starting: MomSeason16YrPlus.py
 ============================================================
-MomSeason16YrPlus predictor saved to ../pyData/Predictors/MomSeason16YrPlus.csv
-Output shape: (1194902, 3)
-First few rows:
-     permno  yyyymm  MomSeason16YrPlus
-208   10001  200112           0.000000
-209   10001  200201           0.020408
-210   10001  200202           0.025200
-211   10001  200203           0.009901
-212   10001  200204          -0.009804
+saving MomSeason16YrPlus
+Saved 1211157 rows to ../pyData/Predictors/MomSeason16YrPlus.csv
 ============================================================
 ✅ Completed: MomSeason16YrPlus.py
-Execution time: 6.00 seconds
+Execution time: 5.51 seconds
 
 
 🔄 Starting: MomSeasonShort.py
 ============================================================
-Creating 11-month lag using stata_multi_lag...
-MomSeasonShort predictor saved successfully
-Output shape: (3713622, 1)
+saving MomSeasonShort
+Saved 3730640 rows to ../pyData/Predictors/MomSeasonShort.csv
 ============================================================
 ✅ Completed: MomSeasonShort.py
-Execution time: 4.23 seconds
+Execution time: 4.05 seconds
 
 
 🔄 Starting: MomVol.py
 ============================================================
 Calculating 6-month calendar-based rolling mean volume...
 saving MomVol
-Saved 1096292 rows to ../pyData/Predictors/MomVol.csv
+Saved 1096816 rows to ../pyData/Predictors/MomVol.csv
 ============================================================
 ✅ Completed: MomVol.py
-Execution time: 5.37 seconds
+Execution time: 8.44 seconds
 
 
 🔄 Starting: NOA.py
@@ -4621,7 +4422,7 @@ Final output: 3213348 observations
 NOA.csv saved successfully
 ============================================================
 ✅ Completed: NOA.py
-Execution time: 3.27 seconds
+Execution time: 3.24 seconds
 
 
 🔄 Starting: NetDebtFinance.py
@@ -4634,7 +4435,7 @@ Final output: 2797645 observations
 NetDebtFinance.csv saved successfully
 ============================================================
 ✅ Completed: NetDebtFinance.py
-Execution time: 2.99 seconds
+Execution time: 2.90 seconds
 
 
 🔄 Starting: NetDebtPrice.py
@@ -4646,7 +4447,7 @@ Execution time: 2.99 seconds
 NetDebtPrice: Saved 1,425,639 observations
 ============================================================
 ✅ Completed: NetDebtPrice.py
-Execution time: 3.89 seconds
+Execution time: 3.82 seconds
 
 
 🔄 Starting: NetEquityFinance.py
@@ -4659,7 +4460,7 @@ Final output: 2889052 observations
 NetEquityFinance.csv saved successfully
 ============================================================
 ✅ Completed: NetEquityFinance.py
-Execution time: 3.00 seconds
+Execution time: 2.96 seconds
 
 
 🔄 Starting: NetPayoutYield.py
@@ -4667,7 +4468,7 @@ Execution time: 3.00 seconds
 NetPayoutYield predictor created with 1818920 observations
 ============================================================
 ✅ Completed: NetPayoutYield.py
-Execution time: 3.87 seconds
+Execution time: 3.83 seconds
 
 
 🔄 Starting: NumEarnIncrease.py
@@ -4675,7 +4476,7 @@ Execution time: 3.87 seconds
 NumEarnIncrease: 2823459 observations saved
 ============================================================
 ✅ Completed: NumEarnIncrease.py
-Execution time: 5.96 seconds
+Execution time: 6.06 seconds
 
 
 🔄 Starting: OPLeverage.py
@@ -4696,7 +4497,7 @@ Saved 3609010 rows to ../pyData/Predictors/OPLeverage.csv
 OPLeverage predictor completed successfully
 ============================================================
 ✅ Completed: OPLeverage.py
-Execution time: 0.99 seconds
+Execution time: 0.91 seconds
 
 
 🔄 Starting: OScore.py
@@ -4706,7 +4507,7 @@ Execution time: 0.99 seconds
 OScore predictor saved successfully
 ============================================================
 ✅ Completed: OScore.py
-Execution time: 4.89 seconds
+Execution time: 4.90 seconds
 
 
 🔄 Starting: OperProf.py
@@ -6492,7 +6293,7 @@ Execution time: 4.89 seconds
 OperProf: Saved 1,407,793 observations
 ============================================================
 ✅ Completed: OperProf.py
-Execution time: 3.00 seconds
+Execution time: 2.94 seconds
 
 
 🔄 Starting: OperProfRD.py
@@ -6500,7 +6301,7 @@ Execution time: 3.00 seconds
 OperProfRD predictor saved successfully
 ============================================================
 ✅ Completed: OperProfRD.py
-Execution time: 3.87 seconds
+Execution time: 3.85 seconds
 
 
 🔄 Starting: OrderBacklog.py
@@ -6508,7 +6309,7 @@ Execution time: 3.87 seconds
 OrderBacklog predictor saved successfully
 ============================================================
 ✅ Completed: OrderBacklog.py
-Execution time: 1.88 seconds
+Execution time: 1.86 seconds
 
 
 🔄 Starting: OrderBacklogChg.py
@@ -6516,25 +6317,16 @@ Execution time: 1.88 seconds
 OrderBacklogChg predictor saved successfully
 ============================================================
 ✅ Completed: OrderBacklogChg.py
-Execution time: 1.96 seconds
+Execution time: 1.90 seconds
 
 
 🔄 Starting: PS.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: divide by zero encountered in log
-  result = getattr(ufunc, method)(*inputs, **kwargs)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/arraylike.py:399: RuntimeWarning: invalid value encountered in log
-  result = getattr(ufunc, method)(*inputs, **kwargs)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/PS.py:143: SettingWithCopyWarning:
-A value is trying to be set on a copy of a slice from a DataFrame.
-Try using .loc[row_indexer,col_indexer] = value instead
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
-PS: Saved 464,239 observations
+saving PS
+Saved 464239 rows to ../pyData/Predictors/PS.csv
 ============================================================
 ✅ Completed: PS.py
-Execution time: 3.24 seconds
+Execution time: 9.80 seconds
 
 
 🔄 Starting: PatentsRD.py
@@ -7120,7 +6912,7 @@ See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stab
 PatentsRD predictor saved successfully
 ============================================================
 ✅ Completed: PatentsRD.py
-Execution time: 55.29 seconds
+Execution time: 52.93 seconds
 
 
 🔄 Starting: PayoutYield.py
@@ -7128,7 +6920,7 @@ Execution time: 55.29 seconds
 PayoutYield predictor created with 1419513 observations
 ============================================================
 ✅ Completed: PayoutYield.py
-Execution time: 4.29 seconds
+Execution time: 3.47 seconds
 
 
 🔄 Starting: PctAcc.py
@@ -7136,7 +6928,7 @@ Execution time: 4.29 seconds
 PctAcc predictor saved successfully
 ============================================================
 ✅ Completed: PctAcc.py
-Execution time: 5.11 seconds
+Execution time: 4.13 seconds
 
 
 🔄 Starting: PctTotAcc.py
@@ -7144,7 +6936,7 @@ Execution time: 5.11 seconds
 PctTotAcc predictor saved successfully
 ============================================================
 ✅ Completed: PctTotAcc.py
-Execution time: 3.89 seconds
+Execution time: 3.27 seconds
 
 
 🔄 Starting: Price.py
@@ -7152,7 +6944,7 @@ Execution time: 3.89 seconds
 Price: Saved 4,029,252 observations
 ============================================================
 ✅ Completed: Price.py
-Execution time: 3.66 seconds
+Execution time: 3.55 seconds
 
 
 🔄 Starting: ProbInformedTrading.py
@@ -9538,7 +9330,7 @@ Execution time: 3.66 seconds
 ProbInformedTrading predictor saved with 24028 observations
 ============================================================
 ✅ Completed: ProbInformedTrading.py
-Execution time: 2.19 seconds
+Execution time: 2.10 seconds
 
 
 🔄 Starting: RD.py
@@ -9546,7 +9338,7 @@ Execution time: 2.19 seconds
 RD: Saved 1,419,157 observations
 ============================================================
 ✅ Completed: RD.py
-Execution time: 1.94 seconds
+Execution time: 1.89 seconds
 
 
 🔄 Starting: RDAbility.py
@@ -9745,7 +9537,7 @@ Saved 180944 rows to ../pyData/Predictors/RDAbility.csv
 RDAbility.csv saved successfully
 ============================================================
 ✅ Completed: RDAbility.py
-Execution time: 12.45 seconds
+Execution time: 11.53 seconds
 
 
 🔄 Starting: RDIPO.py
@@ -9753,7 +9545,7 @@ Execution time: 12.45 seconds
 RDIPO predictor saved successfully
 ============================================================
 ✅ Completed: RDIPO.py
-Execution time: 3.07 seconds
+Execution time: 2.99 seconds
 
 
 🔄 Starting: RDS.py
@@ -9765,7 +9557,7 @@ Execution time: 3.07 seconds
 RDS: Saved 2,816,659 observations
 ============================================================
 ✅ Completed: RDS.py
-Execution time: 28.87 seconds
+Execution time: 26.90 seconds
 
 
 🔄 Starting: RDcap.py
@@ -11597,7 +11389,7 @@ Saved 537864 rows to ../pyData/Predictors/RDcap.csv
 RDcap predictor saved successfully
 ============================================================
 ✅ Completed: RDcap.py
-Execution time: 5.99 seconds
+Execution time: 7.78 seconds
 
 
 🔄 Starting: REV6.py
@@ -11606,7 +11398,7 @@ Loading and processing REV6...
 REV6 predictor saved successfully
 ============================================================
 ✅ Completed: REV6.py
-Execution time: 4.28 seconds
+Execution time: 3.87 seconds
 
 
 🔄 Starting: Recomm_ShortInterest.py
@@ -11635,8 +11427,8 @@ Signal distribution: shape: (3, 2)
 │ i32                  ┆ u32    │
 ╞══════════════════════╪════════╡
 │ 0                    ┆ 19249  │
-│ null                 ┆ 600929 │
 │ 1                    ┆ 29118  │
+│ null                 ┆ 600929 │
 └──────────────────────┴────────┘
 Time period:
 2006-07-01 to 2024-12-01
@@ -11646,7 +11438,7 @@ Saved 48367 rows to ../pyData/Predictors/Recomm_ShortInterest.csv
 ✅ Recomm_ShortInterest.csv saved successfully
 ============================================================
 ✅ Completed: Recomm_ShortInterest.py
-Execution time: 2.77 seconds
+Execution time: 2.51 seconds
 
 
 🔄 Starting: ReturnSkew.py
@@ -11687,7 +11479,7 @@ Generated 1 predictor:
 ================================================================================
 ============================================================
 ✅ Completed: ReturnSkew.py
-Execution time: 5.44 seconds
+Execution time: 5.25 seconds
 
 
 🔄 Starting: RevenueSurprise.py
@@ -11697,7 +11489,7 @@ Execution time: 5.44 seconds
 RevenueSurprise predictor created with 2107507 observations
 ============================================================
 ✅ Completed: RevenueSurprise.py
-Execution time: 12.34 seconds
+Execution time: 10.96 seconds
 
 
 🔄 Starting: RoE.py
@@ -11705,7 +11497,7 @@ Execution time: 12.34 seconds
 RoE: Saved 3,528,982 observations
 ============================================================
 ✅ Completed: RoE.py
-Execution time: 3.74 seconds
+Execution time: 3.34 seconds
 
 
 🔄 Starting: SP.py
@@ -11713,7 +11505,7 @@ Execution time: 3.74 seconds
 SP: Saved 3,030,928 observations
 ============================================================
 ✅ Completed: SP.py
-Execution time: 3.75 seconds
+Execution time: 3.43 seconds
 
 
 🔄 Starting: STreversal.py
@@ -11722,7 +11514,7 @@ saving STreversal
 Saved 4047630 rows to ../pyData/Predictors/STreversal.csv
 ============================================================
 ✅ Completed: STreversal.py
-Execution time: 0.49 seconds
+Execution time: 0.43 seconds
 
 
 🔄 Starting: ShareIss1Y.py
@@ -11734,7 +11526,7 @@ Final output: 3517511 observations
 ShareIss1Y.csv saved successfully
 ============================================================
 ✅ Completed: ShareIss1Y.py
-Execution time: 5.78 seconds
+Execution time: 5.29 seconds
 
 
 🔄 Starting: ShareIss5Y.py
@@ -11746,7 +11538,7 @@ Final output: 2508021 observations
 ShareIss5Y.csv saved successfully
 ============================================================
 ✅ Completed: ShareIss5Y.py
-Execution time: 5.01 seconds
+Execution time: 4.61 seconds
 
 
 🔄 Starting: ShareRepurchase.py
@@ -11754,7 +11546,7 @@ Execution time: 5.01 seconds
 ShareRepurchase predictor created with 3625491 observations
 ============================================================
 ✅ Completed: ShareRepurchase.py
-Execution time: 1.92 seconds
+Execution time: 1.71 seconds
 
 
 🔄 Starting: ShareVol.py
@@ -11763,7 +11555,7 @@ saving ShareVol
 Saved 1661295 rows to ../pyData/Predictors/ShareVol.csv
 ============================================================
 ✅ Completed: ShareVol.py
-Execution time: 0.87 seconds
+Execution time: 0.80 seconds
 
 
 🔄 Starting: ShortInterest.py
@@ -11777,7 +11569,7 @@ Final output: 873182 observations
 ShortInterest.csv saved successfully
 ============================================================
 ✅ Completed: ShortInterest.py
-Execution time: 2.54 seconds
+Execution time: 2.38 seconds
 
 
 🔄 Starting: Size.py
@@ -11787,7 +11579,7 @@ Execution time: 2.54 seconds
 Size: Saved 4,029,252 observations
 ============================================================
 ✅ Completed: Size.py
-Execution time: 3.06 seconds
+Execution time: 2.89 seconds
 
 
 🔄 Starting: SmileSlope.py
@@ -11796,7 +11588,7 @@ saving SmileSlope
 Saved 859994 rows to ../pyData/Predictors/SmileSlope.csv
 ============================================================
 ✅ Completed: SmileSlope.py
-Execution time: 1.23 seconds
+Execution time: 1.17 seconds
 
 
 🔄 Starting: Spinoff.py
@@ -11804,7 +11596,7 @@ Execution time: 1.23 seconds
 Spinoff predictor saved successfully
 ============================================================
 ✅ Completed: Spinoff.py
-Execution time: 2.60 seconds
+Execution time: 2.46 seconds
 
 
 🔄 Starting: SurpriseRD.py
@@ -11812,7 +11604,7 @@ Execution time: 2.60 seconds
 SurpriseRD predictor saved successfully
 ============================================================
 ✅ Completed: SurpriseRD.py
-Execution time: 2.31 seconds
+Execution time: 2.23 seconds
 
 
 🔄 Starting: Tax.py
@@ -11820,7 +11612,7 @@ Execution time: 2.31 seconds
 Tax: Saved 3,213,292 observations
 ============================================================
 ✅ Completed: Tax.py
-Execution time: 3.12 seconds
+Execution time: 2.98 seconds
 
 
 🔄 Starting: TotalAccruals.py
@@ -11828,7 +11620,7 @@ Execution time: 3.12 seconds
 TotalAccruals predictor saved successfully
 ============================================================
 ✅ Completed: TotalAccruals.py
-Execution time: 4.69 seconds
+Execution time: 4.35 seconds
 
 
 🔄 Starting: TrendFactor.py
@@ -11873,7 +11665,7 @@ Saved 2058243 rows to ../pyData/Predictors/TrendFactor.csv
 🎉 TrendFactor computation completed!
 ============================================================
 ✅ Completed: TrendFactor.py
-Execution time: 112.68 seconds
+Execution time: 108.61 seconds
 
 
 🔄 Starting: UpRecomm.py
@@ -11891,7 +11683,7 @@ Rolling statistics calculation completed
 VarCF predictor saved successfully
 ============================================================
 ✅ Completed: VarCF.py
-Execution time: 4.66 seconds
+Execution time: 4.63 seconds
 
 
 🔄 Starting: VolMkt.py
@@ -11900,7 +11692,7 @@ saving VolMkt
 Saved 4361398 rows to ../pyData/Predictors/VolMkt.csv
 ============================================================
 ✅ Completed: VolMkt.py
-Execution time: 0.65 seconds
+Execution time: 0.67 seconds
 
 
 🔄 Starting: VolSD.py
@@ -11909,7 +11701,7 @@ saving VolSD
 Saved 3922399 rows to ../pyData/Predictors/VolSD.csv
 ============================================================
 ✅ Completed: VolSD.py
-Execution time: 0.60 seconds
+Execution time: 0.62 seconds
 
 
 🔄 Starting: VolumeTrend.py
@@ -11919,7 +11711,7 @@ Calculating time-based rolling regressions by permno...
 VolumeTrend predictor saved successfully
 ============================================================
 ✅ Completed: VolumeTrend.py
-Execution time: 63.66 seconds
+Execution time: 64.74 seconds
 
 
 🔄 Starting: XFIN.py
@@ -11927,7 +11719,7 @@ Execution time: 63.66 seconds
 XFIN predictor saved successfully
 ============================================================
 ✅ Completed: XFIN.py
-Execution time: 3.94 seconds
+Execution time: 3.97 seconds
 
 
 🔄 Starting: ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
@@ -11986,7 +11778,7 @@ Generated 3 predictors:
 ================================================================================
 ============================================================
 ✅ Completed: ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
-Execution time: 100.86 seconds
+Execution time: 102.36 seconds
 
 
 🔄 Starting: ZZ1_Activism1_Activism2.py
@@ -14395,7 +14187,7 @@ Saved 30170 rows to ../pyData/Predictors/Activism2.csv
 Activism1 and Activism2 predictors completed!
 ============================================================
 ✅ Completed: ZZ1_Activism1_Activism2.py
-Execution time: 3.10 seconds
+Execution time: 3.14 seconds
 
 
 🔄 Starting: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
@@ -14448,7 +14240,7 @@ Saved 1299504 rows to ../pyData/Placebos/IntrinsicValue.csv
 🎉 All analyst value predictors completed!
 ============================================================
 ✅ Completed: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
-Execution time: 1.78 seconds
+Execution time: 1.80 seconds
 
 
 🔄 Starting: ZZ1_EBM_BPEBM.py
@@ -14459,7 +14251,7 @@ saving BPEBM
 Saved 2924826 rows to ../pyData/Predictors/BPEBM.csv
 ============================================================
 ✅ Completed: ZZ1_EBM_BPEBM.py
-Execution time: 1.22 seconds
+Execution time: 1.23 seconds
 
 
 🔄 Starting: ZZ1_FR_FRbook.py
@@ -14467,7 +14259,7 @@ Execution time: 1.22 seconds
 FR (Predictor) and FRbook (Placobo) saved successfully
 ============================================================
 ✅ Completed: ZZ1_FR_FRbook.py
-Execution time: 3.02 seconds
+Execution time: 2.92 seconds
 
 
 🔄 Starting: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
@@ -14498,7 +14290,7 @@ Saved IntanEP with 1881252 observations
 ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py completed successfully!
 ============================================================
 ✅ Completed: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
-Execution time: 29.36 seconds
+Execution time: 29.11 seconds
 
 
 🔄 Starting: ZZ1_OptionVolume1_OptionVolume2.py
@@ -14509,7 +14301,7 @@ saving OptionVolume2
 Saved 841828 rows to ../pyData/Predictors/OptionVolume2.csv
 ============================================================
 ✅ Completed: ZZ1_OptionVolume1_OptionVolume2.py
-Execution time: 1.93 seconds
+Execution time: 1.92 seconds
 
 
 🔄 Starting: ZZ1_OrgCap_OrgCapNoAdj.py
@@ -14587,7 +14379,7 @@ Saved 1243528 rows to ../pyData/Predictors/OrgCap.csv
 OrgCap calculation completed successfully!
 ============================================================
 ✅ Completed: ZZ1_OrgCap_OrgCapNoAdj.py
-Execution time: 92.59 seconds
+Execution time: 93.80 seconds
 
 
 🔄 Starting: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
@@ -14678,7 +14470,7 @@ Saved 472288 rows to ../pyData/Predictors/RIO_Volatility.csv
 🎉 All RIO predictors completed!
 ============================================================
 ✅ Completed: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
-Execution time: 31.69 seconds
+Execution time: 31.76 seconds
 
 
 🔄 Starting: ZZ1_RIVolSpread.py
@@ -14687,7 +14479,7 @@ saving RIVolSpread
 Saved 748931 rows to ../pyData/Predictors/RIVolSpread.csv
 ============================================================
 ✅ Completed: ZZ1_RIVolSpread.py
-Execution time: 4.30 seconds
+Execution time: 4.28 seconds
 
 
 🔄 Starting: ZZ1_ResidualMomentum6m_ResidualMomentum.py
@@ -14783,7 +14575,7 @@ Generated 2 signals:
 ================================================================================
 ============================================================
 ✅ Completed: ZZ1_ResidualMomentum6m_ResidualMomentum.py
-Execution time: 8.94 seconds
+Execution time: 9.06 seconds
 
 
 🔄 Starting: ZZ1_grcapx_grcapx1y_grcapx3y.py
@@ -14814,14 +14606,14 @@ Saved 2236619 rows to ../pyData/Predictors/grcapx3y.csv
 ZZ1_grcapx_grcapx1y_grcapx3y.py completed successfully
 ============================================================
 ✅ Completed: ZZ1_grcapx_grcapx1y_grcapx3y.py
-Execution time: 2.59 seconds
+Execution time: 2.47 seconds
 
 
 🔄 Starting: ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
 ============================================================
 ============================================================
 ✅ Completed: ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
-Execution time: 21.70 seconds
+Execution time: 21.73 seconds
 
 
 🔄 Starting: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
@@ -14929,7 +14721,7 @@ Saved 2239726 rows to ../pyData/Placebos/AbnormalAccrualsPercent.csv
 ✅ AbnormalAccrualsPercent.csv saved successfully
 ============================================================
 ✅ Completed: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
-Execution time: 2.36 seconds
+Execution time: 2.30 seconds
 
 
 🔄 Starting: ZZ2_AnnouncementReturn.py
@@ -14951,7 +14743,7 @@ Saving to pyData/Predictors/AnnouncementReturn.csv...
 AnnouncementReturn calculation completed.
 ============================================================
 ✅ Completed: ZZ2_AnnouncementReturn.py
-Execution time: 81.32 seconds
+Execution time: 75.68 seconds
 
 
 🔄 Starting: ZZ2_BetaFP.py
@@ -15036,7 +14828,7 @@ saving BetaFP
 Saved 4156070 rows to ../pyData/Predictors/BetaFP.csv
 ============================================================
 ✅ Completed: ZZ2_BetaFP.py
-Execution time: 17.87 seconds
+Execution time: 17.45 seconds
 
 
 🔄 Starting: ZZ2_IdioVolAHT.py
@@ -15045,7 +14837,7 @@ saving IdioVolAHT
 Saved 4849170 rows to ../pyData/Predictors/IdioVolAHT.csv
 ============================================================
 ✅ Completed: ZZ2_IdioVolAHT.py
-Execution time: 94.39 seconds
+Execution time: 87.60 seconds
 
 
 🔄 Starting: ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py
@@ -15136,15 +14928,15 @@ saving PriceDelayRsq
 Saved 4636840 rows to ../pyData/Predictors/PriceDelayRsq.csv
 ✅ PriceDelayRsq.csv saved successfully
 Generated PriceDelayTstat: 4,636,840 observations
-  Mean: 1.607417
-  Std: 1.994466
+  Mean: 0.633005
+  Std: 191.998269
 saving PriceDelayTstat
 Saved 4636840 rows to ../pyData/Predictors/PriceDelayTstat.csv
 ✅ PriceDelayTstat.csv saved successfully
 🎉 All price delay predictors completed!
 ============================================================
 ✅ Completed: ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py
-Execution time: 207.82 seconds
+Execution time: 200.56 seconds
 
 
 🔄 Starting: ZZ2_betaVIX.py
@@ -15153,7 +14945,7 @@ saving betaVIX
 Saved 3553481 rows to ../pyData/Predictors/betaVIX.csv
 ============================================================
 ✅ Completed: ZZ2_betaVIX.py
-Execution time: 64.56 seconds
+Execution time: 61.63 seconds
 
 
 🔄 Starting: cfp.py
@@ -15175,7 +14967,7 @@ Saved 2614930 rows to ../pyData/Predictors/cfp.csv
 cfp predictor completed successfully!
 ============================================================
 ✅ Completed: cfp.py
-Execution time: 4.31 seconds
+Execution time: 4.02 seconds
 
 
 🔄 Starting: dCPVolSpread.py
@@ -15184,7 +14976,7 @@ saving dCPVolSpread
 Saved 851001 rows to ../pyData/Predictors/dCPVolSpread.csv
 ============================================================
 ✅ Completed: dCPVolSpread.py
-Execution time: 1.48 seconds
+Execution time: 1.39 seconds
 
 
 🔄 Starting: dNoa.py
@@ -15202,7 +14994,7 @@ Saved 3195426 rows to ../pyData/Predictors/dNoa.csv
 dNoa predictor completed successfully!
 ============================================================
 ✅ Completed: dNoa.py
-Execution time: 1.72 seconds
+Execution time: 1.61 seconds
 
 
 🔄 Starting: dVolCall.py
@@ -15211,7 +15003,7 @@ saving dVolCall
 Saved 851001 rows to ../pyData/Predictors/dVolCall.csv
 ============================================================
 ✅ Completed: dVolCall.py
-Execution time: 0.87 seconds
+Execution time: 0.84 seconds
 
 
 🔄 Starting: dVolPut.py
@@ -15220,20 +15012,7 @@ saving dVolPut
 Saved 851001 rows to ../pyData/Predictors/dVolPut.csv
 ============================================================
 ✅ Completed: dVolPut.py
-Execution time: 0.92 seconds
-
-
-🔄 Starting: deleteme-MS.py
-============================================================
-Traceback (most recent call last):
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/deleteme-MS.py", line 22, in <module>
-    pl.Config.set_tbl_cols(1000)
-    ^^
-NameError: name 'pl' is not defined
-============================================================
-❌ ERROR in deleteme-MS.py: Return code 1
-Error details: Script failed with return code 1
-Execution time: 0.03 seconds
+Execution time: 0.83 seconds
 
 
 🔄 Starting: fgr5yrLag.py
@@ -15257,7 +15036,7 @@ Calculating 6-month calendar lags...
 fgr5yrLag predictor saved successfully
 ============================================================
 ✅ Completed: fgr5yrLag.py
-Execution time: 37.08 seconds
+Execution time: 34.97 seconds
 
 
 🔄 Starting: hire.py
@@ -15265,7 +15044,7 @@ Execution time: 37.08 seconds
 hire: Saved 3,498,027 observations
 ============================================================
 ✅ Completed: hire.py
-Execution time: 3.89 seconds
+Execution time: 3.74 seconds
 
 
 🔄 Starting: iomom_cust.py
@@ -15284,7 +15063,7 @@ Saved 1637670 rows to ../pyData/Predictors/iomom_cust.csv
 iomom_cust predictor completed successfully!
 ============================================================
 ✅ Completed: iomom_cust.py
-Execution time: 0.93 seconds
+Execution time: 0.91 seconds
 
 
 🔄 Starting: iomom_supp.py
@@ -15303,7 +15082,7 @@ Saved 1639842 rows to ../pyData/Predictors/iomom_supp.csv
 iomom_supp predictor completed successfully!
 ============================================================
 ✅ Completed: iomom_supp.py
-Execution time: 0.92 seconds
+Execution time: 0.89 seconds
 
 
 🔄 Starting: realestate.py
@@ -15311,7 +15090,7 @@ Execution time: 0.92 seconds
 realestate predictor saved successfully
 ============================================================
 ✅ Completed: realestate.py
-Execution time: 4.19 seconds
+Execution time: 3.99 seconds
 
 
 🔄 Starting: retConglomerate.py
@@ -15378,7 +15157,7 @@ Saved 759500 rows to ../pyData/Predictors/retConglomerate.csv
 retConglomerate predictor completed successfully!
 ============================================================
 ✅ Completed: retConglomerate.py
-Execution time: 5.53 seconds
+Execution time: 5.27 seconds
 
 
 🔄 Starting: roaq.py
@@ -15386,7 +15165,7 @@ Execution time: 5.53 seconds
 roaq: Saved 2,490,872 observations
 ============================================================
 ✅ Completed: roaq.py
-Execution time: 3.82 seconds
+Execution time: 3.54 seconds
 
 
 🔄 Starting: sfe.py
@@ -15394,7 +15173,7 @@ Execution time: 3.82 seconds
 sfe predictor saved successfully
 ============================================================
 ✅ Completed: sfe.py
-Execution time: 23.21 seconds
+Execution time: 21.69 seconds
 
 
 🔄 Starting: sinAlgo.py
@@ -15403,7 +15182,7 @@ saving sinAlgo
 Saved 233996 rows to ../pyData/Predictors/sinAlgo.csv
 ============================================================
 ✅ Completed: sinAlgo.py
-Execution time: 32.94 seconds
+Execution time: 31.03 seconds
 
 
 🔄 Starting: skew1.py
@@ -15411,7 +15190,7 @@ Execution time: 32.94 seconds
 skew1 predictor saved successfully
 ============================================================
 ✅ Completed: skew1.py
-Execution time: 1.17 seconds
+Execution time: 1.12 seconds
 
 
 🔄 Starting: std_turn.py
@@ -15420,7 +15199,7 @@ saving std_turn
 Saved 2200763 rows to ../pyData/Predictors/std_turn.csv
 ============================================================
 ✅ Completed: std_turn.py
-Execution time: 2.25 seconds
+Execution time: 2.12 seconds
 
 
 🔄 Starting: tang.py
@@ -15428,6 +15207,6 @@ Execution time: 2.25 seconds
 tang: Saved 1,517,875 observations
 ============================================================
 ✅ Completed: tang.py
-Execution time: 3.73 seconds
+Execution time: 3.48 seconds
 
-Log completed at 2025-08-27 00:31:47
+Log completed at 2025-08-27 23:18:56

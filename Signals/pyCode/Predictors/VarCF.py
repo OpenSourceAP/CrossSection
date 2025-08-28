@@ -10,7 +10,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.asrol import asrol
+from utils.asrol import asrol_fast
 
 # DATA LOAD
 # Start with SignalMasterTable like Stata's "using" dataset
@@ -39,7 +39,7 @@ print(f"Calculating rolling statistics for {df['permno'].nunique()} firms...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Use asrol for 60-month rolling standard deviation with minimum 24 periods
-df = asrol(df, 'permno', 'time_avail_m', 'tempCF', 60, stat='sd', new_col_name='sigma', min_periods=24)
+df = asrol_fast(df, 'permno', 'time_avail_m', 'tempCF', 60, stat='sd', new_col_name='sigma', min_periods=24)
 
 print("Rolling statistics calculation completed")
 

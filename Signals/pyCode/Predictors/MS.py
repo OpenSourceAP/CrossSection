@@ -40,7 +40,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_ineq_pl
-from utils.asrol import asrol_calendar
+from utils.asrol import asrol_fast_calendar
 
 print("=" * 80)
 print("🏗️  MS.py")

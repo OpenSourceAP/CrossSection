@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from utils.savepredictor import save_predictor
 from utils.stata_replication import stata_ineq_pl
-from utils.asrol import asrol
+from utils.asrol import asrol_fast
 from utils.stata_replication import stata_quantile
 from utils.asreg import asreg_collinear
 
@@ -69,7 +69,7 @@ df_daily_pd = df_daily.to_pandas()
 for L in lag_lengths:
     print(f"  Computing {L}-day moving average...")
     # asrol P, window(time_temp `L') stat(mean) by(permno) gen(A_`L')
-    df_daily_pd = asrol(
+    df_daily_pd = asrol_fast(
         df_daily_pd,
         group_col="permno",
         time_col="time_temp",

@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.asrol import asrol
+from utils.asrol import asrol_fast
 from datetime import date
 
 print("=" * 80)

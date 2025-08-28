@@ -1,6 +1,6 @@
 # Predictor Validation Results
 
-**Generated**: 2025-08-27 17:18:22
+**Generated**: 2025-08-27 23:55:01
 
 **Configuration**:
 - TOL_SUPERSET: 1.0%
@@ -18,15 +18,248 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 
 | Predictor                 | Python CSV | Superset   | NumRows       | Precision1   | Precision2              | T-stat     |
 |---------------------------|------------|------------|---------------|--------------|-------------------------|------------|
-| MomOffSeason              | ✅         | ✅ (0.00%) | ✅ (+1.2%)   | ✅ (0.9%)     | ❌ (2.2E+00)             | SKIP       |
+| MomOffSeason              | ✅         | ✅ (0.00%) | ✅ (+1.2%)   | ✅ (0.9%)     | ❌ (2.2E+00)             | ❌ (+2.72)  |
+| Investment                | ✅         | ✅ (0.86%) | ✅ (-0.4%)   | ✅ (0.3%)     | ❌ (1.1E-01)             | ✅ (+0.04)  |
+| Herf                      | ✅         | ✅ (0.20%) | ✅ (-0.2%)   | ✅ (0.2%)     | ✅ (6.2E-02)             | ✅ (+0.01)  |
+| DivInit                   | ✅         | ✅ (0.00%) | ✅ (+0.0%)   | ✅ (0.1%)     | ❌ (7.3E+00)             | ❌ (-0.29)  |
 
-**Overall**: 0/1 available predictors passed validation
-  - Natural passes: 0
+**Overall**: 1/4 available predictors passed validation
+  - Natural passes: 1
   - Overridden passes: 0
-**Python CSVs**: 1/1 predictors have Python implementation
+**Python CSVs**: 4/4 predictors have Python implementation
 \* = Manual override applied (see Predictors/overrides.yaml for details)
 
 ## Detailed Results
+
+### DivInit
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Superset check: ✅ PASSED
+- Test 2 - NumRows check: ✅ PASSED (Python has +0.00% rows vs Stata)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ❌ FAILED
+- Test 5 - T-stat check: NA
+
+**Observations**:
+- Stata:  4,047,630
+- Python: 4,047,630
+- Common: 4,047,630
+
+**Precision1**: 0.103% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+
+**Precision2**: 100th percentile diff = 7.30e+00 (tolerance: < 1.00e-01)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       4.05e+06 |       4.05e+06 |       4.05e+06 |       4.05e+06 |
+| mean       |         0.0191 |         0.0182 |      -9.33e-04 |        -0.0068 |
+| std        |         0.1369 |         0.1336 |         0.0321 |         0.2344 |
+| min        |         0.0000 |         0.0000 |        -1.0000 |        -7.3042 |
+| 25%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 50%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| 75%        |         0.0000 |         0.0000 |         0.0000 |         0.0000 |
+| max        |         1.0000 |         1.0000 |         1.0000 |         7.3042 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = 0.0000 + 0.9486 * stata
+- **R-squared**: 0.9451
+- **N observations**: 4,047,630
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |     4.99e-05 |     1.57e-05 |      3.1734 |     0.002 |
+| Slope       |       0.9486 |     1.14e-04 |   8343.8411 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 4173/4047630 (0.103%)
+- Stata standard deviation: 1.37e-01
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm  python  stata  diff
+0   79145  202412       0      1    -1
+1   81784  202412       0      1    -1
+2   79145  202411       0      1    -1
+3   79145  202410       0      1    -1
+4   79145  202409       0      1    -1
+5   10517  202408       0      1    -1
+6   88988  202408       0      1    -1
+7   10517  202407       0      1    -1
+8   12009  202407       0      1    -1
+9   88988  202407       0      1    -1
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm  python  stata  diff
+0   10001  200510       0      1    -1
+1   10001  200511       0      1    -1
+2   10001  200512       0      1    -1
+3   10001  200601       0      1    -1
+4   10001  200602       0      1    -1
+5   10001  200603       0      1    -1
+6   10056  199410       0      1    -1
+7   10056  199411       0      1    -1
+8   10056  199412       0      1    -1
+9   10056  199501       0      1    -1
+```
+
+**Largest Differences Before 1950**:
+```
+   permno  yyyymm  python  stata  diff
+0   10372  193609       0      1    -1
+1   10372  193610       0      1    -1
+2   10372  193611       0      1    -1
+3   10372  193612       0      1    -1
+4   10372  193701       0      1    -1
+5   10372  193702       0      1    -1
+6   10751  193511       0      1    -1
+7   10751  193512       0      1    -1
+8   10751  193601       0      1    -1
+9   10751  193602       0      1    -1
+```
+
+---
+
+### Herf
+
+**Status**: ✅ PASSED
+
+**Test Results**:
+- Test 1 - Superset check: ✅ PASSED
+- Test 2 - NumRows check: ✅ PASSED (Python has -0.20% rows vs Stata)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ✅ PASSED
+- Test 5 - T-stat check: NA
+
+**Observations**:
+- Stata:  3,158,336
+- Python: 3,152,103
+- Common: 3,152,103
+
+**Precision1**: 0.191% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+
+**Precision2**: 100th percentile diff = 6.18e-02 (tolerance: < 1.00e-01)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       3.15e+06 |       3.15e+06 |       3.15e+06 |       3.15e+06 |
+| mean       |         0.3294 |         0.3294 |      -6.78e-07 |      -2.44e-06 |
+| std        |         0.2779 |         0.2779 |         0.0036 |         0.0131 |
+| min        |         0.0000 |      -1.54e-17 |        -0.5101 |        -1.8359 |
+| 25%        |         0.1184 |         0.1184 |      -2.36e-09 |      -8.48e-09 |
+| 50%        |         0.2537 |         0.2537 |         0.0000 |         0.0000 |
+| 75%        |         0.4723 |         0.4724 |       2.68e-09 |       9.63e-09 |
+| max        |         5.5471 |         5.5471 |         0.4787 |         1.7229 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0000 + 1.0000 * stata
+- **R-squared**: 0.9998
+- **N observations**: 3,152,103
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -3.07e-06 |     3.18e-06 |     -0.9637 |     0.335 |
+| Slope       |       1.0000 |     7.38e-06 | 135450.4159 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 6011/3152103 (0.191%)
+- Stata standard deviation: 2.78e-01
+
+---
+
+### Investment
+
+**Status**: ❌ FAILED
+
+**Test Results**:
+- Test 1 - Superset check: ✅ PASSED
+- Test 2 - NumRows check: ✅ PASSED (Python has -0.39% rows vs Stata)
+- Test 3 - Precision1 check: ✅ PASSED
+- Test 4 - Precision2 check: ❌ FAILED
+- Test 5 - T-stat check: NA
+
+**Observations**:
+- Stata:  2,411,862
+- Python: 2,402,502
+- Common: 2,391,143
+
+**Precision1**: 0.286% obs with std_diff >= 1.00e-02 (tolerance: < 1%)
+
+**Precision2**: 100th percentile diff = 1.07e-01 (tolerance: < 1.00e-01)
+
+**Summary Statistics** (Common Observations):
+
+| Statistic  |          Stata |         Python |     Difference | Std Difference |
+|------------|----------------|----------------|----------------|----------------|
+| count      |       2.39e+06 |       2.39e+06 |       2.39e+06 |       2.39e+06 |
+| mean       |         1.0035 |         1.0027 |      -8.02e-04 |      -4.38e-04 |
+| std        |         1.8324 |         1.8321 |         0.0522 |         0.0285 |
+| min        |     -2512.3491 |     -2512.3180 |       -25.0000 |       -13.6435 |
+| 25%        |         0.6673 |         0.6668 |      -2.22e-08 |      -1.21e-08 |
+| 50%        |         0.9330 |         0.9327 |         0.0000 |         0.0000 |
+| 75%        |         1.2033 |         1.2030 |       2.20e-08 |       1.20e-08 |
+| max        |       253.6225 |       253.6223 |         5.2631 |         2.8723 |
+
+**Regression Analysis** (Python ~ Stata):
+
+- **Model**: python = -0.0002 + 0.9994 * stata
+- **R-squared**: 0.9992
+- **N observations**: 2,391,143
+
+| Coefficient |     Estimate |    Std Error | t-statistic |   p-value |
+|-------------|--------------|--------------|-------------|----------|
+| Intercept   |    -2.18e-04 |     3.85e-05 |     -5.6554 |     0.000 |
+| Slope       |       0.9994 |     1.84e-05 |  54242.1050 |     0.000 |
+
+**Feedback**:
+- Num observations with std_diff >= TOL_DIFF_1: 6834/2391143 (0.286%)
+- Stata standard deviation: 1.83e+00
+
+**Most Recent Bad Observations**:
+```
+   permno  yyyymm  python     stata      diff
+0   12373  202605     0.0  0.684501 -0.684501
+1   12497  202605     0.0  0.053676 -0.053676
+2   12912  202605     0.0  0.140886 -0.140886
+3   14107  202605     0.0  0.023124 -0.023124
+4   16928  202605     0.0  0.117970 -0.117970
+5   17122  202605     0.0  0.328346 -0.328346
+6   18961  202605     0.0  0.033693 -0.033693
+7   19476  202605     0.0  0.175748 -0.175748
+8   19808  202605     0.0  0.149306 -0.149306
+9   20397  202605     0.0  0.080427 -0.080427
+```
+
+**Largest Differences**:
+```
+   permno  yyyymm  python      stata       diff
+0   16705  202306     0.0  25.000000 -25.000000
+1   91186  201206     0.0  25.000000 -25.000000
+2   19560  202406     0.0  18.475424 -18.475424
+3   86990  201912     0.0  15.609619 -15.609619
+4   16705  202307     0.0  13.000000 -13.000000
+5   91186  201207     0.0  13.000000 -13.000000
+6   19560  202407     0.0  11.049025 -11.049025
+7   86990  202001     0.0   9.993940  -9.993940
+8   16705  202308     0.0   9.000000  -9.000000
+9   91186  201208     0.0   9.000000  -9.000000
+```
+
+**Largest Differences Before 1950**:
+```
+No data before 1950
+```
+
+---
 
 ### MomOffSeason
 
@@ -37,7 +270,7 @@ Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.
 - Test 2 - NumRows check: ✅ PASSED (Python has +1.18% rows vs Stata)
 - Test 3 - Precision1 check: ✅ PASSED
 - Test 4 - Precision2 check: ❌ FAILED
-- Test 5 - T-stat check: NA (Skipped for faster execution)
+- Test 5 - T-stat check: NA
 
 **Observations**:
 - Stata:  3,396,704
