@@ -1,5 +1,6 @@
 # ABOUTME: Stata function replications for consistent behavior with Stata code
 # ABOUTME: Usage: from utils.stata_replication import fill_date_gaps, stata_lag, stata_multi_lag, stata_quantile, stata_ineq_pd, stata_ineq_pl, relrank
+# These functions are in principle not necessary. But if we want to exactly replicate the Stata code, we should try to use them.
 
 import pandas as pd
 import numpy as np

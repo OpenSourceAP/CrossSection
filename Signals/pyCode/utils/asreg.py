@@ -193,6 +193,7 @@ def _asreg_cross_sectional(
     add_constant: bool,
     drop_collinear: bool,
     compute_se: bool,
+    compute_residuals: bool,
     rtol: float | None,
 ) -> pd.DataFrame:
     """
@@ -337,8 +338,138 @@ def _asreg_cross_sectional(
     # Convert to DataFrame
     results_df = pd.DataFrame(results_list)
     
-    # Return with group columns first, then regression results
+    # If residuals are requested, compute them for all observations
+    if compute_residuals:
+        # Initialize residuals column with NaNs
+        df_with_residuals = df.copy()
+        df_with_residuals['_residuals'] = np.nan
+        
+        # For each group, compute residuals
+        for name, group in df.groupby(by if single_by else by_list):
+            # Get the coefficients for this group
+            if single_by:
+                group_mask = results_df[by_list[0]] == name
+            else:
+                # Multi-column groupby
+                group_mask = True
+                for i, col in enumerate(by_list):
+                    group_mask = group_mask & (results_df[col] == name[i])
+            
+            group_coeffs = results_df[group_mask]
+            if len(group_coeffs) == 0 or pd.isna(group_coeffs.iloc[0]['_Nobs']):
+                continue
+                
+            # Get coefficient values
+            beta_values = []
+            for col in X_cols:
+                beta_values.append(group_coeffs.iloc[0][f'_b_{col}'])
+            if add_constant:
+                beta_values.append(group_coeffs.iloc[0]['_b_cons'])
+            beta = np.array(beta_values)
+            
+            # Skip if any coefficient is NaN
+            if np.any(np.isnan(beta)):
+                continue
+                
+            # Compute residuals for this group
+            X_group = group[X_cols].values
+            y_group = group[y].values
+            
+            # Add constant if needed
+            if add_constant:
+                X_group = np.column_stack([X_group, np.ones(len(X_group))])
+            
+            # Compute yhat and residuals
+            valid_mask = np.isfinite(y_group) & np.all(np.isfinite(X_group), axis=1)
+            yhat = X_group @ beta
+            residuals = y_group - yhat
+            
+            # Store residuals
+            df_with_residuals.loc[group.index[valid_mask], '_residuals'] = residuals[valid_mask]
+        
+        # Merge residuals into results (each group gets same coefficients but different residuals)
+        # For cross-sectional, we return one row per original observation with residuals
+        result_with_residuals = df.merge(
+            results_df,
+            on=by_list,
+            how='left'
+        )
+        result_with_residuals['_residuals'] = df_with_residuals['_residuals']
+        
+        # Return with group columns, regression results, and residuals
+        return result_with_residuals[by_list + all_result_cols + ['_residuals']]
+    
+    # Return with group columns first, then regression results (no residuals)
     return results_df[by_list + all_result_cols]
+
+
+def _compute_residuals_from_coeffs(
+    df: pd.DataFrame,
+    y: str,
+    X: List[str],
+    coef_df: pd.DataFrame,
+    add_constant: bool = True
+) -> np.ndarray:
+    """
+    Compute residuals = y - X @ beta using pre-computed coefficients.
+    
+    Parameters
+    ----------
+    df : DataFrame with original data
+    y : str name of dependent variable
+    X : list of str names of independent variables  
+    coef_df : DataFrame with coefficient columns (_b_*)
+    add_constant : whether constant was included in regression
+    
+    Returns
+    -------
+    np.ndarray of residuals aligned with df index
+    """
+    residuals = np.full(len(df), np.nan)
+    
+    # Get y values
+    y_vals = df[y].to_numpy(dtype=float)
+    
+    # Get X matrix
+    X_vals = df[X].to_numpy(dtype=float)
+    
+    # Coefficient column names
+    beta_cols = [f"_b_{x}" for x in X]
+    if add_constant:
+        beta_cols.append("_b_cons")
+    
+    # Compute residuals row by row
+    for i in range(len(df)):
+        # Skip if no regression was run for this row (check _Nobs)
+        if np.isnan(coef_df.iloc[i]["_Nobs"]):
+            continue
+            
+        # Skip if y is missing
+        if np.isnan(y_vals[i]):
+            continue
+            
+        # Skip if any X is missing
+        if np.any(np.isnan(X_vals[i])):
+            continue
+        
+        # Get beta coefficients for this row
+        beta = coef_df.iloc[i][beta_cols].to_numpy(dtype=float)
+        
+        # Skip if any coefficient is NaN (shouldn't happen if _Nobs exists, but be safe)
+        if np.any(np.isnan(beta)):
+            continue
+        
+        # Compute yhat = X @ beta
+        if add_constant:
+            # Last element of beta is constant
+            yhat = np.dot(X_vals[i], beta[:-1]) + beta[-1]
+        else:
+            yhat = np.dot(X_vals[i], beta)
+        
+        # Compute residual
+        residuals[i] = y_vals[i] - yhat
+    
+    return residuals
 
 
 def asreg_collinear(
@@ -354,6 +485,7 @@ def asreg_collinear(
     add_constant: bool = True,
     drop_collinear: bool = True,  # If a window is rank-deficient → emit NaNs for that row
     compute_se: bool = False,  # Conventional (non-robust) SEs and t-stats
+    compute_residuals: bool = False,  # Whether to compute and return residuals
     method: str = "auto",  # kept for future use; currently cholesky→lstsq
     rtol: float | None = None,
 ) -> pd.DataFrame:
@@ -376,6 +508,7 @@ def asreg_collinear(
       - If a window/group is rank-deficient and drop_collinear=True, outputs NaNs for that row/group.
       - Stats: _Nobs, _R2, _adjR2, _sigma; Coefs: _b_<var>, (_b_cons if add_constant).
       - If compute_se=True: _se_<var>, _t_<var> (and _se_cons/_t_cons if applicable).
+      - If compute_residuals=True: _residuals column with y - yhat.
 
     Parameters
     ----------
@@ -391,6 +524,7 @@ def asreg_collinear(
     add_constant : include an intercept in each window.
     drop_collinear : if True, windows with rank < p are marked NaN.
     compute_se : compute conventional SEs and t-stats (slower).
+    compute_residuals : compute and return residuals = y - yhat in _residuals column.
     method : reserved; the solver auto-falls back from Cholesky to lstsq.
     rtol : optional tolerance forwarded to lstsq fallback.
 
@@ -401,7 +535,7 @@ def asreg_collinear(
     # Handle cross-sectional case (window=None)
     if window is None:
         return _asreg_cross_sectional(
-            df, y, X, by, add_constant, drop_collinear, compute_se, rtol
+            df, y, X, by, add_constant, drop_collinear, compute_se, compute_residuals, rtol
         )
 
     # Rolling window case - validate parameters
@@ -606,6 +740,18 @@ def asreg_collinear(
 
     # Assemble output DataFrame (aligned to original df index order)
     out_df = pd.DataFrame(out_cols, index=gdf.index)
+    
+    # Compute residuals if requested
+    if compute_residuals:
+        residuals = _compute_residuals_from_coeffs(
+            df=gdf,
+            y=y,
+            X=rhs,
+            coef_df=out_df,
+            add_constant=add_constant
+        )
+        out_df["_residuals"] = residuals
+    
     # Reindex back to the input df's original order
     out_df = out_df.reindex(df.index)
 
@@ -623,6 +769,9 @@ def asreg_collinear(
         ordered_cols += [f"_t_{c}" for c in rhs]
         if add_constant:
             ordered_cols += ["_t_cons"]
+    # Residuals (if requested)
+    if compute_residuals:
+        ordered_cols += ["_residuals"]
 
     return out_df[ordered_cols]
 
