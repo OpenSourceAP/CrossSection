@@ -1,22 +1,9 @@
-#%%
-
-# debug
-import os
-os.chdir(os.path.join(os.path.dirname(__file__), '..'))
-print(os.getcwd())
-
+#!/usr/bin/env python3
 """
 Compustat Short Interest data download script - Python equivalent of G_CompustatShortInterest.do
-(https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/Code/DataDownloads/G_CompustatShortInterest.do)
 
 Downloads short interest data with monthly aggregation.
 Data reported bi-weekly with 4-day lag; using mid-month observation for real-time availability.
-
-from Stata:
-* In 2025, S&P replaced the short interest data (starting in 1973) with a different
-* data source that only starts in 2006. We combine both files and keep the legacy
-* data when both are available for consistency with previous publications
-
 """
 
 import os
@@ -31,56 +18,24 @@ from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
-#%%
-
 # Create SQLAlchemy engine for database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# download legacy short interest file (ends in 2024)
 QUERY = """
 SELECT a.gvkey, a.iid, a.shortint, a.shortintadj, a.datadate
 FROM comp.sec_shortint as a
 """
 
-si_legacy = pd.read_sql_query(QUERY, engine)
+# Add row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    QUERY += f" LIMIT {MAX_ROWS_DL}"
+    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-# download standard short interest file (standard as of 2025)
-QUERY = """
-SELECT a.gvkey, a.iid, a.shortint, a.shortintadj, a.datadate
-FROM comp.sec_shortint as a
-"""
-
-si_standard = pd.read_sql_query(QUERY, engine)
-
+si_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
-#%%
-
-# == Combine and clean ==
-
-si_legacy['legacy'] = 1
-si_standard['legacy'] = 0
-
-# Combine both datasets, keeping legacy data when both are available for a (gvkey, iid, datadate)
-# 1. Concatenate, then sort so legacy comes first, then drop duplicates keeping the first (legacy preferred)
-si = pd.concat([si_legacy, si_standard], ignore_index=True)
-si = si.sort_values(['gvkey', 'iid', 'datadate', 'legacy'], ascending=[True, True, True, False])
-
-#%%
-
-temp = si.copy()
-temp['n'] = temp.groupby(['gvkey', 'datadate','legacy'])['shortint'].transform('count')
-
-temp.query('n > 1').sort_values(['gvkey', 'datadate', 'legacy']).head(10)
-
-
-
-
-
-
-#%%
 print(f"Downloaded {len(si_data)} short interest records")
 
 # Ensure directories exist
