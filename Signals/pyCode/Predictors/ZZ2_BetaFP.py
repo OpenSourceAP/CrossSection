@@ -107,8 +107,6 @@ df = df.with_columns([
 
 print("Aggregating to permno-month level...")
 
-#%% debug
-
 # save last non-missing BetaFP per permno-month
 df_monthly = df.select(['permno', 'time_avail_m', 'time_d', 'BetaFP']).filter(
     pl.col("BetaFP").is_finite()
