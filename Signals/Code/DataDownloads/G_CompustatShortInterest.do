@@ -1,5 +1,33 @@
 * 7. Compustat short interest -----------------------------------------------------
 
+* In 2025, S&P replaced the short interest data (starting in 1973) with a different
+* data source that only starts in 2006. We combine both files and keep the legacy
+* data when both are available for consistency with previous publications
+
+* Legacy file (1973-2024)
+
+// Prepare query
+#delimit ;
+local sql_statement
+    SELECT a.gvkey, a.iid, a.shortint, a.shortintadj, a.datadate
+    FROM comp.sec_shortint_legacy as a;
+#delimit cr
+
+odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
+
+gen time_avail_m = mofd(datadate)
+format time_avail_m %tm
+
+gcollapse (firstnm) shortint shortintadj, by(gvkey time_avail_m)  // Data reported bi-weekly and made available with a four day lag (according to
+			        	                                         // Rapach et al. (2016). As they do, we use the mid-month observation to make sure 
+                                                                 // Data would be available in real time
+
+gen legacyFile = 1
+save tmp, replace
+																 
+
+* New file (2006-)
+
 // Prepare query
 #delimit ;
 local sql_statement
@@ -16,6 +44,23 @@ gcollapse (firstnm) shortint shortintadj, by(gvkey time_avail_m)  // Data report
 			        	                                         // Rapach et al. (2016). As they do, we use the mid-month observation to make sure 
                                                                  // Data would be available in real time
 
+* Combine
+append using tmp
+* Keep legacy data if two observations for same firm in same month
+bys gvkey time_avail_m: gen nobs = _N
+drop if nobs >1 & legacy !=1
+drop nobs legacyFile
+
+* check whether no repeated observations 
+bys gvkey time_avail_m: assert _N == 1
+
+* Wrap up
+replace shortint = shortint/10^6  // for consistency as we also use shares outstanding in millions of shares (see I_CRSPmonthly.do)
+replace shortintadj = shortintadj/10^6																 
+																 
 destring gvkey, replace
 compress
 save "$pathDataIntermediate/monthlyShortInterest", replace
+
+* Housekeeping
+erase tmp.dta
