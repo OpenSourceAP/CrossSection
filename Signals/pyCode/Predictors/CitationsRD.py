@@ -12,7 +12,8 @@ import os
 sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
 from utils.stata_asreg_asrol import asrol
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, stata_quantile
+from utils.savepredictor import save_predictor
 
 # DATA LOAD with early filtering for performance
 print("Loading SignalMasterTable...")
@@ -91,53 +92,43 @@ df = df.sort_values(['gvkey', 'time_avail_m'])
 df = df.groupby('gvkey').apply(lambda x: x.iloc[2:]).reset_index(drop=True)
 
 # Drop financial firms
+df = df.assign(sicCRSP = lambda x: x['sicCRSP'].fillna(np.inf)) # make sicCRSP Inf if missing, to match Stata
 df = df[~((df['sicCRSP'] >= 6000) & (df['sicCRSP'] <= 6999))]
 
 # Drop if ceq < 0 (match Stata exactly: keeps NaN values)
 df = df[~(df['ceq'] < 0)]
 
-# Double independent sort
-# Size categories using astile logic: equal-sized groups based on NYSE breakpoints
-def calculate_size_breakpoints(group):
-    nyse_stocks = group[group['exchcd'] == 1]
-    if len(nyse_stocks) == 0:
-        return group
-    
-    # Stata astile: create equal-sized groups based on NYSE quantiles
-    # astile sizecat = mve_c, qc(exchcd == 1) nq(2)
-    # This creates 2 equal-sized groups using NYSE stocks as the universe for breakpoints
-    
-    try:
-        # Use qcut on NYSE stocks to get the 50th percentile breakpoint
-        nyse_sorted = nyse_stocks['mve_c'].sort_values()
-        breakpoint = nyse_sorted.quantile(0.5)  # 50th percentile
-        
-        # Apply the breakpoint to all stocks
-        group['sizecat'] = np.where(group['mve_c'] <= breakpoint, 1, 2)
-        
-    except Exception:
-        # Fallback in case of issues
-        median_mve = nyse_stocks['mve_c'].median()
-        group['sizecat'] = np.where(group['mve_c'] <= median_mve, 1, 2)
-    
-    return group
+# == Double independent sort ==
 
-df = df.groupby('time_avail_m').apply(calculate_size_breakpoints).reset_index(drop=True)
+# Size categories using NYSE breakpoints
+print("Creating size categories...")
 
+# Calculate NYSE median for each time period
+nyse_medians = df[df['exchcd'] == 1].groupby('time_avail_m')['mve_c'].apply(
+    lambda x: stata_quantile(x, 0.5)
+).reset_index()
+nyse_medians.columns = ['time_avail_m', 'nyse_median']
+
+# Merge medians back to main dataset
+df = df.merge(nyse_medians, on='time_avail_m', how='left')
+
+# Create size categories: 1 if <= NYSE median, 2 if > NYSE median
+df['sizecat'] = np.where(df['mve_c'] <= df['nyse_median'], 1, 2)
+
+# Clean up
+df = df.drop(columns=['nyse_median'])
 
 # Main category using fastxtile logic exactly like Stata
-print("Creating tercile categories...")
+print("Creating CitationsRD tercile categories...")
 
 # Stata: egen maincat = fastxtile(tempCitationsRD), by(time_avail_m) n(3)
 # fastxtile creates equal-sized groups based on VALID (non-missing) observations
 df['maincat'] = fastxtile(df, 'tempCitationsRD', by='time_avail_m', n=3)
 
-
 # Create CitationsRD signal: 1 if small & high, 0 if small & low  
 df['CitationsRD'] = np.nan
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 3), 'CitationsRD'] = 1
 df.loc[(df['sizecat'] == 1) & (df['maincat'] == 1), 'CitationsRD'] = 0
-
 
 # OPTIMIZED: Expand back to monthly using more efficient approach
 print("Expanding to monthly observations...")
@@ -154,22 +145,5 @@ df_expanded = pd.concat([
 
 df = df_expanded.sort_values(['gvkey', 'time_avail_m'])
 
-# Keep only necessary columns for output
-df_final = df[['permno', 'time_avail_m', 'CitationsRD']].copy()
-df_final = df_final.dropna(subset=['CitationsRD'])
-
-# Convert time_avail_m to yyyymm format like other predictors
-df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
-
-# Convert to integers for consistency with other predictors
-df_final['permno'] = df_final['permno'].astype('int64')
-df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
-
-# Keep only required columns and set index
-df_final = df_final[['permno', 'yyyymm', 'CitationsRD']].copy()
-df_final = df_final.set_index(['permno', 'yyyymm'])
-
 # SAVE
-df_final.to_csv('../pyData/Predictors/CitationsRD.csv')
-
-print("CitationsRD predictor saved successfully")
+save_predictor(df, 'CitationsRD')
