@@ -66,9 +66,6 @@ Valid data satisfies:
 **IMPORTANT**: All Python commands must be run from the `pyCode/` directory.
 
 ```bash
-# Navigate to working directory
-cd /Users/idrees/Desktop/CrossSection/Signals/pyCode/
-
 # Activate virtual environment (required for all operations)
 source .venv/bin/activate
 
