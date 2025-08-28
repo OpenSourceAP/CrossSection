@@ -1,104 +1,136 @@
-# ABOUTME: Translates Mom6mJunk.do to calculate 6-month momentum for junk stocks
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom6mJunk.py
+#%%
 
-# Run from pyCode/ directory  
-# Inputs: SignalMasterTable.parquet, m_CIQ_creditratings.parquet, m_SP_creditratings.parquet
-# Output: ../pyData/Predictors/Mom6mJunk.csv
+# ABOUTME: Translates Code/Predictors/Mom6mJunk.do to calculate 6-month momentum for junk stocks
+# ABOUTME: Creates junk stock momentum signal using CIQ and SP credit ratings with forward fill
+
+"""
+This script calculates 6-month momentum for junk-rated stocks (credit rating <= 14).
+
+How to run:
+    cd pyCode/
+    source .venv/bin/activate
+    python3 Predictors/Mom6mJunk.py
+
+Inputs:
+    - ../pyData/Intermediate/m_CIQ_creditratings.parquet
+    - ../pyData/Intermediate/SignalMasterTable.parquet  
+    - ../pyData/Intermediate/m_SP_creditratings.parquet
+
+Outputs:
+    - ../pyData/Predictors/Mom6mJunk.csv (permno, yyyymm, Mom6mJunk)
+"""
 
 import pandas as pd
 import numpy as np
+import os
 import sys
-sys.path.append('.')
-from utils.stata_replication import stata_multi_lag
-from utils.savepredictor import save_predictor
+# Add utils directory to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+from savepredictor import save_predictor
 
-# Clean CIQ ratings
-df_ciq = pd.read_parquet('../pyData/Intermediate/m_CIQ_creditratings.parquet')
 
-# remove suffixes
-df_ciq['currentratingsymbol'] = df_ciq['currentratingsymbol'].str.replace('pi', '')
-df_ciq['currentratingsymbol'] = df_ciq['currentratingsymbol'].str.replace('q', '')
-df_ciq['currentratingsymbol'] = df_ciq['currentratingsymbol'].str.replace(' prelim', '')
+#%%
+# ==== Import and clean data ====
 
-# Create numerical rating (for ease of comparison with CredRatDG)
-df_ciq['credratciq'] = 0
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'D', 'credratciq'] = 1
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'C', 'credratciq'] = 2
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'CC', 'credratciq'] = 3
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'CCC-', 'credratciq'] = 4
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'CCC', 'credratciq'] = 5
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'CCC+', 'credratciq'] = 6
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'B-', 'credratciq'] = 7
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'B', 'credratciq'] = 8
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'B+', 'credratciq'] = 9
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'BB-', 'credratciq'] = 10
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'BB', 'credratciq'] = 11
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'BB+', 'credratciq'] = 12
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'BBB-', 'credratciq'] = 13
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'BBB', 'credratciq'] = 14
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'BBB+', 'credratciq'] = 15
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'A-', 'credratciq'] = 16
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'A', 'credratciq'] = 17
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'A+', 'credratciq'] = 18
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'AA-', 'credratciq'] = 19
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'AA', 'credratciq'] = 20
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'AA+', 'credratciq'] = 21
-df_ciq.loc[df_ciq['currentratingsymbol'] == 'AAA', 'credratciq'] = 22
+# CIQ ratings
+ciq_raw = pd.read_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet",
+                             columns=['gvkey', 'ratingdate', 'source', 'currentratingnum'])
 
-df_ciq = df_ciq[['gvkey', 'time_avail_m', 'credratciq']].copy()
+# clean up formats and names
+ciq_raw['gvkey'] = ciq_raw['gvkey'].astype(np.int64)
+ciq_raw['ratingdate'] = pd.to_datetime(ciq_raw['ratingdate'])
+ciq_raw.rename(columns={'currentratingnum': 'ratingciq'}, inplace=True)
 
-# DATA LOAD
-df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-df = df[['gvkey', 'permno', 'time_avail_m', 'ret']].copy()
-# drop if gvkey ==.
-df = df[df['gvkey'].notna()]
-# merge 1:1 gvkey time_avail_m using m_SP_creditratings
-df_sp = pd.read_parquet('../pyData/Intermediate/m_SP_creditratings.parquet')
-df = df.merge(df_sp, on=['gvkey', 'time_avail_m'], how='left')
-# merge 1:1 gvkey time_avail_m using temp_ciq_rat
-df = df.merge(df_ciq, on=['gvkey', 'time_avail_m'], how='left')
+# keep most recent rating each month
+ciq_raw.sort_values(['gvkey', 'ratingdate'], inplace=True)
+ciq_raw['time_avail_m'] = ciq_raw['ratingdate'].dt.to_period('M').dt.start_time
+ciq_raw = ciq_raw.drop_duplicates(subset=['gvkey', 'time_avail_m'], keep='last')
 
-# fill missing credratciq with most recent 
-# xtset permno time_avail_m; tsfill
+# SP ratings
+# (this is already deduplicated)
+sp_raw = pd.read_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
+sp_raw.rename(columns={'credrat': 'ratingsp'}, inplace=True)
+
+# SignalMasterTable
+df_raw = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet",
+                     columns=['gvkey', 'permno', 'time_avail_m', 'ret'])
+
+#%%
+# ==== Merge and Process Credit Ratings ====
+
+# use SP ratings by default, CIQ as fallback
+df = df_raw.copy()
+
+# ac: Mom6mJunk.do has `drop if gvkey == .` but I'm not sure it makes sense! 
+df.query('gvkey.notna()', inplace=True)
+
+df = pd.merge(df, sp_raw, on=['gvkey', 'time_avail_m'], how='left')
+print(f"left join with sp ratings, nrow = {len(df)}")
+
+df = pd.merge(df, ciq_raw, on=['gvkey', 'time_avail_m'], how='left') 
+print(f"left join with ciq ratings, nrow = {len(df)}")
+
+# use sp by default (as in Avramov et al), CIQ otherwise
+df['credrat'] = df['ratingsp'].fillna(df['ratingciq'])
+
+
+#%%
+# ==== Fill in date gaps and forward fill missing values ====
+# replicate Stata: xtset permno time_avail_m; tsfill
+# ac: the fill date gaps is only needed because we drop missing gvkey above
+
+
+# get all permno and time_avail_m
+permno_list = df['permno'].unique()
+ym_list = df['time_avail_m'].unique() # let's make this cleaner
+
+# 're-index' the df to make a balanced panel with lots of missing values
+full_idx = pd.MultiIndex.from_product([permno_list, ym_list], names=['permno', 'time_avail_m'])
+df_balanced = df.set_index(['permno', 'time_avail_m']).reindex(full_idx).reset_index()\
+    .sort_values(['permno', 'time_avail_m'])
+
+# keep only the observations that are within the range of the original df
+ym_ranges = df.groupby('permno')['time_avail_m'].agg(ym_min='min', ym_max='max').reset_index()
+df_balanced = df_balanced.merge(ym_ranges, on='permno', how='left')
+df_balanced.query('time_avail_m >= ym_min & time_avail_m <= ym_max', inplace=True)
+
+# finally, fill credrat with most recent rating
+df.sort_values(['permno', 'time_avail_m'], inplace=True)
+df['credrat'] = df.groupby('permno')['credrat'].ffill()
+
+#%%
+
+# ==== SIGNAL CONSTRUCTION ====
+
+# Set index for time series operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Get all permno-time combinations that exist in the data range for tsfill
-df_ranges = df.groupby('permno')['time_avail_m'].agg(['min', 'max']).reset_index()
-df_ranges.columns = ['permno', 'time_min', 'time_max']
+# Replace missing returns with 0 
+# ac: this interacts with the missing gvkey drop above
+df.loc[df['ret'].isna(), 'ret'] = 0
 
-# Create all time periods for each permno
-all_times = df['time_avail_m'].unique()
-df_full = []
-for _, row in df_ranges.iterrows():
-    permno = row['permno']
-    time_range = [t for t in all_times if row['time_min'] <= t <= row['time_max']]
-    df_permno = pd.DataFrame({'permno': permno, 'time_avail_m': time_range})
-    df_full.append(df_permno)
+# Calculate 6-month momentum using lags
+df['ret_lag1'] = df.groupby('permno')['ret'].shift(1)
+df['ret_lag2'] = df.groupby('permno')['ret'].shift(2)
+df['ret_lag3'] = df.groupby('permno')['ret'].shift(3)
+df['ret_lag4'] = df.groupby('permno')['ret'].shift(4)
+df['ret_lag5'] = df.groupby('permno')['ret'].shift(5)
 
-df_full = pd.concat(df_full, ignore_index=True)
-df = df_full.merge(df, on=['permno', 'time_avail_m'], how='left')
-df = df.sort_values(['permno', 'time_avail_m'])
-
-# foreach v of varlist credratciq { replace `v' = `v'[_n-1] if permno == permno[_n-1] & mi(`v') }
-df['credratciq'] = df.groupby('permno')['credratciq'].ffill()
-
-# coalecse credit ratings: replace credrat = credratciq if credrat == .
-df['credrat'] = df['credrat'].fillna(df['credratciq'])
-
-# SIGNAL CONSTRUCTION
-# xtset permno time_avail_m
-df = df.sort_values(['permno', 'time_avail_m'])
-# replace ret = 0 if mi(ret)
-df['ret'] = df['ret'].fillna(0)
-# gen Mom6m = ( (1+l.ret)*(1+l2.ret)*(1+l3.ret)*(1+l4.ret)*(1+l5.ret)) - 1
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
+# Calculate 6-month momentum (geometric return)
 df['Mom6m'] = ((1 + df['ret_lag1']) * 
                (1 + df['ret_lag2']) * 
                (1 + df['ret_lag3']) * 
                (1 + df['ret_lag4']) * 
                (1 + df['ret_lag5'])) - 1
-# gen Mom6mJunk = Mom6m if ( credrat <= 14 & credrat > 0 )
+
+# Create Mom6mJunk for junk stocks (rating <= 14 and > 0)
+# set missing to +Inf, following stata rules
+df['credrat'] = df['credrat'].fillna(np.inf)
 df['Mom6mJunk'] = np.where((df['credrat'] <= 14) & (df['credrat'] > 0), df['Mom6m'], np.nan)
 
-# SAVE
+# SAVE 
+# note: save_predictor drops missing values for Mom6mJunk
 save_predictor(df, 'Mom6mJunk')
+
+
+print(f"Mom6mJunk saved with {len(df)} observations")
