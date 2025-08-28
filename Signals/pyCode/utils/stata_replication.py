@@ -10,47 +10,6 @@ import re
 
 # %% old multi lag function
 
-def fill_date_gaps(df, group_col='permno', time_col='time_avail_m'):
-    """
-    Fill date gaps to create a clean panel for lag operations.
-    Replicates Stata: xtset [group_col] [time_col]; tsfill
-    
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Input dataframe
-    group_col : str, default 'permno'
-        Column to group by (e.g., 'permno', 'gvkey')
-    time_col : str, default 'time_avail_m'
-        Time column (e.g., 'time_avail_m', 'date')
-    
-    Returns
-    -------
-    pd.DataFrame
-        Dataframe with date gaps filled, creating a balanced panel
-        within each group's original date range
-    
-    Examples
-    --------
-    >>> df_filled = fill_date_gaps(df, 'permno', 'time_avail_m')
-    >>> df_filled = fill_date_gaps(df, 'gvkey', 'datadate')
-    """
-    # Get all unique groups and time periods
-    group_list = df[group_col].unique()
-    time_list = df[time_col].unique()
-    
-    # Create balanced panel with all combinations
-    full_idx = pd.MultiIndex.from_product([group_list, time_list], names=[group_col, time_col])
-    df_balanced = df.set_index([group_col, time_col]).reindex(full_idx).reset_index()\
-        .sort_values([group_col, time_col])
-    
-    # Keep only observations within each group's original date range
-    time_ranges = df.groupby(group_col)[time_col].agg(time_min='min', time_max='max').reset_index()
-    df_balanced = df_balanced.merge(time_ranges, on=group_col, how='left')
-    df_balanced = df_balanced.query(f'{time_col} >= time_min & {time_col} <= time_max').drop(columns=['time_min', 'time_max'])
-    
-    return df_balanced.sort_values([group_col, time_col])
-
 def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', 
                     prefix='', fill_gaps=True):
     """
@@ -153,6 +112,32 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M',
     return out.sort_values([group_col, time_col])
 
 # %% new multi lag function
+
+
+def fill_date_gaps(df, group_col='permno', time_col='time_avail_m', period_str='1mo', 
+    start_padding="-0mo", end_padding="0mo"):
+    """
+    Fill date gaps to create a clean panel for lag operations.
+    Replicates Stata: xtset [group_col] [time_col]; tsfill
+
+    General pandas/polars wrapper on fill_date_gaps_pl
+    
+    df: pd.DataFrame or pl.DataFrame
+    period_str: 1mo
+    start_padding: 0mo, 3mo, 6mo, 12mo
+    end_padding: -0mo, -3mo, -6mo, -12mo: adds 0, 3, 6, 12 months to the start of the time series
+    """
+
+    # polars path
+    if isinstance(df, pl.DataFrame):
+        return fill_date_gaps_pl(df, group_col, time_col, period_str, start_padding, end_padding)
+    
+    # pandas path
+    elif isinstance(df, pd.DataFrame):
+        # convert to polars
+        out = pl.from_pandas(df)
+        out = fill_date_gaps_pl(out, group_col, time_col, period_str, start_padding, end_padding)
+        return out.to_pandas()
 
 
 def fill_date_gaps_pl(df, group_col='permno', time_col='time_avail_m', period_str='1mo', 

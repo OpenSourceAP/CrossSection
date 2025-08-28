@@ -1,5 +1,9 @@
 #%%
 
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir('..')
+
 # ABOUTME: PS.py - calculates Piotroski F-score (within highest BM quintile)
 # ABOUTME: Nine-factor profitability, efficiency, and leverage score restricted to highest book-to-market quintile
 
@@ -27,7 +31,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.stata_fastxtile import fastxtile
 from utils.save_standardized import save_predictor
-from utils.stata_replication import stata_multi_lag, stata_ineq_pd, fill_date_gaps
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 # DATA LOAD
 # Load m_aCompustat data
@@ -55,7 +59,7 @@ df['fopt'] = df['fopt'].fillna(df['oancf'])
 df['tempebit'] = df['ib'] + df['txt'] + df['xint']
 
 # Create 12-month lags for required variables using stata_multi_lag
-df = fill_date_gaps(df, 'permno', 'time_avail_m') # fill gaps first for efficiency
+df = fill_date_gaps(df, 'permno', 'time_avail_m', '1mo') # fill gaps first for efficiency
 lag_vars = ['ib', 'at', 'dltt', 'act', 'lct', 'sale', 'shrout']
 for var in lag_vars:
     df = stata_multi_lag(df, 'permno', 'time_avail_m', var, [12], prefix='l', fill_gaps=False)
@@ -155,3 +159,6 @@ df.loc[(df['BM_quintile'] != 5), 'PS'] = np.nan
 
 # save
 save_predictor(df, 'PS')
+
+#%%
+
