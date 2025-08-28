@@ -16,8 +16,15 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.asrol import asrol_calendar_pd
 from utils.save_standardized import save_predictor
 
+print("=" * 80)
+print("🏗️  DivInit.py")
+print("Creating dividend initiation predictor")
+print("=" * 80)
+
 # PREP DISTRIBUTIONS DATA
+print("📊 Loading distributions data...")
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
+print(f"Loaded distributions: {len(dist_df):,} observations")
 
 # Cash dividends only (cd2 == 2 | cd2 == 3)
 dist_df = dist_df[(dist_df['cd2'] == 2) | (dist_df['cd2'] == 3)]
@@ -37,6 +44,7 @@ df = df[['permno', 'time_avail_m', 'exchcd', 'shrcd']].copy()
 df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
 
 # SIGNAL CONSTRUCTION
+print("🧮 Computing dividend initiation signal...")
 # Replace missing dividend amounts with 0
 df['divamt'] = df['divamt'].fillna(0)
 
@@ -59,4 +67,11 @@ df = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'temp', stat='sum', window=
 df['DivInit'] = (df['temp_sum'] == 1).astype(int)
 
 # save
+print("💾 Saving DivInit predictor...")
 save_predictor(df, 'DivInit')
+print("✅ DivInit.csv saved successfully")
+
+print("=" * 80)
+print("✅ DivInit.py Complete")
+print("Dividend initiation predictor generated successfully")
+print("=" * 80)

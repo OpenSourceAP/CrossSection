@@ -15,14 +15,22 @@ from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_predictor
 
+print("=" * 80)
+print("🏗️  MomRev.py")
+print("Creating momentum and long-term reversal signal based on 6m and 36m momentum")
+print("=" * 80)
+
 # DATA LOAD
+print("📊 Loading SignalMasterTable data...")
 # use permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable", clear
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')[['permno', 'time_avail_m', 'ret']].copy()
+print(f"Loaded: {len(df):,} observations")
 
 # Sort data for proper lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
+print("🧮 Computing 6m and 36m momentum signals...")
 # replace ret = 0 if mi(ret)
 df.loc[df['ret'].isna(), 'ret'] = 0
 
@@ -67,4 +75,11 @@ df.loc[(df['tempMom6'] == 1) & (df['tempMom36'] == 5), 'MomRev'] = 0
 # (Labels are comments in Python)
 
 # SAVE
+print("💾 Saving MomRev predictor...")
 save_predictor(df, 'MomRev')
+print("✅ MomRev.csv saved successfully")
+
+print("=" * 80)
+print("✅ MomRev.py Complete")
+print("Momentum and long-term reversal signal generated successfully")
+print("=" * 80)

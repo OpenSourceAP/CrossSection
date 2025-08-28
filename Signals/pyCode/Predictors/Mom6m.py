@@ -13,14 +13,22 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_predictor
 
+print("=" * 80)
+print("🏗️  Mom6m.py")
+print("Creating six-month momentum predictor")
+print("=" * 80)
+
 # DATA LOAD
+print("📊 Loading SignalMasterTable data...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
+print(f"Loaded: {len(df):,} observations")
 
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
+print("🧮 Computing 6-month momentum signal...")
 # Replace missing returns with 0
 df['ret'] = df['ret'].fillna(0)
 
@@ -38,4 +46,11 @@ df['Mom6m'] = ((1 + df['ret_lag1']) *
 df_final = df[['permno', 'time_avail_m', 'Mom6m']].copy()
 
 # SAVE
+print("💾 Saving Mom6m predictor...")
 save_predictor(df_final, 'Mom6m')
+print("✅ Mom6m.csv saved successfully")
+
+print("=" * 80)
+print("✅ Mom6m.py Complete")
+print("Six-month momentum predictor generated successfully")
+print("=" * 80)
