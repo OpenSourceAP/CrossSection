@@ -28,7 +28,7 @@ from pathlib import Path
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD

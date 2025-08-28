@@ -9,9 +9,9 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-sys.path.append('.')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_replication import stata_multi_lag
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')

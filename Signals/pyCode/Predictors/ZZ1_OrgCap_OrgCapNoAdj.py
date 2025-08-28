@@ -19,10 +19,11 @@ Outputs:
 """
 
 import sys
+import os
 import pandas as pd
 import numpy as np
-sys.path.append('.')
-from utils.savepredictor import save_predictor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
 from utils.sicff import sicff
 
 # DATA LOAD

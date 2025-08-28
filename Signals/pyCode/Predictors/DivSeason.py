@@ -16,7 +16,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.asrol import asrol_calendar_pd
 from utils.stata_replication import stata_ineq_pd
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')

@@ -12,9 +12,10 @@ from sklearn.linear_model import LinearRegression
 import warnings
 warnings.filterwarnings('ignore')
 import sys
+import os
 import time
 import argparse
-sys.path.append('.')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.sicff import sicff
 
 def main():

@@ -9,7 +9,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import sys
-sys.path.append('.')
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD

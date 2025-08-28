@@ -12,7 +12,7 @@ import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD

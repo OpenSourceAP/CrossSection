@@ -8,7 +8,7 @@
 import pandas as pd
 import numpy as np
 import sys
-sys.path.append('.')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.sicff import sicff
 
 # DATA LOAD (Compustat Segments)

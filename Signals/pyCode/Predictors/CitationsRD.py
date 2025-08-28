@@ -10,10 +10,10 @@ import numpy as np
 import polars as pl
 import sys
 import os
-sys.path.append('.')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag, stata_quantile
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 from utils.asrol import asrol_fast_calendar
 
 # DATA LOAD with early filtering for performance

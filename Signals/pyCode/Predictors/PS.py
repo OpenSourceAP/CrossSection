@@ -26,7 +26,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.stata_fastxtile import fastxtile
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 from utils.stata_replication import stata_multi_lag, stata_ineq_pd, fill_date_gaps
 
 # DATA LOAD

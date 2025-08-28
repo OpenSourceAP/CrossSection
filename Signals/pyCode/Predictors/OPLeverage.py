@@ -27,8 +27,9 @@ do "$pathCode/savepredictor" OPLeverage
 import polars as pl
 from pathlib import Path
 import sys
-sys.path.append('.')
-from utils.savepredictor import save_predictor
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
 
 def main():
     # DATA LOAD - equivalent to: use gvkey permno time_avail_m xsga cogs at using "$pathDataIntermediate/m_aCompustat", clear

@@ -10,10 +10,10 @@ import pandas as pd
 import numpy as np
 import os
 import sys
-sys.path.append('.')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 
 # DATA LOAD
 # use permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable", clear
