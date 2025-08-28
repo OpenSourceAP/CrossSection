@@ -35,12 +35,14 @@ df = df[['permno', 'time_avail_m', 'exchcd', 'shrcd']].copy()
 df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
 
 # SIGNAL CONSTRUCTION
-# OP selects companies on NYSE or AMEX for more than one year with regular dividends
+# OP selects "companies that had existed on the NYSE or AMEX for more than one year and paid regular period div"
 # but we're more flexible
 df['div'] = df['divamt']
 df['div'] = df['div'].fillna(0)
 
 # Create dividend indicator
+#gen divind = div > 0 & (exchcd == 1 | exchcd == 2)
+#gen divind = div > 0 
 df['divind'] = (df['div'] > 0).astype(int)
 
 # Sort data for lag calculations

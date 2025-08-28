@@ -154,6 +154,7 @@ for m in range(60):
         (pl.col("E_ret_mkt2") / (pl.col("E_ret2").sqrt() * pl.col("E_mkt2"))).alias("Coskewness")
     ])
     
+    # OP does not state the required number of obs
     # Filter minimum observations - equivalent to: keep if nobs >= 12
     coskew_df = coskew_df.filter(
         pl.col("nobs") >= 12

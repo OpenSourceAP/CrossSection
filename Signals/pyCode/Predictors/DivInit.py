@@ -1,6 +1,9 @@
 # ABOUTME: Translates DivInit.do to create dividend initiation predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/DivInit.py
 
+# Our signal balances users desire to have flexible data and 
+# fidelity to OP's original test.
+
 # Run from pyCode/ directory
 # Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/DivInit.csv
@@ -55,7 +58,8 @@ df = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divamt', stat='sum', windo
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Create dividend initiation indicator
-# temp = divamt > 0 & l1.divsum == 0
+#gen temp = divamt > 0 & l1.divsum == 0 & (exchcd == 1 | exchcd == 2) // OP does nyse/amex only, but we are more flexible
+#gen temp = divamt > 0 & l1.divsum == 0
 df['divsum_lag1'] = df.groupby('permno')['divamt_sum'].shift(1)
 df['temp'] = (df['divamt'] > 0) & (df['divsum_lag1'] == 0)
 df['temp'] = df['temp'].fillna(False).astype(int)  # Convert boolean to numeric

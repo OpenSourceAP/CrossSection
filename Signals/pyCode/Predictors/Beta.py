@@ -1,5 +1,6 @@
 # ABOUTME: Beta.py - generates CAPM Beta predictor using asreg rolling regressions
 # ABOUTME: Python translation of Beta.do using polars and asreg helper for exact Stata replication
+# BetaSquared was weak in OP
 
 """
 Beta.py

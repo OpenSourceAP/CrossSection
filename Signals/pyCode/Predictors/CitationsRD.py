@@ -106,6 +106,7 @@ df = df[~((df['sicCRSP'] >= 6000) & (df['sicCRSP'] <= 6999))]
 df = df[~(df['ceq'] < 0)]
 
 # == Double independent sort ==
+# double indep sort (can't just drop high mve_c, need indep)
 
 # Size categories using NYSE breakpoints
 print("Creating size categories...")

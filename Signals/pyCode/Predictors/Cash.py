@@ -30,6 +30,10 @@ from utils.save_standardized import save_predictor
 print("Starting Cash predictor...")
 
 # DATA LOAD - m_QCompustat
+# 2020 01 Andrew
+# use rdq instead of time_avail_m following OP
+# Note: time_avail_m is datadate + 3 months but rdq is unchanged from 
+# WRDS download
 print("Loading m_QCompustat data...")
 qcompustat_df = pd.read_parquet('../pyData/Intermediate/m_QCompustat.parquet', 
                                columns=['gvkey', 'rdq', 'cheq', 'atq'])

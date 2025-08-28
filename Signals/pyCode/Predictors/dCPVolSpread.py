@@ -1,6 +1,7 @@
 # ABOUTME: Translates dCPVolSpread.do to create change in call-put volume spread predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/dCPVolSpread.py
 
+# An Ang Bali Cakici 2014 Table II C
 # Run from pyCode/ directory
 # Inputs: OptionMetricsVolSurf.parquet, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/dCPVolSpread.csv

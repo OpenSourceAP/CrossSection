@@ -1,0 +1,243 @@
+# Plan: Update the comments in pyCode/- *.py
+
+## Goals
+
+Update the comments in the py scripts as follows:
+- check the do file for comments on the Original Papers details if they exist
+    - these are often marked with "OP" (as in Original Papers)
+    - Sometimes they refer to the paper by Author (Year)
+    - Sometimes they just refer to a page number (e.g. "page 2283" or "p 24")
+    - Sometimes they refer to a table or figure number (e.g. "Table 1" or "Figure 1")
+- copy over the EXACT TEXT from the do file into a comment
+    - Put the comment in the same place as the do file
+- If the do file does not have comments on the Original Papers, do nothing.
+- When you're finished mark the script with ✅
+    - If the do file does not have comments on the Original Papers, add "no OP comments" after the ✅
+    - If the OP comments are already in the py script, use "✅ already in py script"
+
+## Progress
+
+- AccrualsBM.py - ✅ no OP comments
+- Accruals.py - ✅ already in py script
+- AdExp.py - ✅ already in py script
+- AgeIPO.py - ✅ no OP comments
+- AM.py - ✅ no OP comments
+- AnalystRevision.py - ✅ no OP comments
+- AssetGrowth.py - ✅ no OP comments
+- Beta.py - ✅
+- BetaFP.py - ✅ file doesn't exist
+- BetaLiquidityPS.py - ✅ no OP comments
+- BetaTailRisk.py - ✅ no OP comments
+- BidAskSpread.py - ✅ no OP comments
+- BM.py - ✅ already in py script
+- BMdec.py - ✅ no OP comments
+- BookLeverage.py - ✅ no OP comments
+- BrandInvest.py - ✅ already in py script
+- Cash.py - ✅ already in py script
+- CashProd.py - ✅ no OP comments
+- CBOperProf.py - ✅ already in py script
+- CF.py - ✅ no OP comments
+- cfp.py - ✅ no OP comments
+- ChAssetTurnover.py - ✅ already in py script
+- ChangeInRecommendation.py - ✅ already in py script
+- ChEQ.py - ✅ no OP comments
+- ChForecastAccrual.py - ✅ no OP comments 
+- ChInv.py - ✅ no OP comments
+- ChInvIA.py - ✅ no OP comments
+- ChNAnalyst.py - ✅ already in py script
+- ChNNCOA.py - ✅ no OP comments
+- ChNWC.py - ✅ no OP comments
+- ChTax.py - ✅ no OP comments
+- CitationsRD.py - ✅ no OP comments
+- CompEquIss.py - ✅ no OP comments
+- CompositeDebtIssuance.py - ✅ no OP comments
+- ConsRecomm.py - ✅ no OP comments
+- ConvDebt.py - ✅ no OP comments
+- CoskewACX.py - ✅ already in py script
+- Coskewness.py - ✅
+- CPVolSpread.py - ✅ already in py script
+- CredRatDG.py - ✅ no OP comments
+- CustomerMomentum.py - ✅ no OP comments
+- dCPVolSpread.py - ✅ already in py script 
+- DebtIssuance.py - ✅ no OP comments
+- DelBreadth.py - ✅ no OP comments
+- DelCOA.py - ✅ no OP comments
+- DelCOL.py - ✅ no OP comments
+- DelDRC.py - ✅ no OP comments
+- DelEqu.py - ✅ no OP comments
+- DelFINL.py - ✅ no OP comments
+- DelLTI.py - ✅ no OP comments
+- DelNetFin.py - ✅ no OP comments
+- DivInit.py - ✅ already in py script
+- DivOmit.py - ✅ already in py script
+- DivSeason.py - ✅ already in py script
+- DivYieldST.py - ✅ already in py script
+- dNoa.py - ✅ no OP comments
+- DolVol.py - ✅ no OP comments
+- DownRecomm.py - ✅ no OP comments
+- dVolCall.py - ✅ already in py script
+- dVolPut.py - ✅ already in py script 
+- EarningsConsistency.py - ✅ no OP comments
+- EarningsForecastDisparity.py - ✅ no OP comments
+- EarningsStreak.py - ✅ no OP comments
+- EarningsSurprise.py - ✅ no OP comments
+- EarnSupBig.py - ✅ no OP comments
+- EntMult.py - ✅ no OP comments
+- EP.py - ✅ already in py script
+- EquityDuration.py - ✅ already in py script
+- ExchSwitch.py - ✅ no OP comments
+- ExclExp.py - ✅ no OP comments
+- FEPS.py - ✅ no OP comments
+- fgr5yrLag.py - ✅ already in py script
+- FirmAge.py - ✅ no OP comments
+- FirmAgeMom.py - ✅ no OP comments
+- ForecastDispersion.py - ✅ no OP comments
+- Frontier.py - ✅ no OP comments
+- GP.py - ✅ no OP comments
+- Governance.py - ✅ no OP comments
+- GrAdExp.py - ✅ no OP comments
+- GrLTNOA.py - ✅ no OP comments
+- GrSaleToGrInv.py - ✅ no OP comments
+- GrSaleToGrOverhead.py - ✅ no OP comments
+- Herf.py - ✅ already in py script
+- HerfAsset.py - ✅ already in py script
+- HerfBE.py - ✅ already in py script
+- High52.py - ✅
+- hire.py - ✅ no OP comments
+- Illiquidity.py - ✅ no OP comments
+- IndIPO.py - ✅ no OP comments
+- IndMom.py - ✅ no OP comments
+- IndRetBig.py - ✅ no OP comments
+- IntMom.py - ✅ no OP comments
+- InvestPPEInv.py - ✅ no OP comments
+- Investment.py - ✅ no OP comments
+- InvGrowth.py - ✅ already in py script
+- iomom_cust.py - ✅ no OP comments
+- iomom_supp.py - ✅ no OP comments
+- IO_ShortInterest.py - ✅ no OP comments
+- Leverage.py - ✅ no OP comments
+- LRreversal.py - ✅ no OP comments
+- MaxRet.py - ✅ no OP comments
+- MeanRankRevGrowth.py - ✅ no OP comments
+- Mom12m.py - ✅ no OP comments
+- Mom12mOffSeason.py - ✅ no OP comments
+- Mom6m.py - ✅ no OP comments
+- Mom6mJunk.py - ✅
+- MomOffSeason.py - ✅ no OP comments
+- MomOffSeason06YrPlus.py - ✅ no OP comments
+- MomOffSeason11YrPlus.py - ✅ no OP comments
+- MomOffSeason16YrPlus.py - ✅ no OP comments
+- MomRev.py - ✅ no OP comments
+- MomSeason.py - ✅ no OP comments
+- MomSeason06YrPlus.py - ✅ no OP comments
+- MomSeason11YrPlus.py - ✅ no OP comments
+- MomSeason16YrPlus.py - ✅ no OP comments
+- MomSeasonShort.py - ✅ no OP comments
+- MomVol.py - ✅ no OP comments
+- MRreversal.py - ✅ no OP comments
+- MS.py - ✅
+- NetDebtFinance.py - ✅ no OP comments
+- NetDebtPrice.py - ✅ no OP comments
+- NetEquityFinance.py - ✅ no OP comments
+- NetPayoutYield.py - ✅
+- NOA.py - ✅ no OP comments
+- NumEarnIncrease.py - ✅ no OP comments
+- OperProf.py - ✅ no OP comments
+- OperProfRD.py - ✅
+- OPLeverage.py - ✅ no OP comments
+- OrderBacklog.py - ✅ no OP comments
+- OrderBacklogChg.py - ✅ no OP comments
+- OScore.py - ✅ no OP comments
+- PatentsRD.py - ✅
+- PayoutYield.py - ✅
+- PctAcc.py - ✅ no OP comments
+- PctTotAcc.py - ✅ no OP comments
+- Price.py - ✅ no OP comments
+- ProbInformedTrading.py - ✅ no OP comments
+- PS.py - ✅ no OP comments
+- RD.py - ✅ no OP comments
+- RDAbility.py - ✅ already in py script
+- RDcap.py - ✅
+- RDIPO.py - ✅ no OP comments
+- RDS.py - ✅ no OP comments
+- realestate.py - ✅ no OP comments
+- Recomm_ShortInterest.py - ✅ already in py script
+- retConglomerate.py - ✅ no OP comments  
+- ReturnSkew.py - ✅ no OP comments
+- REV6.py - ✅ no OP comments
+- RevenueSurprise.py - ✅ no OP comments
+- roaq.py - ✅ no OP comments
+- RoE.py - ✅ no OP comments
+- sfe.py - ✅
+- ShareIss1Y.py - ✅
+- ShareIss5Y.py - ✅ no OP comments
+- ShareRepurchase.py - ✅ no OP comments
+- ShareVol.py - ✅ no OP comments
+- ShortInterest.py - ✅ no OP comments
+- sinAlgo.py - ✅ already in py script
+- Size.py - ✅ no OP comments
+- skew1.py - ✅
+- SmileSlope.py - ✅ already in py script
+- SP.py - ✅ no OP comments
+- Spinoff.py - ✅ no OP comments
+- std_turn.py - ✅ already in py script
+- STreversal.py - ✅ no OP comments
+- SurpriseRD.py - ✅ no OP comments
+- tang.py - ✅ no OP comments
+- Tax.py - ✅ no OP comments
+- TotalAccruals.py - ✅ no OP comments
+- TrendFactor.py - ✅ no OP comments
+- UpRecomm.py - ✅ no OP comments
+- VarCF.py - ✅ no OP comments
+- VolMkt.py - ✅ no OP comments
+- VolSD.py - ✅ no OP comments
+- VolumeTrend.py - ✅ no OP comments
+- XFIN.py - ✅ no OP comments
+- ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py - ✅ no OP comments
+- ZZ1_Activism1_Activism2.py - ✅ no OP comments
+- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py - ✅ no OP comments
+- ZZ1_EBM_BPEBM.py - ✅ no OP comments
+- ZZ1_FR_FRbook.py - ✅ no OP comments
+- ZZ1_grcapx_grcapx1y_grcapx3y.py - ✅ no OP comments
+- ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py - ✅ no OP comments
+- ZZ1_OptionVolume1_OptionVolume2.py - ✅ no OP comments
+- ZZ1_OrgCap_OrgCapNoAdj.py - ✅ no OP comments
+- ZZ1_ResidualMomentum6m_ResidualMomentum.py - ✅ no OP comments
+- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py - ✅ no OP comments
+- ZZ1_RIVolSpread.py - ✅ no OP comments
+- ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py - ✅ no OP comments
+- ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py - ✅ no OP comments
+- ZZ2_AnnouncementReturn.py - ✅ no OP comments
+- ZZ2_BetaFP.py - ✅ no OP comments
+- ZZ2_betaVIX.py - ✅ no OP comments
+- ZZ2_IdioVolAHT.py - ✅ no OP comments
+- ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py - ✅ no OP comments
+
+## Do files with OP comments according to grep -w "OP"
+
+- Beta.do
+- BrandInvest.do
+- Cash.do
+- CBOperProf.do
+- ChangeInRecommendation.do
+- ChAssetTurnover.do
+- ChNAnalyst.do
+- Coskewness.do
+- CPVolSpread.do
+- DivInit.do
+- DivOmit.do
+- DivSeason.do
+- DivYieldST.do
+- EquityDuration.do
+- fgr5yrLag.do
+- High52.do
+- MS.do
+- NetPayoutYield.do
+- OperProfRD.do
+- PatentsRD.do
+- PayoutYield.do
+- RDcap.do
+- sfe.do
+- std_turn.do
+- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.do
+- ZZ1_OrgCap_OrgCapNoAdj.do

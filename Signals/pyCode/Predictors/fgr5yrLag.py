@@ -1,6 +1,10 @@
 # ABOUTME: Translates fgr5yrLag.do to create 5-year lagged growth predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/fgr5yrLag.py
 
+# 2021 01 ac:
+# Changed timing to be closer to OP: december only, lag 6 months, then fill
+# Very sensitive to details, even in the lagging method, but can be replicated pretty much
+
 # Run from pyCode/ directory
 # Inputs: IBES_EPS_Unadj.parquet, m_aCompustat.parquet, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/fgr5yrLag.csv

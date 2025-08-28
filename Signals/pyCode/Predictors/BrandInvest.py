@@ -49,6 +49,7 @@ print("Calculating brand capital accumulation...")
 # Create OK flag for non-missing xad
 df['OK'] = df['xad'].notna()
 
+# BrandCapital was not shown to predict in OP
 # Initialize BrandCapital for first observation of each gvkey with non-missing xad
 # BrandCapital = xad/(.5 + .1) for first non-missing xad observation
 df['BrandCapital'] = np.nan
@@ -118,6 +119,7 @@ print("Applying industry filters...")
 # Convert sic to numeric if it's string
 df['sic_numeric'] = pd.to_numeric(df['sic'], errors='coerce')
 
+# filter (OP page 4)
 # Drop utilities (4900-4999) and financials (6000-6999)
 before_filter = len(df)
 df = df[~((df['sic_numeric'] >= 4900) & (df['sic_numeric'] <= 4999))]

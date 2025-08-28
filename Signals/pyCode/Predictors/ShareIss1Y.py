@@ -7,6 +7,11 @@
 # Outputs:
 #   - ../pyData/Predictors/ShareIss1Y.csv
 
+# Note: We tried constructing the share adjustment from facshr as described in Pontiff and Woodgate (2008). Results are almost identical. So we stick with the simpler implementation 
+# by using cfacshr directly. 
+# Note that the signal does not suffer from look-ahead bias despite using cfacshr,
+# see https://github.com/OpenSourceAP/CrossSection/issues/152#issue-2462197349
+
 import pandas as pd
 import numpy as np
 

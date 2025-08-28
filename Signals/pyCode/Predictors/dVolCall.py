@@ -1,6 +1,8 @@
 # ABOUTME: dVolCall.py - calculates change in call option implied volatility
 # ABOUTME: Change in 30-day, 50-delta call option implied volatility from previous month
 
+# An Ang Bali Cakici 2014 Table II A
+
 """
 dVolCall predictor calculation
 

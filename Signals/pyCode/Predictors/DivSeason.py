@@ -76,7 +76,7 @@ df['divamt'] = df['divamt'].fillna(0)
 # Create dividend paid indicator
 df['divpaid'] = (df['divamt'] > 0).astype(int)
 
-# Drop monthly dividends (OP drops monthly div unless otherwise noted - p5)
+# Drop monthly dividends (OP drops monthly div unless otherwise noted (p5))
 df = df[df['cd3'] != 2]
 
 # Keep if cd3 < 6 (Tab 2 note) - exact match to Stata logic
@@ -95,7 +95,7 @@ df = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divpaid', stat='sum', wind
 df['DivSeason'] = np.where(df['divpaid_sum'] > 0, 0, np.nan)
 
 # Long if dividend month is predicted
-# OP page 5: "unknown and missing frequency are assumed quarterly"
+# OP page 5: "unkown and missing frequency are assumed quarterly"
 
 # Create lags for dividend prediction logic
 for lag in [2, 5, 8, 11]:

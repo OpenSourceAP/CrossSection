@@ -1,6 +1,12 @@
 # ABOUTME: EP.py - calculates earnings-to-price ratio predictor
 # ABOUTME: Earnings-to-price ratio as income before extraordinary items (ib) divided by 6-month lagged market value (mve_c)
 
+# original paper uses Dec 31 obs for ib and mve_c, while our 
+# mve_c gets updated monthly.  Thus, we lag mve_c 6 months
+# to try to get at the spirit of the original paper.  
+# this lag helps a lot, as it seems to remove momentum effects.
+# excluding EP < 0 and using the original sample (not MP's) helps too
+
 """
 EP predictor calculation
 

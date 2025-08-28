@@ -1,6 +1,8 @@
 # ABOUTME: Translates EquityDuration.do to create equity duration measure
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/EquityDuration.py
 
+# OP uses FF style: HDMLD is (S/HD + B/HD)/2 - (S/LD + B/LD)/2
+
 # Run from pyCode/ directory  
 # Inputs: a_aCompustat.parquet
 # Output: ../pyData/Predictors/EquityDuration.csv

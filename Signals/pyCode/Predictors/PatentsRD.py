@@ -50,6 +50,8 @@ df = df.reset_index()
 df = df[df['time_avail_m'] % 100 == 6]  # month == 6
 df = df[df['time_avail_m'] >= 197501]  # Takes into account xrd data standardized after 1975
 
+# OP: efficiency in year t is patents in year t scaled by R&D in t-2 ..
+# portfolios are computed from July of year t to ...
 # Replace missing R&D with 0
 df['xrd'] = df['xrd'].fillna(0)
 
@@ -79,6 +81,8 @@ df['comp5'] = np.where(comp5_lag.notna(), comp5_lag, 0.0)
 
 df['RDcap'] = df['comp1'] + df['comp2'] + df['comp3'] + df['comp4'] + df['comp5']
 df['tempPatentsRD'] = np.where(df['RDcap'] > 0, df['npat'] / df['RDcap'], np.nan)
+
+# * my tempPatentsRD is lower than OP, by factor of 2
 
 df = df.reset_index()
 

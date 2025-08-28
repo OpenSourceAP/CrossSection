@@ -1,6 +1,8 @@
 # ABOUTME: Translates skew1.do to create smirk skewness predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/skew1.py
 
+# Xing, Zhang, Zhao 2010 JFQA
+
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, OptionMetricsXZZ.parquet
 # Output: ../pyData/Predictors/skew1.csv

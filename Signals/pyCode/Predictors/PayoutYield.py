@@ -38,7 +38,7 @@ lag_lookup = lag_lookup.rename(columns={'time_avail_m': 'lag6_date', 'mve_c': 'm
 # Merge to get 6-month lagged values
 df = df.merge(lag_lookup, on=['permno', 'lag6_date'], how='left')
 
-# gen PayoutYield = (dvc + prstkc + pstkrv)/l6.mve_c
+# gen PayoutYield = (dvc + prstkc + pstkrv)/l6.mve_c // page 882
 df['PayoutYield'] = (df['dvc'] + df['prstkc'] + df['pstkrv']) / df['mve_c_l6']
 
 # replace PayoutYield = . if PayoutYield <= 0
@@ -48,7 +48,7 @@ df.loc[df['PayoutYield'] <= 0, 'PayoutYield'] = np.nan
 # destring sic, replace (convert sic to numeric)
 df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 
-# keep if (sic < 6000 | sic >= 7000) & ceq > 0
+# keep if (sic < 6000 | sic >= 7000) & ceq > 0 // OP p 5: each of these filters helps
 # In Stata, missing ceq values are treated as large positive numbers, so ceq > 0 is TRUE for missing
 df = df[((df['sic'] < 6000) | (df['sic'] >= 7000)) & ((df['ceq'] > 0) | df['ceq'].isna())]
 

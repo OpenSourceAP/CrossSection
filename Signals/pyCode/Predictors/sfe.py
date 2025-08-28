@@ -15,7 +15,7 @@ from utils.stata_fastxtile import fastxtile
 # Prep IBES data
 ibes = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
 ibes = ibes[ibes['fpi'] == '1'].copy()
-ibes = ibes[pd.to_datetime(ibes['statpers']).dt.month == 3].copy()  # March forecasts
+ibes = ibes[pd.to_datetime(ibes['statpers']).dt.month == 3].copy()  # OP uses march forecasts
 ibes = ibes[(~ibes['fpedats'].isna()) & (ibes['fpedats'] > ibes['statpers'] + pd.Timedelta(days=90))].copy()
 
 # For merge with dec stock price

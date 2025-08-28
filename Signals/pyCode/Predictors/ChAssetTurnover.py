@@ -1,6 +1,8 @@
 # ABOUTME: ChAssetTurnover.py - calculates change in asset turnover predictor
 # ABOUTME: Line-by-line translation of ChAssetTurnover.do following CLAUDE.md translation philosophy
 
+# AssetTurnover was not shown to predict in OP
+
 """
 ChAssetTurnover.py
 

@@ -71,6 +71,7 @@ df = pd.merge(df, ciq_raw, on=['gvkey', 'time_avail_m'], how='left')
 print(f"left join with ciq ratings, nrow = {len(df)}")
 
 # use sp by default (as in Avramov et al), CIQ otherwise
+# Be closer in a sense to Tab III of Avramov Hordia Jostova Philipov 2007
 df['credrat'] = df['ratingsp'].fillna(df['ratingciq'])
 
 

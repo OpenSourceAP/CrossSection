@@ -77,6 +77,9 @@ for var in lag_vars:
 # Clean up temporary lag_time column
 df = df.drop('lag_time', axis=1)
 
+# some confusion about lagging assets or not
+# OP 2016 JFE seems to lag assets, but 2015 JFE does not
+# Yet no lag implies results much closer to OP
 # Calculate CBOperProf following the complex formula
 # CBOperProf = (revt - cogs - (xsga - xrd)) - 
 #              (rect - l12.rect) - (invt - l12.invt) - (xpp - l12.xpp) + 

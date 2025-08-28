@@ -48,7 +48,7 @@ df['RDcap'] = (df['tempXRD'] +
 df.loc[df['time_avail_m'].dt.year < 1980, 'RDcap'] = np.nan
 
 # Create size tertiles using fastxtile helper
-df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)
+df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)  # OP: only works in small firms
 df.loc[df['tempsizeq'] >= 2, 'RDcap'] = np.nan
 df.loc[df['tempsizeq'].isna(), 'RDcap'] = np.nan
 

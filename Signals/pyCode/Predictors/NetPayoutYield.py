@@ -57,7 +57,7 @@ df = df[df['NetPayoutYield'] != 0]
 # destring sic, replace (convert sic to numeric)
 df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 
-# keep if (sic < 6000 | sic >= 7000) & ceq > 0
+# keep if (sic < 6000 | sic >= 7000) & ceq > 0 // OP p 5
 # In Stata, missing ceq values are treated as large positive numbers, so ceq > 0 is TRUE for missing
 df = df[((df['sic'] < 6000) | (df['sic'] >= 7000)) & ((df['ceq'] > 0) | df['ceq'].isna())]
 

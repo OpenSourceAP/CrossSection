@@ -1,6 +1,10 @@
 # ABOUTME: Translates OperProfRD.do to create R&D-adjusted operating profitability predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/OperProfRD.py
 
+# some confusion about lagging assets or not
+# OP 2016 JFE seems to lag assets, but 2015 JFE does not
+# Yet no lag implies results much closer to OP
+
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet
 # Output: ../pyData/Predictors/OperProfRD.csv

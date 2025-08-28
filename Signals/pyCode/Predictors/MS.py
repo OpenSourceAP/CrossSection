@@ -89,7 +89,8 @@ print(f"After merging: {len(df):,} observations")
 # SAMPLE SELECTION
 print("🎯 Applying sample selection criteria...")
 
-# Limit sample to firms in the lowest BM quintile (p 8 of original paper)
+# Limit sample to firms in the lowest BM quintile (see p 8 OP)
+# (has to be done first!, see also MP)
 df = df.with_columns([
     (pl.col("ceq") / pl.col("mve_c")).log().alias("BM")
 ]).filter(
@@ -115,7 +116,7 @@ df = pl.from_pandas(df_pd).filter(
 
 print(f"After BM quintile filter: {len(df):,} observations")
 
-# Keep if at least 3 firms in sic2D-time_avail_m combination
+# keep if at least 3 firms in sic2D (p 8)
 df = df.with_columns(
     pl.col("sicCRSP").cast(pl.Utf8).str.slice(0, 2).alias("sic2D")
 ).with_columns(

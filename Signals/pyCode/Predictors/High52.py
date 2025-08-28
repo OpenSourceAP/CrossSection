@@ -23,6 +23,8 @@ print(f"Loaded dailyCRSP data: {len(df)} observations")
 df['time_avail_m'] = df['time_d'].dt.to_period('M').dt.start_time
 
 # gen prcadj = abs(prc)  
+# OP does not appear to adjust prices for splits and cfacpr has look-ahead bias. 
+# See discussion here: https://github.com/OpenSourceAP/CrossSection/issues/95#issuecomment-2286803178
 df['prcadj'] = df['prc'].abs()
 
 # gcollapse (max) maxpr = prcadj (lastnm) prcadj, by(permno time_avail_m)

@@ -13,7 +13,7 @@ import yaml
 # CONFIGURATION: Scripts to run (modify this list as needed)
 # =============================================================================
 
-PREDICTOR_SCRIPTS = "DivInit Herf MomOffSeason Investment"
+PREDICTOR_SCRIPTS = "Recomm_ShortInterest IO_ShortInterest ShortInterest"
 
 def load_predictor_mapping():
     """Load predictor mapping from YAML file and return the mapping dict"""

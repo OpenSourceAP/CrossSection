@@ -1,6 +1,10 @@
 # ABOUTME: Translates DivYieldST.do to create predicted dividend yield predictor  
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/DivYieldST.py
 
+# OP is mostly theory, really old, and pretty vague about what it does.
+# So we combine their guidelines with our knowledge of the data
+# to get results similar to their regression.
+
 # Run from pyCode/ directory
 # Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet, monthlyCRSP.parquet
 # Output: ../pyData/Predictors/DivYieldST.csv
