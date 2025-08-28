@@ -8,7 +8,10 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
 
+print("Starting IO_ShortInterest.py...")
+
 # DATA LOAD
+print("Loading data...")
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', columns=['permno', 'gvkey', 'time_avail_m'])
 tr_13f = pd.read_parquet('../pyData/Intermediate/TR_13F.parquet', columns=['permno', 'time_avail_m', 'instown_perc'])
 df = pd.merge(signal_master, tr_13f, on=['permno', 'time_avail_m'], how='left', validate='1:1')
@@ -45,4 +48,7 @@ df.loc[(df['tempshortratio'] < df['temps99']) | df['temps99'].isna(), 'temp'] = 
 df['IO_ShortInterest'] = df['temp']
 
 # SAVE
+print(f"Calculated IO_ShortInterest for {df[\"IO_ShortInterest\"].notna().sum()} observations")
+
 save_predictor(df, 'IO_ShortInterest')
+print("IO_ShortInterest.py completed successfully")

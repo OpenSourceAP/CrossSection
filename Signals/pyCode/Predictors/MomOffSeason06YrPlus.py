@@ -14,7 +14,10 @@ from utils.stata_replication import stata_multi_lag
 from utils.asrol import asrol_fast
 from utils.save_standardized import save_predictor
 
+print("Starting MomOffSeason06YrPlus.py...")
+
 # DATA LOAD
+print("Loading data...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
 
@@ -50,4 +53,7 @@ df = asrol_fast(df, 'permno', 'time_avail_m', 'ret_lag60', 60, 'count', 'retLagT
 df['MomOffSeason06YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
 
 # SAVE
+print(f"Calculated MomOffSeason06YrPlus for {df[\"MomOffSeason06YrPlus\"].notna().sum()} observations")
+
 save_predictor(df, 'MomOffSeason06YrPlus')
+print("MomOffSeason06YrPlus.py completed successfully")

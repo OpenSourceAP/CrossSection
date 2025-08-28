@@ -7,7 +7,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 
+print("Starting ZZ1_EBM_BPEBM.py...")
+
 # DATA LOAD
+print("Loading data...")
 # Line 3: use gvkey permno time_avail_m che dltt dlc dc dvpa tstkp ceq using "$pathDataIntermediate/m_aCompustat", clear
 df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet").select([
     "gvkey", "permno", "time_avail_m", "che", "dltt", "dlc", "dc", "dvpa", "tstkp", "ceq"
@@ -50,7 +53,9 @@ df = df.with_columns([
 # Line 16: do "$pathCode/savepredictor" EBM
 ebm_result = df.select(["permno", "time_avail_m", "EBM"])
 save_predictor(ebm_result, "EBM")
+print("ZZ1_EBM_BPEBM.py completed successfully")
 
 # Line 17: do "$pathCode/savepredictor" BPEBM
 bpebm_result = df.select(["permno", "time_avail_m", "BPEBM"])
 save_predictor(bpebm_result, "BPEBM")
+print("ZZ1_EBM_BPEBM.py completed successfully")

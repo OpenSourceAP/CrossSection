@@ -10,7 +10,10 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
+print("Starting ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py...")
+
 # DATA LOAD
+print("Loading data...")
 df = pd.read_parquet('../pyData/Intermediate/dailyCRSP.parquet')
 
 # SIGNAL CONSTRUCTION

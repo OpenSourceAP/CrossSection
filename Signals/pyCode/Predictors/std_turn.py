@@ -8,7 +8,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 
+print("Starting std_turn.py...")
+
 # Data load
+print("Loading data...")
 monthly_crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 df = monthly_crsp.select(["permno", "time_avail_m", "vol", "shrout", "prc"])
 
@@ -50,3 +53,4 @@ result = df.select(["permno", "time_avail_m", "std_turn"])
 
 # Save predictor
 save_predictor(result, "std_turn")
+print("std_turn.py completed successfully")

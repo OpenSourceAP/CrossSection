@@ -28,7 +28,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 
+print("Starting dVolCall.py...")
+
 # DATA LOAD
+print("Loading data...")
 # Clean OptionMetrics data
 options_df = pd.read_parquet("../pyData/Intermediate/OptionMetricsVolSurf.parquet", 
                             columns=['secid', 'time_avail_m', 'days', 'delta', 'cp_flag', 'impl_vol'])
@@ -61,4 +64,7 @@ df = signal_df.merge(temp_df, on=['secid', 'time_avail_m'], how='left')
 df = df[['permno', 'time_avail_m', 'dVolCall']].copy()
 
 # SAVE
+print(f"Calculated dVolCall for {df[\"dVolCall\"].notna().sum()} observations")
+
 save_predictor(df, 'dVolCall')
+print("dVolCall.py completed successfully")

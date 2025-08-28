@@ -11,12 +11,17 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.sicff import sicff
 
+print("Starting sinAlgo.py...")
+
 # DATA LOAD (Compustat Segments)
+print("Loading Compustat segments data...")
 segments = pd.read_parquet('../pyData/Intermediate/CompustatSegments.parquet')
 segments = segments[['gvkey', 'sics1', 'naicsh', 'datadate']].copy()
 segments['year'] = segments['datadate'].dt.year
+print(f"Loaded segments data: {segments.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
+print("Identifying sin segments...")
 segments['sinSegTobacco'] = np.nan
 segments['sinSegBeer'] = np.nan  
 segments['sinSegGaming'] = np.nan
@@ -68,13 +73,17 @@ first_year = first_year.rename(columns={
 })
 
 # DATA LOAD (Firm-level industry codes)
+print("Loading SignalMasterTable...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'gvkey', 'time_avail_m', 'sicCRSP', 'shrcd', 'bh1m']].copy()
+print(f"Loaded SignalMasterTable: {df.shape[0]} rows")
 
 # Add NAICS codes - merge 1:1 permno time_avail_m using m_aCompustat, keepusing(naicsh) keep(master match) nogenerate
+print("Merging with Compustat annual data...")
 comp = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
 comp = comp[['permno', 'time_avail_m', 'naicsh']].copy()
 df = df.merge(comp, on=['permno', 'time_avail_m'], how='left')
+print(f"After merge: {df.shape[0]} rows")
 
 # gen year = year(dofm(time_avail_m))
 df['year'] = df['time_avail_m'].dt.year
@@ -82,6 +91,7 @@ df['year'] = df['time_avail_m'].dt.year
 df['sicCRSP'] = pd.to_numeric(df['sicCRSP'], errors='coerce')
 
 # SIGNAL CONSTRUCTION
+print("Identifying sin stocks...")
 df['sinStockTobacco'] = np.nan
 df['sinStockBeer'] = np.nan
 df['sinStockGaming'] = np.nan
@@ -118,6 +128,7 @@ df = df.merge(temp, on=['gvkey', 'year'], how='left')
 # Merge first year segment data - merge m:1 gvkey using tempFirstYear, keep(master match) nogenerate  
 df = df.merge(first_year, on='gvkey', how='left')
 
+print("Calculating sinAlgo signal...")
 # Finally, create sin stock indicator
 df['sinAlgo'] = np.nan
 
@@ -154,6 +165,8 @@ from utils.save_standardized import save_predictor
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'sinAlgo']].copy()
+print(f"Calculated sinAlgo for {df_final['sinAlgo'].notna().sum()} observations")
 
 # SAVE using standard savepredictor format
 save_predictor(df_final, 'sinAlgo')
+print("sinAlgo.py completed successfully")

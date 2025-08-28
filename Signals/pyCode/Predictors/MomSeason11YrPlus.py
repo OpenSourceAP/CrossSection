@@ -13,7 +13,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_predictor
 
+print("Starting MomSeason11YrPlus.py...")
+
 # DATA LOAD
+print("Loading data...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
 
@@ -40,4 +43,7 @@ df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 df['MomSeason11YrPlus'] = df['retTemp1'] / df['retTemp2']
 
 # SAVE
+print(f"Calculated MomSeason11YrPlus for {df[\"MomSeason11YrPlus\"].notna().sum()} observations")
+
 save_predictor(df, 'MomSeason11YrPlus')
+print("MomSeason11YrPlus.py completed successfully")

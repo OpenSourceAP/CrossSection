@@ -7,25 +7,35 @@
 import pandas as pd
 import numpy as np
 
+print("Starting BM.py...")
+
 # DATA LOAD
 # Load m_aCompustat data
+print("Loading m_aCompustat data...")
 m_compustat = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
 m_compustat = m_compustat[['permno', 'time_avail_m', 'datadate', 'ceqt']].copy()
 
 # Load SignalMasterTable
+print("Loading SignalMasterTable...")
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
+print(f"Loaded m_aCompustat: {m_compustat.shape[0]} rows")
+print(f"Loaded SignalMasterTable: {signal_master.shape[0]} rows")
 
 # Merge 1:1 permno time_avail_m, keep using match
+print("Merging with SignalMasterTable...")
 df = pd.merge(m_compustat, signal_master, on=['permno', 'time_avail_m'], how='right')
+print(f"After merge: {df.shape[0]} rows")
 
 # find the market equity that matches datadate (based on 6 month lag)
 # (see "Company Data" section)
 
 # Sort by permno and time_avail_m for proper lagging (equivalent to xtset)
+print("Setting up panel data structure...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Create 6-month lag using .shift() (equivalent to gen me_datadate = l6.mve_c)
+print("Creating 6-month lag for market equity...")
 df['me_datadate'] = df.groupby('permno')['mve_c'].shift(6)
 df['l6_time_avail_m'] = df.groupby('permno')['time_avail_m'].shift(6)
 
@@ -46,6 +56,7 @@ df['me_datadate'] = df.groupby(['permno', 'datadate'])['me_datadate'].bfill()
 df = df.drop(['l6_time_avail_m', 'l6_time_avail_m_period', 'datadate_period'], axis=1)
 
 # SIGNAL CONSTRUCTION
+print("Calculating BM signal...")
 # Stattman 1980 does not actually take logs but does everything nonparametrically anyway
 # but he does drop negative ceqt, which logs takes care of
 df['BM'] = np.log(df['ceqt'] / df['me_datadate'])
@@ -61,9 +72,11 @@ output_df = output_df[['permno', 'yyyymm', 'BM']].copy()
 
 # Remove rows with missing BM values
 output_df = output_df.dropna(subset=['BM'])
+print(f"Calculated BM for {len(output_df)} observations")
 
 # Set index as required
 output_df = output_df.set_index(['permno', 'yyyymm']).sort_index()
 
 # SAVE
 output_df.to_csv('../pyData/Predictors/BM.csv')
+print("BM.py completed successfully")

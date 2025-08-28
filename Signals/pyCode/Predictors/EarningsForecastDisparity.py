@@ -19,7 +19,10 @@ tempIBESshort = tempIBESshort[(tempIBESshort['fpedats'].notna()) &
 tempIBESlong = ibes_eps[ibes_eps['fpi'] == "0"].copy()
 tempIBESlong = tempIBESlong.rename(columns={'meanest': 'fgr5yr'})
 
+print("Starting EarningsForecastDisparity.py...")
+
 # DATA LOAD
+print("Loading data...")
 # Load SignalMasterTable
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                                 columns=['permno', 'time_avail_m', 'tickerIBES'])

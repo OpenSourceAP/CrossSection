@@ -17,7 +17,10 @@ Outputs:
 
 # --------------
 # Johnson and So 2012 JFE
+print("Starting ZZ1_OptionVolume1_OptionVolume2.py...")
+
 # DATA LOAD
+print("Loading data...")
 import pandas as pd
 import numpy as np
 import sys
@@ -83,6 +86,8 @@ df['OptionVolume2'] = df['OptionVolume1'] / df['tempMean']
 # SAVE
 # do "$pathCode/savepredictor" OptionVolume1
 save_predictor(df[['permno', 'time_avail_m', 'OptionVolume1']], 'OptionVolume1')
+print("ZZ1_OptionVolume1_OptionVolume2.py completed successfully")
 
 # do "$pathCode/savepredictor" OptionVolume2
 save_predictor(df[['permno', 'time_avail_m', 'OptionVolume2']], 'OptionVolume2')
+print("ZZ1_OptionVolume1_OptionVolume2.py completed successfully")

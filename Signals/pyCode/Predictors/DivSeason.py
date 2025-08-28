@@ -18,12 +18,17 @@ from utils.asrol import asrol_calendar_pd
 from utils.stata_replication import stata_ineq_pd
 from utils.save_standardized import save_predictor
 
+print("Starting DivSeason.py...")
+
 # PREP DISTRIBUTIONS DATA
+print("Loading CRSP distributions data...")
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
 dist_df = dist_df[['permno', 'cd1', 'cd2', 'cd3', 'divamt', 'exdt']].copy()
+print(f"Loaded distributions data: {dist_df.shape[0]} rows")
 
 # Keep if cd1 == 1 & cd2 == 2 (regular cash dividends)
 dist_df = dist_df[(dist_df['cd1'] == 1) & (dist_df['cd2'] == 2)]
+print(f"After filtering for regular cash dividends: {dist_df.shape[0]} rows")
 
 # Select timing variable and convert to monthly
 # (p5 says exdt is used)
@@ -42,11 +47,15 @@ tempdivamt = tempdivamt.groupby(['permno', 'time_avail_m']).first().reset_index(
 #%%
 
 # DATA LOAD
+print("Loading SignalMasterTable...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m']].copy()
+print(f"Loaded SignalMasterTable: {df.shape[0]} rows")
 
 # Merge with dividend amounts
+print("Merging with dividend amounts...")
 df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
+print(f"After merge: {df.shape[0]} rows")
 
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
@@ -86,8 +95,10 @@ df = df[df['cd3'] < 6]
 #%%
 
 # SIGNAL CONSTRUCTION
+print("Calculating DivSeason signal...")
 # Short all others with a dividend in last 12 months
 # Use calendar-based asrol for 12-month rolling sum of dividend payments
+print("Creating 12-month rolling dividend payments...")
 df = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divpaid', stat='sum', window='12mo', min_obs=1)
 
 # Initialize DivSeason: 0 if had dividends in last 12 months, otherwise missing (NaN)
@@ -98,6 +109,7 @@ df['DivSeason'] = np.where(df['divpaid_sum'] > 0, 0, np.nan)
 # OP page 5: "unkown and missing frequency are assumed quarterly"
 
 # Create lags for dividend prediction logic
+print("Creating lag variables for dividend prediction...")
 for lag in [2, 5, 8, 11]:
     df[f'divpaid_lag{lag}'] = df.groupby('permno')['divpaid'].shift(lag)
 
@@ -127,6 +139,8 @@ df.loc[(df['temp3'] == 1) | (df['temp4'] == 1) | (df['temp5'] == 1), 'DivSeason'
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'DivSeason']].copy()
+print(f"Calculated DivSeason for {df_final['DivSeason'].notna().sum()} observations")
 
 # SAVE using standardized save_predictor function
 save_predictor(df_final, 'DivSeason')
+print("DivSeason.py completed successfully")

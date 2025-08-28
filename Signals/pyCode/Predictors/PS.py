@@ -33,12 +33,16 @@ from utils.stata_fastxtile import fastxtile
 from utils.save_standardized import save_predictor
 from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
+print("Starting PS.py...")
+
 # DATA LOAD
+print("Loading m_aCompustat data...")
 # Load m_aCompustat data
 compustat_df = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet", 
                                columns=['permno', 'time_avail_m', 'fopt', 'oancf', 'ib', 'at', 'dltt', 'act', 'lct', 'txt', 'xint', 'sale', 'ceq'])
 
 # Merge with SignalMasterTable
+print("Merging with SignalMasterTable...")
 signal_df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
                            columns=['permno', 'time_avail_m', 'mve_c'])
 df = compustat_df.merge(signal_df, on=['permno', 'time_avail_m'], how='inner')
@@ -48,7 +52,10 @@ crsp_df = pd.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet",
                          columns=['permno', 'time_avail_m', 'shrout'])
 df = df.merge(crsp_df, on=['permno', 'time_avail_m'], how='inner')
 
+print(f"Loaded and merged data: {df.shape[0]} rows")
+
 # SIGNAL CONSTRUCTION
+print("Setting up panel data structure and calculating Piotroski score...")
 # Sort data for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
@@ -157,8 +164,10 @@ df = (
 df['BM_quintile'] = fastxtile(df, 'BM', by='time_avail_m', n=5)
 df.loc[(df['BM_quintile'] != 5), 'PS'] = np.nan
 
+print(f"Calculated PS for {df['PS'].notna().sum()} observations")
 # save
 save_predictor(df, 'PS')
+print("PS.py completed successfully")
 
 #%%
 

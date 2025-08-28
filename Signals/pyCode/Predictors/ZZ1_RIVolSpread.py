@@ -74,7 +74,10 @@ df_rv['RealizedVol'] = df_rv['RealizedVol'] * np.sqrt(252)
 # save temp2, replace
 temp2 = df_rv
 
+print("Starting ZZ1_RIVolSpread.py...")
+
 # DATA LOAD
+print("Loading data...")
 # use permno time_avail_m secid sicCRSP using SignalMasterTable, clear
 master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                          columns=['permno', 'time_avail_m', 'secid', 'sicCRSP'])
@@ -113,3 +116,4 @@ df = df[df['RIVolSpread'].notna()]
 # SAVE
 # do "$pathCode/savepredictor" RIVolSpread
 save_predictor(df[['permno', 'time_avail_m', 'RIVolSpread']], 'RIVolSpread')
+print("ZZ1_RIVolSpread.py completed successfully")

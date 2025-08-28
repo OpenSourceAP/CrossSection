@@ -9,20 +9,26 @@ from utils.asreg import asreg_polars
 from utils.save_standardized import save_predictor
 
 
+print("Starting ZZ2_IdioVolAHT.py...")
+
 # Data load
+print("Loading daily CRSP and Fama-French data...")
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
 daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
 
 
 # Select required columns
 df = daily_crsp.select(["permno", "time_d", "ret"])
+print(f"Daily CRSP data: {df.shape[0]} rows")
 
 # Merge with FF data
+print("Merging with Fama-French factors...")
 df = df.join(
     daily_ff.select(["time_d", "rf", "mktrf"]),
     on="time_d",
     how="inner"
 )
+print(f"After merge: {df.shape[0]} rows")
 
 # Calculate excess return (Stata: replace ret = ret - rf)
 df = df.with_columns([
@@ -44,6 +50,7 @@ df = df.with_columns([
 
 
 # Use utils/asreg.py helper for rolling regression with RMSE
+print("Running 252-day rolling CAPM regressions...")
 # This replicates: asreg ret mktrf, window(time_temp 252) min(100) by(permno) rmse
 df = asreg_polars(
     df,
@@ -60,6 +67,7 @@ df = asreg_polars(
 )
 
 
+print("Calculating idiosyncratic volatility...")
 # Extract IdioVolAHT from RMSE (rename _rmse IdioVolAHT in Stata)
 df = df.with_columns([
     pl.col("rmse").alias("IdioVolAHT")
@@ -79,6 +87,8 @@ df = df.group_by(["permno", "time_avail_m"]).agg([
 
 # Select final data
 result = df.select(["permno", "time_avail_m", "IdioVolAHT"])
+print(f"Calculated IdioVolAHT for {result.shape[0]} observations")
 
 # Save predictor
 save_predictor(result, "IdioVolAHT")
+print("ZZ2_IdioVolAHT.py completed successfully")

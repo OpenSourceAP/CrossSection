@@ -8,23 +8,31 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from stata_replication import stata_ineq_pl
 
+print("Starting ShareVol.py...")
+
 # DATA LOAD
+print("Loading SignalMasterTable...")
 # use permno time_avail_m sicCRSP exchcd using "$pathDataIntermediate/SignalMasterTable", clear
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 df = signal_master.select(["permno", "time_avail_m", "sicCRSP", "exchcd"])
+print(f"Loaded SignalMasterTable: {df.shape[0]} rows")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keepusing(shrout vol) nogenerate keep(match)
+print("Merging with monthly CRSP data...")
 monthly_crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 df = df.join(
     monthly_crsp.select(["permno", "time_avail_m", "shrout", "vol"]),
     on=["permno", "time_avail_m"],
     how="inner"  # keep(match) in Stata = inner join
 )
+print(f"After merge: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
+print("Setting up panel data structure...")
 # Sort for lag operations (equivalent to xtset permno time_avail_m)
 df = df.sort(["permno", "time_avail_m"])
 
+print("Creating lag variables for volume calculation...")
 # gen tempShareVol = (vol + l1.vol + l2.vol)/(3*shrout)*100
 # Use position-based lags (l1.vol, l2.vol) - Stata's xtset makes these position-based within permno
 df = df.with_columns([
@@ -96,9 +104,12 @@ df = df.with_columns([
     .alias("ShareVol")
 ])
 
+print("Calculating ShareVol signal...")
 # Select final columns - keep ALL observations, including those with missing ShareVol
 # (though in this case there should be no missing ShareVol due to Stata's missing=infinity logic)
 result = df.select(["permno", "time_avail_m", "ShareVol"])
+print(f"Calculated ShareVol for {result.shape[0]} observations")
 
 # SAVE
 save_predictor(result, "ShareVol")
+print("ShareVol.py completed successfully")

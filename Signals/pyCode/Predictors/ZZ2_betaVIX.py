@@ -8,7 +8,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.asreg import asreg_polars
 from utils.save_standardized import save_predictor
 
+print("Starting ZZ2_betaVIX.py...")
+
 # Data load
+print("Loading data...")
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
 daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
 d_vix = pl.read_parquet("../pyData/Intermediate/d_vix.parquet")
@@ -79,3 +82,4 @@ result = df.select(["permno", "time_avail_m", "betaVIX"])
 
 # Save predictor
 save_predictor(result, "betaVIX")
+print("ZZ2_betaVIX.py completed successfully")
