@@ -13,6 +13,7 @@ import sys
 sys.path.append('.')
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag
+from utils.savepredictor import save_predictor
 
 # DATA LOAD
 # use permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable", clear
@@ -66,24 +67,4 @@ df.loc[(df['tempMom6'] == 1) & (df['tempMom36'] == 5), 'MomRev'] = 0
 # (Labels are comments in Python)
 
 # SAVE
-# do "$pathCode/savepredictor" MomRev
-# Keep only required columns and save
-output_df = df[['permno', 'time_avail_m', 'MomRev']].copy()
-
-# Convert time_avail_m to YYYYMM format
-output_df['yyyymm'] = output_df['time_avail_m'].dt.year * 100 + output_df['time_avail_m'].dt.month
-output_df = output_df[['permno', 'yyyymm', 'MomRev']].copy()
-
-# Remove rows where MomRev is missing
-output_df = output_df[output_df['MomRev'].notna()]
-
-# Create output directory if needed
-os.makedirs('../pyData/Predictors', exist_ok=True)
-
-# Save to CSV
-output_df.to_csv('../pyData/Predictors/MomRev.csv', index=False)
-
-print(f"MomRev predictor saved to pyData/Predictors/MomRev.csv")
-print(f"Output shape: {output_df.shape}")
-print("Sample output:")
-print(output_df.head())
+save_predictor(df, 'MomRev')
