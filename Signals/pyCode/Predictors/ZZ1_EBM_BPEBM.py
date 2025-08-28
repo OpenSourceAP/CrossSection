@@ -4,8 +4,8 @@
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
 
 # DATA LOAD
 # Line 3: use gvkey permno time_avail_m che dltt dlc dc dvpa tstkp ceq using "$pathDataIntermediate/m_aCompustat", clear

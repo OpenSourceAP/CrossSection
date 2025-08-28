@@ -149,8 +149,8 @@ df.loc[df['shrcd'] > 11, 'sinAlgo'] = np.nan
 # SAVE
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'sinAlgo']].copy()

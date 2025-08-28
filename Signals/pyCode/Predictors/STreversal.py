@@ -4,8 +4,8 @@
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
 
 # Data load
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
