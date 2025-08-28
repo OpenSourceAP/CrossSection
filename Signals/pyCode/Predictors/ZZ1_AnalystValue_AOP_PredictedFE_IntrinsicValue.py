@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.saveplacebo import save_placebo
 from utils.stata_fastxtile import fastxtile
-from utils.relrank import relrank
+from utils.stata_replication import relrank
 from utils.winsor2 import winsor2
 
 print("=" * 80)

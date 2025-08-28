@@ -10,7 +10,7 @@ import numpy as np
 import sys
 sys.path.append('.')
 from utils.savepredictor import save_predictor
-from utils.relrank import relrank
+from utils.stata_replication import relrank
 from utils.sicff import sicff
 
 print("Creating EarnSupBig predictor...")
