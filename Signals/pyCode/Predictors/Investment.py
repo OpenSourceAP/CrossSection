@@ -12,7 +12,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_asreg_asrol import asrol
+from utils.asrol import asrol
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')

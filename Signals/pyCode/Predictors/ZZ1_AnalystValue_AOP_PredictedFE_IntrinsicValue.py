@@ -314,8 +314,8 @@ for var in variables:
 df = df.sort(["time_avail_m", "permno"])
 
 # Use asreg helper with group mode  
-from utils.stata_asreg_asrol import asreg_polars as asreg
-df_with_predictions = asreg(
+from utils.asreg import asreg_polars
+df_with_predictions = asreg_polars(
     df,
     y="FErr", 
     X=["lagSG", "lagBM", "lagAOP", "lagLTG"],

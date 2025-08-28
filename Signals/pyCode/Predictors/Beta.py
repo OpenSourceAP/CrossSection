@@ -33,7 +33,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 
 print("=" * 80)
 print("🏗️  Beta.py")
@@ -86,7 +86,7 @@ print("This matches: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno
 
 # Apply asreg rolling regression
 print(f"Processing {df['permno'].n_unique():,} unique permnos...")
-df_with_beta = asreg(
+df_with_beta = asreg_polars(
     df,
     y="retrf", 
     X=["ewmktrf"],

@@ -34,7 +34,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 
 print("=" * 80)
 print("🏗️  BetaTailRisk.py")
@@ -172,7 +172,7 @@ print(f"Computing rolling 120-month tail risk betas for {df['permno'].n_unique()
 print("This matches: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)")
 
 # Apply asreg rolling regression
-df_with_beta = asreg(
+df_with_beta = asreg_polars(
     df,
     y="ret", 
     X=["tailex"],

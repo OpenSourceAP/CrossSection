@@ -9,8 +9,8 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.stata_asreg_asrol import asreg_polars as asreg
-from utils.stata_asreg_asrol import asrol
+from utils.asreg import asreg_polars
+from utils.asrol import asrol
 
 print("=" * 80)
 print("RDAbility.py")
@@ -120,7 +120,7 @@ for n in range(1, 6):
     )
     
     # asreg tempY tempXLag, window(fyear 8) min(6) by(gvkey)
-    result = asreg(
+    result = asreg_polars(
         df, 
         y="tempY", 
         X=["tempXLag"], 

@@ -5,7 +5,7 @@ import polars as pl
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 from utils.savepredictor import save_predictor
 
 
@@ -45,7 +45,7 @@ df = df.with_columns([
 
 # Use utils/asreg.py helper for rolling regression with RMSE
 # This replicates: asreg ret mktrf, window(time_temp 252) min(100) by(permno) rmse
-df = asreg(
+df = asreg_polars(
     df,
     y="ret",  # Excess return (already calculated above)
     X=["mktrf"],

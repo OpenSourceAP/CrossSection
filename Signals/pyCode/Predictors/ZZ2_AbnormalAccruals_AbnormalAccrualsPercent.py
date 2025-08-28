@@ -7,7 +7,7 @@ import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 from utils.savepredictor import save_predictor
 from utils.saveplacebo import save_placebo
 
@@ -148,7 +148,7 @@ df = pl.from_pandas(df_pandas_temp)
 
 # bys fyear sic2: asreg tempAccruals tempInvTA tempDelRev tempPPE, fitted
 # This runs cross-sectional regressions by year and industry using enhanced asreg helper
-df_with_residuals = asreg(
+df_with_residuals = asreg_polars(
     df,
     y="tempAccruals",
     X=["tempInvTA", "tempDelRev", "tempPPE"],

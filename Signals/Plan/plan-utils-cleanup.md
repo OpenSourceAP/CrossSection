@@ -1,17 +1,66 @@
-# asreg Utils Cleanup - Completed
+# Cleanup and standardization of utility functions and calls
 
-## ✅ Consolidation Complete
+## Utilities that should be used instead of in-line implementations
 
-Successfully consolidated all asreg functions into a single, organized `utils/stata_replication.py` file.
+## Core Utility Modules
 
-### What was done:
+Basic IO (TBC: combine savepredictor and saveplacebo)
+- **savepredictor.py**
+  - `save_predictor`: Standardized predictor output formatting and saving
 
-1. **Added `asreg_polars()` to `utils/stata_replication.py`**
-   - Copied the fast polars-based asreg function from `utils/asreg.py`
-   - Added comprehensive documentation explaining differences between implementations
-   - Added polars imports with error handling
+- **saveplacebo.py**
+  - `save_placebo`: Placebo test result saving  
 
-2. **Updated all 10 predictor files using polars asreg:**
+- **column_standardizer_yaml.py**
+  - `standardize_columns`: Standardize column names for downloads  
+
+- **stata_fastxtile.py**
+  - `fastxtile`: Stata-equivalent percentile ranking
+
+TBC: separate asreg and asrol into different files
+- **stata_asreg_asrol.py**
+  - `asrol`: Rolling window statistics and regressions
+    - **IMPORTANT**: NEED TO RATIONALIZE WITH `asrol_custom` from `Predictors/MS.py`
+  - `asreg_polars`: Rolling-window regressions using polars
+  - `asreg_collinear`: Regression with collinearity handling (no rolling windows)
+
+- **stata_regress.py**
+  - `drop_collinear`: Drop collinear variables
+  - `regress`: OLS regression
+  - `asreg`: (**IMPORTANT**: NEED TO RATIONALIZE THIS WITH `asreg_polars` and `asreg_collinear`. where should this be deployed, if anywhere? should we just delete this?)
+
+- **stata_replication.py**
+  - `stata_multi_lag`: Multi-period lagged variables
+  - `stata_ineq_pd`: Stata-style inequality operators for pandas
+  - `stata_ineq_pl`: Stata-style inequality operators for polars
+  - `stata_quantile`: Stata-style quantiles
+  - `fill_date_gaps`: Fill date gaps to create a clean panel for lag operations
+
+TBC: add to stata_replication.py
+- **relrank.py**
+  - `relrank`: Relative ranking within groups
+
+- **sicff.py**
+  - `sicff`: SIC to Fama-French industry mapping
+
+- **winsor2.py**
+  - `winsor2`: Data winsorization
+
+
+
+
+Extra:
+- `Predictors/MS.py`: asrol_custom()
+   - Should consider systematically using this.
+
+## Files that use asreg 
+
+**Current organization asreg-related utilities:**
+- all in `utils/stata_asreg_asrol.py`
+   - `asreg_collinear()`: for specifically dealing with collinearity problems in TrendFactor.py
+   - `asreg_polars()`: a fast asreg used everywhere else
+
+**Updated all 10 predictor files using polars asreg:**
    - ✅ Beta.py
    - ✅ BetaLiquidityPS.py  
    - ✅ BetaTailRisk.py
@@ -23,100 +72,78 @@ Successfully consolidated all asreg functions into a single, organized `utils/st
    - ✅ ZZ2_betaVIX.py (also fixed sys.path import)
    - ✅ ZZ2_IdioVolAHT.py (also fixed sys.path import)
 
-3. **TrendFactor.py unchanged** - already uses `asreg_collinear()` correctly
+**TrendFactor.py unchanged** - already uses `asreg_collinear()` 
 
-4. **Cleaned up old files:**
-   - ❌ Deleted `pyCode/utils/asreg.py`
-   - ❌ Deleted `pyCode/Journal/0813h1-asreg-GPT5.py` (duplicate)
+# Other utility modules
 
-5. **All files tested successfully** - Each predictor script ran without errors after update
+## utils/asrol.py (17 scripts)
 
-## Current Organization in `utils/stata_replication.py`:
+Group 1
+- DivInit.py
+- DivOmit.py
+- DivSeason.py
 
-- **`asreg_polars()`**: Fast polars-based implementation, no collinearity handling
-- **`asreg_collinear()`**: Pandas-based with full Stata replication and collinearity handling  
-- Comprehensive documentation explaining when to use each version
+Group 2
+- Herf.py
+- HerfAsset.py
+- HerfBE.py
+- Investment.py
 
-## Benefits:
-- Single source of truth for asreg functionality
-- Clear documentation of implementation differences  
-- No duplicate code to maintain
-- All predictor files continue to work exactly as before
+Group 3
+- MomOffSeason06YrPlus.py
+- MomOffSeason11YrPlus.py
+- MomOffSeason16YrPlus.py
+- MomVol.py
 
-# Other utils links
+Group 4
+- CitationsRD.py
+- RDAbility.py
+- Recomm_ShortInterest.py
+- TrendFactor.py
+- VarCF.py
+- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
 
-Here's the comprehensive list
-  organized by utility module:
+## utils/stata_fastxtile.py (25 scripts)
 
-  utils/asrol.py (17 scripts):
+- AccrualsBM.py
+- ChForecastAccrual.py
+- ChNAnalyst.py
+- CitationsRD.py
+- DivYieldST.py
+- FirmAgeMom.py
+- GrAdExp.py
+- MomRev.py
+- MomVol.py
+- MS.py
+- NetDebtPrice.py
+- OperProf.py
+- OScore.py
+- PatentsRD.py
+- ProbInformedTrading.py
+- PS.py
+- RDAbility.py
+- RDcap.py
+- Recomm_ShortInterest.py
+- sfe.py
+- std_turn.py
+- tang.py
+- ZZ1_Activism1_Activism2.py
+- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+- ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
 
-  - CitationsRD.py
-  - DivInit.py
-  - DivOmit.py
-  - DivSeason.py
-  - Herf.py
-  - HerfAsset.py
-  - HerfBE.py
-  - Investment.py
-  - MomOffSeason06YrPlus.py
-  - MomOffSeason11YrPlus.py
-  - MomOffSeason16YrPlus.py
-  - MomVol.py
-  - RDAbility.py
-  - Recomm_ShortInterest.py
-  - TrendFactor.py
-  - VarCF.py
-  - ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+## utils/stata_ineq.py (5 scripts)
 
-  utils/asrol_pedantic.py (0 scripts):
+- DivSeason.py
+- MS.py
+- retConglomerate.py
+- ShareVol.py
+- TrendFactor.py
 
-  - No scripts currently use this module
+## utils/winsor2.py (5 scripts)
 
-  utils/stata_fastxtile.py (25 scripts):
+- VolumeTrend.py
+- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+- ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
+- ZZ1_OrgCap_OrgCapNoAdj.py
+- ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
 
-  - AccrualsBM.py
-  - ChForecastAccrual.py
-  - ChNAnalyst.py
-  - CitationsRD.py
-  - DivYieldST.py
-  - FirmAgeMom.py
-  - GrAdExp.py
-  - MomRev.py
-  - MomVol.py
-  - MS.py
-  - NetDebtPrice.py
-  - OperProf.py
-  - OScore.py
-  - PatentsRD.py
-  - ProbInformedTrading.py
-  - PS.py
-  - RDAbility.py
-  - RDcap.py
-  - Recomm_ShortInterest.py
-  - sfe.py
-  - std_turn.py
-  - tang.py
-  - ZZ1_Activism1_Activism2.py
-  - ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
-  - ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
-
-  utils/stata_ineq.py (5 scripts):
-
-  - DivSeason.py
-  - MS.py
-  - retConglomerate.py
-  - ShareVol.py
-  - TrendFactor.py
-
-  utils/winsor2.py (5 scripts):
-
-  - VolumeTrend.py
-  - ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
-  - ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
-  - ZZ1_OrgCap_OrgCapNoAdj.py
-  - ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
-
-  Summary:
-  - Total unique scripts using these utilities: 34 scripts
-  - Most used utility: stata_fastxtile.py (25 scripts)
-  - Least used utility: asrol_pedantic.py (0 scripts)

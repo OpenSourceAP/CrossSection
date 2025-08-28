@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import sys
 sys.path.append('.')
-from utils.stata_asreg_asrol import asrol
+from utils.asrol import asrol
 from utils.savepredictor import save_predictor
 
 # DATA LOAD

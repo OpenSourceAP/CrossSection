@@ -5,7 +5,7 @@ import polars as pl
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 from utils.savepredictor import save_predictor
 
 # Data load
@@ -45,7 +45,7 @@ df = df.with_columns([
 
 # Use utils/asreg.py helper for rolling regression
 # This replicates: asreg ret mktrf dVIX, window(time_temp 20) min(15) by(permno)
-df = asreg(
+df = asreg_polars(
     df,
     y="ret_excess",  # Stata: ret (but we already subtracted rf)
     X=["mktrf", "dVIX"],

@@ -35,7 +35,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
 from utils.saveplacebo import save_placebo
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 
 
 print("=" * 80)
@@ -97,7 +97,7 @@ print("Processing", df['permno'].n_unique(), "unique permnos...")
 # Use asreg helper for rolling FF3 regression with residuals  
 # Rolling 36-observation windows with minimum 36 observations (exact Stata asreg match)
 # Use time_temp (position-based) to match Stata's approach exactly
-df = asreg(
+df = asreg_polars(
     df,
     y="retrf",
     X=["mktrf", "hml", "smb"],

@@ -32,7 +32,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 
 print("=" * 80)
 print("🏗️  BetaLiquidityPS.py")
@@ -83,7 +83,7 @@ print(f"Computing rolling 4-factor regressions for {df['permno'].n_unique():,} u
 print("This matches: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)")
 
 # Apply asreg rolling 4-factor regression
-df_with_beta = asreg(
+df_with_beta = asreg_polars(
     df,
     y="retrf", 
     X=["ps_innov", "mktrf", "hml", "smb"],

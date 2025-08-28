@@ -35,7 +35,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.savepredictor import save_predictor
-from utils.stata_asreg_asrol import asreg_polars as asreg
+from utils.asreg import asreg_polars
 
 
 print("=" * 80)
@@ -86,7 +86,7 @@ print("Running FF3 regressions by permno-month to extract residuals...")
 df = df.sort(["permno", "time_avail_m", "time_d"])
 
 # Use asreg helper with group mode for per-group regressions
-df_with_residuals = asreg(
+df_with_residuals = asreg_polars(
     df,
     y="ret",
     X=["mktrf", "smb", "hml"],
