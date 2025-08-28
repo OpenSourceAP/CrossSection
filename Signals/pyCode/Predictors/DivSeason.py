@@ -14,8 +14,9 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.asrol import asrol_fast
+from utils.asrol import asrol_calendar_pd
 from utils.stata_replication import stata_ineq_pd
+from utils.savepredictor import save_predictor
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
@@ -86,12 +87,12 @@ df = df[df['cd3'] < 6]
 
 # SIGNAL CONSTRUCTION
 # Short all others with a dividend in last 12 months
-# Use fast asrol for 12-month rolling sum of dividend payments
-df = asrol_fast(df, 'permno', 'time_avail_m', 'divpaid', 12, stat='sum', new_col_name='div12', min_periods=1)
+# Use calendar-based asrol for 12-month rolling sum of dividend payments
+df = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divpaid', stat='sum', window='12mo', min_obs=1)
 
 # Initialize DivSeason: 0 if had dividends in last 12 months, otherwise missing (NaN)
 # This exactly replicates Stata's: gen DivSeason = 0 if div12 > 0
-df['DivSeason'] = np.where(df['div12'] > 0, 0, np.nan)
+df['DivSeason'] = np.where(df['divpaid_sum'] > 0, 0, np.nan)
 
 # Long if dividend month is predicted
 # OP page 5: "unknown and missing frequency are assumed quarterly"
@@ -127,22 +128,5 @@ df.loc[(df['temp3'] == 1) | (df['temp4'] == 1) | (df['temp5'] == 1), 'DivSeason'
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'DivSeason']].copy()
 
-# CRITICAL: Match Stata's savepredictor.do behavior - drop if DivSeason == .
-df_final = df_final.dropna(subset=['DivSeason'])
-
-# Convert time_avail_m to yyyymm format like other predictors
-df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
-
-# Convert to integers for consistency with other predictors
-df_final['permno'] = df_final['permno'].astype('int64')
-df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
-df_final['DivSeason'] = df_final['DivSeason'].astype('int64')
-
-# Keep only required columns and set index
-df_final = df_final[['permno', 'yyyymm', 'DivSeason']].copy()
-df_final = df_final.set_index(['permno', 'yyyymm'])
-
-# SAVE
-df_final.to_csv('../pyData/Predictors/DivSeason.csv')
-
-print("DivSeason predictor saved successfully")
+# SAVE using standardized save_predictor function
+save_predictor(df_final, 'DivSeason')
