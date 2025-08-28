@@ -7,6 +7,7 @@ import polars as pl
 import math
 import re
 
+# %% old multi lag function
 
 def fill_date_gaps(df, group_col='permno', time_col='time_avail_m'):
     """
@@ -48,55 +49,6 @@ def fill_date_gaps(df, group_col='permno', time_col='time_avail_m'):
     df_balanced = df_balanced.query(f'{time_col} >= time_min & {time_col} <= time_max').drop(columns=['time_min', 'time_max'])
     
     return df_balanced.sort_values([group_col, time_col])
-
-
-def stata_quantile(x, qs):
-    """
-    Compute Stata-style quantiles for a 1D array-like using only NumPy.
-
-    Parameters
-    ----------
-    x : array-like
-        Data (numeric). NaNs are ignored.
-    qs : float or sequence of floats
-        Quantiles requested. May be in [0,100] (percent) or [0,1] (fractions).
-
-    Returns
-    -------
-    float or np.ndarray
-        Scalar if one quantile requested, else array of quantiles.
-    """
-    arr = np.asarray(x, dtype=float)
-    arr = arr[~np.isnan(arr)]  # drop NaNs
-    arr.sort(kind="mergesort")  # stable sort like Stata
-    n = arr.size
-
-    if n == 0:
-        return np.nan if np.isscalar(qs) else np.full(len(np.atleast_1d(qs)), np.nan)
-
-    qs = np.atleast_1d(qs).astype(float)
-    if np.all((qs >= 0) & (qs <= 1)):
-        qs = qs * 100.0
-
-    P = (qs / 100.0) * n
-    out = np.empty_like(P, dtype=float)
-
-    for j, p in enumerate(P):
-        if p <= 0:
-            out[j] = arr[0]
-        elif p >= n:
-            out[j] = arr[-1]
-        else:
-            # first rank > p
-            idx = np.searchsorted(np.arange(1, n + 1), p, side="right")
-            val = arr[idx]
-            k = int(np.floor(p + 1e-12))
-            if abs(p - k) < 1e-12 and 1 <= k < n:
-                val = (arr[k - 1] + arr[k]) / 2
-            out[j] = val
-
-    return float(out[0]) if out.size == 1 else out
-
 
 def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', 
                     prefix='', fill_gaps=True):
@@ -198,6 +150,117 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M',
         out[col_name] = result
     
     return out.sort_values([group_col, time_col])
+
+# %% new multi lag function
+
+
+def fill_date_gaps_pl(df, group_col='permno', time_col='time_avail_m', period_str='1mo', 
+    start_padding="-0mo", end_padding="0mo"):
+    """
+    Fill date gaps to create a clean panel for lag operations.
+    Replicates Stata: xtset [group_col] [time_col]; tsfill
+    
+    period_str: 1mo
+    start_padding: 0mo, 3mo, 6mo, 12mo
+    end_padding: -0mo, -3mo, -6mo, -12mo: adds 0, 3, 6, 12 months to the start of the time series
+    """
+
+    # force time_col to be a date
+    df = df.with_columns(pl.col(time_col).cast(pl.Date))
+    
+    # create a backbone of group-time with no gaps
+    out = df.group_by(group_col).agg(
+            pl.col(time_col).min().alias("time_min"),
+            pl.col(time_col).max().alias("time_max")
+        ).with_columns(
+            pl.date_ranges(
+                pl.col("time_min").dt.offset_by(start_padding), 
+                pl.col("time_max").dt.offset_by(end_padding),
+                period_str).alias(time_col)
+        ).explode(time_col).select(
+            [group_col, time_col]
+        )
+
+    # merge input onto backbone and sort
+    out = out.join(df, on=[group_col, time_col], how="left")
+    out = out.sort([group_col, time_col])
+
+    return out
+    
+def stata_multi_lag_pl(
+    df,
+    group_col="permno",
+    time_col="time_avail_m",
+    value_col=["act", "che"],
+    lag_list=[1, 2],
+    period_str="1m",
+    prefix="lag",
+):
+    """
+    input = polars dataframe df
+    output = polars dataframe with new lag columns added
+    this is very fast
+    """
+    df = fill_date_gaps_pl(df, group_col, time_col, period_str)
+    df = df.sort([group_col, time_col])
+    df = df.with_columns(
+        [
+            pl.col(v).shift(l).over(group_col).alias(f"{v}_{lagname}{l}")
+            for v in value_col
+            for l in lag_list
+        ]
+    )
+    return df
+
+#%% Replicating Other Stata Functions
+
+
+def stata_quantile(x, qs):
+    """
+    Compute Stata-style quantiles for a 1D array-like using only NumPy.
+
+    Parameters
+    ----------
+    x : array-like
+        Data (numeric). NaNs are ignored.
+    qs : float or sequence of floats
+        Quantiles requested. May be in [0,100] (percent) or [0,1] (fractions).
+
+    Returns
+    -------
+    float or np.ndarray
+        Scalar if one quantile requested, else array of quantiles.
+    """
+    arr = np.asarray(x, dtype=float)
+    arr = arr[~np.isnan(arr)]  # drop NaNs
+    arr.sort(kind="mergesort")  # stable sort like Stata
+    n = arr.size
+
+    if n == 0:
+        return np.nan if np.isscalar(qs) else np.full(len(np.atleast_1d(qs)), np.nan)
+
+    qs = np.atleast_1d(qs).astype(float)
+    if np.all((qs >= 0) & (qs <= 1)):
+        qs = qs * 100.0
+
+    P = (qs / 100.0) * n
+    out = np.empty_like(P, dtype=float)
+
+    for j, p in enumerate(P):
+        if p <= 0:
+            out[j] = arr[0]
+        elif p >= n:
+            out[j] = arr[-1]
+        else:
+            # first rank > p
+            idx = np.searchsorted(np.arange(1, n + 1), p, side="right")
+            val = arr[idx]
+            k = int(np.floor(p + 1e-12))
+            if abs(p - k) < 1e-12 and 1 <= k < n:
+                val = (arr[k - 1] + arr[k]) / 2
+            out[j] = val
+
+    return float(out[0]) if out.size == 1 else out
 
 
 # ================================
