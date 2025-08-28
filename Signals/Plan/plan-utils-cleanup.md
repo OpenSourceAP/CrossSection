@@ -27,7 +27,6 @@ Basic IO (TBC: combine savepredictor and saveplacebo)
     - Not sure this is any slower than asrol_fast
     - May need to add more options (e.g. stats)
 
-
 - **stata_regress.py**
   - `drop_collinear`: Drop collinear variables
   - `regress`: OLS regressionhis be deployed, if anywhere? should we just delete this?)
@@ -75,12 +74,12 @@ TBC: should we move any of these regressions to `asreg_collinear`?
 
 ## utils/asrol.py (17 scripts)
 
-Almost all of these (if not all) are using `asrol_fast`, and just hiding behind the `asrol` wrapper. TBC: delete the `asrol` wrapper and just use `asrol_fast` directly.
+Almost all of these (if not all) are using `asrol_fast`, and just hiding behind the `asrol` wrapper. Let's try to move all of them to use `asrol_calendar_pd` instead. 
 
-Also TBC: determine if we should use `asrol_custom` from `Predictors/MS.py` instead. We should make a pandas version of `asrol_custom`. 
+**IMPORTANT**: Do not make the move if the performance deteriorates. Compare with `Logs/testout_predictors 0827n2.md` to see if the performance deteriorates.
 
 Group 1
-- DivInit.py
+- DivInit.py: ✅ uses `asrol_calendar_pd`
 - DivOmit.py
 - DivSeason.py
 
@@ -88,7 +87,6 @@ Group 2
 - Herf.py
 - HerfAsset.py
 - HerfBE.py
-- Investment.py
 
 Group 3
 - MomOffSeason06YrPlus.py
@@ -99,10 +97,13 @@ Group 3
 Group 4
 - CitationsRD.py: ✅ uses `asrol_calendar`
 - MS.py: ✅ uses `asrol_calendar`
+- Investment.py
 - RDAbility.py
 - Recomm_ShortInterest.py
-- TrendFactor.py
 - VarCF.py
+
+Group 5
+- TrendFactor.py
 - ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
 
 ## utils/stata_fastxtile.py (25 scripts)

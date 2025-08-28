@@ -257,3 +257,49 @@ def asrol_calendar(
         how='left',
         coalesce=True
     )
+
+
+def asrol_calendar_pd(
+    df: pd.DataFrame, 
+    group_col: str, 
+    date_col: str, 
+    value_col: str, 
+    stat: str = 'mean',
+    window: str = '12mo', 
+    min_obs: int = 1,
+    require_prev_obs: bool = False,
+    ) -> pd.DataFrame:
+    """
+    Pandas wrapper for asrol_calendar function.
+    Converts pandas DataFrame to polars, applies asrol_calendar, then converts back.
+    
+    Parameters:
+    - df: pandas DataFrame
+    - group_col: grouping variable (like permno)
+    - date_col: date column (like time_avail_m)
+    - value_col: variable to calculate rolling statistic on
+    - stat: statistic to calculate ('mean', 'sum', 'std', 'count', 'min', 'max')
+    - window: window duration (e.g., '12mo', '24mo', '6mo')
+    - min_obs: minimum observations required in window (default: 1)
+    - require_prev_obs: require previous observation (default: False)
+    
+    Returns:
+    - pandas DataFrame with new rolling statistic column added
+    """
+    # Convert pandas to polars
+    df_pl = pl.from_pandas(df)
+    
+    # Apply asrol_calendar
+    result_pl = asrol_calendar(
+        df_pl, 
+        group_col, 
+        date_col, 
+        value_col, 
+        stat, 
+        window, 
+        min_obs, 
+        require_prev_obs
+    )
+    
+    # Convert back to pandas
+    return result_pl.to_pandas()
