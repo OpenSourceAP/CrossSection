@@ -4,11 +4,8 @@
 
 ## Core Utility Modules
 
-Basic IO (TBC: combine savepredictor and saveplacebo)
-- **savepredictor.py**
+- **save_standardized.py**
   - `save_predictor`: Standardized predictor output formatting and saving
-
-- **saveplacebo.py**
   - `save_placebo`: Placebo test result saving  
 
 - **column_standardizer_yaml.py**
@@ -38,7 +35,6 @@ Basic IO (TBC: combine savepredictor and saveplacebo)
   - `stata_quantile`: Stata-style quantiles
   - `fill_date_gaps`: Fill date gaps to create a clean panel for lag operations
 
-TBC: add to stata_replication.py
 - **relrank.py**
   - `relrank`: Relative ranking within groups
 
@@ -47,10 +43,6 @@ TBC: add to stata_replication.py
 
 - **winsor2.py**
   - `winsor2`: Data winsorization
-
-Extra:
-- `Predictors/MS.py`: asrol_custom()
-   - Should consider systematically using this.
 
 ## Files that use asreg 
 
@@ -68,7 +60,26 @@ Extra:
 
 **TrendFactor.py unchanged** - already uses `asreg_collinear` 
 
-TBC: should we move any of these regressions to `asreg_collinear`?
+Doesn't seem like it's worth the effort to move anything else to use `asreg_collinear`. Seems like `asreg_polars` actually helps `RDAbility.py` replicate OP. Here are the t-stat results:
+
+```
+           signalname metric   old   new  diff  tstat_op                           Test in OP
+16               Beta  tstat  1.72  1.75  0.03      2.57                       univariate reg
+18    BetaLiquidityPS  tstat  1.94  2.03  0.09      2.54                 port sort CAPM alpha
+19       BetaTailRisk  tstat  3.29  3.30  0.01      2.48                            port sort
+152         RDAbility  tstat  1.52  1.74  0.22      2.61                          double sort
+162       RealizedVol  tstat  2.60  2.61  0.01      2.86                            port sort
+90          IdioVol3F  tstat  3.22  3.24  0.02      3.10                  port sort FF3 alpha
+166      ReturnSkew3F  tstat  4.28  4.61  0.33      4.35                            port sort
+10       AnalystValue  tstat  1.76  1.67 -0.09       NaN          port sort nonstandard p-val
+1                 AOP  tstat  2.09  2.02 -0.07       NaN          port sort nonstandard p-val
+145       PredictedFE  tstat  1.02  1.37  0.35       NaN     univariate reg nonstandard p-val
+164  ResidualMomentum  tstat  8.29  8.37  0.08      8.22                         LS FF+ alpha
+2    AbnormalAccruals  tstat  5.03  4.91 -0.12      8.43  port sort size adjusted nonstandard
+189           betaVIX  tstat  3.58  3.61  0.03      3.90                            port sort
+91         IdioVolAHT  tstat  2.53  2.50 -0.03      2.70                                  reg
+```
+
 
 # Other utility modules
 
@@ -80,8 +91,8 @@ Almost all of these (if not all) are using `asrol_fast`, and just hiding behind 
 
 Group 1
 - DivInit.py: ✅ uses `asrol_calendar_pd`
-- DivOmit.py
-- DivSeason.py
+- DivOmit.py: ✅ uses `asrol_calendar_pd`
+- DivSeason.py: ✅ uses `asrol_calendar_pd`
 
 Group 2
 - Herf.py
@@ -98,7 +109,7 @@ Group 4
 - CitationsRD.py: ✅ uses `asrol_calendar`
 - MS.py: ✅ uses `asrol_calendar`
 - Investment.py
-- RDAbility.py
+- RDAbility.py: ✅ uses `asrol_calendar`
 - Recomm_ShortInterest.py
 - VarCF.py
 
@@ -150,3 +161,8 @@ Group 5
 - ZZ1_OrgCap_OrgCapNoAdj.py
 - ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
 
+## utils/relrank.py
+Move the `relrank` function to `stata_replication.py`. Delete `relrank.py`. Update the following:
+- EarnSupBig.py: ✅
+- IntRetBig.py: ✅
+- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py: ✅
