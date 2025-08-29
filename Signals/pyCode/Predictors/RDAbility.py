@@ -10,7 +10,176 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.asreg import asreg_polars
-from utils.asrol import asrol_fast
+from typing import Optional, Union
+
+#%% specialized asrol function
+
+def asrol_custom(
+    df: Union[pl.DataFrame, pd.DataFrame],
+    group_col: str,
+    time_col: str,
+    value_col: str,
+    window: int,
+    stat: str = "mean",
+    new_col_name: Optional[str] = None,
+    min_periods: int = 1
+) -> Union[pl.DataFrame, pd.DataFrame]:
+    """
+    Fast Polars implementation of rolling statistics with consecutive period support
+
+    Parameters:
+    - df: DataFrame (Polars or pandas)
+    - group_col: grouping variable (like permno)
+    - time_col: time variable (like time_avail_m)
+    - value_col: variable to calculate rolling statistic on
+    - window: window size (number of periods)
+    - stat: statistic to calculate ('mean', 'sum', 'std', 'count', 'min', 'max')
+    - new_col_name: name for new column (default: f'{stat}{window}_{value_col}')
+    - min_periods: minimum observations required (default: 1)
+    - consecutive_only: if True, only use consecutive periods like Stata (default: True)
+
+    Returns:
+    - DataFrame with new rolling statistic column added (same type as input)
+    """
+    # Determine input type for return
+    is_pandas_input = isinstance(df, pd.DataFrame)
+
+    # Convert to Polars if needed
+    if is_pandas_input:
+        df_pl = pl.from_pandas(df)
+    else:
+        df_pl = df.clone()
+
+    # Default column name
+    if new_col_name is None:
+        new_col_name = f"{stat}{window}_{value_col}"
+
+    # Sort by group and time for proper processing
+    df_pl = df_pl.sort([group_col, time_col])
+
+    # Stata-compatible rolling with gap detection
+    result_pl = _stata_rolling(
+        df_pl,
+        group_col,
+        time_col,
+        value_col,
+        window,
+        stat,
+        new_col_name,
+        min_periods,
+    )
+
+    # Return same type as input
+    if is_pandas_input:
+        return result_pl.to_pandas()
+    else:
+        return result_pl
+
+def _stata_rolling(
+    df_pl: pl.DataFrame,
+    group_col: str,
+    time_col: str,
+    value_col: str,
+    window: int,
+    stat: str,
+    new_col_name: str,
+    min_periods: int,
+) -> pl.DataFrame:
+    """Stata-compatible rolling with consecutive period detection"""
+
+    # Add gap detection columns
+    # Check if time column is integer (like fyear, time_temp) or datetime
+    time_dtype = df_pl[time_col].dtype
+    if time_dtype in [pl.Int16, pl.Int32, pl.Int64, pl.UInt16, pl.UInt32, pl.UInt64]:
+        # Integer time column - use simple difference for gap detection
+        df_with_gaps = df_pl.with_columns(
+            [
+                pl.col(time_col).diff().over(group_col).alias("_days_diff"),
+                pl.lit(0).alias("_segment_id"),
+            ]
+        )
+        gap_threshold = 1  # Gap if difference > 1 for integer time
+    else:
+        # DateTime time column - use days difference
+        df_with_gaps = df_pl.with_columns(
+            [
+                pl.col(time_col)
+                .diff()
+                .dt.total_days()
+                .over(group_col)
+                .alias("_days_diff"),
+                pl.lit(0).alias("_segment_id"),
+            ]
+        )
+        gap_threshold = 90  # Gap if difference > 90 days for datetime
+
+    # Identify breaks and create segment IDs
+    df_with_gaps = df_with_gaps.with_columns(
+        [
+            # Mark where gaps occur using dynamic threshold
+            pl.when(pl.col("_days_diff") > gap_threshold)
+            .then(1)
+            .otherwise(0)
+            .alias("_is_break")
+        ]
+    )
+
+    # Create cumulative segment IDs within each group
+    df_with_gaps = df_with_gaps.with_columns(
+        [pl.col("_is_break").cum_sum().over(group_col).alias("_segment_id")]
+    )
+
+    # Create combined grouping key: (group_col, segment_id)
+    df_with_gaps = df_with_gaps.with_columns(
+        [
+            pl.concat_str(
+                [
+                    pl.col(group_col).cast(pl.Utf8),
+                    pl.lit("_seg_"),
+                    pl.col("_segment_id").cast(pl.Utf8),
+                ]
+            ).alias("_group_segment")
+        ]
+    )
+
+    # Rolling function mapping
+    rolling_funcs = {
+        "mean": lambda col: col.rolling_mean(
+            window_size=window, min_periods=min_periods
+        ),
+        "sum": lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
+        "std": lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
+        "sd": lambda col: col.rolling_std(
+            window_size=window, min_periods=min_periods
+        ),  # Alias for std
+        "count": lambda col: col.is_not_null()
+        .cast(pl.Int32)
+        .rolling_sum(window_size=window, min_periods=min_periods),
+        "min": lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
+        "max": lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
+        "first": lambda col: col.first(),
+    }
+
+    if stat not in rolling_funcs:
+        raise ValueError(f"Unsupported statistic: {stat}")
+
+    # Apply rolling function to consecutive segments
+    result = df_with_gaps.with_columns(
+        rolling_funcs[stat](pl.col(value_col))
+        .over("_group_segment")
+        .alias(new_col_name)
+    )
+
+    # Clean up temporary columns
+    result = result.drop(["_days_diff", "_is_break", "_segment_id", "_group_segment"])
+
+    return result
+
+
+
+
+
+#%%
 
 print("=" * 80)
 print("RDAbility.py")
@@ -22,16 +191,6 @@ print("Loading a_aCompustat data...")
 df = pl.read_parquet("../pyData/Intermediate/a_aCompustat.parquet")
 df = df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "xrd", "sale"])
 print(f"Loaded Compustat: {len(df):,} observations")
-
-# CHECKPOINT 1
-print("=== CHECKPOINT 1: Initial data load ===")
-debug_df = df.filter(
-    (pl.col("permno") == 79283) & 
-    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
-).sort(["fyear"])
-print(debug_df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "xrd", "sale"]))
-
 
 # SIGNAL CONSTRUCTION - Following Stata code line by line with careful missing value handling
 
@@ -94,16 +253,6 @@ df = df.with_columns(
     .alias("tempX")
 )
 
-# CHECKPOINT 2
-print("=== CHECKPOINT 2: After creating tempY and tempX ===")
-debug_df = df.filter(
-    (pl.col("permno") == 79283) & 
-    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
-).sort(["fyear"])
-print(debug_df.select(["gvkey", "permno", "fyear", "tempXRD", "tempSale", "tempY", "tempX"]))
-
-
 # gen tempNonZero = .
 # gen tempXLag = .
 df = df.with_columns([
@@ -155,17 +304,7 @@ for n in range(1, 6):
     
     # Drop temporary column
     df = df.drop("_valid_count")
-    
-    # CHECKPOINT 3
-    print(f"=== CHECKPOINT 3: After asreg for lag {n} ===")
-    debug_df = df.filter(
-        (pl.col("permno") == 79283) & 
-        (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-        (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
-    ).sort(["fyear"])
-    print(debug_df.select(["gvkey", "permno", "fyear", "tempXLag", f"gammaAbility{n}"]))
-    
-    
+        
     # replace tempNonZero = tempXLag >0 & !mi(tempXLag)
     # In Stata: missing values are handled explicitly
     df = df.with_columns(
@@ -173,12 +312,11 @@ for n in range(1, 6):
     )
     
     # asrol tempNonZero, window(fyear 8) min(6) by(gvkey) stat(mean) gen(tempMean)
-    # Use asrol_legacy for exact Stata behavior that matches asrol
     df_pandas = df.to_pandas()
     df_pandas = df_pandas.sort_values(['gvkey', 'fyear'])
     
     # Calculate rolling mean per gvkey with exactly 8-year window and min 6 observations (matches Stata asrol min(6))
-    df_pandas = asrol_fast(
+    df_pandas = asrol_custom(
         df_pandas,
         group_col='gvkey',
         time_col='fyear', 
@@ -190,15 +328,6 @@ for n in range(1, 6):
     )
     
     df = pl.from_pandas(df_pandas)
-    
-    # CHECKPOINT 4
-    print(f"=== CHECKPOINT 4: After tempMean filtering for lag {n} ===")
-    debug_df = df.filter(
-        (pl.col("permno") == 79283) & 
-        (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-        (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
-    ).sort(["fyear"])
-    print(debug_df.select(["gvkey", "permno", "fyear", "tempNonZero", "tempMean", f"gammaAbility{n}"]))
     
     # replace gammaAbility`n' = . if tempMean < .5 & !mi(tempMean)
     # Critical fix: In Stata, missing tempMean is treated as positive infinity
@@ -224,17 +353,6 @@ df = df.with_columns(
     .list.mean()
     .alias("RDAbility")
 )
-
-# CHECKPOINT 5
-print("=== CHECKPOINT 5: After rowmean of gammaAbil ===")
-debug_df = df.filter(
-    (pl.col("permno") == 79283) & 
-    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
-).sort(["fyear"])
-print(debug_df.select(["gvkey", "permno", "fyear"] + gamma_cols + ["RDAbility"]))
-
-
 
 # gen tempRD = xrd/sale
 df = df.with_columns(
@@ -265,16 +383,6 @@ df_pandas = df.to_pandas()
 df_pandas['tempRDQuant'] = fastxtile(df_pandas, 'tempRD', by='time_avail_m', n=3)
 df = pl.from_pandas(df_pandas)
 
-# CHECKPOINT 6
-print("=== CHECKPOINT 6: After fastxtile ===")
-debug_df = df.filter(
-    (pl.col("permno") == 79283) & 
-    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
-).sort(["fyear"])
-print(debug_df.select(["gvkey", "permno", "fyear", "tempRD", "tempRDQuant", "RDAbility"]))
-
-
 # replace RDAbility = . if tempRDQuant != 3
 # Critical fix: In Stata, missing tempRDQuant is treated as positive infinity
 # So tempRDQuant != 3 is TRUE for missing values, making RDAbility missing
@@ -295,17 +403,6 @@ df = df.with_columns(
     .otherwise(pl.col("RDAbility"))
     .alias("RDAbility")
 )
-
-# CHECKPOINT 7
-print("=== CHECKPOINT 7: After final filtering ===")
-debug_df = df.filter(
-    (pl.col("permno") == 79283) & 
-    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-    (pl.col("time_avail_m") <= pl.date(2003, 12, 31)) &
-    pl.col("RDAbility").is_not_null()
-).sort(["fyear"])
-print(debug_df.select(["gvkey", "permno", "fyear", "RDAbility"]))
-
 
 # cap drop temp*
 df = df.drop(["tempRD", "tempRDQuant"] + gamma_cols)
@@ -360,18 +457,6 @@ print(f"After gvkey-time filter: {len(df):,} observations")
 df = df.sort(["permno", "time_avail_m"])
 df = df.group_by(["permno", "time_avail_m"], maintain_order=True).first()
 print(f"After permno-time filter: {len(df):,} observations")
-
-# CHECKPOINT 8
-print("=== CHECKPOINT 8: Final monthly expansion ===")
-debug_df = df.filter(
-    (pl.col("permno") == 79283) & 
-    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
-    (pl.col("time_avail_m") <= pl.date(2003, 12, 31)) &
-    pl.col("RDAbility").is_not_null()
-).sort(["time_avail_m"])
-print(debug_df.select(["permno", "time_avail_m", "RDAbility"]))
-
-
 
 # Select final columns
 result = df.select(["permno", "time_avail_m", "RDAbility"])
