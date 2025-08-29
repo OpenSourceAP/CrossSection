@@ -1,4 +1,9 @@
 # %%
+
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir('..')
+
 # ABOUTME: MS.py - generates Mohanram G-score predictor using 8 financial metrics
 # ABOUTME: Python translation of MS.do with industry median comparisons and quarterly aggregation
 
@@ -11,11 +16,6 @@ Generates Mohanram G-score predictor from financial statement data:
 - Indicators: ROA, CF-ROA, cash flow quality, earnings volatility, revenue volatility, R&D intensity, capex intensity, advertising intensity
 - All comparisons vs industry medians by (sic2D, time_avail_m)
 
-Usage:
-    cd pyCode/
-    source .venv/bin/activate  
-    python3 Predictors/MS.py
-
 Inputs:
     - ../pyData/Intermediate/m_aCompustat.parquet (accounting data)
     - ../pyData/Intermediate/SignalMasterTable.parquet (mve_c, sicCRSP)
@@ -23,12 +23,6 @@ Inputs:
 
 Outputs:
     - ../pyData/Predictors/MS.csv
-
-Requirements:
-    - Lowest BM quintile sample selection
-    - Industry median normalization for all 8 scores
-    - Quarterly data aggregation using 12-month rolling means
-    - Complex timing logic with seasonal adjustments
 """
 
 import polars as pl
@@ -40,83 +34,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_ineq_pl
+from utils.asrol import asrol
 
 print("=" * 80)
 print("🏗️  MS.py")
 print("Generating Mohanram G-score predictor")
 print("=" * 80)
-
-def asrol_custom(
-    df: pl.DataFrame, 
-    group_col: str, 
-    date_col: str, 
-    value_col: str, 
-    stat: str = 'mean',
-    window: str = '12mo', 
-    min_obs: int = 1,
-    require_prev_obs: bool = False,
-    ) -> pl.DataFrame:
-    """
-    hand built polars asrol that 
-      - constructs windows based a date duration
-      - replaces with na if there are not enough observations in the window
-    input: polars dataframe
-    output: polars dataframe with a new column
-    requires_prev_obs seems like it helps fit in a minority of cases, but in most cases it actually hurts. I left it in here for documentation to say we tried to match the stata 
-    """
-
-    # grab the stat function
-    stat_dict = {'mean': pl.mean, 'std': pl.std, 'min': pl.min, 'max': pl.max}
-    stat_fun = stat_dict[stat]
-
-    # First, add previous observation information to the original dataframe if require_prev_obs is True
-    df_with_prev = df.sort(pl.col([group_col, date_col]))
-    if require_prev_obs:
-        df_with_prev = df_with_prev.with_columns([
-            # Add columns for previous observation check
-            pl.col(date_col).shift(1).over(group_col).alias('prev_date'),
-            pl.col(value_col).shift(1).over(group_col).alias('prev_value')
-        ]).with_columns([
-            # Check if previous date is exactly 1 month before (accounting for varying month lengths)
-            (((pl.col('prev_date') + pl.duration(days=31)) >= pl.col(date_col)) &
-            ((pl.col('prev_date') + pl.duration(days=27)) <= pl.col(date_col)) &
-            pl.col('prev_value').is_not_null()).alias('has_valid_prev_obs')
-        ])
-
-    df_addition = df_with_prev.with_columns(
-        pl.col([group_col, date_col]).set_sorted()
-    ).rolling(index_column=date_col, period=window, group_by=group_col).agg(
-        [
-            pl.last(value_col).alias(f'{value_col}_last'),
-            stat_fun(value_col).alias(f'{value_col}_{stat}'),
-            pl.count(value_col).alias(f'{value_col}_obs')
-        ] + ([pl.last('has_valid_prev_obs').alias('has_valid_prev_obs')] if require_prev_obs else [])
-    )
-    
-    # Apply the final condition based on min_obs and require_prev_obs
-    if require_prev_obs:
-        df_addition = df_addition.with_columns(
-            pl.when(
-                (pl.col(f'{value_col}_obs') >= min_obs) & pl.col('has_valid_prev_obs')
-            ).then(pl.col(f'{value_col}_{stat}'))
-            .otherwise(pl.lit(None))
-            .alias(f'{value_col}_{stat}')
-        )
-    else:
-        df_addition = df_addition.with_columns(
-            pl.when(
-                pl.col(f'{value_col}_obs') >= min_obs
-            ).then(pl.col(f'{value_col}_{stat}'))
-            .otherwise(pl.lit(None))
-            .alias(f'{value_col}_{stat}')
-        )
-
-    return df.join(
-        df_addition.select([group_col, date_col, f'{value_col}_{stat}']),
-        on=[group_col, date_col],
-        how='left', 
-        coalesce=True
-    )
 
 # DATA LOAD
 print("📊 Loading Compustat and SignalMasterTable data...")
@@ -232,15 +155,35 @@ print("📈 Computing quarterly aggregations...")
 # Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations
 # spanning 12 calendar months, not just 12 consecutive data points
 
-# compute rolling means (be strict on windows)
-df = asrol_custom(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
-    .rename({'niq_mean':'niqsum'})
-df = asrol_custom(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
-    .rename({'xrdq_mean':'xrdqsum'})
-df = asrol_custom(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
-    .rename({'oancfq_mean':'oancfqsum'})
-df = asrol_custom(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
-    .rename({'capxq_mean':'capxqsum'})
+
+
+#%%
+
+# 12 month rolling means 
+
+# save the index of the original df
+index_original = df.select(['permno','time_avail_m'])
+temp = asrol(df, 'permno', 'time_avail_m', '1mo', 12, \
+    'niq', 'mean', new_col_name='niqsum', min_samples=12, fill_gaps=True)
+temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 12, \
+    'xrdq', 'mean', new_col_name='xrdqsum', min_samples=12, fill_gaps=False)
+temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 12, \
+    'oancfq', 'mean', new_col_name='oancfqsum', min_samples=12, fill_gaps=False)
+temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 12, \
+    'capxq', 'mean', new_col_name='capxqsum', min_samples=12, fill_gaps=False)
+
+# keep only the original index
+temp = temp.with_columns(
+    pl.col('time_avail_m').cast(pl.Datetime("ns"))
+)
+df = index_original.join(temp,
+    on=['permno','time_avail_m'],
+    how='left'
+)
+
+
+
+#%%
 
 # multiply the means by 4 to convert to sums (to match stata)
 for col in ['niqsum', 'xrdqsum', 'oancfqsum', 'capxqsum']:
@@ -309,12 +252,21 @@ df = df.with_columns([
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
-# Calculate 48-month rolling volatility using asrol_custom
-print("    Calculating 48-month rolling volatility...")
-df = asrol_custom(df, 'permno', 'time_avail_m', 'roaq', 'std', '1470d', 18)\
-    .rename({'roaq_std': 'niVol'})
-df = asrol_custom(df, 'permno', 'time_avail_m', 'sg', 'std', '1470d', 18)\
-    .rename({'sg_std': 'revVol'})
+#%%
+
+# == new code == %
+# Calculate 48-month rolling volatility
+# save original index
+index_original = df.select(['permno','time_avail_m'])
+# run asrol
+temp = asrol(df, 'permno', 'time_avail_m', '1mo', 48, 'roaq', \
+    'std', new_col_name='niVol', min_samples=18, fill_gaps=True)
+temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 48, 'sg',\
+    'std', new_col_name='revVol', min_samples=18, fill_gaps=False)
+temp = temp.with_columns(pl.col("time_avail_m").cast(pl.Datetime("ns")))
+# join back
+df = index_original.join(temp, on=['permno','time_avail_m'], how='left')
+
 
 # Calculate industry medians for volatility measures
 for v in ["niVol", "revVol"]:
