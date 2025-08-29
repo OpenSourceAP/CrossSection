@@ -26,7 +26,6 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
-from utils.forward_fill import apply_quarterly_fill_to_compustat
 
 print("Starting fgr5yrNoLag.py")
 
@@ -51,34 +50,16 @@ df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 df = df.select(['permno', 'time_avail_m', 'ceq', 'ib', 'txdi', 'dv', 'sale', 'ni', 'dp'])
 
 print(f"After loading m_aCompustat: {len(df)} rows")
-# Apply enhanced group-wise forward+backward fill for complete coverage
-print("Applying enhanced group-wise forward+backward fill for analyst data...")
-df = df.sort(['permno', 'time_avail_m'])
 
-# Apply backward fill to key columns for better coverage
-key_cols = [col for col in df.columns if col not in ['permno', 'time_avail_m', 'gvkey']]
-fill_expressions = []
-for col in key_cols:
-    if col in df.columns:
-        fill_expressions.append(
-            pl.col(col).fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias(col)
-        )
-
-if fill_expressions:
-    df = df.with_columns(fill_expressions)
-
-print("Applying forward-fill for missing annual values...")
-# m_aCompustat doesn't have gvkey, so use permno as the group column
-from utils.forward_fill import forward_fill_quarterly
-df = forward_fill_quarterly(df, ['ceq', 'ib', 'txdi', 'dv', 'sale', 'ni', 'dp'], group_col='permno')
-
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(tickerIBES)
+# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(tickerIBES)  
 print("Loading SignalMasterTable...")
 signal_df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 signal_df = signal_df.select(['permno', 'time_avail_m', 'tickerIBES'])
 
 print("Merging with SignalMasterTable...")
-df = df.join(signal_df, on=['permno', 'time_avail_m'], how='inner')
+# keep(using match) means keep observations from SignalMasterTable (using) and matched observations
+# This is equivalent to right join
+df = signal_df.join(df, on=['permno', 'time_avail_m'], how='left')
 
 print(f"After merge with SignalMasterTable: {len(df)} rows")
 

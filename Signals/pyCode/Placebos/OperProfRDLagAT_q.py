@@ -67,11 +67,20 @@ df = df.with_columns([
 ])
 
 
-# Create 3-period lag using position-based approach (like Stata's l3.)
-print("Creating position-based 3-period lag of atq...")
-df = df.with_columns([
-    pl.col('atq').shift(3).over('permno').alias('l3_atq')
-])
+# Create 3-month calendar-based lag (like Stata's l3.)
+print("Creating calendar-based 3-month lag of atq...")
+df_pd = df.to_pandas()
+df_pd['target_lag_date'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)
+
+# Create lag data
+lag_data = df_pd[['permno', 'time_avail_m', 'atq']].copy()
+lag_data = lag_data.rename(columns={'atq': 'l3_atq', 'time_avail_m': 'target_lag_date'})
+
+# Merge to get lagged values
+df_pd = df_pd.merge(lag_data, on=['permno', 'target_lag_date'], how='left')
+
+# Convert back to polars
+df = pl.from_pandas(df_pd.drop(columns=['target_lag_date']))
 
 # Compute OperProfRDLagAT_q = (revtq - cogsq - xsgaq + tempXRD)/l3.atq
 print("Computing OperProfRDLagAT_q...")

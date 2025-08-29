@@ -66,22 +66,10 @@ df = df.with_columns([
     pl.col('intanq').fill_null(0).alias('intanq')
 ])
 
-# Convert to pandas for lag operations
-df_pd = df.to_pandas()
-
-# Create 1-month lag date
-df_pd['time_lag1'] = df_pd['time_avail_m'] - pd.DateOffset(months=1)
-
-# Create lag data for merging
-lag_vars = ['atq']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag1'] + [f'l1_{var}' for var in lag_vars]
-
-# Merge lag data
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag1'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['time_lag1']))
+# Create 1-period lag using polars (position-based like Stata l. operator)
+df = df.with_columns(
+    pl.col('atq').shift(1).over('permno').alias('l1_atq')
+)
 
 # gen AssetLiquidityBookQuart = (cheq + .75*(actq - cheq) + .5*(atq - actq - gdwlq - intanq))/l.atq
 print("Computing AssetLiquidityBookQuart...")

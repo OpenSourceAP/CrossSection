@@ -67,23 +67,23 @@ df = df.with_columns(
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-print("Computing 12-month calendar-based lag...")
+print("Computing 12-period calendar-based lag...")
 
-# Convert to pandas for calendar-based lag operations
+# Convert to pandas for easier date manipulation
 df_pd = df.to_pandas()
 
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
+# Create 12-month lag date (exactly 1 year earlier)
+df_pd['target_lag_date'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
 
-# Create lag data for merging
-lag_data = df_pd[['permno', 'time_avail_m', 'temp']].copy()
-lag_data.columns = ['permno', 'time_lag12', 'l12_temp']
+# Create a lookup dataframe for lagged values
+lag_df = df_pd[['permno', 'time_avail_m', 'temp']].copy()
+lag_df = lag_df.rename(columns={'temp': 'l12_temp', 'time_avail_m': 'target_lag_date'})
 
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+# Merge to get lagged values
+df_pd = df_pd.merge(lag_df, on=['permno', 'target_lag_date'], how='left')
 
 # Convert back to polars
-df = pl.from_pandas(df_pd)
+df = pl.from_pandas(df_pd.drop(columns=['target_lag_date']))
 
 # gen AssetTurnover_q = saleq/((temp + l12.temp)/2)
 print("Computing AssetTurnover_q...")
