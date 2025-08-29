@@ -20,7 +20,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['ret_orig_missing'] = df['ret'].isna()
 
 # Replace missing returns with 0 
-df['ret'] = df['ret'].fillna(0)
+df['ret'] = df['ret'].fillna(0).infer_objects(copy=False)
 
 
 # Calculate lags for months 13-18 using calendar-based approach (matching Stata's l13.ret etc.)
@@ -36,8 +36,8 @@ for lag in [13, 14, 15, 16, 17, 18]:
                   on=['permno', 'time_avail_m'], how='left')
     
     # Fill missing lags with 0 (consistent with Stata behavior for missing)
-    df[f'ret_lag{lag}'] = df[f'ret_lag{lag}'].fillna(0)
-    df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True)
+    df[f'ret_lag{lag}'] = df[f'ret_lag{lag}'].fillna(0).infer_objects(copy=False)
+    df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
 
 # Calculate momentum-reversal (geometric return over months 13-18)
 df['MRreversal'] = ((1 + df['ret_lag13']) * 

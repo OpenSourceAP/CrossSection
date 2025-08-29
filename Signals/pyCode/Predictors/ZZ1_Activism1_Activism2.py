@@ -24,6 +24,7 @@ Signal Construction:
 
 import pandas as pd
 import polars as pl
+import numpy as np
 from pathlib import Path
 import sys
 import os
@@ -99,9 +100,10 @@ df = df.with_columns(tempBLOCK.alias('tempBLOCK'))
 # egen tempBLOCKQuant = fastxtile(tempBLOCK), n(4) by(time_avail_m)
 print("Calculating block holding quartiles by time_avail_m...")
 # Convert to pandas for fastxtile, then back to polars
-df_pandas = df.to_pandas()
-df_pandas['tempBLOCKQuant'] = fastxtile(df_pandas, 'tempBLOCK', by='time_avail_m', n=4)
-df = pl.from_pandas(df_pandas)
+with np.errstate(over='ignore', invalid='ignore'):
+    df_pandas = df.to_pandas()
+    df_pandas['tempBLOCKQuant'] = fastxtile(df_pandas, 'tempBLOCK', by='time_avail_m', n=4)
+    df = pl.from_pandas(df_pandas)
 
 # gen tempEXT = 24 - G
 # replace tempEXT = . if G == . 

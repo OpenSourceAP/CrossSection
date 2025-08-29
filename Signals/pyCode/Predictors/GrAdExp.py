@@ -89,7 +89,8 @@ df = df.sort_values(['permno', 'time_avail_m'])
 print("Calculating GrAdExp...")
 
 # First calculate log of xad for current and lagged values
-df['log_xad'] = np.log(df['xad'])
+with np.errstate(divide='ignore', invalid='ignore'):
+    df['log_xad'] = np.log(df['xad'])
 
 # Calculate 12-month lag of log_xad
 df['log_xad_l12'] = df.groupby('permno')['log_xad'].shift(12)

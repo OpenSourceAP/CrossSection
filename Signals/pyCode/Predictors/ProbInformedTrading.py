@@ -30,7 +30,8 @@ df = df.merge(pin_df[['permno', 'time_avail_m', 'a', 'u', 'es', 'eb']],
 # SIGNAL CONSTRUCTION
 # * generate yearly PIN measure from Easley et al
 # gen pin = (a*u) / (a*u + es + eb)
-df['pin'] = (df['a'] * df['u']) / (df['a'] * df['u'] + df['es'] + df['eb'])
+with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+    df['pin'] = (df['a'] * df['u']) / (df['a'] * df['u'] + df['es'] + df['eb'])
 
 # egen tempsize = fastxtile(mve_c), by(time_avail_m) n(2)
 df['tempsize'] = fastxtile(df, 'mve_c', by='time_avail_m', n=2)

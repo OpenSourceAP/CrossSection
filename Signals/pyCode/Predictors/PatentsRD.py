@@ -117,8 +117,9 @@ for time_month, group in df.groupby('time_avail_m'):
     if len(valid_group) > 0:
         try:
             # Use fastxtile to match Stata behavior
-            valid_group['maincat'] = fastxtile(valid_group['tempPatentsRD'], n=3)
-            valid_group['maincat'] = valid_group['maincat'].astype(int)
+            valid_group = valid_group.copy()  # Make explicit copy to avoid warning
+            valid_group.loc[:, 'maincat'] = fastxtile(valid_group['tempPatentsRD'], n=3)
+            valid_group.loc[:, 'maincat'] = valid_group['maincat'].astype(int)
             
             # Merge categories back to all observations
             group = group.merge(valid_group[['permno', 'time_avail_m', 'maincat']], 

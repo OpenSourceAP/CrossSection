@@ -59,7 +59,8 @@ compustat = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet",
 df = pd.merge(df, compustat, on=['gvkey', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-df['tempprof'] = (df['revt'] - df['cogs'] - df['xsga'] - df['xint']) / df['ceq']
+with np.errstate(over='ignore', invalid='ignore'):
+    df['tempprof'] = (df['revt'] - df['cogs'] - df['xsga'] - df['xint']) / df['ceq']
 
 
 # Create size terciles by time_avail_m and exclude smallest tercile

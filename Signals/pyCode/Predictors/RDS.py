@@ -81,8 +81,8 @@ df['RDS'] = ((df['ceq'] - df['l12_ceq']) - df['DS'] - (df['ni'] - df['dvp']) +
 # Filter out observations where both current and lagged msa/recta were originally missing
 # This prevents meaningless 0-0=0 calculations
 both_missing_mask = (
-    (df['recta_orig_missing'] & df['l12_recta_orig_missing'].fillna(True)) &
-    (df['msa_orig_missing'] & df['l12_msa_orig_missing'].fillna(True))
+    (df['recta_orig_missing'] & df['l12_recta_orig_missing'].fillna(True).infer_objects(copy=False)) &
+    (df['msa_orig_missing'] & df['l12_msa_orig_missing'].fillna(True).infer_objects(copy=False))
 )
 
 # Set RDS to missing for these problematic cases

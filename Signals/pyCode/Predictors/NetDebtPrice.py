@@ -51,7 +51,8 @@ df.loc[(df['sic'] >= 6000) & (df['sic'] <= 6999), 'NetDebtPrice'] = np.nan
 df.loc[(df['at'].isna()) | (df['ib'].isna()) | (df['csho'].isna()) | (df['ceq'].isna()) | (df['prcc_f'].isna()), 'NetDebtPrice'] = np.nan
 
 # Keep constant B/M - exclude bottom 2 BM quintiles
-df['BM'] = np.log(df['ceq'] / df['mve_c'])
+with np.errstate(divide='ignore', invalid='ignore'):
+    df['BM'] = np.log(df['ceq'] / df['mve_c'])
 # Handle infinite values in BM
 df['BM_clean'] = df['BM'].replace([np.inf, -np.inf], np.nan)
 # Use Stata-equivalent fastxtile for BM quintiles
