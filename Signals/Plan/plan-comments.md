@@ -15,7 +15,7 @@ Update the comments in the py scripts as follows:
     - If the do file does not have comments on the Original Papers, add "no OP comments" after the ✅
     - If the OP comments are already in the py script, use "✅ already in py script"
 
-## Progress
+## Pass 1
 
 - AccrualsBM.py - ✅ no OP comments
 - Accruals.py - ✅ already in py script
@@ -24,7 +24,7 @@ Update the comments in the py scripts as follows:
 - AM.py - ✅ no OP comments
 - AnalystRevision.py - ✅ no OP comments
 - AssetGrowth.py - ✅ no OP comments
-- Beta.py - ✅
+- Beta.py - ✅ already in py script
 - BetaFP.py - ✅ file doesn't exist
 - BetaLiquidityPS.py - ✅ no OP comments
 - BetaTailRisk.py - ✅ no OP comments
@@ -213,31 +213,33 @@ Update the comments in the py scripts as follows:
 - ZZ2_IdioVolAHT.py - ✅ no OP comments
 - ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py - ✅ no OP comments
 
-## Do files with OP comments according to grep -w "OP"
+## Pass 2
 
-- Beta.do
-- BrandInvest.do
-- Cash.do
-- CBOperProf.do
-- ChangeInRecommendation.do
-- ChAssetTurnover.do
-- ChNAnalyst.do
-- Coskewness.do
-- CPVolSpread.do
-- DivInit.do
-- DivOmit.do
-- DivSeason.do
-- DivYieldST.do
-- EquityDuration.do
-- fgr5yrLag.do
-- High52.do
-- MS.do
-- NetPayoutYield.do
-- OperProfRD.do
-- PatentsRD.do
-- PayoutYield.do
-- RDcap.do
-- sfe.do
-- std_turn.do
-- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.do
-- ZZ1_OrgCap_OrgCapNoAdj.do
+Do files with OP comments according to grep -w "OP"
+
+- Beta.do ✅
+- BrandInvest.do ✅
+- Cash.do ✅
+- CBOperProf.do ✅
+- ChangeInRecommendation.do ✅
+- ChAssetTurnover.do - ✅ already in py script
+- ChNAnalyst.do - ✅ already in py script
+- Coskewness.do - ✅ already in py script
+- CPVolSpread.do - ✅ already in py script
+- DivInit.do - ✅ already in py script
+- DivOmit.do - ✅ already in py script
+- DivSeason.do - ✅ already in py script
+- DivYieldST.do - ✅ already in py script
+- EquityDuration.do - ✅ already in py script
+- fgr5yrLag.do - ✅ already in py script
+- High52.do - ✅ already in py script
+- MS.do - ✅ already in py script
+- NetPayoutYield.do - ✅ already in py script
+- OperProfRD.do - ✅ already in py script
+- PatentsRD.do - ✅ already in py script
+- PayoutYield.do - ✅ already in py script
+- RDcap.do - ✅ already in py script
+- sfe.do - ✅ already in py script
+- std_turn.do - ✅ already in py script
+- ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.do - ✅ already in py script
+- ZZ1_OrgCap_OrgCapNoAdj.do - ✅ already in py script
