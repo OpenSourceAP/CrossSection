@@ -14,7 +14,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.asrol import asrol_calendar_pd
+from utils.asrol import asrol
 from utils.stata_replication import stata_ineq_pd
 from utils.save_standardized import save_predictor
 
@@ -76,7 +76,7 @@ df = df.drop('first_div_date', axis=1)
 # Fill missing cd3 with previous value (equivalent to Stata's l1.cd3 logic)
 # Stata: replace cd3 = l1.cd3 if cd3 == .
 # This should ONLY fill missing values, not override existing values
-df['cd3'] = df.groupby('permno')['cd3'].fillna(method='ffill')
+df['cd3'] = df.groupby('permno')['cd3'].ffill()
 
 # Replace missing dividend amounts with 0
 df['divamt'] = df['divamt'].fillna(0)
@@ -91,7 +91,6 @@ df = df[df['cd3'] != 2]
 # Keep if cd3 < 6 (Tab 2 note) - exact match to Stata logic
 df = df[df['cd3'] < 6]
 
-
 #%%
 
 # SIGNAL CONSTRUCTION
@@ -99,7 +98,8 @@ print("Calculating DivSeason signal...")
 # Short all others with a dividend in last 12 months
 # Use calendar-based asrol for 12-month rolling sum of dividend payments
 print("Creating 12-month rolling dividend payments...")
-df = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divpaid', stat='sum', window='12mo', min_obs=1)
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 12, 'divpaid', 'sum', new_col_name='divpaid_sum')
+
 
 # Initialize DivSeason: 0 if had dividends in last 12 months, otherwise missing (NaN)
 # This exactly replicates Stata's: gen DivSeason = 0 if div12 > 0
