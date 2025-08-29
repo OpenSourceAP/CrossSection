@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.asreg import asreg_polars
-from utils.asrol import asrol
+from utils.asrol import asrol_fast
 
 print("=" * 80)
 print("RDAbility.py")
@@ -23,6 +23,14 @@ df = pl.read_parquet("../pyData/Intermediate/a_aCompustat.parquet")
 df = df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "xrd", "sale"])
 print(f"Loaded Compustat: {len(df):,} observations")
 
+# CHECKPOINT 1
+print("=== CHECKPOINT 1: Initial data load ===")
+debug_df = df.filter(
+    (pl.col("permno") == 79283) & 
+    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
+).sort(["fyear"])
+print(debug_df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "xrd", "sale"]))
 
 
 # SIGNAL CONSTRUCTION - Following Stata code line by line with careful missing value handling
@@ -86,6 +94,14 @@ df = df.with_columns(
     .alias("tempX")
 )
 
+# CHECKPOINT 2
+print("=== CHECKPOINT 2: After creating tempY and tempX ===")
+debug_df = df.filter(
+    (pl.col("permno") == 79283) & 
+    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
+).sort(["fyear"])
+print(debug_df.select(["gvkey", "permno", "fyear", "tempXRD", "tempSale", "tempY", "tempX"]))
 
 
 # gen tempNonZero = .
@@ -140,6 +156,14 @@ for n in range(1, 6):
     # Drop temporary column
     df = df.drop("_valid_count")
     
+    # CHECKPOINT 3
+    print(f"=== CHECKPOINT 3: After asreg for lag {n} ===")
+    debug_df = df.filter(
+        (pl.col("permno") == 79283) & 
+        (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+        (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
+    ).sort(["fyear"])
+    print(debug_df.select(["gvkey", "permno", "fyear", "tempXLag", f"gammaAbility{n}"]))
     
     
     # replace tempNonZero = tempXLag >0 & !mi(tempXLag)
@@ -154,20 +178,27 @@ for n in range(1, 6):
     df_pandas = df_pandas.sort_values(['gvkey', 'fyear'])
     
     # Calculate rolling mean per gvkey with exactly 8-year window and min 6 observations (matches Stata asrol min(6))
-    df_pandas = asrol(
+    df_pandas = asrol_fast(
         df_pandas,
         group_col='gvkey',
-        time_col='fyear',
-        freq='1y',
-        window=8,
+        time_col='fyear', 
         value_col='tempNonZero',
+        window=8,
         stat='mean',
         new_col_name='tempMean',
-        min_samples=6
+        min_periods=6
     )
     
     df = pl.from_pandas(df_pandas)
     
+    # CHECKPOINT 4
+    print(f"=== CHECKPOINT 4: After tempMean filtering for lag {n} ===")
+    debug_df = df.filter(
+        (pl.col("permno") == 79283) & 
+        (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+        (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
+    ).sort(["fyear"])
+    print(debug_df.select(["gvkey", "permno", "fyear", "tempNonZero", "tempMean", f"gammaAbility{n}"]))
     
     # replace gammaAbility`n' = . if tempMean < .5 & !mi(tempMean)
     # Critical fix: In Stata, missing tempMean is treated as positive infinity
@@ -194,6 +225,14 @@ df = df.with_columns(
     .alias("RDAbility")
 )
 
+# CHECKPOINT 5
+print("=== CHECKPOINT 5: After rowmean of gammaAbil ===")
+debug_df = df.filter(
+    (pl.col("permno") == 79283) & 
+    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
+).sort(["fyear"])
+print(debug_df.select(["gvkey", "permno", "fyear"] + gamma_cols + ["RDAbility"]))
 
 
 
@@ -226,6 +265,14 @@ df_pandas = df.to_pandas()
 df_pandas['tempRDQuant'] = fastxtile(df_pandas, 'tempRD', by='time_avail_m', n=3)
 df = pl.from_pandas(df_pandas)
 
+# CHECKPOINT 6
+print("=== CHECKPOINT 6: After fastxtile ===")
+debug_df = df.filter(
+    (pl.col("permno") == 79283) & 
+    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+    (pl.col("time_avail_m") <= pl.date(2003, 12, 31))
+).sort(["fyear"])
+print(debug_df.select(["gvkey", "permno", "fyear", "tempRD", "tempRDQuant", "RDAbility"]))
 
 
 # replace RDAbility = . if tempRDQuant != 3
@@ -249,6 +296,15 @@ df = df.with_columns(
     .alias("RDAbility")
 )
 
+# CHECKPOINT 7
+print("=== CHECKPOINT 7: After final filtering ===")
+debug_df = df.filter(
+    (pl.col("permno") == 79283) & 
+    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+    (pl.col("time_avail_m") <= pl.date(2003, 12, 31)) &
+    pl.col("RDAbility").is_not_null()
+).sort(["fyear"])
+print(debug_df.select(["gvkey", "permno", "fyear", "RDAbility"]))
 
 
 # cap drop temp*
@@ -305,6 +361,15 @@ df = df.sort(["permno", "time_avail_m"])
 df = df.group_by(["permno", "time_avail_m"], maintain_order=True).first()
 print(f"After permno-time filter: {len(df):,} observations")
 
+# CHECKPOINT 8
+print("=== CHECKPOINT 8: Final monthly expansion ===")
+debug_df = df.filter(
+    (pl.col("permno") == 79283) & 
+    (pl.col("time_avail_m") >= pl.date(2002, 1, 1)) & 
+    (pl.col("time_avail_m") <= pl.date(2003, 12, 31)) &
+    pl.col("RDAbility").is_not_null()
+).sort(["time_avail_m"])
+print(debug_df.select(["permno", "time_avail_m", "RDAbility"]))
 
 
 
