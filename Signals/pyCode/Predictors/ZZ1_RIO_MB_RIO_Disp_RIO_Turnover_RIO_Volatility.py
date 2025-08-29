@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.asrol import asrol_fast
+from utils.asrol import asrol
 
 
 print("=" * 80)
@@ -205,15 +205,16 @@ df = df.with_columns(
 # Use asrol_legacy for rolling standard deviation
 df_pandas_vol = df.to_pandas()
 
-df_pandas_vol = asrol_fast(
+df_pandas_vol = asrol(
     df_pandas_vol,
     group_col='permno',
     time_col='time_avail_m',
-    value_col='ret',
+    freq='1mo',
     window=12,
-    stat='sd',
+    value_col='ret',
+    stat='std',
     new_col_name='Volatility',
-    min_periods=6
+    min_samples=6
 )
 
 df = pl.from_pandas(df_pandas_vol)

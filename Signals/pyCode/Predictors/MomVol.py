@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.asrol import asrol_fast
+from utils.asrol import asrol
 from utils.stata_replication import stata_multi_lag
 
 # Data load
@@ -62,15 +62,16 @@ df_pd['Mom6m'] = (
 # Calculate 6-month calendar-based rolling mean volume (like Stata asrol window(time_avail_m 6))
 # Use the asrol utility but with calendar-based approach
 print("Calculating 6-month calendar-based rolling mean volume...")
-df_pd = asrol_fast(
+df_pd = asrol(
     df_pd, 
     group_col='permno', 
     time_col='time_avail_m', 
-    value_col='vol', 
+    freq='1mo',
     window=6, 
+    value_col='vol', 
     stat='mean', 
     new_col_name='temp', 
-    min_periods=5
+    min_samples=5
 )
 
 # time_avail_m is already a column, no need to reset index

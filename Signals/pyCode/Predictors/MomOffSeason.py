@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_replication import stata_multi_lag
-from utils.asrol import asrol_fast
+from utils.asrol import asrol
 from utils.save_standardized import save_predictor
 
 print("Starting MomOffSeason.py...")
@@ -47,10 +47,10 @@ df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [12])
 
 # asrol retLagTemp, by(permno) window(time_avail_m 48) stat(sum) minimum(1) gen(retLagTemp_sum48)
-df = asrol_fast(df, 'permno', 'time_avail_m', 'ret_lag12', 48, 'sum', 'retLagTemp_sum48', min_periods=1)
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 48, 'ret_lag12', 'sum', 'retLagTemp_sum48', min_samples=1)
 
 # asrol retLagTemp, by(permno) window(time_avail_m 48) stat(count) minimum(1) gen(retLagTemp_count48)
-df = asrol_fast(df, 'permno', 'time_avail_m', 'ret_lag12', 48, 'count', 'retLagTemp_count48', min_periods=1)
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 48, 'ret_lag12', 'count', 'retLagTemp_count48', min_samples=1)
 
 print("Calculating MomOffSeason signal...")
 # gen MomOffSeason = (retLagTemp_sum48 - retTemp1)/(retLagTemp_count48 - retTemp2)
