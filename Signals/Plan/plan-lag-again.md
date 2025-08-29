@@ -7,10 +7,8 @@ All we need to do is fill in the date gaps before doing standard row-based lags.
 
 ## Current status:
 - `utils/stata_replication.py`
-    - `fill_date_gaps_pl` function is good. But could do with more testing.
-    - `fill_date_gaps` function is the pandas version. It could be improved (needs at least a period argument).
-    - `stata_multi_lag_pl`: not used anywhere. needs testing. Maybe not needed.
-    - `stata_multi_lag`: (pandas) used a lot but not needed. Wayyy too complicated. **SIMPLIFY**
+    - `fill_date_gaps`: a clean wrapper
+    - `stata_multi_lag`: a clean wrapper
 - `utils/asrol.py`
     - `asrol_fast`: row based lags for either polars or pandas.
     - `asrol_calendar`: calendar based lags for polars. It's not that complicated but it's still really not needed. **SIMPLIFY**

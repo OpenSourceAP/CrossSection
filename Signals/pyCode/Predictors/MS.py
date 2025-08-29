@@ -40,7 +40,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_ineq_pl
-from utils.asrol import asrol_fast_calendar
+from utils.asrol import asrol_calendar
 
 print("=" * 80)
 print("🏗️  MS.py")
@@ -163,13 +163,13 @@ print("📈 Computing quarterly aggregations...")
 # spanning 12 calendar months, not just 12 consecutive data points
 
 # compute rolling means (be strict on windows)
-df = asrol_fast_calendar(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
+df = asrol_calendar(df, 'permno', 'time_avail_m', 'niq', 'mean', '12mo', 12)\
     .rename({'niq_mean':'niqsum'})
-df = asrol_fast_calendar(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
+df = asrol_calendar(df, 'permno', 'time_avail_m', 'xrdq', 'mean', '12mo', 12)\
     .rename({'xrdq_mean':'xrdqsum'})
-df = asrol_fast_calendar(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
+df = asrol_calendar(df, 'permno', 'time_avail_m', 'oancfq', 'mean', '12mo', 12)\
     .rename({'oancfq_mean':'oancfqsum'})
-df = asrol_fast_calendar(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
+df = asrol_calendar(df, 'permno', 'time_avail_m', 'capxq', 'mean', '12mo', 12)\
     .rename({'capxq_mean':'capxqsum'})
 
 # multiply the means by 4 to convert to sums (to match stata)
@@ -241,9 +241,9 @@ df = df.with_columns([
 
 # Calculate 48-month rolling volatility using asrol_custom
 print("    Calculating 48-month rolling volatility...")
-df = asrol_fast_calendar(df, 'permno', 'time_avail_m', 'roaq', 'std', '1470d', 18)\
+df = asrol_calendar(df, 'permno', 'time_avail_m', 'roaq', 'std', '1470d', 18)\
     .rename({'roaq_std': 'niVol'})
-df = asrol_fast_calendar(df, 'permno', 'time_avail_m', 'sg', 'std', '1470d', 18)\
+df = asrol_calendar(df, 'permno', 'time_avail_m', 'sg', 'std', '1470d', 18)\
     .rename({'sg_std': 'revVol'})
 
 # Calculate industry medians for volatility measures
