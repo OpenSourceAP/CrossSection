@@ -8,10 +8,9 @@ import polars as pl
 import math
 import re
 
-# %% old multi lag function
+# %% stata_multi_lag functions
 
-def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', 
-                    prefix='', fill_gaps=True):
+def stata_multi_lag_pd(df, group_col, time_col, value_col, lag_list, freq='M', prefix='', fill_gaps=True):
     """
     Create multiple Stata-style lags efficiently.
     
@@ -29,12 +28,9 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M',
         List of lag periods (e.g., [1, 2, 3, 6, 12])
     freq : str, default 'M'
         Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
+        (Note: freq parameter kept for compatibility but gaps are always filled)
     prefix : str, default ''
         Optional prefix for column names (e.g., 'l' creates 'l12_at')
-    fill_gaps : bool, default False
-        Whether to fill date gaps before lagging. When True, creates balanced panel
-        to ensure proper calendar-based lag alignment.
-        ac: the only time I can think of when we want to not fill gaps is to try to save time because the gaps have already been filled
     
     Returns
     -------
@@ -49,69 +45,131 @@ def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M',
     >>> df = stata_multi_lag(df, 'permno', 'time_avail_m', 'at', [12], prefix='l')
     >>> # Creates column: l12_at
     """
-    def _validate_lag_dates(lagged_date, time_series, lag, freq):
-        """Helper function to validate lag dates using calendar-based logic."""
-        # Calculate expected date based on frequency
-        if freq == 'M':
-            expected_date = time_series - pd.DateOffset(months=lag)
-        elif freq == 'D':
-            expected_date = time_series - pd.DateOffset(days=lag)
-        elif freq == 'Q':
-            expected_date = time_series - pd.DateOffset(months=lag * 3)
-        elif freq == 'Y':
-            expected_date = time_series - pd.DateOffset(years=lag)
-        else:
-            raise ValueError(f"Unsupported frequency: {freq}")
-        
-        # Convert lagged_date to datetime for comparison
-        lagged_date = pd.to_datetime(lagged_date)
-        
-        # For monthly/quarterly/yearly frequency, compare at month level
-        if freq in ['M', 'Q', 'Y']:
-            lagged_period = lagged_date.dt.to_period('M')
-            expected_period = expected_date.dt.to_period('M')
-            valid_mask = lagged_period == expected_period
-        else:
-            # For daily, compare exact dates
-            valid_mask = lagged_date == expected_date
-        
-        return valid_mask
 
-    out = df.copy()
-    
-    # Fill date gaps if requested
     if fill_gaps:
-        out = fill_date_gaps(out, group_col, time_col)
+        # By default, fill date gaps to ensure proper calendar-based lag alignment
+        out = fill_date_gaps(df, group_col, time_col)
+    else:
+        # In special cases, skip filling gaps (e.g. to save time)
+        out = df
     
-    time_series = pd.to_datetime(out[time_col])
+    # Sort by group and time
+    out = out.sort_values([group_col, time_col])
     
-    # Pre-compute groupby objects for efficiency
+    # Create all lag columns using simple shifts
     grouped_value = out.groupby(group_col)[value_col]
-    grouped_time = out.groupby(group_col)[time_col]
     
-    # Create all lag columns
     for lag in lag_list:
-        # Create lagged value and date
-        lagged_value = grouped_value.shift(lag)
-        lagged_date = grouped_time.shift(lag)
-        
-        # Validate dates using helper function
-        valid_mask = _validate_lag_dates(lagged_date, time_series, lag, freq)
-        
-        # Set invalid lags to NaN
-        result = lagged_value.where(valid_mask)
-        
         # Generate column name
         if prefix:
             col_name = f'{prefix}{lag}_{value_col}'
         else:
             col_name = f'{value_col}_lag{lag}'
         
-        out[col_name] = result
+        # Simple shift operation - works correctly because gaps are filled
+        out[col_name] = grouped_value.shift(lag)
     
-    return out.sort_values([group_col, time_col])
+    return out
+    
+def stata_multi_lag_pl(df, group_col='permno', time_col='time_avail_m', value_col=['act', 'che'], lag_list=[1, 2], freq='M', prefix='', fill_gaps=True):
+    """
+    Create multiple Stata-style lags efficiently (Polars version).
+    
+    Parameters
+    ----------
+    df : pl.DataFrame
+        Input dataframe
+    group_col : str
+        Column to group by (e.g., 'permno')
+    time_col : str
+        Time column (e.g., 'time_avail_m')
+    value_col : list of str
+        Columns to lag
+    lag_list : list of int
+        List of lag periods (e.g., [1, 2, 3, 6, 12])
+    freq : str, default 'M'
+        Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
+    prefix : str, default ''
+        Optional prefix for column names (e.g., 'l' creates 'l12_at')
+    fill_gaps : bool, default True
+        Whether to fill date gaps before lagging
+    
+    Returns
+    -------
+    pl.DataFrame
+        Original dataframe with new lag columns added
+    """
+    # Convert freq to period_str for fill_date_gaps
+    freq_map = {'M': '1mo', 'D': '1d', 'Q': '3mo', 'Y': '1y'}
+    period_str = freq_map.get(freq, '1mo')
+    
+    if fill_gaps:
+        df = fill_date_gaps_pl(df, group_col, time_col, period_str)
+    else:
+        df = df.with_columns(pl.col(time_col).cast(pl.Date))
 
-# %% new multi lag function
+    df = df.sort([group_col, time_col])
+    # Create all lag columns using shift operations
+    for v in value_col:
+        for lag in lag_list:
+            # Generate column name to match pandas version
+            if prefix:
+                col_name = f'{prefix}{lag}_{v}'
+            else:
+                col_name = f'{v}_lag{lag}'
+            
+            df = df.with_columns(
+                pl.col(v).shift(lag).over(group_col).alias(col_name)
+            )
+    
+    return df
+
+def stata_multi_lag(df, group_col, time_col, value_col, lag_list, freq='M', prefix='', fill_gaps=True):
+    """
+    Create multiple Stata-style lags efficiently (unified wrapper).
+    
+    Automatically detects DataFrame type and calls appropriate implementation.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame or pl.DataFrame
+        Input dataframe
+    group_col : str
+        Column to group by (e.g., 'permno')
+    time_col : str
+        Time column (e.g., 'time_avail_m')
+    value_col : str or list of str
+        Column(s) to lag. Single string for pandas, list for polars
+    lag_list : list of int
+        List of lag periods (e.g., [1, 2, 3, 6, 12])
+    freq : str, default 'M'
+        Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
+    prefix : str, default ''
+        Optional prefix for column names (e.g., 'l' creates 'l12_at')
+    fill_gaps : bool, default True
+        Whether to fill date gaps before lagging
+    
+    Returns
+    -------
+    pd.DataFrame or pl.DataFrame
+        Original dataframe with new lag columns added
+    """
+    if isinstance(df, pl.DataFrame):
+        # Ensure value_col is a list for polars version
+        if isinstance(value_col, str):
+            value_col = [value_col]
+        return stata_multi_lag_pl(df, group_col, time_col, value_col, lag_list, freq, prefix, fill_gaps)
+    elif isinstance(df, pd.DataFrame):
+        # Ensure value_col is a string for pandas version  
+        if isinstance(value_col, list):
+            if len(value_col) != 1:
+                raise ValueError("Pandas version only supports single value_col. Use stata_multi_lag_pl directly for multiple columns.")
+            value_col = value_col[0]
+        return stata_multi_lag_pd(df, group_col, time_col, value_col, lag_list, freq, prefix, fill_gaps)
+    else:
+        raise TypeError(f"Unsupported DataFrame type: {type(df)}. Expected pd.DataFrame or pl.DataFrame.")
+    
+# %% fill_date_gaps
 
 
 def fill_date_gaps(df, group_col='permno', time_col='time_avail_m', period_str='1mo', 
@@ -172,31 +230,7 @@ def fill_date_gaps_pl(df, group_col='permno', time_col='time_avail_m', period_st
     out = out.sort([group_col, time_col])
 
     return out
-    
-def stata_multi_lag_pl(
-    df,
-    group_col="permno",
-    time_col="time_avail_m",
-    value_col=["act", "che"],
-    lag_list=[1, 2],
-    period_str="1m",
-    prefix="lag",
-):
-    """
-    input = polars dataframe df
-    output = polars dataframe with new lag columns added
-    this is very fast
-    """
-    df = fill_date_gaps_pl(df, group_col, time_col, period_str)
-    df = df.sort([group_col, time_col])
-    df = df.with_columns(
-        [
-            pl.col(v).shift(l).over(group_col).alias(f"{v}_{lagname}{l}")
-            for v in value_col
-            for l in lag_list
-        ]
-    )
-    return df
+
 
 #%% Replicating Other Stata Functions
 
