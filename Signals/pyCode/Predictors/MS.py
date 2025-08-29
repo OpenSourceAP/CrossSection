@@ -84,6 +84,10 @@ print(f"After merging: {len(df):,} observations")
 print("🎯 Applying sample selection criteria...")
 
 # Limit sample to firms in the lowest BM quintile (p 8 of original paper)
+# (It seems like this has to be done first?! McLean-Pontiff 2016's appendix states
+# "First, the sample is limited to firms in the lowest book-to-market quintile. Then,
+# a measure ranging from zero to eight...."
+
 df = df.with_columns([
     (pl.col("ceq") / pl.col("mve_c")).log().alias("BM")
 ]).filter(
@@ -151,18 +155,15 @@ df = df.with_columns([
 
 print("📈 Computing quarterly aggregations...")
 
-# Aggregate quarterly data using time-based rolling to match Stata's asrol behavior
-# Stata's asrol window(time_avail_m 12) min(12) requires exactly 12 observations
-# spanning 12 calendar months, not just 12 consecutive data points
-
-
-
-#%%
-
-# 12 month rolling means 
+# Aggregate quarterly data using rolling means
+# But here, due to the weird BM filter, we need to be careful with the gaps.
+# We actually do not want to fill the gaps, at least in order to match both Stata, 
+# and, it seems, OP's t-stat. 
 
 # save the index of the original df
 index_original = df.select(['permno','time_avail_m'])
+
+# fill gaps and compute rolling means
 temp = asrol(df, 'permno', 'time_avail_m', '1mo', 12, \
     'niq', 'mean', new_col_name='niqsum', min_samples=12, fill_gaps=True)
 temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 12, \
@@ -172,18 +173,12 @@ temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 12, \
 temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 12, \
     'capxq', 'mean', new_col_name='capxqsum', min_samples=12, fill_gaps=False)
 
-# keep only the original index
-temp = temp.with_columns(
-    pl.col('time_avail_m').cast(pl.Datetime("ns"))
-)
+# keep only obs that are in the original index
+temp = temp.with_columns(pl.col('time_avail_m').cast(pl.Datetime("ns")))
 df = index_original.join(temp,
     on=['permno','time_avail_m'],
     how='left'
 )
-
-
-
-#%%
 
 # multiply the means by 4 to convert to sums (to match stata)
 for col in ['niqsum', 'xrdqsum', 'oancfqsum', 'capxqsum']:
@@ -252,10 +247,9 @@ df = df.with_columns([
     (pl.col("saleq") / pl.col("saleq").shift(3).over("permno")).alias("sg")
 ])
 
-#%%
-
-# == new code == %
 # Calculate 48-month rolling volatility
+# Once again, we avoid gap filling due to the weird BM filter.
+
 # save original index
 index_original = df.select(['permno','time_avail_m'])
 # run asrol
@@ -263,10 +257,9 @@ temp = asrol(df, 'permno', 'time_avail_m', '1mo', 48, 'roaq', \
     'std', new_col_name='niVol', min_samples=18, fill_gaps=True)
 temp = asrol(temp, 'permno', 'time_avail_m', '1mo', 48, 'sg',\
     'std', new_col_name='revVol', min_samples=18, fill_gaps=False)
-temp = temp.with_columns(pl.col("time_avail_m").cast(pl.Datetime("ns")))
 # join back
+temp = temp.with_columns(pl.col("time_avail_m").cast(pl.Datetime("ns")))
 df = index_original.join(temp, on=['permno','time_avail_m'], how='left')
-
 
 # Calculate industry medians for volatility measures
 for v in ["niVol", "revVol"]:
