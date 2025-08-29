@@ -6,11 +6,23 @@ import pandas as pd
 
 RERUN_PORTFOLIOS = True
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 #%%
 
 # call RunPortfoliosExcerpt.R
 if RERUN_PORTFOLIOS:
+    print(' Xxx ======= Rerunning PortfoliosExcerpt.R ======= Xxx ')
+    print(' This will take ~10 minutes')
     os.system('Rscript RunPortfoliosExcerpt.R')
+else:
+    print(' Xxx ======= Not rerunning PortfoliosExcerpt.R ======= Xxx ')
+    print(' Are you sure this is what you want? (y/n)')
+    answer = input()
+    if answer != 'y':
+        print(' Consider opening utils/PredictorSummaryComparison.py and setting RERUN_PORTFOLIOS = True')
+        input("Press Enter to continue, Ctrl-C to exit...")
+        raise Exception('Exiting...')
 
 
 #%%
@@ -18,7 +30,7 @@ if RERUN_PORTFOLIOS:
 sumnew = pd.read_excel('../../../Portfolios/Data/Portfolios/PredictorSummary.xlsx')
 
 # Read in the old version
-sumold = pd.read_excel('../DocsForClaude/PredictorSummary2024.xlsx')
+sumold = pd.read_excel('../../DocsForClaude/PredictorSummary2024.xlsx')
 
 # keep select columns
 cols = ['signalname','tstat','rbar','vol','T','Nlong','Nshort']
@@ -27,14 +39,13 @@ sumold = sumold[cols]
 sumnew = sumnew[cols]
 
 # Read in signaldoc
-signaldoc0 = pd.read_csv('../DocsForClaude/SignalDoc-Copy.csv')
+signaldoc0 = pd.read_csv('../../DocsForClaude/SignalDoc-Copy.csv')
 
 signaldoc = signaldoc0[
     ['Acronym','T-Stat', 'Test in OP']
 ].rename(columns={'Acronym': 'signalname', 'T-Stat': 'tstat_op'})
 signaldoc['tstat_op'] = signaldoc['tstat_op'].round(2)
 signaldoc = signaldoc.sort_values('tstat_op', ascending=False)
-
 
 
 #%%
@@ -61,7 +72,7 @@ both = pd.merge(sumold_long, sumnew_long, on=id_cols + ['metric'], how='outer')\
         diff = lambda x: x['new'] - x['old']
     ).assign(
         diff = lambda x: x['diff'].fillna(np.inf)
-    )
+    ).round(2)
 
 # focus on tstat
 tstat = both[both['metric'] == 'tstat'].merge(signaldoc, on='signalname', how='left')
@@ -83,13 +94,6 @@ print(
 
 #%%
 
-signallist = [
-    "AbnormalAccruals", "RIO_Volatility", "BetaFP", "TrendFactor", "RDAbility", "ResidualMomentum", "ReturnSkew3F", "CitationsRD", "MomOffSeason11YrPlus", "MomOffSeason06YrPlus", "PriceDelayRsq", "DivSeason", "RDAbility"
-]
-
-print(
-    tstat.query('signalname.isin(@signallist)')\
-        .assign(_order=lambda df: df['signalname'].map({k: i for i, k in enumerate(signallist)}))\
-        .sort_values('_order').drop(columns=['_order'])
-)
-
+# save
+tstat_display.to_csv('../../Logs/PredictorSummaryComparison.csv', index=False)
+# %%

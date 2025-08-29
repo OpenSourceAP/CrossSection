@@ -94,40 +94,28 @@ def load_overrides():
 def load_csv_robust_polars(file_path):
     """Load CSV file with polars for performance, robust error handling"""
     try:
-        # First try normal read
-        df = pl.read_csv(file_path)
-        # Filter out rows where the predictor value (non-index column) is null or NaN
+        # Get the predictor name from the file path
         predictor_name = Path(file_path).stem
+        
+        # Always use schema overrides for predictor files
+        schema_overrides = {
+            'permno': pl.Int64,
+            'yyyymm': pl.Int64,
+            predictor_name: pl.Float64
+        }
+        
+        df = pl.read_csv(file_path, schema_overrides=schema_overrides)
+        
+        # Filter out rows where the predictor value is null or NaN
         if predictor_name in df.columns:
             df = df.filter(pl.col(predictor_name).is_finite())
+        
         return df
     except Exception as e:
-        print(f"Error loading {file_path}: {e}")
-        print(f"Might be because the signals look like integers but are actually floats")
-        print(f"Trying with schema overrides for mixed int/float columns")
-        # Try with schema overrides for mixed int/float columns
-        try:
-            # Get the predictor name from the file path
-            predictor_name = Path(file_path).stem
-            
-            # For predictor files, override the predictor column to be Float64
-            schema_overrides = {
-                'permno': pl.Int64,
-                'yyyymm': pl.Int64,
-                predictor_name: pl.Float64
-            }
-            
-            df = pl.read_csv(file_path, schema_overrides=schema_overrides)
-            print(f"Successfully loaded {file_path} with schema overrides")
-            # Filter out rows where the predictor value is null or NaN
-            if predictor_name in df.columns:
-                df = df.filter(pl.col(predictor_name).is_finite())
-            return df
-        except Exception as e2:
-            print(f"Failed to load {file_path} even with schema overrides: {e2}")
-            return None
+        print(f"Failed to load {file_path}: {e}")
+        return None
 
-def validate_precision_requirements(stata_df, python_df, predictor_name, run_tstat=False):
+def validate_precision_requirements(stata_df, python_df, predictor_name, tstat_comparison_df=None):
     """
     Perform precision validation following CLAUDE.md requirements using polars
     Returns (passed, results_dict)
@@ -137,7 +125,7 @@ def validate_precision_requirements(stata_df, python_df, predictor_name, run_tst
     2. NumRows: Python rows don't exceed Stata rows by more than TOL_NUMROWS percent
     3. Precision1: For common observations, percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
     4. Precision2: For common observations, Pth percentile standardized difference < TOL_DIFF_2
-    5. T-stat: Portfolio t-statistic within TOL_TSTAT of last year's value (if run_tstat=True)
+    5. T-stat: Portfolio t-statistic within TOL_TSTAT of last year's value (if tstat_comparison_df provided)
     """
     results = {}
     
@@ -329,10 +317,10 @@ def validate_precision_requirements(stata_df, python_df, predictor_name, run_tst
                 else:
                     results['largest_diff_before1950'] = None
     
-    # Test 5: T-stat check using PredictorSummaryComparison
+    # Test 5: T-stat check using pre-loaded comparison data
     tstat_ok = True
-    if not run_tstat:
-        # Skip t-stat check by default
+    if tstat_comparison_df is None:
+        # Skip t-stat check if no comparison data provided (--tstat not enabled)
         results['current_tstat'] = None
         results['old_tstat'] = None
         results['tstat_diff'] = None
@@ -341,53 +329,28 @@ def validate_precision_requirements(stata_df, python_df, predictor_name, run_tst
         results['tstat_skipped'] = True
     else:
         try:
-            # Run PredictorSummaryComparison.py to generate comparison results
-            import subprocess
-            import os
+            # Look up the predictor in the pre-loaded comparison results
+            predictor_row = tstat_comparison_df[tstat_comparison_df['signalname'] == predictor_name]
             
-            # Get the path to the utils directory PredictorSummaryComparison.py
-            script_path = os.path.join('utils', 'PredictorSummaryComparison.py')
-            
-            # Run the script from the pyCode directory
-            result = subprocess.run(['python3', script_path], 
-                                  capture_output=True, text=True, cwd='.')
-            
-            if result.returncode != 0:
-                results['tstat_error'] = f"PredictorSummaryComparison.py failed: {result.stderr}"
-                tstat_ok = None
-            else:
-                # Read the comparison results
-                comparison_path = os.path.join('..', 'Logs', 'PredictorSummaryComparison.csv')
+            if not predictor_row.empty:
+                current_tstat = predictor_row['new'].iloc[0]
+                old_tstat = predictor_row['old'].iloc[0]
+                tstat_diff_signed = predictor_row['diff'].iloc[0]
                 
-                if os.path.exists(comparison_path):
-                    import pandas as pd
-                    tstat_comparison = pd.read_csv(comparison_path)
-                    
-                    # Look up the predictor in the results
-                    predictor_row = tstat_comparison[tstat_comparison['signalname'] == predictor_name]
-                    
-                    if not predictor_row.empty:
-                        current_tstat = predictor_row['new'].iloc[0]
-                        old_tstat = predictor_row['old'].iloc[0]
-                        tstat_diff_signed = predictor_row['diff'].iloc[0]
-                        
-                        results['current_tstat'] = current_tstat
-                        results['old_tstat'] = old_tstat
-                        results['tstat_diff_signed'] = tstat_diff_signed
-                        results['tstat_diff'] = abs(tstat_diff_signed)  # Keep for backward compatibility
-                        
-                        # Check if diff is within tolerance
-                        tstat_ok = abs(tstat_diff_signed) < TOL_TSTAT
-                    else:
-                        results['tstat_error'] = f"Predictor {predictor_name} not found in comparison results"
-                        results['current_tstat'] = None
-                        results['old_tstat'] = None
-                        results['tstat_diff'] = None
-                        results['tstat_diff_signed'] = None
-                        tstat_ok = None
-                else:
-                    results['tstat_error'] = f"Comparison results file not found: {comparison_path}"
-                    tstat_ok = None
+                results['current_tstat'] = current_tstat
+                results['old_tstat'] = old_tstat
+                results['tstat_diff_signed'] = tstat_diff_signed
+                results['tstat_diff'] = abs(tstat_diff_signed)  # Keep for backward compatibility
+                
+                # Check if diff is within tolerance
+                tstat_ok = abs(tstat_diff_signed) < TOL_TSTAT
+            else:
+                results['tstat_error'] = f"Predictor {predictor_name} not found in comparison results"
+                results['current_tstat'] = None
+                results['old_tstat'] = None
+                results['tstat_diff'] = None
+                results['tstat_diff_signed'] = None
+                tstat_ok = None
                     
         except Exception as e:
             # If t-stat check fails, record error but don't fail validation
@@ -779,7 +742,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     return md_lines
 
-def validate_predictor(predictor_name, run_tstat=False):
+def validate_predictor(predictor_name, tstat_comparison_df=None):
     """Validate a single predictor against Stata output using polars optimization"""
     
     # Load Stata CSV with polars
@@ -818,7 +781,7 @@ def validate_predictor(predictor_name, run_tstat=False):
         return False, results, md_lines
     
     # Perform precision validation
-    passed, results = validate_precision_requirements(stata_df, python_df, predictor_name, run_tstat)
+    passed, results = validate_precision_requirements(stata_df, python_df, predictor_name, tstat_comparison_df)
     
     # Check for overrides
     overrides = load_overrides()
@@ -1095,13 +1058,41 @@ def main():
     if include_python_only:
         print(f"Including {len(include_python_only)} Python-only CSVs in summary: {include_python_only}")
     
+    # Run PredictorSummaryComparison.py once if t-stat validation is enabled
+    tstat_comparison_df = None
+    if args.tstat:
+        print(f"\n=== Running PredictorSummaryComparison.py for t-stat validation ===")
+
+        import subprocess
+        import os
+        
+        # Get the path to the utils directory PredictorSummaryComparison.py
+        script_path = os.path.join('utils', 'PredictorSummaryComparison.py')
+        
+        # Run the script from the pyCode directory
+        result = subprocess.run(['python3', script_path], cwd='.')
+        
+        if result.returncode != 0:
+            print(f"Warning: PredictorSummaryComparison.py failed: {result.stderr}")
+            print("T-stat validation will be skipped for all predictors")
+        else:
+            # Read the comparison results
+            comparison_path = os.path.join('..', 'Logs', 'PredictorSummaryComparison.csv')
+            
+            if os.path.exists(comparison_path):
+                tstat_comparison_df = pd.read_csv(comparison_path)
+                print(f"Loaded t-stat comparison data for {len(tstat_comparison_df)} predictors")
+            else:
+                print(f"Warning: Comparison results file not found: {comparison_path}")
+                print("T-stat validation will be skipped for all predictors")                
+    
     # Validate each available predictor
     all_md_lines = []
     all_results = {}
     passed_count = 0
     
     for predictor in test_predictors:
-        passed, results, md_lines = validate_predictor(predictor, run_tstat=args.tstat)
+        passed, results, md_lines = validate_predictor(predictor, tstat_comparison_df)
         results['python_csv_available'] = True
         all_md_lines.append(md_lines)
         all_results[predictor] = results
@@ -1136,7 +1127,7 @@ def main():
     
     # Add results for Python-only CSVs
     for predictor in include_python_only:
-        passed, results, md_lines = validate_predictor(predictor, run_tstat=args.tstat)
+        passed, results, md_lines = validate_predictor(predictor, tstat_comparison_df)
         all_md_lines.append(md_lines)
         all_results[predictor] = results
         # Python-only predictors cannot "pass" validation since there's no Stata baseline
