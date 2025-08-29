@@ -9,8 +9,8 @@ Usage:
     source .venv/bin/activate
     python3 utils/test_predictors.py --all             # Test all predictors
     python3 utils/test_predictors.py --predictors Accruals  # Test specific predictor
-    python3 utils/test_predictors.py --all --no-tstat  # Fast mode: skip t-stat check (10-60x faster)
-    python3 utils/test_predictors.py --predictors BM Size --no-tstat  # Fast mode for specific predictors
+    python3 utils/test_predictors.py --all --tstat     # With t-stat check enabled
+    python3 utils/test_predictors.py --predictors BM Size --tstat  # With t-stat check for specific predictors
 
 Precision Validation (per CLAUDE.md updated requirements):
 1. Superset: Python observations are a superset of Stata observations
@@ -46,21 +46,6 @@ import yaml
 import statsmodels.formula.api as smf
 import numpy as np
 
-# Import portcheck for t-stat validation
-try:
-    from .portcheck import run_portcheck
-except ImportError:
-    try:
-        from utils.portcheck import run_portcheck
-    except ImportError:
-        try:
-            import sys
-            import os
-            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-            from portcheck import run_portcheck
-        except ImportError:
-            print("Warning: Could not import portcheck module for t-stat validation")
-            run_portcheck = None
 
 # ================================
 # VALIDATION CONFIGURATION
@@ -142,7 +127,7 @@ def load_csv_robust_polars(file_path):
             print(f"Failed to load {file_path} even with schema overrides: {e2}")
             return None
 
-def validate_precision_requirements(stata_df, python_df, predictor_name, skip_tstat=False):
+def validate_precision_requirements(stata_df, python_df, predictor_name, run_tstat=False):
     """
     Perform precision validation following CLAUDE.md requirements using polars
     Returns (passed, results_dict)
@@ -152,7 +137,7 @@ def validate_precision_requirements(stata_df, python_df, predictor_name, skip_ts
     2. NumRows: Python rows don't exceed Stata rows by more than TOL_NUMROWS percent
     3. Precision1: For common observations, percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
     4. Precision2: For common observations, Pth percentile standardized difference < TOL_DIFF_2
-    5. T-stat: Portfolio t-statistic within TOL_TSTAT of last year's value (if skip_tstat=False)
+    5. T-stat: Portfolio t-statistic within TOL_TSTAT of last year's value (if run_tstat=True)
     """
     results = {}
     
@@ -344,47 +329,74 @@ def validate_precision_requirements(stata_df, python_df, predictor_name, skip_ts
                 else:
                     results['largest_diff_before1950'] = None
     
-    # Test 5: T-stat check using portcheck
+    # Test 5: T-stat check using PredictorSummaryComparison
     tstat_ok = True
-    if skip_tstat:
-        # Skip t-stat check for faster execution
+    if not run_tstat:
+        # Skip t-stat check by default
         results['current_tstat'] = None
         results['old_tstat'] = None
         results['tstat_diff'] = None
         results['tstat_diff_signed'] = None
         tstat_ok = None  # Mark as skipped
         results['tstat_skipped'] = True
-    elif run_portcheck is not None:
-        try:
-            portcheck_results = run_portcheck(predictor_name)
-            current_tstat = portcheck_results.get('tstat', None)
-            old_tstat = portcheck_results.get('tstat_old', None)
-            
-            results['current_tstat'] = current_tstat
-            results['old_tstat'] = old_tstat
-            
-            # Force cleanup after portcheck to prevent memory accumulation
-            del portcheck_results
-            import gc
-            gc.collect()
-            
-            if current_tstat is not None and old_tstat is not None:
-                tstat_diff_signed = current_tstat - old_tstat
-                tstat_diff_abs = abs(tstat_diff_signed)
-                results['tstat_diff_signed'] = tstat_diff_signed
-                results['tstat_diff'] = tstat_diff_abs  # Keep for backward compatibility
-                tstat_ok = tstat_diff_abs < TOL_TSTAT
-            else:
-                results['tstat_diff'] = None
-                results['tstat_diff_signed'] = None
-                tstat_ok = None  # Cannot test without both values
-                
-        except Exception as e:
-            # If portcheck fails, record error but don't fail validation
-            results['tstat_error'] = str(e)
-            tstat_ok = None
     else:
-        tstat_ok = None  # Cannot test without portcheck module
+        try:
+            # Run PredictorSummaryComparison.py to generate comparison results
+            import subprocess
+            import os
+            
+            # Get the path to the utils directory PredictorSummaryComparison.py
+            script_path = os.path.join('utils', 'PredictorSummaryComparison.py')
+            
+            # Run the script from the pyCode directory
+            result = subprocess.run(['python3', script_path], 
+                                  capture_output=True, text=True, cwd='.')
+            
+            if result.returncode != 0:
+                results['tstat_error'] = f"PredictorSummaryComparison.py failed: {result.stderr}"
+                tstat_ok = None
+            else:
+                # Read the comparison results
+                comparison_path = os.path.join('..', 'Logs', 'PredictorSummaryComparison.csv')
+                
+                if os.path.exists(comparison_path):
+                    import pandas as pd
+                    tstat_comparison = pd.read_csv(comparison_path)
+                    
+                    # Look up the predictor in the results
+                    predictor_row = tstat_comparison[tstat_comparison['signalname'] == predictor_name]
+                    
+                    if not predictor_row.empty:
+                        current_tstat = predictor_row['new'].iloc[0]
+                        old_tstat = predictor_row['old'].iloc[0]
+                        tstat_diff_signed = predictor_row['diff'].iloc[0]
+                        
+                        results['current_tstat'] = current_tstat
+                        results['old_tstat'] = old_tstat
+                        results['tstat_diff_signed'] = tstat_diff_signed
+                        results['tstat_diff'] = abs(tstat_diff_signed)  # Keep for backward compatibility
+                        
+                        # Check if diff is within tolerance
+                        tstat_ok = abs(tstat_diff_signed) < TOL_TSTAT
+                    else:
+                        results['tstat_error'] = f"Predictor {predictor_name} not found in comparison results"
+                        results['current_tstat'] = None
+                        results['old_tstat'] = None
+                        results['tstat_diff'] = None
+                        results['tstat_diff_signed'] = None
+                        tstat_ok = None
+                else:
+                    results['tstat_error'] = f"Comparison results file not found: {comparison_path}"
+                    tstat_ok = None
+                    
+        except Exception as e:
+            # If t-stat check fails, record error but don't fail validation
+            results['tstat_error'] = str(e)
+            results['current_tstat'] = None
+            results['old_tstat'] = None
+            results['tstat_diff'] = None
+            results['tstat_diff_signed'] = None
+            tstat_ok = None
     
     # Store individual test results (in new order)
     results['test_1_passed'] = is_superset
@@ -541,11 +553,11 @@ def output_predictor_results(predictor_name, results, overall_passed):
         print(f"  ❌ Test 5 - T-stat check: FAILED ({current_tstat:.2f} - {old_tstat:.2f} = {tstat_diff_signed:+.2f}, |{tstat_diff_signed:.2f}| >= {TOL_TSTAT})")
     else:
         if results.get('tstat_skipped'):
-            print(f"  NA Test 5 - T-stat check: N/A (Skipped for faster execution)")
+            print(f"  NA Test 5 - T-stat check: N/A (Skipped - use --tstat to enable)")
         elif 'tstat_error' in results:
             print(f"  NA Test 5 - T-stat check: N/A (Error: {results['tstat_error']})")
         else:
-            print(f"  NA Test 5 - T-stat check: N/A (Missing data or portcheck unavailable)")
+            print(f"  NA Test 5 - T-stat check: N/A (Missing data)")
     
     # Show Python-only specific info
     if results.get('stata_csv_available') is False and results.get('python_csv_available') is True:
@@ -629,7 +641,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
         md_lines.append(f"- Test 5 - T-stat check: {test5_status} (Current: {current_tstat:.2f}, Old: {old_tstat:.2f}, Diff: {tstat_diff_signed:+.2f})\n")
     else:
         if results.get('tstat_skipped'):
-            md_lines.append(f"- Test 5 - T-stat check: {test5_status} (Skipped for faster execution)\n")
+            md_lines.append(f"- Test 5 - T-stat check: {test5_status} (Skipped - use --tstat to enable)\n")
         else:
             md_lines.append(f"- Test 5 - T-stat check: {test5_status}\n")
     
@@ -767,7 +779,7 @@ def output_predictor_results(predictor_name, results, overall_passed):
     
     return md_lines
 
-def validate_predictor(predictor_name, skip_tstat=False):
+def validate_predictor(predictor_name, run_tstat=False):
     """Validate a single predictor against Stata output using polars optimization"""
     
     # Load Stata CSV with polars
@@ -806,7 +818,7 @@ def validate_predictor(predictor_name, skip_tstat=False):
         return False, results, md_lines
     
     # Perform precision validation
-    passed, results = validate_precision_requirements(stata_df, python_df, predictor_name, skip_tstat)
+    passed, results = validate_precision_requirements(stata_df, python_df, predictor_name, run_tstat)
     
     # Check for overrides
     overrides = load_overrides()
@@ -1029,7 +1041,7 @@ def main():
     parser.add_argument('--predictors', '-p', nargs='+', help='Specific predictors to validate')
     parser.add_argument('--list', '-l', action='store_true', help='List available predictors and exit')
     parser.add_argument('--all', '-a', action='store_true', help='Test all available predictors')
-    parser.add_argument('--no-tstat', action='store_true', help='Skip t-stat check (Test 5) for faster execution - 10-60x speedup for large batches')
+    parser.add_argument('--tstat', action='store_true', help='Enable t-stat check (Test 5) by running PredictorSummaryComparison and comparing results')
     
     args = parser.parse_args()
     
@@ -1089,7 +1101,7 @@ def main():
     passed_count = 0
     
     for predictor in test_predictors:
-        passed, results, md_lines = validate_predictor(predictor, skip_tstat=args.no_tstat)
+        passed, results, md_lines = validate_predictor(predictor, run_tstat=args.tstat)
         results['python_csv_available'] = True
         all_md_lines.append(md_lines)
         all_results[predictor] = results
@@ -1124,7 +1136,7 @@ def main():
     
     # Add results for Python-only CSVs
     for predictor in include_python_only:
-        passed, results, md_lines = validate_predictor(predictor, skip_tstat=args.no_tstat)
+        passed, results, md_lines = validate_predictor(predictor, run_tstat=args.tstat)
         all_md_lines.append(md_lines)
         all_results[predictor] = results
         # Python-only predictors cannot "pass" validation since there's no Stata baseline
