@@ -183,6 +183,10 @@ def asrol(*args, **kwargs):
     """Alias for asrol_fast for backward compatibility"""
     return asrol_fast(*args, **kwargs)
 
+def asrol_fast_calendar(*args, **kwargs):
+    """Alias for asrol_calendar for backward compatibility"""
+    return asrol_calendar(*args, **kwargs)
+
 #%% asrol_calendar
 
 def asrol_calendar(

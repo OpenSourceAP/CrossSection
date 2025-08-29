@@ -69,7 +69,7 @@ df['tempebit'] = df['ib'] + df['txt'] + df['xint']
 df = fill_date_gaps(df, 'permno', 'time_avail_m', '1mo') # fill gaps first for efficiency
 lag_vars = ['ib', 'at', 'dltt', 'act', 'lct', 'sale', 'shrout']
 for var in lag_vars:
-    df = stata_multi_lag(df, 'permno', 'time_avail_m', var, [12], prefix='l', fill_gaps=False)
+    df = stata_multi_lag(df, 'permno', 'time_avail_m', var, [12], prefix='l')
 
 # to replicate stata, we need to do some painful handling of 
 #   1: division by zero

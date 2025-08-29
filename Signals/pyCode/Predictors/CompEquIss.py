@@ -13,7 +13,7 @@ import os
 
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_predictor
 
 

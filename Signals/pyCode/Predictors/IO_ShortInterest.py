@@ -48,7 +48,7 @@ df.loc[(df['tempshortratio'] < df['temps99']) | df['temps99'].isna(), 'temp'] = 
 df['IO_ShortInterest'] = df['temp']
 
 # SAVE
-print(f"Calculated IO_ShortInterest for {df[\"IO_ShortInterest\"].notna().sum()} observations")
+print(f"Calculated IO_ShortInterest for {df['IO_ShortInterest'].notna().sum()} observations")
 
 save_predictor(df, 'IO_ShortInterest')
 print("IO_ShortInterest.py completed successfully")

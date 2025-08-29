@@ -64,7 +64,7 @@ df = signal_df.merge(temp_df, on=['secid', 'time_avail_m'], how='left')
 df = df[['permno', 'time_avail_m', 'dVolCall']].copy()
 
 # SAVE
-print(f"Calculated dVolCall for {df[\"dVolCall\"].notna().sum()} observations")
+print(f"Calculated dVolCall for {df['dVolCall'].notna().sum()} observations")
 
 save_predictor(df, 'dVolCall')
-print("dVolCall.py completed successfully")
+print("dVolCall.py completed successfully") 

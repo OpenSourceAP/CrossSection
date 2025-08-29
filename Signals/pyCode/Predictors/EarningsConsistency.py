@@ -30,7 +30,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 
 # Generate earnings growth (called temp in Stata)
 print("Creating lag variables for earnings...")
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'epspx', [12, 24], prefix='l', fill_gaps=True)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'epspx', [12, 24], prefix='l')
 df = df.assign(
     egrowth = lambda x: (x['epspx'] - x['l12_epspx']) / (0.5 * (abs(x['l12_epspx']) + abs(x['l24_epspx'])))
 )
@@ -40,7 +40,7 @@ df['egrowth'] = df['egrowth'].replace([np.inf, -np.inf], np.nan)
 
 # Generate earnings consistency = the mean earnings growth from 48 months ago to now, with some exceptions
 print("Creating additional lag variables for earnings growth...")
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'egrowth', [12, 24, 36, 48], prefix='l', fill_gaps=True)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'egrowth', [12, 24, 36, 48], prefix='l')
 print("Calculating earnings consistency...")
 temp_cols = ['egrowth', 'l12_egrowth', 'l24_egrowth', 'l36_egrowth', 'l48_egrowth']
 df['EarningsConsistency'] = df[temp_cols].mean(axis=1,skipna=True) # important to skipna=True

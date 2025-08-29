@@ -43,7 +43,7 @@ df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 df['MomSeason16YrPlus'] = df['retTemp1'] / df['retTemp2']
 
 # SAVE
-print(f"Calculated MomSeason16YrPlus for {df[\"MomSeason16YrPlus\"].notna().sum()} observations")
+print(f"Calculated MomSeason16YrPlus for {df['MomSeason16YrPlus'].notna().sum()} observations")
 
 save_predictor(df, 'MomSeason16YrPlus')
 print("MomSeason16YrPlus.py completed successfully")

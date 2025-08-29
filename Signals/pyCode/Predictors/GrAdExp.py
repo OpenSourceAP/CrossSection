@@ -27,7 +27,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from stata_fastxtile import fastxtile
+from utils.stata_fastxtile import fastxtile
 
 
 print("Starting GrAdExp.py...")

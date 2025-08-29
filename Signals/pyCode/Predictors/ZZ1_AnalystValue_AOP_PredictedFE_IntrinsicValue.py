@@ -6,8 +6,7 @@ import polars_ols  # registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.save_standardized import save_predictor
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_predictor, save_placebo
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import relrank
 from utils.winsor2 import winsor2

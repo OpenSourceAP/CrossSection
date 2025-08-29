@@ -53,7 +53,7 @@ df = asrol_fast(df, 'permno', 'time_avail_m', 'ret_lag120', 60, 'count', 'retLag
 df['MomOffSeason11YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
 
 # SAVE
-print(f"Calculated MomOffSeason11YrPlus for {df[\"MomOffSeason11YrPlus\"].notna().sum()} observations")
+print(f"Calculated MomOffSeason11YrPlus for {df['MomOffSeason11YrPlus'].notna().sum()} observations")
 
 save_predictor(df, 'MomOffSeason11YrPlus')
 print("MomOffSeason11YrPlus.py completed successfully")
