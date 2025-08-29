@@ -14,7 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag, stata_quantile
 from utils.save_standardized import save_predictor
-from utils.asrol import asrol_calendar
+from utils.asrol import asrol
 
 # DATA LOAD with early filtering for performance
 print("Loading SignalMasterTable...")
@@ -72,20 +72,20 @@ df = df[df['time_avail_m'].dt.month == 6]  # month(dofm(time_avail_m)) == 6 (Jun
 
 print(f"After June filter: {df.shape}")
 
-# Calendar-based rolling sums using asrol_custom (polars-based)
+# Calendar-based rolling sums using new asrol function
 # Stata: asrol xrd_lag, window(time_avail_m 48) stat(sum) 
 print("Creating calendar-based rolling sums...")
 
-# Convert to polars for asrol_custom operations
+# Convert to polars for asrol operations
 df_pl = pl.from_pandas(df)
 
 print("  Computing 48-month calendar rolling XRD sums...")
 # asrol xrd_lag, window(time_avail_m 48) stat(sum) by(permno)
-df_pl = asrol_calendar(df_pl, 'permno', 'time_avail_m', 'xrd_lag', 'sum', '48mo', 1).rename({'xrd_lag_sum': 'sum_xrd'})
+df_pl = asrol(df_pl, 'permno', 'time_avail_m', '1mo', 48, 'xrd_lag', 'sum', 'sum_xrd', min_samples=1)
 
 print("  Computing 48-month calendar rolling citation sums...")
 # asrol ncitscale, window(time_avail_m 48) stat(sum) by(permno)  
-df_pl = asrol_calendar(df_pl, 'permno', 'time_avail_m', 'ncitscale', 'sum', '48mo', 1).rename({'ncitscale_sum': 'sum_ncit'})
+df_pl = asrol(df_pl, 'permno', 'time_avail_m', '1mo', 48, 'ncitscale', 'sum', 'sum_ncit', min_samples=1)
 
 # Convert back to pandas
 df = df_pl.to_pandas()

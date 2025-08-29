@@ -12,7 +12,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.asrol import asrol_calendar_pd
+from utils.asrol import asrol
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
@@ -50,13 +50,13 @@ df = df.sort_values(['permno', 'time_avail_m'])
 
 # QUARTERLY OMISSION (3-month window)
 # Rolling 3-month sum of dividend indicators
-df['sum3_divind'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divind', stat='sum', window='3mo', min_obs=1)['divind_sum']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 3, 'divind', 'sum', 'sum3_divind', min_samples=1)
 
 # Company paid dividend in the quarter
 df['temppaid'] = (df['sum3_divind'] == 1).astype(int)
 
 # Rolling 18-month mean of quarterly payment indicator
-df['mean18_temppaid'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'temppaid', stat='mean', window='18mo', min_obs=1)['temppaid_mean']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 18, 'temppaid', 'mean', 'mean18_temppaid', min_samples=1)
 
 # Regular payer indicator
 df['temppayer'] = (df['mean18_temppaid'] == 1).astype(int)
@@ -76,13 +76,13 @@ df = df.drop(columns=['temppaid', 'sum3_divind', 'mean18_temppaid', 'temppayer',
 
 # SEMI-ANNUAL OMISSION (6-month window)
 # Rolling 6-month sum of dividend indicators
-df['sum6_divind'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divind', stat='sum', window='6mo', min_obs=1)['divind_sum']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 6, 'divind', 'sum', 'sum6_divind', min_samples=1)
 
 # Company paid dividend in the semi-annual period
 df['temppaid'] = (df['sum6_divind'] == 1).astype(int)
 
 # Rolling 18-month mean of semi-annual payment indicator
-df['mean18_temppaid'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'temppaid', stat='mean', window='18mo', min_obs=1)['temppaid_mean']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 18, 'temppaid', 'mean', 'mean18_temppaid', min_samples=1)
 
 # Regular payer indicator
 df['temppayer'] = (df['mean18_temppaid'] == 1).astype(int)
@@ -102,13 +102,13 @@ df = df.drop(columns=['temppaid', 'sum6_divind', 'mean18_temppaid', 'temppayer',
 
 # ANNUAL OMISSION (12-month window)
 # Rolling 12-month sum of dividend indicators
-df['sum12_divind'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'divind', stat='sum', window='12mo', min_obs=1)['divind_sum']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 12, 'divind', 'sum', 'sum12_divind', min_samples=1)
 
 # Company paid dividend in the annual period
 df['temppaid'] = (df['sum12_divind'] == 1).astype(int)
 
 # Rolling 24-month mean of annual payment indicator
-df['mean24_temppaid'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'temppaid', stat='mean', window='24mo', min_obs=1)['temppaid_mean']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 24, 'temppaid', 'mean', 'mean24_temppaid', min_samples=1)
 
 # Regular payer indicator
 df['temppayer'] = (df['mean24_temppaid'] == 1).astype(int)
@@ -131,7 +131,7 @@ df = df.drop(columns=['temppaid', 'sum12_divind', 'mean24_temppaid', 'temppayer'
 df['omitnow'] = ((df['omit_3'] == 1) | (df['omit_6'] == 1) | (df['omit_12'] == 1)).astype(int)
 
 # Rolling 2-month sum to extend signal
-df['temp'] = asrol_calendar_pd(df, 'permno', 'time_avail_m', 'omitnow', stat='sum', window='2mo', min_obs=1)['omitnow_sum']
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 2, 'omitnow', 'sum', 'temp', min_samples=1)
 
 # Final dividend omission signal
 df['DivOmit'] = (df['temp'] == 1).astype(int)
