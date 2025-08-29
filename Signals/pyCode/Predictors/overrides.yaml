@@ -66,3 +66,28 @@ CompEquIss:
     The predictor is failing the NumRows check: it has 16.6% more rows than Stata. But it passes all other tests very nicely. Precision1 and 2 are near perfect. I eyeballed several of the obs that are missing from the Stata file and it seems like the Python code is correct. These observations have valid lagged mve_c, and that's pretty much what is required for this predictor. 
     
     This predictor also has a T-stat that is a _lot_ larger than Stata. Which counts as a failure but maybe the Stata T-stat was too small.
+
+TrendFactor:
+  status: accepted
+  reviewed_on: 2025-08-28
+  reviewed_by: ac
+  details: |
+    Given how complicated this predictor is, with many statistical calculations and daily data, I'm accepting the 25.1% Precision1 failure rate. This seems like reasonable numerical precision with so many calculations.
+
+    The long-short t-stat is almost identical to the 2024 10 release. 
+    
+    I also nearly went crazy trying to replicate the exact details of Stata, including the exact quantile function, and Stata's handling of collinearity regressors.
+
+RDAbility:
+  status: accepted
+  reviewed_on: 2025-08-28
+  reviewed_by: ac
+  details: |
+    Given the complicated nature of this predictor (many regressions with many missing values), the 4.3% Precision1 failure rate is amazing. I think we actually improved the replication a bit, since the long-short t-stat is higher by a bit.  
+
+BetaFP:
+  status: accepted
+  reviewed_on: 2025-08-28
+  reviewed_by: ac
+  details: |
+    This predictor is failing NumRos by 8 percent and Precision1 by 6.3%. The signal is complicated and I went through the py script line by line. The t-stat is close to zero, which is unchanged from the 2024 10 release. I don't think it's quite worth it to dig into this more.
