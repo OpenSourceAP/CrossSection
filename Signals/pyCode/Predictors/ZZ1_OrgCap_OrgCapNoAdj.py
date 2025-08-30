@@ -42,19 +42,6 @@ gnpdefl = pd.read_parquet("../pyData/Intermediate/GNPdefl.parquet",
 df = pd.merge(signal_master, compustat, on=['permno', 'time_avail_m'], how='inner')
 df = pd.merge(df, gnpdefl, on='time_avail_m', how='inner')
 
-# CHECKPOINT 1 - After SignalMasterTable merge
-print("\n=== CHECKPOINT 1: After SignalMasterTable ===")
-checkpoint_df = df[(df['permno'] == 76898) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 7)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'sicCRSP']])
-else:
-    print("No data for permno 76898 at 1992-07")
-    
-checkpoint_df = df[(df['permno'] == 40970) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 12)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'sicCRSP']])
-else:
-    print("No data for permno 40970 at 1992-12")
 
 # Convert sic to numeric (destring sic)
 df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
@@ -70,15 +57,6 @@ df = df[
 
 print(f"After filtering: {len(df):,} observations")
 
-# CHECKPOINT 2 - After CCM merge with SG&A data
-print("\n=== CHECKPOINT 2: After CCM merge ===")
-checkpoint_df = df[(df['permno'] == 76898) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 7)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'xsga', 'at', 'datadate', 'sic']])
-    
-checkpoint_df = df[(df['permno'] == 40970) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 12)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'xsga', 'at', 'datadate', 'sic']])
 
 # SIGNAL CONSTRUCTION
 # xtset permno time_avail_m equivalent - sort by permno and time
@@ -93,15 +71,6 @@ df['xsga'] = df['xsga'].fillna(0)
 # replace xsga = xsga/gnpdefl (price deflation)
 df['xsga'] = df['xsga'] / df['gnpdefl']
 
-# CHECKPOINT 3 - After xsga processing
-print("\n=== CHECKPOINT 3: After xsga processing ===")
-checkpoint_df = df[(df['permno'] == 76898) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 7)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'xsga', 'gnpdefl']])
-    
-checkpoint_df = df[(df['permno'] == 40970) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 12)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'xsga', 'gnpdefl']])
 
 
 # Initialize OrgCapNoAdj
@@ -152,21 +121,6 @@ df.loc[df['OrgCapNoAdj'] == 0, 'OrgCapNoAdj'] = np.nan
 
 print(f"After OrgCapNoAdj calculation: {df['OrgCapNoAdj'].notna().sum():,} non-missing values")
 
-# CHECKPOINT 4 - After OrgCapNoAdj calculation
-print("\n=== CHECKPOINT 4: After OrgCapNoAdj calculation ===")
-checkpoint_df = df[(df['permno'] == 76898) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 7)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'tempAge', 'xsga', 'OrgCapNoAdj', 'at']])
-    
-checkpoint_df = df[(df['permno'] == 40970) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 12)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'tempAge', 'xsga', 'OrgCapNoAdj', 'at']])
-
-# Count non-missing values for specific months
-july_1992 = df[df['time_avail_m'].dt.to_period('M') == '1992-07']
-dec_1992 = df[df['time_avail_m'].dt.to_period('M') == '1992-12']
-print(f"Non-missing OrgCapNoAdj values for July 1992: {july_1992['OrgCapNoAdj'].notna().sum()}")
-print(f"Non-missing OrgCapNoAdj values for Dec 1992: {dec_1992['OrgCapNoAdj'].notna().sum()}")
 
 # INDUSTRY ADJUSTMENT
 # winsor2 OrgCapNoAdj, suffix("temp") cuts(1 99) by(time_avail_m)
@@ -227,39 +181,8 @@ df.loc[df['tempSD'].isna(), 'OrgCap'] = np.nan
 
 print(f"Final OrgCap values: {df['OrgCap'].notna().sum():,} non-missing")
 
-# CHECKPOINT 5 - After OrgCap calculation
-print("\n=== CHECKPOINT 5: After OrgCap calculation ===")
-checkpoint_df = df[(df['permno'] == 76898) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 7)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'OrgCapNoAdjtemp', 'tempMean', 'tempSD', 'OrgCap']])
-    
-checkpoint_df = df[(df['permno'] == 40970) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 12)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'OrgCapNoAdjtemp', 'tempMean', 'tempSD', 'OrgCap']])
-
-# Summary statistics for specific months
-july_1992 = df[df['time_avail_m'].dt.to_period('M') == '1992-07']
-dec_1992 = df[df['time_avail_m'].dt.to_period('M') == '1992-12']
-print(f"\nOrgCap summary for July 1992:")
-print(july_1992['OrgCap'].describe())
-print(f"\nOrgCap summary for Dec 1992:")
-print(dec_1992['OrgCap'].describe())
 
 # SAVE
-# CHECKPOINT 6 - Pre-save final check
-print("\n=== CHECKPOINT 6: Pre-save final check ===")
-non_missing_orgcap = df['OrgCap'].notna().sum()
-non_missing_orgcapnoadj = df['OrgCapNoAdj'].notna().sum()
-print(f"Total non-missing OrgCap values: {non_missing_orgcap}")
-print(f"Total non-missing OrgCapNoAdj values: {non_missing_orgcapnoadj}")
-
-checkpoint_df = df[(df['permno'] == 76898) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 7)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'OrgCap', 'OrgCapNoAdj']])
-
-checkpoint_df = df[(df['permno'] == 40970) & (df['time_avail_m'].dt.year == 1992) & (df['time_avail_m'].dt.month == 12)]
-if not checkpoint_df.empty:
-    print(checkpoint_df[['permno', 'time_avail_m', 'OrgCap', 'OrgCapNoAdj']])
 
 # Keep only required columns for final output
 df_final = df[['permno', 'time_avail_m', 'OrgCap']].dropna(subset=['OrgCap']).copy()
