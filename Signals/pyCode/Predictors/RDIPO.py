@@ -1,5 +1,6 @@
-# ABOUTME: Translates RDIPO.do to create R&D at IPO predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/RDIPO.py
+# ABOUTME: RDIPO.py - calculates IPO firms with no R&D spending predictor
+# ABOUTME: IPO and no R&D spending - binary indicator for IPO firms that have zero R&D expenditures
+# ABOUTME: Reference: Gou, Lev and Shi 2006, Table 8 row 2
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, IPODates.parquet

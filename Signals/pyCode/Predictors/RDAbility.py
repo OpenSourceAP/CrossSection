@@ -270,23 +270,21 @@ for n in range(1, 6):
     
     # asreg tempY tempXLag, window(fyear 8) min(6) by(gvkey)
     # Sort by gvkey and fyear for deterministic window order
-df = df.sort(["gvkey", "fyear"])
+    df = df.sort(["gvkey", "fyear"])
 
-result = df.with_columns(
-    pl.col("tempY").least_squares.rolling_ols(
-        pl.col("tempXLag"),
-        window_size=8,
-        min_periods=6,
-        mode="coefficients",
-        add_intercept=True,
-        null_policy="drop"
-    ).over("gvkey").alias("coef")
-).with_columns([
-    pl.col("coef").struct.field("const").alias("b_const"),
-    pl.col("coef").struct.field("tempXLag").alias("b_tempXLag")
-]),
-        coef_prefix="b_"
-    )
+    df = df.with_columns(
+        pl.col("tempY").least_squares.rolling_ols(
+            pl.col("tempXLag"),
+            window_size=8,
+            min_periods=6,
+            mode="coefficients",
+            add_intercept=True,
+            null_policy="drop"
+        ).over("gvkey").alias("coef")
+    ).with_columns([
+        pl.col("coef").struct.field("const").alias("b_const"),
+        pl.col("coef").struct.field("tempXLag").alias("b_tempXLag")
+    ])
     
     # CRITICAL FIX: Manually enforce min_samples requirement
     # Count valid observations in each 8-year rolling window
@@ -303,7 +301,7 @@ result = df.with_columns(
     # rename _b_tempXLag gammaAbility`n' with min_samples enforcement
     df = df.with_columns(
         pl.when(pl.col("_valid_count") >= 6)
-        .then(result["b_tempXLag"])
+        .then(pl.col("b_tempXLag"))
         .otherwise(None)
         .alias(f"gammaAbility{n}")
     )

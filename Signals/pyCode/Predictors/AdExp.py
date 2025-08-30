@@ -1,5 +1,6 @@
-# ABOUTME: AdExp.py - calculates AdExp predictor using advertising expenses scaled by market value
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/AdExp.do
+# ABOUTME: AdExp.py - calculates advertising expense predictor scaled by market value of equity
+# ABOUTME: Advertising Expense - measures advertising expenditures relative to firm size  
+# ABOUTME: Reference: Chan, Lakonishok and Sougiannis 2001, Table 7, first year
 
 """
 AdExp.py

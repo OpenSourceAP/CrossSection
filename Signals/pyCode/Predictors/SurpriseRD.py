@@ -1,5 +1,6 @@
-# ABOUTME: Translates SurpriseRD.do to create R&D surprise measure predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/SurpriseRD.py
+# ABOUTME: SurpriseRD.py - calculates unexpected R&D increase predictor
+# ABOUTME: Unexpected R&D increase - binary indicator for firms with surprising increases in R&D spending
+# ABOUTME: Reference: Eberhart, Maxwell and Siddique 2004, Table 5A EW
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet

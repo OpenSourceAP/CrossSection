@@ -1,5 +1,6 @@
 # ABOUTME: OrgCap.py - calculates organizational capital predictor
-# ABOUTME: Organizational capital based on SG&A with industry adjustment and depreciation
+# ABOUTME: Organizational capital based on SG&A with industry adjustment and depreciation  
+# ABOUTME: Reference: Eisfeldt and Papanikolaou 2013, Table 4A.1
 
 """
 OrgCap predictor calculation
