@@ -1,4 +1,4 @@
-# ABOUTME: Translates MomSeasonShort.do to create short-term seasonal momentum
+# ABOUTME: Calculates short-term seasonal momentum following Heston and Sadka 2008
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeasonShort.py
 
 # Run from pyCode/ directory

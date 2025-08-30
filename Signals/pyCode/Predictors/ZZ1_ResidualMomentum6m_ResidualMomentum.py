@@ -1,12 +1,11 @@
-# ABOUTME: ZZ1_ResidualMomentum6m_ResidualMomentum.py - generates ResidualMomentum6m and ResidualMomentum predictors
-# ABOUTME: Python translation of ZZ1_ResidualMomentum6m_ResidualMomentum.do using polars for rolling FF3 regressions
+# ABOUTME: Generates ResidualMomentum following Blitz, Huij and Martens 2011
+# ABOUTME: Python implementation using polars for rolling FF3 regressions
 
 """
 ZZ1_ResidualMomentum6m_ResidualMomentum.py
 
-Generates two momentum predictors based on Fama-French 3-factor model residuals:
-- ResidualMomentum6m: 6-month residual momentum (placebo)
-- ResidualMomentum: 12-month residual momentum based on FF3 residuals (predictor)
+Generates ResidualMomentum predictor based on Fama-French 3-factor model residuals:
+- ResidualMomentum: momentum based on FF3 residuals following Blitz, Huij and Martens 2011
 
 Usage:
     cd pyCode/

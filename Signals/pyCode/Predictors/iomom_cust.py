@@ -1,4 +1,4 @@
-# ABOUTME: iomom_cust predictor - Input-Output customer momentum
+# ABOUTME: Calculates customer momentum following Menzly and Ozbas 2010
 # ABOUTME: Run: python3 pyCode/Predictors/iomom_cust.py
 
 """

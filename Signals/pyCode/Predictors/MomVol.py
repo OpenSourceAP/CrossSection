@@ -1,4 +1,4 @@
-# ABOUTME: Momentum among high volume stocks - independent double sort by momentum and volume
+# ABOUTME: Calculates momentum in high volume stocks following Lee and Swaminathan 2000
 # ABOUTME: Usage: python3 MomVol.py (run from pyCode/ directory)
 
 import polars as pl

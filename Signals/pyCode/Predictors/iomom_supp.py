@@ -1,4 +1,4 @@
-# ABOUTME: iomom_supp predictor - Input-Output supplier momentum
+# ABOUTME: Calculates supplier momentum following Menzly and Ozbas 2010
 # ABOUTME: Run: python3 pyCode/Predictors/iomom_supp.py
 
 """

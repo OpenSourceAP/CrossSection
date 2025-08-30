@@ -1,4 +1,4 @@
-# ABOUTME: Calculates 12-month momentum by compounding monthly returns over months t-11 to t-1, skipping most recent month
+# ABOUTME: Calculates 12-month momentum following Jegadeesh and Titman 1993
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom12m.py
 
 # Run from pyCode/ directory

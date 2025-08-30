@@ -1,6 +1,6 @@
 #%%
 
-# ABOUTME: Translates Code/Predictors/Mom6mJunk.do to calculate 6-month momentum for junk stocks
+# ABOUTME: Calculates junk stock momentum following Avramov et al 2007
 # ABOUTME: Creates junk stock momentum signal using CIQ and SP credit ratings with forward fill
 
 """

@@ -1,4 +1,4 @@
-# ABOUTME: CustomerMomentum predictor - loads customer momentum data
+# ABOUTME: Calculates customer momentum following Cohen and Frazzini 2008
 # ABOUTME: Run: python3 pyCode/Predictors/CustomerMomentum.py
 
 """

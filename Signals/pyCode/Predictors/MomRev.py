@@ -1,7 +1,5 @@
-# ABOUTME: Creates binary signal by ranking stocks on 6-month and 36-month momentum, going long high short-term/low long-term momentum stocks
+# ABOUTME: Calculates momentum and long-term reversal signal following Chan and Ko 2006
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomRev.py
-
-# Translation of Code/Predictors/MomRev.do
 # Run from pyCode/ directory: python3 Predictors/MomRev.py
 # Inputs: pyData/Intermediate/SignalMasterTable.parquet
 # Outputs: pyData/Predictors/MomRev.csv
@@ -22,7 +20,7 @@ print("=" * 80)
 
 # DATA LOAD
 print("📊 Loading SignalMasterTable data...")
-# use permno time_avail_m ret using "$pathDataIntermediate/SignalMasterTable", clear
+# Load return data for momentum calculations
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')[['permno', 'time_avail_m', 'ret']].copy()
 print(f"Loaded: {len(df):,} observations")
 

@@ -1,4 +1,4 @@
-# ABOUTME: Translates MomSeason06YrPlus.do to create seasonal momentum (years 6-10)
+# ABOUTME: Calculates seasonal momentum (years 6-10) following Heston and Sadka 2008
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeason06YrPlus.py
 
 # Run from pyCode/ directory

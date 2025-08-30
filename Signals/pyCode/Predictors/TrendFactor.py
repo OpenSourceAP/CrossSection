@@ -1,5 +1,5 @@
 # %%
-# ABOUTME: TrendFactor predictor using daily data with 11 moving averages and cross-sectional regressions
+# ABOUTME: Calculates TrendFactor following Han, Zhou, Zhu 2016
 # ABOUTME: Usage: python3 TrendFactor.py (run from pyCode/ directory)
 # inputs: dailyCRSP.parquet, SignalMasterTable.parquet
 # outputs: TrendFactor.csv
@@ -17,6 +17,8 @@ from utils.stata_replication import stata_ineq_pl
 from utils.asrol import asrol
 from utils.stata_replication import stata_quantile
 
+
+#%% specialized regression utilities
 # =============================================================================
 # STATA REGRESSION UTILITIES (moved from utils/stata_regress.py)
 # =============================================================================
@@ -1325,7 +1327,7 @@ def asreg_collinear(
     return out_df[ordered_cols]
 
 
-# %%
+# %% actual file starts
 
 print("=" * 80)
 print("🏗️  TrendFactor.py")

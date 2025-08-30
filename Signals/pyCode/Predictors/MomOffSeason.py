@@ -1,4 +1,4 @@
-# ABOUTME: Translates MomOffSeason.do to create off-season long-term reversal
+# ABOUTME: Calculates off-season long-term reversal following Heston and Sadka 2008
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomOffSeason.py
 
 # Run from pyCode/ directory

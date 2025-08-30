@@ -1,4 +1,4 @@
-# ABOUTME: Translates MomOffSeason06YrPlus.do to create off-season momentum for years 6-10
+# ABOUTME: Calculates off-season momentum (years 6-10) following Heston and Sadka 2008
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomOffSeason06YrPlus.py
 
 # Run from pyCode/ directory

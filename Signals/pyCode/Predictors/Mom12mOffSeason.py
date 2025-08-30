@@ -1,11 +1,10 @@
-# ABOUTME: Translates Mom12mOffSeason predictor from Stata to Python
+# ABOUTME: Calculates 12-month off-season momentum following Heston and Sadka 2008
 # ABOUTME: Creates 12-month momentum excluding focal (most recent) return
 
 """
-Mom12mOffSeason Predictor Translation
+Mom12mOffSeason Predictor following Heston and Sadka 2008
 
-This script translates the Stata predictor Mom12mOffSeason.do to Python.
-Calculates 10-month rolling mean excluding the focal (most recent) return.
+Calculates average return in other months over the previous year.
 
 Usage:
     python3 Predictors/Mom12mOffSeason.py
