@@ -8,12 +8,14 @@ import time
 import os
 import yaml
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 
 # =============================================================================
 # CONFIGURATION: Scripts to run (modify this list as needed)
 # =============================================================================
 
-PREDICTOR_SCRIPTS = "Recomm_ShortInterest IO_ShortInterest ShortInterest"
+PREDICTOR_SCRIPTS = "HerfBE Investment MomOffSeason MomOffSeason06YrPlus MomOffSeason11YrPlus MomOffSeason16YrPlus MomVol MS RDAbility TrendFactor VarCF ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility"
 
 def load_predictor_mapping():
     """Load predictor mapping from YAML file and return the mapping dict"""
