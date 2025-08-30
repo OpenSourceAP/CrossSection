@@ -1,7 +1,6 @@
-# ABOUTME: Translates OScore.do to create O-Score bankruptcy predictor
+# ABOUTME: Calculates O-Score bankruptcy predictor following Dichev 1998 Table 5
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/OScore.py
 
-# Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, SignalMasterTable.parquet, GNPdefl.parquet
 # Output: ../pyData/Predictors/OScore.csv
 
@@ -42,8 +41,7 @@ df_lag = df_lag.rename(columns={'time_avail_m': 'time_avail_m_lag12', 'ib': 'ib_
 df = df.merge(df_lag, on=['permno', 'time_avail_m_lag12'], how='left')
 df = df.drop('time_avail_m_lag12', axis=1)
 
-# O-Score calculation with proper handling of infinite values
-# Handle division by zero and log of negative values like Stata
+# Calculate O-Score using Dichev formula with safe math operations
 def safe_divide(a, b):
     return np.where((b == 0) | b.isna(), np.nan, a / b)
 

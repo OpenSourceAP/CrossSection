@@ -1,22 +1,8 @@
-# ABOUTME: Cash predictor - calculates cash to assets ratio
-# ABOUTME: Run: python3 pyCode/Predictors/Cash.py
+# ABOUTME: Calculates cash to assets ratio following Palazzo 2012 Table 4
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/Cash.py
 
-"""
-Cash Predictor
-
-Cash to assets ratio calculation: cheq/atq
-Uses quarterly Compustat data with complex time expansion logic.
-
-Inputs:
-- m_QCompustat.parquet (gvkey, rdq, cheq, atq)
-- SignalMasterTable.parquet (permno, gvkey, time_avail_m)
-
-Outputs:
-- Cash.csv (permno, yyyymm, Cash)
-
-This predictor calculates cash holdings as a ratio of total quarterly assets,
-following the quarterly data expansion and deduplication logic from the original Stata code.
-"""
+# Inputs: m_QCompustat.parquet, SignalMasterTable.parquet
+# Output: ../pyData/Predictors/Cash.csv
 
 import pandas as pd
 import numpy as np
@@ -29,11 +15,7 @@ from utils.save_standardized import save_predictor
 
 print("Starting Cash predictor...")
 
-# DATA LOAD - m_QCompustat
-# 2020 01 Andrew
-# use rdq instead of time_avail_m following OP
-# Note: time_avail_m is datadate + 3 months but rdq is unchanged from 
-# WRDS download
+# DATA LOAD - Load quarterly Compustat data
 print("Loading m_QCompustat data...")
 qcompustat_df = pd.read_parquet('../pyData/Intermediate/m_QCompustat.parquet', 
                                columns=['gvkey', 'rdq', 'cheq', 'atq'])
@@ -108,22 +90,11 @@ print(f"After merge: {len(df):,} observations")
 # SIGNAL CONSTRUCTION
 print("Constructing Cash signal...")
 
-# Calculate Cash = cheq/atq with domain-aware missing value handling
-# Following missing/missing = 1.0 pattern for division operations
-df['Cash'] = np.where(
-    df['atq'] == 0,
-    np.nan,  # Division by zero = missing
-    np.where(
-        df['cheq'].isna() & df['atq'].isna(),
-        1.0,  # missing/missing = 1.0 (no change)
-        df['cheq'] / df['atq']
-    )
-)
+# Calculate Cash = cheq/atq 
+df = df.query('atq > 0')
+df['Cash'] = df['cheq'] / df['atq']
 
 print(f"Generated Cash values for {df['Cash'].notna().sum():,} observations")
-
-# Clean up extra columns for save
-df = df[['permno', 'time_avail_m', 'Cash']].copy()
 
 # SAVE
 print("Saving predictor...")

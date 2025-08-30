@@ -1,7 +1,6 @@
-# ABOUTME: Translates realestate.do to create real estate holdings predictor
+# ABOUTME: Calculates industry-adjusted real estate holdings following Tuzel 2010 Table 5
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/realestate.py
 
-# Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/realestate.csv
 

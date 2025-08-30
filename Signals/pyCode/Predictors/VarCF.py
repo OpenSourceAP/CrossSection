@@ -1,8 +1,7 @@
-# ABOUTME: Translates VarCF.do to create cash-flow variance predictor
+# ABOUTME: Calculates cash-flow to price variance following Haugen and Baker 1996 Table 1
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/VarCF.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
+# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet  
 # Output: ../pyData/Predictors/VarCF.csv
 
 import pandas as pd
@@ -13,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.asrol import asrol
 
 # DATA LOAD
-# Start with SignalMasterTable like Stata's "using" dataset
+# Load SignalMasterTable for market value data
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = smt[['permno', 'time_avail_m', 'mve_c']].copy()
 
@@ -22,14 +21,11 @@ compustat = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
 compustat = compustat[['permno', 'time_avail_m', 'ib', 'dp']].copy()
 df = df.merge(compustat, on=['permno', 'time_avail_m'], how='left')
 
-# Note: This replicates Stata's "merge 1:1 permno time_avail_m using SignalMasterTable, keep(using match)"
-# We keep all SignalMasterTable observations, with ib/dp missing for observations not in m_aCompustat
-
 # Sort for rolling operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
-# Create temporary cash flow measure
+# Calculate cash flow to price ratio
 df['tempCF'] = (df['ib'] + df['dp']) / df['mve_c']
 
 # Calculate rolling standard deviation using asrol (60-month window, min 24 periods)
@@ -43,7 +39,7 @@ df = asrol(df, 'permno', 'time_avail_m', '1mo', 60, 'tempCF', 'std', 'sigma', mi
 
 print("Rolling statistics calculation completed")
 
-# VarCF = sigma^2
+# Calculate variance from standard deviation
 df['VarCF'] = df['sigma'] ** 2
 
 # Keep only necessary columns for output

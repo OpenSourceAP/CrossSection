@@ -40,17 +40,15 @@ If the subsection is marked with ✅, all predictors in the subsection are compl
 - PctAcc
 - PctTotAcc
 
-## asset composition
+## asset composition and cash flow risk ✅ 
 
 - Cash
 - NOA
 - RDcap
 - realestate
 - tang
-
-## cash flow risk
-
 - VarCF
+- OScore
 
 ## composite accounting
 
@@ -59,10 +57,6 @@ If the subsection is marked with ✅, all predictors in the subsection are compl
 - MS
 - PS
 - RDS
-
-## default risk
-
-- OScore
 
 ## earnings event
 
@@ -326,6 +320,3 @@ If the subsection is marked with ✅, all predictors in the subsection are compl
 - ShareVol
 - VolMkt
 - VolumeTrend
-```
-
-Do you also want me to collapse this further into just **categories with predictor counts** (e.g. `## R&D (5 predictors)`), or keep the flat list of predictor names like above?

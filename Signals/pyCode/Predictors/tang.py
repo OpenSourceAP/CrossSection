@@ -1,20 +1,8 @@
-# ABOUTME: tang.py - calculates tangibility predictor for manufacturing firms
-# ABOUTME: Asset tangibility measure using weighted average of cash, receivables, inventory, and PPE
+# ABOUTME: Calculates tangibility for manufacturing firms following Hahn and Lee 2009 Table 4A
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/tang.py
 
-"""
-tang predictor calculation
-
-Usage:
-    cd pyCode/
-    source .venv/bin/activate
-    python3 Predictors/tang.py
-
-Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, che, rect, invt, ppegt, at, sic)
-
-Outputs:
-    - ../pyData/Predictors/tang.csv (permno, yyyymm, tang)
-"""
+# Inputs: m_aCompustat.parquet
+# Output: ../pyData/Predictors/tang.csv
 
 import pandas as pd
 import numpy as np
@@ -44,7 +32,7 @@ df['tempFC'] = fastxtile(df, 'at', by='time_avail_m', n=10)
 df['FC'] = np.where(df['tempFC'] <= 3, 1, np.nan)
 df['FC'] = np.where(df['tempFC'] >= 8, 0, df['FC'])
 
-# Calculate tangibility
+# Calculate tangibility using Almeida and Campello formula
 df['tang'] = (df['che'] + 0.715*df['rect'] + 0.547*df['invt'] + 0.535*df['ppegt']) / df['at']
 
 # Drop missing values

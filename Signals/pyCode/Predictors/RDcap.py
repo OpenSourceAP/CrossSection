@@ -1,7 +1,6 @@
-# ABOUTME: Translates RDcap.do to create R&D capital to assets predictor for small firms
+# ABOUTME: Calculates R&D capital-to-assets following Li 2011 Table 7 (small firms only)
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/RDcap.py
 
-# Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/RDcap.csv
 
@@ -28,7 +27,7 @@ df = df.merge(smt[['permno', 'time_avail_m', 'mve_c']], on=['permno', 'time_avai
 
 # SIGNAL CONSTRUCTION
 
-# fill in date gaps: note this must come before filling missing xrd values
+# Fill date gaps before processing R&D data
 df = fill_date_gaps(df)
 
 # Assume missing xrd values are 0
@@ -47,8 +46,8 @@ df['RDcap'] = (df['tempXRD'] +
 # Exclude observations before 1980
 df.loc[df['time_avail_m'].dt.year < 1980, 'RDcap'] = np.nan
 
-# Create size tertiles using fastxtile helper
-df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)  # OP: only works in small firms
+# Create size tertiles - RDcap only works in small firms
+df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)
 df.loc[df['tempsizeq'] >= 2, 'RDcap'] = np.nan
 df.loc[df['tempsizeq'].isna(), 'RDcap'] = np.nan
 
