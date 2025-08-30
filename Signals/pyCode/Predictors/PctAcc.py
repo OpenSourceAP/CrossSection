@@ -1,5 +1,5 @@
-# ABOUTME: Translates PctAcc.do to create percent operating accruals predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/PctAcc.py
+# ABOUTME: Percent Operating Accruals predictor from Hafzalla, Lundholm, Van Winkle 2011 (AR), Table 4A
+# ABOUTME: Calculates income before extraordinary items minus net cash flow, scaled by absolute income
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet

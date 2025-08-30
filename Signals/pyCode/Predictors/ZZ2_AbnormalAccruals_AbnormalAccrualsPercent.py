@@ -1,5 +1,5 @@
-# ABOUTME: Abnormal Accruals predictor using Xie (2001) cross-sectional regressions by year and industry
-# ABOUTME: Usage: python3 ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py (run from pyCode/ directory)
+# ABOUTME: Abnormal Accruals predictor from Xie 2001 (AR), Table 3
+# ABOUTME: Uses cross-sectional regressions by year and industry to calculate residual accruals after controlling for firm characteristics
 
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace

@@ -1,5 +1,5 @@
-# ABOUTME: Translates PctTotAcc.do to create percent total accruals predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/PctTotAcc.py
+# ABOUTME: Percent Total Accruals predictor from Hafzalla, Lundholm, Van Winkle 2011 (AR), Table 5A
+# ABOUTME: Calculates net income minus cash flows from operations, financing and investment, scaled by absolute net income
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet
