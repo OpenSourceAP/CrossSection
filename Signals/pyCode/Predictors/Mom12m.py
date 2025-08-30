@@ -1,4 +1,4 @@
-# ABOUTME: Translates Mom12m.do to create twelve-month momentum predictor
+# ABOUTME: Calculates 12-month momentum by compounding monthly returns over months t-11 to t-1, skipping most recent month
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom12m.py
 
 # Run from pyCode/ directory
@@ -29,13 +29,13 @@ df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
 print("🧮 Computing 12-month momentum signal...")
-# Replace missing returns with 0
+# Replace missing returns with 0 for momentum calculations
 df['ret'] = df['ret'].fillna(0)
 
-# Calculate lags using stata_multi_lag for calendar validation
+# Create 11 monthly lags (t-1 to t-11) using calendar-aware lag function
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
 
-# Calculate 12-month momentum (geometric return over 11 months)
+# Compounds monthly returns over months t-11 to t-1 to create 12-month momentum (skips current month t)
 df['Mom12m'] = ((1 + df['ret_lag1']) *
                 (1 + df['ret_lag2']) *
                 (1 + df['ret_lag3']) *

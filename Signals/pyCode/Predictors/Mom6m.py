@@ -1,4 +1,4 @@
-# ABOUTME: Translates Mom6m.do to create six-month momentum predictor
+# ABOUTME: Calculates 6-month momentum by compounding monthly returns over months t-5 to t-1, skipping most recent month
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom6m.py
 
 # Run from pyCode/ directory
@@ -29,13 +29,13 @@ df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
 print("🧮 Computing 6-month momentum signal...")
-# Replace missing returns with 0
+# Replace missing returns with 0 for momentum calculations
 df['ret'] = df['ret'].fillna(0)
 
-# Calculate lags using stata_multi_lag for calendar validation
+# Create 5 monthly lags (t-1 to t-5) using calendar-aware lag function
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
 
-# Calculate 6-month momentum (geometric return)
+# Compounds monthly returns over months t-5 to t-1 to create 6-month momentum (skips current month t)
 df['Mom6m'] = ((1 + df['ret_lag1']) * 
                (1 + df['ret_lag2']) * 
                (1 + df['ret_lag3']) * 

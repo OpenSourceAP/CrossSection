@@ -1,4 +1,4 @@
-# ABOUTME: Translates LRreversal.do to create long-term reversal predictor
+# ABOUTME: Calculates long-term reversal by compounding monthly returns over months t-36 to t-13, expecting reversal of past performance
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/LRreversal.py
 
 # Run from pyCode/ directory
@@ -16,18 +16,18 @@ df = df[['permno', 'time_avail_m', 'ret']].copy()
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
-# Replace missing returns with 0
+# Replace missing returns with 0 for momentum calculations
 df['ret'] = df['ret'].fillna(0)
 
-# Calculate lags for months 13-36
+# Create 24 monthly lags (t-13 to t-36) for long-term reversal calculation
 lag_cols = []
 for i in range(13, 37):
     lag_col = f'ret_lag{i}'
     df[lag_col] = df.groupby('permno')['ret'].shift(i)
-    # Don't fill missing values - keep as NaN to match Stata's behavior
+    # Keep missing values as NaN to match Stata's behavior
     lag_cols.append(lag_col)
 
-# Calculate long-term reversal (geometric return over months 13-36)
+# Compounds monthly returns over months t-36 to t-13 to create long-term reversal signal
 product = df[lag_cols[0]] * 0 + 1  # Initialize to 1
 for col in lag_cols:
     product = product * (1 + df[col])

@@ -1,4 +1,4 @@
-# ABOUTME: Creates Industry Momentum (IndMom) predictor by calculating weighted mean of 6-month momentum within SIC2 industry groups
+# ABOUTME: Calculates industry momentum by computing market-cap weighted average of 6-month momentum within 2-digit SIC industry groups
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/IndMom.py
 
 # Industry Momentum predictor translation from Code/Predictors/IndMom.do
@@ -13,66 +13,19 @@ import os
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret', 'sicCRSP', 'mve_c']].copy()
 
-# CHECKPOINT 1: Initial data load  
-print(f"CHECKPOINT 1: Initial observations after data load: {len(df)}")
-# Check problematic observations
-test_date_2021m11 = pd.Timestamp('2021-11-01')
-test_date_2007m4 = pd.Timestamp('2007-04-01')
-test_obs_16086 = df[(df['permno'] == 16086) & (df['time_avail_m'] == test_date_2021m11)]
-if not test_obs_16086.empty:
-    print(f"Permno 16086 2021m11: ret={test_obs_16086['ret'].iloc[0]}, sicCRSP={test_obs_16086['sicCRSP'].iloc[0]}, mve_c={test_obs_16086['mve_c'].iloc[0]}")
-else:
-    print("Permno 16086 2021m11: NOT FOUND")
-test_obs_11406 = df[(df['permno'] == 11406) & (df['time_avail_m'] == test_date_2007m4)]
-if not test_obs_11406.empty:
-    print(f"Permno 11406 2007m4: ret={test_obs_11406['ret'].iloc[0]}, sicCRSP={test_obs_11406['sicCRSP'].iloc[0]}, mve_c={test_obs_11406['mve_c'].iloc[0]}")
-else:
-    print("Permno 11406 2007m4: NOT FOUND")
-
 # SIGNAL CONSTRUCTION
 
-# Stata: tostring sicCRSP, replace
+# Convert SIC codes to string and extract first 2 digits for industry grouping
 df['sicCRSP'] = df['sicCRSP'].astype(str)
-
-# Stata: gen sic2D = substr(sicCRSP,1,2)  
 df['sic2D'] = df['sicCRSP'].str[:2]
 
-# CHECKPOINT 2: After sic2D creation
-print("CHECKPOINT 2: After sic2D creation")
-problem_permnos = [16086, 16338, 21359]
-for permno in problem_permnos:
-    test_obs = df[(df['permno'] == permno) & (df['time_avail_m'] == test_date_2021m11)]
-    if not test_obs.empty:
-        print(f"Permno {permno} 2021m11: sicCRSP={test_obs['sicCRSP'].iloc[0]}, sic2D={test_obs['sic2D'].iloc[0]}")
-    else:
-        print(f"Permno {permno} 2021m11: NOT FOUND")
-test_obs_11406 = df[(df['permno'] == 11406) & (df['time_avail_m'] == test_date_2007m4)]
-if not test_obs_11406.empty:
-    print(f"Permno 11406 2007m4: sicCRSP={test_obs_11406['sicCRSP'].iloc[0]}, sic2D={test_obs_11406['sic2D'].iloc[0]}")
-else:
-    print("Permno 11406 2007m4: NOT FOUND")
-
-# Stata: replace ret = 0 if mi(ret)
+# Replace missing returns with 0 for momentum calculations
 df.loc[df['ret'].isna(), 'ret'] = 0
-
-# CHECKPOINT 3: After return cleaning
-print("CHECKPOINT 3: After return cleaning")
-date_range_2021 = pd.date_range('2021-06-01', '2021-11-01', freq='MS')
-for permno in problem_permnos:
-    test_obs = df[(df['permno'] == permno) & (df['time_avail_m'].isin(date_range_2021))]
-    if not test_obs.empty:
-        print(f"Permno {permno} returns 2021m6-2021m11:")
-        for _, row in test_obs.iterrows():
-            print(f"  {row['time_avail_m'].strftime('%Y-%m')}: {row['ret']}")
-    else:
-        print(f"Permno {permno} 2021m6-2021m11: NOT FOUND")
 
 # Sort data for lag operations (ensuring proper panel structure)
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Stata: gen Mom6m = ( (1+l.ret)*(1+l2.ret)*(1+l3.ret)*(1+l4.ret)*(1+l5.ret)) - 1
-# Create TIME-BASED lag variables to match Stata's behavior exactly
-# Stata's l.ret looks for the exact previous calendar month, not previous position
+# Create calendar-based lags for months t-1 to t-5 using time-based merges
 for lag in range(1, 6):
     # Create lag data by shifting time_avail_m forward by lag months
     df_lag = df[['permno', 'time_avail_m', 'ret']].copy()
@@ -81,7 +34,7 @@ for lag in range(1, 6):
     df = df.merge(df_lag[['permno', 'time_avail_m', f'l{lag}_ret']], 
                   on=['permno', 'time_avail_m'], how='left')
 
-# Calculate 6-month momentum
+# Compounds monthly returns over months t-5 to t-1 to create individual 6-month momentum
 df['Mom6m'] = ((1 + df['l1_ret']) * (1 + df['l2_ret']) * (1 + df['l3_ret']) * 
                (1 + df['l4_ret']) * (1 + df['l5_ret'])) - 1
 
@@ -110,8 +63,8 @@ print("Industry counts with valid Mom6m and mve_c:")
 for sic, count in industry_counts.head(10).items():
     print(f"  sic2D {sic}: {count} obs")
 
-# Stata: egen IndMom = wtmean(Mom6m), by(sic2D time_avail_m) weight(mve_c)
-# Calculate weighted average using transform to match egen wtmean exactly
+# Calculate market-cap weighted average of Mom6m within each 2-digit SIC industry group by month
+# Uses market value (mve_c) as weights, requires both Mom6m and mve_c to be non-missing
 def calculate_weighted_mean(group):
     # Match Stata's exact logic: require both Mom6m and mve_c to be non-missing AND mve_c > 0
     valid_mask = group['Mom6m'].notna() & group['mve_c'].notna() & (group['mve_c'] > 0)
