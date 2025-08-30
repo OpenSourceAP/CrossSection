@@ -63,93 +63,49 @@ df = df.join(ibes_eps, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging all data sources: {len(df):,} observations")
 
+#%% Drop stocks in bottom NYSE/AMEX size quintile
+# pedantically replicate old Stata code
+from utils.stata_replication import stata_multi_lag, stata_quantile
 
-#%%
-print("🔍 Applying size filters...")
+# calculate 20th percentile of NYSE/AMEX mve_c, using stata's exact method
+me_pd = df.select(['permno', 'time_avail_m', 'mve_c', 'exchcd']).filter(
+    (pl.col("exchcd") == 1) | (pl.col("exchcd") == 2)
+).to_pandas()
+me_pd = (
+    me_pd.groupby("time_avail_m").agg(
+        me_20pct = ("mve_c", lambda x: stata_quantile(x, 0.2))
+    ).reset_index()
+)
+me_pd = pl.from_pandas(me_pd)
 
-# filter below 20th pct NYSE me 
-# do before indep sort
-# bys time_avail_m: astile sizecat = mve_c, qc(exchcd==1 | exchcd == 2) nq(5)
-# This creates NYSE/AMEX-based size quintiles but assigns them to ALL observations
-# First, compute percentile breakpoints based ONLY on NYSE/AMEX stocks
-df = df.with_columns(
-    pl.when((pl.col("exchcd") == 1) | (pl.col("exchcd") == 2))
-    .then(pl.col("mve_c"))
-    .otherwise(None)
-    .alias("nyse_amex_mve")
+# applying size filter
+print("Removing stocks in bottom NYSE/AMEX size quintile...")
+
+df = df.join(me_pd, on="time_avail_m", how="left").filter(
+    (pl.col("mve_c") > pl.col("me_20pct")) & (pl.col("mve_c").is_not_null())
 )
 
-# Calculate quintile breakpoints for each time_avail_m using only NYSE/AMEX stocks
-df = df.with_columns(
-    pl.col("nyse_amex_mve").quantile(0.2).over("time_avail_m").alias("p20"),
-    pl.col("nyse_amex_mve").quantile(0.4).over("time_avail_m").alias("p40"),
-    pl.col("nyse_amex_mve").quantile(0.6).over("time_avail_m").alias("p60"),
-    pl.col("nyse_amex_mve").quantile(0.8).over("time_avail_m").alias("p80")
-)
-
-# Assign ALL observations to quintiles based on NYSE/AMEX breakpoints
-df = df.with_columns(
-    pl.when(pl.col("mve_c") <= pl.col("p20")).then(1)
-    .when(pl.col("mve_c") <= pl.col("p40")).then(2)
-    .when(pl.col("mve_c") <= pl.col("p60")).then(3)  
-    .when(pl.col("mve_c") <= pl.col("p80")).then(4)
-    .otherwise(5)
-    .alias("sizecat")
-)
-
-# drop if sizecat == 1
-df = df.filter(pl.col("sizecat") != 1)
 print(f"After filtering bottom size quintile: {len(df):,} observations")
-
-
-# Clean up temporary columns
-df = df.drop(["nyse_amex_mve", "p20", "p40", "p60", "p80", "sizecat"])
 
 #%%
 print("🏛️ Computing Residual Institutional Ownership (RIO)...")
 
-# Residual Institutional Ownership sort
-# CRITICAL FIX: Match Stata's sequential replace logic exactly
-# gen temp = instown_perc/100
+# construct cleaned institutional ownership
 df = df.with_columns(
-    pl.when(pl.col("instown_perc").is_null())
-    .then(None)  # Keep as null initially
-    .otherwise(pl.col("instown_perc") / 100)
-    .alias("temp")
+    instown = (pl.col("instown_perc") / 100)
+).with_columns(
+    pl.when(pl.col("instown").is_null()).then(0.0).otherwise(pl.col("instown")).alias("instown")
+).with_columns(
+    pl.when(pl.col("instown") > 0.9999).then(0.9999).otherwise(pl.col("instown")).alias("instown")
+).with_columns(
+    pl.when(pl.col("instown") < 0.0001).then(0.0001).otherwise(pl.col("instown")).alias("instown")
 )
 
-# replace temp = 0 if mi(temp)
+# construct residual institutional ownership (RIO)
 df = df.with_columns(
-    pl.when(pl.col("temp").is_null())
-    .then(0.0)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
-)
-
-# replace temp = .9999 if temp > .9999
-df = df.with_columns(
-    pl.when(pl.col("temp") > 0.9999)
-    .then(0.9999)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
-)
-
-# replace temp = .0001 if temp < .0001 (this catches temp=0 from missing data!)
-df = df.with_columns(
-    pl.when(pl.col("temp") < 0.0001)
-    .then(0.0001)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
-)
-
-# gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
-df = df.with_columns(
-    (
-        (pl.col("temp") / (1 - pl.col("temp"))).log() + 
-        23.66 - 
-        2.89 * pl.col("mve_c").log() + 
-        0.08 * (pl.col("mve_c").log()).pow(2)
-    ).alias("RIO")
+    log_me = np.log(pl.col("mve_c"))
+).with_columns(
+    RIO = np.log(pl.col("instown") / (1 - pl.col("instown"))) + 23.66 - 2.89 * pl.col("log_me") + 0.08 * (pl.col("log_me")).pow(2)
 )
 
 #%%
