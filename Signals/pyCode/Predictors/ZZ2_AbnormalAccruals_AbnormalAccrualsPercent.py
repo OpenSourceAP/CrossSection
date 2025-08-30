@@ -112,12 +112,6 @@ df_with_residuals = df.with_columns(
         add_intercept=True,
         null_policy="drop"
     ).over(['fyear', 'sic2']).alias("resid")
-).filter(
-    pl.col("tempAccruals").count().over(['fyear', 'sic2']) >= 1
-),
-    null_policy="drop",  # Pass through the null policy like original
-    solve_method="svd",   # Revert to original SVD method
-    collect=True
 )
 
 # Add the observation count for filtering (replicating _Nobs from Stata asreg)

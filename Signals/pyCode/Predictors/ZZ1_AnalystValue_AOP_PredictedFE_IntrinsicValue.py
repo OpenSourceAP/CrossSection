@@ -1,5 +1,5 @@
-# ABOUTME: Multi-component analyst value predictor: AnalystValue, AOP, PredictedFE, IntrinsicValue
-# ABOUTME: Usage: python3 ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py (run from pyCode/ directory)
+# ABOUTME: Multi-component analyst value predictor: AnalystValue, AOP, PredictedFE (Frankel and Lee 1998 JAE Table 8A), IntrinsicValue
+# ABOUTME: Implements multi-stage equity valuation using analyst forecasts and cross-sectional forecast error prediction
 
 import polars as pl
 import polars_ols  # registers .least_squares namespace
@@ -326,19 +326,15 @@ df_with_predictions = df.with_columns(
     pl.col("coef").struct.field("lagBM").alias("b_lagBM"),
     pl.col("coef").struct.field("lagAOP").alias("b_lagAOP"),
     pl.col("coef").struct.field("lagLTG").alias("b_lagLTG")
-]),
-    coef_prefix="_b_",
-    null_policy="drop",
-    min_samples=5  # Need at least 5 observations for 4 variables + intercept
-)
+])
 
 # Rename coefficient columns to match original names
 df_with_predictions = df_with_predictions.rename({
-    "_b_const": "_b_cons",
-    "_b_lagSG": "_b_lagSG",
-    "_b_lagBM": "_b_lagBM", 
-    "_b_lagAOP": "_b_lagAOP",
-    "_b_lagLTG": "_b_lagLTG"
+    "b_const": "_b_cons",
+    "b_lagSG": "_b_lagSG",
+    "b_lagBM": "_b_lagBM", 
+    "b_lagAOP": "_b_lagAOP",
+    "b_lagLTG": "_b_lagLTG"
 })
 
 # gen PredictedFE = _b_cons + _b_lagSG*rankSG + _b_lagBM*rankBM + _b_lagAOP*rankAOP + _b_lagLTG*rankLTG
