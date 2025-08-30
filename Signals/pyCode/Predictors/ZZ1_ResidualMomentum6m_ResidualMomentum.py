@@ -103,25 +103,12 @@ df = df.with_columns(
         pl.col("mktrf"), pl.col("hml"), pl.col("smb"),
         window_size=36,
         min_periods=36,
-        mode="coefficients",
+        mode="residuals",
         add_intercept=True,
         null_policy="drop"
-    ).over("permno").alias("coef")
-).with_columns([
-    pl.col("coef").struct.field("const").alias("b_const"),
-    pl.col("coef").struct.field("mktrf").alias("b_mktrf"),
-    pl.col("coef").struct.field("hml").alias("b_hml"),
-    pl.col("coef").struct.field("smb").alias("b_smb")
-]),
-    null_policy="ignore",  # Match Stata's handling of missing values
-    solve_method="svd",  # Match Stata's OLS solver method
-    collect=True
+    ).over("permno").alias("_residuals")
 )
 
-# Rename residual column to match existing code
-df = df.with_columns(
-    pl.col("resid").alias("_residuals")
-).drop("resid")
 
 print(f"Completed rolling regressions for {len(df):,} observations")
 
