@@ -1,9 +1,9 @@
-# ABOUTME: Translates EarningsConsistency.do from Stata to Python
-# ABOUTME: Calculates earnings consistency measure based on standardized earnings changes
-
-# How to run: python3 EarningsConsistency.py
+# ABOUTME: Calculates earnings consistency following Alwathainani 2009 Table 11A CLG-CHG
+# ABOUTME: Average earnings growth over previous 48 months with sign consistency filters
+# 
 # Inputs: ../pyData/Intermediate/m_aCompustat.parquet
 # Outputs: ../pyData/Predictors/EarningsConsistency.csv
+# How to run: python3 EarningsConsistency.py
 
 import pandas as pd
 import numpy as np
@@ -25,43 +25,43 @@ print(f"Loaded data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 print("Setting up panel data structure...")
-# Sort data (equivalent to xtset permno time_avail_m)
+# Sort data by permno and time for panel structure
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Generate earnings growth (called temp in Stata)
+# Calculate earnings growth: (EPS - EPS_12m_ago) / average(abs(EPS_12m_ago), abs(EPS_24m_ago))
 print("Creating lag variables for earnings...")
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'epspx', [12, 24], prefix='l')
 df = df.assign(
     egrowth = lambda x: (x['epspx'] - x['l12_epspx']) / (0.5 * (abs(x['l12_epspx']) + abs(x['l24_epspx'])))
 )
 
-# replace infs (from division by zero) with nans
+# Replace infinite values from division by zero with NaN
 df['egrowth'] = df['egrowth'].replace([np.inf, -np.inf], np.nan)
 
-# Generate earnings consistency = the mean earnings growth from 48 months ago to now, with some exceptions
+# Calculate earnings consistency as mean of current and lagged earnings growth over 48 months
 print("Creating additional lag variables for earnings growth...")
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'egrowth', [12, 24, 36, 48], prefix='l')
 print("Calculating earnings consistency...")
 temp_cols = ['egrowth', 'l12_egrowth', 'l24_egrowth', 'l36_egrowth', 'l48_egrowth']
-df['EarningsConsistency'] = df[temp_cols].mean(axis=1,skipna=True) # important to skipna=True
+df['EarningsConsistency'] = df[temp_cols].mean(axis=1,skipna=True)
 
-# exceptions: ignore the following settings
+# Apply exclusion filters: missing earnings, extreme growth (>600%), or sign changes
 df = df.assign(
     exception=lambda x: (
         (
             x["epspx"].isna()
-            | x["l12_epspx"].isna()  # missing earnings this year or last
+            | x["l12_epspx"].isna()  # missing earnings current or prior year
         )
-        | (abs(x["epspx"] / x["l12_epspx"]) > 6)  # absurdly high growth
+        | (abs(x["epspx"] / x["l12_epspx"]) > 6)  # earnings growth exceeds 600%
         | (
             (x["egrowth"] > 0)
             & (x["l12_egrowth"] < 0)
-            & x["egrowth"].notna()  # sign change this year
+            & x["egrowth"].notna()  # positive growth following negative growth
         )
         | (
             (x["egrowth"] < 0)
             & ((x["l12_egrowth"] > 0) | x["l12_egrowth"].isna())
-            & x["egrowth"].notna()  # sign change this year
+            & x["egrowth"].notna()  # negative growth following positive/missing growth
         )
     ) # end lambda
 )
