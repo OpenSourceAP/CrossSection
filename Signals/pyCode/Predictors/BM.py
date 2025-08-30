@@ -49,9 +49,6 @@ df.loc[df['l6_time_avail_m_period'] != df['datadate_period'], 'me_datadate'] = n
 # Forward fill me_datadate within each permno (equivalent to bys permno (time_avail_m): replace me_datadate = me_datadate[_n-1])
 df['me_datadate'] = df.groupby('permno')['me_datadate'].ffill()
 
-# Additional backward fill within datadate groups to match Stata's exact behavior
-df['me_datadate'] = df.groupby(['permno', 'datadate'])['me_datadate'].bfill()
-
 # Cleanup intermediate columns
 df = df.drop(['l6_time_avail_m', 'l6_time_avail_m_period', 'datadate_period'], axis=1)
 
