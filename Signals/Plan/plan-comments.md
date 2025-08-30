@@ -1,321 +1,219 @@
 # Plan for comments
 
-We're done matching the Stata results. So let's remove the comments referring to the Stata code and replace them with comments that:
-1. Describe the computational mechanics. 
-2. Provide the LongDescription, AuthorYear and Table being replicated at the very top (ABOUTME: ...)
+Update the comments in ONE script as follows:
 
-To get info for 2, run `cd pyCode && python3 utils/fetch-doc.py [signalname]`
+1. Get the predictor names from the script
+    - Most predictors are just what comes before the .py
+    - In some cases you need to remove ZZ1_, ZZ2_, and there are multiple predictors in some files
+2. Get context by running `cd pyCode && python3 utils/fetch-doc.py [predictorname]`
+    - This will give an overview of what the predictor does
+3. Remove references to the Stata code. (e.g. "equivalent to xtset permno time_avail_m")
+4. Describe the computational mechanics in the code
+5. Provide the LongDescription, AuthorYear and Table being replicated at the very top (ABOUTME: ...)
+    - The table appears in the format "Key Table      : [table number] [table panel]"
+    - Example of top comment: "# ABOUTME: Calculates 6-month momentum following Jegadeesh and Titman 1993 Table 1A K=3 row 6"
+
+Be careful. Only work on one script at a time. 
 
 Some scripts create more than one predictor. For example, `ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py` creates `AbnormalAccruals` and `AbnormalAccrualsPercent`. For these predictors, you need to search for substrings in `Predictors/*.py`.
 
-# Progress tracking by predictor
-
-If the subsection is marked with ✅, all predictors in the subsection are complete.
-
-## momentum ✅
-
-- FirmAgeMom
-- High52
-- IndMom
-- IntMom
-- Mom12m
-- Mom6m
-- Mom6mJunk
-- MomRev
-- MomVol
-- ResidualMomentum
-- TrendFactor
-
-## R&D ✅
-
-- AdExp
-- OrgCap
-- RD
-- RDIPO
-- SurpriseRD
-
-## accruals ✅
-
-- AbnormalAccruals
-- Accruals
-- OrderBacklogChg
-- PctAcc
-- PctTotAcc
-
-## asset composition and cash flow risk ✅ 
-
-- Cash
-- NOA
-- RDcap
-- realestate
-- tang
-- VarCF
-- OScore
-
-## composite accounting and earnings event ✅
-
-- ExclExp
-- FR
-- MS
-- PS
-- RDS
-- AnnouncementReturn
-- ChNAnalyst
-
-## earnings forecast ✅
-
-- AnalystRevision
-- ChForecastAccrual
-- DownRecomm
-- EarningsForecastDisparity
-- PredictedFE
-- REV6
-- UpRecomm
-- fgr5yrLag
-
-## earnings growth
-
-- EarningsConsistency
-- EarningsStreak
-- EarningsSurprise
-- NumEarnIncrease
-
-## external financing
-
-- CompEquIss
-- CompositeDebtIssuance
-- ConvDebt
-- DebtIssuance
-- DelCOL
-- DelFINL
-- IndIPO
-- NetDebtFinance
-- NetEquityFinance
-- ShareIss1Y
-- ShareIss5Y
-- XFIN
-
-## info proxy
-
-- FirmAge
-
-## informed trading
-
-- dCPVolSpread
-- dVolCall
-- dVolPut
-
-## investment
-
-- AssetGrowth
-- ChEQ
-- DelEqu
-- DelLTI
-- GrLTNOA
-- InvestPPEInv
-- Investment
-- dNoa
-
-## investment alt
-
-- BrandInvest
-- ChInv
-- ChNNCOA
-- ChNWC
-- DelCOA
-- DelDRC
-- DelNetFin
-- GrAdExp
-- TotalAccruals
-- hire
-
-## investment growth
-
-- ChInvIA
-- grcapx
-- grcapx3y
-
-## lead lag
-
-- CustomerMomentum
-- EarnSupBig
-- IndRetBig
-- PriceDelayRsq
-- PriceDelaySlope
-- PriceDelayTstat
-- iomom_cust
-- iomom_supp
-- retConglomerate
-
-## leverage
-
-- BPEBM
-- BookLeverage
-- Leverage
-- NetDebtPrice
-
-## liquidity
-
-- BetaLiquidityPS
-- BidAskSpread
-- Illiquidity
-- ProbInformedTrading
-- VolSD
-- std_turn
-- zerotrade12M
-- zerotrade1M
-- zerotrade6M
-
-## long term reversal
-
-- IntanBM
-- IntanCFP
-- IntanEP
-- IntanSP
-- LRreversal
-- MRreversal
-
-## optionrisk
-
-- CPVolSpread
-- RIVolSpread
-- SmileSlope
-- skew1
-
-## other
-
-- AOP
-- Activism1
-- AgeIPO
-- BetaFP
-- ChTax
-- CredRatDG
-- ExchSwitch
-- Governance
-- Herf
-- HerfAsset
-- HerfBE
-- Mom12mOffSeason
-- MomOffSeason
-- MomOffSeason06YrPlus
-- MomOffSeason11YrPlus
-- MomOffSeason16YrPlus
-- MomSeason
-- MomSeason06YrPlus
-- MomSeason11YrPlus
-- MomSeason16YrPlus
-- MomSeasonShort
-- OPLeverage
-- Price
-- RDAbility
-- Spinoff
-- Tax
-- sinAlgo
-
-## ownership
-
-- Activism2
-- DelBreadth
-- IO_ShortInterest
-
-## payout indicator
-
-- DivInit
-- DivOmit
-- DivSeason
-- ShareRepurchase
-
-## profitability
-
-- CBOperProf
-- FEPS
-- GP
-- InvGrowth
-- OperProf
-- OperProfRD
-- RoE
-- roaq
-
-## profitability alt
-
-- CashProd
-- CitationsRD
-- PatentsRD
-
-## recommendation
-
-- ChangeInRecommendation
-- ConsRecomm
-- Recomm_ShortInterest
-
-## risk
-
-- Beta
-- BetaTailRisk
-- CoskewACX
-- Coskewness
-- ReturnSkew
-- ReturnSkew3F
-
-## sales growth
-
-- ChAssetTurnover
-- GrSaleToGrInv
-- GrSaleToGrOverhead
-- MeanRankRevGrowth
-- OrderBacklog
-- RevenueSurprise
-
-## short sale constraints
-
-- RIO_Disp
-- RIO_MB
-- RIO_Turnover
-- RIO_Volatility
-- ShortInterest
-
-## short-term reversal
-
-- STreversal
-
-## size
-
-- Size
-
-## valuation
-
-- AM
-- AccrualsBM
-- AnalystValue
-- BM
-- BMdec
-- CF
-- DivYieldST
-- EBM
-- EP
-- EntMult
-- EquityDuration
-- Frontier
-- NetPayoutYield
-- PayoutYield
-- SP
-- cfp
-- sfe
-
-## volatility
-
-- ForecastDispersion
-- IdioVol3F
-- IdioVolAHT
-- MaxRet
-- RealizedVol
-- betaVIX
-
-## volume
-
-- DolVol
-- OptionVolume1
-- OptionVolume2
-- ShareVol
-- VolMkt
-- VolumeTrend
+When complete, mark the predictor below by ✅.
+
+If no predictor is specified, work on the first incomplete predictor.
+
+# Progress tracking 
+
+- Accruals.py
+- AccrualsBM.py
+- AdExp.py
+- AgeIPO.py
+- AM.py
+- AnalystRevision.py
+- AssetGrowth.py
+- Beta.py
+- BetaLiquidityPS.py
+- BetaTailRisk.py
+- BidAskSpread.py
+- BM.py
+- BMdec.py
+- BookLeverage.py
+- BrandInvest.py
+- Cash.py
+- CashProd.py
+- CBOperProf.py
+- CF.py
+- cfp.py
+- ChangeInRecommendation.py
+- ChAssetTurnover.py
+- ChEQ.py
+- ChForecastAccrual.py
+- ChInv.py
+- ChInvIA.py
+- ChNAnalyst.py
+- ChNNCOA.py
+- ChNWC.py
+- ChTax.py
+- CitationsRD.py
+- CompEquIss.py
+- CompositeDebtIssuance.py
+- ConsRecomm.py
+- ConvDebt.py
+- CoskewACX.py
+- Coskewness.py
+- CPVolSpread.py
+- CredRatDG.py
+- CustomerMomentum.py
+- dCPVolSpread.py
+- DebtIssuance.py
+- DelBreadth.py
+- DelCOA.py
+- DelCOL.py
+- DelDRC.py
+- DelEqu.py
+- DelFINL.py
+- DelLTI.py
+- DelNetFin.py
+- DivInit.py
+- DivOmit.py
+- DivSeason.py
+- DivYieldST.py
+- dNoa.py
+- DolVol.py
+- DownRecomm.py
+- dVolCall.py
+- dVolPut.py
+- EarningsConsistency.py
+- EarningsForecastDisparity.py
+- EarningsStreak.py
+- EarningsSurprise.py
+- EarnSupBig.py
+- EntMult.py
+- EP.py
+- EquityDuration.py
+- ExchSwitch.py
+- ExclExp.py
+- FEPS.py
+- fgr5yrLag.py
+- FirmAge.py
+- FirmAgeMom.py
+- ForecastDispersion.py
+- Frontier.py
+- Governance.py
+- GP.py
+- GrAdExp.py
+- GrLTNOA.py
+- GrSaleToGrInv.py
+- GrSaleToGrOverhead.py
+- Herf.py
+- HerfAsset.py
+- HerfBE.py
+- High52.py
+- hire.py
+- Illiquidity.py
+- IndIPO.py
+- IndMom.py
+- IndRetBig.py
+- IntMom.py
+- Investment.py
+- InvestPPEInv.py
+- InvGrowth.py
+- IO-ShortInterest.py
+- iomom-cust.py
+- iomom-supp.py
+- Leverage.py
+- LRreversal.py
+- MaxRet.py
+- MeanRankRevGrowth.py
+- Mom12m.py
+- Mom12mOffSeason.py
+- Mom6m.py
+- Mom6mJunk.py
+- MomOffSeason.py
+- MomOffSeason06YrPlus.py
+- MomOffSeason11YrPlus.py
+- MomOffSeason16YrPlus.py
+- MomRev.py
+- MomSeason.py
+- MomSeason06YrPlus.py
+- MomSeason11YrPlus.py
+- MomSeason16YrPlus.py
+- MomSeasonShort.py
+- MomVol.py
+- MRreversal.py
+- MS.py
+- NetDebtFinance.py
+- NetDebtPrice.py
+- NetEquityFinance.py
+- NetPayoutYield.py
+- NOA.py
+- NumEarnIncrease.py
+- OperProf.py
+- OperProfRD.py
+- OPLeverage.py
+- OrderBacklog.py
+- OrderBacklogChg.py
+- OScore.py
+- PatentsRD.py
+- PayoutYield.py
+- PctAcc.py
+- PctTotAcc.py
+- Price.py
+- ProbInformedTrading.py
+- PS.py
+- RD.py
+- RDAbility.py
+- RDcap.py
+- RDIPO.py
+- RDS.py
+- realestate.py
+- Recomm-ShortInterest.py
+- retConglomerate.py
+- ReturnSkew.py
+- REV6.py
+- RevenueSurprise.py
+- roaq.py
+- RoE.py
+- sfe.py
+- ShareIss1Y.py
+- ShareIss5Y.py
+- ShareRepurchase.py
+- ShareVol.py
+- ShortInterest.py
+- sinAlgo.py
+- Size.py
+- skew1.py
+- SmileSlope.py
+- SP.py
+- Spinoff.py
+- std-turn.py
+- STreversal.py
+- SurpriseRD.py
+- tang.py
+- Tax.py
+- TotalAccruals.py
+- TrendFactor.py
+- UpRecomm.py
+- VarCF.py
+- VolMkt.py
+- VolSD.py
+- VolumeTrend.py
+- XFIN.py
+- ZZ0-RealizedVol-IdioVol3F-ReturnSkew3F.py
+- ZZ1-Activism1-Activism2.py
+- ZZ1-AnalystValue-AOP-PredictedFE-IntrinsicValue.py
+- ZZ1-EBM-BPEBM.py
+- ZZ1-FR-FRbook.py
+- ZZ1-grcapx-grcapx1y-grcapx3y.py
+- ZZ1-IntanBM-IntanSP-IntanCFP-IntanEP.py
+- ZZ1-OptionVolume1-OptionVolume2.py
+- ZZ1-OrgCap-OrgCapNoAdj.py
+- ZZ1-ResidualMomentum6m-ResidualMomentum.py
+- ZZ1-RIO-MB-RIO-Disp-RIO-Turnover-RIO-Volatility.py
+- ZZ1-RIVolSpread.py
+- ZZ1-zerotrade-zerotradeAlt1-zerotradeAlt12.py
+- ZZ2-AbnormalAccruals-AbnormalAccrualsPercent.py
+- ZZ2-AnnouncementReturn.py
+- ZZ2-BetaFP.py
+- ZZ2-betaVIX.py
+- ZZ2-IdioVolAHT.py
+- ZZ2-PriceDelaySlope-PriceDelayRsq-PriceDelayTstat.py
