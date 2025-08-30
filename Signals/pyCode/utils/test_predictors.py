@@ -840,8 +840,8 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.\n\n")
         
         # Create summary table with Python CSV column
-        f.write("| Predictor                 | Python CSV | Superset   | NumRows       | Precision1   | Precision2              | T-stat     |\n")
-        f.write("|---------------------------|------------|------------|---------------|--------------|-------------------------|------------|\n")
+        f.write("| Predictor                 | Python CSV | Superset   | NumRows       | Precision1   | Precision2    | T-stat     |\n")
+        f.write("|---------------------------|------------|------------|---------------|--------------|---------------|------------|\n")
         
         # Sort predictors by test results - worst to best
         def sort_key(predictor):
@@ -976,7 +976,7 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             if results.get('override_applied'):
                 predictor_display = f"{predictor}*"
             
-            f.write(f"| {predictor_display:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<23} | {col5:<10} |\n")
+            f.write(f"| {predictor_display:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<13} | {col5:<10} |\n")
         
         # Count available predictors and overrides for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
