@@ -1,5 +1,5 @@
-# ABOUTME: BetaLiquidityPS.py - generates Pastor-Stambaugh liquidity beta using asreg rolling regressions
-# ABOUTME: Python translation of BetaLiquidityPS.do using polars and asreg helper for exact Stata replication
+# ABOUTME: BetaLiquidityPS.py - generates Pastor-Stambaugh liquidity beta using polars-ols rolling regressions
+# ABOUTME: Python translation of BetaLiquidityPS.do using direct polars-ols for exact Stata replication
 
 """
 BetaLiquidityPS.py
@@ -28,11 +28,11 @@ Requirements:
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.asreg import asreg_polars
 
 print("=" * 80)
 print("🏗️  BetaLiquidityPS.py")
@@ -67,7 +67,7 @@ df = (crsp
 print(f"After merging: {len(df):,} observations")
 
 # SIGNAL CONSTRUCTION
-print("🧮 Computing Pastor-Stambaugh liquidity beta using asreg rolling 60-observation 4-factor regressions...")
+print("🧮 Computing Pastor-Stambaugh liquidity beta using direct polars-ols rolling 60-observation 4-factor regressions...")
 
 # Create excess returns (matching Stata exactly)
 df = df.with_columns([
@@ -82,19 +82,26 @@ df = df.with_columns(
 print(f"Computing rolling 4-factor regressions for {df['permno'].n_unique():,} unique permnos...")
 print("This matches: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)")
 
-# Apply asreg rolling 4-factor regression
-df_with_beta = asreg_polars(
-    df,
-    y="retrf", 
-    X=["ps_innov", "mktrf", "hml", "smb"],
-    by=["permno"], 
-    t="time_temp",
-    mode="rolling", 
-    window_size=60, 
-    min_samples=36,
-    outputs=("coef",),
-    coef_prefix="b_"
-)
+# Apply direct polars-ols rolling 4-factor regression
+# Sort by permno and time_temp for deterministic window order
+df = df.sort(["permno", "time_temp"])
+
+df_with_beta = df.with_columns(
+    pl.col("retrf").least_squares.rolling_ols(
+        pl.col("ps_innov"), pl.col("mktrf"), pl.col("hml"), pl.col("smb"),
+        window_size=60,
+        min_periods=36,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("ps_innov").alias("b_ps_innov"),
+    pl.col("coef").struct.field("mktrf").alias("b_mktrf"),
+    pl.col("coef").struct.field("hml").alias("b_hml"),
+    pl.col("coef").struct.field("smb").alias("b_smb")
+])
 
 # Extract Pastor-Stambaugh liquidity beta coefficient and filter to non-null values
 df_final = (df_with_beta
@@ -125,5 +132,5 @@ else:
     
 print("=" * 80)
 print("✅ BetaLiquidityPS.py Complete")
-print("Pastor-Stambaugh liquidity beta predictor generated using polars asreg exact Stata replication")
+print("Pastor-Stambaugh liquidity beta predictor generated using direct polars-ols exact Stata replication")
 print("=" * 80)

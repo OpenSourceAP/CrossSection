@@ -1,5 +1,5 @@
-# ABOUTME: BetaTailRisk.py - generates tail risk beta using custom tail risk factor and asreg rolling regressions
-# ABOUTME: Python translation of BetaTailRisk.do using polars for tail risk calculation and asreg helper for exact Stata replication
+# ABOUTME: BetaTailRisk.py - generates tail risk beta using custom tail risk factor and polars-ols rolling regressions
+# ABOUTME: Python translation of BetaTailRisk.do using polars for tail risk calculation and direct polars-ols for exact Stata replication
 
 """
 BetaTailRisk.py
@@ -30,11 +30,11 @@ Requirements:
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.asreg import asreg_polars
 
 print("=" * 80)
 print("🏗️  BetaTailRisk.py")
@@ -171,19 +171,23 @@ df = df.with_columns([
 print(f"Computing rolling 120-month tail risk betas for {df['permno'].n_unique():,} unique permnos...")
 print("This matches: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)")
 
-# Apply asreg rolling regression
-df_with_beta = asreg_polars(
-    df,
-    y="ret", 
-    X=["tailex"],
-    by=["permno"], 
-    t="time_avail_m_int",
-    mode="rolling", 
-    window_size=120, 
-    min_samples=72,
-    outputs=("coef",),
-    coef_prefix="b_"
-)
+# Apply direct polars-ols rolling regression
+# Sort by permno and time_avail_m_int for deterministic window order
+df = df.sort(["permno", "time_avail_m_int"])
+
+df_with_beta = df.with_columns(
+    pl.col("ret").least_squares.rolling_ols(
+        pl.col("tailex"),
+        window_size=120,
+        min_periods=72,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("tailex").alias("b_tailex")
+])
 
 # Extract tail risk beta coefficient
 df_with_beta = df_with_beta.with_columns(

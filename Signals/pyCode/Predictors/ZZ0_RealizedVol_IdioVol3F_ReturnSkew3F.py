@@ -29,13 +29,13 @@ Requirements:
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import numpy as np
 from scipy.stats import skew
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.asreg import asreg_polars
 
 
 print("=" * 80)
@@ -78,25 +78,23 @@ df = df.with_columns(
 
 print(f"Date range: {df['time_d'].min()} to {df['time_d'].max()}")
 
-# Run FF3 regressions by permno-month using asreg helper to get residuals
+# Run FF3 regressions by permno-month using direct polars-ols helper to get residuals
 # Equivalent to Stata's "bys permno time_avail_m: asreg ret mktrf smb hml, fit"
 print("Running FF3 regressions by permno-month to extract residuals...")
 
 # Sort data first (required for asreg)
 df = df.sort(["permno", "time_avail_m", "time_d"])
 
-# Use asreg helper with group mode for per-group regressions
-df_with_residuals = asreg_polars(
-    df,
-    y="ret",
-    X=["mktrf", "smb", "hml"],
-    by=["permno", "time_avail_m"],
-    mode="group",
-    min_samples=15,  # Minimum 15 daily observations per permno-month
-    outputs=("resid",),
-    add_intercept=True,
-    null_policy="drop",  # Drop rows with nulls before regression
-    solve_method="svd"   # Use SVD for better numerical stability
+# Use direct polars-ols with group mode for per-group regressions
+df_with_residuals = df.with_columns(
+    pl.col("ret").least_squares.ols(
+        pl.col("mktrf"), pl.col("smb"), pl.col("hml"),
+        mode="residuals",
+        add_intercept=True,
+        null_policy="drop"
+    ).over(['permno', 'time_avail_m']).alias("resid")
+).filter(
+    pl.col("ret").count().over(['permno', 'time_avail_m']) >= 15
 )
 
 # Rename residual column to match original naming

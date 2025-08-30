@@ -1,5 +1,5 @@
-# ABOUTME: Beta.py - generates CAPM Beta predictor using asreg rolling regressions
-# ABOUTME: Python translation of Beta.do using polars and asreg helper for exact Stata replication
+# ABOUTME: Beta.py - generates CAPM Beta predictor using polars-ols rolling regressions
+# ABOUTME: Python translation of Beta.do using direct polars-ols for exact Stata replication
 # BetaSquared was weak in OP
 
 """
@@ -29,16 +29,16 @@ Requirements:
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.asreg import asreg_polars
 
 print("=" * 80)
 print("🏗️  Beta.py")
-print("Generating CAPM Beta predictor using polars asreg rolling regression")
+print("Generating CAPM Beta predictor using direct polars-ols rolling regression")
 print("=" * 80)
 
 # DATA LOAD
@@ -69,7 +69,7 @@ df = (crsp
 print(f"After merging: {len(df):,} observations")
 
 # SIGNAL CONSTRUCTION
-print("🧮 Computing CAPM Beta using asreg rolling 60-observation regressions...")
+print("🧮 Computing CAPM Beta using direct polars-ols rolling 60-observation regressions...")
 
 # Create excess returns (matching Stata exactly)
 df = df.with_columns([
@@ -85,20 +85,26 @@ df = df.with_columns(
 print("Computing rolling regressions by permno (exact Stata replication)...")
 print("This matches: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)")
 
-# Apply asreg rolling regression
+# Apply direct polars-ols rolling regression
 print(f"Processing {df['permno'].n_unique():,} unique permnos...")
-df_with_beta = asreg_polars(
-    df,
-    y="retrf", 
-    X=["ewmktrf"],
-    by=["permno"], 
-    t="time_temp",
-    mode="rolling", 
-    window_size=60, 
-    min_samples=20,
-    outputs=("coef",),
-    coef_prefix="b_"
-)
+
+# Sort by permno and time_temp for deterministic window order
+df = df.sort(["permno", "time_temp"])
+
+# Direct polars-ols rolling regression
+df_with_beta = df.with_columns(
+    pl.col("retrf").least_squares.rolling_ols(
+        pl.col("ewmktrf"),
+        window_size=60,
+        min_periods=20,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("ewmktrf").alias("b_ewmktrf")
+])
 
 # Extract Beta coefficient and filter to non-null values
 df_final = (df_with_beta
@@ -128,5 +134,5 @@ else:
     
 print("=" * 80)
 print("✅ Beta.py Complete")
-print("CAPM Beta predictor generated using polars asreg exact Stata replication")
+print("CAPM Beta predictor generated using direct polars-ols exact Stata replication")
 print("=" * 80)

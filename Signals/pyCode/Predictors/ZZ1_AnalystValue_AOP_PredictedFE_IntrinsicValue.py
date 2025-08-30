@@ -313,15 +313,20 @@ for var in variables:
 df = df.sort(["time_avail_m", "permno"])
 
 # Use asreg helper with group mode  
-from utils.asreg import asreg_polars
-df_with_predictions = asreg_polars(
-    df,
-    y="FErr", 
-    X=["lagSG", "lagBM", "lagAOP", "lagLTG"],
-    by=["time_avail_m"],
-    mode="group",
-    add_intercept=True,
-    outputs=("coef",),
+df_with_predictions = df.with_columns(
+    pl.col("FErr").least_squares.ols(
+        pl.col("lagSG"), pl.col("lagBM"), pl.col("lagAOP"), pl.col("lagLTG"),
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over(['time_avail_m']).alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("lagSG").alias("b_lagSG"),
+    pl.col("coef").struct.field("lagBM").alias("b_lagBM"),
+    pl.col("coef").struct.field("lagAOP").alias("b_lagAOP"),
+    pl.col("coef").struct.field("lagLTG").alias("b_lagLTG")
+]),
     coef_prefix="_b_",
     null_policy="drop",
     min_samples=5  # Need at least 5 observations for 4 variables + intercept

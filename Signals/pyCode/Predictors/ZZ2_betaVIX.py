@@ -2,10 +2,10 @@
 # ABOUTME: Usage: python3 betaVIX.py (run from pyCode/ directory)
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.asreg import asreg_polars
 from utils.save_standardized import save_predictor
 
 print("Starting ZZ2_betaVIX.py...")
@@ -46,20 +46,24 @@ df = df.with_columns([
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 ])
 
-# Use utils/asreg.py helper for rolling regression
+# Use direct polars-ols for rolling regression
 # This replicates: asreg ret mktrf dVIX, window(time_temp 20) min(15) by(permno)
-df = asreg_polars(
-    df,
-    y="ret_excess",  # Stata: ret (but we already subtracted rf)
-    X=["mktrf", "dVIX"],
-    by=["permno"],
-    t="time_temp", 
-    mode="rolling",
-    window_size=20,
-    min_samples=15,
-    outputs=("coef",),
-    coef_prefix="b_"
-)
+
+# Sort is already done above
+df = df.with_columns(
+    pl.col("ret_excess").least_squares.rolling_ols(
+        pl.col("mktrf"), pl.col("dVIX"),
+        window_size=20,
+        min_periods=15,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("mktrf").alias("b_mktrf"),
+    pl.col("coef").struct.field("dVIX").alias("b_dVIX")
+])
 
 # Extract betaVIX coefficient (rename _b_dVIX betaVIX in Stata)
 df = df.with_columns([

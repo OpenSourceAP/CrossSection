@@ -2,12 +2,12 @@
 # ABOUTME: Usage: python3 ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py (run from pyCode/ directory)
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd
 import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.asreg import asreg_polars
 from utils.save_standardized import save_predictor, save_placebo
 from utils.stata_replication import fill_date_gaps_pl
 from utils.winsor2 import winsor2
@@ -105,15 +105,16 @@ df = pl.from_pandas(df_pandas_temp)
 
 # bys fyear sic2: asreg tempAccruals tempInvTA tempDelRev tempPPE, fitted
 # This runs cross-sectional regressions by year and industry using enhanced asreg helper
-df_with_residuals = asreg_polars(
-    df,
-    y="tempAccruals",
-    X=["tempInvTA", "tempDelRev", "tempPPE"],
-    by=["fyear", "sic2"],
-    mode="group",
-    min_samples=1,  # Let all groups run, filter by _Nobs afterwards like Stata
-    add_intercept=True,
-    outputs=("resid",),
+df_with_residuals = df.with_columns(
+    pl.col("tempAccruals").least_squares.ols(
+        pl.col("tempInvTA"), pl.col("tempDelRev"), pl.col("tempPPE"),
+        mode="residuals",
+        add_intercept=True,
+        null_policy="drop"
+    ).over(['fyear', 'sic2']).alias("resid")
+).filter(
+    pl.col("tempAccruals").count().over(['fyear', 'sic2']) >= 1
+),
     null_policy="drop",  # Pass through the null policy like original
     solve_method="svd",   # Revert to original SVD method
     collect=True

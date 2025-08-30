@@ -2,10 +2,10 @@
 # ABOUTME: Usage: python3 ZZ2_IdioVolAHT.py (run from pyCode/ directory)
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.asreg import asreg_polars
 from utils.save_standardized import save_predictor
 
 
@@ -49,21 +49,30 @@ df = df.with_columns([
 ])
 
 
-# Use utils/asreg.py helper for rolling regression with RMSE
+# Use direct polars-ols for rolling regression to get residuals, then compute RMSE
 print("Running 252-day rolling CAPM regressions...")
 # This replicates: asreg ret mktrf, window(time_temp 252) min(100) by(permno) rmse
-df = asreg_polars(
-    df,
-    y="ret",  # Excess return (already calculated above)
-    X=["mktrf"],
-    by=["permno"],
-    t="time_temp", 
-    mode="rolling",
-    window_size=252,
-    min_samples=100,
-    add_intercept=True,  # Stata's asreg includes intercept by default
-    outputs=("rmse",),  # Only need RMSE output (equivalent to Stata's _rmse)
-    coef_prefix="b_"
+
+# Get rolling residuals
+df = df.with_columns(
+    pl.col("ret").least_squares.rolling_ols(
+        pl.col("mktrf"),
+        window_size=252,
+        min_periods=100,
+        mode="residuals",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("resid")
+)
+
+# Calculate RMSE for each window
+# RMSE = sqrt(mean(residuals^2))
+df = df.with_columns(
+    (pl.col("resid") ** 2)
+    .rolling_mean(window_size=252, min_periods=100)
+    .over("permno")
+    .sqrt()
+    .alias("rmse")
 )
 
 

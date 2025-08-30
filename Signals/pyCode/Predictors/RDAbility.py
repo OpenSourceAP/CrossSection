@@ -2,6 +2,7 @@
 # ABOUTME: Usage: python3 RDAbility.py (run from pyCode/ directory)
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd
 import numpy as np
 import sys
@@ -9,7 +10,6 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
-from utils.asreg import asreg_polars
 from typing import Optional, Union
 
 #%% specialized asrol function
@@ -269,16 +269,22 @@ for n in range(1, 6):
     )
     
     # asreg tempY tempXLag, window(fyear 8) min(6) by(gvkey)
-    result = asreg_polars(
-        df, 
-        y="tempY", 
-        X=["tempXLag"], 
-        by=["gvkey"], 
-        t="fyear",
-        mode="rolling", 
-        window_size=8, 
-        min_samples=6,
-        outputs=("coef",),
+    # Sort by gvkey and fyear for deterministic window order
+df = df.sort(["gvkey", "fyear"])
+
+result = df.with_columns(
+    pl.col("tempY").least_squares.rolling_ols(
+        pl.col("tempXLag"),
+        window_size=8,
+        min_periods=6,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("gvkey").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("tempXLag").alias("b_tempXLag")
+]),
         coef_prefix="b_"
     )
     

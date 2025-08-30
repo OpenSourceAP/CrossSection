@@ -28,13 +28,13 @@ Requirements:
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import polars.selectors as cs
 import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor, save_placebo
-from utils.asreg import asreg_polars
 
 
 print("=" * 80)
@@ -90,23 +90,30 @@ df = df.with_columns(
 )
 
 
-print("Running rolling 36-observation FF3 regressions by permno using asreg helper...")
+print("Running rolling 36-observation FF3 regressions by permno using direct polars-ols helper...")
 print("Processing", df['permno'].n_unique(), "unique permnos...")
 
 # Use asreg helper for rolling FF3 regression with residuals  
 # Rolling 36-observation windows with minimum 36 observations (exact Stata asreg match)
 # Use time_temp (position-based) to match Stata's approach exactly
-df = asreg_polars(
-    df,
-    y="retrf",
-    X=["mktrf", "hml", "smb"],
-    by=["permno"],
-    t="time_temp",  # Use position-based time_temp to match Stata exactly 
-    mode="rolling",
-    window_size=36,
-    min_samples=36,
-    add_intercept=True,  # Explicit parameter to match Stata asreg default behavior
-    outputs=("resid",),
+# Sort by permno and time_temp for deterministic window order
+df = df.sort(["permno", "time_temp"])
+
+df = df.with_columns(
+    pl.col("retrf").least_squares.rolling_ols(
+        pl.col("mktrf"), pl.col("hml"), pl.col("smb"),
+        window_size=36,
+        min_periods=36,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("mktrf").alias("b_mktrf"),
+    pl.col("coef").struct.field("hml").alias("b_hml"),
+    pl.col("coef").struct.field("smb").alias("b_smb")
+]),
     null_policy="ignore",  # Match Stata's handling of missing values
     solve_method="svd",  # Match Stata's OLS solver method
     collect=True
