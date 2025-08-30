@@ -1,5 +1,5 @@
 # ABOUTME: AccrualsBM.py - calculates AccrualsBM predictor combining accruals and book-to-market
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/AccrualsBM.do
+# ABOUTME: Identifies value stocks with low accruals versus growth stocks with high accruals
 
 """
 AccrualsBM.py
@@ -34,7 +34,7 @@ print("Starting AccrualsBM.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use gvkey permno time_avail_m ceq act che lct dlc txp at using "$pathDataIntermediate/m_aCompustat", clear
+# Load m_aCompustat with required financial statement variables
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -51,12 +51,12 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations by keeping first occurrence per permno-month
 print("Deduplicating by permno time_avail_m...")
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplication: {df.shape[0]} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(mve_c)
+# Merge with SignalMasterTable to get market value of equity
 print("Merging with SignalMasterTable...")
 
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -75,13 +75,13 @@ df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
 
 print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
-# xtset permno time_avail_m (setup for lag operations)
+# Sort data by firm and time for lag calculations
 print("Setting up panel data structure...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
 
-# gen BM = log(ceq/mve_c)
+# Calculate log book-to-market ratio
 print("Calculating BM...")
 df['BM'] = np.log(df['ceq'] / df['mve_c'])
 
@@ -94,39 +94,35 @@ df['lag_dlc'] = df.groupby('permno')['dlc'].shift(12)
 df['lag_txp'] = df.groupby('permno')['txp'].shift(12)
 df['lag_at'] = df.groupby('permno')['at'].shift(12)
 
-# gen tempacc = ( (act - l12.act) - (che - l12.che) - ( (lct - l12.lct) - (dlc - l12.dlc) - (txp - l12.txp) )) / ( (at + l12.at)/2)
+# Calculate working capital accruals: change in working capital divided by average total assets
 print("Calculating tempacc...")
 df['tempacc'] = (
     (df['act'] - df['lag_act']) - (df['che'] - df['lag_che']) -
     ((df['lct'] - df['lag_lct']) - (df['dlc'] - df['lag_dlc']) - (df['txp'] - df['lag_txp']))
 ) / ((df['at'] + df['lag_at']) / 2)
 
-# egen tempqBM = fastxtile(BM), by(time_avail_m) n(5)
+# Rank firms into book-to-market quintiles within each month
 print("Creating BM quintiles...")
 df['tempqBM'] = fastxtile(df, 'BM', by='time_avail_m', n=5)
 
-# egen tempqAcc = fastxtile(tempacc), by(time_avail_m) n(5)
+# Rank firms into accruals quintiles within each month
 print("Creating accruals quintiles...")
 df['tempqAcc'] = fastxtile(df, 'tempacc', by='time_avail_m', n=5)
 
-# gen AccrualsBM = 1 if tempqBM == 5 & tempqAcc == 1
-# replace AccrualsBM = 0 if tempqBM == 1 & tempqAcc == 5
-# replace AccrualsBM = . if ceq <0
+# Create binary signal: 1 for high BM + low accruals, 0 for low BM + high accruals
 print("Generating AccrualsBM signal...")
 df['AccrualsBM'] = np.nan
 
-# High BM (quintile 5) and low accruals (quintile 1) = 1
-# Following exact Stata logic: ONLY tempqBM==5 AND tempqAcc==1
+# High book-to-market (quintile 5) and low accruals (quintile 1) = 1
 df.loc[(df['tempqBM'] == 5) & (df['tempqAcc'] == 1), 'AccrualsBM'] = 1
 
-# Low BM (quintile 1) and high accruals (quintile 5) = 0
-# Following exact Stata logic: ONLY tempqBM==1 AND tempqAcc==5  
+# Low book-to-market (quintile 1) and high accruals (quintile 5) = 0
 df.loc[(df['tempqBM'] == 1) & (df['tempqAcc'] == 5), 'AccrualsBM'] = 0
 
 # Set missing if negative book equity
 df.loc[df['ceq'] < 0, 'AccrualsBM'] = np.nan
 
-# drop temp*
+# Remove temporary and lag variables
 temp_cols = [col for col in df.columns if col.startswith('temp')]
 lag_cols = [col for col in df.columns if col.startswith('lag_')]
 drop_cols = temp_cols + lag_cols
@@ -134,8 +130,7 @@ df = df.drop(columns=drop_cols)
 
 print(f"Calculated AccrualsBM for {df['AccrualsBM'].notna().sum()} observations")
 
-# SAVE
-# do "$pathCode/savepredictor" AccrualsBM
+# Save predictor to standardized format
 save_predictor(df, 'AccrualsBM')
 
 print("AccrualsBM.py completed successfully")

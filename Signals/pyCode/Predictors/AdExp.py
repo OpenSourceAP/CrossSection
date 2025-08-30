@@ -35,7 +35,7 @@ print("Starting AdExp.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use permno time_avail_m xad using "$pathDataIntermediate/m_aCompustat", clear
+# Load advertising expense data from monthly Compustat
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -52,7 +52,7 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(mve_c)
+# Merge with SignalMasterTable to get market value of equity
 print("Merging with SignalMasterTable...")
 
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -66,24 +66,24 @@ if 'mve_c' not in signal_master.columns:
 # Keep only required columns from SignalMasterTable
 signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
 
-# Merge (equivalent to keep(using match) - right join)
+# Use right join to keep only observations present in SignalMasterTable
 df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
 
 print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# gen AdExp = xad/mve_c
+# Calculate advertising expense scaled by market value of equity
 print("Calculating AdExp...")
 df['AdExp'] = df['xad'] / df['mve_c']
 
-# replace AdExp = . if xad <= 0 // Following Table VII
+# Set to missing for non-positive advertising expense values
 df.loc[df['xad'] <= 0, 'AdExp'] = np.nan
 
 print(f"Calculated AdExp for {df['AdExp'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" AdExp
+# Save the AdExp predictor to CSV file
 save_predictor(df, 'AdExp')
 
 print("AdExp.py completed successfully")

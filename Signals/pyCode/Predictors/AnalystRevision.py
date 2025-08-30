@@ -1,5 +1,5 @@
-# ABOUTME: AnalystRevision.py - computes EPS forecast revision (Hawkins, Chamberlin, Daniel 1984 FAJ Table 10)
-# ABOUTME: Calculates ratio of current month EPS forecast to previous month's forecast using IBES data
+# ABOUTME: AnalystRevision.py - computes analyst earnings forecast revision signal
+# ABOUTME: Measures change in analyst sentiment by comparing current month's EPS forecast to previous month
 
 """
 AnalystRevision.py

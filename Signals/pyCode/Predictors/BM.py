@@ -22,7 +22,7 @@ signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
 print(f"Loaded m_aCompustat: {m_compustat.shape[0]} rows")
 print(f"Loaded SignalMasterTable: {signal_master.shape[0]} rows")
 
-# Merge 1:1 permno time_avail_m, keep using match
+# Merge accounting data with market data
 print("Merging with SignalMasterTable...")
 df = pd.merge(m_compustat, signal_master, on=['permno', 'time_avail_m'], how='right')
 print(f"After merge: {df.shape[0]} rows")
@@ -30,23 +30,23 @@ print(f"After merge: {df.shape[0]} rows")
 # find the market equity that matches datadate (based on 6 month lag)
 # (see "Company Data" section)
 
-# Sort by permno and time_avail_m for proper lagging (equivalent to xtset)
+# Sort by permno and time_avail_m for proper lagging
 print("Setting up panel data structure...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 6-month lag using .shift() (equivalent to gen me_datadate = l6.mve_c)
+# Create 6-month lag of market equity
 print("Creating 6-month lag for market equity...")
 df['me_datadate'] = df.groupby('permno')['mve_c'].shift(6)
 df['l6_time_avail_m'] = df.groupby('permno')['time_avail_m'].shift(6)
 
-# Convert to Period('M') format for comparison (equivalent to mofd() function)
+# Convert to Period('M') format for comparison
 df['l6_time_avail_m_period'] = pd.to_datetime(df['l6_time_avail_m']).dt.to_period('M')
 df['datadate_period'] = pd.to_datetime(df['datadate']).dt.to_period('M')
 
-# Replace me_datadate with NaN if l6.time_avail_m != mofd(datadate)
+# Only use market equity if lag period matches datadate period
 df.loc[df['l6_time_avail_m_period'] != df['datadate_period'], 'me_datadate'] = np.nan
 
-# Forward fill me_datadate within each permno (equivalent to bys permno (time_avail_m): replace me_datadate = me_datadate[_n-1])
+# Forward fill market equity within each firm
 df['me_datadate'] = df.groupby('permno')['me_datadate'].ffill()
 
 # Cleanup intermediate columns

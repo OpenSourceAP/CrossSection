@@ -1,12 +1,12 @@
 # ABOUTME: BetaLiquidityPS.py - generates Pastor-Stambaugh liquidity beta using polars-ols rolling regressions
-# ABOUTME: Python translation of BetaLiquidityPS.do using direct polars-ols for exact Stata replication
+# ABOUTME: Computes liquidity risk exposure coefficient from 4-factor rolling window regressions
 
 """
 BetaLiquidityPS.py
 
 Generates Pastor-Stambaugh liquidity beta predictor from 4-factor rolling regressions:
-- BetaLiquidityPS: Coefficient of ps_innov from regression retrf ~ ps_innov + mktrf + hml + smb
-- Exact replication of Stata: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)
+- BetaLiquidityPS: Coefficient of liquidity innovation from 4-factor model regression
+- Rolling 60-observation windows with minimum 36 observations, computed separately for each stock
 
 Usage:
     cd pyCode/
@@ -24,7 +24,7 @@ Outputs:
 Requirements:
     - Rolling 60-observation windows (not 60 months) with minimum 36 observations per window
     - 4-factor regression: retrf = alpha + beta_ps*ps_innov + beta_mkt*mktrf + beta_hml*hml + beta_smb*smb + residual
-    - Exact replication of Stata's asreg behavior
+    - Sequential window-based regression estimation for each stock
 """
 
 import polars as pl
@@ -69,18 +69,18 @@ print(f"After merging: {len(df):,} observations")
 # SIGNAL CONSTRUCTION
 print("🧮 Computing Pastor-Stambaugh liquidity beta using direct polars-ols rolling 60-observation 4-factor regressions...")
 
-# Create excess returns (matching Stata exactly)
+# Create excess returns
 df = df.with_columns([
     (pl.col("ret") - pl.col("rf")).alias("retrf")
 ])
 
-# Add time sequence for each permno (replicates Stata's time_temp = _n)
+# Add observation sequence number for rolling window identification
 df = df.with_columns(
     pl.int_range(pl.len()).over("permno").add(1).alias("time_temp")
 )
 
 print(f"Computing rolling 4-factor regressions for {df['permno'].n_unique():,} unique permnos...")
-print("This matches: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)")
+print("Using 60-observation rolling windows with 36-observation minimum for each stock")
 
 # Apply direct polars-ols rolling 4-factor regression
 # Sort by permno and time_temp for deterministic window order
@@ -132,5 +132,5 @@ else:
     
 print("=" * 80)
 print("✅ BetaLiquidityPS.py Complete")
-print("Pastor-Stambaugh liquidity beta predictor generated using direct polars-ols exact Stata replication")
+print("Pastor-Stambaugh liquidity beta predictor generated using rolling 4-factor regressions")
 print("=" * 80)

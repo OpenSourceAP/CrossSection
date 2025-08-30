@@ -7,7 +7,7 @@ Beta.py
 
 Generates CAPM Beta predictor from monthly returns and market returns using rolling 60-observation regressions:
 - Beta: Coefficient from CAPM regression retrf ~ ewmktrf over 60-observation rolling windows
-- Exact replication of Stata: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)
+- Rolling regression of excess returns on market excess returns using 60-observation windows with minimum 20 observations
 
 Usage:
     cd pyCode/
@@ -25,7 +25,7 @@ Outputs:
 Requirements:
     - Rolling 60-observation windows (not 60 months) with minimum 20 observations per window
     - CAPM regression: retrf = alpha + beta * ewmktrf + residual
-    - Exact replication of Stata's asreg behavior
+    - Rolling window regression analysis with observation-based (not time-based) windows
 """
 
 import polars as pl
@@ -77,13 +77,13 @@ df = df.with_columns([
     (pl.col("ewretd") - pl.col("rf")).alias("ewmktrf")
 ])
 
-# Add time sequence for each permno (replicates Stata's time_temp = _n)
+# Add time sequence for each permno to track observation order within each stock
 df = df.with_columns(
     pl.int_range(pl.len()).over("permno").add(1).alias("time_temp")
 )
 
-print("Computing rolling regressions by permno (exact Stata replication)...")
-print("This matches: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)")
+print("Computing rolling regressions by permno using 60-observation windows...")
+print("Rolling window regression with minimum 20 observations per window")
 
 # Apply direct polars-ols rolling regression
 print(f"Processing {df['permno'].n_unique():,} unique permnos...")
@@ -134,5 +134,5 @@ else:
     
 print("=" * 80)
 print("✅ Beta.py Complete")
-print("CAPM Beta predictor generated using direct polars-ols exact Stata replication")
+print("CAPM Beta predictor generated using rolling 60-observation regression windows")
 print("=" * 80)

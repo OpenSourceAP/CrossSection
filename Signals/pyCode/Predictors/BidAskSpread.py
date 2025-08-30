@@ -1,5 +1,5 @@
 # ABOUTME: BidAskSpread.py - loads BidAskSpread predictor from pre-computed data
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/BidAskSpread.do
+# ABOUTME: Processes bid-ask spread data using Corwin-Schultz methodology
 
 """
 BidAskSpread.py
@@ -33,7 +33,7 @@ print("Starting BidAskSpread.py...")
 # DATA LOAD
 print("Loading BAspreadsCorwin data...")
 
-# Load BAspreadsCorwin - equivalent to Stata: use "$pathDataIntermediate/BAspreadsCorwin.dta", clear
+# Load pre-computed bid-ask spreads data
 ba_spreads_path = Path("../pyData/Intermediate/BAspreadsCorwin.parquet")
 if not ba_spreads_path.exists():
     raise FileNotFoundError(f"Required input file not found: {ba_spreads_path}")
@@ -53,7 +53,7 @@ if 'BidAskSpread' not in df.columns:
 print(f"BidAskSpread available for {df['BidAskSpread'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" BidAskSpread
+# Save BidAskSpread predictor to standardized format
 save_predictor(df, 'BidAskSpread')
 
 print("BidAskSpread.py completed successfully")

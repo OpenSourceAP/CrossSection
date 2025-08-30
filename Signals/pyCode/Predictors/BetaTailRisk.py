@@ -7,7 +7,7 @@ BetaTailRisk.py
 Generates tail risk beta predictor from daily and monthly return data:
 - Creates monthly tail risk factor from daily returns (5th percentile tail excess returns)
 - BetaTailRisk: Coefficient from regression ret ~ tailex over 120-month rolling windows
-- Exact replication of Stata: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)
+- Rolling 120-month regression of returns on tail risk factor with minimum 72 observations per window
 
 Usage:
     cd pyCode/
@@ -26,7 +26,7 @@ Requirements:
     - Tail risk factor: log(ret/retp5) for returns in bottom 5% each month
     - Rolling 120-month windows with minimum 72 observations per window
     - Filter out non-common stocks (shrcd > 11)
-    - Exact replication of Stata's asreg behavior
+    - Rolling window regression behavior with proper minimum observation constraints
 """
 
 import polars as pl
@@ -49,7 +49,7 @@ print("Loading dailyCRSP.parquet...")
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet").select(["permno", "time_d", "ret"])
 print(f"Loaded daily CRSP: {len(daily_crsp):,} daily observations")
 
-# Convert daily dates to monthly (equivalent to mofd() in Stata)
+# Convert daily dates to monthly
 daily_crsp = daily_crsp.with_columns([
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 ])
@@ -57,7 +57,7 @@ daily_crsp = daily_crsp.with_columns([
 
 print("Calculating 5th percentile returns by month...")
 # Calculate 5th percentile of returns by month (retp5)
-# Use "lower" interpolation to match Stata's quantile method
+# Use "lower" interpolation method for 5th percentile calculation
 monthly_p5 = daily_crsp.group_by("time_avail_m").agg([
     pl.col("ret").quantile(0.05, interpolation="lower").alias("retp5")
 ])
@@ -109,14 +109,14 @@ print(f"After merging: {len(df):,} observations")
 
 
 
-# Convert time_avail_m to integer for window-based asreg (matching Stata's mofd function)
-# Stata time starts from Jan 1960 = 0
+# Convert time_avail_m to integer for window-based regression
+# Time starts from Jan 1960 = 0
 df = df.with_columns([
     ((pl.col("time_avail_m").dt.year() - 1960) * 12 + (pl.col("time_avail_m").dt.month() - 1)).alias("time_avail_m_int")
 ])
 
 print(f"Computing rolling 120-month tail risk betas for {df['permno'].n_unique():,} unique permnos...")
-print("This matches: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)")
+print("Rolling 120-month regression windows with minimum 72 observations per permno")
 
 # Apply direct polars-ols rolling regression
 # Sort by permno and time_avail_m_int for deterministic window order
@@ -169,5 +169,5 @@ else:
     
 print("=" * 80)
 print("✅ BetaTailRisk.py Complete")
-print("Tail risk beta predictor generated using polars asreg exact Stata replication")
+print("Tail risk beta predictor generated using polars rolling window regression")
 print("=" * 80)

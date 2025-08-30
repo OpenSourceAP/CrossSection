@@ -1,4 +1,4 @@
-# ABOUTME: Translates AM.do to create assets-to-market predictor
+# ABOUTME: Creates assets-to-market ratio predictor from book value of assets and market equity
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/AM.py
 
 # Run from pyCode/ directory
