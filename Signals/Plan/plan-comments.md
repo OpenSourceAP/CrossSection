@@ -6,7 +6,9 @@ We're done matching the Stata results. So let's remove the comments referring to
 
 To get info for 2, run `cd pyCode && python3 utils/fetch-doc.py [signalname]`
 
-# Progress tracking
+Some scripts create more than one predictor. For example, `ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py` creates `AbnormalAccruals` and `AbnormalAccrualsPercent`. For these predictors, you need to search for substrings in `Predictors/*.py`.
+
+# Progress tracking by predictor
 
 If the subsection is marked with ✅, all predictors in the subsection are complete.
 
@@ -50,20 +52,17 @@ If the subsection is marked with ✅, all predictors in the subsection are compl
 - VarCF
 - OScore
 
-## composite accounting
+## composite accounting and earnings event ✅
 
 - ExclExp
 - FR
 - MS
 - PS
 - RDS
-
-## earnings event
-
 - AnnouncementReturn
 - ChNAnalyst
 
-## earnings forecast
+## earnings forecast ✅
 
 - AnalystRevision
 - ChForecastAccrual

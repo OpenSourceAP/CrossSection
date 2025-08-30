@@ -22,8 +22,8 @@ print("📊 Preparing IBES forecast data...")
 print("Loading IBES EPS Unadj for FROE1...")
 ibes_eps = pl.read_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet")
 
-# keep if fpi == "1" & month(statpers) == 5 // only May p 290
-# keep if fpedats != . & fpedats > statpers + 30 // keep only forecasts past June
+# Filter 1-year ahead forecasts from May statement periods
+# Keep only forecasts extending beyond 30 days from statement period
 froe1 = ibes_eps.filter(
     (pl.col("fpi") == "1") & 
     (pl.col("statpers").dt.month() == 5) &
@@ -31,7 +31,7 @@ froe1 = ibes_eps.filter(
     (pl.col("fpedats") > pl.col("statpers") + pl.duration(days=30))
 )
 
-# replace time_avail_m = time_avail_m + 1 // OP is conservative
+# Add 1-month conservative timing adjustment per original paper
 froe1 = froe1.with_columns(
     pl.col("time_avail_m").dt.offset_by("1mo").alias("time_avail_m")
 )
@@ -63,16 +63,16 @@ print(f"LTG data: {len(ltg):,} observations")
 print("📊 Loading main data sources...")
 
 # DATA LOAD
-# use permno tickerIBES time_avail_m prc using "$pathDataIntermediate/SignalMasterTable", clear
+# Load master table with security identifiers and prices
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 df = signal_master.select(["permno", "tickerIBES", "time_avail_m", "prc"])
 print(f"SignalMasterTable: {len(df):,} observations")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(shrout) 
+# Add shares outstanding from CRSP 
 crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 df = df.join(crsp.select(["permno", "time_avail_m", "shrout"]), on=["permno", "time_avail_m"], how="left")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/m_aCompustat", keep(master match) nogenerate keepusing(ceq ib ibcom ni sale datadate dvc at)
+# Add accounting fundamentals from Compustat
 m_compustat = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 df = df.join(
     m_compustat.select(["permno", "time_avail_m", "ceq", "ib", "ibcom", "ni", "sale", "datadate", "dvc", "at"]), 
@@ -82,22 +82,22 @@ df = df.join(
 
 print(f"After merging CRSP and Compustat: {len(df):,} observations")
 
-# gen SG = sale/l60.sale
+# Calculate 5-year sales growth
 df = df.sort(["permno", "time_avail_m"])
 df = df.with_columns(
     (pl.col("sale") / pl.col("sale").shift(60).over("permno")).alias("SG")
 )
 
-# keep if month(dofm(time_avail_m)) == 6
+# Restrict to June observations
 df = df.filter(pl.col("time_avail_m").dt.month() == 6)
 print(f"After filtering to June observations: {len(df):,} observations")
 
 # Merge with IBES data
-# merge m:1 tickerIBES time_avail_m using "$pathtemp/tempFROE", keep(match) nogenerate
+# Add 1-year ahead earnings forecasts
 df = df.join(froe1, on=["tickerIBES", "time_avail_m"], how="left")
-# merge m:1 tickerIBES time_avail_m using "$pathtemp/tempFROE2", keep(master match) nogenerate
+# Add 2-year ahead earnings forecasts
 df = df.join(froe2, on=["tickerIBES", "time_avail_m"], how="left")
-# merge m:1 tickerIBES time_avail_m using "$pathtemp/tempLTG", keep(master match) nogenerate
+# Add long-term growth forecasts
 df = df.join(ltg, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging IBES data: {len(df):,} observations")
@@ -105,11 +105,11 @@ print(f"After merging IBES data: {len(df):,} observations")
 print("🧮 Computing financial variables and screens...")
 
 # Common screens and variables
-# xtset permno time_avail_m
+# Sort data by firm and time for panel calculations
 df = df.sort(["permno", "time_avail_m"])
 
-# gen ceq_ave = (ceq + l12.ceq)/2
-# bys permno (time_avail_m): replace ceq_ave = ceq if _n <= 1 // seems important
+# Calculate average book equity using 12-month lag
+# Use current book equity for first observation per firm
 # NOTE: Since we've filtered to June observations only, l12.ceq means previous June (1 year back = 1 position back)
 df = df.with_columns([
     pl.col("ceq").shift(1).over("permno").alias("l12_ceq"),  # Changed from shift(12) to shift(1)
@@ -125,18 +125,18 @@ df = df.with_columns(
     .alias("ceq_ave")
 )
 
-# gen mve_c = (shrout * abs(prc))
+# Calculate market value of equity
 df = df.with_columns(
     (pl.col("shrout") * pl.col("prc").abs()).alias("mve_c")
 )
 
-# gen BM = ceq/mve_c
+# Calculate book-to-market ratio
 df = df.with_columns(
     (pl.col("ceq") / pl.col("mve_c")).alias("BM")
 )
 
-# gen k = dvc/ibcom // p 288 says ib, but Table 1 says ibcom
-# replace k = dvc/(0.06*at) if ibcom < 0
+# Calculate dividend payout ratio
+# Use alternative calculation when income is negative
 df = df.with_columns(
     pl.when(pl.col("ibcom") < 0)
     .then(pl.col("dvc") / (0.06 * pl.col("at")))
@@ -144,7 +144,7 @@ df = df.with_columns(
     .alias("k")
 )
 
-# gen ROE = ibcom/ceq_ave // p 290 or Table 1
+# Calculate return on equity using average book value
 df = df.with_columns(
     (pl.col("ibcom") / pl.col("ceq_ave")).alias("ROE")
 )
@@ -152,38 +152,38 @@ df = df.with_columns(
 print("📈 Computing forecast-based equity values...")
 
 # p 317 (Appendix) - Multi-stage equity valuation
-# gen FROE1 = feps1*shrout/ceq_ave
+# Calculate forecasted ROE for year 1
 df = df.with_columns(
     (pl.col("feps1") * pl.col("shrout") / pl.col("ceq_ave")).alias("FROE1")
 )
 
-# gen ceq1 = ceq*(1+FROE1*(1-k))
+# Project book equity for year 1
 df = df.with_columns(
     (pl.col("ceq") * (1 + pl.col("FROE1") * (1 - pl.col("k")))).alias("ceq1")
 )
 
-# gen ceq1h = ceq*(1+ROE*(1-k))
+# Project book equity using historical ROE
 df = df.with_columns(
     (pl.col("ceq") * (1 + pl.col("ROE") * (1 - pl.col("k")))).alias("ceq1h")
 )
 
-# gen FROE2 = feps2*shrout/((ceq1 + ceq)/2)
+# Calculate forecasted ROE for year 2
 df = df.with_columns(
     (pl.col("feps2") * pl.col("shrout") / ((pl.col("ceq1") + pl.col("ceq")) / 2)).alias("FROE2")
 )
 
-# gen ceq2 = ceq1*(1+FROE1*(1-k))
+# Project book equity for year 2
 df = df.with_columns(
     (pl.col("ceq1") * (1 + pl.col("FROE1") * (1 - pl.col("k")))).alias("ceq2")
 )
 
-# gen ceq2h = ceq1h*(1+ROE*(1-k))
+# Project book equity year 2 using historical ROE
 df = df.with_columns(
     (pl.col("ceq1h") * (1 + pl.col("ROE") * (1 - pl.col("k")))).alias("ceq2h")
 )
 
-# gen FROE3 = feps2*(1+LTG/100)*shrout/((ceq1+ceq2)/2)
-# replace FROE3 = FROE2 if LTG == .
+# Calculate forecasted ROE for year 3 using long-term growth
+# Use year 2 ROE when long-term growth missing
 df = df.with_columns(
     pl.when(pl.col("LTG").is_null())
     .then(pl.col("FROE2"))
@@ -191,7 +191,7 @@ df = df.with_columns(
     .alias("FROE3")
 )
 
-# gen ceq3 = ceq2*(1+FROE2*(1-k))
+# Project book equity for year 3
 df = df.with_columns(
     (pl.col("ceq2") * (1 + pl.col("FROE2") * (1 - pl.col("k")))).alias("ceq3")
 )
@@ -199,10 +199,9 @@ df = df.with_columns(
 print("🔍 Applying data screens...")
 
 # Screens
-# drop if ceq < 0 | ceq == . // page 291
-# drop if abs(ROE) > 1 | abs(FROE1) > 1 | k > 1 // page 291
-# keep if month(datadate) >= 6 // p 290
-# drop if feps2 == . | feps1 == . // p 290
+# Apply data quality screens per original methodology
+# Exclude extreme ROE values and missing forecast data
+# Require June or later datadate and complete forecasts
 df = df.filter(
     (pl.col("ceq") > 0) & (pl.col("ceq").is_not_null()) &
     ((pl.col("ROE").abs() <= 1) | pl.col("ROE").is_null()) & 
@@ -262,7 +261,7 @@ df = df.with_columns(
     .alias("IntrinsicValue")
 )
 
-# gen AOP = (AnalystValue - IntrinsicValue)/abs(IntrinsicValue)
+# Calculate analyst optimism as scaled difference between valuations
 df = df.with_columns(
     ((pl.col("AnalystValue") - pl.col("IntrinsicValue")) / pl.col("IntrinsicValue").abs()).alias("AOP")
 )
@@ -273,7 +272,7 @@ print("🔮 Computing predicted forecast error...")
 # Predicted FE
 # ===============================================
 
-# gen FErr = l12.FROE1 - ROE // almost works!
+# Calculate forecast error as difference between forecasted and realized ROE
 # Create time-based 12-month lag for FROE1 (not position-based)
 df_lag = df.select(["permno", "time_avail_m", "FROE1"]).with_columns(
     pl.col("time_avail_m").dt.offset_by("12mo").alias("time_avail_m_future")
@@ -337,7 +336,7 @@ df_with_predictions = df_with_predictions.rename({
     "b_lagLTG": "_b_lagLTG"
 })
 
-# gen PredictedFE = _b_cons + _b_lagSG*rankSG + _b_lagBM*rankBM + _b_lagAOP*rankAOP + _b_lagLTG*rankLTG
+# Calculate predicted forecast error using cross-sectional regression coefficients
 df_with_predictions = df_with_predictions.with_columns(
     (
         pl.col("_b_cons") + 

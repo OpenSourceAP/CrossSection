@@ -1,47 +1,45 @@
-# ABOUTME: Translates EarningsForecastDisparity.do from Stata to Python
-# ABOUTME: Calculates difference between long-term and short-term earnings forecasts
+# ABOUTME: EarningsForecastDisparity.py - computes long-vs-short EPS forecasts (Da and Warachka 2011 JFE Table 2B)
+# ABOUTME: Calculates disparity between long-term growth forecasts and scaled short-term earnings expectations
 
-# How to run: python3 EarningsForecastDisparity.py
-# Inputs: ../pyData/Intermediate/IBES_EPS_Unadj.parquet, SignalMasterTable.parquet, IBES_UnadjustedActuals.parquet
-# Outputs: ../pyData/Predictors/EarningsForecastDisparity.csv
+# Usage: python3 EarningsForecastDisparity.py
+# Inputs: IBES EPS forecasts, master table, and actual earnings data
+# Output: Long-term vs short-term forecast disparity measure
 
 import pandas as pd
 import numpy as np
 
-# Prep IBES data
-# Load IBES_EPS_Unadj and filter for short-term forecasts (fpi == "1")
+# Prepare IBES forecast data
+# Extract 1-year ahead earnings forecasts
 ibes_eps = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
 tempIBESshort = ibes_eps[ibes_eps['fpi'] == "1"].copy()
 tempIBESshort = tempIBESshort[(tempIBESshort['fpedats'].notna()) & 
                               (tempIBESshort['fpedats'] > tempIBESshort['statpers'] + pd.Timedelta(days=30))]
 
-# Load IBES_EPS_Unadj and filter for long-term forecasts (fpi == "0")
+# Extract long-term growth forecasts (5-year ahead)
 tempIBESlong = ibes_eps[ibes_eps['fpi'] == "0"].copy()
 tempIBESlong = tempIBESlong.rename(columns={'meanest': 'fgr5yr'})
 
 print("Starting EarningsForecastDisparity.py...")
 
-# DATA LOAD
-print("Loading data...")
-# Load SignalMasterTable
+# Load master security table with identifiers
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                                 columns=['permno', 'time_avail_m', 'tickerIBES'])
 
-# Merge with short-term IBES data: keep(master match) -> how='left'
+# Merge short-term forecasts (left join preserves all securities)
 df = pd.merge(signal_master, 
               tempIBESshort[['tickerIBES', 'time_avail_m', 'meanest']], 
               on=['tickerIBES', 'time_avail_m'], 
               how='left', 
               validate='m:1')
 
-# Merge with long-term IBES data: keep(master match) -> how='left'
+# Merge long-term forecasts (left join preserves all securities)
 df = pd.merge(df, 
               tempIBESlong[['tickerIBES', 'time_avail_m', 'fgr5yr']], 
               on=['tickerIBES', 'time_avail_m'], 
               how='left', 
               validate='m:1')
 
-# Load and merge with IBES actuals
+# Add actual earnings data for scaling
 ibes_actuals = pd.read_parquet('../pyData/Intermediate/IBES_UnadjustedActuals.parquet',
                                columns=['tickerIBES', 'time_avail_m', 'fy0a'])
 df = pd.merge(df, 
@@ -50,20 +48,18 @@ df = pd.merge(df,
               how='left', 
               validate='m:1')
 
-# SIGNAL CONSTRUCTION
-# Calculate tempShort: 100* (meanest - fy0a)/abs(fy0a)
-# Handle division by zero like Stata (set to missing)
+# Compute scaled short-term forecast error
+# Scale by absolute value of actual earnings to avoid sign issues
 df['tempShort'] = np.where(df['fy0a'] == 0, np.nan, 100 * (df['meanest'] - df['fy0a']) / abs(df['fy0a']))
 
-# Calculate EarningsForecastDisparity: fgr5yr - tempShort
+# Compute disparity between long-term growth and short-term scaled forecast
 df['EarningsForecastDisparity'] = df['fgr5yr'] - df['tempShort']
 
-# Create yyyymm variable
+# Convert date to YYYYMM format
 df['yyyymm'] = (df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month).astype(int)
 
-# Keep only required columns and remove missing values
-# Only drop rows where EarningsForecastDisparity is missing (not intermediate variables)
+# Prepare final output with valid observations only
 result = df[['permno', 'yyyymm', 'EarningsForecastDisparity']].dropna(subset=['EarningsForecastDisparity'])
 
-# Save the predictor
+# Save predictor to CSV
 result.to_csv('../pyData/Predictors/EarningsForecastDisparity.csv', index=False)

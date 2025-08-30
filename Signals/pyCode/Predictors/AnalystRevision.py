@@ -1,5 +1,5 @@
-# ABOUTME: AnalystRevision.py - calculates AnalystRevision predictor using IBES analyst estimates
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/AnalystRevision.do
+# ABOUTME: AnalystRevision.py - computes EPS forecast revision (Hawkins, Chamberlin, Daniel 1984 FAJ Table 10)
+# ABOUTME: Calculates ratio of current month EPS forecast to previous month's forecast using IBES data
 
 """
 AnalystRevision.py
@@ -15,7 +15,7 @@ Inputs:
 
 Outputs:
     - AnalystRevision.csv: CSV file with columns [permno, yyyymm, AnalystRevision]
-    - AnalystRevision = meanest/l.meanest (1-month analyst revision)
+    - AnalystRevision = ratio of current to previous month's mean earnings estimate
 """
 
 import pandas as pd
@@ -34,17 +34,17 @@ print("Starting AnalystRevision.py...")
 # Prep IBES data
 print("Loading and preparing IBES data...")
 
-# Load IBES data - equivalent to Stata: use "$pathDataIntermediate/IBES_EPS_Unadj", replace
+# Load IBES earnings per share data
 ibes_path = Path("../pyData/Intermediate/IBES_EPS_Unadj.parquet")
 if not ibes_path.exists():
     raise FileNotFoundError(f"Required input file not found: {ibes_path}")
 
 ibes_df = pd.read_parquet(ibes_path)
 
-# keep if fpi == "1"
+# Keep only 1-year ahead forecasts
 ibes_df = ibes_df[ibes_df['fpi'] == "1"].copy()
 
-# keep tickerIBES time_avail_m meanest
+# Select required columns for analysis
 required_cols = ['tickerIBES', 'time_avail_m', 'meanest']
 missing_cols = [col for col in required_cols if col not in ibes_df.columns]
 if missing_cols:
@@ -56,7 +56,7 @@ print(f"Prepared IBES data: {ibes_df.shape[0]} rows, {ibes_df.shape[1]} columns"
 # DATA LOAD
 print("Loading SignalMasterTable...")
 
-# Load SignalMasterTable - equivalent to Stata: use permno tickerIBES time_avail_m using "$pathDataIntermediate/SignalMasterTable", clear
+# Load master table with security identifiers and timing
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
 if not signal_master_path.exists():
     raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
@@ -72,33 +72,33 @@ if smt_missing_cols:
 df = signal_master[smt_required_cols].copy()
 print(f"Loaded SignalMasterTable: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# merge m:1 tickerIBES time_avail_m using "$pathtemp/temp", keep(master match) nogenerate
+# Merge IBES data with master table
 print("Merging with IBES data...")
 
-# Merge (equivalent to keep(master match) - left join)
+# Left join preserves all master table observations
 df = pd.merge(df, ibes_df, on=['tickerIBES', 'time_avail_m'], how='left')
 
 print(f"After merging with IBES data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# xtset permno time_avail_m
+# Sort data by security and time for panel calculations
 print("Setting up panel data (sorting by permno, time_avail_m)...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen AnalystRevision = meanest/l.meanest
+# Calculate analyst revision as ratio of current to lagged forecast
 print("Calculating 1-month lag and AnalystRevision...")
 
-# Create 1-month lag using simple shift (Method 1 from StataDocs)
+# Create 1-month lag of mean earnings estimate
 df['l_meanest'] = df.groupby('permno')['meanest'].shift(1)
 
-# gen AnalystRevision = meanest/l.meanest
+# Compute forecast revision ratio
 df['AnalystRevision'] = df['meanest'] / df['l_meanest']
 
 print(f"Calculated AnalystRevision for {df['AnalystRevision'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" AnalystRevision
+# Save predictor to standardized output format
 save_predictor(df, 'AnalystRevision')
 
 print("AnalystRevision.py completed successfully")
