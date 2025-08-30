@@ -1,6 +1,8 @@
 # ABOUTME: stata_fastxtile.py - Robust Stata fastxtile function equivalent in Python
 # ABOUTME: Handles infinite values, missing data, and tie-breaking to match Stata behavior exactly
 
+# ac: 2025-08-30: we should at some point simplify this function. But right now it replicates the Stata code very well.
+
 """
 Robust Stata fastxtile equivalent implementation
 
@@ -26,8 +28,10 @@ Key improvements over previous versions:
 
 import pandas as pd
 import numpy as np
+import polars as pl
+from typing import Optional, Union
 
-def fastxtile(df_or_series, variable=None, by=None, n=5):
+def fastxtile_pd(df_or_series, variable=None, by=None, n=5):
     """
     Robust Stata fastxtile equivalent with automatic infinite value handling
     
@@ -74,6 +78,57 @@ def fastxtile(df_or_series, variable=None, by=None, n=5):
         return df.groupby(by)[variable].transform(lambda x: _fastxtile_core(x, n=n))
     else:
         return _fastxtile_core(series, n=n)
+
+
+def fastxtile(df_or_series, variable=None, by=None, n=5):
+    """
+    Wrapper for fastxtile_pd that handles both pandas and polars inputs.
+    
+    For pandas input: directly calls fastxtile_pd.
+    For polars input: converts to pandas, applies fastxtile_pd, converts back.
+    
+    Parameters:
+    -----------
+    df_or_series : pd.DataFrame, pd.Series, pl.DataFrame, or pl.Series
+        Input data
+    variable : str, optional
+        Column name when df_or_series is DataFrame
+    by : str or list, optional
+        Column name(s) to group by for within-group quantiles
+    n : int
+        Number of quantiles (default: 5 for quintiles)
+        
+    Returns:
+    --------
+    Same type as input (pandas Series for pandas input, polars Series for polars input)
+        Quantile assignments (1, 2, ..., n) with same index as input
+    """
+    
+    # Check input type
+    is_polars_df = isinstance(df_or_series, pl.DataFrame)
+    is_polars_series = isinstance(df_or_series, pl.Series)
+    is_pandas = isinstance(df_or_series, (pd.DataFrame, pd.Series))
+    
+    if is_pandas:
+        # Direct pandas input - call fastxtile_pd directly
+        return fastxtile_pd(df_or_series, variable=variable, by=by, n=n)
+    
+    elif is_polars_series:
+        # Polars Series input
+        series_pd = df_or_series.to_pandas()
+        result_pd = fastxtile_pd(series_pd, variable=None, by=None, n=n)
+        return pl.Series(name=result_pd.name or 'fastxtile', values=result_pd.values)
+    
+    elif is_polars_df:
+        # Polars DataFrame input
+        # Store original column types to handle date/datetime conversion issues
+        original_schema = df_or_series.schema
+        df_pd = df_or_series.to_pandas()
+        result_pd = fastxtile_pd(df_pd, variable=variable, by=by, n=n)
+        return pl.Series(name=result_pd.name if hasattr(result_pd, 'name') else 'fastxtile', values=result_pd.values)
+    
+    else:
+        raise ValueError("Input must be pandas DataFrame, pandas Series, polars DataFrame, or polars Series")
 
 
 def _fastxtile_core(series, n=5):
@@ -328,6 +383,23 @@ def test_fastxtile():
     print(f"Ties data:    {ties_data.tolist()}")
     print(f"Tertiles:     {ties_result.tolist()}")
     print("✅ Should handle ties consistently with Stata")
+    
+    # Test 10: NEW - Polars integration tests
+    print("\n🔥 Test 10 - Polars integration (NEW):") 
+    print("Testing Polars Series:")
+    polars_series = pl.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    polars_result = fastxtile(polars_series, n=5)
+    print(f"Polars data:   {polars_series.to_list()}")
+    print(f"Polars result: {polars_result.to_list()}")
+    
+    print("\nTesting Polars DataFrame:")
+    polars_df = pl.DataFrame({
+        'value': [1, 2, 3, 4, 5, 11, 12, 13, 14, 15],
+        'group': ['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']
+    })
+    polars_df_result = fastxtile(polars_df, 'value', by='group', n=5)
+    print(f"Polars DataFrame result: {polars_df_result.to_list()}")
+    print("✅ Polars integration should work seamlessly with pandas backend")
     
     print("\n" + "=" * 80)
     print("🎉 Enhanced Fastxtile Testing Complete!")
