@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from datetime import date
+from utils.stata_replication import fill_date_gaps
 
 print("=" * 80)
 print("🏗️  Recomm_ShortInterest.py")
@@ -41,7 +42,6 @@ ibes_recs = pl.read_parquet("../pyData/Intermediate/IBES_Recommendations.parquet
 print(f"Loaded IBES Recommendations: {len(ibes_recs):,} observations")
 
 # fill in time-series gaps by tickerIBES-amaskcd
-from utils.stata_replication import fill_date_gaps
 ibes_recs = ibes_recs.with_columns(
     ticker_analyst = pl.concat_str([pl.col("tickerIBES"), pl.col("amaskcd")], separator="_")
 )
@@ -64,57 +64,6 @@ ibes_recs = ibes_recs.with_columns(
         pl.col('ireccd12')
     ).alias('ireccd12')
 )
-
-#%% debug
-pl.Config.set_tbl_rows(36)
-
-print(
-    ibes_recs.filter(
-        cc('tickerIBES') == 'GFGC', cc('time_avail_m') <= pl.date(2017, 2, 1)
-    ).sort(['time_avail_m','ticker_analyst']).tail(36)
-)
-
-#%% debug
-
-# compare with stata
-stata0 = pd.read_stata('../Human/temp_rs_asrol.dta')
-stata0 = pl.from_pandas(stata0).with_columns(
-    cc('anndats').cast(pl.Date), cc('time_avail_m').cast(pl.Date), cc('amaskcd').cast(pl.Int32),
-    cc('ireccd').cast(pl.Int8), cc('ireccd12').cast(pl.Int8)
-)
-
-#%% debug
-pl.Config.set_tbl_rows(36)
-
-# check on GFGC 122399 in 2016m10
-print(
-stata0.filter(
-    cc('tickerIBES') == 'GFGC', cc('tempID') == 122399,
-    cc('time_avail_m') <= pl.date(2017, 3, 1)
-).sort(['time_avail_m','tempID']).tail(36)
-)
-
-#%% debug
-
-# compare stata and ibes_recs in detail
-pl.Config.set_tbl_rows(12)
-
-stata = stata0.with_columns(
-    ticker_analyst = pl.concat_str([pl.col("tickerIBES"), pl.col("amaskcd")], separator="_")
-).sort(['ticker_analyst','time_avail_m']).with_columns(
-    cc('anndats').forward_fill().over('ticker_analyst')
-)
-
-both = ibes_recs.join(
-    stata.select(['ticker_analyst','time_avail_m','anndats','ireccd','ireccd12']),
-    on = ['ticker_analyst','time_avail_m'],
-    how = 'left'
-).sort(['ticker_analyst','time_avail_m']).with_columns(
-    cc('time_avail_m').cast(pl.Date)
-)
-
-
-
 
 
 #%%
@@ -207,22 +156,6 @@ df_pandas['QuintConsRecomm'] = fastxtile(df_pandas, "ConsRecomm", by="time_avail
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-#%% debug
-pl.Config.set_tbl_rows(36)
-
-# take a survey of obs by month
-print(
-    df.group_by("time_avail_m").agg(
-        cc('permno').n_unique().alias("n_permno"),
-        cc('ShortInterest').count().alias("n_ShortInterest"),
-        cc('ConsRecomm').count().alias("n_ConsRecomm"),
-        cc('QuintShortInterest').count().alias("n_QSI"),
-        cc('QuintConsRecomm').count().alias("n_QCR")
-    ).sort("time_avail_m").head(36)
-)
-
-pl.Config.set_tbl_rows(10)
-
 #%%
 
 # Define binary signal: pessimistic vs optimistic cases
@@ -255,68 +188,3 @@ print("💾 Saving Recomm_ShortInterest predictor...")
 save_predictor(df, "Recomm_ShortInterest")
 print("✅ Recomm_ShortInterest.csv saved successfully")
 
-#%%
-# read in the dta
-
-import pandas as pd
-
-sorted(os.listdir('../Human/'))
-stata0 = pd.read_stata('../Human/temp_rs_last.dta')
-stata0 = pl.from_pandas(stata0).with_columns(
-   pl.col('time_avail_m').dt.date().alias('time_avail_m')
-)
-#%%
-index_col = ['permno', 'time_avail_m']
-target_cols = ['ShortInterest', 'ConsRecomm', 'Recomm_ShortInterest']
-
-
-statalong = stata0.select(index_col + target_cols).unpivot(index=index_col, variable_name = 'name', value_name = 'stata').with_columns(
-   pl.col('stata').cast(pl.Float64)
-)
-
-
-dflong = df.with_columns(
-   pl.col('time_avail_m').dt.date().alias('time_avail_m')
-).select(index_col + target_cols).unpivot(index=index_col, variable_name = 'name', value_name = 'python').with_columns(
-   pl.col('python').cast(pl.Float64)
-)
-
-
-both = statalong.join(
-   dflong, on = ['permno','time_avail_m','name'], how='full', coalesce=True
-).sort(['permno','time_avail_m','name']).filter(
-   cc('time_avail_m') >= pl.date(2010, 1, 1)
-)
-
-
-both = (
-   both.with_columns(
-       pl.when(pl.col('stata').is_null() & pl.col('python').is_null())
-       .then(0)
-       .when(pl.col('stata').is_not_null() & pl.col('python').is_not_null())
-       .then(pl.col('stata') - pl.col('python'))
-       .otherwise(pl.lit(float("inf")))
-       .alias("diff")
-   )
-   .sort(pl.col("diff").abs(), descending=True)
-)
-
-aa = both.filter(
-    cc('name') == 'ConsRecomm'
-)
-
-
-#%%
-
-# check on permno 10001 in 2012-01
-print(
-    stata0.filter(
-        cc('permno') == 10001, cc('time_avail_m') == pl.date(2012, 1, 1)
-    )
-)
-
-print(
-    ibes_recs.filter(
-        cc('tickerIBES') == 'GFGC', cc('time_avail_m') <= pl.date(2012, 1, 1)
-    )
-)   

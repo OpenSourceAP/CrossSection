@@ -1,10 +1,14 @@
-# ABOUTME: Calculates 12-month off-season momentum following Heston and Sadka 2008
-# ABOUTME: Creates 12-month momentum excluding focal (most recent) return
+# ABOUTME: Momentum without the seasonal part following Heston and Sadka 2008 Table 2 Year 1 Nonannual
+# ABOUTME: Average return in other months over the previous year
 
 """
-Mom12mOffSeason Predictor following Heston and Sadka 2008
+Mom12mOffSeason Predictor
 
-Calculates average return in other months over the previous year.
+Momentum without the seasonal part (Heston and Sadka 2008 JFE)
+Average return in other months over the previous year.
+
+Evidence: t=4 in portfolio sort, Return=1.17%, T-Stat=4.2
+This predictor behaves distinctly from other off-season signals.
 
 Usage:
     python3 Predictors/Mom12mOffSeason.py
