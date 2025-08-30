@@ -1,4 +1,4 @@
-# ABOUTME: Calculates supplier momentum following Menzly and Ozbas 2010
+# ABOUTME: Calculates supplier momentum following Menzly and Ozbas 2010 Table 2 (1) r_supplier,t-1
 # ABOUTME: Run: python3 pyCode/Predictors/iomom_supp.py
 
 """

@@ -1,4 +1,4 @@
-# ABOUTME: Calculates momentum and long-term reversal signal following Chan and Ko 2006
+# ABOUTME: Calculates momentum and long-term reversal signal following Chan and Ko 2006 Table 5
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomRev.py
 # Run from pyCode/ directory: python3 Predictors/MomRev.py
 # Inputs: pyData/Intermediate/SignalMasterTable.parquet

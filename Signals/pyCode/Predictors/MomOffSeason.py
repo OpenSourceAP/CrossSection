@@ -1,4 +1,4 @@
-# ABOUTME: Calculates off-season long-term reversal following Heston and Sadka 2008
+# ABOUTME: Calculates off-season long-term reversal following Heston and Sadka 2008 Table 2 Years 2-5 Nonannual
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomOffSeason.py
 
 # Run from pyCode/ directory

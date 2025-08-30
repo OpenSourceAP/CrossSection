@@ -1,4 +1,4 @@
-# ABOUTME: Calculates customer momentum following Cohen and Frazzini 2008
+# ABOUTME: Calculates customer momentum following Cohen and Frazzini 2008 Table 3A
 # ABOUTME: Run: python3 pyCode/Predictors/CustomerMomentum.py
 
 """

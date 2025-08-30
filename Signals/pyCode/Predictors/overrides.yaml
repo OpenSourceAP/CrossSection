@@ -89,3 +89,17 @@ BetaFP:
   reviewed_by: ac
   details: |
     This predictor is failing NumRows by 8 percent and Precision1 by 6.3%. The signal is complicated and I went through the py script line by line. The t-stat is close to zero, which is unchanged from the 2024 10 release. I don't think it's quite worth it to dig into this more.
+
+IO_ShortInterest:
+  status: accepted
+  reviewed_on: 2025-08-30
+  reviewed_by: ac
+  details: |
+    Like the other short interest predictors, the only test here that is really informative is the t-stat, and the t-stat test passes.
+
+ShortInterest:
+  status: accepted
+  reviewed_on: 2025-08-30
+  reviewed_by: ac
+  details: |
+    Like the other short interest predictors, the only test here that is really informative is the t-stat, and the t-stat test passes.    

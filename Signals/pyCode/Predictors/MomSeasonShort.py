@@ -1,4 +1,4 @@
-# ABOUTME: Calculates short-term seasonal momentum following Heston and Sadka 2008
+# ABOUTME: Calculates short-term seasonal momentum following Heston and Sadka 2008 Table 2 Year 1 Annual
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeasonShort.py
 
 # Run from pyCode/ directory

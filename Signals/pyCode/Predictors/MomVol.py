@@ -1,4 +1,4 @@
-# ABOUTME: Calculates momentum in high volume stocks following Lee and Swaminathan 2000
+# ABOUTME: Calculates momentum in high volume stocks following Lee and Swaminathan 2000 Table 2 J=6 K=3 V3 R10-R1
 # ABOUTME: Usage: python3 MomVol.py (run from pyCode/ directory)
 
 import polars as pl

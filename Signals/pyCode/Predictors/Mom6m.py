@@ -1,4 +1,4 @@
-# ABOUTME: Calculates 6-month momentum following Jegadeesh and Titman 1993
+# ABOUTME: Calculates 6-month momentum following Jegadeesh and Titman 1993 Table 1A K=3 row 6
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom6m.py
 
 # Run from pyCode/ directory

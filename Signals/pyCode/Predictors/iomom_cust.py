@@ -1,4 +1,4 @@
-# ABOUTME: Calculates customer momentum following Menzly and Ozbas 2010
+# ABOUTME: Calculates customer momentum following Menzly and Ozbas 2010 Table 2 (1) r_customer,t-1
 # ABOUTME: Run: python3 pyCode/Predictors/iomom_cust.py
 
 """

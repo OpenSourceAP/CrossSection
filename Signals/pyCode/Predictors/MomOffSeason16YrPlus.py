@@ -1,4 +1,4 @@
-# ABOUTME: Calculates off-season momentum (years 16-20) following Heston and Sadka 2008
+# ABOUTME: Calculates off-season momentum (years 16-20) following Heston and Sadka 2008 Table 2 Years 16-20 Nonannual
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomOffSeason16YrPlus.py
 
 # Run from pyCode/ directory

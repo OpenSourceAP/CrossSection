@@ -1,4 +1,4 @@
-# ABOUTME: Calculates seasonal momentum (years 11-15) following Heston and Sadka 2008
+# ABOUTME: Calculates seasonal momentum (years 11-15) following Heston and Sadka 2008 Table 2 Years 11-15 Annual
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeason11YrPlus.py
 
 # Run from pyCode/ directory

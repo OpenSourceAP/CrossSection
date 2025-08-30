@@ -1,5 +1,5 @@
 # %%
-# ABOUTME: Calculates TrendFactor following Han, Zhou, Zhu 2016
+# ABOUTME: Calculates TrendFactor following Han, Zhou, Zhu 2016 Table 1
 # ABOUTME: Usage: python3 TrendFactor.py (run from pyCode/ directory)
 # inputs: dailyCRSP.parquet, SignalMasterTable.parquet
 # outputs: TrendFactor.csv
