@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor, save_placebo
-from utils.stata_replication import fill_date_gaps_pl
+from utils.stata_replication import fill_date_gaps_pl, stata_multi_lag
 from utils.winsor2 import winsor2
 
 print("=" * 80)
@@ -40,50 +40,40 @@ df = df.with_columns(fyear_date = pl.date(pl.col("fyear"), 1, 1))
 df = fill_date_gaps_pl(df, group_col="gvkey", time_col="fyear_date", period_str="12mo")
 df = df.with_columns(pl.col("fyear").fill_null(strategy="forward").over("gvkey"))
 
-# lag
-df = df.with_columns([
-    pl.col("act").shift(1).over("gvkey").alias("l_act"),
-    pl.col("che").shift(1).over("gvkey").alias("l_che"),
-    pl.col("lct").shift(1).over("gvkey").alias("l_lct"),
-    pl.col("dlc").shift(1).over("gvkey").alias("l_dlc"),
-    pl.col("at").shift(1).over("gvkey").alias("l_at")
-])
+# lag using stata_multi_lag utility
+df = stata_multi_lag(df, group_col="gvkey", time_col="fyear_date", 
+                     value_col=["act", "che", "lct", "dlc", "at"], 
+                     lag_list=[1], prefix="l", fill_gaps=False, freq="Y")
 
-# cash flow from operations (depends on the mnemonic of the time)
-df = df.with_columns(
+# cash flow from operations and ratios
+df = df.with_columns([
+    # cash flow from operations (depends on the mnemonic of the time)
     pl.when(pl.col("oancf").is_not_null())
     .then(pl.col("oancf"))
     .otherwise(
-        pl.col("fopt") - (pl.col("act") - pl.col("l_act")) + 
-        (pl.col("che") - pl.col("l_che")) + (pl.col("lct") - pl.col("l_lct")) - 
-        (pl.col("dlc") - pl.col("l_dlc"))
+        pl.col("fopt") - (pl.col("act") - pl.col("l1_act")) + 
+        (pl.col("che") - pl.col("l1_che")) + (pl.col("lct") - pl.col("l1_lct")) - 
+        (pl.col("dlc") - pl.col("l1_dlc"))
     )
-    .alias("tempCFO")
-)
+    .alias("tempCFO"),
+    
+    # Generate 1/l.at
+    (1 / pl.col("l1_at")).alias("tempInvTA")
+])
 
 # Generate (ib - tempCFO) / l.at
 df = df.with_columns(
-    ((pl.col("ib") - pl.col("tempCFO")) / pl.col("l_at")).alias("tempAccruals")
+    ((pl.col("ib") - pl.col("tempCFO")) / pl.col("l1_at")).alias("tempAccruals")
 )
 
-# Generate 1/l.at
-df = df.with_columns(
-    (1 / pl.col("l_at")).alias("tempInvTA")
-)
+# Generate (sale - l.sale)/l.at and ppegt/l.at
+df = stata_multi_lag(df, group_col="gvkey", time_col="fyear_date", 
+                     value_col=["sale"], lag_list=[1], prefix="l", fill_gaps=False, freq="Y")
 
-# Generate (sale - l.sale)/l.at
 df = df.with_columns([
-    pl.col("sale").shift(1).over("gvkey").alias("l_sale")
+    ((pl.col("sale") - pl.col("l1_sale")) / pl.col("l1_at")).alias("tempDelRev"),
+    (pl.col("ppegt") / pl.col("l1_at")).alias("tempPPE")
 ])
-
-df = df.with_columns(
-    ((pl.col("sale") - pl.col("l_sale")) / pl.col("l_at")).alias("tempDelRev")
-)
-
-# Generate ppegt/l.at
-df = df.with_columns(
-    (pl.col("ppegt") / pl.col("l_at")).alias("tempPPE")
-)
 
 print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 
@@ -141,17 +131,12 @@ df_with_residuals = df_with_residuals.group_by(["permno", "fyear"], maintain_ord
 
 print(f"After cross-sectional regressions and filtering: {len(df_with_residuals):,} observations")
 
-
 # Calculate Abnormal Accruals as percentage of net income
-df_with_residuals = df_with_residuals.sort(["permno", "fyear"])
 df_with_residuals = df_with_residuals.with_columns([
-    pl.col("at").shift(1).over("permno").alias("l_at_permno")
-])
-
-df_with_residuals = df_with_residuals.with_columns(
-    (pl.col("AbnormalAccruals") * pl.col("l_at_permno") / pl.col("ni").abs())
+    pl.col("at").shift(1).over("permno").alias("l_at_permno"),
+    (pl.col("AbnormalAccruals") * pl.col("at").shift(1).over("permno") / pl.col("ni").abs())
     .alias("AbnormalAccrualsPercent")
-)
+])
 
 
 #%%
@@ -160,8 +145,7 @@ print("📅 Expanding to permno-monthly observations...")
 df_expanded = fill_date_gaps_pl(df_with_residuals, group_col="permno", time_col="time_avail_m", period_str="1mo", end_padding="12mo")
 
 # Fill forward AbnormalAccruals and AbnormalAccrualsPercent within each permno
-df_expanded = df_expanded.sort(["permno", "time_avail_m"])
-df_expanded = df_expanded.with_columns([
+df_expanded = df_expanded.sort(["permno", "time_avail_m"]).with_columns([
     pl.col("AbnormalAccruals").fill_null(strategy="forward").over("permno"),
     pl.col("AbnormalAccrualsPercent").fill_null(strategy="forward").over("permno")
 ])
