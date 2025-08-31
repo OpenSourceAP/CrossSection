@@ -19,11 +19,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
-from pathlib import Path
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_fastxtile import fastxtile
+from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 # Load IBES earnings per share data
 ibes_df = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
@@ -62,11 +62,9 @@ df = pd.merge(df, temp_ibes, on=['tickerIBES', 'time_avail_m'], how='left')
 # Sort data for time series operations
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 
-# Calculate 3-month lagged analyst coverage for comparison
-df['numest_l3_date'] = df['time_avail_m'] - pd.DateOffset(months=3)
-numest_lag = df[['permno', 'time_avail_m', 'numest']].rename(columns={'time_avail_m': 'numest_l3_date', 'numest': 'numest_l3'})
-df = df.merge(numest_lag, on=['permno', 'numest_l3_date'], how='left')
-df = df.drop(columns=['numest_l3_date'])
+# Calculate 3-month lagged analyst coverage using stata_multi_lag
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'numest', [3])
+df = df.rename(columns={'numest_lag3': 'numest_l3'})
 df['ChNAnalyst'] = np.nan
 
 # Set indicator to 1 if current analyst count is less than 3 months ago
@@ -81,24 +79,21 @@ df.loc[mask_no_decline, 'ChNAnalyst'] = 0
 mask_1987 = (df['time_avail_m'] >= pd.Timestamp('1987-07-01')) & (df['time_avail_m'] <= pd.Timestamp('1987-09-01'))
 df.loc[mask_1987, 'ChNAnalyst'] = np.nan
 
-# Calculate size quintiles based on market value (predictor only works for small firms)
-df['temp'] = fastxtile(df, 'mve_c', n=5)
+# Only works in small firms (OP tab 2)
+# this is the correct way to do it
+df['tempqsize'] = (
+    df.groupby('time_avail_m')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
+
+# this way replicates `ChNAnalyst.do`
+# df['tempqsize'] = (
+#     df['mve_c'].transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+# )
 
 # Keep only smallest two quintiles (small firms)
-df = df[df['temp'] <= 2].copy()
+df = df[df['tempqsize'] <= 2].copy()
 
-# Keep only needed columns and non-missing values
+# Keep only needed columns and save using standardized utility
 result = df[['permno', 'time_avail_m', 'ChNAnalyst']].copy()
-result = result.dropna(subset=['ChNAnalyst']).copy()
-
-# Convert time_avail_m to yyyymm
-result['yyyymm'] = result['time_avail_m'].dt.year * 100 + result['time_avail_m'].dt.month
-
-# Prepare final output
-final_result = result[['permno', 'yyyymm', 'ChNAnalyst']].copy()
-
-# SAVE
-Path('../pyData/Predictors').mkdir(parents=True, exist_ok=True)
-final_result.to_csv('../pyData/Predictors/ChNAnalyst.csv', index=False)
-
-print(f"ChNAnalyst predictor saved: {len(final_result)} observations")
+save_predictor(result, 'ChNAnalyst')
