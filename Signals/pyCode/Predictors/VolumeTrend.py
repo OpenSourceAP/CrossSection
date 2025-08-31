@@ -1,3 +1,7 @@
+# %%
+import os
+os.chdir(os.path.join(os.path.dirname(__file__), '..'))
+
 # ABOUTME: Volume Trend following Haugen and Baker 1996, Table 1, trading volume trend
 # ABOUTME: calculates rolling coefficient from regressing monthly trading volume on linear time trend over 60-month window
 """
@@ -15,12 +19,18 @@ Outputs:
 
 import polars as pl
 import numpy as np
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.asreg import asreg_collinear
+from utils.asrol import asrol  
+from utils.winsor2 import winsor2
 
 print("Loading and processing VolumeTrend...")
 
 # DATA LOAD
-df = pl.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet')
-df = df.select(['permno', 'time_avail_m', 'vol'])
+df = pl.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
+                     columns=['permno', 'time_avail_m', 'vol'])
 
 # SIGNAL CONSTRUCTION - Time-based rolling regression
 print("Calculating time-based rolling regressions by permno...")
@@ -33,75 +43,59 @@ df = df.with_columns([
     ((pl.col('time_avail_m').dt.year() - 1960) * 12 + pl.col('time_avail_m').dt.month() - 1).alias('time_numeric')
 ])
 
-def time_based_rolling_regression(group_df):
-    """
-    Implement time-based rolling regression matching the logic:
-    asreg vol time_avail_m, window(time_av 60) min(30) by(permno)
-    
-    This uses a 60-month rolling window, not 60-observation window.
-    """
-    if len(group_df) == 0:
-        return group_df.with_columns([
-            pl.lit(None, dtype=pl.Float64).alias('betaVolTrend'),
-            pl.lit(None, dtype=pl.Float64).alias('meanX')
-        ])
-    
-    # Convert to numpy for efficient computation
-    dates = group_df['time_avail_m'].to_numpy()
-    time_numeric = group_df['time_numeric'].to_numpy() 
-    vol = group_df['vol'].to_numpy()
-    
-    n = len(group_df)
-    betaVolTrend = np.full(n, np.nan)
-    meanX = np.full(n, np.nan)
-    
-    # For each observation, look back 60 months
-    for i in range(n):
-        current_date = dates[i]
-        # Calculate 60 months ago (approximately 60 * 30.44 days)
-        cutoff_date = current_date - np.timedelta64(60 * 30, 'D')  # 60 months * 30 days
-        
-        # Find observations within the 60-month window
-        window_mask = (dates <= current_date) & (dates >= cutoff_date)
-        window_indices = np.where(window_mask)[0]
-        
-        if len(window_indices) >= 30:  # min(30) requirement
-            # Extract window data
-            window_time = time_numeric[window_indices]
-            window_vol = vol[window_indices]
-            
-            # Remove any NaN values
-            valid_mask = ~(np.isnan(window_time) | np.isnan(window_vol))
-            if np.sum(valid_mask) >= 30:
-                clean_time = window_time[valid_mask]
-                clean_vol = window_vol[valid_mask]
-                
-                # Simple linear regression: vol = alpha + beta * time_numeric
-                n_obs = len(clean_time)
-                sum_x = np.sum(clean_time)
-                sum_y = np.sum(clean_vol)
-                sum_xx = np.sum(clean_time * clean_time)
-                sum_xy = np.sum(clean_time * clean_vol)
-                
-                # Calculate beta coefficient
-                denominator = n_obs * sum_xx - sum_x * sum_x
-                if abs(denominator) > 1e-10:  # Avoid division by very small numbers
-                    beta = (n_obs * sum_xy - sum_x * sum_y) / denominator
-                    betaVolTrend[i] = beta
-                
-                # Calculate rolling mean of vol
-                meanX[i] = np.mean(clean_vol)
-    
-    # Add results to dataframe
-    result = group_df.with_columns([
-        pl.Series('betaVolTrend', betaVolTrend),
-        pl.Series('meanX', meanX)
-    ])
-    
-    return result
+# # Convert to pandas for asreg (which expects pandas DataFrames)
+# df_pandas = df.to_pandas()
 
-# Apply time-based rolling regression to each permno group
-df = df.group_by('permno', maintain_order=True).map_groups(time_based_rolling_regression)
+# # Run time-based rolling regression using asreg
+# print("Running asreg for vol ~ time_numeric...")
+# reg_results = asreg_collinear(
+#     df_pandas,
+#     y='vol',
+#     X=['time_numeric'], 
+#     by='permno',
+#     time='time_avail_m',
+#     window=60,  # 60-month window
+#     min_obs=30,  # min(30) requirement
+#     add_constant=True
+# )
+
+# # Merge regression results back with original data
+# df_pandas = df_pandas.merge(reg_results[['_b_time_numeric']], left_index=True, right_index=True, how='left')
+# df_pandas = df_pandas.rename(columns={'_b_time_numeric': 'betaVolTrend'})
+
+# # Convert back to polars
+# df = pl.from_pandas(df_pandas)
+
+#%%
+# Run time-based rolling regression using asreg_polars
+print("Rolling window regressions of volume on time...")
+df = df.with_columns(
+    pl.col('vol').least_squares.rolling_ols(
+        pl.col('time_numeric'),
+        window_size=60,
+        min_periods=30,
+        mode='coefficients',
+        add_intercept=True,
+        null_policy='drop'
+    ).over('permno').alias('coef')
+).with_columns([
+    pl.col('coef').struct.field('time_numeric').alias('betaVolTrend')
+])
+
+
+# Calculate rolling mean using asrol 
+print("Calculating 60-month rolling mean of vol...")
+df = asrol(
+    df,
+    group_col='permno',
+    time_col='time_avail_m', 
+    freq='1mo',
+    window=60,
+    value_col='vol',
+    stat='mean',
+    new_col_name='meanX',
+    min_samples=30
+)
 
 
 # Calculate VolumeTrend
@@ -110,20 +104,7 @@ df = df.with_columns([
 ])
 
 # Stata: winsor2 VolumeTrend, cut(1 99) replace trim
-# The "trim" option sets values outside bounds to missing (not winsorized)
-# Filter out NaN/inf values before calculating quantiles
-clean_data = df.filter(pl.col('VolumeTrend').is_finite())
-
-# Stata: winsor2 VolumeTrend, cut(1 99) Update df.filter(pl.col('VolumeTrend').is_finite())
-lower = clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
-upper = clean_data.select(pl.col('VolumeTrend').quantile(0.99)).item()
-
-df = df.with_columns([
-    pl.when((pl.col('VolumeTrend') < lower) | (pl.col('VolumeTrend') > upper))
-    .then(None)
-    .otherwise(pl.col('VolumeTrend'))
-    .alias('VolumeTrend')
-])
+df = winsor2(df, ['VolumeTrend'], replace=True, trim=True, cuts=[1, 99])
 
 # Convert to output format
 df = df.with_columns([
