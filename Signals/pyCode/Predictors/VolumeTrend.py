@@ -14,13 +14,14 @@ Outputs:
 """
 
 import polars as pl
-import numpy as np
+import polars_ols as pls # Registers .least_squares namespace
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.asrol import asrol  
 from utils.winsor2 import winsor2
 from utils.save_standardized import save_predictor
+
 
 print("Loading and processing VolumeTrend...")
 
