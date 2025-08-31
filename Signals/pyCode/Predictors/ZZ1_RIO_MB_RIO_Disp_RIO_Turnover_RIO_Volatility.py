@@ -84,49 +84,32 @@ print(f"After filtering bottom size quintile: {len(df):,} observations")
 print("🏛️ Computing Residual Institutional Ownership (RIO)...")
 
 # Residual Institutional Ownership sort
-# CRITICAL FIX: Match Stata's sequential replace logic exactly
-# gen temp = instown_perc/100
+
+# Construct cleaned institutional ownership (instown)
+# This step is required to match the do file exactly
+# But I'm not sure we should keep it around in general
 df = df.with_columns(
     pl.when(pl.col("instown_perc").is_null())
     .then(None)  # Keep as null initially
     .otherwise(pl.col("instown_perc") / 100)
-    .alias("temp")
+    .alias("instown")
 )
 
-# replace temp = 0 if mi(temp)
 df = df.with_columns(
-    pl.when(pl.col("temp").is_null())
-    .then(0.0)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
+    pl.when(pl.col("instown").is_null()).then(0.0).otherwise(pl.col("instown")).alias("instown")
+).with_columns(
+    pl.when(pl.col("instown") > 0.9999).then(0.9999).otherwise(pl.col("instown")).alias("instown")
+).with_columns(
+    pl.when(pl.col("instown") < 0.0001).then(0.0001).otherwise(pl.col("instown")).alias("instown")
 )
 
-# replace temp = .9999 if temp > .9999
+# Construct residual institutional ownership (RIO)
+# RIO = log(instown/(1-instown)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
 df = df.with_columns(
-    pl.when(pl.col("temp") > 0.9999)
-    .then(0.9999)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
+    log_me = np.log(pl.col("mve_c"))
+).with_columns(
+    RIO = np.log(pl.col("instown") / (1 - pl.col("instown"))) + 23.66 - 2.89 * pl.col("log_me") + 0.08 * (pl.col("log_me")).pow(2)
 )
-
-# replace temp = .0001 if temp < .0001 (this catches temp=0 from missing data!)
-df = df.with_columns(
-    pl.when(pl.col("temp") < 0.0001)
-    .then(0.0001)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
-)
-
-# gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
-df = df.with_columns(
-    (
-        (pl.col("temp") / (1 - pl.col("temp"))).log() + 
-        23.66 - 
-        2.89 * pl.col("mve_c").log() + 
-        0.08 * (pl.col("mve_c").log()).pow(2)
-    ).alias("RIO")
-)
-
 
 # form RIO quintiles, based on lagged RIO
 df = stata_multi_lag(df, "permno", "time_avail_m", "RIO", [6], freq="M", prefix="l")
@@ -156,6 +139,7 @@ df = asrol(df, 'permno', 'time_avail_m', '1mo', 12, 'ret', 'std',
     new_col_name='Volatility', min_samples=6)
 
 # patch to imitate stata, which does not fill gaps as much as stata_multi_lag and asrol
+# in the future run, we may want to be more thoughtful about gap handling in asrol
 df = df.filter(pl.col('mve_c').is_not_null())    
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
