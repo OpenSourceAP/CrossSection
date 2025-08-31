@@ -219,6 +219,9 @@ df_pandas_vol = asrol(
 
 df = pl.from_pandas(df_pandas_vol)
 
+# drop rows missing mve_c
+# it seems our asrol fills in gaps too aggressively
+df = df.filter(pl.col("mve_c").is_not_null())
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 
