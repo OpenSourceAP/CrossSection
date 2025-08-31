@@ -1,5 +1,5 @@
-# ABOUTME: GP.py - calculates gross profitability predictor
-# ABOUTME: Gross profitability as (revenue - cost of goods sold) / assets, excluding financial firms
+# ABOUTME: Gross profitability following Novy-Marx 2013, Table 2a
+# ABOUTME: calculates gross profits / total assets, excluding financial firms
 
 """
 GP predictor calculation

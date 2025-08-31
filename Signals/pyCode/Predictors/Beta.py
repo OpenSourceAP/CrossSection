@@ -1,5 +1,5 @@
-# ABOUTME: Beta.py - generates CAPM Beta predictor using polars-ols rolling regressions
-# ABOUTME: Python translation of Beta.do using direct polars-ols for exact Stata replication
+# ABOUTME: CAPM beta following Fama and MacBeth 1973, Table 3A
+# ABOUTME: calculates coefficient from 60-month rolling regression of stock excess returns on market excess returns
 # BetaSquared was weak in OP
 
 """

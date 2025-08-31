@@ -1,5 +1,5 @@
-# ABOUTME: Translates RevenueSurprise.do to calculate standardized revenue surprise
-# ABOUTME: Run with: python3 Predictors/RevenueSurprise.py
+# ABOUTME: Revenue Surprise following Jegadeesh and Livnat 2006, Journal of Accounting and Economics, Table 7 Model 1 SURGE
+# ABOUTME: calculates standardized revenue surprise scaled by revenue per share standard deviation
 
 # Calculates revenue surprise using Compustat quarterly data
 # Input: ../pyData/Intermediate/SignalMasterTable.parquet, ../pyData/Intermediate/m_QCompustat.parquet

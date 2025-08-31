@@ -1,5 +1,5 @@
-# ABOUTME: Translates CoskewACX.do to generate coskewness following Ang, Chen, Xing 2006 with 12-month batched processing
-# ABOUTME: Replicates ACX appendix equation B-9 using daily CRSP data processed in monthly batches (Jan-Dec)
+# ABOUTME: Coskewness using daily returns following Ang, Chen and Xing 2006, Table 8B
+# ABOUTME: Calculates sample counterpart of E[r*m²]/(SD[r]*SD[m]²) using de-meaned returns
 #
 # This script translates Code/Predictors/CoskewACX.do to Python
 # Following Appendix and Table 8 caption from Ang, Chen, Xing 2006

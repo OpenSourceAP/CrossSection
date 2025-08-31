@@ -1,5 +1,19 @@
-# ABOUTME: Enterprise book-to-market (EBM) and BP minus EBM (BPEBM) predictors
-# ABOUTME: Usage: python3 ZZ1_EBM_BPEBM.py (run from pyCode/ directory)
+# ABOUTME: Enterprise book-to-market (EBM) following Penman, Richardson and Tuna 2007, Table 4A
+# ABOUTME: BP minus EBM (BPEBM) following Penman, Richardson and Tuna 2007, Table 1D
+"""
+Usage:
+    python3 Predictors/ZZ1_EBM_BPEBM.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, che, dltt, dlc, dc, dvpa, tstkp, ceq]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
+
+Outputs:
+    - EBM.csv: CSV file with columns [permno, yyyymm, EBM]
+    - BPEBM.csv: CSV file with columns [permno, yyyymm, BPEBM]
+    - EBM = (ceq + che - dltt - dlc - dc - dvpa + tstkp) / (mve_c + che - dltt - dlc - dc - dvpa + tstkp)
+    - BPEBM = BP - EBM, where BP = (ceq + tstkp - dvpa) / mve_c
+"""
 
 import polars as pl
 import sys

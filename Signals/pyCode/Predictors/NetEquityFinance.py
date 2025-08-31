@@ -1,10 +1,16 @@
-# ABOUTME: Translates NetEquityFinance.do - calculates net equity financing activity
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/NetEquityFinance.py
+# ABOUTME: Net equity financing following Bradshaw, Richardson, Sloan 2006, Table 3
+# ABOUTME: calculates net equity financing scaled by average total assets
+"""
+Usage:
+    python3 Predictors/NetEquityFinance.py
 
-# Inputs:
-#   - ../pyData/Intermediate/m_aCompustat.parquet
-# Outputs:
-#   - ../pyData/Predictors/NetEquityFinance.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, sstk, prstkc, at, dv]
+
+Outputs:
+    - NetEquityFinance.csv: CSV file with columns [permno, yyyymm, NetEquityFinance]  
+    - NetEquityFinance = (sstk - prstkc - dv) / (0.5 * (at + l12.at)), set to missing if |ratio| > 1
+"""
 
 import pandas as pd
 import numpy as np

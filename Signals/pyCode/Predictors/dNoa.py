@@ -1,5 +1,5 @@
-# ABOUTME: dNoa predictor - calculates change in net operating assets
-# ABOUTME: Run: python3 pyCode/Predictors/dNoa.py
+# ABOUTME: Change in Net Operating Assets following Hirshleifer, Hou, Teoh, Zhang 2004, Table 7B
+# ABOUTME: calculates 12-month growth in Net Operating Assets scaled by lagged total assets
 
 """
 dNoa Predictor - Change in Net Operating Assets

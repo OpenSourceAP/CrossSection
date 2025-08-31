@@ -1,12 +1,18 @@
-# ABOUTME: Translates ShortInterest.do - calculates short interest as ratio of short interest to shares outstanding
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/ShortInterest.py
+# ABOUTME: Short Interest following Dechow et al. 2001, Table 1A
+# ABOUTME: calculates short interest predictor scaled by shares outstanding
+"""
+Usage:
+    python3 Predictors/ShortInterest.py
 
-# Inputs: 
-#   - ../pyData/Intermediate/SignalMasterTable.parquet 
-#   - ../pyData/Intermediate/monthlyCRSP.parquet
-#   - ../pyData/Intermediate/monthlyShortInterest.parquet
-# Outputs:
-#   - ../pyData/Predictors/ShortInterest.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with company identifiers
+    - monthlyCRSP.parquet: Monthly CRSP data with shares outstanding
+    - monthlyShortInterest.parquet: Monthly short interest data
+
+Outputs:
+    - ShortInterest.csv: CSV file with columns [permno, yyyymm, ShortInterest]
+    - ShortInterest = shortint/shrout, short interest scaled by shares outstanding
+"""
 
 import pandas as pd
 import numpy as np

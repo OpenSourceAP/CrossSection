@@ -1,20 +1,17 @@
-# ABOUTME: Generates coskewness predictor using 60-batch processing strategy
-# ABOUTME: Calculates systematic coskewness using rolling windows and forward-fill time assignment
-# 
-# Algorithm overview:
-# 1. Load monthly CRSP and Fama-French data
-# 2. Convert to simple excess returns (ret - rf, mkt = mktrf) 
-# 3. Process data in 60 monthly batches (m=0 to 59) based on mod(time_avail_m, 60)
-# 4. For each batch m: forward-fill time_avail_m to create overlapping periods
-# 5. Demean returns within each time period (simple demeaning, not CAPM residuals)
-# 6. Calculate coskewness using sample moments: E[r*m^2] / (sqrt(E[r^2]) * E[m^2])
-# 7. Filter to require >= 12 observations per period
-# 8. Combine all 60 batches into final output
-#
-# Input: ../pyData/Intermediate/monthlyCRSP.parquet, ../pyData/Intermediate/monthlyFF.parquet
-# Output: ../pyData/Predictors/Coskewness.csv
-#
-# Run: python3 Coskewness.py (from pyCode/ directory with .venv activated)
+# ABOUTME: Coskewness following Harvey and Siddique 2000, in text p 1276
+# ABOUTME: calculates systematic coskewness using sample moments of demeaned returns over 60 months
+"""
+Usage:
+    python3 Predictors/Coskewness.py
+
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret]
+    - monthlyFF.parquet: Monthly Fama-French data with columns [time_avail_m, mktrf, rf]
+
+Outputs:
+    - Coskewness.csv: CSV file with columns [permno, yyyymm, Coskewness]
+    - Coskewness = E[r*m^2] / (sqrt(E[r^2]) * E[m^2]) using demeaned returns over 60 months
+"""
 
 import polars as pl
 import warnings

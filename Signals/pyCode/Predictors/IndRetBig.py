@@ -1,5 +1,16 @@
-# ABOUTME: Creates Industry Return Big Companies (IndRetBig) predictor by calculating industry returns for large companies
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/IndRetBig.py
+# ABOUTME: Industry Return Big Companies following Hou 2007, Table 6, R_i,3(-1)
+# ABOUTME: calculates average monthly return of 30% largest companies in same FF48 industry
+"""
+Usage:
+    python3 Predictors/IndRetBig.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, ret, mve_c, sicCRSP]
+
+Outputs:
+    - IndRetBig.csv: CSV file with columns [permno, yyyymm, IndRetBig]
+    - IndRetBig = average return of large firms (>70th percentile) in same FF48 industry, set to missing for large firms themselves
+"""
 
 # IndRetBig predictor translation from Code/Predictors/IndRetBig.do
 # Line-by-line translation preserving exact order and logic

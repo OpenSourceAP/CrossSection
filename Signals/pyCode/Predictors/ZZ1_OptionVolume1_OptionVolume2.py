@@ -1,5 +1,5 @@
-# ABOUTME: ZZ1_OptionVolume1_OptionVolume2.py - Generates OptionVolume1 and OptionVolume2 predictors
-# ABOUTME: Measures option trading volume relative to stock volume (Johnson and So 2012 JFE)
+# ABOUTME: Option trading volume predictors following Johnson and So 2012 JFE, Table 2A
+# ABOUTME: OptionVolume1 = option to stock volume ratio, OptionVolume2 = abnormal option volume (current/6-month average)
 
 """
 Usage:

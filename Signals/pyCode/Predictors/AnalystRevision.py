@@ -1,4 +1,4 @@
-# ABOUTME: AnalystRevision.py - computes analyst earnings forecast revision signal
+# ABOUTME: EPS forecast revision following Hawkins, Chamberlin and Daniel 1984, Table 10, mean
 # ABOUTME: Measures change in analyst sentiment by comparing current month's EPS forecast to previous month
 
 """

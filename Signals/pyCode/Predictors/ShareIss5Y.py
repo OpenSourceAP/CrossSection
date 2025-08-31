@@ -1,11 +1,19 @@
-# ABOUTME: Translates ShareIss5Y.do - calculates 5-year share issuance signal
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/ShareIss5Y.py
+# ABOUTME: Share issuance (5 year) following Daniel and Titman 2006, Table 3 \iota(t-5,t)
+# ABOUTME: calculates 5-year growth in number of shares adjusted for splits
 
-# Inputs: 
-#   - ../pyData/Intermediate/SignalMasterTable.parquet 
-#   - ../pyData/Intermediate/monthlyCRSP.parquet
-# Outputs:
-#   - ../pyData/Predictors/ShareIss5Y.csv
+"""
+Usage:
+    python3 Predictors/ShareIss5Y.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, shrout, cfacshr]
+
+Outputs:
+    - ShareIss5Y.csv: CSV file with columns [permno, yyyymm, ShareIss5Y]
+    - ShareIss5Y = (shares 5mo ago - shares 65mo ago) / shares 65mo ago
+    - Uses adjusted shares = shrout * cfacshr to handle stock splits (following Definition in OP)
+"""
 
 import pandas as pd
 import numpy as np

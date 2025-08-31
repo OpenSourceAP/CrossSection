@@ -1,5 +1,5 @@
-# ABOUTME: ChTax predictor - calculates change in taxes
-# ABOUTME: Run: python3 pyCode/Predictors/ChTax.py
+# ABOUTME: Change in Taxes following Thomas and Zhang 2011, Table 2, column (1)
+# ABOUTME: calculates 4-quarter change in quarterly total taxes scaled by lagged total assets
 
 """
 ChTax Predictor

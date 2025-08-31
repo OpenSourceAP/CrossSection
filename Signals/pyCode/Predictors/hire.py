@@ -1,5 +1,5 @@
-# ABOUTME: hire.py - calculates employee growth rate
-# ABOUTME: Employee growth rate over prior 12 months, scaled by average employment
+# ABOUTME: Employment growth following Bazdresch, Belo and Lin 2014, Table 1A
+# ABOUTME: Change in number of employees scaled by average employment, set to 0 if emp data missing
 
 """
 hire predictor calculation

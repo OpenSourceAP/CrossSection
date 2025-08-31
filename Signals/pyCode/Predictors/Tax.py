@@ -1,5 +1,5 @@
-# ABOUTME: Tax_fixed.py - calculates taxable income to income ratio predictor with correct missing value handling
-# ABOUTME: Tax rate adjusted measure using historical corporate tax rates by year
+# ABOUTME: Taxable income to income following Lev and Nissim 2004, Table 5A R_TAX
+# ABOUTME: calculates taxable income to income ratio predictor with correct missing value handling
 
 """
 Tax predictor calculation

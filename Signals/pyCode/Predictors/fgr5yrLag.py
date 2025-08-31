@@ -1,12 +1,18 @@
-# ABOUTME: fgr5yrLag.py - computes long-term EPS forecast (La Porta 1996 JF Table 3)
-# ABOUTME: 6-month lagged long-term earnings growth forecasts from IBES with June-only observations
+# ABOUTME: Long-term EPS forecast following La Porta 1996, Table 3 E{g}
+# ABOUTME: calculates 6-month lagged long-term earnings growth forecasts from IBES with June-only observations
+"""
+Usage:
+    python3 Predictors/fgr5yrLag.py
 
-# Implementation notes: Uses December-only observations with 6-month lag, then forward-fills
-# Timing details are critical for replicating original paper results
+Inputs:
+    - IBES_EPS_Unadj.parquet: IBES long-term EPS forecasts with columns [tickerIBES, time_avail_m, meanest, fpi]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ceq, ib, txdi, dv, sale, ni, dp]
+    - SignalMasterTable.parquet: Monthly master table with tickerIBES mapping
 
-# Usage: python3 Predictors/fgr5yrLag.py (from pyCode/ directory)
-# Inputs: IBES forecasts, Compustat fundamentals, master security table
-# Output: 6-month lagged long-term growth forecasts
+Outputs:
+    - fgr5yrLag.csv: CSV file with columns [permno, yyyymm, fgr5yrLag]
+    - fgr5yrLag = 6-month lagged long-term growth forecast, June observations forward-filled for 12 months
+"""
 
 import pandas as pd
 import numpy as np

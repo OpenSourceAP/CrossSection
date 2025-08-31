@@ -7,8 +7,21 @@ os.chdir('..')
 from polars import col as cc
 import pandas as pd
 
-# ABOUTME: Recommendation and Short Interest predictor combining analyst sentiment with short interest
-# ABOUTME: Usage: python3 Recomm_ShortInterest.py (run from pyCode/ directory)
+# ABOUTME: Analyst Recommendations and Short Interest following Drake, Rees and Swanson 2011, Table 7b
+# ABOUTME: Binary signal: 1 for lowest quintile short interest & recommendations, 0 for highest quintiles
+"""
+Usage:
+    python3 Predictors/Recomm_ShortInterest.py
+
+Inputs:
+    - IBES_Recommendations.parquet: IBES analyst recommendations data
+    - SignalMasterTable.parquet: Master table with gvkey, tickerIBES mappings
+    - monthlyCRSP.parquet: CRSP data for shares outstanding (shrout)
+    - monthlyShortInterest.parquet: Short interest data (shortint)
+
+Outputs:
+    - Recomm_ShortInterest.csv: Binary signal (0/1) for extreme recommendation-short interest combinations
+"""
 
 import polars as pl
 import sys

@@ -1,5 +1,5 @@
-# ABOUTME: Creates industry concentration predictor using Herfindahl index
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Herf.py
+# ABOUTME: Industry concentration following Hou and Robinson 2006, Table 2, firm-level raw
+# ABOUTME: calculates three-year rolling average of industry Herfindahl index based on firm sales
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, SignalMasterTable.parquet

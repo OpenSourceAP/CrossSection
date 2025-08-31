@@ -1,5 +1,16 @@
-# ABOUTME: Volume variance using 36-month rolling standard deviation
-# ABOUTME: Usage: python3 VolSD.py (run from pyCode/ directory)
+# ABOUTME: Volume variance following Chordia, Subra, Anshuman 2001, Table 5B DVOL
+# ABOUTME: calculates rolling standard deviation of monthly trading volume over past 36 months
+"""
+Usage:
+    python3 Predictors/VolSD.py
+
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol]
+
+Outputs:
+    - VolSD.csv: CSV file with columns [permno, yyyymm, VolSD]
+    - VolSD = 36-month rolling standard deviation of vol, min 24 observations required
+"""
 
 import polars as pl
 import sys

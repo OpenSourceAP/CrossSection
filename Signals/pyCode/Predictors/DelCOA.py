@@ -1,5 +1,5 @@
-# ABOUTME: DelCOA.py - calculates DelCOA predictor (Change in current operating assets)
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/DelCOA.do
+# ABOUTME: Change in current operating assets following Richardson et al. 2005, Table 8C
+# ABOUTME: calculates DelCOA predictor, difference in current operating assets scaled by average total assets
 
 """
 DelCOA.py

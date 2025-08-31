@@ -1,5 +1,5 @@
-# ABOUTME: cfp predictor - calculates cash flow to price ratio
-# ABOUTME: Run: python3 pyCode/Predictors/cfp.py
+# ABOUTME: Operating Cash flows to price following Desai, Rajgopal, Venkatachalam 2004, Table 2E R1
+# ABOUTME: calculates operating cash flow to market value of equity ratio
 
 """
 cfp Predictor

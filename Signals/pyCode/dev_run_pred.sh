@@ -23,8 +23,8 @@ if python3 02_CreatePredictors.py; then
     echo "02_CreatePredictors.py completed successfully"
     
     # Run test_predictors.py --all
-    echo "Running utils/test_predictors.py --all..."
-    if python3 utils/test_predictors.py --all; then
+    echo "Running utils/test_predictors.py --all --tstat..."
+    if python3 utils/test_predictors.py --all --tstat; then
         send_iMessage "+12404465313" "🎉 All Complete: Both predictor creation and validation finished successfully"
         echo "All tasks completed successfully"
     else

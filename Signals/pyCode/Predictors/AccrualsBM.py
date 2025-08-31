@@ -1,5 +1,5 @@
-# ABOUTME: AccrualsBM.py - calculates AccrualsBM predictor combining accruals and book-to-market
-# ABOUTME: Identifies value stocks with low accruals versus growth stocks with high accruals
+# ABOUTME: AccrualsBM predictor following Bartov and Kim 2004, Table 3, mean difference 1-2
+# ABOUTME: Binary signal combining book-to-market and accruals to identify value vs growth with extreme accruals
 
 """
 AccrualsBM.py

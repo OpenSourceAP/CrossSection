@@ -1,4 +1,4 @@
-# ABOUTME: Generates ResidualMomentum following Blitz, Huij and Martens 2011
+# ABOUTME: Generates ResidualMomentum following Blitz, Huij and Martens 2011, Table 2B 1M
 # ABOUTME: Python implementation using polars for rolling FF3 regressions
 
 """

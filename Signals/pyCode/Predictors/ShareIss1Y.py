@@ -1,11 +1,18 @@
-# ABOUTME: Calculates 1-year share issuance signal
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/ShareIss1Y.py
+# ABOUTME: Share issuance (1 year) following Pontiff and Woodgate 2008, Table 3A ISSUE
+# ABOUTME: calculates growth in number of shares between t-18 and t-6 months
 
-# Inputs: 
-#   - ../pyData/Intermediate/SignalMasterTable.parquet 
-#   - ../pyData/Intermediate/monthlyCRSP.parquet
-# Outputs:
-#   - ../pyData/Predictors/ShareIss1Y.csv
+"""
+Usage:
+    python3 Predictors/ShareIss1Y.py
+
+Inputs:
+    - ../pyData/Intermediate/SignalMasterTable.parquet: Monthly master table
+    - ../pyData/Intermediate/monthlyCRSP.parquet: Monthly CRSP data with shrout, cfacshr
+
+Outputs:
+    - ../pyData/Predictors/ShareIss1Y.csv: CSV file with columns [permno, yyyymm, ShareIss1Y]
+    - ShareIss1Y = (shares_t-6 - shares_t-18) / shares_t-18, where shares = shrout * cfacshr
+"""
 
 # Note: We tried constructing the share adjustment from facshr as described in Pontiff and Woodgate (2008). Results are almost identical. So we stick with the simpler implementation 
 # by using cfacshr directly. 

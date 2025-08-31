@@ -1,4 +1,4 @@
-# ABOUTME: roaq.py - calculates return on assets quarterly predictor
+# ABOUTME: Return on assets quarterly following Balakrishnan, Bartov and Faurel 2010, Figure 1 Overall SAR
 # ABOUTME: Quarterly return on assets as quarterly income (ibq) divided by 3-month lagged quarterly assets (atq)
 
 """

@@ -1,5 +1,5 @@
-# ABOUTME: ZZ1_grcapx_grcapx1y_grcapx3y.py - calculates capital expenditure growth predictors
-# ABOUTME: Calculates capital expenditure growth predictors over different time horizons
+# ABOUTME: Capital expenditure growth following Anderson and Garcia-Feijoo 2006, Tables 3B and 3D
+# ABOUTME: Calculates grcapx (2-year growth), grcapx1y (1-year lagged growth), grcapx3y (3-year growth)
 
 """
 ZZ1_grcapx_grcapx1y_grcapx3y.py

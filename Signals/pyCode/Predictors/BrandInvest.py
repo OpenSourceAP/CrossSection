@@ -1,21 +1,16 @@
-# ABOUTME: BrandInvest predictor - calculates brand investment rate
-# ABOUTME: Run: python3 pyCode/Predictors/BrandInvest.py
+# ABOUTME: Brand capital investment following Belo, Lin and Vitorino 2014, Table 1A r^S
+# ABOUTME: calculates brand investment rate as advertising expense divided by brand capital
 
 """
-BrandInvest Predictor
-
-Brand investment rate calculation based on brand capital accumulation.
+Usage:
+    python3 Predictors/BrandInvest.py
 
 Inputs:
-- a_aCompustat.parquet (gvkey, permno, time_avail_m, fyear, datadate, xad, xad0, at, sic)
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, time_avail_m, fyear, datadate, xad, xad0, at, sic]
 
 Outputs:
-- BrandInvest.csv (permno, yyyymm, BrandInvest)
-
-This predictor calculates brand investment rate as xad0/l.BrandCapital where:
-1. BrandCapital is accumulated over time with 50% depreciation
-2. Industry filters exclude utilities and financials
-3. December data is expanded to monthly
+    - BrandInvest.csv: CSV file with columns [permno, yyyymm, BrandInvest]
+    - BrandInvest = xad0/l.BrandCapital, where brand capital uses perpetual inventory method with 50% depreciation
 """
 
 import pandas as pd

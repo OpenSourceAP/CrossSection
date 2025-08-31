@@ -1,5 +1,5 @@
-# ABOUTME: FEPS.py - calculates FEPS (Forecasted EPS) predictor using IBES analyst estimates
-# ABOUTME: Calculates FEPS (Forecasted EPS) predictor using IBES analyst mean estimates
+# ABOUTME: Analyst earnings per share following Cen, Wei, and Zhang 2006, Table 2, Ret0:1
+# ABOUTME: Calculates FEPS (Forecasted EPS) predictor using IBES analyst mean estimates (meanest)
 
 """
 FEPS.py

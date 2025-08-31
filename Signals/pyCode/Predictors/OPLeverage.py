@@ -1,5 +1,5 @@
-# ABOUTME: OPLeverage.py - Operating Leverage predictor calculation
-# ABOUTME: Calculates Operating Leverage predictor using polars
+# ABOUTME: Operating leverage following Novy-Marx 2011, Table 3b
+# ABOUTME: Sum of administrative expenses and cost of goods sold, scaled by total assets
 
 """
 OPLeverage.py

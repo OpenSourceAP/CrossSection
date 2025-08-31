@@ -1,4 +1,4 @@
-# ABOUTME: Price.py - calculates log absolute price predictor
+# ABOUTME: Price predictor following Blume and Husic 1973, Table 2 column c
 # ABOUTME: Log of absolute value of stock price (prc) from SignalMasterTable
 
 """

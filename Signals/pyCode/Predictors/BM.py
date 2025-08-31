@@ -1,8 +1,18 @@
-# ABOUTME: Translates BM.do predictor to create Book-to-market ratio based on Stattman (1980)
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/BM.py
+# ABOUTME: Book-to-market ratio following Stattman (1980), Table 3
+# ABOUTME: Calculates log of tangible book equity (ceqt) over market equity matched at FYE
 
-# BM based on the original, Dennis Stattman (1980)
-# see https://github.com/OpenSourceAP/CrossSection/issues/126
+"""
+Usage:
+    python3 Predictors/BM.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, datadate, ceqt]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
+
+Outputs:
+    - BM.csv: CSV file with columns [permno, yyyymm, BM]
+    - BM = log(ceqt/market_equity), where market equity is matched at FYE with 6-month lag
+"""
 
 import pandas as pd
 import numpy as np

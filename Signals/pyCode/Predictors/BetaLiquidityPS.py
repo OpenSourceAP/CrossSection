@@ -1,5 +1,5 @@
-# ABOUTME: BetaLiquidityPS.py - generates Pastor-Stambaugh liquidity beta using polars-ols rolling regressions
-# ABOUTME: Computes liquidity risk exposure coefficient from 4-factor rolling window regressions
+# ABOUTME: Pastor-Stambaugh liquidity beta following Pastor and Stambaugh 2003, Table 4A CAPM 10-1
+# ABOUTME: calculates liquidity risk exposure coefficient from rolling window regressions
 
 """
 BetaLiquidityPS.py

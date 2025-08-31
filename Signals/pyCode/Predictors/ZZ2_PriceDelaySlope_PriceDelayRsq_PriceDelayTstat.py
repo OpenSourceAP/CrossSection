@@ -1,6 +1,21 @@
-# ABOUTME: Price delay predictors using daily return regressions with market lags
-# ABOUTME: Usage: python3 ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py (run from pyCode/ directory)
-# ABOUTME: Options: --test-permnos N (run on first N permnos for testing)
+# ABOUTME: Price delay predictors following Hou and Moskowitz 2005, Tables 2A and 2B
+# ABOUTME: calculates PriceDelaySlope (D2), PriceDelayRsq (D1), and PriceDelayTstat (D3) using daily return regressions with market lags
+"""
+Usage:
+    python3 Predictors/ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py
+    python3 Predictors/ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py --test-permnos 100
+
+Inputs:
+    - dailyCRSP.parquet: Daily stock returns with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, mktrf, rf]
+
+Outputs:
+    - PriceDelaySlope.csv: D2 measure from Table 2A adjusted - weighted slope ratio
+    - PriceDelayRsq.csv: D1 measure from Table 2B one year daily - R-squared ratio (1 - R²restricted/R²unrestricted)  
+    - PriceDelayTstat.csv: D3 measure from Table 2A adjusted - weighted t-statistic ratio
+
+Key Table      : 2A D2 adjusted (PriceDelaySlope), 2B one year daily (PriceDelayRsq), 2A D3 adjusted (PriceDelayTstat)
+"""
 
 import polars as pl
 import polars_ols  # registers .least_squares namespace

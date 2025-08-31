@@ -1,5 +1,5 @@
-# ABOUTME: CompEquIss predictor - calculates composite equity issuance
-# ABOUTME: Run: python3 pyCode/Predictors/CompEquIss.py
+# ABOUTME: Composite equity issuance following Daniel and Titman 2006, Table 3
+# ABOUTME: calculates 5 year growth rate of market value minus 5 year stock return
 
 """
 Inputs: SignalMasterTable.parquet (permno, time_avail_m, ret, mve_c)

@@ -1,10 +1,17 @@
-# ABOUTME: Translates NetDebtFinance.do - calculates net debt financing activity
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/NetDebtFinance.py
+# ABOUTME: Net debt financing following Bradshaw, Richardson, Sloan 2006, Table 3
+# ABOUTME: calculates net debt financing activity scaled by average total assets
+"""
+Usage:
+    python3 Predictors/NetDebtFinance.py
 
-# Inputs:
-#   - ../pyData/Intermediate/m_aCompustat.parquet
-# Outputs:
-#   - ../pyData/Predictors/NetDebtFinance.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, dlcch, dltis, dltr, at]
+
+Outputs:
+    - NetDebtFinance.csv: CSV file with columns [permno, yyyymm, NetDebtFinance]
+    - NetDebtFinance = (dltis - dltr + dlcch) / (0.5 * (at + l12.at))
+    - Missing dlcch values replaced with 0, excluded if abs(ratio) > 1
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,5 +1,5 @@
-# ABOUTME: GrSaleToGrOverhead.py - calculates GrSaleToGrOverhead predictor using sales and overhead growth
-# ABOUTME: Calculates sales growth minus overhead growth using 12 and 24-month lags
+# ABOUTME: Sales growth over overhead growth following Abarbanell and Bushee 1998, Table 2b RS&A
+# ABOUTME: Calculates percentage growth in sales minus percentage growth in administrative expenses
 
 """
 GrSaleToGrOverhead.py

@@ -1,5 +1,5 @@
-# ABOUTME: ChNNCOA.py - calculates change in net noncurrent operating assets predictor
-# ABOUTME: Line-by-line translation of ChNNCOA.do following CLAUDE.md translation philosophy
+# ABOUTME: Change in Net Noncurrent Operating Assets following Soliman 2008, Table 7, DeltaNCO
+# ABOUTME: calculates twelve-month change in noncurrent operating assets scaled by total assets
 
 """
 ChNNCOA.py

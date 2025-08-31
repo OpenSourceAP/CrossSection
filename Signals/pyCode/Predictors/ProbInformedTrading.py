@@ -1,9 +1,17 @@
-# ABOUTME: Calculates probability of informed trading predictor from Easley et al
-# ABOUTME: Computes probability of informed trading from microstructure parameters
-#
-# Run: python3 Predictors/ProbInformedTrading.py
-# Input: SignalMasterTable.parquet, pin_monthly.parquet
-# Output: ../pyData/Predictors/ProbInformedTrading.csv
+# ABOUTME: Probability of Informed Trading following Easley, Hvidkjaer and O'Hara 2002, Table 6
+# ABOUTME: calculates probability of informed trading from microstructure parameters, set to missing for large cap stocks
+"""
+Usage:
+    python3 Predictors/ProbInformedTrading.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with market value (mve_c)
+    - pin_monthly.parquet: Monthly PIN parameter estimates with columns [permno, time_avail_m, a, u, es, eb]
+
+Outputs:
+    - ProbInformedTrading.csv: CSV file with columns [permno, yyyymm, ProbInformedTrading]
+    - ProbInformedTrading = (a * u) / (a * u + es + eb), set to missing for large cap stocks (top 50%)
+"""
 
 import pandas as pd
 import numpy as np

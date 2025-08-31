@@ -1,22 +1,20 @@
 #%%
 
-# ABOUTME: CredRatDG predictor - calculates credit rating downgrade signal
-# ABOUTME: Run: python3 pyCode/Predictors/CredRatDG.py
+# ABOUTME: Credit Rating Downgrade following Dichev and Piotroski 2001, Table 4, Downgrade BHAR 3-month
+# ABOUTME: calculates credit rating downgrade signal - 1 if downgrade in past 6 months
 
 """
-CredRatDG Predictor
-
-Credit rating downgrade signal using both Compustat and CIQ data.
+Usage:
+    python3 Predictors/CredRatDG.py
 
 Inputs:
-- m_SP_creditratings.parquet (gvkey, time_avail_m, credrat)
-- m_CIQ_creditratings.parquet 
-- SignalMasterTable.parquet (gvkey, permno, time_avail_m)
+    - m_SP_creditratings.parquet: S&P credit ratings data with columns [gvkey, time_avail_m, credrat]
+    - m_CIQ_creditratings.parquet: CIQ credit ratings data with columns [gvkey, ratingdate, source, anydowngrade]
+    - SignalMasterTable.parquet: Monthly master table with columns [gvkey, permno, time_avail_m]
 
 Outputs:
-- CredRatDG.csv (permno, yyyymm, CredRatDG)
-
-
+    - CredRatDG.csv: CSV file with columns [permno, yyyymm, CredRatDG]
+    - CredRatDG = 1 if credit rating downgrade occurred in past 6 months, else 0
 """
 
 import pandas as pd

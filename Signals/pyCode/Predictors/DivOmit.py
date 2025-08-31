@@ -1,5 +1,5 @@
-# ABOUTME: Creates dividend omission predictor identifying companies that stop paying regular dividends
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DivOmit.py
+# ABOUTME: Dividend omission following Michaely, Thaler and Womack 1995, Table 3, omit to Day 254
+# ABOUTME: identifies companies that stop paying regular dividends with signal held for 2 months
 
 # Run from pyCode/ directory
 # Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet

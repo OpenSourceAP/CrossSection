@@ -1,5 +1,5 @@
-# ABOUTME: AssetGrowth.py - calculates annual asset growth rate for each firm
-# ABOUTME: Computes percentage change in total assets over a 12-month period
+# ABOUTME: Asset growth following Cooper, Gulen and Schill 2008, Table 2B.1, year 1
+# ABOUTME: calculates annual growth rate of total assets scaled by lagged assets
 
 """
 AssetGrowth.py

@@ -1,4 +1,4 @@
-# ABOUTME: NetDebtPrice.py - calculates net debt to market value ratio for non-financial firms in top 3 BM quintiles
+# ABOUTME: Net debt to price following Penman, Richardson and Tuna 2007, Table 4A
 # ABOUTME: Net debt (debt + preferred stock - cash) divided by market value, excluding financial firms and low BM firms
 
 """

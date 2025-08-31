@@ -1,5 +1,5 @@
-# ABOUTME: Creates R&D-adjusted operating profitability predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/OperProfRD.py
+# ABOUTME: Operating profitability R&D adjusted following Ball et al. 2016, Table 4A Oper PRof
+# ABOUTME: calculates R&D-adjusted operating profitability predictor scaled by total assets
 
 # Note: Uses current period assets in denominator (not lagged)
 # This approach produces results closer to original Ohlson-Penman specification

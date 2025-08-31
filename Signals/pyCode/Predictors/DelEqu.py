@@ -1,5 +1,5 @@
-# ABOUTME: DelEqu.py - calculates change in common equity scaled by average total assets
-# ABOUTME: Measures financing activity through change in book value of common equity relative to firm size
+# ABOUTME: Change in equity to assets following Richardson et al. 2005, Table 9A
+# ABOUTME: calculates change in common equity scaled by average total assets
 
 """
 DelEqu predictor calculation

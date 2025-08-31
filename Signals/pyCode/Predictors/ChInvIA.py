@@ -1,5 +1,5 @@
-# ABOUTME: ChInvIA.py - calculates change in capital investment (industry adjusted) predictor
-# ABOUTME: Line-by-line translation of ChInvIA.do following CLAUDE.md translation philosophy
+# ABOUTME: Change in capital investment (industry adjusted) following Abarbanell and Bushee 1998, Table 2b RCAPX
+# ABOUTME: Calculates growth in capital expenditure minus average growth in same industry (two-digit SIC)
 
 """
 ChInvIA.py

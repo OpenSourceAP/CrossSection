@@ -1,19 +1,15 @@
-# ABOUTME: Creates Illiquidity predictor using Amihud illiquidity measure
-# ABOUTME: Run: python3 Predictors/Illiquidity.py
-
+# ABOUTME: Amihud's illiquidity following Amihud 2002, Table 2
+# ABOUTME: calculates past twelve month average of daily return divided by turnover
 """
-Illiquidity Predictor
-
-Implements the Amihud illiquidity measure:
-- Daily illiquidity = |return| / (|price| * volume)
-- Monthly average of daily illiquidity
-- 12-month rolling mean of monthly illiquidity
+Usage:
+    python3 Predictors/Illiquidity.py
 
 Inputs:
-- ../pyData/Intermediate/dailyCRSP.parquet
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret, prc, vol]
 
-Outputs:  
-- ../pyData/Predictors/Illiquidity.csv
+Outputs:
+    - Illiquidity.csv: CSV file with columns [permno, yyyymm, Illiquidity]
+    - Illiquidity = past twelve month average of: daily |ret| / (|prc| * vol)
 """
 
 import pandas as pd

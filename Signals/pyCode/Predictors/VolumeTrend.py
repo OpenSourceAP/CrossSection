@@ -1,9 +1,17 @@
-# ABOUTME: Translates VolumeTrend.do to create volume trend measure using time-based rolling regression
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/VolumeTrend.py
+# ABOUTME: Volume Trend following Haugen and Baker 1996, Table 1, trading volume trend
+# ABOUTME: calculates rolling coefficient from regressing monthly trading volume on linear time trend over 60-month window
+"""
+Usage:
+    python3 Predictors/VolumeTrend.py
 
-# Run from pyCode/ directory
-# Inputs: monthlyCRSP.parquet
-# Output: ../pyData/Predictors/VolumeTrend.csv
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol]
+
+Outputs:
+    - VolumeTrend.csv: CSV file with columns [permno, yyyymm, VolumeTrend]
+    - VolumeTrend = rolling coefficient from regressing vol on time trend, scaled by 60-month average volume
+    - Uses 60-month rolling window, requires at least 30 observations
+"""
 
 import polars as pl
 import numpy as np

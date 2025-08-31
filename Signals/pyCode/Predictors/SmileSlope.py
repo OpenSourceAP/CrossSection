@@ -1,5 +1,5 @@
-# ABOUTME: SmileSlope.py - Generates SmileSlope predictor (Average Jump Size)
-# ABOUTME: Measures implied volatility smile slope from options data (Yan 2011 JFE)
+# ABOUTME: Implied volatility smile slope following Yan 2011, Table 5A
+# ABOUTME: Put volatility minus call volatility for 30-day 50-delta options
 
 """
 Usage:

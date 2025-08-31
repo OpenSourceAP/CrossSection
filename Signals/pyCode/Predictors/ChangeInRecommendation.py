@@ -1,9 +1,18 @@
-# ABOUTME: Translates ChangeInRecommendation.do to calculate change in analyst recommendations
-# ABOUTME: Run with: python3 Predictors/ChangeInRecommendation.py
+# ABOUTME: Change in recommendation following Jegadeesh et al. 2004, Table 3C
+# ABOUTME: calculates change in analyst recommendation score from previous month
 
-# Calculates change in analyst recommendations using IBES data
-# Input: ../pyData/Intermediate/IBES_Recommendations.parquet, ../pyData/Intermediate/SignalMasterTable.parquet  
-# Output: ../pyData/Predictors/ChangeInRecommendation.csv
+"""
+Usage:
+    python3 Predictors/ChangeInRecommendation.py
+
+Inputs:
+    - IBES_Recommendations.parquet: IBES analyst recommendations with columns [tickerIBES, amaskcd, anndats, time_avail_m, ireccd]
+    - SignalMasterTable.parquet: Monthly master table with permno identifiers
+
+Outputs:
+    - ChangeInRecommendation.csv: CSV file with columns [permno, yyyymm, ChangeInRecommendation]
+    - ChangeInRecommendation = current month opscore - last month opscore, where opscore = 6 - ireccd (following Table 3C)
+"""
 
 import pandas as pd
 import numpy as np

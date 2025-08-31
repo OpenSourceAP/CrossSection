@@ -1,9 +1,16 @@
-# ABOUTME: Translates ShareRepurchase.do to calculate share repurchase indicator
-# ABOUTME: Run with: python3 Predictors/ShareRepurchase.py
+# ABOUTME: Share repurchases following Ikenberry, Lakonishok, Vermaelen 1995, Table 3, All firms Year 1
+# ABOUTME: Binary variable equal to 1 if stock repurchase indicated in cash flow statement
+"""
+Usage:
+    python3 Predictors/ShareRepurchase.py
 
-# Calculates binary indicator for share repurchases using Compustat data
-# Input: ../pyData/Intermediate/m_aCompustat.parquet
-# Output: ../pyData/Predictors/ShareRepurchase.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, prstkc]
+
+Outputs:
+    - ShareRepurchase.csv: CSV file with columns [permno, yyyymm, ShareRepurchase]
+    - ShareRepurchase = 1 if prstkc > 0, 0 if prstkc = 0, missing otherwise
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,5 +1,5 @@
-# ABOUTME: GrSaleToGrInv.py - calculates GrSaleToGrInv predictor using sales growth over inventory growth
-# ABOUTME: Computes the difference between sales growth and inventory growth rates
+# ABOUTME: Sales growth over inventory growth following Abarbanell and Bushee 1998, Table 2b RINV
+# ABOUTME: calculates the difference between sales growth and inventory growth rates
 
 """
 GrSaleToGrInv.py

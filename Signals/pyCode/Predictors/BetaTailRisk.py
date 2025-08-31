@@ -1,5 +1,5 @@
-# ABOUTME: BetaTailRisk.py - generates tail risk beta using custom tail risk factor and polars-ols rolling regressions
-# ABOUTME: Python translation of BetaTailRisk.do using polars for tail risk calculation and direct polars-ols for exact Stata replication
+# ABOUTME: Tail risk beta following Kelly and Jiang 2014, RFS, Table 4A EW
+# ABOUTME: calculates tail risk beta from rolling regression of returns on tail risk factor
 
 """
 BetaTailRisk.py

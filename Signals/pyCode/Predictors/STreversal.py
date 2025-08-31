@@ -1,5 +1,5 @@
-# ABOUTME: Short-term reversal predictor - current month return
-# ABOUTME: Usage: python3 STreversal.py (run from pyCode/ directory)
+# ABOUTME: Short-term reversal following Jegadeesh 1990, Table 2, Jan-Dec
+# ABOUTME: calculates stock return over the previous month (1-month momentum/reversal)
 
 import polars as pl
 import sys

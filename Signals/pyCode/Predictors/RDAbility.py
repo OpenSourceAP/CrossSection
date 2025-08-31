@@ -1,5 +1,5 @@
-# ABOUTME: R&D ability predictor using Cohen, Diether and Malloy (2013) methodology
-# ABOUTME: Usage: python3 RDAbility.py (run from pyCode/ directory)
+# ABOUTME: R&D ability predictor following Cohen, Diether and Malloy (2013), Table 2A Spread
+# ABOUTME: calculates R&D ability by regressing sales growth on lagged R&D intensity
 
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace

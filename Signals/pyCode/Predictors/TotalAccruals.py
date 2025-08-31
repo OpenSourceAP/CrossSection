@@ -1,9 +1,17 @@
-# ABOUTME: Translates TotalAccruals.do to create total accruals predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/TotalAccruals.py
+# ABOUTME: Total accruals following Richardson et al. 2005, Table 8A TACC
+# ABOUTME: calculates total accruals using balance sheet method (before 1988) or cash flow method (1988+)
+"""
+Usage:
+    python3 Predictors/TotalAccruals.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/TotalAccruals.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ivao, ivst, dltt, dlc, pstk, sstk, prstkc, dv, act, che, lct, at, lt, ni, oancf, ivncf, fincf]
+
+Outputs:
+    - TotalAccruals.csv: CSV file with columns [permno, yyyymm, TotalAccruals]
+    - TotalAccruals = Before 1988: change in working capital + change in non-current assets + change in financial assets, scaled by lagged assets
+    - TotalAccruals = 1988+: net income minus cash flows plus equity financing activities, scaled by lagged assets
+"""
 
 import pandas as pd
 import numpy as np

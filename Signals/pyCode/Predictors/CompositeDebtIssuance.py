@@ -1,20 +1,15 @@
-# ABOUTME: CompositeDebtIssuance predictor - calculates composite debt issuance
-# ABOUTME: Run: python3 pyCode/Predictors/CompositeDebtIssuance.py
-
+# ABOUTME: Composite debt issuance following Lyandres, Sun and Zhang 2008, Table 5B
+# ABOUTME: calculates log of total debt minus log of total debt 5 years ago
 """
-CompositeDebtIssuance Predictor
-
-Composite debt issuance calculation.
+Usage:
+    python3 Predictors/CompositeDebtIssuance.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, dltt, dlc)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, dltt, dlc]
 
 Outputs:
-- CompositeDebtIssuance.csv (permno, yyyymm, CompositeDebtIssuance)
-
-This predictor calculates:
-1. Total debt = dltt + dlc
-2. Composite debt issuance = log(tempBD/l60.tempBD)
+    - CompositeDebtIssuance.csv: CSV file with columns [permno, yyyymm, CompositeDebtIssuance]
+    - CompositeDebtIssuance = log(total_debt) - log(total_debt_5_years_ago), where total_debt = dltt + dlc
 """
 
 import pandas as pd

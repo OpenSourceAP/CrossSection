@@ -1,9 +1,18 @@
-# ABOUTME: Calculates corporate governance score predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Governance.py
+# ABOUTME: Governance Index following Gompers, Ishii and Metrick 2003, Table 7 Panel 1
+# ABOUTME: calculates corporate governance score predictor using governance index data
+"""
+Usage:
+    python3 Predictors/Governance.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, GovIndex.parquet
-# Output: ../pyData/Predictors/Governance.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, ticker, exchcd, mve_c]
+    - GovIndex.parquet: Governance index data with columns [ticker, time_avail_m, G]
+
+Outputs:
+    - Governance.csv: CSV file with columns [permno, yyyymm, Governance]
+    - Governance = G (governance index), bounded between 5 and 14
+    - Index available from http://faculty.som.yale.edu/andrewmetrick/data.html
+"""
 
 import pandas as pd
 import numpy as np

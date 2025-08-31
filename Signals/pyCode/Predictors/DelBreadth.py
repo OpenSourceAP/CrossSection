@@ -1,9 +1,18 @@
-# ABOUTME: Translates DelBreadth.do to create change in product breadth predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DelBreadth.py
+# ABOUTME: Change in breadth of ownership following Chen, Hong and Stein 2002, Table 4A
+# ABOUTME: calculates quarterly change in number of institutional owners from 13F data
+"""
+Usage:
+    python3 Predictors/DelBreadth.py
 
-# Run from pyCode/ directory  
-# Inputs: SignalMasterTable.parquet, TR_13F.parquet
-# Output: ../pyData/Predictors/DelBreadth.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, exchcd, mve_c]
+    - TR_13F.parquet: 13F data with columns [permno, time_avail_m, dbreadth]
+
+Outputs:
+    - DelBreadth.csv: CSV file with columns [permno, yyyymm, DelBreadth]
+    - DelBreadth = quarterly change in number of institutional owners (dbreadth)
+    - Excludes stocks in lowest quintile by market value of equity (based on NYSE stocks only)
+"""
 
 import pandas as pd
 import numpy as np

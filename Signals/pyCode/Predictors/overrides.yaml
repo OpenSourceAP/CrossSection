@@ -103,3 +103,5 @@ ShortInterest:
   reviewed_by: ac
   details: |
     Like the other short interest predictors, the only test here that is really informative is the t-stat, and the t-stat test passes.    
+
+    

@@ -1,5 +1,5 @@
-# ABOUTME: Creates R&D citations ratio predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/CitationsRD.py
+# ABOUTME: Citations to R&D expenses following Hirschleifer, Hsu and Li 2013, Table 9A EMI2
+# ABOUTME: calculates citations ratio predictor for small firms using double independent sort
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet, PatentDataProcessed.parquet, monthlyCRSP.parquet  

@@ -1,5 +1,5 @@
-# ABOUTME: CashProd predictor - calculates cash productivity ratio
-# ABOUTME: Run: python3 pyCode/Predictors/CashProd.py
+# ABOUTME: Cash Productivity following Chandrashekar and Rao 2009, Table 4A
+# ABOUTME: calculates cash productivity ratio as (market value of equity - total assets) / cash
 
 """
 CashProd.py

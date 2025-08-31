@@ -1,9 +1,17 @@
-# ABOUTME: Creates enterprise multiple predictor based on market value and operating income
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/EntMult.py
+# ABOUTME: Enterprise Multiple following Loughran and Wellman 2011, Table 3B
+# ABOUTME: calculates enterprise value divided by operating income before depreciation
+"""
+Usage:
+    python3 Predictors/EntMult.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/EntMult.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, dltt, dlc, dc, che, oibdp, ceq]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
+
+Outputs:
+    - EntMult.csv: CSV file with columns [permno, yyyymm, EntMult]
+    - EntMult = (mve_c + dltt + dlc + dc - che) / oibdp, exclude if ceq < 0 or oibdp < 0
+"""
 
 import pandas as pd
 import numpy as np

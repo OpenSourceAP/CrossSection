@@ -1,5 +1,17 @@
-# ABOUTME: Share Volume - volatility of share volume (vol/shrout) over 3 months
-# ABOUTME: Usage: python3 ShareVol.py (run from pyCode/ directory)
+# ABOUTME: Share Volume following Datar, Naik and Radcliffe 1998, Table 2A Turnover
+# ABOUTME: calculates binary signal based on share volume thresholds (0 if <5%, 1 if >10%)
+"""
+Usage:
+    python3 Predictors/ShareVol.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with [permno, time_avail_m, sicCRSP, exchcd]
+    - monthlyCRSP.parquet: Monthly CRSP data with [permno, time_avail_m, shrout, vol]
+
+Outputs:
+    - ShareVol.csv: CSV file with columns [permno, yyyymm, ShareVol]
+    - ShareVol = 0 if 3-month average share volume < 5%, 1 if > 10%, missing otherwise
+"""
 
 import polars as pl
 import sys

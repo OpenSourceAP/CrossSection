@@ -1,9 +1,17 @@
-# ABOUTME: Counts consecutive quarterly earnings increases
-# ABOUTME: Calculates number of consecutive quarters with positive earnings growth
+# ABOUTME: Earnings streak length following Loh and Warachka 2012, Table 4
+# ABOUTME: Counts consecutive quarters with positive earnings growth, up to 8 quarters
+"""
+Usage:
+    python3 Predictors/NumEarnIncrease.py
 
-# How to run: python3 Predictors/NumEarnIncrease.py (from pyCode/ directory)
-# Inputs: ../pyData/Intermediate/SignalMasterTable.parquet, ../pyData/Intermediate/m_QCompustat.parquet  
-# Outputs: ../pyData/Predictors/NumEarnIncrease.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with permno-gvkey mapping
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, ibq]
+
+Outputs:
+    - NumEarnIncrease.csv: CSV file with columns [permno, yyyymm, NumEarnIncrease]
+    - NumEarnIncrease = Number of consecutive 4-quarter increases in ibq, up to 8 quarters
+"""
 
 import pandas as pd
 import numpy as np

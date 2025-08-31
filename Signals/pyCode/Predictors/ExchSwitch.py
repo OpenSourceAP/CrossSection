@@ -1,9 +1,16 @@
-# ABOUTME: Translates ExchSwitch.do to create exchange switching indicator
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/ExchSwitch.py
+# ABOUTME: Exchange Switch following Dharan and Ikenberry 1995, Table 2 Months -1-6
+# ABOUTME: Binary indicator for firms switching from AMEX/NASDAQ to NYSE or NASDAQ to AMEX within past year
+"""
+Usage:
+    python3 Predictors/ExchSwitch.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/ExchSwitch.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, exchcd]
+
+Outputs:
+    - ExchSwitch.csv: CSV file with columns [permno, yyyymm, ExchSwitch]
+    - ExchSwitch = 1 if firm switched exchanges within past year, 0 otherwise
+"""
 
 import pandas as pd
 import numpy as np

@@ -4,7 +4,7 @@ import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.chdir('..')
 
-# ABOUTME: PS.py - calculates Piotroski F-score (within highest BM quintile)
+# ABOUTME: Piotroski F-score following Piotroski 2000, Table 3A
 # ABOUTME: Nine-factor profitability, efficiency, and leverage score restricted to highest book-to-market quintile
 
 """

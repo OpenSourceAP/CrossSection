@@ -1,5 +1,5 @@
-# ABOUTME: GrLTNOA.py - calculates GrLTNOA predictor using growth in long term net operating assets
-# ABOUTME: Computes annual change in long-term net operating assets scaled by average total assets
+# ABOUTME: Growth in long term operating assets following Fairfield, Whisenant and Yohn 2003, Table 5A and B
+# ABOUTME: Annual growth in net operating assets, minus accruals
 
 """
 GrLTNOA.py

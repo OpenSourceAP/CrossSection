@@ -1,9 +1,18 @@
-# ABOUTME: Translates NetPayoutYield.do to calculate net payout yield
-# ABOUTME: Run with: python3 Predictors/NetPayoutYield.py
+# ABOUTME: Net Payout Yield following Boudoukh et al. 2007, Table 6D
+# ABOUTME: calculates net payout yield scaled by lagged market value of equity
 
-# Calculates net payout yield using Compustat and market value data
-# Input: ../pyData/Intermediate/m_aCompustat.parquet, ../pyData/Intermediate/SignalMasterTable.parquet
-# Output: ../pyData/Predictors/NetPayoutYield.csv
+"""
+Usage:
+    python3 Predictors/NetPayoutYield.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, dvc, prstkc, sstk, sic, ceq]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
+
+Outputs:
+    - NetPayoutYield.csv: CSV file with columns [permno, yyyymm, NetPayoutYield]
+    - NetPayoutYield = (dvc + prstkc - sstk) / mve_c_l6, excludes zeros and financials (following Table 6D)
+"""
 
 import pandas as pd
 import numpy as np

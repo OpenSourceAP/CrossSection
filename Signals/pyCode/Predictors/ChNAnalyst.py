@@ -1,5 +1,5 @@
-# ABOUTME: ChNAnalyst.py - calculates decline in analyst coverage predictor
-# ABOUTME: Line-by-line translation of ChNAnalyst.do following CLAUDE.md translation philosophy
+# ABOUTME: Decline in Analyst Coverage following Scherbina 2008, Table 2 alphas return diff
+# ABOUTME: calculates binary predictor for decrease in analyst coverage relative to three months ago
 
 """
 ChNAnalyst.py

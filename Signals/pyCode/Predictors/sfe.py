@@ -1,5 +1,5 @@
-# ABOUTME: Creates sales forecast error predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/sfe.py
+# ABOUTME: Earnings Forecast to price following Elgers, Lo and Pfeiffer 2001, Table 4A, FAF_t+1 lower coverage
+# ABOUTME: calculates median EPS forecast divided by stock price for December fiscal year ends with low analyst coverage
 
 # Run from pyCode/ directory
 # Inputs: IBES_EPS_Unadj.parquet, SignalMasterTable.parquet, m_aCompustat.parquet

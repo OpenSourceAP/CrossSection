@@ -1,5 +1,5 @@
-# ABOUTME: BMdec predictor - calculates book-to-market using December market equity
-# ABOUTME: Run: python3 pyCode/Predictors/BMdec.py
+# ABOUTME: Book to market using December ME following Fama and French 1992, Table 3 Ln(BE/ME)
+# ABOUTME: calculates book-to-market ratio using most recent December value of market equity
 
 """
 BMdec Predictor

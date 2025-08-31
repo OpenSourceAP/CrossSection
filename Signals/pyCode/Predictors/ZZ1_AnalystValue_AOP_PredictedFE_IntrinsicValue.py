@@ -1,5 +1,5 @@
-# ABOUTME: Multi-component analyst value predictor: AnalystValue, AOP, PredictedFE (Frankel and Lee 1998 JAE Table 8A), IntrinsicValue
-# ABOUTME: Implements multi-stage equity valuation using analyst forecasts and cross-sectional forecast error prediction
+# ABOUTME: AnalystValue, AOP, PredictedFE following Frankel and Lee 1998 JAE, Tables 3D, 5C, 8A; IntrinsicValue placebo
+# ABOUTME: Multi-stage equity valuation using analyst forecasts and cross-sectional forecast error prediction
 
 import polars as pl
 import polars_ols  # registers .least_squares namespace

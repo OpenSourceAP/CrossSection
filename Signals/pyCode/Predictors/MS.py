@@ -4,8 +4,8 @@ import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.chdir('..')
 
-# ABOUTME: MS.py - generates Mohanram G-score predictor using 8 financial metrics
-# ABOUTME: Python translation of MS.do with industry median comparisons and quarterly aggregation
+# ABOUTME: Mohanram G-score following Mohanram 2005, Table 4A, for low book-to-market firms
+# ABOUTME: calculates composite accounting score using 8 financial strength indicators vs industry medians
 
 """
 MS.py

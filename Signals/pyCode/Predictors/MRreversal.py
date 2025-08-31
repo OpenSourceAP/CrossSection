@@ -1,9 +1,16 @@
-# ABOUTME: Translates MRreversal.do to create momentum-reversal predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MRreversal.py
+# ABOUTME: Medium-run reversal following De Bondt and Thaler 1985, Fig2 two-year line
+# ABOUTME: calculates stock return between months t-18 and t-13
+"""
+Usage:
+    python3 Predictors/MRreversal.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/MRreversal.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with ret column
+
+Outputs:
+    - MRreversal.csv: CSV file with columns [permno, yyyymm, MRreversal]
+    - MRreversal = geometric return over months t-18 to t-13 (medium-run reversal)
+"""
 
 import pandas as pd
 import numpy as np

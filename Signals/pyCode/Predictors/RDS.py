@@ -1,5 +1,5 @@
-# ABOUTME: RDS.py - calculates Real Dirty Surplus measure
-# ABOUTME: Real dirty surplus incorporating changes in equity, dirty surplus, earnings, dividends, and share issuance
+# ABOUTME: Real Dirty Surplus following Landsman et al. 2011, Table 4
+# ABOUTME: calculates real dirty surplus as change in book equity minus dirty surplus minus earnings plus dividends
 
 """
 RDS predictor calculation

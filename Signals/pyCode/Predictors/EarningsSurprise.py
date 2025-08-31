@@ -1,5 +1,5 @@
-# ABOUTME: Translates EarningsSurprise.do to calculate standardized earnings surprise
-# ABOUTME: Run with: python3 Predictors/EarningsSurprise.py
+# ABOUTME: Earnings Surprise following Foster, Olsen and Shevlin 1984 AR, Table 4, Days +1 to +60
+# ABOUTME: Calculates standardized unexpected earnings scaled by standard deviation
 
 # Calculates earnings surprise using Compustat quarterly data
 # Input: ../pyData/Intermediate/SignalMasterTable.parquet, ../pyData/Intermediate/m_QCompustat.parquet

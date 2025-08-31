@@ -1,5 +1,5 @@
-# ABOUTME: Calculates organizational capital predictors (OrgCap and OrgCapNoAdj)
-# ABOUTME: Organizational capital based on SG&A with industry adjustment and depreciation
+# ABOUTME: Organizational capital following Eisfeldt and Papanikolaou 2013, Table 4A.1
+# ABOUTME: Calculates OrgCap (industry-adjusted) and OrgCapNoAdj (raw) based on SG&A with depreciation
 
 """
 OrgCap predictor calculation

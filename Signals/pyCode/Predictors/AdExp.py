@@ -1,13 +1,7 @@
-# ABOUTME: AdExp.py - calculates advertising expense predictor scaled by market value of equity
-# ABOUTME: Advertising Expense - measures advertising expenditures relative to firm size  
-# ABOUTME: Reference: Chan, Lakonishok and Sougiannis 2001, Table 7, first year
-
+# ABOUTME: Advertising Expense following Chan, Lakonishok and Sougiannis 2001, Table 7, first year
+# ABOUTME: calculates advertising expense predictor scaled by market value of equity
 """
-AdExp.py
-
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
     python3 Predictors/AdExp.py
 
 Inputs:

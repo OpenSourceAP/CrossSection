@@ -1,5 +1,5 @@
-# ABOUTME: BidAskSpread.py - loads BidAskSpread predictor from pre-computed data
-# ABOUTME: Processes bid-ask spread data using Corwin-Schultz methodology
+# ABOUTME: Bid-ask spread following Amihud and Mendelson 1986 JFE, Table 2 Spread Mean
+# ABOUTME: Effective bid ask spread based on Corwin-Schulz scaled by stock price
 
 """
 BidAskSpread.py

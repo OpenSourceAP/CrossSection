@@ -1,5 +1,5 @@
-# ABOUTME: Calculates Frontier predictor using cross-sectional regressions with optional year filtering
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Frontier.py [--max-year YEAR]
+# ABOUTME: Efficient frontier index following Nguyen and Swanson 2009, Table 4A Spread
+# ABOUTME: calculates residual from regression of log(BM) on accounting variables with 60-month rolling window
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet

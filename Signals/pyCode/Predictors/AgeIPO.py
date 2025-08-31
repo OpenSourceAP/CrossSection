@@ -1,4 +1,4 @@
-# ABOUTME: AgeIPO.py - calculates AgeIPO predictor using firm age for recent IPO companies
+# ABOUTME: Age-based predictor following Ritter 1991, Table 9A
 # ABOUTME: Computes firm age relative to founding year for companies that went public 3-36 months ago
 
 """

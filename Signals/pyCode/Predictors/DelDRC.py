@@ -1,5 +1,5 @@
-# ABOUTME: DelDRC.py - calculates DelDRC predictor (Change in Deferred Revenue scaled by assets)
-# ABOUTME: Measures the change in deferred revenue normalized by average total assets
+# ABOUTME: Deferred Revenue following Prakash and Sinha 2013, Table 7
+# ABOUTME: calculates annual change in deferred revenue scaled by average total assets
 
 """
 DelDRC.py

@@ -1,5 +1,16 @@
-# ABOUTME: Turnover volatility predictor using 36-month rolling standard deviation of turnover
-# ABOUTME: Usage: python3 std_turn.py (run from pyCode/ directory)
+# ABOUTME: Share turnover volatility following Chordia, Subrahmanyam and Anshuman 2001, Table 5B
+# ABOUTME: calculates standard deviation of turnover (vol/shrout) over the past 36 months
+"""
+Usage:
+    python3 Predictors/std_turn.py
+
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol, shrout, prc]
+
+Outputs:
+    - std_turn.csv: CSV file with columns [permno, yyyymm, std_turn]
+    - std_turn = standard deviation of turnover over past 36 months, set to missing for size quintiles 4-5
+"""
 
 import polars as pl
 import sys

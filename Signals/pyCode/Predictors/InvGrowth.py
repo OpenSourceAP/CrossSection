@@ -1,5 +1,5 @@
-# ABOUTME: Creates InvGrowth predictor measuring year-over-year inventory growth
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/InvGrowth.py
+# ABOUTME: Inventory Growth following Belo and Lin 2012, Table 2A EW
+# ABOUTME: Creates InvGrowth predictor measuring year-over-year inventory growth using GNP deflator
 
 """
 InvGrowth.py

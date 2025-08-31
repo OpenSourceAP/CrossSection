@@ -1,5 +1,5 @@
-# ABOUTME: ZZ1_Activism1_Activism2.py - generates shareholder activism proxy predictors
-# ABOUTME: Creates Activism1 and Activism2 signals based on institutional ownership and governance metrics
+# ABOUTME: Activism1 (takeover vulnerability) and Activism2 (active shareholders) following Cremers and Nair 2005, Tables 3A and 4A
+# ABOUTME: Creates shareholder activism proxy predictors based on institutional ownership and governance metrics
 
 """
 ZZ1_Activism1_Activism2.py

@@ -1,5 +1,5 @@
-# ABOUTME: Calculates firm age-momentum interaction predictor following Zhang 2006 Table 4
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/FirmAgeMom.py
+# ABOUTME: Firm Age-Momentum following Zhang 2006, Table 4, middle U5
+# ABOUTME: calculates 6-month momentum for bottom quintile (youngest 20%) firms by age
 
 # Inputs: SignalMasterTable.parquet  
 # Output: ../pyData/Predictors/FirmAgeMom.csv

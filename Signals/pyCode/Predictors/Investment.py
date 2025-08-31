@@ -1,5 +1,16 @@
-# ABOUTME: Creates Investment predictor measuring capital expenditure scaled by revenue relative to historical average
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Investment.py
+# ABOUTME: Investment following Titman, Wei and Xie 2004, Table 1B Average
+# ABOUTME: Ratio of capital investment to revenue divided by firm-specific 36-month rolling mean
+"""
+Usage:
+    python3 Predictors/Investment.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, capx, revt]
+
+Outputs:
+    - Investment.csv: CSV file with columns [permno, yyyymm, Investment]
+    - Investment = (capx/revt) / 36-month rolling mean, exclude if revt < $10m
+"""
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet

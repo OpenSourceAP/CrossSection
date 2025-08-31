@@ -1,7 +1,17 @@
-# ABOUTME: Creates Industry Earnings Surprise Big Companies (EarnSupBig) predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/EarnSupBig.py
+# ABOUTME: Earnings surprise of big firms following Hou 2007, Key Table AR_i,3
+# ABOUTME: Average monthly value of EarningsSurprise of the 30% largest companies by market value in same FF48 industry
+"""
+Usage:
+    python3 Predictors/EarnSupBig.py
 
-# Creates earnings surprise then calculates industry averages for big companies
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, mve_c, sicCRSP]
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, epspxq]
+
+Outputs:
+    - EarnSupBig.csv: CSV file with columns [permno, yyyymm, EarnSupBig]
+    - EarnSupBig = Average EarningsSurprise of 30% largest companies in FF48 industry, excluding largest 30% companies
+"""
 
 import pandas as pd
 import numpy as np

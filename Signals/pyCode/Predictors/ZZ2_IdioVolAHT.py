@@ -1,5 +1,17 @@
-# ABOUTME: Idiosyncratic risk predictor using RMSE from 252-day rolling CAPM regression
-# ABOUTME: Usage: python3 Predictors/ZZ2_IdioVolAHT.py (run from pyCode/ directory)
+# ABOUTME: Idiosyncratic risk following Ali, Hwang, and Trombley 2003, Table 4 Ivolatility^-1
+# ABOUTME: calculates standard deviation of residuals from CAPM regressions using past year of daily data
+"""
+Usage:
+    python3 Predictors/ZZ2_IdioVolAHT.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, rf, mktrf]
+
+Outputs:
+    - IdioVolAHT.csv: CSV file with columns [permno, yyyymm, IdioVolAHT]
+    - IdioVolAHT = RMSE from 252-day rolling CAPM regression (min 100 observations)
+"""
 
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace

@@ -1,5 +1,5 @@
-# ABOUTME: DebtIssuance.py - calculates debt issuance predictor
-# ABOUTME: Line-by-line translation of DebtIssuance.do following CLAUDE.md translation philosophy
+# ABOUTME: Debt Issuance following Spiess and Affleck-Graves 1999, Table 4A EW
+# ABOUTME: calculates debt issuance predictor, equal to 1 if debt issuance (dltis) > 0
 
 """
 DebtIssuance.py

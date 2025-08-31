@@ -3,23 +3,20 @@
 import os
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 
-# ABOUTME: OperProf.py - calculates operating profitability predictor
-# ABOUTME: Operating profitability excluding small-cap stocks with size filtering
+# ABOUTME: Operating profitability following Fama and French 2006, Table 3 Y_t/B_t
+# ABOUTME: calculates operating profits scaled by book equity, excluding smallest size tercile
 
 """
-OperProf predictor calculation
-
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
     python3 Predictors/OperProf.py
 
 Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c, gvkey)
-    - ../pyData/Intermediate/m_aCompustat.parquet (gvkey, time_avail_m, revt, cogs, xsga, xint, ceq)
+    - SignalMasterTable.parquet: Monthly master table with mve_c for size filtering
+    - m_aCompustat.parquet: Monthly Compustat data with revt, cogs, xsga, xint, ceq
 
 Outputs:
-    - ../pyData/Predictors/OperProf.csv (permno, yyyymm, OperProf)
+    - OperProf.csv: CSV file with columns [permno, yyyymm, OperProf]
+    - OperProf = (revt - cogs - xsga - xint) / ceq, excluding smallest size tercile
 """
 
 # Notes:

@@ -1,5 +1,19 @@
-# ABOUTME: Calculates institutional ownership for high short interest stocks
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/IO_ShortInterest.py
+# ABOUTME: Institutional ownership among high short interest stocks following Asquith, Pathak and Ritter 2005, Table 5, EW 99th
+# ABOUTME: Excludes stocks below 99th percentile of short interest, calculates institutional ownership for remaining stocks
+"""
+Usage:
+    python3 Predictors/IO_ShortInterest.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, gvkey, time_avail_m]
+    - TR_13F.parquet: 13F institutional ownership data with columns [permno, time_avail_m, instown_perc]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, shrout]
+    - monthlyShortInterest.parquet: Short interest data with columns [gvkey, time_avail_m, shortint]
+
+Outputs:
+    - IO_ShortInterest.csv: CSV file with columns [permno, yyyymm, IO_ShortInterest]
+    - IO_ShortInterest = institutional ownership for stocks with short interest above 99th percentile, missing otherwise
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,5 +1,5 @@
-# ABOUTME: Calculates patent efficiency scaled by R&D capital 
-# ABOUTME: Implements double-sorted portfolio approach linking patent counts to accumulated R&D capital
+# ABOUTME: Patents to RD expenses following Hirschleifer, Hsu and Li 2013, Table 9A EMI1
+# ABOUTME: Calculates patent efficiency scaled by R&D capital with double-sorted portfolio approach
 
 # Run: python3 Predictors/PatentsRD.py
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet, PatentDataProcessed.parquet

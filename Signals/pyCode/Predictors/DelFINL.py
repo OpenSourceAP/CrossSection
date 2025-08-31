@@ -1,5 +1,5 @@
-# ABOUTME: DelFINL.py - calculates change in financial liabilities scaled by average total assets  
-# ABOUTME: Change in financial liabilities (debt + preferred stock) from prior 12 months divided by average total assets
+# ABOUTME: Change in financial liabilities following Richardson et al. 2005, Table 8C
+# ABOUTME: calculates change in financial liabilities scaled by average total assets
 
 """
 DelFINL predictor calculation

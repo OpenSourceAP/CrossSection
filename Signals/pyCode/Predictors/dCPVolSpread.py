@@ -1,5 +1,5 @@
-# ABOUTME: Translates dCPVolSpread.do to create change in call-put volume spread predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/dCPVolSpread.py
+# ABOUTME: Change in put vol minus change in call vol following An, Ang, Bali, Cakici 2014, Table IIC
+# ABOUTME: calculates change in call-put volume spread predictor for informed trading
 
 # An Ang Bali Cakici 2014 Table II C
 # Run from pyCode/ directory

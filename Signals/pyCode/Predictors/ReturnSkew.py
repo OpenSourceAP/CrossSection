@@ -1,5 +1,5 @@
-# ABOUTME: ReturnSkew.py - generates ReturnSkew predictor (skewness of daily returns)
-# ABOUTME: Python translation of ReturnSkew.do using polars for performance
+# ABOUTME: Return skewness following Bali, Engle and Murray 2015, Table 14.10 
+# ABOUTME: calculates skewness of daily returns over previous month
 
 """
 ReturnSkew.py

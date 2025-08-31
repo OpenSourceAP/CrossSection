@@ -1,22 +1,16 @@
-# ABOUTME: ConsRecomm predictor - calculates consensus recommendation
-# ABOUTME: Run: python3 pyCode/Predictors/ConsRecomm.py
-
+# ABOUTME: Consensus Recommendation following Barber et al. 2001, Table 3A
+# ABOUTME: Binary variable if monthly mean of recommendations over analysts is greater than 3, and 0 if less or equal to 1.5
 """
-ConsRecomm Predictor
-
-Consensus recommendation calculation using IBES data.
+Usage:
+    python3 Predictors/ConsRecomm.py
 
 Inputs:
-- IBES_Recommendations.parquet (tickerIBES, amaskcd, anndats, time_avail_m, ireccd)
-- SignalMasterTable.parquet (permno, time_avail_m, tickerIBES)
+    - IBES_Recommendations.parquet: IBES recommendations data with columns [tickerIBES, amaskcd, anndats, time_avail_m, ireccd]
+    - SignalMasterTable.parquet: Monthly master table with permno-ticker mapping
 
 Outputs:
-- ConsRecomm.csv (permno, yyyymm, ConsRecomm)
-
-This predictor calculates:
-1. Collapse IBES recommendations to firm-month level
-2. ConsRecomm = 1 if ireccd > 3 and not missing
-3. ConsRecomm = 0 if ireccd <= 1.5
+    - ConsRecomm.csv: CSV file with columns [permno, yyyymm, ConsRecomm]
+    - ConsRecomm = 1 if mean ireccd > 3, ConsRecomm = 0 if mean ireccd <= 1.5 (following Table 3A)
 """
 
 import pandas as pd

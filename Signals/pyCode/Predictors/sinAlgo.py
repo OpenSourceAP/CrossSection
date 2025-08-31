@@ -1,9 +1,18 @@
-# ABOUTME: Translates sinAlgo.do to create sin stock algorithmic predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/sinAlgo.py
+# ABOUTME: Sin Stock predictor following Hong and Kacperczyk 2009, Table 4A 1965-2006 first row, Table 4B 1926-2006 first row
+# ABOUTME: Binary variable = 1 for firms with segments in sin industries (alcohol, tobacco, gaming), 0 for comparable stocks
+"""
+Usage:
+    python3 Predictors/sinAlgo.py
 
-# Run from pyCode/ directory  
-# Inputs: CompustatSegments.parquet, SignalMasterTable.parquet, m_aCompustat.parquet
-# Output: ../pyData/Predictors/sinAlgo.csv
+Inputs:
+    - CompustatSegments.parquet: Segment data with SIC/NAICS codes
+    - SignalMasterTable.parquet: Monthly master table with firm identifiers
+    - m_aCompustat.parquet: Monthly Compustat data
+
+Outputs:
+    - sinAlgo.csv: CSV file with columns [permno, yyyymm, sinAlgo]
+    - sinAlgo = 1 for sin stocks, 0 for comparable stocks, missing otherwise
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,9 +1,16 @@
-# ABOUTME: Calculates long-term reversal by compounding monthly returns over months t-36 to t-13, expecting reversal of past performance
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/LRreversal.py
+# ABOUTME: Long-run reversal following De Bondt and Thaler 1985, Table 1, three-year
+# ABOUTME: calculates stock return between months t-36 and t-13 for long-term reversal signal
+"""
+Usage:
+    python3 Predictors/LRreversal.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/LRreversal.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - LRreversal.csv: CSV file with columns [permno, yyyymm, LRreversal]
+    - LRreversal = compound return from months t-36 to t-13 (expecting reversal)
+"""
 
 import pandas as pd
 import numpy as np

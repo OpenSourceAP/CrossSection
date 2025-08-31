@@ -1,5 +1,5 @@
-# ABOUTME: ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py - generates RealizedVol, IdioVol3F, and ReturnSkew3F predictors
-# ABOUTME: Python translation of ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.do using polars and polars-ols for performance
+# ABOUTME: RealizedVol following Ang et al. 2006, Table 6A; IdioVol3F following Ang et al. 2006, Table 7B; ReturnSkew3F following Bali, Engle and Murray 2015, Table 14.10
+# ABOUTME: calculates realized volatility, idiosyncratic volatility (3F), and idiosyncratic skewness (3F) predictors from daily returns
 
 """
 ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py

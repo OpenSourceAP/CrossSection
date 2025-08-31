@@ -1,5 +1,5 @@
+# ABOUTME: Intangible return predictors following Daniel and Titman 2006, Table 4
 # ABOUTME: Creates 4 intangible return predictors (IntanBM, IntanSP, IntanCFP, IntanEP) using cross-sectional regressions
-# ABOUTME: Calculates cumulative returns and 60-month changes, then runs regressions for each time period
 
 """
 How to run:

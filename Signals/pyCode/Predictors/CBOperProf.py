@@ -1,5 +1,5 @@
-# ABOUTME: CBOperProf predictor - calculates cash-based operating profitability
-# ABOUTME: Run: python3 pyCode/Predictors/CBOperProf.py
+# ABOUTME: Cash-based operating profitability following Ball et al. 2016 JFE, Table 4A Cash-based 10-1
+# ABOUTME: calculates operating profitability with working capital and R&D adjustments
 
 """
 CBOperProf Predictor

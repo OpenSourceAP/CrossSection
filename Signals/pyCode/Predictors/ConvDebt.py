@@ -1,5 +1,5 @@
-# ABOUTME: ConvDebt predictor - calculates convertible debt indicator
-# ABOUTME: Run: python3 pyCode/Predictors/ConvDebt.py
+# ABOUTME: Convertible debt indicator following Valta 2016, Table 4 DCONV
+# ABOUTME: Binary variable equal to 1 if deferred charges (dc) > 0 or common shares reserved for convertible debt (cshrc) > 0
 
 """
 ConvDebt Predictor

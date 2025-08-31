@@ -1,4 +1,4 @@
-Create Predictors Log - Started at 2025-08-29 21:52:03
+Create Predictors Log - Started at 2025-08-30 23:42:57
 ================================================================================
 
 
@@ -25,7 +25,7 @@ Final shape: 4047630 rows, 16 columns
 Column names: ['permno', 'ret', 'prc', 'shrcd', 'exchcd', 'sicCRSP', 'ticker', 'time_avail_m', 'mve_c', 'gvkey', 'sicCS', 'NYSE', 'bh1m', 'tickerIBES', 'secid', 'om_score']
 ============================================================
 ✅ Completed: SignalMasterTable.py
-Execution time: 5.00 seconds
+Execution time: 5.02 seconds
 
 
 🔄 Starting: Accruals.py
@@ -44,7 +44,7 @@ Saved 3276202 rows to ../pyData/Predictors/Accruals.csv
 Accruals.py completed successfully
 ============================================================
 ✅ Completed: Accruals.py
-Execution time: 1.70 seconds
+Execution time: 1.82 seconds
 
 
 🔄 Starting: AccrualsBM.py
@@ -73,7 +73,7 @@ Saved 220635 rows to ../pyData/Predictors/AccrualsBM.csv
 AccrualsBM.py completed successfully
 ============================================================
 ✅ Completed: AccrualsBM.py
-Execution time: 4.66 seconds
+Execution time: 4.73 seconds
 
 
 🔄 Starting: AdExp.py
@@ -90,12 +90,12 @@ Saved 1049037 rows to ../pyData/Predictors/AdExp.csv
 AdExp.py completed successfully
 ============================================================
 ✅ Completed: AdExp.py
-Execution time: 1.83 seconds
+Execution time: 1.79 seconds
 
 
 🔄 Starting: AgeIPO.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/AgeIPO.py:86: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'nan' has dtype incompatible with bool, please explicitly cast to a compatible dtype first.
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/AgeIPO.py:85: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'nan' has dtype incompatible with bool, please explicitly cast to a compatible dtype first.
   df.loc[df['IPOdate'].isna(), 'tempipo'] = np.nan
 Starting AgeIPO.py...
 Loading SignalMasterTable data...
@@ -111,7 +111,7 @@ Saved 353486 rows to ../pyData/Predictors/AgeIPO.csv
 AgeIPO.py completed successfully
 ============================================================
 ✅ Completed: AgeIPO.py
-Execution time: 1.04 seconds
+Execution time: 1.06 seconds
 
 
 🔄 Starting: AM.py
@@ -119,7 +119,7 @@ Execution time: 1.04 seconds
 AM predictor saved successfully
 ============================================================
 ✅ Completed: AM.py
-Execution time: 4.37 seconds
+Execution time: 4.55 seconds
 
 
 🔄 Starting: AnalystRevision.py
@@ -139,7 +139,7 @@ Saved 1923490 rows to ../pyData/Predictors/AnalystRevision.csv
 AnalystRevision.py completed successfully
 ============================================================
 ✅ Completed: AnalystRevision.py
-Execution time: 1.89 seconds
+Execution time: 2.03 seconds
 
 
 🔄 Starting: AssetGrowth.py
@@ -155,7 +155,7 @@ Saved 3311751 rows to ../pyData/Predictors/AssetGrowth.csv
 AssetGrowth.py completed successfully
 ============================================================
 ✅ Completed: AssetGrowth.py
-Execution time: 1.36 seconds
+Execution time: 1.33 seconds
 
 
 🔄 Starting: Beta.py
@@ -174,8 +174,8 @@ Loaded Market: 1,189 monthly observations
 🔗 Merging datasets...
 After merging: 5,150,010 observations
 🧮 Computing CAPM Beta using direct polars-ols rolling 60-observation regressions...
-Computing rolling regressions by permno (exact Stata replication)...
-This matches: asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)
+Computing rolling regressions by permno using 60-observation windows...
+Rolling window regression with minimum 20 observations per window
 Processing 38,835 unique permnos...
 Generated Beta values: 4,353,773 observations
 Beta summary stats:
@@ -189,11 +189,11 @@ Saved 4353773 rows to ../pyData/Predictors/Beta.csv
 ✅ Beta.csv saved successfully
 ================================================================================
 ✅ Beta.py Complete
-CAPM Beta predictor generated using direct polars-ols exact Stata replication
+CAPM Beta predictor generated using rolling 60-observation regression windows
 ================================================================================
 ============================================================
 ✅ Completed: Beta.py
-Execution time: 6.23 seconds
+Execution time: 7.31 seconds
 
 
 🔄 Starting: BetaLiquidityPS.py
@@ -213,7 +213,7 @@ Loaded Liquidity: 749 monthly observations
 After merging: 5,150,010 observations
 🧮 Computing Pastor-Stambaugh liquidity beta using direct polars-ols rolling 60-observation 4-factor regressions...
 Computing rolling 4-factor regressions for 38,835 unique permnos...
-This matches: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)
+Using 60-observation rolling windows with 36-observation minimum for each stock
 Generated BetaLiquidityPS values: 3,479,410 observations
 BetaLiquidityPS summary stats:
   Mean: -0.0021
@@ -226,11 +226,11 @@ Saved 3479410 rows to ../pyData/Predictors/BetaLiquidityPS.csv
 ✅ BetaLiquidityPS.csv saved successfully
 ================================================================================
 ✅ BetaLiquidityPS.py Complete
-Pastor-Stambaugh liquidity beta predictor generated using direct polars-ols exact Stata replication
+Pastor-Stambaugh liquidity beta predictor generated using rolling 4-factor regressions
 ================================================================================
 ============================================================
 ✅ Completed: BetaLiquidityPS.py
-Execution time: 10.22 seconds
+Execution time: 13.66 seconds
 
 
 🔄 Starting: BetaTailRisk.py
@@ -242,83 +242,9 @@ Generating Tail Risk Beta predictor
 📊 Part 1: Creating monthly tail risk factor from daily returns...
 Loading dailyCRSP.parquet...
 Loaded daily CRSP: 107,662,961 daily observations
-CHECKPOINT 1: Daily data for permno 78050 (Nov 1998 - Feb 1999)
-shape: (80, 4)
-┌────────┬─────────────────────┬───────────┬─────────────────────┐
-│ permno ┆ time_d              ┆ ret       ┆ time_avail_m        │
-│ ---    ┆ ---                 ┆ ---       ┆ ---                 │
-│ i32    ┆ datetime[ns]        ┆ f64       ┆ datetime[ns]        │
-╞════════╪═════════════════════╪═══════════╪═════════════════════╡
-│ 78050  ┆ 1998-11-02 00:00:00 ┆ 0.010989  ┆ 1998-11-01 00:00:00 │
-│ 78050  ┆ 1998-11-03 00:00:00 ┆ -0.021739 ┆ 1998-11-01 00:00:00 │
-│ 78050  ┆ 1998-11-04 00:00:00 ┆ 0.0       ┆ 1998-11-01 00:00:00 │
-│ 78050  ┆ 1998-11-05 00:00:00 ┆ -0.022222 ┆ 1998-11-01 00:00:00 │
-│ 78050  ┆ 1998-11-06 00:00:00 ┆ 0.0       ┆ 1998-11-01 00:00:00 │
-│ …      ┆ …                   ┆ …         ┆ …                   │
-│ 78050  ┆ 1999-02-22 00:00:00 ┆ 0.0       ┆ 1999-02-01 00:00:00 │
-│ 78050  ┆ 1999-02-23 00:00:00 ┆ 0.0       ┆ 1999-02-01 00:00:00 │
-│ 78050  ┆ 1999-02-24 00:00:00 ┆ -0.022222 ┆ 1999-02-01 00:00:00 │
-│ 78050  ┆ 1999-02-25 00:00:00 ┆ 0.028409  ┆ 1999-02-01 00:00:00 │
-│ 78050  ┆ 1999-02-26 00:00:00 ┆ -0.01105  ┆ 1999-02-01 00:00:00 │
-└────────┴─────────────────────┴───────────┴─────────────────────┘
-
 Calculating 5th percentile returns by month...
 Generated monthly 5th percentiles for 1,188 months
-CHECKPOINT 2: Monthly 5th percentile values (Nov 1998 - Feb 1999)
-shape: (4, 2)
-┌─────────────────────┬───────────┐
-│ time_avail_m        ┆ retp5     │
-│ ---                 ┆ ---       │
-│ datetime[ns]        ┆ f64       │
-╞═════════════════════╪═══════════╡
-│ 1998-11-01 00:00:00 ┆ -0.07131  │
-│ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ 1999-01-01 00:00:00 ┆ -0.068966 │
-│ 1999-02-01 00:00:00 ┆ -0.069444 │
-└─────────────────────┴───────────┘
-
 Filtering to tail observations (bottom 5%) and calculating tail excess returns...
-CHECKPOINT 3: Tail observations for permno 78050 (Nov 1998 - Feb 1999)
-Count of tail observations: 12
-shape: (12, 5)
-┌────────┬─────────────────────┬───────────┬─────────────────────┬───────────┐
-│ permno ┆ time_d              ┆ ret       ┆ time_avail_m        ┆ retp5     │
-│ ---    ┆ ---                 ┆ ---       ┆ ---                 ┆ ---       │
-│ i32    ┆ datetime[ns]        ┆ f64       ┆ datetime[ns]        ┆ f64       │
-╞════════╪═════════════════════╪═══════════╪═════════════════════╪═══════════╡
-│ 78050  ┆ 1998-11-30 00:00:00 ┆ -0.242376 ┆ 1998-11-01 00:00:00 ┆ -0.07131  │
-│ 78050  ┆ 1998-12-01 00:00:00 ┆ -0.169492 ┆ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ 78050  ┆ 1998-12-02 00:00:00 ┆ -0.346939 ┆ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ 78050  ┆ 1998-12-03 00:00:00 ┆ -0.234375 ┆ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ 78050  ┆ 1998-12-08 00:00:00 ┆ -0.087866 ┆ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ …      ┆ …                   ┆ …         ┆ …                   ┆ …         │
-│ 78050  ┆ 1998-12-17 00:00:00 ┆ -0.155172 ┆ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ 78050  ┆ 1998-12-31 00:00:00 ┆ -0.103448 ┆ 1998-12-01 00:00:00 ┆ -0.074074 │
-│ 78050  ┆ 1999-01-20 00:00:00 ┆ -0.069124 ┆ 1999-01-01 00:00:00 ┆ -0.068966 │
-│ 78050  ┆ 1999-02-08 00:00:00 ┆ -0.114537 ┆ 1999-02-01 00:00:00 ┆ -0.069444 │
-│ 78050  ┆ 1999-02-09 00:00:00 ┆ -0.099503 ┆ 1999-02-01 00:00:00 ┆ -0.069444 │
-└────────┴─────────────────────┴───────────┴─────────────────────┴───────────┘
-
-CHECKPOINT 4: Tailex calculations for permno 78050 (Nov 1998 - Feb 1999)
-shape: (12, 6)
-┌────────┬─────────────────────┬───────────┬─────────────────────┬───────────┬──────────┐
-│ permno ┆ time_d              ┆ ret       ┆ time_avail_m        ┆ retp5     ┆ tailex   │
-│ ---    ┆ ---                 ┆ ---       ┆ ---                 ┆ ---       ┆ ---      │
-│ i32    ┆ datetime[ns]        ┆ f64       ┆ datetime[ns]        ┆ f64       ┆ f64      │
-╞════════╪═════════════════════╪═══════════╪═════════════════════╪═══════════╪══════════╡
-│ 78050  ┆ 1998-11-30 00:00:00 ┆ -0.242376 ┆ 1998-11-01 00:00:00 ┆ -0.07131  ┆ 1.223454 │
-│ 78050  ┆ 1998-12-01 00:00:00 ┆ -0.169492 ┆ 1998-12-01 00:00:00 ┆ -0.074074 ┆ 0.827741 │
-│ 78050  ┆ 1998-12-02 00:00:00 ┆ -0.346939 ┆ 1998-12-01 00:00:00 ┆ -0.074074 ┆ 1.544084 │
-│ 78050  ┆ 1998-12-03 00:00:00 ┆ -0.234375 ┆ 1998-12-01 00:00:00 ┆ -0.074074 ┆ 1.151858 │
-│ 78050  ┆ 1998-12-08 00:00:00 ┆ -0.087866 ┆ 1998-12-01 00:00:00 ┆ -0.074074 ┆ 0.170748 │
-│ …      ┆ …                   ┆ …         ┆ …                   ┆ …         ┆ …        │
-│ 78050  ┆ 1998-12-17 00:00:00 ┆ -0.155172 ┆ 1998-12-01 00:00:00 ┆ -0.074074 ┆ 0.73947  │
-│ 78050  ┆ 1998-12-31 00:00:00 ┆ -0.103448 ┆ 1998-12-01 00:00:00 ┆ -0.074074 ┆ 0.334004 │
-│ 78050  ┆ 1999-01-20 00:00:00 ┆ -0.069124 ┆ 1999-01-01 00:00:00 ┆ -0.068966 ┆ 0.002288 │
-│ 78050  ┆ 1999-02-08 00:00:00 ┆ -0.114537 ┆ 1999-02-01 00:00:00 ┆ -0.069444 ┆ 0.500377 │
-│ 78050  ┆ 1999-02-09 00:00:00 ┆ -0.099503 ┆ 1999-02-01 00:00:00 ┆ -0.069444 ┆ 0.359667 │
-└────────┴─────────────────────┴───────────┴─────────────────────┴───────────┴──────────┘
-
 Filtered to 5,325,782 tail observations
 Generated monthly tail risk factor for 1,188 months
 Saved TailRisk.parquet
@@ -327,61 +253,8 @@ Loading monthlyCRSP.parquet...
 Loaded monthly CRSP: 5,153,763 monthly observations
 Merging with tail risk factor...
 After merging: 5,153,763 observations
-CHECKPOINT 5: Monthly average tailex values (Nov 1998 - Feb 1999)
-shape: (4, 2)
-┌─────────────────────┬──────────┐
-│ time_avail_m        ┆ tailex   │
-│ ---                 ┆ ---      │
-│ datetime[ns]        ┆ f64      │
-╞═════════════════════╪══════════╡
-│ 1998-11-01 00:00:00 ┆ 0.439559 │
-│ 1998-12-01 00:00:00 ┆ 0.442859 │
-│ 1999-01-01 00:00:00 ┆ 0.415432 │
-│ 1999-02-01 00:00:00 ┆ 0.414332 │
-└─────────────────────┴──────────┘
-
-CHECKPOINT 6: Merged monthly data for permno 78050 (1990-2000)
-shape: (99, 5)
-┌────────┬─────────────────────┬───────────┬───────┬──────────┐
-│ permno ┆ time_avail_m        ┆ ret       ┆ shrcd ┆ tailex   │
-│ ---    ┆ ---                 ┆ ---       ┆ ---   ┆ ---      │
-│ i32    ┆ datetime[ns]        ┆ f64       ┆ f64   ┆ f64      │
-╞════════╪═════════════════════╪═══════════╪═══════╪══════════╡
-│ 78050  ┆ 1992-10-01 00:00:00 ┆ null      ┆ null  ┆ 0.473835 │
-│ 78050  ┆ 1992-11-01 00:00:00 ┆ null      ┆ 11.0  ┆ 0.514084 │
-│ 78050  ┆ 1992-12-01 00:00:00 ┆ -0.028571 ┆ 11.0  ┆ 0.505533 │
-│ 78050  ┆ 1993-01-01 00:00:00 ┆ -0.117647 ┆ 11.0  ┆ 0.456809 │
-│ 78050  ┆ 1993-02-01 00:00:00 ┆ -0.016667 ┆ 11.0  ┆ 0.402109 │
-│ …      ┆ …                   ┆ …         ┆ …     ┆ …        │
-│ 78050  ┆ 2000-08-01 00:00:00 ┆ -0.087719 ┆ 11.0  ┆ 0.421719 │
-│ 78050  ┆ 2000-09-01 00:00:00 ┆ -0.192308 ┆ 11.0  ┆ 0.377073 │
-│ 78050  ┆ 2000-10-01 00:00:00 ┆ -0.047619 ┆ 11.0  ┆ 0.384066 │
-│ 78050  ┆ 2000-11-01 00:00:00 ┆ 0.1       ┆ 11.0  ┆ 0.3781   │
-│ 78050  ┆ 2000-12-01 00:00:00 ┆ -0.5      ┆ 11.0  ┆ 0.395675 │
-└────────┴─────────────────────┴───────────┴───────┴──────────┘
-
 Computing rolling 120-month tail risk betas for 38,843 unique permnos...
-This matches: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)
-CHECKPOINT 7: Final BetaTailRisk values for permno 78050 (1998-2000)
-shape: (36, 3)
-┌────────┬─────────────────────┬──────────────┐
-│ permno ┆ time_avail_m        ┆ BetaTailRisk │
-│ ---    ┆ ---                 ┆ ---          │
-│ i32    ┆ datetime[ns]        ┆ f64          │
-╞════════╪═════════════════════╪══════════════╡
-│ 78050  ┆ 1998-01-01 00:00:00 ┆ null         │
-│ 78050  ┆ 1998-02-01 00:00:00 ┆ null         │
-│ 78050  ┆ 1998-03-01 00:00:00 ┆ null         │
-│ 78050  ┆ 1998-04-01 00:00:00 ┆ null         │
-│ 78050  ┆ 1998-05-01 00:00:00 ┆ null         │
-│ …      ┆ …                   ┆ …            │
-│ 78050  ┆ 2000-08-01 00:00:00 ┆ 1.471211     │
-│ 78050  ┆ 2000-09-01 00:00:00 ┆ 1.564395     │
-│ 78050  ┆ 2000-10-01 00:00:00 ┆ 1.581043     │
-│ 78050  ┆ 2000-11-01 00:00:00 ┆ 1.523394     │
-│ 78050  ┆ 2000-12-01 00:00:00 ┆ 1.690806     │
-└────────┴─────────────────────┴──────────────┘
-
+Rolling 120-month regression windows with minimum 72 observations per permno
 Generated BetaTailRisk values: 2,332,084 observations
 BetaTailRisk summary stats:
   Mean: 0.6372
@@ -394,11 +267,11 @@ Saved 2332084 rows to ../pyData/Predictors/BetaTailRisk.csv
 ✅ BetaTailRisk.csv saved successfully
 ================================================================================
 ✅ BetaTailRisk.py Complete
-Tail risk beta predictor generated using polars asreg exact Stata replication
+Tail risk beta predictor generated using polars rolling window regression
 ================================================================================
 ============================================================
 ✅ Completed: BetaTailRisk.py
-Execution time: 7.83 seconds
+Execution time: 8.07 seconds
 
 
 🔄 Starting: BidAskSpread.py
@@ -412,7 +285,7 @@ Saved 4481622 rows to ../pyData/Predictors/BidAskSpread.csv
 BidAskSpread.py completed successfully
 ============================================================
 ✅ Completed: BidAskSpread.py
-Execution time: 0.52 seconds
+Execution time: 0.51 seconds
 
 
 🔄 Starting: BM.py
@@ -431,11 +304,11 @@ After merge: 4047630 rows
 Setting up panel data structure...
 Creating 6-month lag for market equity...
 Calculating BM signal...
-Calculated BM for 2715252 observations
+Calculated BM for 2715230 observations
 BM.py completed successfully
 ============================================================
 ✅ Completed: BM.py
-Execution time: 4.50 seconds
+Execution time: 4.56 seconds
 
 
 🔄 Starting: BMdec.py
@@ -456,7 +329,7 @@ Saved 2998697 rows to ../pyData/Predictors/BMdec.csv
 BMdec predictor completed successfully!
 ============================================================
 ✅ Completed: BMdec.py
-Execution time: 2.70 seconds
+Execution time: 2.79 seconds
 
 
 🔄 Starting: BookLeverage.py
@@ -475,7 +348,7 @@ Saved 3607287 rows to ../pyData/Predictors/BookLeverage.csv
 BookLeverage.py completed successfully
 ============================================================
 ✅ Completed: BookLeverage.py
-Execution time: 1.52 seconds
+Execution time: 1.60 seconds
 
 
 🔄 Starting: BrandInvest.py
@@ -499,7 +372,7 @@ Saved 509472 rows to ../pyData/Predictors/BrandInvest.csv
 BrandInvest predictor completed successfully!
 ============================================================
 ✅ Completed: BrandInvest.py
-Execution time: 31.51 seconds
+Execution time: 33.03 seconds
 
 
 🔄 Starting: Cash.py
@@ -524,7 +397,7 @@ Saved 2246763 rows to ../pyData/Predictors/Cash.csv
 Cash predictor completed successfully!
 ============================================================
 ✅ Completed: Cash.py
-Execution time: 3.09 seconds
+Execution time: 3.29 seconds
 
 
 🔄 Starting: CashProd.py
@@ -543,7 +416,7 @@ Saved 3038208 rows to ../pyData/Predictors/CashProd.csv
 CashProd.py completed successfully
 ============================================================
 ✅ Completed: CashProd.py
-Execution time: 2.05 seconds
+Execution time: 1.95 seconds
 
 
 🔄 Starting: CBOperProf.py
@@ -568,7 +441,7 @@ Saved 2283897 rows to ../pyData/Predictors/CBOperProf.csv
 CBOperProf predictor completed successfully!
 ============================================================
 ✅ Completed: CBOperProf.py
-Execution time: 6.26 seconds
+Execution time: 6.04 seconds
 
 
 🔄 Starting: CF.py
@@ -587,7 +460,7 @@ Saved 3053133 rows to ../pyData/Predictors/CF.csv
 CF.py completed successfully
 ============================================================
 ✅ Completed: CF.py
-Execution time: 2.13 seconds
+Execution time: 2.12 seconds
 
 
 🔄 Starting: cfp.py
@@ -609,7 +482,7 @@ Saved 2614930 rows to ../pyData/Predictors/cfp.csv
 cfp predictor completed successfully!
 ============================================================
 ✅ Completed: cfp.py
-Execution time: 4.13 seconds
+Execution time: 4.08 seconds
 
 
 🔄 Starting: ChangeInRecommendation.py
@@ -617,7 +490,7 @@ Execution time: 4.13 seconds
 ChangeInRecommendation predictor created with 450458 observations
 ============================================================
 ✅ Completed: ChangeInRecommendation.py
-Execution time: 12.35 seconds
+Execution time: 13.06 seconds
 
 
 🔄 Starting: ChAssetTurnover.py
@@ -650,7 +523,7 @@ Execution time: 0.74 seconds
 ChForecastAccrual predictor saved: 628490 observations
 ============================================================
 ✅ Completed: ChForecastAccrual.py
-Execution time: 7.43 seconds
+Execution time: 7.32 seconds
 
 
 🔄 Starting: ChInv.py
@@ -658,7 +531,7 @@ Execution time: 7.43 seconds
 ChInv predictor saved: 3311811 observations
 ============================================================
 ✅ Completed: ChInv.py
-Execution time: 3.19 seconds
+Execution time: 3.12 seconds
 
 
 🔄 Starting: ChInvIA.py
@@ -666,7 +539,7 @@ Execution time: 3.19 seconds
 ChInvIA predictor saved: 2678515 observations
 ============================================================
 ✅ Completed: ChInvIA.py
-Execution time: 5.34 seconds
+Execution time: 5.38 seconds
 
 
 🔄 Starting: ChNAnalyst.py
@@ -676,7 +549,7 @@ Execution time: 5.34 seconds
 ChNAnalyst predictor saved: 210931 observations
 ============================================================
 ✅ Completed: ChNAnalyst.py
-Execution time: 2.90 seconds
+Execution time: 2.93 seconds
 
 
 🔄 Starting: ChNNCOA.py
@@ -684,7 +557,7 @@ Execution time: 2.90 seconds
 ChNNCOA predictor saved: 3262618 observations
 ============================================================
 ✅ Completed: ChNNCOA.py
-Execution time: 3.43 seconds
+Execution time: 3.41 seconds
 
 
 🔄 Starting: ChNWC.py
@@ -701,7 +574,7 @@ Saved 3275986 rows to ../pyData/Predictors/ChNWC.csv
 ChNWC predictor completed successfully!
 ============================================================
 ✅ Completed: ChNWC.py
-Execution time: 0.86 seconds
+Execution time: 0.84 seconds
 
 
 🔄 Starting: ChTax.py
@@ -721,12 +594,12 @@ Saved 2828411 rows to ../pyData/Predictors/ChTax.csv
 ChTax predictor completed successfully!
 ============================================================
 ✅ Completed: ChTax.py
-Execution time: 2.18 seconds
+Execution time: 2.20 seconds
 
 
 🔄 Starting: CitationsRD.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/CitationsRD.py:99: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/CitationsRD.py:97: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
   df = df.groupby('gvkey').apply(lambda x: x.iloc[2:]).reset_index(drop=True)
 Loading SignalMasterTable...
 After early date filter: (3481556, 6)
@@ -749,7 +622,7 @@ saving CitationsRD
 Saved 660588 rows to ../pyData/Predictors/CitationsRD.csv
 ============================================================
 ✅ Completed: CitationsRD.py
-Execution time: 5.50 seconds
+Execution time: 5.71 seconds
 
 
 🔄 Starting: CompEquIss.py
@@ -766,7 +639,7 @@ Saved 2560488 rows to ../pyData/Predictors/CompEquIss.csv
 CompEquIss predictor completed successfully!
 ============================================================
 ✅ Completed: CompEquIss.py
-Execution time: 2.85 seconds
+Execution time: 2.83 seconds
 
 
 🔄 Starting: CompositeDebtIssuance.py
@@ -788,7 +661,7 @@ Saved 2157897 rows to ../pyData/Predictors/CompositeDebtIssuance.csv
 CompositeDebtIssuance predictor completed successfully!
 ============================================================
 ✅ Completed: CompositeDebtIssuance.py
-Execution time: 1.35 seconds
+Execution time: 1.33 seconds
 
 
 🔄 Starting: ConsRecomm.py
@@ -809,7 +682,7 @@ Saved 134129 rows to ../pyData/Predictors/ConsRecomm.csv
 ConsRecomm predictor completed successfully!
 ============================================================
 ✅ Completed: ConsRecomm.py
-Execution time: 0.96 seconds
+Execution time: 0.97 seconds
 
 
 🔄 Starting: ConvDebt.py
@@ -902,7 +775,7 @@ Saving to CSV...
 CoskewACX translation complete!
 ============================================================
 ✅ Completed: CoskewACX.py
-Execution time: 77.48 seconds
+Execution time: 84.11 seconds
 
 
 🔄 Starting: Coskewness.py
@@ -1120,7 +993,7 @@ Saving to CSV...
 Coskewness translation complete!
 ============================================================
 ✅ Completed: Coskewness.py
-Execution time: 14.45 seconds
+Execution time: 14.30 seconds
 
 
 🔄 Starting: CPVolSpread.py
@@ -1138,7 +1011,7 @@ Saved 682114 rows to ../pyData/Predictors/CPVolSpread.csv
 CPVolSpread.py completed successfully
 ============================================================
 ✅ Completed: CPVolSpread.py
-Execution time: 1.42 seconds
+Execution time: 1.48 seconds
 
 
 🔄 Starting: CredRatDG.py
@@ -1158,7 +1031,7 @@ Saved 3041661 rows to ../pyData/Predictors/CredRatDG.csv
 CredRatDG predictor completed successfully!
 ============================================================
 ✅ Completed: CredRatDG.py
-Execution time: 1.79 seconds
+Execution time: 1.81 seconds
 
 
 🔄 Starting: CustomerMomentum.py
@@ -1174,7 +1047,7 @@ Saved 356510 rows to ../pyData/Predictors/CustomerMomentum.csv
 CustomerMomentum predictor completed successfully!
 ============================================================
 ✅ Completed: CustomerMomentum.py
-Execution time: 0.34 seconds
+Execution time: 0.35 seconds
 
 
 🔄 Starting: dCPVolSpread.py
@@ -1192,7 +1065,7 @@ Saved 851001 rows to ../pyData/Predictors/dCPVolSpread.csv
 dCPVolSpread.py completed successfully
 ============================================================
 ✅ Completed: dCPVolSpread.py
-Execution time: 1.41 seconds
+Execution time: 1.52 seconds
 
 
 🔄 Starting: DebtIssuance.py
@@ -1216,23 +1089,15 @@ Saved 2726038 rows to ../pyData/Predictors/DebtIssuance.csv
 DebtIssuance predictor completed successfully!
 ============================================================
 ✅ Completed: DebtIssuance.py
-Execution time: 2.22 seconds
+Execution time: 2.31 seconds
 
 
 🔄 Starting: DelBreadth.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/DelBreadth.py:23: FutureWarning: SeriesGroupBy.fillna is deprecated and will be removed in a future version. Use obj.ffill() or obj.bfill() for forward or backward filling instead. If you want to fill with a single value, use Series.fillna instead
-  df['dbreadth'] = df.groupby('permno')['dbreadth'].fillna(method='ffill')
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/DelBreadth.py:23: FutureWarning: Series.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df['dbreadth'] = df.groupby('permno')['dbreadth'].fillna(method='ffill')
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/DelBreadth.py:26: FutureWarning: SeriesGroupBy.fillna is deprecated and will be removed in a future version. Use obj.ffill() or obj.bfill() for forward or backward filling instead. If you want to fill with a single value, use Series.fillna instead
-  df['dbreadth'] = df.groupby('permno')['dbreadth'].fillna(method='bfill')
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/DelBreadth.py:26: FutureWarning: Series.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
-  df['dbreadth'] = df.groupby('permno')['dbreadth'].fillna(method='bfill')
 DelBreadth predictor saved successfully
 ============================================================
 ✅ Completed: DelBreadth.py
-Execution time: 3.15 seconds
+Execution time: 1.89 seconds
 
 
 🔄 Starting: DelCOA.py
@@ -1272,7 +1137,7 @@ Saved 3276202 rows to ../pyData/Predictors/DelCOL.csv
 DelCOL.py completed successfully
 ============================================================
 ✅ Completed: DelCOL.py
-Execution time: 1.69 seconds
+Execution time: 1.59 seconds
 
 
 🔄 Starting: DelDRC.py
@@ -1293,7 +1158,7 @@ Saved 462430 rows to ../pyData/Predictors/DelDRC.csv
 DelDRC.py completed successfully
 ============================================================
 ✅ Completed: DelDRC.py
-Execution time: 2.19 seconds
+Execution time: 2.17 seconds
 
 
 🔄 Starting: DelEqu.py
@@ -1301,7 +1166,7 @@ Execution time: 2.19 seconds
 DelEqu: Saved 3,195,504 observations
 ============================================================
 ✅ Completed: DelEqu.py
-Execution time: 3.77 seconds
+Execution time: 3.87 seconds
 
 
 🔄 Starting: DelFINL.py
@@ -1309,7 +1174,7 @@ Execution time: 3.77 seconds
 DelFINL: Saved 3,251,941 observations
 ============================================================
 ✅ Completed: DelFINL.py
-Execution time: 3.87 seconds
+Execution time: 4.02 seconds
 
 
 🔄 Starting: DelLTI.py
@@ -1317,7 +1182,7 @@ Execution time: 3.87 seconds
 DelLTI: Saved 3,296,136 observations
 ============================================================
 ✅ Completed: DelLTI.py
-Execution time: 3.33 seconds
+Execution time: 3.50 seconds
 
 
 🔄 Starting: DelNetFin.py
@@ -1325,7 +1190,7 @@ Execution time: 3.33 seconds
 DelNetFin: Saved 3,251,941 observations
 ============================================================
 ✅ Completed: DelNetFin.py
-Execution time: 4.02 seconds
+Execution time: 4.18 seconds
 
 
 🔄 Starting: DivInit.py
@@ -1347,7 +1212,7 @@ Dividend initiation predictor generated successfully
 ================================================================================
 ============================================================
 ✅ Completed: DivInit.py
-Execution time: 2.21 seconds
+Execution time: 2.37 seconds
 
 
 🔄 Starting: DivOmit.py
@@ -1355,7 +1220,7 @@ Execution time: 2.21 seconds
 DivOmit predictor saved successfully
 ============================================================
 ✅ Completed: DivOmit.py
-Execution time: 6.29 seconds
+Execution time: 6.53 seconds
 
 
 🔄 Starting: DivSeason.py
@@ -1377,7 +1242,7 @@ Saved 1785982 rows to ../pyData/Predictors/DivSeason.csv
 DivSeason.py completed successfully
 ============================================================
 ✅ Completed: DivSeason.py
-Execution time: 1.95 seconds
+Execution time: 2.07 seconds
 
 
 🔄 Starting: DivYieldST.py
@@ -1385,7 +1250,7 @@ Execution time: 1.95 seconds
 DivYieldST predictor saved successfully
 ============================================================
 ✅ Completed: DivYieldST.py
-Execution time: 4.57 seconds
+Execution time: 4.65 seconds
 
 
 🔄 Starting: dNoa.py
@@ -1403,7 +1268,7 @@ Saved 3195426 rows to ../pyData/Predictors/dNoa.csv
 dNoa predictor completed successfully!
 ============================================================
 ✅ Completed: dNoa.py
-Execution time: 1.66 seconds
+Execution time: 1.68 seconds
 
 
 🔄 Starting: DolVol.py
@@ -1413,33 +1278,15 @@ Execution time: 1.66 seconds
 DolVol predictor saved successfully
 ============================================================
 ✅ Completed: DolVol.py
-Execution time: 5.07 seconds
+Execution time: 5.08 seconds
 
 
 🔄 Starting: DownRecomm.py
 ============================================================
-CHECKPOINT 1 - After first gcollapse:
-      tickerIBES time_avail_m  ireccd
-24728       AAPL   1993-11-01       2
-24764       AAPL   1993-11-01       3
-24783       AAPL   1993-11-01       3
-24844       AAPL   1993-11-01       3
-24856       AAPL   1993-11-01       3
-24864       AAPL   1993-11-01       5
-24945       AAPL   1993-11-01       3
-CHECKPOINT 2 - After second gcollapse:
-      tickerIBES time_avail_m    ireccd
-16353       AAPL   1993-11-01  3.142857
-CHECKPOINT 3 - After creating DownRecomm variable:
-      tickerIBES time_avail_m    ireccd  DownRecomm
-16353       AAPL   1993-11-01  3.142857           0
-CHECKPOINT 4 - After merge with SignalMasterTable:
-        permno time_avail_m  DownRecomm
-184444   10001   1993-11-01           0
 DownRecomm predictor created with 464223 observations
 ============================================================
 ✅ Completed: DownRecomm.py
-Execution time: 12.74 seconds
+Execution time: 12.78 seconds
 
 
 🔄 Starting: dVolCall.py
@@ -1452,7 +1299,7 @@ Saved 851001 rows to ../pyData/Predictors/dVolCall.csv
 dVolCall.py completed successfully
 ============================================================
 ✅ Completed: dVolCall.py
-Execution time: 0.83 seconds
+Execution time: 0.88 seconds
 
 
 🔄 Starting: dVolPut.py
@@ -1465,7 +1312,7 @@ Saved 851001 rows to ../pyData/Predictors/dVolPut.csv
 dVolPut.py completed successfully
 ============================================================
 ✅ Completed: dVolPut.py
-Execution time: 0.84 seconds
+Execution time: 0.88 seconds
 
 
 🔄 Starting: EarningsConsistency.py
@@ -1483,25 +1330,23 @@ Saved 1387458 rows to ../pyData/Predictors/EarningsConsistency.csv
 EarningsConsistency.py completed successfully
 ============================================================
 ✅ Completed: EarningsConsistency.py
-Execution time: 1.86 seconds
+Execution time: 1.93 seconds
 
 
 🔄 Starting: EarningsForecastDisparity.py
 ============================================================
 Starting EarningsForecastDisparity.py...
-Loading data...
 ============================================================
 ✅ Completed: EarningsForecastDisparity.py
-Execution time: 4.27 seconds
+Execution time: 4.52 seconds
 
 
 🔄 Starting: EarningsStreak.py
 ============================================================
-Warning: Dropped 817177 observations with missing EarningsStreak after forward-fill
 EarningsStreak predictor created with 1225443 observations
 ============================================================
 ✅ Completed: EarningsStreak.py
-Execution time: 5.39 seconds
+Execution time: 4.86 seconds
 
 
 🔄 Starting: EarningsSurprise.py
@@ -1509,287 +1354,19 @@ Execution time: 5.39 seconds
 EarningsSurprise predictor created with 2324021 observations
 ============================================================
 ✅ Completed: EarningsSurprise.py
-Execution time: 11.04 seconds
+Execution time: 11.60 seconds
 
 
 🔄 Starting: EarnSupBig.py
 ============================================================
 Creating EarnSupBig predictor...
-CHECKPOINT 1: Loaded 4047630 observations from SignalMasterTable
-CHECKPOINT 1 - April 2007 debug permnos:
-        permno    gvkey time_avail_m
-9233     10051  16456.0   2007-04-01
-215206   11406   8031.0   2007-04-01
-CHECKPOINT 2: After dropping missing gvkey: 3041661 observations
-CHECKPOINT 2 - April 2007 debug permnos:
-        permno    gvkey time_avail_m
-9233     10051  16456.0   2007-04-01
-215206   11406   8031.0   2007-04-01
-CHECKPOINT 3: After merge with m_QCompustat: 2823459 observations
-CHECKPOINT 3 - April 2007 debug permnos:
-        permno    gvkey time_avail_m  epspxq
-6038     10051  16456.0   2007-04-01     0.2
-130741   11406   8031.0   2007-04-01     0.5
-CHECKPOINT 4: GrTemp calculated for 2533796 observations
-CHECKPOINT 4 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m  epspxq  GrTemp
-10051   10100   2001-05-01   -0.22   -0.22
-CHECKPOINT 4 - April 2007 debug permnos:
-        permno time_avail_m  epspxq  GrTemp
-6038     10051   2007-04-01     0.2   -0.11
-130741   11406   2007-04-01     0.5    0.12
-CHECKPOINT 4.5: Drift calculated
-CHECKPOINT 4.5 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m  GrTemp   Drift
-10051   10100   2001-05-01   -0.22 -0.0025
-CHECKPOINT 5: Raw EarningsSurprise calculated for 2472534 observations
-CHECKPOINT 5 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m  epspxq   Drift  EarningsSurprise
-10051   10100   2001-05-01   -0.22 -0.0025           -0.2175
-CHECKPOINT 5 - April 2007 debug permnos:
-        permno time_avail_m  epspxq  Drift  EarningsSurprise
-6038     10051   2007-04-01     0.2  0.235            -0.345
-130741   11406   2007-04-01     0.5  0.110             0.010
-CHECKPOINT 5.5: SD calculated
-CHECKPOINT 5.5 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m        SD  EarningsSurprise
-10051   10100   2001-05-01  0.008555           -0.2175
-CHECKPOINT 5.5 - Found 950 observations with very small SD values:
-      permno time_avail_m            SD  EarningsSurprise
-1235   10012   1989-08-01  6.133174e-18         -0.010000
-1236   10012   1989-09-01  6.133174e-18         -0.010000
-7456   10074   1985-01-01  3.925231e-17          0.013333
-7457   10074   1985-02-01  3.925231e-17          0.013333
-7458   10074   1985-03-01  3.925231e-17          0.013333
-CHECKPOINT 6: EarningsSurprise standardized for 2353037 observations
-CHECKPOINT 6 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m        SD  EarningsSurprise
-10051   10100   2001-05-01  0.008555        -25.424014
-CHECKPOINT 6 - Found 12 observations with extreme standardized values:
-         permno time_avail_m        SD  EarningsSurprise
-460696    18286   2000-09-01  0.165682     -12222.228115
-460697    18286   2000-10-01  0.193928     -10442.066913
-460698    18286   2000-11-01  0.193928     -10442.066913
-1900626   77703   1996-12-01  0.017423      -3176.065325
-1900627   77703   1997-01-01  0.017800      -3108.715892
-CHECKPOINT 6 - April 2007 debug permnos:
-        permno time_avail_m        SD  EarningsSurprise
-6038     10051   2007-04-01  0.820452         -0.420500
-130741   11406   2007-04-01  0.326576          0.030621
-CHECKPOINT 7: Loaded 4047630 observations from SignalMasterTable for EarnSupBig
-CHECKPOINT 7 - April 2007 debug permnos:
-        permno time_avail_m       mve_c  sicCRSP
-9233     10051   2007-04-01  264.159119     3842
-215206   11406   2007-04-01  907.809143     6351
-CHECKPOINT 8: After merge with earnings data: 4047630 observations
-CHECKPOINT 8: With non-missing EarningsSurprise: 2353037 observations
-CHECKPOINT 8 - April 2007 debug permnos:
-        permno time_avail_m       mve_c  sicCRSP  EarningsSurprise
-9233     10051   2007-04-01  264.159119     3842         -0.420500
-215206   11406   2007-04-01  907.809143     6351          0.030621
-CHECKPOINT 9: FF48 industries assigned to 3775465 observations
-CHECKPOINT 9 - April 2007 debug permnos:
-        permno time_avail_m  sicCRSP  tempFF48
-9233     10051   2007-04-01     3842      12.0
-215206   11406   2007-04-01     6351      45.0
-CHECKPOINT 10: After dropping missing FF48: 3775465 observations
-CHECKPOINT 10 - April 2007 debug permnos:
-        permno time_avail_m  tempFF48       mve_c
-9233     10051   2007-04-01      12.0  264.159119
-215206   11406   2007-04-01      45.0  907.809143
-CHECKPOINT 11: Relrank calculated for 3761138 observations
-CHECKPOINT 11 - Problem observation 1973-08 (permno=10613):
-       permno time_avail_m  tempFF48     mve_c    tempRK  EarningsSurprise
-97529   10613   1973-08-01      36.0  5.529375  0.421053               NaN
-CHECKPOINT 11 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m  tempFF48    mve_c    tempRK  EarningsSurprise
-15202   10100   2001-05-01      33.0  9.10362  0.112676        -25.424014
-CHECKPOINT 11 - April 2007 debug permnos:
-        permno time_avail_m  tempFF48       mve_c    tempRK
-9233     10051   2007-04-01      12.0  264.159119  0.493976
-215206   11406   2007-04-01      45.0  907.809143  0.411765
-CHECKPOINT 12: Large companies (tempRK >= 0.7): 1158389 observations
-CHECKPOINT 13: Industry-month groups with EarnSupBig: 54576 groups
-CHECKPOINT 13 - Industry averages for 1973-08:
-       tempFF48 time_avail_m  EarnSupBig
-572         1.0   1973-08-01    0.992395
-1761        2.0   1973-08-01   -0.028524
-2511        3.0   1973-08-01   -0.596659
-3700        4.0   1973-08-01    0.428862
-4889        5.0   1973-08-01   -0.928581
-6078        6.0   1973-08-01   -0.215254
-7267        7.0   1973-08-01   -0.222455
-8456        8.0   1973-08-01   -0.083956
-9645        9.0   1973-08-01    0.096352
-10834      10.0   1973-08-01    0.144248
-11510      11.0   1973-08-01   -3.919583
-12699      12.0   1973-08-01   -0.178165
-13888      13.0   1973-08-01    0.877865
-15077      14.0   1973-08-01    1.112366
-16220      15.0   1973-08-01    0.081872
-17409      16.0   1973-08-01    0.985981
-18598      17.0   1973-08-01   -1.164687
-19787      18.0   1973-08-01    0.146878
-20976      19.0   1973-08-01    0.633316
-21726      20.0   1973-08-01    0.289363
-22915      21.0   1973-08-01    0.259041
-24104      22.0   1973-08-01    0.803268
-25293      23.0   1973-08-01    0.291301
-26482      24.0   1973-08-01    0.506832
-27671      25.0   1973-08-01    1.079999
-28421      26.0   1973-08-01   -0.169704
-29171      27.0   1973-08-01    1.065546
-30360      28.0   1973-08-01    0.875644
-31549      29.0   1973-08-01   -0.322640
-32738      30.0   1973-08-01    0.953330
-33927      31.0   1973-08-01   -0.007385
-35116      32.0   1973-08-01   -0.160833
-36289      33.0   1973-08-01    0.172878
-37478      34.0   1973-08-01    0.950508
-38667      35.0   1973-08-01    0.755061
-39856      36.0   1973-08-01    0.451178
-41045      37.0   1973-08-01    0.391732
-42196      38.0   1973-08-01    1.919558
-43385      39.0   1973-08-01    0.432029
-44574      40.0   1973-08-01    0.450377
-45763      41.0   1973-08-01    0.848100
-46952      42.0   1973-08-01    0.438979
-48141      43.0   1973-08-01    0.424519
-49330      44.0   1973-08-01   -0.385503
-50519      45.0   1973-08-01   -0.066865
-51708      46.0   1973-08-01    0.220522
-52897      47.0   1973-08-01   -0.318790
-53959      48.0   1973-08-01         NaN
-CHECKPOINT 13 - Industry averages for 2001-05:
-       tempFF48 time_avail_m  EarnSupBig
-905         1.0   2001-05-01   -0.847387
-2094        2.0   2001-05-01   -0.458933
-2844        3.0   2001-05-01    0.623716
-4033        4.0   2001-05-01   -0.646815
-5222        5.0   2001-05-01   -0.018797
-6411        6.0   2001-05-01    0.224301
-7600        7.0   2001-05-01   -1.052309
-8789        8.0   2001-05-01   -0.642350
-9978        9.0   2001-05-01   -0.840904
-11167      10.0   2001-05-01   -0.501244
-11843      11.0   2001-05-01   -0.575362
-13032      12.0   2001-05-01   -0.267890
-14221      13.0   2001-05-01   -0.032418
-15410      14.0   2001-05-01   -0.527997
-16553      15.0   2001-05-01   -1.245817
-17742      16.0   2001-05-01   -0.330603
-18931      17.0   2001-05-01   -1.498874
-20120      18.0   2001-05-01    0.306198
-21309      19.0   2001-05-01   -0.363586
-22059      20.0   2001-05-01  -23.025243
-23248      21.0   2001-05-01   -0.154239
-24437      22.0   2001-05-01   -1.014505
-25626      23.0   2001-05-01   -1.837136
-26815      24.0   2001-05-01   -0.939568
-28004      25.0   2001-05-01   -1.232170
-28754      26.0   2001-05-01   -0.685942
-29504      27.0   2001-05-01   -4.360355
-30693      28.0   2001-05-01    0.659452
-31882      29.0   2001-05-01    3.184555
-33071      30.0   2001-05-01    0.566393
-34260      31.0   2001-05-01   -1.653570
-35449      32.0   2001-05-01   -0.938503
-36622      33.0   2001-05-01    0.068662
-37811      34.0   2001-05-01   -0.307004
-39000      35.0   2001-05-01   -1.093009
-40189      36.0   2001-05-01   -0.131215
-41378      37.0   2001-05-01    0.006385
-42529      38.0   2001-05-01   -0.526837
-43718      39.0   2001-05-01   -0.301382
-44907      40.0   2001-05-01   -0.679242
-46096      41.0   2001-05-01   -0.757690
-47285      42.0   2001-05-01   -1.166495
-48474      43.0   2001-05-01   -0.656201
-49663      44.0   2001-05-01   -0.161418
-50852      45.0   2001-05-01    0.161740
-52041      46.0   2001-05-01    0.932063
-53230      47.0   2001-05-01   -0.173006
-54292      48.0   2001-05-01   -1.189986
-CHECKPOINT 13 - April 2007 industry averages:
-       tempFF48 time_avail_m  EarnSupBig
-976         1.0   2007-04-01   -0.280361
-2165        2.0   2007-04-01    0.367407
-2915        3.0   2007-04-01   -1.716903
-4104        4.0   2007-04-01    0.867004
-5293        5.0   2007-04-01   -0.324739
-6482        6.0   2007-04-01    0.587328
-7671        7.0   2007-04-01   -0.417585
-8860        8.0   2007-04-01   -1.192247
-10049       9.0   2007-04-01    0.573761
-11238      10.0   2007-04-01   -0.882970
-11914      11.0   2007-04-01    0.070203
-13103      12.0   2007-04-01    0.026010
-14292      13.0   2007-04-01   -0.283180
-15481      14.0   2007-04-01    0.138504
-16624      15.0   2007-04-01    0.473825
-17813      16.0   2007-04-01    0.719970
-19002      17.0   2007-04-01   -0.003194
-20191      18.0   2007-04-01   -2.045217
-21380      19.0   2007-04-01   -0.051678
-22130      20.0   2007-04-01   -1.477763
-23319      21.0   2007-04-01    0.085744
-24508      22.0   2007-04-01   -0.552683
-25697      23.0   2007-04-01   -0.353636
-26886      24.0   2007-04-01    0.944187
-28075      25.0   2007-04-01   -0.560558
-28825      26.0   2007-04-01    0.445231
-29575      27.0   2007-04-01    0.675599
-30764      28.0   2007-04-01   -0.280848
-31953      29.0   2007-04-01    0.348944
-33142      30.0   2007-04-01   -0.925428
-34331      31.0   2007-04-01   -0.075134
-35520      32.0   2007-04-01   -0.238576
-36693      33.0   2007-04-01    0.053656
-37882      34.0   2007-04-01    0.247187
-39071      35.0   2007-04-01    0.254295
-40260      36.0   2007-04-01    0.096773
-41449      37.0   2007-04-01    0.453782
-42600      38.0   2007-04-01    0.422815
-43789      39.0   2007-04-01    2.162936
-44978      40.0   2007-04-01   -0.217244
-46167      41.0   2007-04-01   -0.279148
-47356      42.0   2007-04-01    0.510262
-48545      43.0   2007-04-01   -0.487964
-49734      44.0   2007-04-01   -0.277477
-50923      45.0   2007-04-01    0.529917
-52112      46.0   2007-04-01   -0.281632
-53301      47.0   2007-04-01   -0.225284
-54363      48.0   2007-04-01    0.550375
-CHECKPOINT 14: After merging industry averages: 3775465 observations
-CHECKPOINT 14: With non-missing EarnSupBig: 3359412 observations
-CHECKPOINT 14 - Problem observation 1973-08 (permno=10613):
-       permno time_avail_m  tempFF48    tempRK  EarnSupBig
-96996   10613   1973-08-01      36.0  0.421053    0.451178
-CHECKPOINT 14 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m  tempFF48    tempRK  EarnSupBig
-15185   10100   2001-05-01      33.0  0.112676    0.068662
-CHECKPOINT 14 - April 2007 debug permnos:
-        permno time_avail_m  tempFF48    tempRK  EarnSupBig
-9216     10051   2007-04-01      12.0  0.493976    0.026010
-213211   11406   2007-04-01      45.0  0.411765    0.529917
-CHECKPOINT 15: Final EarnSupBig (excluding large companies): 2336093 observations
-CHECKPOINT 15 - Problem observation 1973-08 (permno=10613):
-       permno time_avail_m  tempFF48    tempRK  EarnSupBig
-96996   10613   1973-08-01      36.0  0.421053    0.451178
-CHECKPOINT 15 - Problem observation 2001-05 (permno=10100):
-       permno time_avail_m  tempFF48    tempRK  EarnSupBig
-15185   10100   2001-05-01      33.0  0.112676    0.068662
-CHECKPOINT 15 - April 2007 debug permnos:
-        permno time_avail_m  tempFF48    tempRK  EarnSupBig
-9216     10051   2007-04-01      12.0  0.493976    0.026010
-213211   11406   2007-04-01      45.0  0.411765    0.529917
 Final dataset has 3775465 observations with 2336093 non-missing EarnSupBig values
 saving EarnSupBig
 Saved 2336093 rows to ../pyData/Predictors/EarnSupBig.csv
 EarnSupBig predictor saved successfully
 ============================================================
 ✅ Completed: EarnSupBig.py
-Execution time: 42.37 seconds
+Execution time: 43.58 seconds
 
 
 🔄 Starting: EntMult.py
@@ -1797,7 +1374,7 @@ Execution time: 42.37 seconds
 EntMult predictor saved successfully
 ============================================================
 ✅ Completed: EntMult.py
-Execution time: 3.74 seconds
+Execution time: 3.93 seconds
 
 
 🔄 Starting: EP.py
@@ -1805,23 +1382,21 @@ Execution time: 3.74 seconds
 EP: Saved 2,203,166 observations
 ============================================================
 ✅ Completed: EP.py
-Execution time: 3.34 seconds
+Execution time: 3.47 seconds
 
 
 🔄 Starting: EquityDuration.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/EquityDuration.py:100: SettingWithCopyWarning:
-A value is trying to be set on a copy of a slice from a DataFrame.
-Try using .loc[row_indexer,col_indexer] = value instead
-
-See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-  df_monthly['temp_na_sort'] = df_monthly['EquityDuration'].isna()
 Loading and processing EquityDuration...
-Expanding to monthly observations...
-EquityDuration predictor saved successfully
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/EquityDuration.py", line 32, in <module>
+    df['temp_g_eq'] = df['sale'] / sale_lag - 1
+                                   ^^^^^^^^
+NameError: name 'sale_lag' is not defined
 ============================================================
-✅ Completed: EquityDuration.py
-Execution time: 6.81 seconds
+❌ ERROR in EquityDuration.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 0.44 seconds
 
 
 🔄 Starting: ExchSwitch.py
@@ -1829,7 +1404,7 @@ Execution time: 6.81 seconds
 ExchSwitch predictor saved successfully
 ============================================================
 ✅ Completed: ExchSwitch.py
-Execution time: 4.16 seconds
+Execution time: 4.20 seconds
 
 
 🔄 Starting: ExclExp.py
@@ -1837,7 +1412,7 @@ Execution time: 4.16 seconds
 ExclExp predictor saved successfully
 ============================================================
 ✅ Completed: ExclExp.py
-Execution time: 3.79 seconds
+Execution time: 3.85 seconds
 
 
 🔄 Starting: FEPS.py
@@ -1857,7 +1432,7 @@ Saved 1958211 rows to ../pyData/Predictors/FEPS.csv
 FEPS.py completed successfully
 ============================================================
 ✅ Completed: FEPS.py
-Execution time: 1.81 seconds
+Execution time: 1.83 seconds
 
 
 🔄 Starting: fgr5yrLag.py
@@ -1881,7 +1456,7 @@ Calculating 6-month calendar lags...
 fgr5yrLag predictor saved successfully
 ============================================================
 ✅ Completed: fgr5yrLag.py
-Execution time: 35.89 seconds
+Execution time: 37.46 seconds
 
 
 🔄 Starting: FirmAge.py
@@ -1889,17 +1464,17 @@ Execution time: 35.89 seconds
 FirmAge predictor saved successfully
 ============================================================
 ✅ Completed: FirmAge.py
-Execution time: 3.06 seconds
+Execution time: 3.26 seconds
 
 
 🔄 Starting: FirmAgeMom.py
 ============================================================
 saving FirmAgeMom
-Saved 569202 rows to ../pyData/Predictors/FirmAgeMom.csv
+Saved 550434 rows to ../pyData/Predictors/FirmAgeMom.csv
 FirmAgeMom predictor completed
 ============================================================
 ✅ Completed: FirmAgeMom.py
-Execution time: 2.28 seconds
+Execution time: 2.44 seconds
 
 
 🔄 Starting: ForecastDispersion.py
@@ -1918,7 +1493,7 @@ Saved 1620034 rows to ../pyData/Predictors/ForecastDispersion.csv
 ForecastDispersion.py completed successfully
 ============================================================
 ✅ Completed: ForecastDispersion.py
-Execution time: 1.83 seconds
+Execution time: 1.94 seconds
 
 
 🔄 Starting: Frontier.py
@@ -1928,55 +1503,55 @@ Loading data...
 Computing FF48 industry codes...
 Processing 889 time periods (starting from 1950-12)...
 Processed 151/889 periods (17.0%), stored 66 predictions for 1963-06
-  Elapsed: 0.6s, Est. remaining: 61.4s, Avg: 0.083s/period (last 7 periods)
+  Elapsed: 0.7s, Est. remaining: 76.2s, Avg: 0.103s/period (last 7 periods)
 Processed 181/889 periods (20.4%), stored 55 predictions for 1965-12
-  Elapsed: 1.0s, Est. remaining: 9.9s, Avg: 0.014s/period (last 30 periods)
+  Elapsed: 1.3s, Est. remaining: 13.4s, Avg: 0.019s/period (last 30 periods)
 Processed 211/889 periods (23.7%), stored 152 predictions for 1968-06
-  Elapsed: 1.6s, Est. remaining: 14.4s, Avg: 0.021s/period (last 30 periods)
+  Elapsed: 2.1s, Est. remaining: 18.0s, Avg: 0.027s/period (last 30 periods)
 Processed 241/889 periods (27.1%), stored 191 predictions for 1970-12
-  Elapsed: 2.5s, Est. remaining: 18.1s, Avg: 0.028s/period (last 30 periods)
+  Elapsed: 3.1s, Est. remaining: 21.7s, Avg: 0.033s/period (last 30 periods)
 Processed 271/889 periods (30.5%), stored 1230 predictions for 1973-06
-  Elapsed: 4.4s, Est. remaining: 39.1s, Avg: 0.063s/period (last 30 periods)
+  Elapsed: 5.2s, Est. remaining: 43.0s, Avg: 0.070s/period (last 30 periods)
 Processed 301/889 periods (33.9%), stored 1600 predictions for 1975-12
-  Elapsed: 8.5s, Est. remaining: 80.8s, Avg: 0.137s/period (last 30 periods)
+  Elapsed: 9.6s, Est. remaining: 86.4s, Avg: 0.147s/period (last 30 periods)
 Processed 331/889 periods (37.2%), stored 1487 predictions for 1978-06
-  Elapsed: 13.5s, Est. remaining: 93.3s, Avg: 0.167s/period (last 30 periods)
+  Elapsed: 15.0s, Est. remaining: 100.0s, Avg: 0.179s/period (last 30 periods)
 Processed 361/889 periods (40.6%), stored 1527 predictions for 1980-12
-  Elapsed: 18.7s, Est. remaining: 91.3s, Avg: 0.173s/period (last 30 periods)
+  Elapsed: 20.5s, Est. remaining: 97.9s, Avg: 0.185s/period (last 30 periods)
 Processed 391/889 periods (44.0%), stored 1714 predictions for 1983-06
-  Elapsed: 24.1s, Est. remaining: 90.1s, Avg: 0.181s/period (last 30 periods)
+  Elapsed: 26.2s, Est. remaining: 94.0s, Avg: 0.189s/period (last 30 periods)
 Processed 421/889 periods (47.4%), stored 2048 predictions for 1985-12
-  Elapsed: 30.5s, Est. remaining: 98.6s, Avg: 0.211s/period (last 30 periods)
+  Elapsed: 32.4s, Est. remaining: 96.6s, Avg: 0.207s/period (last 30 periods)
 Processed 451/889 periods (50.7%), stored 2144 predictions for 1988-06
-  Elapsed: 37.2s, Est. remaining: 97.8s, Avg: 0.223s/period (last 30 periods)
+  Elapsed: 39.2s, Est. remaining: 99.8s, Avg: 0.228s/period (last 30 periods)
 Processed 481/889 periods (54.1%), stored 2013 predictions for 1990-12
-  Elapsed: 44.2s, Est. remaining: 96.2s, Avg: 0.236s/period (last 30 periods)
+  Elapsed: 46.6s, Est. remaining: 101.0s, Avg: 0.248s/period (last 30 periods)
 Processed 511/889 periods (57.5%), stored 2244 predictions for 1993-06
-  Elapsed: 51.2s, Est. remaining: 87.6s, Avg: 0.232s/period (last 30 periods)
+  Elapsed: 53.9s, Est. remaining: 91.1s, Avg: 0.241s/period (last 30 periods)
 Processed 541/889 periods (60.9%), stored 2616 predictions for 1995-12
-  Elapsed: 58.7s, Est. remaining: 87.5s, Avg: 0.252s/period (last 30 periods)
+  Elapsed: 61.6s, Est. remaining: 90.0s, Avg: 0.259s/period (last 30 periods)
 Processed 571/889 periods (64.2%), stored 3163 predictions for 1998-06
-  Elapsed: 67.7s, Est. remaining: 94.7s, Avg: 0.298s/period (last 30 periods)
+  Elapsed: 71.1s, Est. remaining: 100.3s, Avg: 0.315s/period (last 30 periods)
 Processed 601/889 periods (67.6%), stored 2723 predictions for 2000-12
-  Elapsed: 76.8s, Est. remaining: 88.0s, Avg: 0.306s/period (last 30 periods)
+  Elapsed: 80.8s, Est. remaining: 93.6s, Avg: 0.325s/period (last 30 periods)
 Processed 631/889 periods (71.0%), stored 2437 predictions for 2003-06
-  Elapsed: 85.5s, Est. remaining: 74.3s, Avg: 0.288s/period (last 30 periods)
+  Elapsed: 89.9s, Est. remaining: 77.9s, Avg: 0.302s/period (last 30 periods)
 Processed 661/889 periods (74.4%), stored 2283 predictions for 2005-12
-  Elapsed: 93.2s, Est. remaining: 58.7s, Avg: 0.257s/period (last 30 periods)
+  Elapsed: 97.8s, Est. remaining: 59.8s, Avg: 0.262s/period (last 30 periods)
 Processed 691/889 periods (77.7%), stored 2180 predictions for 2008-06
-  Elapsed: 100.5s, Est. remaining: 48.3s, Avg: 0.244s/period (last 30 periods)
+  Elapsed: 105.3s, Est. remaining: 49.7s, Avg: 0.251s/period (last 30 periods)
 Processed 721/889 periods (81.1%), stored 1838 predictions for 2010-12
-  Elapsed: 107.3s, Est. remaining: 38.1s, Avg: 0.227s/period (last 30 periods)
+  Elapsed: 112.4s, Est. remaining: 40.0s, Avg: 0.238s/period (last 30 periods)
 Processed 751/889 periods (84.5%), stored 1667 predictions for 2013-06
-  Elapsed: 113.4s, Est. remaining: 28.0s, Avg: 0.203s/period (last 30 periods)
+  Elapsed: 119.1s, Est. remaining: 30.7s, Avg: 0.223s/period (last 30 periods)
 Processed 781/889 periods (87.9%), stored 1578 predictions for 2015-12
-  Elapsed: 119.2s, Est. remaining: 20.8s, Avg: 0.193s/period (last 30 periods)
+  Elapsed: 124.9s, Est. remaining: 20.7s, Avg: 0.192s/period (last 30 periods)
 Processed 811/889 periods (91.2%), stored 1409 predictions for 2018-06
-  Elapsed: 124.3s, Est. remaining: 13.3s, Avg: 0.171s/period (last 30 periods)
+  Elapsed: 130.2s, Est. remaining: 13.8s, Avg: 0.177s/period (last 30 periods)
 Processed 841/889 periods (94.6%), stored 1259 predictions for 2020-12
-  Elapsed: 129.1s, Est. remaining: 7.7s, Avg: 0.159s/period (last 30 periods)
+  Elapsed: 135.1s, Est. remaining: 7.9s, Avg: 0.164s/period (last 30 periods)
 Processed 871/889 periods (98.0%), stored 1296 predictions for 2023-06
-  Elapsed: 133.5s, Est. remaining: 2.7s, Avg: 0.149s/period (last 30 periods)
+  Elapsed: 139.8s, Est. remaining: 2.8s, Avg: 0.154s/period (last 30 periods)
 Total predictions generated: 1222287
 Before ceq filter: 2860911
 After ceq filter: 2695300
@@ -1984,12 +1559,12 @@ Before dropping NaN Frontier: 2695300
 Final output: 1221161 observations
 
 Timing Summary:
-Total execution time: 158.66 seconds (2.64 minutes)
-Processed 889 periods at 6.47 periods/second
+Total execution time: 165.65 seconds (2.76 minutes)
+Processed 889 periods at 6.18 periods/second
 Frontier predictor saved successfully
 ============================================================
 ✅ Completed: Frontier.py
-Execution time: 160.16 seconds
+Execution time: 167.04 seconds
 
 
 🔄 Starting: Governance.py
@@ -1997,7 +1572,7 @@ Execution time: 160.16 seconds
 Governance predictor saved successfully
 ============================================================
 ✅ Completed: Governance.py
-Execution time: 1.29 seconds
+Execution time: 1.34 seconds
 
 
 🔄 Starting: GP.py
@@ -2005,7 +1580,7 @@ Execution time: 1.29 seconds
 GP: Saved 2,972,251 observations
 ============================================================
 ✅ Completed: GP.py
-Execution time: 3.41 seconds
+Execution time: 3.46 seconds
 
 
 🔄 Starting: GrAdExp.py
@@ -3849,7 +3424,7 @@ Saved 905831 rows to ../pyData/Predictors/GrAdExp.csv
 GrAdExp.py completed successfully
 ============================================================
 ✅ Completed: GrAdExp.py
-Execution time: 3.19 seconds
+Execution time: 3.35 seconds
 
 
 🔄 Starting: GrLTNOA.py
@@ -3867,7 +3442,7 @@ Saved 3235740 rows to ../pyData/Predictors/GrLTNOA.csv
 GrLTNOA.py completed successfully
 ============================================================
 ✅ Completed: GrLTNOA.py
-Execution time: 1.87 seconds
+Execution time: 1.91 seconds
 
 
 🔄 Starting: GrSaleToGrInv.py
@@ -3886,7 +3461,7 @@ Saved 2545662 rows to ../pyData/Predictors/GrSaleToGrInv.csv
 GrSaleToGrInv.py completed successfully
 ============================================================
 ✅ Completed: GrSaleToGrInv.py
-Execution time: 1.62 seconds
+Execution time: 1.56 seconds
 
 
 🔄 Starting: GrSaleToGrOverhead.py
@@ -3894,7 +3469,7 @@ Execution time: 1.62 seconds
 Starting GrSaleToGrOverhead.py...
 Loading m_aCompustat data...
 Loaded m_aCompustat: 3625491 rows, 5 columns
-Removing duplicate observations (bysort permno time_avail_m: keep if _n == 1)...
+Removing duplicate observations...
 Setting up panel data (sorting by permno, time_avail_m)...
 Calculating 12-month and 24-month lags...
 Calculating GrSaleToGrOverhead using primary formula...
@@ -3905,82 +3480,23 @@ Saved 2681589 rows to ../pyData/Predictors/GrSaleToGrOverhead.csv
 GrSaleToGrOverhead.py completed successfully
 ============================================================
 ✅ Completed: GrSaleToGrOverhead.py
-Execution time: 1.71 seconds
+Execution time: 1.70 seconds
 
 
 🔄 Starting: Herf.py
 ============================================================
-Initial observations after loading m_aCompustat: 3625491
-permno 10006, 2007m4: not found in initial data
-permno 11406, 2007m4: not found in initial data
-permno 12473, 2007m4: not found in initial data
-Observations after merge with SignalMasterTable: 4047630
-permno 10006, 2007m4: not found after merge
-permno 11406, 2007m4: not found after merge
-permno 12473, 2007m4: not found after merge
-Non-missing Herf after shrcd filter: 3532898
-Non-missing Herf after regulated industry filters: 3386134
-Final non-missing Herf observations: 3179806
 Herf predictor saved successfully
 ============================================================
 ✅ Completed: Herf.py
-Execution time: 7.28 seconds
+Execution time: 7.25 seconds
 
 
 🔄 Starting: HerfAsset.py
 ============================================================
-CHECKPOINT 1: After loading m_aCompustat
-Total observations: 3625491
-Sample observations for problematic permnos:
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'at': 1262.614}
-
-CHECKPOINT 2: After merge with SignalMasterTable
-Total observations: 3041661
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'at': 1262.614, 'sicCRSP': 6351, 'shrcd': 11}
-
-CHECKPOINT 3: After creating SIC codes
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'sicCRSP': 6351, 'tempSIC': '6351', 'sic3D': '6351'}
-
-CHECKPOINT 4: Before asrol moving average
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'at': 1262.614, 'indasset': 138920.616, 'temp': 8.260527860047476e-05, 'tempHerf': 0.2630824616842573}
-Sample of tempHerf values - mean: 0.332690, std: 0.286627
-tempHerf range: 0.015292 to 1.000000
-
-CHECKPOINT 5: After asrol moving average
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'tempHerf': 0.2630824616842573, 'HerfAsset': 0.251011330147868}
-Non-null HerfAsset observations: 2810535
-HerfAsset range: 0.016227 to 1.000000
-
-CHECKPOINT 6: After shrcd > 11 filter
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'shrcd': 11.0, 'HerfAsset': 0.251011330147868}
-Non-null HerfAsset observations: 2684619
-
-CHECKPOINT 7: After regulated industry filters
-Permno 11406, 2007m4: {'permno': 11406, 'time_avail_m': Timestamp('2007-04-01 00:00:00'), 'year': 2007, 'tempSIC': '6351', 'HerfAsset': 0.251011330147868}
-Non-null HerfAsset observations: 2571906
-Final sample statistics - mean: 0.342736, std: 0.277758
-HerfAsset range: 0.016227 to 1.000000
-
-CHECKPOINT 8: Final output before save
-Final observations: 2571906
-Sample of final data:
-               HerfAsset
-permno yyyymm
-10001  200812   0.355374
-       200901   0.355745
-       200902   0.356137
-       200903   0.356327
-       200904   0.356529
-       200905   0.356744
-10002  199505   0.017839
-       199506   0.017787
-       199507   0.017748
-       199508   0.017718
-Final HerfAsset range: 0.016227 to 1.000000
 HerfAsset predictor saved successfully
 ============================================================
 ✅ Completed: HerfAsset.py
-Execution time: 6.22 seconds
+Execution time: 5.86 seconds
 
 
 🔄 Starting: HerfBE.py
@@ -3988,7 +3504,7 @@ Execution time: 6.22 seconds
 HerfBE predictor saved successfully
 ============================================================
 ✅ Completed: HerfBE.py
-Execution time: 6.49 seconds
+Execution time: 6.39 seconds
 
 
 🔄 Starting: High52.py
@@ -3997,11 +3513,12 @@ Starting High52 calculation...
 Loaded dailyCRSP data: 107662961 observations
 After collapse by permno and time_avail_m: 5116571 observations
 High52 calculated for 4995429 observations
-Final output: 4995429 observations
+saving High52
+Saved 4995429 rows to ../pyData/Predictors/High52.csv
 High52.csv saved successfully
 ============================================================
 ✅ Completed: High52.py
-Execution time: 16.36 seconds
+Execution time: 12.69 seconds
 
 
 🔄 Starting: hire.py
@@ -4009,7 +3526,7 @@ Execution time: 16.36 seconds
 hire: Saved 3,498,027 observations
 ============================================================
 ✅ Completed: hire.py
-Execution time: 3.76 seconds
+Execution time: 3.77 seconds
 
 
 🔄 Starting: Illiquidity.py
@@ -4027,7 +3544,7 @@ Sample of final data:
 Saved to ../pyData/Predictors/Illiquidity.csv
 ============================================================
 ✅ Completed: Illiquidity.py
-Execution time: 13.29 seconds
+Execution time: 12.95 seconds
 
 
 🔄 Starting: IndIPO.py
@@ -4035,215 +3552,59 @@ Execution time: 13.29 seconds
 IndIPO predictor saved successfully
 ============================================================
 ✅ Completed: IndIPO.py
-Execution time: 2.50 seconds
+Execution time: 2.53 seconds
 
 
 🔄 Starting: IndMom.py
 ============================================================
-CHECKPOINT 1: Initial observations after data load: 4047630
-Permno 16086 2021m11: ret=nan, sicCRSP=7514, mve_c=11189.1962890625
-Permno 11406 2007m4: ret=-0.02180099999999996, sicCRSP=6351, mve_c=907.8091430664062
-CHECKPOINT 2: After sic2D creation
-Permno 16086 2021m11: sicCRSP=7514, sic2D=75
-Permno 16338 2021m11: sicCRSP=7538, sic2D=75
-Permno 21359 2021m11: sicCRSP=7539, sic2D=75
-Permno 11406 2007m4: sicCRSP=6351, sic2D=63
-CHECKPOINT 3: After return cleaning
-Permno 16086 returns 2021m6-2021m11:
-  2021-11: 0.0
-Permno 16338 returns 2021m6-2021m11:
-  2021-06: -0.016364000000000045
-  2021-07: -0.054837000000000025
-  2021-08: -0.01287499999999997
-  2021-09: 0.03381999999999996
-  2021-10: 0.0891599999999999
-  2021-11: 0.006920000000000037
-Permno 21359 returns 2021m6-2021m11:
-  2021-06: 0.0
-  2021-07: -0.032047999999999965
-  2021-08: -0.079175
-  2021-09: -0.04898400000000003
-  2021-10: 0.0049319999999999364
-  2021-11: -0.12431800000000004
-CHECKPOINT 4: After Mom6m calculation
-Permno 16086 2021m11: l1_ret=nan, l2_ret=nan, l3_ret=nan, l4_ret=nan, l5_ret=nan, Mom6m=nan
-Permno 16338 2021m11: l1_ret=0.0891599999999999, l2_ret=0.03381999999999996, l3_ret=-0.01287499999999997, l4_ret=-0.054837000000000025, l5_ret=-0.016364000000000045, Mom6m=0.0333558230375024
-Permno 21359 2021m11: l1_ret=0.0049319999999999364, l2_ret=-0.04898400000000003, l3_ret=-0.079175, l4_ret=-0.032047999999999965, l5_ret=0.0, Mom6m=-0.14816511339953475
-Permno 11406 2007m4: l1_ret=0.06889600000000007, l2_ret=-0.07105899999999998, l3_ret=-0.011627999999999972, l4_ret=0.07715399999999994, l5_ret=-0.018683000000000005, Mom6m=0.037363917523544954
-CHECKPOINT 5: Before IndMom calculation - Industry groups in 2021m11
-Industry counts with valid Mom6m and mve_c:
-  sic2D 0: 17 obs
-  sic2D 10: 81 obs
-  sic2D 12: 5 obs
-  sic2D 13: 96 obs
-  sic2D 14: 11 obs
-  sic2D 15: 20 obs
-  sic2D 16: 9 obs
-  sic2D 17: 16 obs
-  sic2D 20: 66 obs
-  sic2D 21: 4 obs
-CHECKPOINT 6: After IndMom calculation
-Permno 16086 2021m11: sic2D=75, Mom6m=nan, mve_c=11189.1962890625, IndMom=-0.017180467814197135
-Permno 16338 2021m11: sic2D=75, Mom6m=0.0333558230375024, mve_c=6133.962890625, IndMom=-0.017180467814197135
-Permno 21359 2021m11: sic2D=75, Mom6m=-0.14816511339953475, mve_c=4775.29638671875, IndMom=-0.017180467814197135
-Permno 16086 2022m2: sic2D=75, Mom6m=nan, mve_c=8723.25390625, IndMom=-0.030868538211147423
-Permno 16338 2022m2: sic2D=75, Mom6m=0.09618296604403409, mve_c=5798.57958984375, IndMom=-0.030868538211147423
-Permno 21359 2022m2: sic2D=75, Mom6m=-0.10369906153482555, mve_c=4763.40283203125, IndMom=-0.030868538211147423
-Permno 11406 2007m4: sic2D=63, Mom6m=0.037363917523544954, mve_c=907.8091430664062, IndMom=0.05535522441803019
-IndMom predictor saved with 4043138 observations
-Date range: 192605 to 202412
+saving IndMom
+Saved 4043138 rows to ../pyData/Predictors/IndMom.csv
+IndMom predictor saved with 4047630 observations
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/indexes/base.py", line 3805, in get_loc
+    return self._engine.get_loc(casted_key)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7081, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7089, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'yyyymm'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/IndMom.py", line 73, in <module>
+    print(f"Date range: {df['yyyymm'].min()} to {df['yyyymm'].max()}")
+                         ~~^^^^^^^^^^
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/frame.py", line 4102, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/.venv/lib/python3.13/site-packages/pandas/core/indexes/base.py", line 3812, in get_loc
+    raise KeyError(key) from err
+KeyError: 'yyyymm'
 ============================================================
-✅ Completed: IndMom.py
-Execution time: 28.23 seconds
+❌ ERROR in IndMom.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 25.64 seconds
 
 
 🔄 Starting: IndRetBig.py
 ============================================================
-CHECKPOINT 1: Initial data load
-4047630
-   13784 1932-07-01   0.600000     0.474500   7810
-   10886 2002-04-01   0.443750    75.876572   2273
-CHECKPOINT 2: After FF48 industry classification
-272165
-   13784 1932-07-01   7810      7.0
-   10886 2002-04-01   2273     16.0
-CHECKPOINT 3: After dropping missing FF48
-3775465
-   13784 1932-07-01   7810      7.0
-   10886 2002-04-01   2273     16.0
-CHECKPOINT 4: After relrank calculation
-   13784 1932-07-01     0.474500 0.200000
-   10886 2002-04-01    75.876572 0.350000
-Variable |        Obs        Mean    Std. dev.       Min        Max
--------------+--------------------------------------------------------
-    tempRK |    3761138   0.5072553   0.2889478  0.0008446  1.0000000
-CHECKPOINT 5: Before preserve
-3775465
-   13784 1932-07-01 0.200000
-   10886 2002-04-01 0.350000
-CHECKPOINT 6: Large companies (tempRK >= 0.7)
-1152987
-No observation for permno 13784 in 193207
-No observation for permno 10886 in 200204
-CHECKPOINT 7: Industry returns calculated
-54576
-     1.0 1932-07-01   0.900990
-     2.0 1932-07-01   0.281742
-     4.0 1932-07-01   0.208932
-     5.0 1932-07-01   0.272279
-     6.0 1932-07-01   0.500000
-     7.0 1932-07-01   0.676327
-     8.0 1932-07-01   0.402694
-     9.0 1932-07-01   0.482951
-    10.0 1932-07-01   0.191980
-    12.0 1932-07-01   0.159483
-    13.0 1932-07-01   0.343835
-    14.0 1932-07-01   0.282955
-    15.0 1932-07-01   0.416667
-    16.0 1932-07-01   0.380732
-    17.0 1932-07-01   0.391911
-    18.0 1932-07-01   0.266190
-    19.0 1932-07-01   0.698736
-    21.0 1932-07-01   0.405199
-    22.0 1932-07-01   0.598831
-    23.0 1932-07-01   0.478658
-    24.0 1932-07-01   0.504138
-    25.0 1932-07-01   0.665231
-    28.0 1932-07-01   0.527935
-    29.0 1932-07-01   0.558246
-    30.0 1932-07-01   0.374746
-    31.0 1932-07-01   0.342091
-    32.0 1932-07-01   0.130853
-    33.0 1932-07-01   0.108696
-    34.0 1932-07-01   0.396911
-    35.0 1932-07-01   0.246953
-    36.0 1932-07-01   0.341800
-    37.0 1932-07-01   0.130990
-    38.0 1932-07-01   0.428571
-    39.0 1932-07-01   0.151005
-    40.0 1932-07-01   0.650650
-    41.0 1932-07-01   0.119985
-    42.0 1932-07-01   0.271554
-    43.0 1932-07-01   0.247932
-    44.0 1932-07-01   0.339806
-    45.0 1932-07-01   0.646541
-    46.0 1932-07-01  -0.111111
-    47.0 1932-07-01   0.485587
-    48.0 1932-07-01   0.281746
-     1.0 2002-04-01   0.101044
-     2.0 2002-04-01   0.017331
-     3.0 2002-04-01   0.051461
-     4.0 2002-04-01   0.055498
-     5.0 2002-04-01   0.027882
-     6.0 2002-04-01  -0.005016
-     7.0 2002-04-01   0.052080
-     8.0 2002-04-01  -0.006700
-     9.0 2002-04-01   0.023685
-    10.0 2002-04-01   0.021331
-    11.0 2002-04-01   0.127277
-    12.0 2002-04-01   0.012386
-    13.0 2002-04-01  -0.096162
-    14.0 2002-04-01  -0.035105
-    15.0 2002-04-01   0.048912
-    16.0 2002-04-01   0.093269
-    17.0 2002-04-01   0.032844
-    18.0 2002-04-01   0.087736
-    19.0 2002-04-01  -0.024299
-    20.0 2002-04-01   0.086072
-    21.0 2002-04-01  -0.000587
-    22.0 2002-04-01  -0.036264
-    23.0 2002-04-01   0.007570
-    24.0 2002-04-01   0.022767
-    25.0 2002-04-01   0.008592
-    26.0 2002-04-01   0.075299
-    27.0 2002-04-01   0.031489
-    28.0 2002-04-01  -0.025859
-    29.0 2002-04-01  -0.013888
-    30.0 2002-04-01   0.016457
-    31.0 2002-04-01  -0.017944
-    32.0 2002-04-01  -0.084171
-    33.0 2002-04-01   0.005129
-    34.0 2002-04-01  -0.064760
-    35.0 2002-04-01  -0.077385
-    36.0 2002-04-01  -0.083516
-    37.0 2002-04-01  -0.097266
-    38.0 2002-04-01  -0.007078
-    39.0 2002-04-01  -0.012013
-    40.0 2002-04-01  -0.028979
-    41.0 2002-04-01   0.047656
-    42.0 2002-04-01   0.049810
-    43.0 2002-04-01   0.063132
-    44.0 2002-04-01   0.059500
-    45.0 2002-04-01   0.060207
-    46.0 2002-04-01   0.015907
-    47.0 2002-04-01  -0.048167
-    48.0 2002-04-01   0.021554
-CHECKPOINT 8: After restore
-3775465
-   13784 1932-07-01 0.200000
-   10886 2002-04-01 0.350000
-CHECKPOINT 9: After merge
-3775465
-   13784 1932-07-01 0.200000   0.676327
-   10886 2002-04-01 0.350000   0.093269
-CHECKPOINT 10: Final dataset
-   13784 1932-07-01 0.200000 0.676327
-   10886 2002-04-01 0.350000 0.09326900000000005
-2616695
 saving IndRetBig
 Saved 2616695 rows to ../pyData/Predictors/IndRetBig.csv
 IndRetBig predictor saved successfully
 ============================================================
 ✅ Completed: IndRetBig.py
-Execution time: 27.73 seconds
+Execution time: 29.31 seconds
 
 
 🔄 Starting: IntMom.py
 ============================================================
-Saved 3686625 observations to IntMom.csv
+saving IntMom
+Saved 3686625 rows to ../pyData/Predictors/IntMom.csv
+Saved 4047630 observations to IntMom.csv
 ============================================================
 ✅ Completed: IntMom.py
-Execution time: 7.22 seconds
+Execution time: 4.62 seconds
 
 
 🔄 Starting: Investment.py
@@ -4251,7 +3612,7 @@ Execution time: 7.22 seconds
 Investment predictor saved successfully
 ============================================================
 ✅ Completed: Investment.py
-Execution time: 3.78 seconds
+Execution time: 3.92 seconds
 
 
 🔄 Starting: InvestPPEInv.py
@@ -4272,7 +3633,7 @@ Saved 2943499 rows to ../pyData/Predictors/InvestPPEInv.csv
 InvestPPEInv.py completed successfully
 ============================================================
 ✅ Completed: InvestPPEInv.py
-Execution time: 1.51 seconds
+Execution time: 1.64 seconds
 
 
 🔄 Starting: InvGrowth.py
@@ -4299,12 +3660,12 @@ Saved 1996001 rows to ../pyData/Predictors/InvGrowth.csv
 InvGrowth predictor completed successfully!
 ============================================================
 ✅ Completed: InvGrowth.py
-Execution time: 3.59 seconds
+Execution time: 3.67 seconds
 
 
 🔄 Starting: IO_ShortInterest.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/IO_ShortInterest.py:40: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/IO_ShortInterest.py:54: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
   temps99_by_month = df.groupby('time_avail_m').apply(
 Starting IO_ShortInterest.py...
 Loading data...
@@ -4333,7 +3694,7 @@ Saved 1637670 rows to ../pyData/Predictors/iomom_cust.csv
 iomom_cust predictor completed successfully!
 ============================================================
 ✅ Completed: iomom_cust.py
-Execution time: 0.91 seconds
+Execution time: 0.93 seconds
 
 
 🔄 Starting: iomom_supp.py
@@ -4352,7 +3713,7 @@ Saved 1639842 rows to ../pyData/Predictors/iomom_supp.csv
 iomom_supp predictor completed successfully!
 ============================================================
 ✅ Completed: iomom_supp.py
-Execution time: 0.90 seconds
+Execution time: 0.92 seconds
 
 
 🔄 Starting: Leverage.py
@@ -4360,7 +3721,7 @@ Execution time: 0.90 seconds
 Leverage: Saved 3,014,667 observations
 ============================================================
 ✅ Completed: Leverage.py
-Execution time: 3.36 seconds
+Execution time: 3.42 seconds
 
 
 🔄 Starting: LRreversal.py
@@ -4368,7 +3729,7 @@ Execution time: 3.36 seconds
 LRreversal predictor saved successfully
 ============================================================
 ✅ Completed: LRreversal.py
-Execution time: 3.91 seconds
+Execution time: 3.95 seconds
 
 
 🔄 Starting: MaxRet.py
@@ -4376,7 +3737,7 @@ Execution time: 3.91 seconds
 MaxRet predictor saved successfully
 ============================================================
 ✅ Completed: MaxRet.py
-Execution time: 14.01 seconds
+Execution time: 14.05 seconds
 
 
 🔄 Starting: MeanRankRevGrowth.py
@@ -4384,7 +3745,7 @@ Execution time: 14.01 seconds
 MeanRankRevGrowth predictor saved successfully
 ============================================================
 ✅ Completed: MeanRankRevGrowth.py
-Execution time: 6.88 seconds
+Execution time: 6.98 seconds
 
 
 🔄 Starting: Mom12m.py
@@ -4406,12 +3767,12 @@ Twelve-month momentum predictor generated successfully
 ================================================================================
 ============================================================
 ✅ Completed: Mom12m.py
-Execution time: 1.45 seconds
+Execution time: 1.50 seconds
 
 
 🔄 Starting: Mom12mOffSeason.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/Mom12mOffSeason.py:104: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/Mom12mOffSeason.py:107: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
   df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_fast)
 Starting Mom12mOffSeason predictor translation...
 Loading SignalMasterTable...
@@ -4427,7 +3788,7 @@ saving Mom12mOffSeason
 Saved 3865561 rows to ../pyData/Predictors/Mom12mOffSeason.csv
 ============================================================
 ✅ Completed: Mom12mOffSeason.py
-Execution time: 24.02 seconds
+Execution time: 24.66 seconds
 
 
 🔄 Starting: Mom6m.py
@@ -4449,7 +3810,7 @@ Six-month momentum predictor generated successfully
 ================================================================================
 ============================================================
 ✅ Completed: Mom6m.py
-Execution time: 1.32 seconds
+Execution time: 1.34 seconds
 
 
 🔄 Starting: Mom6mJunk.py
@@ -4461,7 +3822,7 @@ Saved 346566 rows to ../pyData/Predictors/Mom6mJunk.csv
 Mom6mJunk saved with 3041661 observations
 ============================================================
 ✅ Completed: Mom6mJunk.py
-Execution time: 4.15 seconds
+Execution time: 4.20 seconds
 
 
 🔄 Starting: MomOffSeason.py
@@ -4478,7 +3839,7 @@ Saved 3436969 rows to ../pyData/Predictors/MomOffSeason.csv
 MomOffSeason.py completed successfully
 ============================================================
 ✅ Completed: MomOffSeason.py
-Execution time: 3.07 seconds
+Execution time: 3.14 seconds
 
 
 🔄 Starting: MomOffSeason06YrPlus.py
@@ -4491,7 +3852,7 @@ Saved 2472210 rows to ../pyData/Predictors/MomOffSeason06YrPlus.csv
 MomOffSeason06YrPlus.py completed successfully
 ============================================================
 ✅ Completed: MomOffSeason06YrPlus.py
-Execution time: 3.08 seconds
+Execution time: 3.25 seconds
 
 
 🔄 Starting: MomOffSeason11YrPlus.py
@@ -4504,7 +3865,7 @@ Saved 1707608 rows to ../pyData/Predictors/MomOffSeason11YrPlus.csv
 MomOffSeason11YrPlus.py completed successfully
 ============================================================
 ✅ Completed: MomOffSeason11YrPlus.py
-Execution time: 3.05 seconds
+Execution time: 3.16 seconds
 
 
 🔄 Starting: MomOffSeason16YrPlus.py
@@ -4517,7 +3878,7 @@ Saved 1044703 rows to ../pyData/Predictors/MomOffSeason16YrPlus.csv
 MomOffSeason16YrPlus.py completed successfully
 ============================================================
 ✅ Completed: MomOffSeason16YrPlus.py
-Execution time: 3.06 seconds
+Execution time: 3.19 seconds
 
 
 🔄 Starting: MomRev.py
@@ -4539,7 +3900,7 @@ Momentum and long-term reversal signal generated successfully
 ================================================================================
 ============================================================
 ✅ Completed: MomRev.py
-Execution time: 5.11 seconds
+Execution time: 5.39 seconds
 
 
 🔄 Starting: MomSeason.py
@@ -4556,7 +3917,7 @@ Saved 3437360 rows to ../pyData/Predictors/MomSeason.csv
 MomSeason.py completed successfully
 ============================================================
 ✅ Completed: MomSeason.py
-Execution time: 1.70 seconds
+Execution time: 1.73 seconds
 
 
 🔄 Starting: MomSeason06YrPlus.py
@@ -4569,7 +3930,7 @@ Saved 2472493 rows to ../pyData/Predictors/MomSeason06YrPlus.csv
 MomSeason06YrPlus.py completed successfully
 ============================================================
 ✅ Completed: MomSeason06YrPlus.py
-Execution time: 1.68 seconds
+Execution time: 1.74 seconds
 
 
 🔄 Starting: MomSeason11YrPlus.py
@@ -4582,7 +3943,7 @@ Saved 1707812 rows to ../pyData/Predictors/MomSeason11YrPlus.csv
 MomSeason11YrPlus.py completed successfully
 ============================================================
 ✅ Completed: MomSeason11YrPlus.py
-Execution time: 1.65 seconds
+Execution time: 1.71 seconds
 
 
 🔄 Starting: MomSeason16YrPlus.py
@@ -4595,7 +3956,7 @@ Saved 1211157 rows to ../pyData/Predictors/MomSeason16YrPlus.csv
 MomSeason16YrPlus.py completed successfully
 ============================================================
 ✅ Completed: MomSeason16YrPlus.py
-Execution time: 1.65 seconds
+Execution time: 1.70 seconds
 
 
 🔄 Starting: MomSeasonShort.py
@@ -4611,7 +3972,7 @@ Saved 3730640 rows to ../pyData/Predictors/MomSeasonShort.csv
 MomSeasonShort.py completed successfully
 ============================================================
 ✅ Completed: MomSeasonShort.py
-Execution time: 1.17 seconds
+Execution time: 1.22 seconds
 
 
 🔄 Starting: MomVol.py
@@ -4621,27 +3982,27 @@ saving MomVol
 Saved 1096816 rows to ../pyData/Predictors/MomVol.csv
 ============================================================
 ✅ Completed: MomVol.py
-Execution time: 4.50 seconds
+Execution time: 4.69 seconds
 
 
 🔄 Starting: MRreversal.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:40: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:47: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:40: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:47: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:40: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:47: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:40: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:47: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:40: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:47: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:40: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/MRreversal.py:47: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
   df[f'ret_lag{lag}_orig_missing'] = df[f'ret_lag{lag}_orig_missing'].fillna(True).infer_objects(copy=False)
 MRreversal predictor saved successfully
 ============================================================
 ✅ Completed: MRreversal.py
-Execution time: 8.51 seconds
+Execution time: 8.82 seconds
 
 
 🔄 Starting: MS.py
@@ -4683,7 +4044,7 @@ Saved 473079 rows to ../pyData/Predictors/MS.csv
 ✅ MS.csv saved successfully
 ============================================================
 ✅ Completed: MS.py
-Execution time: 3.62 seconds
+Execution time: 3.84 seconds
 
 
 🔄 Starting: NetDebtFinance.py
@@ -4696,7 +4057,7 @@ Final output: 2797645 observations
 NetDebtFinance.csv saved successfully
 ============================================================
 ✅ Completed: NetDebtFinance.py
-Execution time: 2.82 seconds
+Execution time: 2.99 seconds
 
 
 🔄 Starting: NetDebtPrice.py
@@ -4704,7 +4065,7 @@ Execution time: 2.82 seconds
 NetDebtPrice: Saved 1,425,639 observations
 ============================================================
 ✅ Completed: NetDebtPrice.py
-Execution time: 3.80 seconds
+Execution time: 4.06 seconds
 
 
 🔄 Starting: NetEquityFinance.py
@@ -4717,7 +4078,7 @@ Final output: 2889052 observations
 NetEquityFinance.csv saved successfully
 ============================================================
 ✅ Completed: NetEquityFinance.py
-Execution time: 2.95 seconds
+Execution time: 3.21 seconds
 
 
 🔄 Starting: NetPayoutYield.py
@@ -4725,7 +4086,7 @@ Execution time: 2.95 seconds
 NetPayoutYield predictor created with 1818920 observations
 ============================================================
 ✅ Completed: NetPayoutYield.py
-Execution time: 3.84 seconds
+Execution time: 4.04 seconds
 
 
 🔄 Starting: NOA.py
@@ -4738,7 +4099,7 @@ Final output: 3213348 observations
 NOA.csv saved successfully
 ============================================================
 ✅ Completed: NOA.py
-Execution time: 3.19 seconds
+Execution time: 3.45 seconds
 
 
 🔄 Starting: NumEarnIncrease.py
@@ -4746,7 +4107,98 @@ Execution time: 3.19 seconds
 NumEarnIncrease: 2823459 observations saved
 ============================================================
 ✅ Completed: NumEarnIncrease.py
-Execution time: 5.95 seconds
+Execution time: 6.37 seconds
+
+
+🔄 Starting: old_rio.py
+============================================================
+================================================================================
+🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+Generating Real Investment Opportunities (RIO) predictors
+================================================================================
+📊 Preparing IBES data...
+IBES EPS data: 2,382,154 observations
+📊 Loading main data sources...
+SignalMasterTable: 4,047,630 observations
+After merging all data sources: 4,047,630 observations
+Removing stocks in bottom NYSE/AMEX size quintile...
+After filtering bottom size quintile: 2,602,675 observations
+🏛️ Computing Residual Institutional Ownership (RIO)...
+📊 Computing interaction signals
+🏷️ Creating characteristic quintiles and RIO interactions...
+💾 Saving RIO predictors...
+Generated RIO_MB: 354,598 observations
+  Value distribution:
+shape: (5, 2)
+┌────────┬───────┐
+│ RIO_MB ┆ count │
+│ ---    ┆ ---   │
+│ f64    ┆ u32   │
+╞════════╪═══════╡
+│ 1.0    ┆ 80520 │
+│ 2.0    ┆ 85121 │
+│ 3.0    ┆ 77570 │
+│ 4.0    ┆ 63746 │
+│ 5.0    ┆ 47641 │
+└────────┴───────┘
+saving RIO_MB
+Saved 354598 rows to ../pyData/Predictors/RIO_MB.csv
+✅ RIO_MB.csv saved successfully
+Generated RIO_Disp: 497,854 observations
+  Value distribution:
+shape: (5, 2)
+┌──────────┬────────┐
+│ RIO_Disp ┆ count  │
+│ ---      ┆ ---    │
+│ f64      ┆ u32    │
+╞══════════╪════════╡
+│ 1.0      ┆ 43571  │
+│ 2.0      ┆ 62759  │
+│ 3.0      ┆ 110516 │
+│ 4.0      ┆ 138183 │
+│ 5.0      ┆ 142825 │
+└──────────┴────────┘
+saving RIO_Disp
+Saved 497854 rows to ../pyData/Predictors/RIO_Disp.csv
+✅ RIO_Disp.csv saved successfully
+Generated RIO_Turnover: 445,770 observations
+  Value distribution:
+shape: (5, 2)
+┌──────────────┬────────┐
+│ RIO_Turnover ┆ count  │
+│ ---          ┆ ---    │
+│ f64          ┆ u32    │
+╞══════════════╪════════╡
+│ 1.0          ┆ 57912  │
+│ 2.0          ┆ 88788  │
+│ 3.0          ┆ 101664 │
+│ 4.0          ┆ 96230  │
+│ 5.0          ┆ 101176 │
+└──────────────┴────────┘
+saving RIO_Turnover
+Saved 445770 rows to ../pyData/Predictors/RIO_Turnover.csv
+✅ RIO_Turnover.csv saved successfully
+Generated RIO_Volatility: 481,446 observations
+  Value distribution:
+shape: (5, 2)
+┌────────────────┬────────┐
+│ RIO_Volatility ┆ count  │
+│ ---            ┆ ---    │
+│ f64            ┆ u32    │
+╞════════════════╪════════╡
+│ 1.0            ┆ 58107  │
+│ 2.0            ┆ 66501  │
+│ 3.0            ┆ 100852 │
+│ 4.0            ┆ 124154 │
+│ 5.0            ┆ 131832 │
+└────────────────┴────────┘
+saving RIO_Volatility
+Saved 481446 rows to ../pyData/Predictors/RIO_Volatility.csv
+✅ RIO_Volatility.csv saved successfully
+🎉 All RIO predictors completed!
+============================================================
+✅ Completed: old_rio.py
+Execution time: 8.13 seconds
 
 
 🔄 Starting: OperProf.py
@@ -6532,7 +5984,7 @@ Execution time: 5.95 seconds
 OperProf: Saved 1,407,793 observations
 ============================================================
 ✅ Completed: OperProf.py
-Execution time: 2.96 seconds
+Execution time: 3.27 seconds
 
 
 🔄 Starting: OperProfRD.py
@@ -6540,7 +5992,7 @@ Execution time: 2.96 seconds
 OperProfRD predictor saved successfully
 ============================================================
 ✅ Completed: OperProfRD.py
-Execution time: 3.82 seconds
+Execution time: 4.08 seconds
 
 
 🔄 Starting: OPLeverage.py
@@ -6561,7 +6013,7 @@ Saved 3609010 rows to ../pyData/Predictors/OPLeverage.csv
 OPLeverage predictor completed successfully
 ============================================================
 ✅ Completed: OPLeverage.py
-Execution time: 0.96 seconds
+Execution time: 0.97 seconds
 
 
 🔄 Starting: OrderBacklog.py
@@ -6569,7 +6021,7 @@ Execution time: 0.96 seconds
 OrderBacklog predictor saved successfully
 ============================================================
 ✅ Completed: OrderBacklog.py
-Execution time: 1.91 seconds
+Execution time: 1.87 seconds
 
 
 🔄 Starting: OrderBacklogChg.py
@@ -6577,7 +6029,7 @@ Execution time: 1.91 seconds
 OrderBacklogChg predictor saved successfully
 ============================================================
 ✅ Completed: OrderBacklogChg.py
-Execution time: 1.92 seconds
+Execution time: 1.97 seconds
 
 
 🔄 Starting: OScore.py
@@ -6587,7 +6039,7 @@ Execution time: 1.92 seconds
 OScore predictor saved successfully
 ============================================================
 ✅ Completed: OScore.py
-Execution time: 4.85 seconds
+Execution time: 5.15 seconds
 
 
 🔄 Starting: PatentsRD.py
@@ -6597,7 +6049,7 @@ Execution time: 4.85 seconds
 PatentsRD predictor saved successfully
 ============================================================
 ✅ Completed: PatentsRD.py
-Execution time: 52.69 seconds
+Execution time: 54.59 seconds
 
 
 🔄 Starting: PayoutYield.py
@@ -6605,7 +6057,7 @@ Execution time: 52.69 seconds
 PayoutYield predictor created with 1419513 observations
 ============================================================
 ✅ Completed: PayoutYield.py
-Execution time: 3.52 seconds
+Execution time: 3.91 seconds
 
 
 🔄 Starting: PctAcc.py
@@ -6613,7 +6065,7 @@ Execution time: 3.52 seconds
 PctAcc predictor saved successfully
 ============================================================
 ✅ Completed: PctAcc.py
-Execution time: 4.25 seconds
+Execution time: 4.62 seconds
 
 
 🔄 Starting: PctTotAcc.py
@@ -6621,7 +6073,7 @@ Execution time: 4.25 seconds
 PctTotAcc predictor saved successfully
 ============================================================
 ✅ Completed: PctTotAcc.py
-Execution time: 3.37 seconds
+Execution time: 3.33 seconds
 
 
 🔄 Starting: Price.py
@@ -6629,7 +6081,7 @@ Execution time: 3.37 seconds
 Price: Saved 4,029,252 observations
 ============================================================
 ✅ Completed: Price.py
-Execution time: 3.56 seconds
+Execution time: 3.73 seconds
 
 
 🔄 Starting: ProbInformedTrading.py
@@ -9015,7 +8467,7 @@ Execution time: 3.56 seconds
 ProbInformedTrading predictor saved with 24028 observations
 ============================================================
 ✅ Completed: ProbInformedTrading.py
-Execution time: 2.10 seconds
+Execution time: 2.26 seconds
 
 
 🔄 Starting: PS.py
@@ -9031,7 +8483,7 @@ Saved 464239 rows to ../pyData/Predictors/PS.csv
 PS.py completed successfully
 ============================================================
 ✅ Completed: PS.py
-Execution time: 6.58 seconds
+Execution time: 6.67 seconds
 
 
 🔄 Starting: RD.py
@@ -9039,18 +8491,39 @@ Execution time: 6.58 seconds
 RD: Saved 1,419,157 observations
 ============================================================
 ✅ Completed: RD.py
-Execution time: 1.88 seconds
+Execution time: 1.93 seconds
 
 
 🔄 Starting: RDAbility.py
 ============================================================
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/RDAbility.py", line 288
-    coef_prefix="b_"
-IndentationError: unexpected indent
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/RDAbility.py:147: DeprecationWarning: the argument `min_periods` for `Expr.rolling_mean` is deprecated. It was renamed to `min_samples` in version 1.21.0.
+  "mean": lambda col: col.rolling_mean(
+================================================================================
+RDAbility.py
+Generating R&D ability predictor using Cohen, Diether and Malloy (2013) methodology
+================================================================================
+Loading a_aCompustat data...
+Loaded Compustat: 302,326 observations
+Expanding to monthly observations...
+Before expansion: 302,326 observations
+After expansion: 3,627,912 observations
+Applying final filters...
+After gvkey-time filter: 3,625,613 observations
+After permno-time filter: 3,625,491 observations
+Generated RDAbility values: 3,625,491 observations
+Non-null RDAbility: 180,944 observations
+RDAbility summary stats:
+  Mean: 0.465636
+  Std: 5.318033
+  Min: -170.731482
+  Max: 83.859231
+Saving RDAbility predictor...
+saving RDAbility
+Saved 180944 rows to ../pyData/Predictors/RDAbility.csv
+RDAbility.csv saved successfully
 ============================================================
-❌ ERROR in RDAbility.py: Return code 1
-Error details: Script failed with return code 1
-Execution time: 0.02 seconds
+✅ Completed: RDAbility.py
+Execution time: 13.12 seconds
 
 
 🔄 Starting: RDcap.py
@@ -10882,7 +10355,7 @@ Saved 537864 rows to ../pyData/Predictors/RDcap.csv
 RDcap predictor saved successfully
 ============================================================
 ✅ Completed: RDcap.py
-Execution time: 2.96 seconds
+Execution time: 3.15 seconds
 
 
 🔄 Starting: RDIPO.py
@@ -10890,7 +10363,7 @@ Execution time: 2.96 seconds
 RDIPO predictor saved successfully
 ============================================================
 ✅ Completed: RDIPO.py
-Execution time: 3.04 seconds
+Execution time: 3.18 seconds
 
 
 🔄 Starting: RDS.py
@@ -10902,7 +10375,7 @@ Execution time: 3.04 seconds
 RDS: Saved 2,816,659 observations
 ============================================================
 ✅ Completed: RDS.py
-Execution time: 27.13 seconds
+Execution time: 29.35 seconds
 
 
 🔄 Starting: realestate.py
@@ -10910,7 +10383,7 @@ Execution time: 27.13 seconds
 realestate predictor saved successfully
 ============================================================
 ✅ Completed: realestate.py
-Execution time: 4.01 seconds
+Execution time: 4.28 seconds
 
 
 🔄 Starting: Recomm_ShortInterest.py
@@ -10921,92 +10394,6 @@ Generating Recommendation and Short Interest predictor
 ================================================================================
 📊 Loading IBES Recommendations data...
 Loaded IBES Recommendations: 864,089 observations
-shape: (36, 7)
-┌────────────────┬──────────────┬────────────┬─────────┬────────────┬────────┬──────────┐
-│ ticker_analyst ┆ time_avail_m ┆ tickerIBES ┆ amaskcd ┆ anndats    ┆ ireccd ┆ ireccd12 │
-│ ---            ┆ ---          ┆ ---        ┆ ---     ┆ ---        ┆ ---    ┆ ---      │
-│ str            ┆ date         ┆ str        ┆ i32     ┆ date       ┆ i8     ┆ i8       │
-╞════════════════╪══════════════╪════════════╪═════════╪════════════╪════════╪══════════╡
-│ GFGC_153109    ┆ 2014-06-01   ┆ GFGC       ┆ null    ┆ 2014-01-31 ┆ null   ┆ 3        │
-│ GFGC_82505     ┆ 2014-06-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_153109    ┆ 2014-07-01   ┆ GFGC       ┆ 153109  ┆ 2014-07-22 ┆ 2      ┆ 2        │
-│ GFGC_82505     ┆ 2014-07-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2014-08-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2014-09-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2014-10-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2014-11-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2014-12-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-01-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-02-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-03-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_14963     ┆ 2015-04-01   ┆ GFGC       ┆ 14963   ┆ 2015-04-07 ┆ 2      ┆ 2        │
-│ GFGC_82505     ┆ 2015-04-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-05-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-06-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-07-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-08-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-09-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-10-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-11-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2015-12-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-01-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-02-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-03-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-04-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-05-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-06-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-07-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-08-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-09-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-│ GFGC_82505     ┆ 2016-10-01   ┆ GFGC       ┆ 82505   ┆ 2016-10-11 ┆ 5      ┆ 5        │
-│ GFGC_82505     ┆ 2016-11-01   ┆ GFGC       ┆ null    ┆ 2016-10-11 ┆ null   ┆ 5        │
-│ GFGC_82505     ┆ 2016-12-01   ┆ GFGC       ┆ null    ┆ 2016-10-11 ┆ null   ┆ 5        │
-│ GFGC_82505     ┆ 2017-01-01   ┆ GFGC       ┆ null    ┆ 2016-10-11 ┆ null   ┆ 5        │
-│ GFGC_82505     ┆ 2017-02-01   ┆ GFGC       ┆ null    ┆ 2016-10-11 ┆ null   ┆ 5        │
-└────────────────┴──────────────┴────────────┴─────────┴────────────┴────────┴──────────┘
-shape: (36, 7)
-┌────────────┬─────────┬────────────┬──────────────┬────────┬──────────┬──────────┐
-│ tickerIBES ┆ amaskcd ┆ anndats    ┆ time_avail_m ┆ ireccd ┆ tempID   ┆ ireccd12 │
-│ ---        ┆ ---     ┆ ---        ┆ ---          ┆ ---    ┆ ---      ┆ ---      │
-│ str        ┆ i32     ┆ date       ┆ date         ┆ i8     ┆ f32      ┆ i8       │
-╞════════════╪═════════╪════════════╪══════════════╪════════╪══════════╪══════════╡
-│ GFGC       ┆ null    ┆ null       ┆ 2014-04-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-05-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-06-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-07-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-08-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-09-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-10-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-11-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2014-12-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-01-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-02-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-03-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-04-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-05-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-06-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-07-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-08-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-09-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-10-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-11-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2015-12-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-01-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-02-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-03-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-04-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-05-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-06-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-07-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-08-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-09-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ 82505   ┆ 2016-10-11 ┆ 2016-10-01   ┆ 5      ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-11-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2016-12-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2017-01-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2017-02-01   ┆ null   ┆ 122399.0 ┆ null     │
-│ GFGC       ┆ null    ┆ null       ┆ 2017-03-01   ┆ null   ┆ 122399.0 ┆ null     │
-└────────────┴─────────┴────────────┴──────────────┴────────┴──────────┴──────────┘
 After taking mean recommendation within each stock-month: 1,302,063 observations
 📊 Loading SignalMasterTable, CRSP, and Short Interest data...
 Loaded SignalMasterTable: 3,041,661 observations
@@ -11015,49 +10402,6 @@ After merging with short interest: 1,577,922 observations
 After merging with recommendations: 792,823 observations
 🧮 Signal construction...
 📊 Computing quintiles using stata_fastxtile...
-shape: (36, 6)
-┌─────────────────────┬──────────┬─────────────────┬──────────────┬───────┬───────┐
-│ time_avail_m        ┆ n_permno ┆ n_ShortInterest ┆ n_ConsRecomm ┆ n_QSI ┆ n_QCR │
-│ ---                 ┆ ---      ┆ ---             ┆ ---          ┆ ---   ┆ ---   │
-│ datetime[ms]        ┆ u32      ┆ u32             ┆ u32          ┆ u32   ┆ u32   │
-╞═════════════════════╪══════════╪═════════════════╪══════════════╪═══════╪═══════╡
-│ 1993-10-01 00:00:00 ┆ 49       ┆ 49              ┆ 49           ┆ 49    ┆ 49    │
-│ 1993-11-01 00:00:00 ┆ 1118     ┆ 1118            ┆ 1118         ┆ 1118  ┆ 1118  │
-│ 1993-12-01 00:00:00 ┆ 1174     ┆ 1174            ┆ 1174         ┆ 1174  ┆ 1174  │
-│ 1994-01-01 00:00:00 ┆ 1271     ┆ 1271            ┆ 1271         ┆ 1271  ┆ 1271  │
-│ 1994-02-01 00:00:00 ┆ 1246     ┆ 1246            ┆ 1246         ┆ 1246  ┆ 1246  │
-│ 1994-03-01 00:00:00 ┆ 1244     ┆ 1244            ┆ 1244         ┆ 1244  ┆ 1244  │
-│ 1994-04-01 00:00:00 ┆ 1240     ┆ 1240            ┆ 1240         ┆ 1240  ┆ 1240  │
-│ 1994-05-01 00:00:00 ┆ 1242     ┆ 1242            ┆ 1242         ┆ 1242  ┆ 1242  │
-│ 1994-06-01 00:00:00 ┆ 1306     ┆ 1306            ┆ 1306         ┆ 1306  ┆ 1306  │
-│ 1994-07-01 00:00:00 ┆ 1311     ┆ 1311            ┆ 1311         ┆ 1311  ┆ 1311  │
-│ 1994-08-01 00:00:00 ┆ 1318     ┆ 1318            ┆ 1318         ┆ 1318  ┆ 1318  │
-│ 1994-09-01 00:00:00 ┆ 1319     ┆ 1319            ┆ 1319         ┆ 1319  ┆ 1319  │
-│ 1994-10-01 00:00:00 ┆ 1307     ┆ 1307            ┆ 1307         ┆ 1307  ┆ 1307  │
-│ 1994-11-01 00:00:00 ┆ 1261     ┆ 1261            ┆ 1261         ┆ 1261  ┆ 1261  │
-│ 1994-12-01 00:00:00 ┆ 1231     ┆ 1231            ┆ 1231         ┆ 1231  ┆ 1231  │
-│ 1995-01-01 00:00:00 ┆ 1217     ┆ 1217            ┆ 1217         ┆ 1217  ┆ 1217  │
-│ 1995-02-01 00:00:00 ┆ 1199     ┆ 1199            ┆ 1199         ┆ 1199  ┆ 1199  │
-│ 1995-03-01 00:00:00 ┆ 1203     ┆ 1203            ┆ 1203         ┆ 1203  ┆ 1203  │
-│ 1995-04-01 00:00:00 ┆ 1227     ┆ 1227            ┆ 1227         ┆ 1227  ┆ 1227  │
-│ 1995-05-01 00:00:00 ┆ 1230     ┆ 1230            ┆ 1230         ┆ 1230  ┆ 1230  │
-│ 1995-06-01 00:00:00 ┆ 1265     ┆ 1265            ┆ 1265         ┆ 1265  ┆ 1265  │
-│ 1995-07-01 00:00:00 ┆ 1279     ┆ 1279            ┆ 1279         ┆ 1279  ┆ 1279  │
-│ 1995-08-01 00:00:00 ┆ 1280     ┆ 1280            ┆ 1280         ┆ 1280  ┆ 1280  │
-│ 1995-09-01 00:00:00 ┆ 1317     ┆ 1317            ┆ 1317         ┆ 1317  ┆ 1317  │
-│ 1995-10-01 00:00:00 ┆ 1294     ┆ 1294            ┆ 1294         ┆ 1294  ┆ 1294  │
-│ 1995-11-01 00:00:00 ┆ 1293     ┆ 1293            ┆ 1293         ┆ 1293  ┆ 1293  │
-│ 1995-12-01 00:00:00 ┆ 1297     ┆ 1297            ┆ 1297         ┆ 1297  ┆ 1297  │
-│ 1996-01-01 00:00:00 ┆ 1294     ┆ 1294            ┆ 1294         ┆ 1294  ┆ 1294  │
-│ 1996-02-01 00:00:00 ┆ 1275     ┆ 1275            ┆ 1275         ┆ 1275  ┆ 1275  │
-│ 1996-03-01 00:00:00 ┆ 1264     ┆ 1264            ┆ 1264         ┆ 1264  ┆ 1264  │
-│ 1996-04-01 00:00:00 ┆ 1272     ┆ 1272            ┆ 1272         ┆ 1272  ┆ 1272  │
-│ 1996-05-01 00:00:00 ┆ 1268     ┆ 1268            ┆ 1268         ┆ 1268  ┆ 1268  │
-│ 1996-06-01 00:00:00 ┆ 1297     ┆ 1297            ┆ 1297         ┆ 1297  ┆ 1297  │
-│ 1996-07-01 00:00:00 ┆ 1289     ┆ 1289            ┆ 1289         ┆ 1289  ┆ 1289  │
-│ 1996-08-01 00:00:00 ┆ 1303     ┆ 1303            ┆ 1303         ┆ 1303  ┆ 1303  │
-│ 1996-09-01 00:00:00 ┆ 1293     ┆ 1293            ┆ 1293         ┆ 1293  ┆ 1293  │
-└─────────────────────┴──────────┴─────────────────┴──────────────┴───────┴───────┘
 --- Signal summary ---
 Signal distribution: shape: (3, 2)
 ┌──────────────────────┬────────┐
@@ -11065,46 +10409,19 @@ Signal distribution: shape: (3, 2)
 │ ---                  ┆ ---    │
 │ i32                  ┆ u32    │
 ╞══════════════════════╪════════╡
-│ null                 ┆ 725123 │
-│ 0                    ┆ 26497  │
-│ 1                    ┆ 41203  │
+│ 0                    ┆ 26481  │
+│ 1                    ┆ 41286  │
+│ null                 ┆ 725056 │
 └──────────────────────┴────────┘
 Time period:
 1993-10-01 to 2024-12-01
 💾 Saving Recomm_ShortInterest predictor...
 saving Recomm_ShortInterest
-Saved 67700 rows to ../pyData/Predictors/Recomm_ShortInterest.csv
+Saved 67767 rows to ../pyData/Predictors/Recomm_ShortInterest.csv
 ✅ Recomm_ShortInterest.csv saved successfully
-shape: (1, 13)
-┌────────┬─────────────┬───────┬──────────┬───┬────────────┬─────────────┬────────────┬────────────┐
-│ permno ┆ time_avail_ ┆ gvkey ┆ bh1m     ┆ … ┆ ConsRecomm ┆ QuintShortI ┆ QuintConsR ┆ Recomm_Sho │
-│ ---    ┆ m           ┆ ---   ┆ ---      ┆   ┆ ---        ┆ nterest     ┆ ecomm      ┆ rtInterest │
-│ i32    ┆ ---         ┆ i32   ┆ f32      ┆   ┆ f32        ┆ ---         ┆ ---        ┆ ---        │
-│        ┆ date        ┆       ┆          ┆   ┆            ┆ f32         ┆ f32        ┆ f32        │
-╞════════╪═════════════╪═══════╪══════════╪═══╪════════════╪═════════════╪════════════╪════════════╡
-│ 10001  ┆ 2012-01-01  ┆ 12994 ┆ 0.005005 ┆ … ┆ null       ┆ 1.0         ┆ null       ┆ null       │
-└────────┴─────────────┴───────┴──────────┴───┴────────────┴─────────────┴────────────┴────────────┘
-shape: (27, 7)
-┌────────────────┬──────────────┬────────────┬─────────┬────────────┬────────┬──────────┐
-│ ticker_analyst ┆ time_avail_m ┆ tickerIBES ┆ amaskcd ┆ anndats    ┆ ireccd ┆ ireccd12 │
-│ ---            ┆ ---          ┆ ---        ┆ ---     ┆ ---        ┆ ---    ┆ ---      │
-│ str            ┆ date         ┆ str        ┆ i32     ┆ date       ┆ i8     ┆ i8       │
-╞════════════════╪══════════════╪════════════╪═════════╪════════════╪════════╪══════════╡
-│ GFGC_31893     ┆ 1993-11-01   ┆ GFGC       ┆ 31893   ┆ 1993-11-04 ┆ 3      ┆ 3        │
-│ GFGC_31893     ┆ 1993-12-01   ┆ GFGC       ┆ null    ┆ 1993-11-04 ┆ null   ┆ 3        │
-│ GFGC_31893     ┆ 1994-01-01   ┆ GFGC       ┆ null    ┆ 1993-11-04 ┆ null   ┆ 3        │
-│ GFGC_31893     ┆ 1994-02-01   ┆ GFGC       ┆ 31893   ┆ 1994-02-08 ┆ 1      ┆ 1        │
-│ GFGC_31893     ┆ 1994-03-01   ┆ GFGC       ┆ null    ┆ 1994-02-08 ┆ null   ┆ 1        │
-│ …              ┆ …            ┆ …          ┆ …       ┆ …          ┆ …      ┆ …        │
-│ GFGC_82505     ┆ 2011-09-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ 1        │
-│ GFGC_82505     ┆ 2011-10-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ 1        │
-│ GFGC_82505     ┆ 2011-11-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ 1        │
-│ GFGC_82505     ┆ 2011-12-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ 1        │
-│ GFGC_82505     ┆ 2012-01-01   ┆ GFGC       ┆ null    ┆ 2011-01-06 ┆ null   ┆ null     │
-└────────────────┴──────────────┴────────────┴─────────┴────────────┴────────┴──────────┘
 ============================================================
 ✅ Completed: Recomm_ShortInterest.py
-Execution time: 6.26 seconds
+Execution time: 3.38 seconds
 
 
 🔄 Starting: retConglomerate.py
@@ -11171,7 +10488,7 @@ Saved 759500 rows to ../pyData/Predictors/retConglomerate.csv
 retConglomerate predictor completed successfully!
 ============================================================
 ✅ Completed: retConglomerate.py
-Execution time: 5.24 seconds
+Execution time: 5.51 seconds
 
 
 🔄 Starting: ReturnSkew.py
@@ -11212,7 +10529,7 @@ Generated 1 predictor:
 ================================================================================
 ============================================================
 ✅ Completed: ReturnSkew.py
-Execution time: 5.27 seconds
+Execution time: 5.55 seconds
 
 
 🔄 Starting: REV6.py
@@ -11221,7 +10538,7 @@ Loading and processing REV6...
 REV6 predictor saved successfully
 ============================================================
 ✅ Completed: REV6.py
-Execution time: 3.87 seconds
+Execution time: 4.15 seconds
 
 
 🔄 Starting: RevenueSurprise.py
@@ -11231,7 +10548,7 @@ Execution time: 3.87 seconds
 RevenueSurprise predictor created with 2107507 observations
 ============================================================
 ✅ Completed: RevenueSurprise.py
-Execution time: 11.18 seconds
+Execution time: 11.78 seconds
 
 
 🔄 Starting: roaq.py
@@ -11239,7 +10556,7 @@ Execution time: 11.18 seconds
 roaq: Saved 2,490,872 observations
 ============================================================
 ✅ Completed: roaq.py
-Execution time: 3.53 seconds
+Execution time: 3.77 seconds
 
 
 🔄 Starting: RoE.py
@@ -11247,7 +10564,7 @@ Execution time: 3.53 seconds
 RoE: Saved 3,528,982 observations
 ============================================================
 ✅ Completed: RoE.py
-Execution time: 3.37 seconds
+Execution time: 3.62 seconds
 
 
 🔄 Starting: sfe.py
@@ -11255,7 +10572,7 @@ Execution time: 3.37 seconds
 sfe predictor saved successfully
 ============================================================
 ✅ Completed: sfe.py
-Execution time: 21.94 seconds
+Execution time: 23.54 seconds
 
 
 🔄 Starting: ShareIss1Y.py
@@ -11267,7 +10584,7 @@ Final output: 3517511 observations
 ShareIss1Y.csv saved successfully
 ============================================================
 ✅ Completed: ShareIss1Y.py
-Execution time: 5.20 seconds
+Execution time: 5.49 seconds
 
 
 🔄 Starting: ShareIss5Y.py
@@ -11279,7 +10596,7 @@ Final output: 2508021 observations
 ShareIss5Y.csv saved successfully
 ============================================================
 ✅ Completed: ShareIss5Y.py
-Execution time: 4.50 seconds
+Execution time: 4.65 seconds
 
 
 🔄 Starting: ShareRepurchase.py
@@ -11287,7 +10604,7 @@ Execution time: 4.50 seconds
 ShareRepurchase predictor created with 3625491 observations
 ============================================================
 ✅ Completed: ShareRepurchase.py
-Execution time: 1.72 seconds
+Execution time: 1.80 seconds
 
 
 🔄 Starting: ShareVol.py
@@ -11306,7 +10623,7 @@ Saved 1661295 rows to ../pyData/Predictors/ShareVol.csv
 ShareVol.py completed successfully
 ============================================================
 ✅ Completed: ShareVol.py
-Execution time: 0.80 seconds
+Execution time: 0.86 seconds
 
 
 🔄 Starting: ShortInterest.py
@@ -11320,7 +10637,7 @@ Final output: 1577922 observations
 ShortInterest.csv saved successfully
 ============================================================
 ✅ Completed: ShortInterest.py
-Execution time: 3.22 seconds
+Execution time: 3.38 seconds
 
 
 🔄 Starting: sinAlgo.py
@@ -11341,7 +10658,7 @@ Saved 233996 rows to ../pyData/Predictors/sinAlgo.csv
 sinAlgo.py completed successfully
 ============================================================
 ✅ Completed: sinAlgo.py
-Execution time: 30.71 seconds
+Execution time: 31.68 seconds
 
 
 🔄 Starting: Size.py
@@ -11351,7 +10668,7 @@ Execution time: 30.71 seconds
 Size: Saved 4,029,252 observations
 ============================================================
 ✅ Completed: Size.py
-Execution time: 2.88 seconds
+Execution time: 2.95 seconds
 
 
 🔄 Starting: skew1.py
@@ -11359,7 +10676,7 @@ Execution time: 2.88 seconds
 skew1 predictor saved successfully
 ============================================================
 ✅ Completed: skew1.py
-Execution time: 1.10 seconds
+Execution time: 1.14 seconds
 
 
 🔄 Starting: SmileSlope.py
@@ -11368,7 +10685,7 @@ saving SmileSlope
 Saved 859994 rows to ../pyData/Predictors/SmileSlope.csv
 ============================================================
 ✅ Completed: SmileSlope.py
-Execution time: 1.16 seconds
+Execution time: 1.22 seconds
 
 
 🔄 Starting: SP.py
@@ -11376,7 +10693,7 @@ Execution time: 1.16 seconds
 SP: Saved 3,030,928 observations
 ============================================================
 ✅ Completed: SP.py
-Execution time: 3.41 seconds
+Execution time: 3.48 seconds
 
 
 🔄 Starting: Spinoff.py
@@ -11384,7 +10701,7 @@ Execution time: 3.41 seconds
 Spinoff predictor saved successfully
 ============================================================
 ✅ Completed: Spinoff.py
-Execution time: 2.50 seconds
+Execution time: 2.53 seconds
 
 
 🔄 Starting: std_turn.py
@@ -11396,7 +10713,7 @@ Saved 2200763 rows to ../pyData/Predictors/std_turn.csv
 std_turn.py completed successfully
 ============================================================
 ✅ Completed: std_turn.py
-Execution time: 2.07 seconds
+Execution time: 2.13 seconds
 
 
 🔄 Starting: STreversal.py
@@ -11411,7 +10728,7 @@ Saved 4047630 rows to ../pyData/Predictors/STreversal.csv
 STreversal.py completed successfully
 ============================================================
 ✅ Completed: STreversal.py
-Execution time: 0.44 seconds
+Execution time: 0.43 seconds
 
 
 🔄 Starting: SurpriseRD.py
@@ -11419,7 +10736,7 @@ Execution time: 0.44 seconds
 SurpriseRD predictor saved successfully
 ============================================================
 ✅ Completed: SurpriseRD.py
-Execution time: 2.30 seconds
+Execution time: 2.32 seconds
 
 
 🔄 Starting: tang.py
@@ -11427,7 +10744,7 @@ Execution time: 2.30 seconds
 tang: Saved 1,517,875 observations
 ============================================================
 ✅ Completed: tang.py
-Execution time: 3.49 seconds
+Execution time: 3.94 seconds
 
 
 🔄 Starting: Tax.py
@@ -11435,7 +10752,7 @@ Execution time: 3.49 seconds
 Tax: Saved 3,213,292 observations
 ============================================================
 ✅ Completed: Tax.py
-Execution time: 2.95 seconds
+Execution time: 3.27 seconds
 
 
 🔄 Starting: TotalAccruals.py
@@ -11443,7 +10760,7 @@ Execution time: 2.95 seconds
 TotalAccruals predictor saved successfully
 ============================================================
 ✅ Completed: TotalAccruals.py
-Execution time: 4.46 seconds
+Execution time: 4.67 seconds
 
 
 🔄 Starting: TrendFactor.py
@@ -11477,7 +10794,7 @@ After merging moving averages: 2,076,870 observations
 Preparing for cross-sectional regression...
 Carefully creating fRet with left join
 🔧 asreg regressions with asreg_collinear
-Error processing group 2024-12-01 00:00:00: No rows left after applying estimation-sample mask.
+Warning: could not process group 2024-12-01 00:00:00: No rows left after applying estimation-sample mask.
 📊 Computing 12-month rolling averages of beta coefficients...
 🎯 Computing TrendFactor as the smoothed regression model predictions
 Generated TrendFactor values: 2,058,243 observations
@@ -11488,7 +10805,7 @@ Saved 2058243 rows to ../pyData/Predictors/TrendFactor.csv
 🎉 TrendFactor computation completed!
 ============================================================
 ✅ Completed: TrendFactor.py
-Execution time: 123.60 seconds
+Execution time: 139.40 seconds
 
 
 🔄 Starting: UpRecomm.py
@@ -11496,17 +10813,19 @@ Execution time: 123.60 seconds
 UpRecomm predictor created with 464223 observations
 ============================================================
 ✅ Completed: UpRecomm.py
-Execution time: 12.31 seconds
+Execution time: 12.76 seconds
 
 
 🔄 Starting: VarCF.py
 ============================================================
-Calculating rolling statistics for 29339 firms...
-Rolling statistics calculation completed
-VarCF predictor saved successfully
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/VarCF.py", line 17, in <module>
+    from asrol import asrol
+ModuleNotFoundError: No module named 'asrol'
 ============================================================
-✅ Completed: VarCF.py
-Execution time: 4.82 seconds
+❌ ERROR in VarCF.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 0.25 seconds
 
 
 🔄 Starting: VolMkt.py
@@ -11522,7 +10841,7 @@ Saved 4361398 rows to ../pyData/Predictors/VolMkt.csv
 VolMkt.py completed successfully
 ============================================================
 ✅ Completed: VolMkt.py
-Execution time: 0.66 seconds
+Execution time: 0.67 seconds
 
 
 🔄 Starting: VolSD.py
@@ -11544,17 +10863,19 @@ Volume variance predictor generated successfully
 ================================================================================
 ============================================================
 ✅ Completed: VolSD.py
-Execution time: 0.62 seconds
+Execution time: 0.61 seconds
 
 
 🔄 Starting: VolumeTrend.py
 ============================================================
-Loading and processing VolumeTrend...
-Calculating time-based rolling regressions by permno...
-VolumeTrend predictor saved successfully
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/VolumeTrend.py", line 114
+    lower  to clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
+           ^^
+SyntaxError: invalid syntax
 ============================================================
-✅ Completed: VolumeTrend.py
-Execution time: 65.22 seconds
+❌ ERROR in VolumeTrend.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 0.02 seconds
 
 
 🔄 Starting: XFIN.py
@@ -11562,66 +10883,19 @@ Execution time: 65.22 seconds
 XFIN predictor saved successfully
 ============================================================
 ✅ Completed: XFIN.py
-Execution time: 3.94 seconds
+Execution time: 3.97 seconds
 
 
 🔄 Starting: ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
 ============================================================
-================================================================================
-🏗️  ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
-Generating RealizedVol, IdioVol3F, and ReturnSkew3F predictors
-================================================================================
-📊 Loading daily CRSP and Fama-French data...
-Loading dailyCRSP.parquet...
-Loaded CRSP: 107,662,961 daily observations
-Loading dailyFF.parquet...
-Loaded FF factors: 26,003 daily observations
-Merging CRSP and FF data...
-Merged dataset: 107,583,998 observations
-Adjusting returns by risk-free rate...
-
-🔧 Starting signal construction...
-Creating time_avail_m (year-month identifier)...
-Date range: 1926-07-01 00:00:00 to 2024-12-31 00:00:00
-Running FF3 regressions by permno-month to extract residuals...
-Adding _Nobs to track observations used in regression...
-⚠️  Warning: 63491 observations with missing residuals (likely singular matrices)
-Completed regressions: 105,390,189 observations
-Filtering out observations where FF3 regression failed (null residuals)...
-After removing null residuals: 105,326,698 observations
-Permno-month groups after filtering: 4,980,936
-Calculating predictors using group aggregations...
-Generated predictors: 4,980,936 permno-month observations
-
-📈 Predictor summary statistics:
-shape: (1, 6)
-┌────────────────┬────────────────┬────────────────┬───────────────┬───────────────┬───────────────┐
-│ RealizedVol_me ┆ RealizedVol_st ┆ IdioVol3F_mean ┆ IdioVol3F_std ┆ ReturnSkew3F_ ┆ ReturnSkew3F_ │
-│ an             ┆ d              ┆ ---            ┆ ---           ┆ mean          ┆ std           │
-│ ---            ┆ ---            ┆ f64            ┆ f64           ┆ ---           ┆ ---           │
-│ f64            ┆ f64            ┆                ┆               ┆ f64           ┆ f64           │
-╞════════════════╪════════════════╪════════════════╪═══════════════╪═══════════════╪═══════════════╡
-│ 0.029741       ┆ 0.031077       ┆ 0.025296       ┆ 0.028492      ┆ NaN           ┆ NaN           │
-└────────────────┴────────────────┴────────────────┴───────────────┴───────────────┴───────────────┘
-
-💾 Saving predictors...
-saving RealizedVol
-Saved 4980936 rows to ../pyData/Predictors/RealizedVol.csv
-saving IdioVol3F
-Saved 4980936 rows to ../pyData/Predictors/IdioVol3F.csv
-saving ReturnSkew3F
-Saved 4967368 rows to ../pyData/Predictors/ReturnSkew3F.csv
-
-================================================================================
-✅ ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py completed successfully
-Generated 3 predictors:
-  • RealizedVol: Realized (Total) Vol (Daily)
-  • IdioVol3F: Idiosyncratic Risk (3 factor)
-  • ReturnSkew3F: Skewness of daily idiosyncratic returns (3F model)
-================================================================================
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py", line 66
+    df  to df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
+        ^^
+SyntaxError: invalid syntax
 ============================================================
-✅ Completed: ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
-Execution time: 88.23 seconds
+❌ ERROR in ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 0.02 seconds
 
 
 🔄 Starting: ZZ1_Activism1_Activism2.py
@@ -11652,18 +10926,60 @@ Saved 30170 rows to ../pyData/Predictors/Activism2.csv
 Activism1 and Activism2 predictors completed!
 ============================================================
 ✅ Completed: ZZ1_Activism1_Activism2.py
-Execution time: 3.03 seconds
+Execution time: 3.20 seconds
 
 
 🔄 Starting: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
 ============================================================
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py", line 330
-    coef_prefix="_b_",
-IndentationError: unexpected indent
+================================================================================
+🏗️  ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+Generating analyst value predictors: AnalystValue, AOP, PredictedFE. Also the placebo IntrinsicValue.
+================================================================================
+📊 Preparing IBES forecast data...
+Loading IBES EPS Unadj for FROE1...
+FROE1 data: 183,523 observations
+Loading IBES EPS Unadj for FROE2...
+FROE2 data: 181,697 observations
+Loading IBES EPS Unadj for LTG...
+LTG data: 1,423,499 observations
+📊 Loading main data sources...
+SignalMasterTable: 4,047,630 observations
+After merging CRSP and Compustat: 4,047,630 observations
+After filtering to June observations: 336,692 observations
+After merging IBES data: 336,692 observations
+🧮 Computing financial variables and screens...
+📈 Computing forecast-based equity values...
+🔍 Applying data screens...
+After applying screens: 108,632 observations
+💰 Computing analyst and intrinsic values...
+🔮 Computing predicted forecast error...
+📅 Expanding to monthly observations...
+💾 Saving predictors...
+Generated AnalystValue: 1,299,504 observations
+  Mean: 0.780050
+  Std: 10.226677
+saving AnalystValue
+Saved 1299504 rows to ../pyData/Predictors/AnalystValue.csv
+✅ AnalystValue.csv saved successfully
+Generated AOP: 1,299,504 observations
+  Mean: 160.357614
+  Std: 46464.774095
+saving AOP
+Saved 1299504 rows to ../pyData/Predictors/AOP.csv
+✅ AOP.csv saved successfully
+Generated PredictedFE: 635,124 observations
+  Mean: 0.052645
+  Std: 0.033105
+saving PredictedFE
+Saved 635124 rows to ../pyData/Predictors/PredictedFE.csv
+✅ PredictedFE.csv saved successfully
+saving IntrinsicValue
+Saved 1299504 rows to ../pyData/Placebos/IntrinsicValue.csv
+✅ IntrinsicValue.csv saved successfully
+🎉 All analyst value predictors completed!
 ============================================================
-❌ ERROR in ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py: Return code 1
-Error details: Script failed with return code 1
-Execution time: 0.03 seconds
+✅ Completed: ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+Execution time: 1.82 seconds
 
 
 🔄 Starting: ZZ1_EBM_BPEBM.py
@@ -11678,7 +10994,7 @@ Saved 2924826 rows to ../pyData/Predictors/BPEBM.csv
 ZZ1_EBM_BPEBM.py completed successfully
 ============================================================
 ✅ Completed: ZZ1_EBM_BPEBM.py
-Execution time: 1.22 seconds
+Execution time: 1.30 seconds
 
 
 🔄 Starting: ZZ1_FR_FRbook.py
@@ -11686,7 +11002,7 @@ Execution time: 1.22 seconds
 FR (Predictor) and FRbook (Placobo) saved successfully
 ============================================================
 ✅ Completed: ZZ1_FR_FRbook.py
-Execution time: 2.96 seconds
+Execution time: 2.95 seconds
 
 
 🔄 Starting: ZZ1_grcapx_grcapx1y_grcapx3y.py
@@ -11717,7 +11033,7 @@ Saved 2236619 rows to ../pyData/Predictors/grcapx3y.csv
 ZZ1_grcapx_grcapx1y_grcapx3y.py completed successfully
 ============================================================
 ✅ Completed: ZZ1_grcapx_grcapx1y_grcapx3y.py
-Execution time: 2.45 seconds
+Execution time: 2.58 seconds
 
 
 🔄 Starting: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
@@ -11748,7 +11064,7 @@ Saved IntanEP with 1881252 observations
 ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py completed successfully!
 ============================================================
 ✅ Completed: ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
-Execution time: 29.17 seconds
+Execution time: 29.83 seconds
 
 
 🔄 Starting: ZZ1_OptionVolume1_OptionVolume2.py
@@ -11763,96 +11079,71 @@ Saved 841828 rows to ../pyData/Predictors/OptionVolume2.csv
 ZZ1_OptionVolume1_OptionVolume2.py completed successfully
 ============================================================
 ✅ Completed: ZZ1_OptionVolume1_OptionVolume2.py
-Execution time: 1.91 seconds
+Execution time: 1.98 seconds
 
 
 🔄 Starting: ZZ1_OrgCap_OrgCapNoAdj.py
 ============================================================
 Loading data files...
-
-=== CHECKPOINT 1: After SignalMasterTable ===
-         permno time_avail_m  sicCRSP
-2025927   76898   1992-07-01     1380
-         permno time_avail_m  sicCRSP
-1137730   40970   1992-12-01     1311
 After filtering: 1,583,658 observations
-
-=== CHECKPOINT 2: After CCM merge ===
-         permno time_avail_m   xsga     at   datadate   sic
-2025927   76898   1992-07-01  4.078  6.915 1991-12-31  1389
-         permno time_avail_m   xsga      at   datadate   sic
-1137730   40970   1992-12-01  4.712  37.664 1991-12-31  1311
-
-=== CHECKPOINT 3: After xsga processing ===
-         permno time_avail_m      xsga  gnpdefl
-1030307   76898   1992-07-01  6.520836  0.62538
-        permno time_avail_m      xsga  gnpdefl
-639047   40970   1992-12-01  7.498767  0.62837
 Applying recursive organizational capital formula...
 After OrgCapNoAdj calculation: 1,343,203 non-missing values
-
-=== CHECKPOINT 4: After OrgCapNoAdj calculation ===
-         permno time_avail_m  tempAge      xsga  OrgCapNoAdj     at
-1030307   76898   1992-07-01        2  6.520836     3.771995  6.915
-        permno time_avail_m  tempAge      xsga  OrgCapNoAdj      at
-639047   40970   1992-12-01      151  7.498767     3.097914  37.664
-Non-missing OrgCapNoAdj values for July 1992: 1833
-Non-missing OrgCapNoAdj values for Dec 1992: 1789
 After FF17 classification: 1,465,660 observations
 Final OrgCap values: 1,243,528 non-missing
-
-=== CHECKPOINT 5: After OrgCap calculation ===
-        permno time_avail_m  OrgCapNoAdjtemp  tempMean    tempSD    OrgCap
-922724   76898   1992-07-01         3.771995  0.803109  0.649385  4.571839
-        permno time_avail_m  OrgCapNoAdjtemp  tempMean    tempSD    OrgCap
-545980   40970   1992-12-01         3.097914  0.768713  0.584112  3.987595
-
-OrgCap summary for July 1992:
-count    1.809000e+03
-mean    -7.855641e-18
-std      9.955654e-01
-min     -1.415246e+00
-25%     -6.831084e-01
-50%     -2.629825e-01
-75%      3.454293e-01
-max      6.579684e+00
-Name: OrgCap, dtype: float64
-
-OrgCap summary for Dec 1992:
-count    1.768000e+03
-mean    -4.018907e-18
-std      9.954623e-01
-min     -1.385977e+00
-25%     -6.871366e-01
-50%     -2.538552e-01
-75%      3.710740e-01
-max      6.592133e+00
-Name: OrgCap, dtype: float64
-
-=== CHECKPOINT 6: Pre-save final check ===
-Total non-missing OrgCap values: 1243528
-Total non-missing OrgCapNoAdj values: 1243563
-        permno time_avail_m    OrgCap  OrgCapNoAdj
-922724   76898   1992-07-01  4.571839     3.771995
-        permno time_avail_m    OrgCap  OrgCapNoAdj
-545980   40970   1992-12-01  3.987595     3.097914
 saving OrgCap
 Saved 1243528 rows to ../pyData/Predictors/OrgCap.csv
-OrgCap calculation completed successfully!
+saving OrgCapNoAdj
+Saved 1243563 rows to ../pyData/Predictors/OrgCapNoAdj.csv
+OrgCap and OrgCapNoAdj calculation completed successfully!
 ============================================================
 ✅ Completed: ZZ1_OrgCap_OrgCapNoAdj.py
-Execution time: 91.67 seconds
+Execution time: 96.71 seconds
 
 
 🔄 Starting: ZZ1_ResidualMomentum6m_ResidualMomentum.py
 ============================================================
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/ZZ1_ResidualMomentum6m_ResidualMomentum.py", line 117
-    null_policy="ignore",  # Match Stata's handling of missing values
-IndentationError: unexpected indent
+================================================================================
+🏗️  ZZ1_ResidualMomentum6m_ResidualMomentum.py
+Generating ResidualMomentum6m and ResidualMomentum predictors
+================================================================================
+📊 Loading monthly CRSP and Fama-French data...
+Loading monthlyCRSP.parquet...
+Loaded CRSP: 5,153,763 monthly observations
+Loading monthlyFF.parquet...
+Loaded FF factors: 1,187 monthly observations
+Merging CRSP and FF data...
+Merged dataset: 5,150,010 observations
+
+🔧 Starting signal construction...
+Calculating excess returns (retrf = ret - rf)...
+Creating time_temp position index by permno...
+Running rolling 36-observation FF3 regressions by permno using direct polars-ols helper...
+Processing 38835 unique permnos...
+Completed rolling regressions for 5,150,010 observations
+Calculating lagged residuals and momentum signals...
+Calculating 6-observation and 11-observation rolling momentum signals...
+
+📈 Signal summary statistics:
+ResidualMomentum6m - Mean: -0.0597, Std: 0.5126
+ResidualMomentum - Mean: -0.0383, Std: 0.3300
+Non-missing ResidualMomentum6m: 3,601,799
+Non-missing ResidualMomentum: 3,458,602
+
+💾 Saving signals...
+saving ResidualMomentum6m
+Saved 3601799 rows to ../pyData/Placebos/ResidualMomentum6m.csv
+saving ResidualMomentum
+Saved 3458602 rows to ../pyData/Predictors/ResidualMomentum.csv
+
+================================================================================
+✅ ZZ1_ResidualMomentum6m_ResidualMomentum.py completed successfully
+Generated 2 signals:
+  • ResidualMomentum6m: 6 month residual momentum (Placebo)
+  • ResidualMomentum: Momentum based on FF3 residuals (Predictor)
+================================================================================
 ============================================================
-❌ ERROR in ZZ1_ResidualMomentum6m_ResidualMomentum.py: Return code 1
-Error details: Script failed with return code 1
-Execution time: 0.02 seconds
+✅ Completed: ZZ1_ResidualMomentum6m_ResidualMomentum.py
+Execution time: 8.33 seconds
 
 
 🔄 Starting: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
@@ -11866,84 +11157,88 @@ IBES EPS data: 2,382,154 observations
 📊 Loading main data sources...
 SignalMasterTable: 4,047,630 observations
 After merging all data sources: 4,047,630 observations
-🔍 Applying size filters...
-After filtering bottom size quintile: 2,620,054 observations
+Removing stocks in bottom NYSE/AMEX size quintile...
+After filtering bottom size quintile: 2,602,675 observations
 🏛️ Computing Residual Institutional Ownership (RIO)...
-📊 Computing characteristic variables...
+📊 Computing interaction signals
 🏷️ Creating characteristic quintiles and RIO interactions...
 💾 Saving RIO predictors...
-Generated RIO_MB: 354,474 observations
+Generated RIO_MB: 376,648 observations
   Value distribution:
-shape: (5, 2)
+shape: (6, 2)
 ┌────────┬───────┐
 │ RIO_MB ┆ count │
 │ ---    ┆ ---   │
 │ f64    ┆ u32   │
 ╞════════╪═══════╡
-│ 1.0    ┆ 79108 │
-│ 2.0    ┆ 82962 │
-│ 3.0    ┆ 76270 │
-│ 4.0    ┆ 65044 │
-│ 5.0    ┆ 51090 │
+│ 1.0    ┆ 80520 │
+│ 2.0    ┆ 85121 │
+│ 3.0    ┆ 77570 │
+│ 4.0    ┆ 63746 │
+│ 5.0    ┆ 47641 │
+│ NaN    ┆ 22050 │
 └────────┴───────┘
 saving RIO_MB
-Saved 354474 rows to ../pyData/Predictors/RIO_MB.csv
+Saved 376648 rows to ../pyData/Predictors/RIO_MB.csv
 ✅ RIO_MB.csv saved successfully
-Generated RIO_Disp: 497,766 observations
+Generated RIO_Disp: 517,527 observations
   Value distribution:
-shape: (5, 2)
+shape: (6, 2)
 ┌──────────┬────────┐
 │ RIO_Disp ┆ count  │
 │ ---      ┆ ---    │
 │ f64      ┆ u32    │
 ╞══════════╪════════╡
-│ 1.0      ┆ 42948  │
-│ 2.0      ┆ 59618  │
-│ 3.0      ┆ 106474 │
-│ 4.0      ┆ 138146 │
-│ 5.0      ┆ 150580 │
+│ 1.0      ┆ 43571  │
+│ 2.0      ┆ 62759  │
+│ 3.0      ┆ 110516 │
+│ 4.0      ┆ 138183 │
+│ 5.0      ┆ 142825 │
+│ NaN      ┆ 19673  │
 └──────────┴────────┘
 saving RIO_Disp
-Saved 497766 rows to ../pyData/Predictors/RIO_Disp.csv
+Saved 517527 rows to ../pyData/Predictors/RIO_Disp.csv
 ✅ RIO_Disp.csv saved successfully
-Generated RIO_Turnover: 446,011 observations
+Generated RIO_Turnover: 493,064 observations
   Value distribution:
-shape: (5, 2)
+shape: (6, 2)
 ┌──────────────┬────────┐
 │ RIO_Turnover ┆ count  │
 │ ---          ┆ ---    │
 │ f64          ┆ u32    │
 ╞══════════════╪════════╡
-│ 1.0          ┆ 56605  │
-│ 2.0          ┆ 85733  │
-│ 3.0          ┆ 99683  │
-│ 4.0          ┆ 96433  │
-│ 5.0          ┆ 107557 │
+│ 1.0          ┆ 57912  │
+│ 2.0          ┆ 88788  │
+│ 3.0          ┆ 101664 │
+│ 4.0          ┆ 96230  │
+│ 5.0          ┆ 101176 │
+│ NaN          ┆ 47294  │
 └──────────────┴────────┘
 saving RIO_Turnover
-Saved 446011 rows to ../pyData/Predictors/RIO_Turnover.csv
+Saved 493064 rows to ../pyData/Predictors/RIO_Turnover.csv
 ✅ RIO_Turnover.csv saved successfully
-Generated RIO_Volatility: 457,716 observations
+Generated RIO_Volatility: 487,389 observations
   Value distribution:
-shape: (5, 2)
+shape: (6, 2)
 ┌────────────────┬────────┐
 │ RIO_Volatility ┆ count  │
 │ ---            ┆ ---    │
 │ f64            ┆ u32    │
 ╞════════════════╪════════╡
-│ 1.0            ┆ 55248  │
-│ 2.0            ┆ 62354  │
-│ 3.0            ┆ 95224  │
-│ 4.0            ┆ 117370 │
-│ 5.0            ┆ 127520 │
+│ 1.0            ┆ 57584  │
+│ 2.0            ┆ 67452  │
+│ 3.0            ┆ 101362 │
+│ 4.0            ┆ 122142 │
+│ 5.0            ┆ 121901 │
+│ NaN            ┆ 16948  │
 └────────────────┴────────┘
 saving RIO_Volatility
-Saved 457716 rows to ../pyData/Predictors/RIO_Volatility.csv
+Saved 487389 rows to ../pyData/Predictors/RIO_Volatility.csv
 ✅ RIO_Volatility.csv saved successfully
 🎉 All RIO predictors completed!
 ============================================================
 ✅ Completed: ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
-Execution time: 31.75 seconds
+Execution time: 7.86 seconds
 
 
 🔄 Starting: ZZ1_RIVolSpread.py
@@ -11955,7 +11250,7 @@ Saved 748931 rows to ../pyData/Predictors/RIVolSpread.csv
 ZZ1_RIVolSpread.py completed successfully
 ============================================================
 ✅ Completed: ZZ1_RIVolSpread.py
-Execution time: 4.29 seconds
+Execution time: 4.62 seconds
 
 
 🔄 Starting: ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
@@ -11964,18 +11259,41 @@ Starting ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py...
 Loading data...
 ============================================================
 ✅ Completed: ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
-Execution time: 21.49 seconds
+Execution time: 22.88 seconds
 
 
 🔄 Starting: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
 ============================================================
-  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py", line 118
-    null_policy="drop",  # Pass through the null policy like original
-IndentationError: unexpected indent
+================================================================================
+🏗️  ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+Generating Abnormal Accruals predictor using Xie (2001) methodology
+================================================================================
+📊 Loading a_aCompustat data...
+Loaded a_aCompustat: 302,326 observations
+After merging with SignalMasterTable: 302,326 observations
+🧮 Computing abnormal accruals following Xie (2001)...
+📊 Applying winsorization at 0.1% and 99.9% levels...
+🏭 Running cross-sectional regressions by year and industry (SIC2)...
+After cross-sectional regressions and filtering: 264,668 observations
+📅 Expanding to permno-monthly observations...
+💾 Saving AbnormalAccruals predictor...
+saving AbnormalAccruals
+Saved 2685478 rows to ../pyData/Predictors/AbnormalAccruals.csv
+✅ AbnormalAccruals.csv saved successfully
+💾 Saving AbnormalAccrualsPercent predictor...
+saving AbnormalAccrualsPercent
+Saved 2629101 rows to ../pyData/Placebos/AbnormalAccrualsPercent.csv
+✅ AbnormalAccrualsPercent.csv saved successfully
+Generated AbnormalAccruals values: 3,247,004 observations
+Non-null AbnormalAccruals: 2,685,478 observations
+AbnormalAccruals summary stats:
+  Mean: -0.001561
+  Std: 0.166208
+  Min: -8.278991
+  Max: 2.811868
 ============================================================
-❌ ERROR in ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py: Return code 1
-Error details: Script failed with return code 1
-Execution time: 0.02 seconds
+✅ Completed: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+Execution time: 1.70 seconds
 
 
 🔄 Starting: ZZ2_AnnouncementReturn.py
@@ -11997,7 +11315,7 @@ Saving to pyData/Predictors/AnnouncementReturn.csv...
 AnnouncementReturn calculation completed.
 ============================================================
 ✅ Completed: ZZ2_AnnouncementReturn.py
-Execution time: 76.27 seconds
+Execution time: 78.69 seconds
 
 
 🔄 Starting: ZZ2_BetaFP.py
@@ -12050,7 +11368,7 @@ Generated predictor: BetaFP (Frazzini-Pedersen Beta)
 ================================================================================
 ============================================================
 ✅ Completed: ZZ2_BetaFP.py
-Execution time: 11.29 seconds
+Execution time: 11.68 seconds
 
 
 🔄 Starting: ZZ2_betaVIX.py
@@ -12062,12 +11380,12 @@ Saved 3553481 rows to ../pyData/Predictors/betaVIX.csv
 ZZ2_betaVIX.py completed successfully
 ============================================================
 ✅ Completed: ZZ2_betaVIX.py
-Execution time: 61.05 seconds
+Execution time: 62.82 seconds
 
 
 🔄 Starting: ZZ2_IdioVolAHT.py
 ============================================================
-/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/ZZ2_IdioVolAHT.py:72: DeprecationWarning: the argument `min_periods` for `Expr.rolling_mean` is deprecated. It was renamed to `min_samples` in version 1.21.0.
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/Predictors/ZZ2_IdioVolAHT.py:84: DeprecationWarning: the argument `min_periods` for `Expr.rolling_mean` is deprecated. It was renamed to `min_samples` in version 1.21.0.
   .rolling_mean(window_size=252, min_periods=100)
 Starting ZZ2_IdioVolAHT.py...
 Loading daily CRSP and Fama-French data...
@@ -12082,105 +11400,6 @@ Saved 4670398 rows to ../pyData/Predictors/IdioVolAHT.csv
 ZZ2_IdioVolAHT.py completed successfully
 ============================================================
 ✅ Completed: ZZ2_IdioVolAHT.py
-Execution time: 140.44 seconds
+Execution time: 143.87 seconds
 
-
-🔄 Starting: ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py
-============================================================
-================================================================================
-🏗️  ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py
-Generating price delay predictors using daily data regressions
-================================================================================
-📊 Preparing daily Fama-French data with lags...
-Daily FF data with 4 lags: 26,003 observations
-📊 Loading daily CRSP data...
-Daily CRSP data: 107,662,961 observations
-After merging and adjusting returns: 107,583,998 observations
-
-📊 FULL DATASET MODE: Processing all permnos
-📅 Setting up time variables for June regressions...
-🏃 Running regressions by group...
-  Filtering groups with minimum 26 observations and data quality checks...
-Groups before quality filtering: 461,455
-Groups after quality filtering: 448,811
-  Filtered out 12,644 groups with data quality issues
-🚀 Processing all valid groups
-After filtering for minimum observations and data quality: 106,071,675 observations
-  Running regressions (one per group)...
-  Running restricted regressions on 448,811 groups...
-  Running unrestricted regressions on 448,811 groups...
-📊 Extracting coefficients and R-squared values...
-📅 Filtering for valid results and June endpoints...
-Monthly data after filtering: 415,512 observations
-🎯 Constructing price delay signals...
-📊 Applying winsorization and time adjustment...
-📅 Forward-filling to monthly frequency...
-  Calculated values: 415,512 observations
-  Creating complete time series per permno (like Stata's tsfill)...
-  Processing 37576 permnos...
-    Processing batch 1/376...
-    Processing batch 11/376...
-    Processing batch 21/376...
-    Processing batch 31/376...
-    Processing batch 41/376...
-    Processing batch 51/376...
-    Processing batch 61/376...
-    Processing batch 71/376...
-    Processing batch 81/376...
-    Processing batch 91/376...
-    Processing batch 101/376...
-    Processing batch 111/376...
-    Processing batch 121/376...
-    Processing batch 131/376...
-    Processing batch 141/376...
-    Processing batch 151/376...
-    Processing batch 161/376...
-    Processing batch 171/376...
-    Processing batch 181/376...
-    Processing batch 191/376...
-    Processing batch 201/376...
-    Processing batch 211/376...
-    Processing batch 221/376...
-    Processing batch 231/376...
-    Processing batch 241/376...
-    Processing batch 251/376...
-    Processing batch 261/376...
-    Processing batch 271/376...
-    Processing batch 281/376...
-    Processing batch 291/376...
-    Processing batch 301/376...
-    Processing batch 311/376...
-    Processing batch 321/376...
-    Processing batch 331/376...
-    Processing batch 341/376...
-    Processing batch 351/376...
-    Processing batch 361/376...
-    Processing batch 371/376...
-  Complete grid after tsfill: 4,636,840 observations
-  Forward-filling missing values within each permno...
-  After forward-filling: 4,636,840 observations
-💾 Saving price delay predictors...
-Generated PriceDelaySlope: 4,636,840 observations
-  Mean: -0.172447
-  Std: 251.199930
-saving PriceDelaySlope
-Saved 4636840 rows to ../pyData/Predictors/PriceDelaySlope.csv
-✅ PriceDelaySlope.csv saved successfully
-Generated PriceDelayRsq: 4,636,840 observations
-  Mean: 0.364095
-  Std: 0.327532
-saving PriceDelayRsq
-Saved 4636840 rows to ../pyData/Predictors/PriceDelayRsq.csv
-✅ PriceDelayRsq.csv saved successfully
-Generated PriceDelayTstat: 4,636,840 observations
-  Mean: 0.633005
-  Std: 191.998269
-saving PriceDelayTstat
-Saved 4636840 rows to ../pyData/Predictors/PriceDelayTstat.csv
-✅ PriceDelayTstat.csv saved successfully
-🎉 All price delay predictors completed!
-============================================================
-✅ Completed: ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py
-Execution time: 211.00 seconds
-
-Log completed at 2025-08-29 22:27:37
+Log completed at 2025-08-31 00:13:29

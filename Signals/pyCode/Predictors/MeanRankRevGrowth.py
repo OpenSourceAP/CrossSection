@@ -1,9 +1,16 @@
-# ABOUTME: Translates MeanRankRevGrowth.do to create mean rank revenue growth predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MeanRankRevGrowth.py
+# ABOUTME: Revenue Growth Rank following Lakonishok, Shleifer, Vishny 1994, Table 6 panel 2
+# ABOUTME: calculates weighted average of revenue growth ranks over past 5 years
+"""
+Usage:
+    python3 Predictors/MeanRankRevGrowth.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/MeanRankRevGrowth.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, revt]
+
+Outputs:
+    - MeanRankRevGrowth.csv: CSV file with columns [permno, yyyymm, MeanRankRevGrowth]
+    - MeanRankRevGrowth = weighted average of ranks: (5*Rank_t-1 + 4*Rank_t-2 + 3*Rank_t-3 + 2*Rank_t-4 + 1*Rank_t-5)/15
+"""
 
 import pandas as pd
 import numpy as np

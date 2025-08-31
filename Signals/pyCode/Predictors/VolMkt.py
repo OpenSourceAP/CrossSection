@@ -1,5 +1,16 @@
-# ABOUTME: Volume to market equity ratio using 12-month rolling mean of dollar volume
-# ABOUTME: Usage: python3 VolMkt.py (run from pyCode/ directory)
+# ABOUTME: Volume to market equity following Haugen and Baker 1996, Table 1, trading volume / market cap
+# ABOUTME: calculates 12-month average dollar volume scaled by market value of equity
+"""
+Usage:
+    python3 Predictors/VolMkt.py
+
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol, prc, shrout]
+
+Outputs:
+    - VolMkt.csv: CSV file with columns [permno, yyyymm, VolMkt]
+    - VolMkt = 12-month rolling mean of dollar volume / market value of equity
+"""
 
 import polars as pl
 import sys

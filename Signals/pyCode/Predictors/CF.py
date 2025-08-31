@@ -1,5 +1,5 @@
-# ABOUTME: CF predictor - calculates cash flow to market value ratio  
-# ABOUTME: Run: python3 pyCode/Predictors/CF.py
+# ABOUTME: Cash flow to market following Lakonishok, Shleifer, Vishny 1994, Table 6 panel 1
+# ABOUTME: calculates cash flow to market value ratio (net income + depreciation) / market equity
 
 """
 CF.py

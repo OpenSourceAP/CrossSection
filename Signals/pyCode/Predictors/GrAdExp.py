@@ -1,4 +1,4 @@
-# ABOUTME: Calculates GrAdExp (Growth in advertising expenses) predictor
+# ABOUTME: Growth in advertising expenses following Lou 2014 RFS, Table 2A Year 1 Excess
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/GrAdExp.py
 
 """

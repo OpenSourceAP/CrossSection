@@ -1,5 +1,17 @@
-# ABOUTME: Frazzini-Pedersen beta using rolling correlations and volatility ratios
-# ABOUTME: Usage: python3 Predictors/ZZ2_BetaFP.py (run from pyCode/ directory)
+# ABOUTME: Frazzini-Pedersen Beta following Frazzini and Pedersen 2014, Table 3 BAB
+# ABOUTME: calculates beta using R-squared from 3-day overlapping returns regressed on market, times ratio of stock to market volatility
+"""
+Usage:
+    python3 Predictors/ZZ2_BetaFP.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP returns with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, rf, mktrf]
+
+Outputs:
+    - BetaFP.csv: CSV file with columns [permno, yyyymm, BetaFP]
+    - BetaFP = sqrt(R²) × (σ_stock/σ_market) where R² from 3-day overlapping returns regression
+"""
 
 import polars as pl
 import sys

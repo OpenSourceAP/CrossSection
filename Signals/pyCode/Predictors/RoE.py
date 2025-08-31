@@ -1,19 +1,15 @@
-# ABOUTME: RoE.py - calculates return on equity predictor
-# ABOUTME: Return on equity as net income (ni) divided by common equity (ceq)
-
+# ABOUTME: Return on Equity following Haugen and Baker 1996, Table 1, return on equity
+# ABOUTME: calculates net income (ni) divided by book value of equity (ceq)
 """
-RoE predictor calculation
-
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
     python3 Predictors/RoE.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, ni, ceq)
+    - ../pyData/Intermediate/m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ni, ceq]
 
 Outputs:
-    - ../pyData/Predictors/RoE.csv (permno, yyyymm, RoE)
+    - RoE.csv: CSV file with columns [permno, yyyymm, RoE]
+    - RoE = ni/ceq, following Haugen and Baker 1996 definition
 """
 
 import pandas as pd

@@ -1,5 +1,5 @@
-# ABOUTME: Translates Spinoff.do to create spinoff indicator predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Spinoff.py
+# ABOUTME: Spinoff following Cusatis, Miles and Woolridge 1993, Table 3B I-24
+# ABOUTME: Creates spinoff indicator predictor for firms identified in CRSP acquisition data
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_CRSPAcquisitions.parquet

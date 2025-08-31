@@ -1,9 +1,17 @@
-# ABOUTME: Creates assets-to-market ratio predictor from book value of assets and market equity
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/AM.py
+# ABOUTME: Assets-to-market ratio following Fama and French 1992, Table 3 Ln(A/ME)
+# ABOUTME: calculates total assets divided by market value of equity
+"""
+Usage:
+    python3 Predictors/AM.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/AM.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
+
+Outputs:
+    - AM.csv: CSV file with columns [permno, yyyymm, AM]
+    - AM = at/mve_c (total assets divided by market value of equity)
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,5 +1,5 @@
-# ABOUTME: Accruals.py - calculates Accruals predictor using Sloan 1996 formula
-# ABOUTME: Implements Sloan 1996 working capital accruals predictor
+# ABOUTME: Accruals following Sloan 1996, Table 6, year t+1
+# ABOUTME: calculates working capital accruals predictor scaled by average total assets
 
 """
 Accruals.py

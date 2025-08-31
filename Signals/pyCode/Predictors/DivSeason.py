@@ -1,7 +1,7 @@
 #%%
 
-# ABOUTME: Creates seasonal dividend yield predictor based on expected dividend timing patterns
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DivSeason.py
+# ABOUTME: Dividend seasonality following Hartzmark and Salomon 2013, Table 2B
+# ABOUTME: Creates seasonal dividend predictor based on expected dividend timing patterns
 
 # Run from pyCode/ directory
 # Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet

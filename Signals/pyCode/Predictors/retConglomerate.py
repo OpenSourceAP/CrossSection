@@ -1,5 +1,5 @@
-# ABOUTME: retConglomerate predictor - calculates conglomerate returns based on segment-weighted industry returns
-# ABOUTME: Run: python3 pyCode/Predictors/retConglomerate.py
+# ABOUTME: Conglomerate return following Cohen and Lou 2012, Table 2B
+# ABOUTME: calculates conglomerate returns based on segment-weighted industry returns
 
 """
 retConglomerate Predictor - Conglomerate Return Calculation

@@ -1,5 +1,5 @@
-# ABOUTME: ChInv.py - calculates change in inventory predictor
-# ABOUTME: Line-by-line translation of ChInv.do following CLAUDE.md translation philosophy
+# ABOUTME: Inventory Growth following Thomas and Zhang 2002, Table 1, Delta Invent
+# ABOUTME: calculates 12 month change in inventory scaled by average total assets
 
 """
 ChInv.py

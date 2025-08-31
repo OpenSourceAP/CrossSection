@@ -1,5 +1,5 @@
-# ABOUTME: ZZ1_RIVolSpread.py - Generates RIVolSpread predictor (Realized minus Implied Volatility)
-# ABOUTME: Measures difference between realized and implied volatility (Bali-Hovakimian 2009)
+# ABOUTME: Realized minus Implied Volatility spread following Bali and Hovakimian 2009, Table 3 Panel A
+# ABOUTME: Calculates difference between realized volatility (past 30 days) and ATM implied volatility
 
 """
 Usage:

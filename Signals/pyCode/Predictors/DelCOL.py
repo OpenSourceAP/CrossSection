@@ -1,4 +1,4 @@
-# ABOUTME: DelCOL.py - calculates DelCOL predictor (Change in current operating liabilities)
+# ABOUTME: Change in current operating liabilities following Richardson et al. 2005, Table 8C
 # ABOUTME: Calculates year-over-year change in current operating liabilities scaled by average assets
 
 """

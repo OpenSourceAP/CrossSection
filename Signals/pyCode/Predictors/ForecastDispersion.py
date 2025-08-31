@@ -1,5 +1,5 @@
-# ABOUTME: Calculates ForecastDispersion predictor using IBES analyst forecast dispersion  
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/ForecastDispersion.py
+# ABOUTME: EPS Forecast Dispersion following Diether, Malloy and Scherbina 2002, Table 2
+# ABOUTME: calculates forecast dispersion as standard deviation of earnings estimates scaled by mean earnings estimate
 
 """
 ForecastDispersion.py

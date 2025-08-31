@@ -1,5 +1,5 @@
-# ABOUTME: Creates InvestPPEInv predictor measuring investment in property, plant, equipment and inventory scaled by assets
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/InvestPPEInv.py
+# ABOUTME: Investment in property, plant, equipment and inventory following Lyandres, Sun and Zhang 2008, text p 2837
+# ABOUTME: calculates one-year change in PPE plus one-year change in inventory scaled by lagged assets
 
 """
 InvestPPEInv.py

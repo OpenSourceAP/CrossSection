@@ -1,5 +1,5 @@
-# ABOUTME: Translates IndIPO.do to create industry IPO activity predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/IndIPO.py
+# ABOUTME: Initial Public Offerings following Ritter 1991, Table 2, month 12
+# ABOUTME: calculates IPO indicator for stocks 3-36 months after IPO, with non-IPO stocks = 0
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, IPODates.parquet

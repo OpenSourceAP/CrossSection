@@ -1,20 +1,16 @@
-# ABOUTME: ChNWC predictor - calculates change in net working capital
-# ABOUTME: Run: python3 pyCode/Predictors/ChNWC.py
+# ABOUTME: Change in Net Working Capital following Soliman 2008, Table 7 Model 2 DeltaWC
+# ABOUTME: calculates twelve-month change in net working capital scaled by total assets
 
 """
-ChNWC Predictor
-
-Change in net working capital calculation.
+Usage:
+    python3 Predictors/ChNWC.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, act, che, lct, dlc, at)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, act, che, lct, dlc, at]
 
 Outputs:
-- ChNWC.csv (permno, yyyymm, ChNWC)
-
-This predictor calculates:
-1. Net working capital ratio = ((act - che) - (lct - dlc))/at
-2. Change in NWC = current ratio - 12-month lag ratio
+    - ChNWC.csv: CSV file with columns [permno, yyyymm, ChNWC]
+    - ChNWC = twelve-month change in ((act - che) - (lct - dlc))/at
 """
 
 import pandas as pd

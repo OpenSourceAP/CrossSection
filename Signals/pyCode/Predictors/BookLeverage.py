@@ -1,5 +1,5 @@
-# ABOUTME: BookLeverage.py - calculates BookLeverage predictor using book leverage ratio
-# ABOUTME: Computes book leverage as total assets divided by book equity (with deferred taxes adjusted)
+# ABOUTME: Book leverage following Fama and French 1992, Table 3 Ln(A/BE)
+# ABOUTME: calculates book leverage as total assets divided by book value of equity plus deferred taxes
 
 """
 BookLeverage.py

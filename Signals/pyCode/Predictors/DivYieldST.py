@@ -1,13 +1,19 @@
-# ABOUTME: Translates DivYieldST.do to create predicted dividend yield predictor  
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DivYieldST.py
+# ABOUTME: Predicted dividend yield following Litzenberger and Ramaswamy 1979, Table 1
+# ABOUTME: calculates predicted dividend yield based on frequency-specific lag structure
+"""
+Usage:
+    python3 Predictors/DivYieldST.py
 
-# OP is mostly theory, really old, and pretty vague about what it does.
-# So we combine their guidelines with our knowledge of the data
-# to get results similar to their regression.
+Inputs:
+    - CRSPdistributions.parquet: CRSP distributions with columns [permno, cd1, cd2, cd3, divamt, exdt]
+    - SignalMasterTable.parquet: Monthly master table with [permno, time_avail_m, prc]
+    - monthlyCRSP.parquet: Monthly CRSP data with [permno, time_avail_m, ret, retx]
 
-# Run from pyCode/ directory
-# Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet, monthlyCRSP.parquet
-# Output: ../pyData/Predictors/DivYieldST.csv
+Outputs:
+    - DivYieldST.csv: CSV file with columns [permno, yyyymm, DivYieldST]
+    - DivYieldST = discretized predicted dividend yield (0-3) based on Ediv1/abs(prc)
+    - Only includes firms that paid dividends in past 12 months
+"""
 
 import pandas as pd
 import numpy as np

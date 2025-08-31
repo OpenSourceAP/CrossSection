@@ -1,5 +1,5 @@
-# ABOUTME: DivInit.py - calculates dividend initiation predictor for companies starting to pay dividends
-# ABOUTME: Identifies firms that paid dividends in current month after 24 months of no dividends
+# ABOUTME: Dividend initiation following Michaely, Thaler and Womack 1995, Table 3 init
+# ABOUTME: Identifies firms that paid dividends after 24 months of no dividends, held for 6 months
 
 """
 DivInit predictor calculation

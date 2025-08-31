@@ -1,5 +1,5 @@
-# ABOUTME: Leverage.py - calculates market leverage ratio predictor
-# ABOUTME: Market leverage as total liabilities (lt) divided by market value of equity (mve_c)
+# ABOUTME: Market leverage following Bhandari 1988, Table 1 DER
+# ABOUTME: calculates market leverage as total liabilities divided by market value of equity
 
 """
 Leverage predictor calculation

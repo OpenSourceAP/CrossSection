@@ -1,19 +1,16 @@
-# ABOUTME: ChEQ predictor - calculates sustainable growth (change in equity)
-# ABOUTME: Run: python3 pyCode/Predictors/ChEQ.py
+# ABOUTME: Growth in book equity following Lockwood and Prombutr 2010, Table 4A SUSG
+# ABOUTME: calculates ratio of book equity to book equity in the previous year
 
 """
-ChEQ Predictor
-
-Sustainable growth calculation: ceq/l12.ceq (current equity / 12-month lagged equity)
+Usage:
+    python3 Predictors/ChEQ.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, ceq)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ceq]
 
 Outputs:
-- ChEQ.csv (permno, yyyymm, ChEQ)
-
-This predictor calculates sustainable growth as the ratio of current equity 
-to equity from 12 months ago, but only for positive values.
+    - ChEQ.csv: CSV file with columns [permno, yyyymm, ChEQ]
+    - ChEQ = ceq/l12.ceq, included only if book equity is positive this year and last year
 """
 
 import pandas as pd

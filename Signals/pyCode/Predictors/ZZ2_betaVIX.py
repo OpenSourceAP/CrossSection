@@ -1,5 +1,18 @@
-# ABOUTME: Systematic volatility predictor using rolling regression of returns on market and VIX changes
-# ABOUTME: Usage: python3 Predictors/ZZ2_betaVIX.py (run from pyCode/ directory)
+# ABOUTME: Systematic volatility following Ang, Hodrick, Xing, and Zhang 2006, Table 1A
+# ABOUTME: calculates betaVIX coefficient from rolling regression of stock returns on market and VIX changes
+"""
+Usage:
+    python3 Predictors/ZZ2_betaVIX.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, rf, mktrf]
+    - d_vix.parquet: Daily VIX changes with columns [time_d, dVIX]
+
+Outputs:
+    - betaVIX.csv: CSV file with columns [permno, yyyymm, betaVIX]
+    - betaVIX = coefficient on daily change in VIX from 1-month rolling regression (20-day window, min 15 obs)
+"""
 
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace

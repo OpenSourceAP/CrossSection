@@ -1,9 +1,18 @@
-# ABOUTME: Calculates payout yield predictor
-# ABOUTME: Run with: python3 Predictors/PayoutYield.py
+# ABOUTME: Payout Yield following Boudoukh et al. 2007, Table 6B
+# ABOUTME: calculates payout yield predictor scaled by market value of equity
+"""
+Usage:
+    python3 Predictors/PayoutYield.py
 
-# Calculates payout yield using Compustat and market value data
-# Input: ../pyData/Intermediate/m_aCompustat.parquet, ../pyData/Intermediate/SignalMasterTable.parquet
-# Output: ../pyData/Predictors/PayoutYield.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, dvc, prstkc, pstkrv, sstk, sic, ceq, datadate]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
+
+Outputs:
+    - PayoutYield.csv: CSV file with columns [permno, yyyymm, PayoutYield]
+    - PayoutYield = (dvc + prstkc + max(pstkrv, 0))/mve_c, lagged 6 months
+    - Excludes financial firms (SIC 6000-6999), ceq <= 0, PayoutYield <= 0, or < 2 years in CRSP
+"""
 
 import pandas as pd
 import numpy as np

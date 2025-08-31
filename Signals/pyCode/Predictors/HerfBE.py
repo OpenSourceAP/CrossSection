@@ -1,9 +1,17 @@
-# ABOUTME: Translates HerfBE.do to create book equity-based industry concentration predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/HerfBE.py
+# ABOUTME: Industry concentration (equity) following Hou and Robinson 2006, Table 2, H(Equity)
+# ABOUTME: calculates three-year rolling average of Herfindahl index based on firm book equity
+"""
+Usage:
+    python3 Predictors/HerfBE.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/HerfBE.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, txditc, pstk, pstkrv, pstkl, seq, ceq, at, lt]
+    - SignalMasterTable.parquet: Monthly master table with sicCRSP, shrcd
+
+Outputs:
+    - HerfBE.csv: CSV file with columns [permno, yyyymm, HerfBE]
+    - HerfBE = 3-year rolling average of industry Herfindahl index based on book equity, excludes regulated industries
+"""
 
 import pandas as pd
 import numpy as np

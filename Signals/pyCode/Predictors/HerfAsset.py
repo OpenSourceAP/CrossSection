@@ -1,9 +1,18 @@
-# ABOUTME: Translates HerfAsset.do to create asset-based industry concentration predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/HerfAsset.py
+# ABOUTME: Industry concentration (assets) following Hou and Robinson 2006, Table 2 H(Assets)
+# ABOUTME: calculates three-year rolling average of three-digit industry Herfindahl index based on firm assets
+"""
+Usage:
+    python3 Predictors/HerfAsset.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/HerfAsset.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at]
+    - SignalMasterTable.parquet: Monthly master table with sicCRSP, shrcd
+
+Outputs:
+    - HerfAsset.csv: CSV file with columns [permno, yyyymm, HerfAsset]
+    - HerfAsset = Three-year rolling average of industry Herfindahl index based on assets
+    - Excludes regulated industries per Barclay and Smith 1995 definition
+"""
 
 import pandas as pd
 import numpy as np

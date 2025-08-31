@@ -1,4 +1,23 @@
-# ABOUTME: Calculates cash-flow to price variance following HauGenerate pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
+# ABOUTME: Cash-flow to price variance following Haugen and Baker 1996, Table 1 variability in cf to price
+# ABOUTME: Rolling variance of (ib+dp)/mve_c over the past 60 months (minimum 24 months data required)
+"""
+Usage:
+    python3 Predictors/VarCF.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ib, dp]
+
+Outputs:
+    - VarCF.csv: CSV file with columns [permno, yyyymm, VarCF]
+    - VarCF = Rolling variance of (ib+dp)/mve_c over past 60 months with minimum 24 months required
+"""
+
+import pandas as pd
+from asrol import asrol
+
+# Read SignalMasterTable 
+smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = smt[['permno', 'time_avail_m', 'mve_c']].copy()
 
 # Merge with m_aCompustat data (left join to keep all SignalMasterTable observations)

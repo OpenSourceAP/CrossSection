@@ -1,5 +1,5 @@
-# ABOUTME: CPVolSpread.py - calculates CPVolSpread predictor using option implied volatility spread
-# ABOUTME: Computes call-put volatility spread from OptionMetrics data
+# ABOUTME: Call minus Put Vol following Bali and Hovakimian 2009, Table 3 Panel B
+# ABOUTME: Calculates ATM call vol minus ATM put vol spread from OptionMetrics data
 
 """
 CPVolSpread.py
