@@ -1,11 +1,4 @@
 #%%
-# debug
-
-import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir('..')
-#%%
-
 # ABOUTME: RIO predictors combining institutional ownership with various characteristics
 # ABOUTME: Usage: python3 ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py (run from pyCode/ directory)
 
@@ -19,6 +12,7 @@ from utils.stata_fastxtile import fastxtile, fastxtile_pd
 from utils.asrol import asrol
 from utils.stata_replication import stata_multi_lag
 import numpy as np
+from utils.stata_replication import stata_multi_lag, stata_quantile
 
 print("=" * 80)
 print("🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py")
@@ -108,9 +102,6 @@ df = df.with_columns(
     RIO = np.log(pl.col("instown") / (1 - pl.col("instown"))) + 23.66 - 2.89 * pl.col("log_me") + 0.08 * (pl.col("log_me")).pow(2)
 )
 
-#%%
-from utils.stata_replication import stata_multi_lag, stata_quantile
-
 # form RIO quintiles, based on lagged RIO
 df = stata_multi_lag(df, "permno", "time_avail_m", "RIO", [6], freq="M", prefix="l")
 df = df.with_columns(
@@ -136,83 +127,31 @@ df = df.with_columns(
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 12, 'ret', 'std',
     new_col_name='Volatility', min_samples=6)
 
-
-#%%
-
-
-print("📊 Computing characteristic variables...")
-
-# Forecast dispersion, market-to-book, turnover, volatiltity sorts
-# replace txditc = 0 if mi(txditc)
-df = df.with_columns(
-    pl.when(pl.col("txditc").is_null()).then(0.0).otherwise(pl.col("txditc")).alias("txditc")
-)
-
-# gen MB = mve_c/(ceq + txditc)
-# replace MB = . if (ceq + txditc) < 0
-df = df.with_columns(
-    pl.when((pl.col("ceq") + pl.col("txditc")) < 0)
-    .then(None)
-    .otherwise(pl.col("mve_c") / (pl.col("ceq") + pl.col("txditc")))
-    .alias("MB")
-)
-
-# gen Disp = stdev/at if stdev > 0
-df = df.with_columns(
-    pl.when(pl.col("stdev") > 0)
-    .then(pl.col("stdev") / pl.col("at"))
-    .otherwise(None)
-    .alias("Disp")
-)
-
-# gen Turnover = vol/shrout
-df = df.with_columns(
-    (pl.col("vol") / pl.col("shrout")).alias("Turnover")
-)
-
-# bys permno: asrol ret, gen(Volatility) stat(sd) window(time_avail_m 12) min(6)
-# Use asrol_legacy for rolling standard deviation
-df_pandas_vol = df.to_pandas()
-
-df_pandas_vol = asrol(
-    df_pandas_vol,
-    group_col='permno',
-    time_col='time_avail_m',
-    freq='1mo',
-    window=12,
-    value_col='ret',
-    stat='std',
-    new_col_name='Volatility',
-    min_samples=6
-)
-
-df = pl.from_pandas(df_pandas_vol)
-
+# patch to imitate stata, which does not fill gaps as much as stata_multi_lag and asrol
+df = df.filter(pl.col('mve_c').is_not_null())    
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 
 # Create characteristic quintiles and RIO interactions
 variables = ["MB", "Disp", "Volatility", "Turnover"]
 
-# Convert to pandas for fastxtile operations
-df_pandas = df.to_pandas()
-
 for var in variables:
-    # egen cat_`v' = fastxtile(`v'), n(5) by(time_avail_m)
-    df_pandas[f'cat_{var}'] = fastxtile(df_pandas, var, by='time_avail_m', n=5)
+    # eGenerate fastxtile(`v'), n(5) by(time_avail_m)
+    df = df.with_columns(
+        fastxtile(df, var, by='time_avail_m', n=5).alias(f'cat_{var}')
+    )
     
-    # gen RIO_`v' = cat_RIO if cat_`v' == 5
-    df_pandas[f'RIO_{var}'] = df_pandas['cat_RIO'].where(df_pandas[f'cat_{var}'] == 5)
-
-# Convert back to polars
-df = pl.from_pandas(df_pandas)
-
+    # Generate cat_RIO if cat_`v' == 5
+    df = df.with_columns(
+        pl.when(pl.col(f'cat_{var}') == 5).then(pl.col('cat_RIO')).otherwise(None).alias(f'RIO_{var}')
+    )
 
 # patch for Dispersion
-# replace RIO_Disp = cat_RIO if cat_Disp >= 4 & cat_Disp != .
+# Update cat_RIO if cat_Disp > to 4 & cat_Disp != .
 df = df.with_columns(
-    pl.when((pl.col("cat_Disp") >= 4) & (pl.col("cat_Disp").is_not_null()))
-    .then(pl.col("cat_RIO"))
+    pl.when(
+        (pl.col("cat_Disp") >= 4) & (pl.col("cat_Disp").is_not_null()) & (pl.col("cat_Disp").is_not_nan())
+    ).then(pl.col("cat_RIO"))
     .otherwise(pl.col("RIO_Disp"))
     .alias("RIO_Disp")
 )
