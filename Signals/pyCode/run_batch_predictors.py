@@ -19,7 +19,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 """
 
-PREDICTOR_SCRIPTS = "ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility"
+PREDICTOR_SCRIPTS = "ZZ2_IdioVolAHT"
 
 def load_predictor_mapping():
     """Load predictor mapping from YAML file and return the mapping dict"""

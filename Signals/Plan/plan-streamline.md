@@ -18,4 +18,3 @@ Some files are excessively long and complicated.
     - mark with ✅ if the script is simplified and the test results are at least as good as the original
 
 ## Progress Tracking
-- ChNAnalyst.py 
