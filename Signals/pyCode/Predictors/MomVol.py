@@ -6,7 +6,6 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile
 from utils.asrol import asrol
 from utils.stata_replication import stata_multi_lag
 
@@ -23,9 +22,6 @@ df = df.join(
     on=["permno", "time_avail_m"],
     how="inner"
 )
-
-# Sort by permno and time_avail_m (critical for proper lag operations)
-df = df.sort(["permno", "time_avail_m"])
 
 # Signal construction
 df = df.with_columns([
@@ -77,12 +73,17 @@ df_pd = asrol(
 # time_avail_m is already a column, no need to reset index
 
 # Create momentum deciles within each time_avail_m (like fastxtile)
-df_pd['catMom'] = fastxtile(df_pd, 'Mom6m', by='time_avail_m', n=10)
+df_pd['catMom'] = (
+    df_pd.groupby('time_avail_m')['Mom6m']
+    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+)
 
 
 # Volume terciles within each time_avail_m
-df_pd['catVol'] = fastxtile(df_pd, 'temp', by='time_avail_m', n=3)
-
+df_pd['catVol'] = (
+    df_pd.groupby('time_avail_m')['temp']
+    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+)
 
 # Convert back to polars (we're already in pandas from lag calculation)
 df = pl.from_pandas(df_pd)
@@ -94,7 +95,6 @@ df = df.with_columns([
     .otherwise(None)
     .alias("MomVol")
 ])
-
 
 # Filter: set to missing if observation number < 24 (like Stata _n < 24)
 # Add observation number within each permno group
@@ -109,12 +109,5 @@ df = df.with_columns([
     .alias("MomVol")
 ])
 
-
-# Drop temporary columns (including new lag columns)
-df = df.drop(["ret_lag1", "ret_lag2", "ret_lag3", "ret_lag4", "ret_lag5", "obs_num", "temp", "catMom", "catVol"])
-
-# Select final data
-result = df.select(["permno", "time_avail_m", "MomVol"])
-
 # Save predictor
-save_predictor(result, "MomVol")
+save_predictor(df, "MomVol")

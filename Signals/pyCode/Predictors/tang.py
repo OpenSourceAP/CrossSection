@@ -9,8 +9,6 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_fastxtile import fastxtile
-
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet", 
                      columns=['permno', 'time_avail_m', 'che', 'rect', 'invt', 'ppegt', 'at', 'sic'])
@@ -26,7 +24,10 @@ df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 df = df[(df['sic'] >= 2000) & (df['sic'] <= 3999)]
 
 # Create size deciles for financial constraint measure
-df['tempFC'] = fastxtile(df, 'at', by='time_avail_m', n=10)
+df['tempFC'] = (
+    df.groupby('time_avail_m')['at']
+    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+)
 
 # Define financially constrained firms (lower three deciles)
 df['FC'] = np.where(df['tempFC'] <= 3, 1, np.nan)

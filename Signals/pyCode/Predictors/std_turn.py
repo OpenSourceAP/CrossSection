@@ -13,11 +13,11 @@ Outputs:
 """
 
 import polars as pl
+import pandas as pd
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile
 
 print("Starting std_turn.py...")
 
@@ -45,10 +45,12 @@ df = df.with_columns(
     .alias("std_turn")
 )
 
-# Size quintiles by time_avail_m using fastxtile helper
-# Convert to pandas for fastxtile, then back to polars
+# Size quintiles by time_avail_m using groupby+qcut pattern
 df_pandas = df.to_pandas()
-df_pandas['tempqsize'] = fastxtile(df_pandas, 'mve_c', by='time_avail_m', n=5)
+df_pandas['tempqsize'] = (
+    df_pandas.groupby('time_avail_m')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 df = pl.from_pandas(df_pandas)
 
 # Set to null for size quintiles 4 and 5 (tiny spread per OP Tab3B)

@@ -9,7 +9,6 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.save_standardized import save_predictor
 
@@ -47,7 +46,10 @@ df['RDcap'] = (df['tempXRD'] +
 df.loc[df['time_avail_m'].dt.year < 1980, 'RDcap'] = np.nan
 
 # Create size tertiles - RDcap only works in small firms
-df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)
+df['tempsizeq'] = (
+    df.groupby('time_avail_m')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+)
 df.loc[df['tempsizeq'] >= 2, 'RDcap'] = np.nan
 df.loc[df['tempsizeq'].isna(), 'RDcap'] = np.nan
 

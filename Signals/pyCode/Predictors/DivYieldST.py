@@ -20,7 +20,6 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_fastxtile import fastxtile
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
@@ -97,7 +96,10 @@ df['Edy1'] = df['Ediv1'] / abs(df['prc'])
 df['Edy1pos'] = df['Edy1'].where(df['Edy1'] > 0)
 
 # Rank positive dividend yields into terciles by month
-df['DivYieldST'] = fastxtile(df, 'Edy1pos', by='time_avail_m', n=3)
+df['DivYieldST'] = (
+    df.groupby('time_avail_m')['Edy1pos']
+    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+)
 
 # Assign zero yield to bottom tercile
 df.loc[df['Edy1'] == 0, 'DivYieldST'] = 0

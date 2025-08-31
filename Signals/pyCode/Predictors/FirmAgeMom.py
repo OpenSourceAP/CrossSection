@@ -10,7 +10,6 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
@@ -44,7 +43,10 @@ df['FirmAgeMom'] = ((1 + df['l1_ret']) *
                     (1 + df['l5_ret'])) - 1
 
 # Identify bottom quintile (youngest 20%) of firms by age each month
-df['age_quintile'] = fastxtile(df, 'age', by='time_avail_m', n=5)
+df['age_quintile'] = (
+    df.groupby('time_avail_m')['age']
+    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 
 # Restrict signal to youngest quintile only - set others to missing
 df.loc[

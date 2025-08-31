@@ -15,7 +15,11 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 # CONFIGURATION: Scripts to run (modify this list as needed)
 # =============================================================================
 
-PREDICTOR_SCRIPTS = "MomRev Mom12m Mom6m IndMom LRreversal"
+"""
+
+"""
+
+PREDICTOR_SCRIPTS = "ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility"
 
 def load_predictor_mapping():
     """Load predictor mapping from YAML file and return the mapping dict"""

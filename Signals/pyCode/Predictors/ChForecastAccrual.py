@@ -24,7 +24,6 @@ from pathlib import Path
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_fastxtile import fastxtile
 
 # Load and prepare IBES earnings forecast data
 ibes_df = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
@@ -79,7 +78,10 @@ df.loc[denominator == 0, 'tempAccruals'] = np.nan
 df.loc[np.isinf(df['tempAccruals']), 'tempAccruals'] = np.nan
 
 # Create binary accruals ranking (median split by month)
-df['tempsort'] = fastxtile(df, 'tempAccruals', by='time_avail_m', n=2)
+df['tempsort'] = (
+    df.groupby('time_avail_m')['tempAccruals']
+    .transform(lambda x: pd.qcut(x, q=2, labels=False, duplicates='drop') + 1)
+)
 
 # Create forecast change indicator by comparing current earnings estimate to previous month
 df['meanest_l'] = df.groupby('permno')['meanest'].shift(1)

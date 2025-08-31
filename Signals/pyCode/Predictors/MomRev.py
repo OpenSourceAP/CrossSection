@@ -9,7 +9,6 @@ import numpy as np
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_predictor
 

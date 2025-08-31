@@ -29,7 +29,6 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.stata_fastxtile import fastxtile
 from utils.save_standardized import save_predictor
 from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
@@ -161,7 +160,10 @@ df = (
         BM = lambda x: np.log(x['ceq'] / x['mve_c'])
     )
 )
-df['BM_quintile'] = fastxtile(df, 'BM', by='time_avail_m', n=5)
+df['BM_quintile'] = (
+    df.groupby('time_avail_m')['BM']
+    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 df.loc[(df['BM_quintile'] != 5), 'PS'] = np.nan
 
 print(f"Calculated PS for {df['PS'].notna().sum()} observations")

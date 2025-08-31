@@ -9,7 +9,6 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -63,7 +62,10 @@ df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 df.loc[((df['sic'] > 3999) & (df['sic'] < 5000)) | (df['sic'] > 5999), 'OScore'] = np.nan
 
 # Create deciles and form long-short following Table 5
-df['tempsort'] = fastxtile(df, 'OScore', by='time_avail_m', n=10)
+df['tempsort'] = (
+    df.groupby('time_avail_m')['OScore']
+    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+)
 
 # Reset OScore and create binary signal
 df['OScore'] = np.nan

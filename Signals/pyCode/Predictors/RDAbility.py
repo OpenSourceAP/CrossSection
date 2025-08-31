@@ -9,7 +9,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile
 from typing import Optional, Union
 
 #%% specialized asrol function
@@ -369,9 +368,12 @@ df = df.with_columns(
 )
 
 # Create R&D intensity terciles within each time period
-# Convert to pandas for fastxtile
+# Convert to pandas for qcut groupby
 df_pandas = df.to_pandas()
-df_pandas['tempRDQuant'] = fastxtile(df_pandas, 'tempRD', by='time_avail_m', n=3)
+df_pandas['tempRDQuant'] = (
+    df_pandas.groupby('time_avail_m')['tempRD']
+    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+)
 df = pl.from_pandas(df_pandas)
 
 # Keep R&D ability only for firms in highest R&D intensity tercile

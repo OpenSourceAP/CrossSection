@@ -29,7 +29,6 @@ import pandas as pd
 import numpy as np
 import sys
 sys.path.insert(0, '.')
-from utils.stata_fastxtile import fastxtile
 
 #%%
 
@@ -53,7 +52,10 @@ with np.errstate(over='ignore', invalid='ignore'):
 
 
 # Create size terciles by time_avail_m and exclude smallest tercile
-df['tempsizeq'] = fastxtile(df, 'mve_c', by='time_avail_m', n=3)
+df['tempsizeq'] = (
+    df.groupby('time_avail_m')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+)
 
 # Set tempprof to missing for smallest size tercile
 df.loc[df['tempsizeq'] == 1, 'tempprof'] = pd.NA

@@ -32,7 +32,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile
 from utils.stata_replication import stata_ineq_pl
 from utils.asrol import asrol
 
@@ -102,8 +101,11 @@ df_pd = df.to_pandas()
 # Clean infinite BM values explicitly (following successful PS pattern)
 df_pd['BM_clean'] = df_pd['BM'].replace([np.inf, -np.inf], np.nan)
 
-# Use enhanced fastxtile for quintile assignment
-df_pd['BM_quintile'] = fastxtile(df_pd, 'BM_clean', by='time_avail_m', n=5)
+# Use groupby/qcut for quintile assignment
+df_pd['BM_quintile'] = (
+    df_pd.groupby('time_avail_m')['BM_clean']
+    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 
 # Convert back to polars and filter for lowest quintile
 df = pl.from_pandas(df_pd).filter(

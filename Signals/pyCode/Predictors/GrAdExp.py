@@ -27,7 +27,6 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile
 
 
 print("Starting GrAdExp.py...")
@@ -104,8 +103,11 @@ print("Calculating size deciles...")
 # Extract time_avail from time_avail_m for grouping (YYYY-MM format)
 df['time_avail'] = df['time_avail_m']
 
-# Calculate size deciles using standardized fastxtile
-df['tempSize'] = fastxtile(df, 'mve_c', by='time_avail', n=10)
+# Calculate size deciles using groupby, transform, qcut pattern
+df['tempSize'] = (
+    df.groupby('time_avail')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+)
 
 # Filter out small advertising expenses and smallest size decile
 print("Applying filters...")

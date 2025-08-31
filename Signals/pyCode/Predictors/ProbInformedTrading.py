@@ -17,8 +17,6 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 # Load master data with market value information
@@ -42,7 +40,10 @@ with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
     df['pin'] = (df['a'] * df['u']) / (df['a'] * df['u'] + df['es'] + df['eb'])
 
 # Create size quintiles based on market value within each month
-df['tempsize'] = fastxtile(df, 'mve_c', by='time_avail_m', n=2)
+df['tempsize'] = (
+    df.groupby('time_avail_m')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=2, labels=False, duplicates='drop') + 1)
+)
 
 # Set PIN to missing for large cap stocks (top size quintile)
 df.loc[df['tempsize'] == 2, 'pin'] = np.nan
