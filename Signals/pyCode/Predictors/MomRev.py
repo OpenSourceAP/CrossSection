@@ -55,11 +55,19 @@ df['Mom6m_clean'] = df['Mom6m'].replace([np.inf, -np.inf], np.nan)
 df['Mom36m_clean'] = df['Mom36m'].replace([np.inf, -np.inf], np.nan)
 
 # Ranks stocks into quintiles (1-5) within each month based on 6-month momentum
-df['tempMom6'] = fastxtile(df, 'Mom6m_clean', by='time_avail_m', n=5)
+# old code: df['tempMom6'] = fastxtile(df, 'Mom6m_clean', by='time_avail_m', n=5)
+df['tempMom6'] = (
+    df.groupby('time_avail_m')['Mom6m']
+      .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 
 
 # Ranks stocks into quintiles (1-5) within each month based on 36-month momentum
-df['tempMom36'] = fastxtile(df, 'Mom36m_clean', by='time_avail_m', n=5)
+# old code: df['tempMom36'] = fastxtile(df, 'Mom36m_clean', by='time_avail_m', n=5)
+df['tempMom36'] = (
+    df.groupby('time_avail_m')['Mom36m']
+      .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 
 
 # Goes long (MomRev = 1) stocks in top quintile for 6m momentum AND bottom quintile for 36m momentum
