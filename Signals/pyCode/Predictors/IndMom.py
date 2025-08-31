@@ -68,6 +68,3 @@ df = df.merge(group_weighted_means, on=['sic2D', 'time_avail_m'], how='left')
 
 # SAVE
 save_predictor(df, 'IndMom')
-
-print(f"IndMom predictor saved with {len(df)} observations")
-print(f"Date range: {df['yyyymm'].min()} to {df['yyyymm'].max()}")
