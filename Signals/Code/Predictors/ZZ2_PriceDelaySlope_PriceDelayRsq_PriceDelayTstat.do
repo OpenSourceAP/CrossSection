@@ -1,9 +1,6 @@
 * -----------------------------------------
 * Takes about 10 min
 
-* debug mode
-local DEBUG_MODE_PRE1950 1
-
 * works best with nlag 4 weightscale 1 so far.  
 global nlag 4
 global weightscale 1
@@ -21,12 +18,6 @@ save "$pathtemp/tempdailyff", replace
 
 * load daily crsp
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
-
-* debug mode
-if `DEBUG_MODE_PRE1950' == 1 {
-    keep if time_d < td(01jan1950)
-}
-
 merge m:1 time_d using "$pathtemp/tempdailyff", nogenerate keep(match) 
 replace ret = ret - rf
 drop rf 
@@ -48,26 +39,12 @@ by time_avail_m permno: asreg ret mktrf, min(26) // Cannot entirely control that
 rename _R2 R2Restricted
 drop _*
 
-* - CHECKPOINT 1: Check R2Restricted for bad observations
-preserve 
-keep if inlist(permno, 17283, 10066)
-keep if inlist(time_avail_m, tm(1930m7), tm(1930m8), tm(1930m9), tm(1930m10), tm(1990m7), tm(1990m8), tm(1990m9), tm(1990m10))
-list permno time_avail_m R2Restricted, clean noobs
-restore
-
 * unrestricted
 by time_avail_m permno: asreg ret mktrf mktLag*, min(26) se
 cap drop _adjR2 _Nobs _b_cons
 foreach n of numlist 1/$nlag {
 	gen _t_mktLag`n' = _b_mktLag`n'/_se_mktLag`n'
 }
-
-* - CHECKPOINT 2: Check unrestricted R2 and coefficients for bad observations
-preserve 
-keep if inlist(permno, 17283, 10066)
-keep if inlist(time_avail_m, tm(1930m7), tm(1930m8), tm(1930m9), tm(1930m10), tm(1990m7), tm(1990m8), tm(1990m9), tm(1990m10))
-list permno time_avail_m _R2 _b_mktrf _b_mktLag1 _b_mktLag2 _b_mktLag3 _b_mktLag4, clean noobs
-restore
 
 // CONSTRUCT DELAY SIGNALS
 
@@ -78,13 +55,6 @@ bys permno time_avail_m: keep if _n == 1
 
 * Construct D1
 gen PriceDelayRsq = 1 - R2Restricted/_R2
-
-* - CHECKPOINT 3: Check PriceDelayRsq calculation for bad observations
-preserve 
-keep if inlist(permno, 17283, 10066)
-keep if inlist(time_avail_m, tm(1930m7), tm(1930m8), tm(1930m9), tm(1930m10), tm(1990m7), tm(1990m8), tm(1990m9), tm(1990m10))
-list permno time_avail_m R2Restricted _R2 PriceDelayRsq, clean noobs
-restore
 
 * Construct D2
 foreach n of numlist 1/$nlag  {

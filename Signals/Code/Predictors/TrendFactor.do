@@ -27,7 +27,6 @@ foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
 
 * Keep only last observation each month
 bys permno time_avail_m (time_d): keep if _n == _N
-
 drop time_d time_temp 
 * Normalize by closing price at end of month
 foreach L of numlist 3 5 10 20 50 100 200 400 600 800 1000 {
@@ -79,7 +78,7 @@ preserve
 restore
 
 merge m:1 time_avail_m using tempBeta, nogenerate 
-
+	
 * Calculate expected return E[r] = \sum E[\beta_i]A_L_i
 gen TrendFactor = EBeta_3    * A_3 +   ///
                   EBeta_5    * A_5 +   ///

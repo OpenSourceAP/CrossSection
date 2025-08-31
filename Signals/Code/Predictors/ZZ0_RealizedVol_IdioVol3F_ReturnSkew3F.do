@@ -1,16 +1,7 @@
 * -------------------------
 * Realized Vol is used in one other predictor so this is run before other ZZ stuff
-
-* debug mode
-local DEBUG_MODE_PRE1950 1
-
 // DATA LOAD
 use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
-
-* debug mode
-if `DEBUG_MODE_PRE1950' == 1 {
-    keep if time_d < td(01jan1950)
-}
 
 merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match)keepusing(rf mktrf smb hml)
 replace ret = ret - rf
