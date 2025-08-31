@@ -1,6 +1,5 @@
-# ABOUTME: OrgCap.py - calculates organizational capital predictor
-# ABOUTME: Organizational capital based on SG&A with industry adjustment and depreciation  
-# ABOUTME: Reference: Eisfeldt and Papanikolaou 2013, Table 4A.1
+# ABOUTME: Calculates organizational capital predictors (OrgCap and OrgCapNoAdj)
+# ABOUTME: Organizational capital based on SG&A with industry adjustment and depreciation
 
 """
 OrgCap predictor calculation
@@ -8,7 +7,7 @@ OrgCap predictor calculation
 Usage:
     cd pyCode/
     source .venv/bin/activate
-    python3 Predictors/OrgCap.py
+    python3 Predictors/ZZ1_OrgCap_OrgCapNoAdj.py
 
 Inputs:
     - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, sicCRSP, shrcd, exchcd)
@@ -17,6 +16,7 @@ Inputs:
 
 Outputs:
     - ../pyData/Predictors/OrgCap.csv (permno, yyyymm, OrgCap)
+    - ../pyData/Predictors/OrgCapNoAdj.csv (permno, yyyymm, OrgCapNoAdj)
 """
 
 import sys
@@ -43,11 +43,10 @@ df = pd.merge(signal_master, compustat, on=['permno', 'time_avail_m'], how='inne
 df = pd.merge(df, gnpdefl, on='time_avail_m', how='inner')
 
 
-# Convert sic to numeric (destring sic)
+# Convert sic to numeric
 df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 
 # Filter conditions: December fiscal year end and SIC industry restrictions
-# keep if month(datadate) == 12 & (sic < 6000 | sic >= 7000) & sic != .
 df['month_datadate'] = df['datadate'].dt.month
 df = df[
     (df['month_datadate'] == 12) & 
@@ -59,27 +58,25 @@ print(f"After filtering: {len(df):,} observations")
 
 
 # SIGNAL CONSTRUCTION
-# xtset permno time_avail_m equivalent - sort by permno and time
+# Sort by permno and time
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 
-# bys permno (time_avail_m): gen tempAge = _n 
+# Create age variable for each firm
 df['tempAge'] = df.groupby('permno').cumcount() + 1
 
-# replace xsga = 0 if xsga == . (OP p 17)
+# Replace missing SG&A with 0
 df['xsga'] = df['xsga'].fillna(0)
 
-# replace xsga = xsga/gnpdefl (price deflation)
+# Deflate SG&A by GNP deflator
 df['xsga'] = df['xsga'] / df['gnpdefl']
 
 
 
-# Initialize OrgCapNoAdj
-# gen OrgCapNoAdj = 4*xsga if tempAge <= 12 
+# Initialize organizational capital for firms with <= 12 periods of data 
 df['OrgCapNoAdj'] = np.where(df['tempAge'] <= 12, 4 * df['xsga'], np.nan)
 
-# replace OrgCapNoAdj = .85*l12.OrgCapNoAdj + xsga if tempAge > 12
-# Need to implement 12-month CALENDAR lag (l12.) not positional lag
-# Key insight: Must apply iteratively since later values depend on earlier calculations
+# For firms with > 12 periods: use depreciation formula with 12-month calendar lag
+# Apply iteratively since later values depend on earlier calculations
 
 # Sort by permno and time to ensure proper order
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
@@ -94,7 +91,7 @@ for idx, row in df.iterrows():
 print("Applying recursive organizational capital formula...")
 for idx, row in df.iterrows():
     if row['tempAge'] > 12:
-        # Look for the value 12 months ago using calendar lag
+        # Look for the value 12 months ago
         lag_date = row['time_avail_m'] - pd.DateOffset(months=12)
         lag_key = (row['permno'], lag_date)
         
@@ -110,31 +107,29 @@ for idx, row in df.iterrows():
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 df['l12_OrgCapNoAdj'] = df.groupby('permno')['OrgCapNoAdj'].shift(12)
 
-# replace OrgCapNoAdj = OrgCapNoAdj/at
+# Scale by total assets
 df['OrgCapNoAdj'] = df['OrgCapNoAdj'] / df['at']
 
-# Handle inf values that result from division by zero (Stata produces missing)
+# Handle infinite values from division by zero
 df.loc[np.isinf(df['OrgCapNoAdj']), 'OrgCapNoAdj'] = np.nan
 
-# replace OrgCapNoAdj = . if OrgCapNoAdj == 0 (OP p 18: works better without this)
+# Set zero values to missing
 df.loc[df['OrgCapNoAdj'] == 0, 'OrgCapNoAdj'] = np.nan
 
 print(f"After OrgCapNoAdj calculation: {df['OrgCapNoAdj'].notna().sum():,} non-missing values")
 
 
 # INDUSTRY ADJUSTMENT
-# winsor2 OrgCapNoAdj, suffix("temp") cuts(1 99) by(time_avail_m)
 # Winsorize by time_avail_m at 1% and 99%
 def winsorize_by_time(group):
-    """Winsorize a column within each time group, matching Stata winsor2 behavior"""
+    """Winsorize a column within each time group"""
     if group.isna().all() or len(group.dropna()) <= 1:
         return group
     
     # Only consider non-missing values for quantile calculation
     non_missing = group.dropna()
     
-    # Use numpy percentile with different interpolation to match Stata
-    # Stata uses a specific percentile calculation that might differ from pandas default
+    # Calculate percentiles for winsorization bounds
     lower_bound = np.percentile(non_missing, 1, method='lower')
     upper_bound = np.percentile(non_missing, 99, method='higher')
     
@@ -144,34 +139,26 @@ def winsorize_by_time(group):
 df['OrgCapNoAdjtemp'] = df.groupby('time_avail_m')['OrgCapNoAdj'].transform(winsorize_by_time)
 
 
-# sicff sicCRSP, generate(tempFF17) industry(17)
-# Need to create FF17 industry classification from sicCRSP
-# This is equivalent to Fama-French 17 industry classification
-# sicff sicCRSP, generate(tempFF17) industry(17)
-# Use unified sicff module for Fama-French 17 industry classification
+# Create Fama-French 17 industry classification from sicCRSP
 df['tempFF17'] = sicff(df['sicCRSP'], industry=17)
 
-# drop if mi(tempFF17)
+# Drop observations with missing industry classification
 df = df.dropna(subset=['tempFF17']).copy()
 
-# Exclude SIC 9999 companies as they may be handled differently in Stata
-# SIC 9999 typically represents missing or unclassified companies
-# This matches Stata's likely treatment of these observations
+# Exclude SIC 9999 companies (unclassified)
 df = df[df['sicCRSP'] != 9999].copy()
 
 
 print(f"After FF17 classification: {len(df):,} observations")
 
-# Calculate industry means and standard deviations
-# egen tempMean = mean(OrgCapNoAdjtemp), by(tempFF17 time_avail_m)
-# egen tempSD = sd(OrgCapNoAdjtemp), by(tempFF17 time_avail_m)
+# Calculate industry means and standard deviations by FF17 industry and time
 temp_stats = df.groupby(['tempFF17', 'time_avail_m'])['OrgCapNoAdjtemp'].agg(['mean', 'std']).reset_index()
 temp_stats.columns = ['tempFF17', 'time_avail_m', 'tempMean', 'tempSD']
 
 df = pd.merge(df, temp_stats, on=['tempFF17', 'time_avail_m'], how='left')
 
 
-# gen OrgCap = (OrgCapNoAdjtemp - tempMean)/tempSD
+# Create industry-adjusted organizational capital
 df['OrgCap'] = (df['OrgCapNoAdjtemp'] - df['tempMean']) / df['tempSD']
 
 # Handle cases where tempSD is 0 or NaN
@@ -184,10 +171,12 @@ print(f"Final OrgCap values: {df['OrgCap'].notna().sum():,} non-missing")
 
 # SAVE
 
-# Keep only required columns for final output
-df_final = df[['permno', 'time_avail_m', 'OrgCap']].dropna(subset=['OrgCap']).copy()
+# Save OrgCap predictor
+df_orgcap = df[['permno', 'time_avail_m', 'OrgCap']].dropna(subset=['OrgCap']).copy()
+save_predictor(df_orgcap, 'OrgCap')
 
-# Save using the standard utility function
-save_predictor(df_final, 'OrgCap')
+# Save OrgCapNoAdj predictor  
+df_orgcapnoadj = df[['permno', 'time_avail_m', 'OrgCapNoAdj']].dropna(subset=['OrgCapNoAdj']).copy()
+save_predictor(df_orgcapnoadj, 'OrgCapNoAdj')
 
-print("OrgCap calculation completed successfully!")
+print("OrgCap and OrgCapNoAdj calculation completed successfully!")

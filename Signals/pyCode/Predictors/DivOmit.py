@@ -1,4 +1,4 @@
-# ABOUTME: Translates DivOmit.do to create dividend omission predictor
+# ABOUTME: Creates dividend omission predictor identifying companies that stop paying regular dividends
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/DivOmit.py
 
 # Run from pyCode/ directory
@@ -40,9 +40,7 @@ df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
 df['div'] = df['divamt']
 df['div'] = df['div'].fillna(0)
 
-# Create dividend indicator
-#gen divind = div > 0 & (exchcd == 1 | exchcd == 2)
-#gen divind = div > 0 
+# Create dividend indicator: 1 if company paid any dividend, 0 otherwise
 df['divind'] = (df['div'] > 0).astype(int)
 
 # Sort data for lag calculations

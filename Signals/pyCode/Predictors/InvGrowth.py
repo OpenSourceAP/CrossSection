@@ -1,5 +1,5 @@
-# ABOUTME: InvGrowth.py - calculates inventory growth predictor
-# ABOUTME: Line-by-line translation of InvGrowth.do following CLAUDE.md translation philosophy
+# ABOUTME: Creates InvGrowth predictor measuring year-over-year inventory growth
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/InvGrowth.py
 
 """
 InvGrowth.py
@@ -24,39 +24,35 @@ from pathlib import Path
 print("Starting InvGrowth predictor...")
 
 # DATA LOAD
-# use gvkey permno time_avail_m invt sic ppent at using "$pathDataIntermediate/m_aCompustat", clear
 print("Loading m_aCompustat data...")
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                      columns=['gvkey', 'permno', 'time_avail_m', 'invt', 'sic', 'ppent', 'at'])
 print(f"Loaded {len(df):,} Compustat observations")
 
-# merge m:1 time_avail_m using "$pathDataIntermediate/GNPdefl", keep(match) nogenerate
+# Merge with GNP deflator data for inflation adjustment
 print("Loading GNPdefl data...")
 gnp = pd.read_parquet('../pyData/Intermediate/GNPdefl.parquet')
 print(f"Loaded {len(gnp):,} GNPdefl observations")
 
 print("Merging with GNPdefl...")
-# Stata keep(match) = inner join
 df = pd.merge(df, gnp, on='time_avail_m', how='inner')
 print(f"After merging with GNPdefl: {len(df):,} observations")
 
-# replace invt = invt/gnpdefl // op uses cpi
+# Adjust inventory values for inflation using GNP deflator
 print("Adjusting invt for inflation...")
 df['invt'] = df['invt'] / df['gnpdefl']
 
 # Sample selection
 print("Applying sample selection filters...")
 
-# drop if substr(sic,1,1) == "4"
-# drop if substr(sic,1,1) == "6"
+# Exclude utilities (SIC 4xxx) and financial firms (SIC 6xxx)
 df['sic_str'] = df['sic'].astype(str)
 before_sic = len(df)
 df = df[~df['sic_str'].str.startswith('4')].copy()
 df = df[~df['sic_str'].str.startswith('6')].copy()
 print(f"After SIC filter (dropped SIC 4xxx and 6xxx): {len(df):,} observations (dropped {before_sic - len(df):,})")
 
-# drop if at <= 0 | ppent <= 0
-# Note: Stata allows missing ppent values, only filters ppent <= 0
+# Exclude firms with non-positive total assets or property, plant & equipment
 before_at_ppent = len(df)
 df = df[(df['at'] > 0) & ((df['ppent'] > 0) | df['ppent'].isna())].copy()
 print(f"After AT/PPENT filter: {len(df):,} observations (dropped {before_at_ppent - len(df):,})")
@@ -64,20 +60,18 @@ print(f"After AT/PPENT filter: {len(df):,} observations (dropped {before_at_ppen
 # SIGNAL CONSTRUCTION
 print("Constructing InvGrowth signal...")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate firm-month observations
 before_dedup = len(df)
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplication: {len(df):,} observations (dropped {before_dedup - len(df):,} duplicates)")
 
-# xtset permno time_avail_m
-# gen InvGrowth = invt/l12.invt - 1
+# Calculate 12-month lag for inventory growth
 print("Calculating 12-month lag for inventory growth...")
 
 # Sort by permno and time_avail_m for lag calculation
 df = df.sort_values(['permno', 'time_avail_m']).copy()
 
-# Create 12-month lag using calendar-based logic (like Stata's l12.invt)  
-# Stata's l12.invt means 12 months back in calendar time, not 12 positions back
+# Create 12-month calendar-based lag for inventory values
 print("Implementing efficient calendar-based 12-month lag...")
 
 # Create lag target date for each observation
@@ -93,7 +87,7 @@ df = pd.merge(df, lag_df, on=['permno', 'lag_target_date'], how='left')
 # Clean up temporary columns
 df = df.drop(columns=['lag_target_date'])
 
-# gen InvGrowth = invt/l12.invt - 1
+# Calculate inventory growth as percentage change from 12 months ago
 df['InvGrowth'] = df['invt'] / df['invt_lag12'] - 1
 
 # Keep only observations with valid InvGrowth

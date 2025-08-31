@@ -1,4 +1,4 @@
-# ABOUTME: Translates Governance.do to create corporate governance score predictor
+# ABOUTME: Calculates corporate governance score predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Governance.py
 
 # Run from pyCode/ directory

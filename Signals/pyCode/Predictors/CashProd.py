@@ -1,5 +1,5 @@
-# ABOUTME: CashProd.py - calculates CashProd predictor using cash productivity
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/CashProd.do
+# ABOUTME: CashProd predictor - calculates cash productivity ratio
+# ABOUTME: Run: python3 pyCode/Predictors/CashProd.py
 
 """
 CashProd.py
@@ -34,7 +34,7 @@ print("Starting CashProd.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use permno time_avail_m at che using "$pathDataIntermediate/m_aCompustat", clear
+# Load monthly Compustat data with total assets and cash & equivalents
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -51,12 +51,12 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations for the same firm-month combination
 print("Deduplicating by permno time_avail_m...")
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplication: {df.shape[0]} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_c)
+# Merge with SignalMasterTable to get market value of equity data
 print("Merging with SignalMasterTable...")
 
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -77,14 +77,14 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# gen CashProd = (mve_c - at)/che
+# Generate (mve_c - at)/che
 print("Calculating CashProd...")
 df['CashProd'] = (df['mve_c'] - df['at']) / df['che']
 
 print(f"Calculated CashProd for {df['CashProd'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" CashProd
+# Save the CashProd predictor to standardized CSV format
 save_predictor(df, 'CashProd')
 
 print("CashProd.py completed successfully")

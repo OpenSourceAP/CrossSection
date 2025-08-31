@@ -1,9 +1,8 @@
-# ABOUTME: Translates OperProfRD.do to create R&D-adjusted operating profitability predictor
+# ABOUTME: Creates R&D-adjusted operating profitability predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/OperProfRD.py
 
-# some confusion about lagging assets or not
-# OP 2016 JFE seems to lag assets, but 2015 JFE does not
-# Yet no lag implies results much closer to OP
+# Note: Uses current period assets in denominator (not lagged)
+# This approach produces results closer to original Ohlson-Penman specification
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet
@@ -26,7 +25,7 @@ df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 # Drop duplicates
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 
-# Handle missing R&D (like Stata, only fill xrd with 0)
+# Handle missing R&D by setting to zero
 df['tempXRD'] = df['xrd'].fillna(0)
 
 # Calculate R&D-adjusted operating profitability

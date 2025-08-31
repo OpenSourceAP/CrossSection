@@ -55,8 +55,8 @@ monthly_ill['ill_lag10'] = monthly_ill.groupby('permno')['ill'].shift(10)
 monthly_ill['ill_lag11'] = monthly_ill.groupby('permno')['ill'].shift(11)
 
 # Calculate 12-month rolling mean
-# In Stata, the formula (ill + l.ill + ... + l11.ill)/12 requires ALL 12 values to be non-missing
-# If ANY are missing, the result is missing. We need to replicate this exact behavior.
+# Require ALL 12 values to be non-missing for the calculation
+# If any value is missing, the result is missing
 illiquidity_cols = ['ill', 'ill_lag1', 'ill_lag2', 'ill_lag3', 'ill_lag4', 'ill_lag5',
                    'ill_lag6', 'ill_lag7', 'ill_lag8', 'ill_lag9', 'ill_lag10', 'ill_lag11']
 

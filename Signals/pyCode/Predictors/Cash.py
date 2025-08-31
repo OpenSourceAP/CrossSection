@@ -28,7 +28,7 @@ print("Processing quarterly data...")
 # Sort by gvkey rdq (matching Stata: sort gvkey rdq)
 qcompustat_df = qcompustat_df.sort_values(['gvkey', 'rdq'])
 
-# Generate dup variable (matching Stata: quietly by gvkey rdq: gen dup = cond(_N==1,0,_n))
+# Generate dup variable to identify duplicates within gvkey-rdq groups
 qcompustat_df['group_size'] = qcompustat_df.groupby(['gvkey', 'rdq'])['gvkey'].transform('count')
 qcompustat_df['obs_num'] = qcompustat_df.groupby(['gvkey', 'rdq']).cumcount() + 1
 qcompustat_df['dup'] = np.where(qcompustat_df['group_size'] == 1, 0, qcompustat_df['obs_num'])
@@ -45,14 +45,14 @@ qcompustat_df = qcompustat_df.drop(['group_size', 'obs_num', 'dup'], axis=1)
 
 print(f"After deduplication: {len(qcompustat_df):,} observations")
 
-# Define time_avail_m (equivalent to gen time_avail_m = mofd(rdq))
+# Define time_avail_m as month-start date from rdq
 qcompustat_df['time_avail_m'] = pd.to_datetime(qcompustat_df['rdq']).dt.to_period('M').dt.to_timestamp()
 
 # Expand back to monthly (equivalent to Stata expand 3 logic)
 print("Expanding quarterly data to monthly...")
 
 # Replicate each row 3 times, then adjust time_avail_m for each copy
-# This matches Stata's: expand 3; replace time_avail_m = time_avail_m + _n - 1
+# Expand each quarterly observation to 3 monthly observations with incremental dates
 expanded_dfs = []
 for n in range(1, 4):  # _n goes from 1 to 3 in Stata
     df_copy = qcompustat_df.copy()

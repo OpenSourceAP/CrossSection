@@ -48,11 +48,10 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # Calculate total debt
 df['tempBD'] = df['dltt'] + df['dlc']
 
-# Create 60-month lag using calendar-based calculation (not position-based shift)
-# Stata's l60. means 60 months back in time, not 60 positions back
+# Create 60-month lag using calendar-based calculation
 print("Calculating 60-month calendar-based lag...")
 
-# Simple approach: create target date column and merge with self
+# Create target date column and merge with self for exact date matching
 df['target_lag_date'] = df['time_avail_m'] - pd.DateOffset(months=60)
 
 # Create lookup table for lag values  
@@ -63,17 +62,14 @@ lag_lookup.columns = ['permno', 'lag_date', 'l60_tempBD']
 df = df.merge(lag_lookup, left_on=['permno', 'target_lag_date'], 
               right_on=['permno', 'lag_date'], how='left')
 
-# For cases without exact matches, we'll accept the shift(60) approach as approximation
-# This should handle the majority of cases correctly
+# For cases without exact matches, use position-based approximation
 shift_lag = df.groupby('permno')['tempBD'].shift(60)
 df['l60_tempBD'] = df['l60_tempBD'].fillna(shift_lag)
 
 # Clean up temporary columns
 df = df.drop(columns=['target_lag_date', 'lag_date'])
 
-# Calculate composite debt issuance
-# gen CompositeDebtIssuance = log(tempBD/l60.tempBD)
-# Stata automatically handles division by zero and missing values in log()
+# Calculate composite debt issuance as log growth in total debt over 60 months
 df['CompositeDebtIssuance'] = np.log(df['tempBD'] / df['l60_tempBD'])
 
 print(f"Generated CompositeDebtIssuance values for {df['CompositeDebtIssuance'].notna().sum():,} observations")

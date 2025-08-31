@@ -41,7 +41,7 @@ qcompustat_df = pd.read_parquet('../pyData/Intermediate/m_QCompustat.parquet',
 
 print(f"Loaded {len(qcompustat_df):,} quarterly Compustat observations")
 
-# Merge data (equivalent to merge 1:1 gvkey time_avail_m using m_QCompustat, keepusing(txtq) nogenerate keep(match))
+# Merge annual and quarterly Compustat data on company and date
 print("Merging Compustat and quarterly data...")
 df = pd.merge(compustat_df, qcompustat_df, on=['gvkey', 'time_avail_m'], how='inner')
 
@@ -50,10 +50,10 @@ print(f"After merge: {len(df):,} observations")
 # SIGNAL CONSTRUCTION
 print("Constructing ChTax signal...")
 
-# Sort by gvkey and time_avail_m (equivalent to xtset gvkey time_avail_m)
+# Sort by company and time for lag calculations
 df = df.sort_values(['gvkey', 'time_avail_m'])
 
-# Create 12-month lags using calendar-based method (not position-based shift)
+# Create 12-month lags using calendar-based matching
 # Create lag time column
 df['lag_time'] = df['time_avail_m'] - pd.DateOffset(months=12)
 
@@ -73,7 +73,7 @@ df = df.sort_values(['gvkey', 'time_avail_m'])
 # Clean up
 df = df.drop('lag_time', axis=1)    
 
-# Calculate ChTax = (txtq - l12.txtq)/l12.at 
+# Calculate change in taxes scaled by lagged total assets 
 df['ChTax'] = (df['txtq'] - df['l12_txtq']) / df['l12_at']
 
 print(f"Generated ChTax values for {df['ChTax'].notna().sum():,} observations")

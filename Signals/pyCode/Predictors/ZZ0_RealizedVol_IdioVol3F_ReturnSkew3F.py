@@ -61,15 +61,15 @@ print("Merging CRSP and FF data...")
 df = crsp.join(ff, on="time_d", how="inner")
 print(f"Merged dataset: {len(df):,} observations")
 
-# Adjust returns: ret = ret - rf (equivalent to Stata's "replace ret = ret - rf")
+# Adjust returns: ret = ret - rf (equivalent to the's "Update ret - rf")
 print("Adjusting returns by risk-free rate...")
-df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
+df  to df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
 
 
 # SIGNAL CONSTRUCTION
 print("\n🔧 Starting signal construction...")
 
-# Create time_avail_m (year-month) equivalent to Stata's "gen time_avail_m = mofd(time_d)"
+# Create time_avail_m (year-month) equivalent to the's "Generate mofd(time_d)"
 print("Creating time_avail_m (year-month identifier)...")
 df = df.with_columns(
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
@@ -79,7 +79,7 @@ df = df.with_columns(
 print(f"Date range: {df['time_d'].min()} to {df['time_d'].max()}")
 
 # Run FF3 regressions by permno-month using direct polars-ols helper to get residuals
-# Equivalent to Stata's "bys permno time_avail_m: asreg ret mktrf smb hml, fit"
+# equivalent to the's "bys permno time_avail_m: asreg ret mktrf smb hml, fit"
 print("Running FF3 regressions by permno-month to extract residuals...")
 
 # Sort data first (required for asreg)

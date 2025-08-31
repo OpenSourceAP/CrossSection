@@ -1,4 +1,4 @@
-# ABOUTME: Translates Investment.do to create investment predictor
+# ABOUTME: Creates Investment predictor measuring capital expenditure scaled by revenue relative to historical average
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Investment.py
 
 # Run from pyCode/ directory
@@ -27,19 +27,16 @@ df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
-# Calculate investment ratio
+# Calculate investment ratio as capital expenditure divided by revenue
 df['Investment'] = df['capx'] / df['revt']
 
-
-# Calculate rolling mean over 36 months (minimum 24)
+# Calculate 36-month rolling historical average of investment ratio (minimum 24 observations required)
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 36, 'Investment', 'mean', 'tempMean', min_samples=24)
 
-
-# Normalize by rolling mean
+# Normalize current investment ratio by its historical average to capture relative investment intensity
 df['Investment'] = df['Investment'] / df['tempMean']
 
-
-# Set to missing if revenue less than 10 million
+# Exclude firms with revenue below $10 million to focus on established companies
 df.loc[df['revt'] < 10, 'Investment'] = np.nan
 
 

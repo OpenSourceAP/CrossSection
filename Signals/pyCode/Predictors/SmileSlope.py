@@ -23,43 +23,38 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
 
-# Data Prep
-# use OptionMetricsVolSurf, clear
+# Load option volatility surface data
 df = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolSurf.parquet')
 
-# bottom right page 221
-# keep if days == 30 & abs(delta) == 50
+# Filter to 30-day options with 50 delta (per page 221)
 df = df[(df['days'] == 30) & (np.abs(df['delta']) == 50)]
 
-# make signal
-# keep secid time_avail_m cp_flag impl_vol
+# Select relevant columns for smile slope calculation
 df = df[['secid', 'time_avail_m', 'cp_flag', 'impl_vol']]
 
-# reshape wide impl_vol, i(secid time_avail_m) j(cp_flag) string
+# Pivot to get separate columns for put and call implied volatilities
 df_pivot = df.pivot_table(index=['secid', 'time_avail_m'], 
                           columns='cp_flag', 
                           values='impl_vol',
                           aggfunc='first').reset_index()
 
-# gen SmileSlope = impl_volP - impl_volC
+# Calculate smile slope as put IV minus call IV
 df_pivot['SmileSlope'] = df_pivot['P'] - df_pivot['C']
 
-# save temp, replace
+# Keep relevant columns for merging
 temp = df_pivot[['secid', 'time_avail_m', 'SmileSlope']]
 
-# Merge onto master table
-# use permno time_avail_m secid using SignalMasterTable, clear
+# Load SignalMasterTable for merging
 master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                          columns=['permno', 'time_avail_m', 'secid'])
 
-# merge m:1 secid time_avail_m using temp, keep(master match) nogenerate
+# Merge smile slope data with master table
 df_final = master.merge(temp, on=['secid', 'time_avail_m'], how='left')
 
-# keep if SmileSlope != .
+# Keep only observations with non-missing smile slope values
 df_final = df_final[df_final['SmileSlope'].notna()]
 
-# label var SmileSlope "Average Jump Size"
+# SmileSlope represents average jump size (option volatility smile slope)
 
-# SAVE
-# do "$pathCode/savepredictor" SmileSlope
+# Save standardized predictor output
 save_predictor(df_final[['permno', 'time_avail_m', 'SmileSlope']], 'SmileSlope')

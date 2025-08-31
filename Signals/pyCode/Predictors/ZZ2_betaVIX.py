@@ -1,5 +1,5 @@
 # ABOUTME: Systematic volatility predictor using rolling regression of returns on market and VIX changes
-# ABOUTME: Usage: python3 betaVIX.py (run from pyCode/ directory)
+# ABOUTME: Usage: python3 Predictors/ZZ2_betaVIX.py (run from pyCode/ directory)
 
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
@@ -41,13 +41,13 @@ df = df.join(
 # Critical: Sort data first (from Beta.py success pattern)
 df = df.sort(["permno", "time_d"])
 
-# Set up time index for rolling window (Stata: time_temp = _n)
+# Set up time index for rolling window
 df = df.with_columns([
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 ])
 
 # Use direct polars-ols for rolling regression
-# This replicates: asreg ret mktrf dVIX, window(time_temp 20) min(15) by(permno)
+# Rolling regression of excess returns on market factor and VIX changes using 20-day window with minimum 15 observations
 
 # Sort is already done above
 df = df.with_columns(
@@ -65,7 +65,7 @@ df = df.with_columns(
     pl.col("coef").struct.field("dVIX").alias("b_dVIX")
 ])
 
-# Extract betaVIX coefficient (rename _b_dVIX betaVIX in Stata)
+# Extract betaVIX coefficient from dVIX regression term
 df = df.with_columns([
     pl.col("b_dVIX").alias("betaVIX")
 ])

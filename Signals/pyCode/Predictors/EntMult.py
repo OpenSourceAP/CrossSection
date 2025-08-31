@@ -1,4 +1,4 @@
-# ABOUTME: Translates EntMult.do to create enterprise multiple predictor
+# ABOUTME: Creates enterprise multiple predictor based on market value and operating income
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/EntMult.py
 
 # Run from pyCode/ directory
@@ -17,10 +17,12 @@ smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df.merge(smt[['permno', 'time_avail_m', 'mve_c']], on=['permno', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-# EntMult = (mve_c + dltt + dlc + dc - che) / oibdp
+# Calculate enterprise multiple as enterprise value divided by operating income
+# Enterprise value = market value + long-term debt + debt in current liabilities + debt due in one year - cash and equivalents
+# Operating income before depreciation serves as the earnings measure
 df['EntMult'] = (df['mve_c'] + df['dltt'] + df['dlc'] + df['dc'] - df['che']) / df['oibdp']
 
-# Screen: set to missing if ceq < 0 or oibdp < 0
+# Apply screening filters: exclude observations with negative book equity or negative operating income
 df.loc[(df['ceq'] < 0) | (df['oibdp'] < 0), 'EntMult'] = np.nan
 
 # Keep only necessary columns for output

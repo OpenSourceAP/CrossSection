@@ -21,25 +21,26 @@ import numpy as np
 from pathlib import Path
 
 # DATA LOAD
-# use gvkey permno time_avail_m at act ivao lt dlc dltt using "$pathDataIntermediate/m_aCompustat", clear
+# Load accounting data from Compustat
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                      columns=['gvkey', 'permno', 'time_avail_m', 'at', 'act', 'ivao', 'lt', 'dlc', 'dltt'])
 
 # SIGNAL CONSTRUCTION
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations for same company-month
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first').copy()
 
-# xtset permno time_avail_m
+# Sort by company and time to enable lag calculations
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 
-# gen temp = ( (at - act - ivao)  - (lt - dlc - dltt) )/at
+# Calculate net noncurrent operating assets as proportion of total assets
+# NNCOA = (Total Assets - Current Assets - Investment in Unconsolidated Subsidiaries) - (Total Liabilities - Current Debt - Long-term Debt)
 df['temp'] = ((df['at'] - df['act'] - df['ivao']) - (df['lt'] - df['dlc'] - df['dltt'])) / df['at']
 
-# gen ChNNCOA = temp - l12.temp
+# Calculate 12-month change in net noncurrent operating assets
 df['temp_l12'] = df.groupby('permno')['temp'].shift(12)
 df['ChNNCOA'] = df['temp'] - df['temp_l12']
 
-# drop temp*
+# Clean up temporary columns
 df = df.drop(columns=['temp', 'temp_l12'])
 
 # Keep only needed columns and non-missing values

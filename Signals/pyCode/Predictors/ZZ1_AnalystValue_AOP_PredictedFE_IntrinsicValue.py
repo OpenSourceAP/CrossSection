@@ -110,9 +110,10 @@ df = df.sort(["permno", "time_avail_m"])
 
 # Calculate average book equity using 12-month lag
 # Use current book equity for first observation per firm
-# NOTE: Since we've filtered to June observations only, l12.ceq means previous June (1 year back = 1 position back)
+# Calculate lagged book equity for 12-month average
+# Since we filtered to June observations only, previous June is 1 position back
 df = df.with_columns([
-    pl.col("ceq").shift(1).over("permno").alias("l12_ceq"),  # Changed from shift(12) to shift(1)
+    pl.col("ceq").shift(1).over("permno").alias("l12_ceq"),
     pl.int_range(pl.len()).over("permno").alias("row_num")
 ])
 
@@ -219,10 +220,9 @@ print("💰 Computing analyst and intrinsic values...")
 # footnote on p 294 describes r. I find value of r if constant r does not matter
 df = df.with_columns(pl.lit(0.12).alias("r"))
 
-# Note: The Stata code has a commented line for FF3 expected return adjustment:
-# * egen catBM = fastxtile(BM), by(time_avail_m) n(5)  
-# * gen r = 0.12 + (catBM-3)/2*0.00  // value premium is about 6 pct per year
-# If this is ever uncommented, use: fastxtile(df.to_pandas(), "BM", by="time_avail_m", n=5)
+# Fixed discount rate of 12% per Frankel and Lee (1998)
+# Alternative: Risk adjustment based on book-to-market quintiles could be applied
+# Higher book-to-market firms would get higher discount rates reflecting value premium
 
 # p 290: formulas p 294: 3-stage for AnalystValue and 2-stage for IntrinsicValue
 # Break down the complex calculations into steps for better debugging
@@ -284,11 +284,12 @@ df = df.with_columns(
     (pl.col("FROE1_lag12") - pl.col("ROE")).alias("FErr")
 )
 
-# winsor2 FErr, replace cuts(1 99) trim by(time_avail_m)
+# Winsorize forecast errors at 1st and 99th percentiles within each time period
+# This removes extreme outliers that could distort cross-sectional regressions
 df = winsor2(df, ["FErr"], replace=True, trim=True, cuts=[1, 99], by=["time_avail_m"])
 
-# Convert to ranks using utils/relrank to match Stata's exact behavior
-# Stata: foreach v of varlist SG BM AOP LTG { by time_avail_m: relrank `v', gen(rank`v') ref(`v') }
+# Convert variables to relative ranks within each time period
+# This standardizes variables for cross-sectional forecast error prediction
 # Convert to pandas temporarily for relrank processing
 df_pandas = df.to_pandas()
 variables = ["SG", "BM", "AOP", "LTG"]
@@ -307,8 +308,8 @@ for var in variables:
     })
     df = df.join(df_lag_rank, on=["permno", "time_avail_m"], how="left")
 
-# asreg FErr lag*, by(time_avail_m)
-# Always sort data first
+# Run cross-sectional regressions of forecast errors on lagged firm characteristics
+# This estimates how firm characteristics predict analyst forecast errors
 df = df.sort(["time_avail_m", "permno"])
 
 # Use asreg helper with group mode  
@@ -349,9 +350,8 @@ df_with_predictions = df_with_predictions.with_columns(
 
 print("📅 Expanding to monthly observations...")
 
-# EXPAND TO MONTHLY
-# Signal relevant for one year
-# Replicate Stata: gen temp = 12; expand temp; bysort permno tempTime: replace time_avail_m = time_avail_m + _n - 1
+# Expand each annual observation to 12 monthly observations
+# Each predictor value applies for the 12 months following portfolio formation
 df_expanded = df_with_predictions.with_columns(
     pl.col("time_avail_m").alias("tempTime")  # Keep original time for grouping
 )

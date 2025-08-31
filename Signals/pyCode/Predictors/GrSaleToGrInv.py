@@ -1,5 +1,5 @@
 # ABOUTME: GrSaleToGrInv.py - calculates GrSaleToGrInv predictor using sales growth over inventory growth
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/GrSaleToGrInv.do
+# ABOUTME: Computes the difference between sales growth and inventory growth rates
 
 """
 GrSaleToGrInv.py
@@ -34,7 +34,7 @@ print("Starting GrSaleToGrInv.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use gvkey permno time_avail_m sale invt using "$pathDataIntermediate/m_aCompustat", clear
+# Load monthly Compustat data with required columns for sales and inventory analysis
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -53,11 +53,11 @@ print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # SIGNAL CONSTRUCTION
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations for same company-month combination
 print("Removing duplicate permno-time_avail_m observations...")
 df = df.drop_duplicates(['permno', 'time_avail_m'], keep='first')
 
-# xtset permno time_avail_m
+# Sort data by company and time for time-series calculations
 print("Setting up panel data (sorting by permno, time_avail_m)...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
@@ -69,7 +69,7 @@ df['l24_sale'] = df.groupby('permno')['sale'].shift(24)
 df['l12_invt'] = df.groupby('permno')['invt'].shift(12)
 df['l24_invt'] = df.groupby('permno')['invt'].shift(24)
 
-# Primary formula: GrSaleToGrInv = ((sale- (.5*(l12.sale + l24.sale)))/(.5*(l12.sale + l24.sale))) - ((invt- (.5*(l12.invt + l24.invt)))/(.5*(l12.invt + l24.invt)))
+# Primary calculation: difference between sales and inventory growth rates using 12/24-month average baselines
 print("Calculating primary GrSaleToGrInv formula...")
 
 # Calculate average of 12 and 24-month lags
@@ -93,7 +93,7 @@ df['invt_growth'] = np.where(
 # Primary GrSaleToGrInv calculation
 df['GrSaleToGrInv'] = df['sale_growth'] - df['invt_growth']
 
-# Fallback formula: replace GrSaleToGrInv = ((sale-l12.sale)/l12.sale)-((invt-l12.invt)/l12.invt) if mi(GrSaleToGrInv)
+# Fallback calculation: use 12-month growth rates when primary calculation is unavailable
 print("Applying fallback formula for missing values...")
 
 # Calculate fallback components
@@ -111,7 +111,7 @@ df['invt_growth_12m'] = np.where(
 
 df['GrSaleToGrInv_fallback'] = df['sale_growth_12m'] - df['invt_growth_12m']
 
-# Apply fallback when primary is missing (equivalent to Stata's mi() function)
+# Use fallback values when primary calculation yields missing values
 df['GrSaleToGrInv'] = np.where(
     df['GrSaleToGrInv'].isna(),
     df['GrSaleToGrInv_fallback'],
@@ -124,7 +124,7 @@ print(f"Calculated GrSaleToGrInv for {df['GrSaleToGrInv'].notna().sum()} observa
 df = df[['gvkey', 'permno', 'time_avail_m', 'GrSaleToGrInv']].copy()
 
 # SAVE
-# do "$pathCode/savepredictor" GrSaleToGrInv
+# Save standardized predictor output
 save_predictor(df, 'GrSaleToGrInv')
 
 print("GrSaleToGrInv.py completed successfully")

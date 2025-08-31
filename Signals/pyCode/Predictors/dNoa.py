@@ -37,7 +37,7 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet',
 
 print(f"Loaded {len(df):,} m_aCompustat observations")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicates by keeping first observation per permno-month
 print("Deduplicating by permno time_avail_m...")
 df = df.sort_values(['permno', 'time_avail_m'])
 df = df.drop_duplicates(['permno', 'time_avail_m'], keep='first')
@@ -46,29 +46,25 @@ print(f"After deduplication: {len(df):,} observations")
 # SIGNAL CONSTRUCTION
 print("Constructing dNoa signal...")
 
-# xtset permno time_avail_m - prepare for panel operations
+# Sort data for panel operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen tempOA = at - che
+# Calculate operating assets (total assets minus cash)
 df['tempOA'] = df['at'] - df['che']
 
-# foreach v of varlist dltt dlc mib pstk {
-#     gen temp`v' = `v'
-#     replace temp`v' = 0 if mi(temp`v')
-# }
+# Create temporary variables for debt and preferred stock components, filling missing values with zero
 for var in ['dltt', 'dlc', 'mib', 'pstk']:
     df[f'temp{var}'] = df[var].fillna(0)
 
-# gen tempOL = at - tempdltt - tempmib - tempdlc - temppstk - ceq
+# Calculate operating liabilities
 df['tempOL'] = (df['at'] - df['tempdltt'] - df['tempmib'] - 
                 df['tempdlc'] - df['temppstk'] - df['ceq'])
 
-# gen tempNOA = tempOA - tempOL
+# Calculate net operating assets
 df['tempNOA'] = df['tempOA'] - df['tempOL']
 
-# gen dNoa = (tempNOA - l12.tempNOA)/l12.at
-# Create 12-month lags using time-based approach (more accurate than position-based)
-# This matches Stata's l12. operator which uses calendar-based lags
+# Calculate change in net operating assets scaled by lagged assets
+# Create 12-month lags using time-based approach
 df['time_lag12'] = pd.to_datetime(df['time_avail_m']) - pd.DateOffset(months=12)
 
 # Create lag data for merging

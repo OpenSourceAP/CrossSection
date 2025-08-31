@@ -1,19 +1,4 @@
-# ABOUTME: Calculates cash-flow to price variance following Haugen and Baker 1996 Table 1
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/VarCF.py
-
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet  
-# Output: ../pyData/Predictors/VarCF.csv
-
-import pandas as pd
-import numpy as np
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.asrol import asrol
-
-# DATA LOAD
-# Load SignalMasterTable for market value data
-smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
+# ABOUTME: Calculates cash-flow to price variance following HauGenerate pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = smt[['permno', 'time_avail_m', 'mve_c']].copy()
 
 # Merge with m_aCompustat data (left join to keep all SignalMasterTable observations)

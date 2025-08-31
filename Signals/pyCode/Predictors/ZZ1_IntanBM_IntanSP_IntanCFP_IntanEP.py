@@ -2,8 +2,6 @@
 # ABOUTME: Calculates cumulative returns and 60-month changes, then runs regressions for each time period
 
 """
-This script translates Code/Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.do
-
 How to run:
     python3 Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
 
@@ -95,7 +93,6 @@ df.drop('target_date', axis=1, inplace=True)
 df['tempRet60'] = (df['tempCumRet'] - df['tempCumRet_lag60']) / df['tempCumRet_lag60']
 
 # Winsorize tempRet60 at 1% and 99% percentiles using trim (set extreme values to NaN)
-# Stata: winsor2 tempRet60, replace cut(1 99) trim
 df = winsor2(df, ['tempRet60'], replace=True, trim=True, cuts=[1, 99])
 
 # Loop over four measures

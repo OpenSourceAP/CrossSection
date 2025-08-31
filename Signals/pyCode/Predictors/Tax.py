@@ -38,14 +38,14 @@ df.loc[(df['year'] >= 1988) & (df['year'] <= 1992), 'tr'] = 0.34
 df.loc[df['year'] >= 1993, 'tr'] = 0.35
 
 
-# Step 1: gen Tax = ((txfo+txfed)/tr)/ib
+# Step 1: Calculate Tax as ratio of tax expense to income
 df['Tax'] = ((df['txfo'] + df['txfed']) / df['tr']) / df['ib']
 
-# Step 2: replace Tax = ((txt-txdi)/tr)/ib if txfo ==. | txfed ==.
+# Step 2: Use alternative tax calculation when foreign or federal taxes missing
 condition_missing = df['txfo'].isna() | df['txfed'].isna()
 df.loc[condition_missing, 'Tax'] = ((df['txt'] - df['txdi']) / df['tr']) / df['ib']
 
-# Step 3: replace Tax = 1 if (txfo + txfed > 0 | txt > txdi) & ib <=0
+# Step 3: Set Tax to 1 when company has tax expense but negative income
 # Handle the division by zero case first (ib = 0)
 # When ib = 0, any tax activity should result in Tax = 1
 div_by_zero = (df['ib'] == 0) & (

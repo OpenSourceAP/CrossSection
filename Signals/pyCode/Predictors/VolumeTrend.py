@@ -27,7 +27,7 @@ df = df.with_columns([
 
 def time_based_rolling_regression(group_df):
     """
-    Implement time-based rolling regression matching Stata:
+    Implement time-based rolling regression matching the logic:
     asreg vol time_avail_m, window(time_av 60) min(30) by(permno)
     
     This uses a 60-month rolling window, not 60-observation window.
@@ -102,11 +102,8 @@ df = df.with_columns([
 ])
 
 
-# Stata: winsor2 VolumeTrend, cut(1 99) replace trim
-# The "trim" option sets values outside bounds to missing (not winsorized)
-# Filter out NaN/inf values before calculating quantiles
-clean_data = df.filter(pl.col('VolumeTrend').is_finite())
-lower = clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
+# Stata: winsor2 VolumeTrend, cut(1 99) Update df.filter(pl.col('VolumeTrend').is_finite())
+lower  to clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
 upper = clean_data.select(pl.col('VolumeTrend').quantile(0.99)).item()
 
 df = df.with_columns([

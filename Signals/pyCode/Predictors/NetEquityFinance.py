@@ -12,34 +12,34 @@ import numpy as np
 print("Starting NetEquityFinance calculation...")
 
 # DATA LOAD
-# use gvkey permno time_avail_m sstk prstkc at dv using "$pathDataIntermediate/m_aCompustat", clear
+# Load required variables from Compustat annual data
 m_aCompustat = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                                columns=['gvkey', 'permno', 'time_avail_m', 'sstk', 'prstkc', 'at', 'dv'])
 df = m_aCompustat.copy()
 print(f"Loaded m_aCompustat data: {len(df)} observations")
 
 # SIGNAL CONSTRUCTION
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations by permno and time_avail_m
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplicating by permno time_avail_m: {len(df)} observations")
 
-# xtset permno time_avail_m
+# Sort data by permno and time for time-series operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen NetEquityFinance = (sstk - prstkc - dv)/(.5*(at + l12.at))
-# Create 12-month lag of at
+# Calculate net equity financing as net equity issuance scaled by average assets
+# Create 12-month lag of total assets
 df['l12_at'] = df.groupby('permno')['at'].shift(12)
 
 # Calculate NetEquityFinance
 df['NetEquityFinance'] = (df['sstk'] - df['prstkc'] - df['dv']) / (0.5 * (df['at'] + df['l12_at']))
 
-# replace NetEquityFinance = . if abs(NetEquityFinance) > 1
+# Remove extreme values (absolute value greater than 1)
 df.loc[df['NetEquityFinance'].abs() > 1, 'NetEquityFinance'] = np.nan
 
 print(f"NetEquityFinance calculated for {df['NetEquityFinance'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" NetEquityFinance
+# Save the NetEquityFinance predictor to CSV
 result = df[['permno', 'time_avail_m', 'NetEquityFinance']].copy()
 result = result.dropna(subset=['NetEquityFinance'])
 

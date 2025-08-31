@@ -57,6 +57,7 @@ df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 # Calculate working capital accruals using 12-month lagged values
 # Working capital accruals = changes in operating assets minus operating liabilities
 def create_calendar_lag(df, var_name, months=12):
+    """Create calendar-based lag by matching exact date 12 months prior"""
     df[f'{var_name}_l{months}_date'] = df['time_avail_m'] - pd.DateOffset(months=months)
     lag_data = df[['permno', 'time_avail_m', var_name]].rename(
         columns={'time_avail_m': f'{var_name}_l{months}_date', var_name: f'{var_name}_l{months}'})
@@ -80,8 +81,7 @@ df.loc[np.isinf(df['tempAccruals']), 'tempAccruals'] = np.nan
 # Create binary accruals ranking (median split by month)
 df['tempsort'] = fastxtile(df, 'tempAccruals', by='time_avail_m', n=2)
 
-# Create forecast change indicator based on 1-month lagged estimates
-# Use position-based lag for consistency with sorted panel data
+# Create forecast change indicator by comparing current earnings estimate to previous month
 df['meanest_l'] = df.groupby('permno')['meanest'].shift(1)
 df['ChForecastAccrual'] = np.nan
 

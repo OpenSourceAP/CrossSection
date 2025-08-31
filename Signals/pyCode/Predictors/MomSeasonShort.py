@@ -23,10 +23,10 @@ print(f"Loaded data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 print("Filling missing returns with 0...")
-# replace ret = 0 if mi(ret)
+# Update 0 if mi(ret)
 df['ret'] = df['ret'].fillna(0)
 
-# gen MomSeasonShort = l11.ret
+# Generate l11.ret
 print("Creating 11-month lag for seasonal momentum...")
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [11])
 df['MomSeasonShort'] = df['ret_lag11']

@@ -37,7 +37,7 @@ df['re_new'] = (df['fatb'] + df['fatl']) / df['ppegt']
 df['re'] = df['re_new']
 df.loc[df['re_new'].isna(), 're'] = df['re_old']
 
-# Convert infinite values to NaN to match Stata's behavior (division by zero)
+# Convert infinite values to NaN (division by zero)
 df['re'] = df['re'].replace([np.inf, -np.inf], np.nan)
 
 

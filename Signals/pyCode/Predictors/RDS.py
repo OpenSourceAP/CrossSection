@@ -41,7 +41,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['recta_orig_missing'] = df['recta'].isna()
 df['msa_orig_missing'] = df['msa'].isna()
 
-# Replace missing recta and msa with 0 (matching Stata line 9: replace recta = 0 if recta == .)
+# Replace missing recta and msa with 0
 df['recta'] = df['recta'].fillna(0)
 df['msa'] = df['msa'].fillna(0)
 
@@ -59,17 +59,17 @@ df = df.merge(lag_data, on=['permno', 'time_lag12'], how='left')
 
 # Calculate dirty surplus (DS)
 # min(pcupsu - paddml, 0) - min(l12.pcupsu - l12.paddml, 0)
-# Stata treats missing pension data as 0 in the min() function
-def stata_min_pension(pcupsu, paddml):
+# Handle missing pension data by treating as 0 in the min() function
+def min_pension(pcupsu, paddml):
     if pd.isna(pcupsu) or pd.isna(paddml):
-        return 0  # Stata treats missing pension data as 0 in min() function
+        return 0  # Treat missing pension data as 0 in min() function
     return min(pcupsu - paddml, 0)
 
-pension_current = df.apply(lambda row: stata_min_pension(row['pcupsu'], row['paddml']), axis=1)
-pension_lag = df.apply(lambda row: stata_min_pension(row['l12_pcupsu'], row['l12_paddml']), axis=1)
+pension_current = df.apply(lambda row: min_pension(row['pcupsu'], row['paddml']), axis=1)
+pension_lag = df.apply(lambda row: min_pension(row['l12_pcupsu'], row['l12_paddml']), axis=1)
 
 # Note: msa and recta are already filled with 0 above for current values
-# But we should NOT fill lag values - let NaN propagate as Stata does
+# But we should NOT fill lag values - let NaN propagate naturally
 df['DS'] = ((df['msa'] - df['l12_msa']) + 
             (df['recta'] - df['l12_recta']) + 
             0.65 * (pension_current - pension_lag))

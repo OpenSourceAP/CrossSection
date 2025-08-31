@@ -1350,17 +1350,17 @@ print(f"Daily CRSP data: {len(df_daily):,} observations")
 print("🔄 Computing adjusted prices and time variables...")
 
 # Adjust prices for splits etc
-# gen P = abs(prc)/cfacpr
+# Generate abs(prc)/cfacpr
 df_daily = df_daily.with_columns((pl.col("prc").abs() / pl.col("cfacpr")).alias("P"))
 
 # Generate time variable without trading day gaps for simplicity and generate month variable for sorting
-# bys permno (time_d): gen time_temp = _n
+# bys permno (time_d): Generate _n
 df_daily = df_daily.sort(["permno", "time_d"])
 df_daily = df_daily.with_columns(
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 )
 
-# gen time_avail_m = mofd(time_d)
+# Generate mofd(time_d)
 df_daily = df_daily.with_columns(
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 )

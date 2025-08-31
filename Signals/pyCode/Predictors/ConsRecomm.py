@@ -38,21 +38,18 @@ ibes_df = pd.read_parquet('../pyData/Intermediate/IBES_Recommendations.parquet',
 print(f"Loaded {len(ibes_df):,} IBES recommendations observations")
 
 # Collapse down to firm-month level
-# gcollapse (lastnm) ireccd, by(tickerIBES amaskcd time_avail_m)
-# Sort by time to get last non-missing value
+# Sort by time to get last non-missing value within each ticker-analyst-month group
 ibes_df = ibes_df.sort_values(['tickerIBES', 'amaskcd', 'time_avail_m', 'anndats'])
 ibes_df = ibes_df.groupby(['tickerIBES', 'amaskcd', 'time_avail_m'])['ireccd'].last().reset_index()
 
 print(f"After first collapse: {len(ibes_df):,} observations")
 
-# gcollapse (mean) ireccd, by(tickerIBES time_avail_m)
+# Aggregate across analysts to get mean recommendation per ticker-month
 ibes_df = ibes_df.groupby(['tickerIBES', 'time_avail_m'])['ireccd'].mean().reset_index()
 
 print(f"After second collapse: {len(ibes_df):,} observations")
 
-# Define signal - match Stata logic exactly:
-# gen ConsRecomm = 1 if ireccd > 3 & ireccd < .
-# replace ConsRecomm = 0 if ireccd <= 1.5
+# Create binary recommendation signal: 1 for sell recommendations, 0 for strong buy
 ibes_df['ConsRecomm'] = np.nan
 ibes_df.loc[(ibes_df['ireccd'] > 3) & ibes_df['ireccd'].notna(), 'ConsRecomm'] = 1
 ibes_df.loc[ibes_df['ireccd'] <= 1.5, 'ConsRecomm'] = 0
@@ -66,10 +63,9 @@ signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parque
 
 print(f"Loaded {len(signal_master):,} SignalMasterTable observations")
 
-# Merge with SignalMasterTable (Stata uses 1:m merge)
+# Merge with SignalMasterTable
 print("Merging data...")
-# The Stata merge is: merge 1:m tickerIBES time_avail_m using SignalMasterTable
-# This means one IBES record can match multiple permnos
+# One IBES ticker can match multiple permnos
 df = pd.merge(ibes_df, signal_master, on=['tickerIBES', 'time_avail_m'], how='inner')
 
 print(f"After merging: {len(df):,} observations")

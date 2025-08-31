@@ -1,4 +1,4 @@
-# ABOUTME: Translates EquityDuration.do to create equity duration measure
+# ABOUTME: Creates equity duration measure using cash flow projections and discount rates
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/EquityDuration.py
 
 # OP uses FF style: HDMLD is (S/HD + B/HD)/2 - (S/LD + B/LD)/2
@@ -28,12 +28,11 @@ longrun_growth = 0.06
 # Compute ROE, book equity growth, and cash distributions to equity
 df['tempRoE'] = df['ib'] / df.groupby('gvkey')['ceq'].shift(1)
 
-# Handle division by zero like Stata: replace inf with NaN
-sale_lag = df.groupby('gvkey')['sale'].shift(1)
+# Handle division by zero: Update df.groupby('gvkey')['sale'].shift(1)
 df['temp_g_eq'] = df['sale'] / sale_lag - 1
 df['temp_g_eq'] = df['temp_g_eq'].replace([np.inf, -np.inf], np.nan)
 
-# Handle missing temp_g_eq in tempCD calculation like Stata
+# Handle missing growth rates in cash distribution calculation by filling with zero
 ceq_lag = df.groupby('gvkey')['ceq'].shift(1)
 df['tempCD'] = ceq_lag * (df['tempRoE'] - df['temp_g_eq'].fillna(0))
 
@@ -68,13 +67,13 @@ df['tempME'] = df['prcc_f'] * df['csho']
 df['EquityDuration'] = (df['MD_Part1'] / df['tempME'] + 
                         (10 + (1 + cost_equity) / cost_equity) * (1 - df['PV_Part1'] / df['tempME']))
 
-# Monthly expansion - optimized version matching Stata logic
-# expand temp (where temp = 12) - create 12 copies of each row
+# Monthly expansion - create 12 monthly observations for each annual observation
+# This spreads annual data across the following 12 months
 print("Expanding to monthly observations...")
 df_expanded = pd.concat([df] * 12, ignore_index=True)
 df_expanded['expansion_n'] = np.repeat(np.arange(1, 13), len(df))
 
-# bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
+# Add sequential months to each expanded observation
 df_expanded['tempTime'] = df_expanded['time_avail_m']  # Store original time_avail_m
 
 # Add months correctly - efficiently handle month addition
@@ -88,15 +87,13 @@ df_expanded['time_avail_m'] = df_expanded['new_period'].dt.to_timestamp()
 # Clean up temporary columns
 df_expanded = df_expanded.drop(['months_to_add', 'time_period', 'new_period'], axis=1)
 
-# bysort gvkey time_avail_m (datadate): keep if _n == _N
-# Keep latest datadate for each gvkey-time combination
+# For each company-month combination, keep the observation with the latest data date
 df_expanded = df_expanded.sort_values(['gvkey', 'time_avail_m', 'datadate'])
 df_monthly = df_expanded.groupby(['gvkey', 'time_avail_m']).tail(1)
 
-# bysort permno time_avail_m: keep if _n == 1
-# Keep first observation for each permno-time combination (handles duplicates)
-# Stata prioritizes observations with valid EquityDuration in tie-breaking
-# Create a temporary column for sorting (NaN last = False first)
+# For each permno-month combination, keep the first observation (handles duplicates)
+# Prioritize observations with valid EquityDuration values in tie-breaking
+# Create a temporary column for sorting to put non-missing values first
 df_monthly['temp_na_sort'] = df_monthly['EquityDuration'].isna()
 df_monthly = df_monthly.sort_values(['permno', 'time_avail_m', 'temp_na_sort', 'gvkey', 'datadate']).groupby(['permno', 'time_avail_m']).head(1)
 df_monthly = df_monthly.drop('temp_na_sort', axis=1)

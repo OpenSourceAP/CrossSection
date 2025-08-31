@@ -31,8 +31,7 @@ print("=" * 80)
 # ===================================================================
 print("📊 Loading IBES Recommendations data...")
 
-# Load IBES recommendations 
-# use tickerIBES amaskcd anndats time_avail_m ireccd using "$pathDataIntermediate/IBES_Recommendations", clear
+# Load IBES recommendations
 ibes_recs = pl.read_parquet("../pyData/Intermediate/IBES_Recommendations.parquet",
                             columns=["tickerIBES", "amaskcd", "anndats", "time_avail_m", "ireccd"]).with_columns(
                                 pl.col("time_avail_m").cast(pl.Date),
@@ -87,17 +86,16 @@ print(f"After taking mean recommendation within each stock-month: {len(stock_rec
 print("📊 Loading SignalMasterTable, CRSP, and Short Interest data...")
 
 # DATA LOAD
-# use permno gvkey tickerIBES time_avail_m bh1m using "$pathDataIntermediate/SignalMasterTable", clear
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet",
                                 columns=["permno", "gvkey", "tickerIBES", "time_avail_m"]).with_columns(
     pl.col("time_avail_m").cast(pl.Date)
 )
 
-# drop if mi(gvkey) | mi(tickerIBES)
+# drop if missing gvkey or tickerIBES
 signal_master = signal_master.filter(pl.col("gvkey").is_not_null() & pl.col("tickerIBES").is_not_null())
 print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(match) nogenerate keepusing(shrout)
+# merge with monthlyCRSP
 crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet",
                         columns=["permno", "time_avail_m", "shrout"]).with_columns(
     pl.col("time_avail_m").cast(pl.Date)
@@ -107,7 +105,7 @@ crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet",
 df = signal_master.join(crsp, on=["permno", "time_avail_m"], how="inner")
 print(f"SignalMasterTable merged with CRSP: {len(df):,} observations")
 
-# merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/monthlyShortInterest", keep(match) nogenerate keepusing(shortint)
+# merge with monthlyShortInterest
 short_interest = pl.read_parquet("../pyData/Intermediate/monthlyShortInterest.parquet",
     columns=["gvkey", "time_avail_m", "shortint"]).with_columns(
     pl.col("time_avail_m").cast(pl.Date)
@@ -120,7 +118,7 @@ df = df.join(short_interest, on=["gvkey", "time_avail_m"], how="inner")
 print(f"After merging with short interest: {len(df):,} observations")
 
 
-# merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
+# merge with recommendations
 df = df.join(stock_rec, on=["tickerIBES", "time_avail_m"], how="inner")
 print(f"After merging with recommendations: {len(df):,} observations")
 
@@ -132,12 +130,12 @@ print(f"After merging with recommendations: {len(df):,} observations")
 print("🧮 Signal construction...")
 
 # SIGNAL CONSTRUCTION
-# gen ShortInterest = shortint/shrout
+# Create ShortInterest = shortint/shrout
 df = df.with_columns(
     (pl.col("shortint") / pl.col("shrout")).alias("ShortInterest")
 )
 
-# gen ConsRecomm = 6 - ireccd  // To align with coding in Drake, Rees, Swanson (2011)
+# Create ConsRecomm = 6 - ireccd to align with coding in Drake, Rees, Swanson (2011)
 df = df.with_columns(
     (6 - pl.col("ireccd12")).alias("ConsRecomm")
 )
@@ -147,10 +145,10 @@ print("📊 Computing quintiles using stata_fastxtile...")
 # Convert to pandas for fastxtile, then back to polars
 df_pandas = df.to_pandas()
 
-# egen QuintShortInterest = xtile(ShortInterest), n(5) by(time_avail_m)
+# Create quintiles for ShortInterest
 df_pandas['QuintShortInterest'] = fastxtile(df_pandas, "ShortInterest", by="time_avail_m", n=5)
 
-# egen QuintConsRecomm = xtile(ConsRecomm), n(5) by(time_avail_m)  
+# Create quintiles for ConsRecomm
 df_pandas['QuintConsRecomm'] = fastxtile(df_pandas, "ConsRecomm", by="time_avail_m", n=5)
 
 # Convert back to polars
@@ -159,10 +157,8 @@ df = pl.from_pandas(df_pandas)
 #%%
 
 # Define binary signal: pessimistic vs optimistic cases
-# cap drop Recomm_ShortInterest
-# gen Recomm_ShortInterest = .
-# replace Recomm_ShortInterest = 1 if QuintShortInterest == 1 & QuintConsRecomm ==1
-# replace Recomm_ShortInterest = 0 if QuintShortInterest == 5 & QuintConsRecomm ==5
+# 1 if both QuintShortInterest == 1 and QuintConsRecomm == 1 (pessimistic)
+# 0 if both QuintShortInterest == 5 and QuintConsRecomm == 5 (optimistic)
 df = df.with_columns(
     pl.when((pl.col("QuintShortInterest") == 1) & (pl.col("QuintConsRecomm") == 1))
     .then(1)

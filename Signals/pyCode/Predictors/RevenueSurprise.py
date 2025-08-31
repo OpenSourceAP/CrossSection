@@ -13,24 +13,24 @@ import numpy as np
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
                      columns=['permno', 'gvkey', 'time_avail_m', 'mve_c'])
 
-# keep if !mi(gvkey)
+# Keep observations with valid gvkey
 df = df.dropna(subset=['gvkey'])
 
-# merge 1:1 gvkey time_avail_m using m_QCompustat, keepusing(revtq cshprq) nogenerate keep(match)
+# Merge with quarterly Compustat data for revenue and shares outstanding
 qcompustat = pd.read_parquet('../pyData/Intermediate/m_QCompustat.parquet', 
                              columns=['gvkey', 'time_avail_m', 'revtq', 'cshprq'])
 
 df = df.merge(qcompustat, on=['gvkey', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-# xtset permno time_avail_m
+# Sort by firm and time for panel calculations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen revps = revtq/cshprq
+# Calculate revenue per share
 df['revps'] = df['revtq'] / df['cshprq']
 
-# gen GrTemp = (revps - l12.revps)
-# Stata uses calendar-based lags with xtset - exact date matching
+# Calculate year-over-year change in revenue per share
+# Use calendar-based lags for exact date matching
 df['date_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)
 temp_merge = df[['permno', 'time_avail_m', 'revps']].copy()
 temp_merge.columns = ['permno', 'date_lag12', 'revps_l12']
@@ -38,8 +38,8 @@ df = df.merge(temp_merge, on=['permno', 'date_lag12'], how='left')
 df = df.drop('date_lag12', axis=1)
 df['GrTemp'] = df['revps'] - df['revps_l12']
 
-# foreach n of numlist 3(3)24: gen temp`n' = l`n'.GrTemp
-# Create calendar-based lags 3, 6, 9, 12, 15, 18, 21, 24 months of GrTemp for Drift calculation
+# Create historical revenue changes for drift calculation
+# Use 3, 6, 9, 12, 15, 18, 21, 24 month lags of revenue changes
 for n in range(3, 25, 3):
     df[f'date_lag{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
     temp_merge = df[['permno', 'time_avail_m', 'GrTemp']].copy()
@@ -47,18 +47,18 @@ for n in range(3, 25, 3):
     df = df.merge(temp_merge, on=['permno', f'date_lag{n}'], how='left')
     df = df.drop(f'date_lag{n}', axis=1)
 
-# egen Drift = rowmean(temp*)
+# Calculate mean of historical revenue changes
 grtemp_lag_cols = [f'grtemp_lag{n}' for n in range(3, 25, 3)]
 df['Drift'] = df[grtemp_lag_cols].mean(axis=1)
 
-# gen RevenueSurprise = revps - l12.revps - Drift
+# Calculate revenue surprise as change minus historical drift
 df['RevenueSurprise'] = df['revps'] - df['revps_l12'] - df['Drift']
 
 # Drop grtemp lag columns
 df = df.drop(columns=grtemp_lag_cols)
 
-# foreach n of numlist 3(3)24: gen temp`n' = l`n'.RevenueSurprise
-# Create calendar-based lags 3, 6, 9, 12, 15, 18, 21, 24 months of RevenueSurprise for SD calculation
+# Create historical revenue surprises for volatility calculation
+# Use 3, 6, 9, 12, 15, 18, 21, 24 month lags of revenue surprises
 for n in range(3, 25, 3):
     df[f'date_lag{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
     temp_merge = df[['permno', 'time_avail_m', 'RevenueSurprise']].copy()
@@ -66,19 +66,19 @@ for n in range(3, 25, 3):
     df = df.merge(temp_merge, on=['permno', f'date_lag{n}'], how='left')
     df = df.drop(f'date_lag{n}', axis=1)
 
-# egen SD = rowsd(temp*)
-# Stata's rowsd() uses sample std with n-1 denominator (ddof=1)
+# Calculate standard deviation of historical revenue surprises
+# Use sample standard deviation with n-1 denominator
 rs_lag_cols = [f'rs_lag{n}' for n in range(3, 25, 3)]
 df['SD'] = df[rs_lag_cols].std(axis=1, ddof=1)
 
-# replace RevenueSurprise = RevenueSurprise/SD
-# Stata divides by SD even when SD is extremely small, creating large values
+# Standardize revenue surprise by historical volatility
+# Division by very small SD can create large values
 df['RevenueSurprise'] = df['RevenueSurprise'] / df['SD']
-# Replace inf/-inf with NaN to match Stata's behavior when SD = 0 exactly
+# Replace infinite values with NaN when SD = 0
 df['RevenueSurprise'] = df['RevenueSurprise'].replace([np.inf, -np.inf], np.nan)
 
 # Keep only observations with valid RevenueSurprise and reliable SD
-# Stata appears to filter out observations with unreliable SD calculations
+# Filter out observations with unreliable SD calculations
 df = df.dropna(subset=['RevenueSurprise'])
 df = df.dropna(subset=['SD'])  # Remove observations where SD = NaN  
 df = df[df['SD'] > 1e-8]  # Remove observations where SD is essentially zero
@@ -89,7 +89,7 @@ result = df[['permno', 'time_avail_m', 'RevenueSurprise']].copy()
 # Convert time_avail_m to yyyymm format
 result['yyyymm'] = result['time_avail_m'].dt.year * 100 + result['time_avail_m'].dt.month
 
-# Final format matching Stata output
+# Format final output
 result = result[['permno', 'yyyymm', 'RevenueSurprise']]
 
 # Convert permno and yyyymm to int

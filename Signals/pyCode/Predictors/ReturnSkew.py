@@ -40,7 +40,7 @@ print(f"Loaded CRSP: {len(crsp):,} daily observations")
 # SIGNAL CONSTRUCTION
 print("\n🔧 Starting signal construction...")
 
-# Create time_avail_m (year-month) equivalent to Stata's "gen time_avail_m = mofd(time_d)"
+# Create time_avail_m (year-month identifier)
 print("Creating time_avail_m (year-month identifier)...")
 crsp = crsp.with_columns(
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
@@ -49,18 +49,17 @@ crsp = crsp.with_columns(
 print(f"Date range: {crsp['time_d'].min()} to {crsp['time_d'].max()}")
 
 # Calculate skewness and count of observations by permno-month
-# Equivalent to Stata's "gcollapse (count) ndays = days (skewness) ReturnSkew = ret, by(permno time_avail_m)"
-# Note: Stata counts ALL rows (including those with missing ret), not just non-null values
+# Count includes all rows (even those with missing returns) to match original logic
 print("Calculating return skewness by permno-month...")
 predictors = crsp.group_by(["permno", "time_avail_m"]).agg([
-    pl.len().alias("ndays"),                    # Count ALL rows (Stata's behavior)
+    pl.len().alias("ndays"),                    # Count all rows
     pl.col("ret").skew().alias("ReturnSkew")    # Skewness of returns (ignores nulls)
 ])
 
 print(f"Generated {len(predictors):,} permno-month observations before filtering")
 
 # Filter to keep only observations with >= 15 days
-# Equivalent to Stata's "replace ReturnSkew = . if ndays < 15"
+# Remove permno-months with insufficient data for reliable skewness calculation
 print("Filtering to permno-months with >=15 observations...")
 predictors_filtered = predictors.filter(pl.col("ndays") >= 15).drop("ndays")
 
@@ -82,7 +81,7 @@ print("\n💾 Saving predictor...")
 # Convert to pandas for compatibility with existing save_predictor utility
 predictors_pd = predictors_filtered.to_pandas()
 
-# Save predictor using existing utility (equivalent to savepredictor.do call)
+# Save predictor using standardized format
 save_predictor(predictors_pd, 'ReturnSkew')
 
 print("\n" + "=" * 80)

@@ -14,10 +14,10 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet',
                      columns=['gvkey', 'permno', 'time_avail_m', 'prstkc'])
 
 # SIGNAL CONSTRUCTION
-# gen ShareRepurchase = (prstkc > 0 & !mi(prstkc))
+# Create binary indicator: 1 if positive share repurchases, 0 otherwise
 df['ShareRepurchase'] = ((df['prstkc'] > 0) & (df['prstkc'].notna())).astype(int)
 
-# replace ShareRepurchase = . if mi(prstkc)
+# Set to missing when underlying data is missing
 df.loc[df['prstkc'].isna(), 'ShareRepurchase'] = np.nan
 
 # Keep only observations with valid ShareRepurchase (not missing)

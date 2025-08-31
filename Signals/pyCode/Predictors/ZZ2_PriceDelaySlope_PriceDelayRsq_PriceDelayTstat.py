@@ -27,14 +27,13 @@ print("🏗️  ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py")
 print("Generating price delay predictors using daily data regressions")
 print("=" * 80)
 
-# Global parameters from Stata code
+# Global parameters
 nlag = 4
 weightscale = 1
 
 print("📊 Preparing daily Fama-French data with lags...")
 
-# Prep mkt lag data
-# use "$pathDataIntermediate/dailyFF", clear
+# Prep market lag data
 daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
 daily_ff = daily_ff.select(["time_d", "mktrf", "rf"]).sort("time_d")
 
@@ -54,7 +53,7 @@ print(f"Daily CRSP data: {len(df):,} observations")
 # Merge with daily FF data
 df = df.join(daily_ff, on="time_d", how="inner")
 
-# replace ret = ret - rf
+# Calculate excess returns
 df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret"))
 
 print(f"After merging and adjusting returns: {len(df):,} observations")
@@ -79,7 +78,7 @@ print("📅 Setting up time variables for June regressions...")
 
 # Set up for Regressions in each June
 # time_avail_m is the most next June after the obs
-# Stata logic: time_avail_m = mofd(mdy(6,30,year(dofm(time_m+6))))
+# Set time_avail_m to June of the year that's 6 months after the observation month
 df = df.with_columns([pl.col("time_d").dt.truncate("1mo").alias("time_m")])
 
 # Add 6 months to time_m, then extract the year, then create June of that year
@@ -237,8 +236,7 @@ last_dates = df.group_by(["time_avail_m", "permno"], maintain_order=True).agg(
 
 df_results = df_results.join(last_dates, on=["time_avail_m", "permno"], how="left")
 
-# drop if _R2 == .
-# keep if month(time_d) == 6 // drop if last obs is not June
+# Filter for valid R-squared and June endpoint observations
 df_monthly = df_results.filter(
     (pl.col("_R2").is_not_null()) & (pl.col("last_time_d").dt.month() == 6)
 )
@@ -284,22 +282,21 @@ df_monthly = df_monthly.with_columns(
 
 print("📊 Applying winsorization and time adjustment...")
 
-# replace time_avail_m = time_avail_m + 1 // Hou and Moskowitz skip one month
+# Add one month to time_avail_m (Hou and Moskowitz skip one month)
 df_monthly = df_monthly.with_columns(
     pl.col("time_avail_m").dt.offset_by("1mo").alias("time_avail_m")
 )
 
 print("📅 Forward-filling to monthly frequency...")
 
-# Fill to monthly - Replicate Stata's xtset + tsfill + forward-fill behavior
-# This is different from using SignalMasterTable - we create complete time series per permno
+# Fill to monthly frequency by creating complete time series per permno and forward-filling missing values
 price_delay_cols = ["PriceDelaySlope", "PriceDelayRsq", "PriceDelayTstat"]
 df_calc_values = df_monthly.select(["permno", "time_avail_m"] + price_delay_cols)
 
 print(f"  Calculated values: {len(df_calc_values):,} observations")
 
-# Replicate Stata's tsfill: create missing time periods within each permno's range
-print("  Creating complete time series per permno (like Stata's tsfill)...")
+# Create missing time periods within each permno's range
+print("  Creating complete time series per permno...")
 
 # Get min/max time_avail_m for each permno
 permno_ranges = df_calc_values.group_by("permno").agg(
@@ -363,7 +360,7 @@ if expanded_data:
     )
 
     print("  Forward-filling missing values within each permno...")
-    # Forward-fill missing values within each permno (like Stata's forward-fill)
+    # Forward-fill missing values within each permno
     df_monthly = df_monthly.sort(["permno", "time_avail_m"])
     for col in price_delay_cols:
         df_monthly = df_monthly.with_columns(pl.col(col).forward_fill().over("permno"))

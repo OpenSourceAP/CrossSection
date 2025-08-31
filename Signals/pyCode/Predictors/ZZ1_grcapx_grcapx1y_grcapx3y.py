@@ -1,5 +1,5 @@
 # ABOUTME: ZZ1_grcapx_grcapx1y_grcapx3y.py - calculates capital expenditure growth predictors
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/ZZ1_grcapx_grcapx1y_grcapx3y.do
+# ABOUTME: Calculates capital expenditure growth predictors over different time horizons
 
 """
 ZZ1_grcapx_grcapx1y_grcapx3y.py
@@ -40,7 +40,7 @@ print("Starting ZZ1_grcapx_grcapx1y_grcapx3y.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use gvkey permno time_avail_m capx ppent at using "$pathDataIntermediate/m_aCompustat", clear
+# Load required columns from monthly Compustat data
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -57,13 +57,13 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate permno-time_avail_m observations
 print("Removing duplicate permno-time_avail_m observations...")
 initial_rows = len(df)
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"Removed {initial_rows - len(df)} duplicate observations")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(exchcd)
+# Merge with SignalMasterTable to get exchange codes
 print("Merging with SignalMasterTable...")
 
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -73,36 +73,36 @@ if not signal_master_path.exists():
 signal_master = pd.read_parquet(signal_master_path)
 signal_master = signal_master[['permno', 'time_avail_m', 'exchcd']].copy()
 
-# Inner merge to keep only observations that match in both datasets (equivalent to keep(using match))
+# Inner merge to keep only observations that match in both datasets
 df = pd.merge(signal_master, df, on=['permno', 'time_avail_m'], how='inner')
 
 print(f"After merge: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # SIGNAL CONSTRUCTION
 
-# Set up panel data - equivalent to xtset permno time_avail_m
+# Set up panel data by sorting by permno and time
 print("Setting up panel data (sorting by permno, time_avail_m)...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Need Firm Age
-# bys permno (time_avail_m): gen FirmAge = _n
+# Calculate firm age as sequence number within each permno
 print("Calculating FirmAge...")
 df['FirmAge'] = df.groupby('permno').cumcount() + 1
 
 # remove stuff we started with (don't have age for)
-# gen tempcrsptime = time_avail_m - mofd(mdy(7,1,1926)) + 1
+# Calculate time since CRSP start date
 print("Calculating tempcrsptime and applying FirmAge restriction...")
 crsp_start = pd.Timestamp('1926-07-01')
 df['tempcrsptime'] = ((df['time_avail_m'] - crsp_start).dt.days / 30.44).round().astype(int) + 1
 
-# replace FirmAge = . if tempcrsptime == FirmAge
+# Set FirmAge to missing if it equals time since CRSP start
 df.loc[df['tempcrsptime'] == df['FirmAge'], 'FirmAge'] = np.nan
 
 # Create l12_ppent lag first (needed for conditional capx replacement)
 print("Creating l12_ppent lag for conditional replacement...")
 df['l12_ppent'] = df.groupby('permno')['ppent'].shift(12)
 
-# replace capx = ppent - l12.ppent if capx ==. & FirmAge >=24
+# Replace missing capx with change in ppent for firms with sufficient age
 print("Applying conditional capx replacement...")
 condition = df['capx'].isna() & (df['FirmAge'] >= 24)
 df.loc[condition, 'capx'] = df.loc[condition, 'ppent'] - df.loc[condition, 'l12_ppent']
@@ -116,13 +116,13 @@ df['l36_capx'] = df.groupby('permno')['capx'].shift(36)
 # Calculate the three predictors
 print("Calculating predictors...")
 
-# gen grcapx = (capx-l24.capx)/l24.capx 
+# Calculate 2-year capital expenditure growth 
 df['grcapx'] = (df['capx'] - df['l24_capx']) / df['l24_capx']
 
-# gen grcapx1y = (l12.capx-l24.capx)/l24.capx 
+# Calculate 1-year capital expenditure growth (lagged) 
 df['grcapx1y'] = (df['l12_capx'] - df['l24_capx']) / df['l24_capx']
 
-# gen grcapx3y = capx/(l12.capx + l24.capx + l36.capx )*3
+# Calculate 3-year capital expenditure growth
 df['grcapx3y'] = df['capx'] / (df['l12_capx'] + df['l24_capx'] + df['l36_capx']) * 3
 
 print(f"Calculated grcapx for {df['grcapx'].notna().sum()} observations")
@@ -130,13 +130,13 @@ print(f"Calculated grcapx1y for {df['grcapx1y'].notna().sum()} observations")
 print(f"Calculated grcapx3y for {df['grcapx3y'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" grcapx
+# Save grcapx predictor
 save_predictor(df, 'grcapx')
 
-# do "$pathCode/saveplacebo" grcapx1y
+# Save grcapx1y placebo
 save_placebo(df, 'grcapx1y')
 
-# do "$pathCode/savepredictor" grcapx3y
+# Save grcapx3y predictor
 save_predictor(df, 'grcapx3y')
 
 print("ZZ1_grcapx_grcapx1y_grcapx3y.py completed successfully")

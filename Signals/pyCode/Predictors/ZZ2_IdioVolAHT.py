@@ -1,5 +1,5 @@
 # ABOUTME: Idiosyncratic risk predictor using RMSE from 252-day rolling CAPM regression
-# ABOUTME: Usage: python3 ZZ2_IdioVolAHT.py (run from pyCode/ directory)
+# ABOUTME: Usage: python3 Predictors/ZZ2_IdioVolAHT.py (run from pyCode/ directory)
 
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
@@ -30,7 +30,7 @@ df = df.join(
 )
 print(f"After merge: {df.shape[0]} rows")
 
-# Calculate excess return (Stata: replace ret = ret - rf)
+# Calculate excess return
 df = df.with_columns([
     (pl.col("ret") - pl.col("rf")).alias("ret")
 ])
@@ -43,7 +43,7 @@ df = df.filter(pl.col("ret").is_not_null() & pl.col("mktrf").is_not_null())
 # Critical: Sort data first (from Beta.py success pattern)
 df = df.sort(["permno", "time_d"])
 
-# Set up time index for rolling window (Stata: time_temp = _n)
+# Set up time index for rolling window
 df = df.with_columns([
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 ])
@@ -51,7 +51,7 @@ df = df.with_columns([
 
 # Use direct polars-ols for rolling regression to get residuals, then compute RMSE
 print("Running 252-day rolling CAPM regressions...")
-# This replicates: asreg ret mktrf, window(time_temp 252) min(100) by(permno) rmse
+# Rolling CAPM regression using 252-day window with minimum 100 observations to calculate residuals
 
 # Get rolling residuals
 df = df.with_columns(
@@ -77,7 +77,7 @@ df = df.with_columns(
 
 
 print("Calculating idiosyncratic volatility...")
-# Extract IdioVolAHT from RMSE (rename _rmse IdioVolAHT in Stata)
+# Extract IdioVolAHT from RMSE
 df = df.with_columns([
     pl.col("rmse").alias("IdioVolAHT")
 ])
@@ -87,7 +87,7 @@ df = df.with_columns([
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 ])
 
-# Keep last non-missing IdioVolAHT per permno-month (Stata: gcollapse (lastnm))
+# Keep last non-missing IdioVolAHT per permno-month
 df = df.sort(["permno", "time_avail_m", "time_d"])
 df = df.group_by(["permno", "time_avail_m"]).agg([
     pl.col("IdioVolAHT").drop_nulls().last().alias("IdioVolAHT")

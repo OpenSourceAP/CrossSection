@@ -24,35 +24,33 @@ from pathlib import Path
 print("Starting DebtIssuance predictor...")
 
 # DATA LOAD
-# use permno time_avail_m ceq dltis using "$pathDataIntermediate/m_aCompustat", clear
+# Load Compustat data with required fields
 print("Loading m_aCompustat data...")
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                      columns=['permno', 'time_avail_m', 'ceq', 'dltis'])
 print(f"Loaded {len(df):,} Compustat observations")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_c shrcd)
+# Merge with SignalMasterTable to get market value and share code data
 print("Loading SignalMasterTable...")
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
                       columns=['permno', 'time_avail_m', 'mve_c', 'shrcd'])
 print(f"Loaded {len(smt):,} SignalMasterTable observations")
 
 print("Merging data...")
-# Stata keep(match) = inner join
+# Keep only matched observations
 df = pd.merge(df, smt, on=['permno', 'time_avail_m'], how='inner')
 print(f"After merging: {len(df):,} observations")
 
 print("Constructing DebtIssuance signal...")
 
 # SIGNAL CONSTRUCTION
-# gen BM = log(ceq/mve_c)
+# Calculate book-to-market ratio
 df['BM'] = np.log(df['ceq'] / df['mve_c'])
 
-# gen DebtIssuance = (dltis > 0 & dltis !=.)
-# In Python: (dltis > 0) & (dltis.notna())
+# Create debt issuance indicator for positive debt issuances
 df['DebtIssuance'] = ((df['dltis'] > 0) & df['dltis'].notna()).astype(int)
 
-# replace DebtIssuance = . if shrcd > 11 | mi(BM)
-# Set to NaN if shrcd > 11 or BM is missing
+# Exclude observations with invalid share codes or missing book-to-market ratios
 mask_exclude = (df['shrcd'] > 11) | df['BM'].isna()
 df.loc[mask_exclude, 'DebtIssuance'] = np.nan
 

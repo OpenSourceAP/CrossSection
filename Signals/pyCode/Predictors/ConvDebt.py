@@ -49,7 +49,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 # ConvDebt = 0 by default
 df['ConvDebt'] = 0
 
-# ConvDebt = 1 if (dc != . & dc != 0) | (cshrc != . & cshrc != 0)
+# ConvDebt = 1 if convertible debt exists (non-zero dc) or converted shares exist (non-zero cshrc)
 df.loc[
     ((df['dc'].notna()) & (df['dc'] != 0)) | 
     ((df['cshrc'].notna()) & (df['cshrc'] != 0)), 

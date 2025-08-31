@@ -11,51 +11,51 @@ print("Starting ZZ1_EBM_BPEBM.py...")
 
 # DATA LOAD
 print("Loading data...")
-# Line 3: use gvkey permno time_avail_m che dltt dlc dc dvpa tstkp ceq using "$pathDataIntermediate/m_aCompustat", clear
+# Load required columns from annual Compustat data
 df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet").select([
     "gvkey", "permno", "time_avail_m", "che", "dltt", "dlc", "dc", "dvpa", "tstkp", "ceq"
 ])
 
-# Line 4: bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Keep only first observation per permno-time to remove duplicates
 df = df.group_by(["permno", "time_avail_m"]).first()
 
-# Line 5: merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(mve_c)
+# Merge with SignalMasterTable to get market value (mve_c)
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select([
     "permno", "time_avail_m", "mve_c"
 ])
 df = df.join(signal_master, on=["permno", "time_avail_m"], how="inner")
 
-# Line 6: xtset permno time_avail_m (sort data by permno and time)
+# Sort data by permno and time
 df = df.sort(["permno", "time_avail_m"])
 
 # SIGNAL CONSTRUCTION
-# Line 8: gen temp = che - dltt - dlc - dc - dvpa + tstkp
+# Calculate temporary variable: cash minus total debt minus preferred dividends plus preferred stock
 df = df.with_columns([
     (pl.col("che") - pl.col("dltt") - pl.col("dlc") - pl.col("dc") - pl.col("dvpa") + pl.col("tstkp")).alias("temp")
 ])
 
-# Line 9: gen EBM = (ceq + temp)/(mve_c + temp)
+# Calculate enterprise book-to-market ratio
 df = df.with_columns([
     ((pl.col("ceq") + pl.col("temp")) / (pl.col("mve_c") + pl.col("temp"))).alias("EBM")
 ])
 
-# Line 10: gen BP = (ceq + tstkp - dvpa)/mve_c
+# Calculate book-to-price ratio
 df = df.with_columns([
     ((pl.col("ceq") + pl.col("tstkp") - pl.col("dvpa")) / pl.col("mve_c")).alias("BP")
 ])
 
-# Line 11: gen BPEBM = BP - EBM
+# Calculate difference between book-to-price and enterprise book-to-market
 df = df.with_columns([
     (pl.col("BP") - pl.col("EBM")).alias("BPEBM")
 ])
 
 # SAVE
-# Line 16: do "$pathCode/savepredictor" EBM
+# Save EBM predictor
 ebm_result = df.select(["permno", "time_avail_m", "EBM"])
 save_predictor(ebm_result, "EBM")
 print("ZZ1_EBM_BPEBM.py completed successfully")
 
-# Line 17: do "$pathCode/savepredictor" BPEBM
+# Save BPEBM predictor
 bpebm_result = df.select(["permno", "time_avail_m", "BPEBM"])
 save_predictor(bpebm_result, "BPEBM")
 print("ZZ1_EBM_BPEBM.py completed successfully")

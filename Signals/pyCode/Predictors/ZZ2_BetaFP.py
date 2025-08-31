@@ -1,12 +1,5 @@
-#%%
-# debug
-import os
-os.chdir(os.path.dirname(__file__))
-os.chdir('..')
-
-
 # ABOUTME: Frazzini-Pedersen beta using rolling correlations and volatility ratios
-# ABOUTME: Usage: python3 BetaFP.py (run from pyCode/ directory)
+# ABOUTME: Usage: python3 Predictors/ZZ2_BetaFP.py (run from pyCode/ directory)
 
 import polars as pl
 import sys

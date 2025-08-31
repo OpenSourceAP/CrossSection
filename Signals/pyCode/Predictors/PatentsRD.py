@@ -1,4 +1,4 @@
-# ABOUTME: Translates PatentsRD.do - calculates patent efficiency scaled by R&D capital 
+# ABOUTME: Calculates patent efficiency scaled by R&D capital 
 # ABOUTME: Implements double-sorted portfolio approach linking patent counts to accumulated R&D capital
 
 # Run: python3 Predictors/PatentsRD.py
@@ -37,7 +37,7 @@ df = df.merge(patents[['gvkey', 'year', 'npat']], on=['gvkey', 'year'], how='lef
 df = df.sort_values(['permno', 'time_avail_m'])
 df = df.set_index(['permno', 'time_avail_m'])
 
-# Lag patent data by 6 months (l6.npat)
+# Lag patent data by 6 months
 df['temp'] = df.groupby('permno')['npat'].shift(6)
 df['temp'] = df['temp'].fillna(0)
 df['npat'] = df['temp']
@@ -50,8 +50,8 @@ df = df.reset_index()
 df = df[df['time_avail_m'] % 100 == 6]  # month == 6
 df = df[df['time_avail_m'] >= 197501]  # Takes into account xrd data standardized after 1975
 
-# OP: efficiency in year t is patents in year t scaled by R&D in t-2 ..
-# portfolios are computed from July of year t to ...
+# Efficiency in year t is patents in year t scaled by R&D capital (sum of depreciated past R&D)
+# Portfolios are computed from July of year t to June of year t+1
 # Replace missing R&D with 0
 df['xrd'] = df['xrd'].fillna(0)
 
@@ -65,13 +65,13 @@ df['comp3'] = 0
 df['comp4'] = 0
 df['comp5'] = 0
 
-# Create lagged R&D components (June-only data: shift by years, not months)
+# Create lagged R&D components with depreciation (June-only data: shift by years)
 grouped = df.groupby('permno')['xrd']
-comp1_lag = grouped.shift(2)  # 2 years back (was shift(24) - WRONG!)
-comp2_lag = 0.8 * grouped.shift(3)  # 3 years back (was shift(36) - WRONG!)
-comp3_lag = 0.6 * grouped.shift(4)  # 4 years back (was shift(48) - WRONG!)
-comp4_lag = 0.4 * grouped.shift(5)  # 5 years back (was shift(60) - WRONG!)
-comp5_lag = 0.2 * grouped.shift(6)  # 6 years back (was shift(72) - WRONG!)
+comp1_lag = grouped.shift(2)  # 2 years back
+comp2_lag = 0.8 * grouped.shift(3)  # 3 years back, depreciated 20%
+comp3_lag = 0.6 * grouped.shift(4)  # 4 years back, depreciated 40%
+comp4_lag = 0.4 * grouped.shift(5)  # 5 years back, depreciated 60%
+comp5_lag = 0.2 * grouped.shift(6)  # 6 years back, depreciated 80%
 
 df['comp1'] = np.where(comp1_lag.notna(), comp1_lag, 0.0)
 df['comp2'] = np.where(comp2_lag.notna(), comp2_lag, 0.0)
@@ -82,7 +82,7 @@ df['comp5'] = np.where(comp5_lag.notna(), comp5_lag, 0.0)
 df['RDcap'] = df['comp1'] + df['comp2'] + df['comp3'] + df['comp4'] + df['comp5']
 df['tempPatentsRD'] = np.where(df['RDcap'] > 0, df['npat'] / df['RDcap'], np.nan)
 
-# * my tempPatentsRD is lower than OP, by factor of 2
+# Patent efficiency ratio: number of patents divided by R&D capital
 
 df = df.reset_index()
 

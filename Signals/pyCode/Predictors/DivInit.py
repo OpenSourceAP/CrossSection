@@ -1,12 +1,21 @@
-# ABOUTME: Translates DivInit.do to create dividend initiation predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DivInit.py
+# ABOUTME: DivInit.py - calculates dividend initiation predictor for companies starting to pay dividends
+# ABOUTME: Identifies firms that paid dividends in current month after 24 months of no dividends
 
-# Our signal balances users desire to have flexible data and 
-# fidelity to OP's original test.
+"""
+DivInit predictor calculation
 
-# Run from pyCode/ directory
-# Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/DivInit.csv
+Usage:
+    cd pyCode/
+    source .venv/bin/activate
+    python3 Predictors/DivInit.py
+
+Inputs:
+    - ../pyData/Intermediate/CRSPdistributions.parquet (permno, exdt, cd2, divamt)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, exchcd, shrcd)
+
+Outputs:
+    - ../pyData/Predictors/DivInit.csv (permno, yyyymm, DivInit)
+"""
 
 import pandas as pd
 import numpy as np
@@ -58,8 +67,7 @@ df = asrol(df, 'permno', 'time_avail_m', '1mo', 24, 'divamt', 'sum', 'divamt_sum
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Create dividend initiation indicator
-#gen temp = divamt > 0 & l1.divsum == 0 & (exchcd == 1 | exchcd == 2) // OP does nyse/amex only, but we are more flexible
-#gen temp = divamt > 0 & l1.divsum == 0
+# Flag firms paying dividends after 24 months of no dividends
 df['divsum_lag1'] = df.groupby('permno')['divamt_sum'].shift(1)
 df['temp'] = (df['divamt'] > 0) & (df['divsum_lag1'] == 0)
 df['temp'] = df['temp'].fillna(False).astype(int)  # Convert boolean to numeric
@@ -67,7 +75,7 @@ df['temp'] = df['temp'].fillna(False).astype(int)  # Convert boolean to numeric
 # Keep for 6 months using asrol
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 6, 'temp', 'sum', 'temp_sum', min_samples=1)
 
-# Create final DivInit signal (initsum == 1)
+# Create final DivInit signal - indicator equals 1 if dividend initiation occurred in past 6 months
 df['DivInit'] = (df['temp_sum'] == 1).astype(int)
 
 # save

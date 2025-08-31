@@ -23,16 +23,16 @@ print(f"Loaded data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 print("Filling missing returns with 0...")
-# replace ret = 0 if mi(ret)
+# Update 0 if mi(ret)
 df['ret'] = df['ret'].fillna(0)
 
-# foreach n of numlist 23(12)59 { gen temp`n' = l`n'.ret }
+# foreach n of numlist 23(12)59 { Generate l`n'.ret }
 # This creates lags for periods: 23, 35, 47, 59 months
 print("Creating lag variables for returns (23, 35, 47, 59 months)...")
 lag_periods = [23, 35, 47, 59]
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
 
-# egen retTemp1 = rowtotal(temp*), missing
+# eGenerate rowtotal(temp*), missing
 print("Calculating seasonal momentum signal...")
 lag_cols = [f'ret_lag{n}' for n in lag_periods]
 df['retTemp1'] = df[lag_cols].sum(axis=1)
@@ -40,10 +40,10 @@ df['retTemp1'] = df[lag_cols].sum(axis=1)
 all_missing = df[lag_cols].isna().all(axis=1)
 df.loc[all_missing, 'retTemp1'] = np.nan
 
-# egen retTemp2 = rownonmiss(temp*)
+# eGenerate rownonmiss(temp*)
 df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 
-# gen MomSeason = retTemp1/retTemp2
+# Generate retTemp1/retTemp2
 df['MomSeason'] = df['retTemp1'] / df['retTemp2']
 print(f"Calculated MomSeason for {df['MomSeason'].notna().sum()} observations")
 

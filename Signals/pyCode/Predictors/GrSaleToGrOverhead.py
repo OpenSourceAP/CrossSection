@@ -1,5 +1,5 @@
 # ABOUTME: GrSaleToGrOverhead.py - calculates GrSaleToGrOverhead predictor using sales and overhead growth
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/GrSaleToGrOverhead.do
+# ABOUTME: Calculates sales growth minus overhead growth using 12 and 24-month lags
 
 """
 GrSaleToGrOverhead.py
@@ -33,7 +33,7 @@ print("Starting GrSaleToGrOverhead.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use gvkey permno time_avail_m sale xsga using "$pathDataIntermediate/m_aCompustat", clear
+# Load m_aCompustat data with required columns
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -52,11 +52,9 @@ print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # SIGNAL CONSTRUCTION
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
-print("Removing duplicate observations (bysort permno time_avail_m: keep if _n == 1)...")
+print("Removing duplicate observations...")
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 
-# xtset permno time_avail_m
 print("Setting up panel data (sorting by permno, time_avail_m)...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
@@ -93,11 +91,11 @@ df['overhead_growth'] = np.where(
 # Primary formula: sales growth minus overhead growth
 df['GrSaleToGrOverhead'] = df['sale_growth'] - df['overhead_growth']
 
-# Fallback formula: replace GrSaleToGrOverhead = ((sale-l12.sale)/l12.sale)-((xsga-l12.xsga)/l12.xsga) if mi(GrSaleToGrOverhead)
+# Fallback formula: Update ((sale-l12.sale)/l12.sale)-((xsga-l12.xsga)/l12.xsga) if mi(GrSaleToGrOverhead)
 print("Applying fallback formula where primary formula is missing...")
 
 # Calculate fallback sales growth: (sale - l12.sale) / l12.sale
-df['fallback_sale_growth'] = np.where(
+df['fallback_sale_growth']  to np.where(
     df['l12_sale'] == 0,
     np.nan,  # Division by zero = missing
     (df['sale'] - df['l12_sale']) / df['l12_sale']
@@ -123,7 +121,7 @@ df['GrSaleToGrOverhead'] = np.where(
 print(f"Calculated GrSaleToGrOverhead for {df['GrSaleToGrOverhead'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" GrSaleToGrOverhead
+# Save the predictor using standardized format
 save_predictor(df, 'GrSaleToGrOverhead')
 
 print("GrSaleToGrOverhead.py completed successfully")

@@ -1,5 +1,5 @@
 # ABOUTME: Calculates probability of informed trading predictor from Easley et al
-# ABOUTME: Runs line-by-line translation of Code/Predictors/ProbInformedTrading.do
+# ABOUTME: Computes probability of informed trading from microstructure parameters
 #
 # Run: python3 Predictors/ProbInformedTrading.py
 # Input: SignalMasterTable.parquet, pin_monthly.parquet
@@ -13,33 +13,33 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# Load master data with market value information
 master_df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = master_df[['permno', 'gvkey', 'time_avail_m', 'mve_c']].copy()
 
-# gen year = yofd(dofm(time_avail_m))
+# Extract year from time_avail_m for grouping
 df['time_avail_m'] = pd.to_datetime(df['time_avail_m'])
 df['year'] = df['time_avail_m'].dt.year
 
-# merge m:1 permno time_avail_m using "$pathDataIntermediate/pin_monthly", keep(master match) nogen
+# Merge with PIN microstructure parameters data
 pin_df = pd.read_parquet('../pyData/Intermediate/pin_monthly.parquet')
 pin_df['time_avail_m'] = pd.to_datetime(pin_df['time_avail_m'])
 df = df.merge(pin_df[['permno', 'time_avail_m', 'a', 'u', 'es', 'eb']], 
               on=['permno', 'time_avail_m'], how='left')
 
 # SIGNAL CONSTRUCTION
-# * generate yearly PIN measure from Easley et al
-# gen pin = (a*u) / (a*u + es + eb)
+# Calculate PIN measure: probability of informed trading
+# PIN = (arrival rate * uninformed trades) / (arrival rate * uninformed trades + buy orders + sell orders)
 with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
     df['pin'] = (df['a'] * df['u']) / (df['a'] * df['u'] + df['es'] + df['eb'])
 
-# egen tempsize = fastxtile(mve_c), by(time_avail_m) n(2)
+# Create size quintiles based on market value within each month
 df['tempsize'] = fastxtile(df, 'mve_c', by='time_avail_m', n=2)
 
-# replace pin = . if tempsize == 2
+# Set PIN to missing for large cap stocks (top size quintile)
 df.loc[df['tempsize'] == 2, 'pin'] = np.nan
 
-# rename pin ProbInformedTrading
+# Assign final predictor name
 df['ProbInformedTrading'] = df['pin']
 
 # SAVE

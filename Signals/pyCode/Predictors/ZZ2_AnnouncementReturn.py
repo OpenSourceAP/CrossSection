@@ -1,7 +1,6 @@
 # ABOUTME: Calculates earnings announcement returns from CRSP daily returns minus market returns
 # ABOUTME: Uses 3-day window around announcement dates from Compustat quarterly data
 # 
-# This script replicates Code/Predictors/ZZ2_AnnouncementReturn.do
 # Run from pyCode/ directory: python3 Predictors/ZZ2_AnnouncementReturn.py
 #
 # Inputs:
@@ -43,7 +42,7 @@ print("Merging with crosswalk...")
 df = df.merge(tempCW, on='permno', how='left')
 
 # Use only if data date is within the validity period of the link
-# Note: missing timeLinkEnd_d (NaT) means link is still active (Stata behavior)
+# Note: missing timeLinkEnd_d (NaT) means link is still active
 temp = (df['timeLinkStart_d'] <= df['time_d']) & ((df['time_d'] <= df['timeLinkEnd_d']) | df['timeLinkEnd_d'].isna())
 print(f"Observations within link validity period: {temp.sum()} out of {len(df)}")
 df = df[temp == True]
@@ -134,7 +133,7 @@ for permno in df.index.get_level_values('permno').unique():
     # Forward fill up to 6 months
     temp = permno_df['AnnouncementReturn'].copy()
     
-    # Sequential forward fill (mimicking Stata's behavior)
+    # Sequential forward fill up to 6 months for missing values
     for i in range(1, 7):  # fill up to 6 lags
         mask = permno_df['AnnouncementReturn'].isna()
         permno_df.loc[mask, 'AnnouncementReturn'] = temp.shift(i).loc[mask]

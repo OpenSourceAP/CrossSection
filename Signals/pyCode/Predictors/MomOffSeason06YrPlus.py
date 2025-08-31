@@ -22,34 +22,33 @@ df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
 
 # SIGNAL CONSTRUCTION
-# replace ret = 0 if mi(ret)
+# Replace missing returns with 0
 df['ret'] = df['ret'].fillna(0)
 
-# foreach n of numlist 71(12)119 { gen temp`n' = l`n'.ret }
-# This creates lags for periods: 71, 83, 95, 107, 119 months
+# Create lag variables for returns in years 6-10 (71, 83, 95, 107, 119 months)
 lag_periods = list(range(71, 120, 12))  # 71, 83, 95, 107, 119
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
 
-# egen retTemp1 = rowtotal(temp*), missing
+# Calculate sum of lagged returns
 lag_cols = [f'ret_lag{n}' for n in lag_periods]
 df['retTemp1'] = df[lag_cols].sum(axis=1)
 # Handle case where all values are NaN - should return NaN, not 0
 all_missing = df[lag_cols].isna().all(axis=1)
 df.loc[all_missing, 'retTemp1'] = np.nan
 
-# egen retTemp2 = rownonmiss(temp*)
+# Count number of non-missing lagged return values
 df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 
-# gen retLagTemp = l60.ret
+# Create 60-month lagged return for rolling calculations
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [60])
 
-# asrol retLagTemp, by(permno) window(time_avail_m 60) stat(sum) minimum(1) gen(retLagTemp_sum60)
+# Calculate 60-month rolling sum of 60-month lagged returns
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 60, 'ret_lag60', 'sum', 'retLagTemp_sum60', min_samples=1)
 
-# asrol retLagTemp, by(permno) window(time_avail_m 60) stat(count) minimum(1) gen(retLagTemp_count60)
+# Calculate 60-month rolling count of 60-month lagged returns
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 60, 'ret_lag60', 'count', 'retLagTemp_count60', min_samples=1)
 
-# gen MomOffSeason06YrPlus = (retLagTemp_sum60 - retTemp1)/(retLagTemp_count60 - retTemp2)
+# Calculate off-season momentum for years 6-10 as difference in average returns
 df['MomOffSeason06YrPlus'] = (df['retLagTemp_sum60'] - df['retTemp1']) / (df['retLagTemp_count60'] - df['retTemp2'])
 
 # SAVE

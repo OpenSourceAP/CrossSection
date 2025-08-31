@@ -1,4 +1,4 @@
-# ABOUTME: Translates Herf.do to create industry concentration predictor
+# ABOUTME: Creates industry concentration predictor using Herfindahl index
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Herf.py
 
 # Run from pyCode/ directory

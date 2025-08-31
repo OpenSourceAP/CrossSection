@@ -44,8 +44,8 @@ df = pd.merge(signal_master, compustat[['permno', 'time_avail_m', 'ib']],
 # Sort for proper lagging
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 6-month lagged mve_c using calendar-based approach (not position-based)
-# This replicates Stata's l6.mve_c which looks back exactly 6 months in calendar time
+# Create 6-month lagged mve_c using calendar-based approach
+# Look back exactly 6 months in calendar time to align earnings with appropriate market value
 df['time_lag6'] = df['time_avail_m'] - pd.DateOffset(months=6)
 
 # Self-merge to get 6-month lagged values

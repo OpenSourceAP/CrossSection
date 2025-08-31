@@ -45,7 +45,7 @@ print("Data sorted by permno and time_avail_m")
 # SIGNAL CONSTRUCTION
 print("Starting signal construction...")
 
-# Replace missing returns with 0 (equivalent to: replace ret = 0 if mi(ret))
+# Update missing returns with 0 (equivalent to: Replace 0 if mi(ret))
 df['ret'] = df['ret'].fillna(0)
 print("Replaced missing returns with 0")
 

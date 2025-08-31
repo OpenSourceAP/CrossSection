@@ -26,17 +26,17 @@ print(f"After deduplicating by permno time_avail_m: {len(df)} observations")
 # xtset permno time_avail_m
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# replace dlcch = 0 if mi(dlcch)
+# Update 0 if mi(dlcch)
 df['dlcch'] = df['dlcch'].fillna(0)
 
-# gen NetDebtFinance = (dltis - dltr + dlcch)/(.5*(at + l12.at))
+# Generate (dltis - dltr + dlcch)/(.5*(at + l12.at))
 # Create 12-month lag of at
 df['l12_at'] = df.groupby('permno')['at'].shift(12)
 
 # Calculate NetDebtFinance
 df['NetDebtFinance'] = (df['dltis'] - df['dltr'] + df['dlcch']) / (0.5 * (df['at'] + df['l12_at']))
 
-# replace NetDebtFinance = . if abs(NetDebtFinance) > 1
+# Update . if abs(NetDebtFinance) > 1
 df.loc[df['NetDebtFinance'].abs() > 1, 'NetDebtFinance'] = np.nan
 
 print(f"NetDebtFinance calculated for {df['NetDebtFinance'].notna().sum()} observations")

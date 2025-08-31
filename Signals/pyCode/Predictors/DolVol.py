@@ -1,4 +1,4 @@
-# ABOUTME: Translates DolVol.do to create dollar volume predictor
+# ABOUTME: Creates dollar volume predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/DolVol.py
 
 # Run from pyCode/ directory

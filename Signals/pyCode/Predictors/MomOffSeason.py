@@ -24,36 +24,35 @@ print(f"Loaded data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 print("Filling missing returns with 0...")
-# replace ret = 0 if mi(ret)
+# Replace missing returns with 0
 df['ret'] = df['ret'].fillna(0)
 
-# foreach n of numlist 23(12)59 { gen temp`n' = l`n'.ret }
-# This creates lags for periods: 23, 35, 47, 59 months
+# Create lag variables for returns at specific intervals (23, 35, 47, 59 months)
 print("Creating lag variables for returns (23, 35, 47, 59 months)...")
 lag_periods = [23, 35, 47, 59]
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
 
-# egen retTemp1 = rowtotal(temp*), missing
+# Calculate sum of lagged returns
 lag_cols = [f'ret_lag{n}' for n in lag_periods]
 df['retTemp1'] = df[lag_cols].sum(axis=1)
 # Handle case where all values are NaN - should return NaN, not 0
 all_missing = df[lag_cols].isna().all(axis=1)
 df.loc[all_missing, 'retTemp1'] = np.nan
 
-# egen retTemp2 = rownonmiss(temp*)
+# Count number of non-missing lagged return values
 df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 
-# gen retLagTemp = l12.ret
+# Create 12-month lagged return for rolling calculations
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', [12])
 
-# asrol retLagTemp, by(permno) window(time_avail_m 48) stat(sum) minimum(1) gen(retLagTemp_sum48)
+# Calculate 48-month rolling sum of 12-month lagged returns
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 48, 'ret_lag12', 'sum', 'retLagTemp_sum48', min_samples=1)
 
-# asrol retLagTemp, by(permno) window(time_avail_m 48) stat(count) minimum(1) gen(retLagTemp_count48)
+# Calculate 48-month rolling count of 12-month lagged returns
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 48, 'ret_lag12', 'count', 'retLagTemp_count48', min_samples=1)
 
 print("Calculating MomOffSeason signal...")
-# gen MomOffSeason = (retLagTemp_sum48 - retTemp1)/(retLagTemp_count48 - retTemp2)
+# Calculate off-season momentum as difference in average returns
 df['MomOffSeason'] = (df['retLagTemp_sum48'] - df['retTemp1']) / (df['retLagTemp_count48'] - df['retTemp2'])
 print(f"Calculated MomOffSeason for {df['MomOffSeason'].notna().sum()} observations")
 

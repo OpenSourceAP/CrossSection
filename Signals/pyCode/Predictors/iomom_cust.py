@@ -32,7 +32,7 @@ print("Loading SignalMasterTable...")
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                                columns=['permno', 'gvkey', 'time_avail_m'])
 
-# drop if gvkey ==.
+# Drop observations with missing gvkey
 signal_master = signal_master.dropna(subset=['gvkey'])
 print(f"Loaded {len(signal_master):,} observations with gvkey")
 
@@ -40,16 +40,16 @@ print("Loading InputOutputMomentumProcessed...")
 iomom_df = pd.read_parquet('../pyData/Intermediate/InputOutputMomentumProcessed.parquet')
 print(f"Loaded {len(iomom_df):,} InputOutputMomentum observations")
 
-# merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/InputOutputMomentumProcessed", keep(master match) nogenerate
+# Merge with InputOutputMomentumProcessed data on gvkey and time_avail_m
 print("Merging with InputOutputMomentumProcessed...")
 df = pd.merge(signal_master, iomom_df, on=['gvkey', 'time_avail_m'], how='left')
 print(f"After merge: {len(df):,} observations")
 
 # SIGNAL CONSTRUCTION
-# gen iomom_cust = retmatchcustomer
+# Set customer momentum variable from retmatchcustomer column
 df['iomom_cust'] = df['retmatchcustomer']
 
-# keep if iomom_cust != .
+# Keep only observations with valid customer momentum values
 df = df.dropna(subset=['iomom_cust'])
 print(f"After dropping missing iomom_cust: {len(df):,} observations")
 

@@ -32,7 +32,7 @@ from utils.stata_replication import stata_ineq_pd
 print("Starting retConglomerate predictor (rewritten from scratch)...")
 
 # ------------------------------------------------------------
-# Load Data (following Stata code lines 1-25 exactly)
+# Load Data
 # ------------------------------------------------------------
 
 # --- Prepare GVKEY-PERMNO crosswalk
@@ -41,10 +41,10 @@ crosswalk = pd.read_parquet('../pyData/Intermediate/CCMLinkingTable.parquet',
                             columns=['gvkey', 'permno', 'timeLinkStart_d', 'timeLinkEnd_d'])
 print(f"Initial crosswalk shape: {crosswalk.shape}")
 
-# destring gvkey, replace
+# Convert gvkey to numeric
 crosswalk['gvkey'] = pd.to_numeric(crosswalk['gvkey'], errors='coerce')
 
-# save "$pathtemp/tempCW", replace  
+# Save temporary crosswalk
 tempCW = crosswalk.copy()
 print(f"tempCW shape after destring: {tempCW.shape}")
 
@@ -54,8 +54,7 @@ crsp_df = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
                          columns=['permno', 'time_avail_m', 'ret'])
 print(f"Initial CRSP shape: {crsp_df.shape}")
 
-# keep permno time_avail_m ret (already done in loading)
-# save "$pathtemp/tempCRSP", replace
+# Save temporary CRSP data
 tempCRSP = crsp_df.copy()
 print(f"tempCRSP shape: {tempCRSP.shape}")
 
@@ -65,15 +64,14 @@ compustat_annual = pd.read_parquet('../pyData/Intermediate/a_aCompustat.parquet'
                                    columns=['gvkey', 'permno', 'sale', 'fyear'])
 print(f"Initial compustat annual shape: {compustat_annual.shape}")
 
-# rename sale saleACS
+# Rename sale to saleACS
 compustat_annual = compustat_annual.rename(columns={'sale': 'saleACS'})
 
-# drop if saleACS <0 | mi(saleACS)
-# Apply Trap #1: Stata's inequality behavior - use stata_ineq_pd for < comparison
+# Drop if saleACS < 0 or missing
 mask_keep = ~(stata_ineq_pd(compustat_annual['saleACS'], "<", 0) | compustat_annual['saleACS'].isna())
 compustat_annual = compustat_annual[mask_keep]
 
-# save "$pathtemp/tempCS", replace
+# Save temporary Compustat data
 tempCS = compustat_annual.copy()
 print(f"tempCS shape after filtering: {tempCS.shape}")
 
@@ -83,62 +81,56 @@ segments_df = pd.read_parquet('../pyData/Intermediate/CompustatSegments.parquet'
                              columns=['gvkey', 'datadate', 'stype', 'sics1', 'sales'])
 print(f"Initial segments shape: {segments_df.shape}")
 
-# keep if stype == "OPSEG" | stype == "BUSSEG"
+# Keep only operating or business segments
 segments_df = segments_df[segments_df['stype'].isin(['OPSEG', 'BUSSEG'])]
 print(f"After stype filter: {segments_df.shape}")
 
-# drop if sales < 0 | mi(sales)
-# Apply Trap #1: Stata's inequality behavior
+# Drop if sales < 0 or missing
 mask_keep = ~(stata_ineq_pd(segments_df['sales'], "<", 0) | segments_df['sales'].isna())
 segments_df = segments_df[mask_keep]
 print(f"After sales filter: {segments_df.shape}")
 
-# tostring sics1, replace
-# In Stata, missing numeric values become "." when converted to string
-# In Python, NaN becomes "nan" - we need to match Stata behavior
+# Convert sics1 to string (missing numeric values become ".")
 segments_df['sics1'] = segments_df['sics1'].astype(str)
 segments_df['sics1'] = segments_df['sics1'].replace('nan', '.')
 
 # ------------------------------------------------------------
-# Identify Conglomerates (following Stata code lines 27-46 exactly)
+# Identify Conglomerates
 # ------------------------------------------------------------
 print("Identifying conglomerates...")
 
-# gen sic2D = substr(sics1, 1,2)
+# Create 2-digit SIC code
 segments_df['sic2D'] = segments_df['sics1'].str[:2]
 
-# gcollapse (sum) sales, by(gvkey sic2D datadate)
+# Collapse sales by gvkey, sic2D, and datadate
 segments_agg = segments_df.groupby(['gvkey', 'sic2D', 'datadate'])['sales'].sum().reset_index()
 print(f"After collapse: {segments_agg.shape}")
 
-# gen fyear = yofd(datadate)
+# Extract fiscal year from datadate
 segments_agg['fyear'] = pd.to_datetime(segments_agg['datadate']).dt.year
 
-# merge m:1 gvkey fyear using "$pathtemp/tempCS", keep(match) nogenerate
+# Merge with Compustat annual data
 segments_agg = pd.merge(segments_agg, tempCS, on=['gvkey', 'fyear'], how='inner')
 print(f"After merge with tempCS: {segments_agg.shape}")
 print(f"Columns after merge: {list(segments_agg.columns)}")
 
-# egen temptotalSales = total(sales), by(gvkey fyear)
+# Calculate total sales by gvkey and fyear
 segments_agg['temptotalSales'] = segments_agg.groupby(['gvkey', 'fyear'])['sales'].transform('sum')
 
-# gen tempCSSegmentShare = sales/saleACS
+# Calculate segment share of total sales
 segments_agg['tempCSSegmentShare'] = segments_agg['sales'] / segments_agg['saleACS']
 
-# bys gvkey datadate: gen tempNInd = _N
+# Count number of industries per gvkey-datadate
 segments_agg['tempNInd'] = segments_agg.groupby(['gvkey', 'datadate']).transform('size')
-
-# tab tempNInd
 print(f"Industry count distribution:\\n{segments_agg['tempNInd'].value_counts().head()}")
 
-# Apply conglomerate classification logic exactly as Stata
-# gen Conglomerate = 0 if tempNInd == 1 & tempCSSegmentShare > .8
-# replace Conglomerate = 1 if tempNInd > 1 & tempCSSegmentShare > .8
+# Apply conglomerate classification logic:
+# Stand-alone: single industry (tempNInd == 1) with segment share > 0.8
+# Conglomerate: multiple industries (tempNInd > 1) with segment share > 0.8
 
 segments_agg['Conglomerate'] = np.nan
 
 # Stand-alone: tempNInd == 1 & tempCSSegmentShare > 0.8
-# Apply Trap #1: Use stata_ineq_pd for > comparison with missing values
 mask_standalone = (segments_agg['tempNInd'] == 1) & stata_ineq_pd(segments_agg['tempCSSegmentShare'], ">", 0.8)
 segments_agg.loc[mask_standalone, 'Conglomerate'] = 0
 
@@ -146,34 +138,34 @@ segments_agg.loc[mask_standalone, 'Conglomerate'] = 0
 mask_conglomerate = (segments_agg['tempNInd'] > 1) & stata_ineq_pd(segments_agg['tempCSSegmentShare'], ">", 0.8)
 segments_agg.loc[mask_conglomerate, 'Conglomerate'] = 1
 
-# drop if mi(Conglomerate)
+# Drop missing conglomerate classifications
 segments_agg = segments_agg.dropna(subset=['Conglomerate'])
 print(f"After dropping missing Conglomerate: {segments_agg.shape}")
 
-# tab Conglomerate
+# Show conglomerate distribution
 print(f"Conglomerate distribution:\\n{segments_agg['Conglomerate'].value_counts()}")
 
-# save tempConglomerate, replace
+# Save temporary conglomerate data
 tempConglomerate = segments_agg.copy()
 
 # ------------------------------------------------------------
-# Calculate Industry Returns (following Stata code lines 48-76 exactly)
+# Calculate Industry Returns
 # ------------------------------------------------------------
 print("Calculating industry returns from stand-alones...")
 
 # Industry returns from stand-alones
-# keep if Conglomerate == 0
+# Keep only stand-alone companies (Conglomerate == 0)
 stand_alone = tempConglomerate[tempConglomerate['Conglomerate'] == 0].copy()
 print(f"Stand-alone segments shape: {stand_alone.shape}")
 
 # Add identifiers for merging with stock returns
-# joinby gvkey using "$pathtemp/tempCW", update
+# Merge with GVKEY-PERMNO crosswalk
 stand_alone = pd.merge(stand_alone, tempCW, on='gvkey', how='left')
 print(f"After merge with tempCW: {stand_alone.shape}")
 print(f"Columns after merge: {list(stand_alone.columns)}")
 
 # Use only if data date is within the validity period of the link
-# gen temp = (timeLinkStart_d <= datadate  & datadate <= timeLinkEnd_d)
+# Generate (timeLinkStart_d <= datadate  & datadate <= timeLinkEnd_d)
 # Apply Trap #1: Handle missing dates according to Stata's infinity behavior
 
 # In Stata: missing <= anything is FALSE, anything <= missing is TRUE
@@ -227,7 +219,7 @@ stand_alone = stand_alone.rename(columns={'sic2D': 'sic2DCSS'})
 stand_alone = pd.merge(stand_alone, tempCRSP, on='permno', how='inner')
 print(f"After merge with tempCRSP: {stand_alone.shape}")
 
-# gen year = yofd(dofm(time_avail_m))
+# Generate yofd(dofm(time_avail_m))
 stand_alone['year'] = pd.to_datetime(stand_alone['time_avail_m']).dt.year
 
 # keep if fyear == year
@@ -269,7 +261,7 @@ print(f"After dropping missing sic2DCSS: {conglomerates.shape}")
 conglomerates = pd.merge(conglomerates, tempReturns, on='sic2DCSS', how='inner')
 print(f"After merge with industry returns: {conglomerates.shape}")
 
-# gen year = yofd(dofm(time_avail_m))
+# Generate yofd(dofm(time_avail_m))
 conglomerates['year'] = pd.to_datetime(conglomerates['time_avail_m']).dt.year
 
 # keep if fyear == year
@@ -277,10 +269,10 @@ conglomerates = conglomerates[conglomerates['fyear'] == conglomerates['year']]
 print(f"After year filter: {conglomerates.shape}")
 
 # Now take weighted return
-# egen tempTotal = total(sales), by(permno time_avail_m)
+# eGenerate total(sales), by(permno time_avail_m)
 conglomerates['tempTotal'] = conglomerates.groupby(['permno', 'time_avail_m'])['sales'].transform('sum')
 
-# gen tempweight = sales/tempTotal
+# Generate sales/tempTotal
 conglomerates['tempweight'] = conglomerates['sales'] / conglomerates['tempTotal']
 
 # DEBUG: Check weights like original code comment

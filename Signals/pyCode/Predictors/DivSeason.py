@@ -1,6 +1,6 @@
 #%%
 
-# ABOUTME: Translates DivSeason.do to create seasonal dividend yield predictor
+# ABOUTME: Creates seasonal dividend yield predictor based on expected dividend timing patterns
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/DivSeason.py
 
 # Run from pyCode/ directory
@@ -60,22 +60,21 @@ print(f"After merge: {df.shape[0]} rows")
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# CRITICAL: Identify the first observation with actual dividend data for each permno
-# This matches Stata's behavior where observations before first dividend data are effectively excluded
+# Identify first observation with dividend data for each company
+# Only analyze periods from when dividend history becomes available
 first_div_obs = df[df['cd3'].notna()].groupby('permno')['time_avail_m'].min().reset_index()
 first_div_obs.columns = ['permno', 'first_div_date']
 
 # Merge to get first dividend observation date
 df = df.merge(first_div_obs, on='permno', how='left')
 
-# Only keep observations from first dividend observation onward
-# This matches Stata's effective behavior after the merge step
+# Keep only observations from first dividend record onward
+# This ensures consistent dividend frequency tracking
 df = df[(df['time_avail_m'] >= df['first_div_date']) | df['first_div_date'].isna()]
 df = df.drop('first_div_date', axis=1)
 
-# Fill missing cd3 with previous value (equivalent to Stata's l1.cd3 logic)
-# Stata: replace cd3 = l1.cd3 if cd3 == .
-# This should ONLY fill missing values, not override existing values
+# Fill missing dividend frequency codes with previous value for consistency
+# This forward-fills missing frequency codes to maintain continuity
 df['cd3'] = df.groupby('permno')['cd3'].ffill()
 
 # Replace missing dividend amounts with 0
@@ -101,8 +100,8 @@ print("Creating 12-month rolling dividend payments...")
 df = asrol(df, 'permno', 'time_avail_m', '1mo', 12, 'divpaid', 'sum', new_col_name='divpaid_sum')
 
 
-# Initialize DivSeason: 0 if had dividends in last 12 months, otherwise missing (NaN)
-# This exactly replicates Stata's: gen DivSeason = 0 if div12 > 0
+# Initialize DivSeason: 0 for companies with dividends in last 12 months, missing otherwise
+# Companies without recent dividends are not eligible for the seasonal strategy
 df['DivSeason'] = np.where(df['divpaid_sum'] > 0, 0, np.nan)
 
 # Long if dividend month is predicted
@@ -113,25 +112,23 @@ print("Creating lag variables for dividend prediction...")
 for lag in [2, 5, 8, 11]:
     df[f'divpaid_lag{lag}'] = df.groupby('permno')['divpaid'].shift(lag)
 
-# temp3: quarterly, unknown, or missing frequency with expected dividend timing
-# cd3 == 3 (quarterly) | cd3 == 0 (unknown) | cd3 == 1 (annual treated as quarterly?)
-# with dividends 2, 5, 8, or 11 months ago
-# In Stata: l2.divpaid | l5.divpaid | l8.divpaid | l11.divpaid
-# This is TRUE if any lag is 1 OR if any lag is missing (Stata treats missing as positive infinity)
+# Quarterly or unknown frequency companies with expected dividend timing
+# For quarterly payers, check for dividends 2, 5, 8, or 11 months ago
+# This identifies companies likely to pay dividends based on their historical quarterly pattern
 df['temp3'] = ((df['cd3'].isin([0, 1, 3])) & 
                (stata_ineq_pd(df['divpaid_lag2'], ">", 0) | 
                 stata_ineq_pd(df['divpaid_lag5'], ">", 0) | 
                 stata_ineq_pd(df['divpaid_lag8'], ">", 0) | 
                 stata_ineq_pd(df['divpaid_lag11'], ">", 0))).astype(int)
 
-# temp4: semi-annual (cd3 == 4) with dividends 5 or 11 months ago
-# In Stata: l5.divpaid | l11.divpaid
+# Semi-annual frequency companies with expected dividend timing
+# Check for dividends 5 or 11 months ago to predict next semi-annual payment
 df['temp4'] = ((df['cd3'] == 4) & 
                (stata_ineq_pd(df['divpaid_lag5'], ">", 0) | 
                 stata_ineq_pd(df['divpaid_lag11'], ">", 0))).astype(int)
 
-# temp5: annual (cd3 == 5) with dividend 11 months ago
-# In Stata: l11.divpaid
+# Annual frequency companies with expected dividend timing
+# Check for dividend 11 months ago to predict next annual payment
 df['temp5'] = ((df['cd3'] == 5) & stata_ineq_pd(df['divpaid_lag11'], ">", 0)).astype(int)
 
 # Replace DivSeason = 1 if any temp condition is met

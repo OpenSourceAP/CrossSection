@@ -13,21 +13,20 @@ import numpy as np
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
                      columns=['permno', 'gvkey', 'time_avail_m'])
 
-# keep if !mi(gvkey)
+# Filter to observations with valid gvkey identifiers
 df = df.dropna(subset=['gvkey'])
 
-# merge 1:1 gvkey time_avail_m using m_QCompustat, keepusing(epspxq) nogenerate keep(match)
+# Merge with quarterly Compustat data to get earnings per share
 qcompustat = pd.read_parquet('../pyData/Intermediate/m_QCompustat.parquet', 
                              columns=['gvkey', 'time_avail_m', 'epspxq'])
 
 df = df.merge(qcompustat, on=['gvkey', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-# xtset permno time_avail_m
+# Sort data by company and time for time series operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen GrTemp = (epspxq - l12.epspxq)
-# Stata uses calendar-based lags with xtset - exact date matching
+# Calculate quarterly earnings growth over 12-month period
 df['date_lag12'] = df['time_avail_m'] - pd.DateOffset(months=12)
 temp_merge = df[['permno', 'time_avail_m', 'epspxq']].copy()
 temp_merge.columns = ['permno', 'date_lag12', 'epspxq_l12']
@@ -35,8 +34,7 @@ df = df.merge(temp_merge, on=['permno', 'date_lag12'], how='left')
 df = df.drop('date_lag12', axis=1)
 df['GrTemp'] = df['epspxq'] - df['epspxq_l12']
 
-# foreach n of numlist 3(3)24: gen temp`n' = l`n'.GrTemp
-# Create calendar-based lags 3, 6, 9, 12, 15, 18, 21, 24 months of GrTemp for Drift calculation
+# Create lagged earnings growth values at 3-month intervals for drift calculation
 for n in range(3, 25, 3):
     df[f'date_lag{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
     temp_merge = df[['permno', 'time_avail_m', 'GrTemp']].copy()
@@ -44,18 +42,17 @@ for n in range(3, 25, 3):
     df = df.merge(temp_merge, on=['permno', f'date_lag{n}'], how='left')
     df = df.drop(f'date_lag{n}', axis=1)
 
-# egen Drift = rowmean(temp*)
+# Calculate average earnings growth over past 8 quarters (drift component)
 grtemp_lag_cols = [f'grtemp_lag{n}' for n in range(3, 25, 3)]
 df['Drift'] = df[grtemp_lag_cols].mean(axis=1)
 
-# gen EarningsSurprise = epspxq - l12.epspxq - Drift
+# Calculate earnings surprise as growth minus historical drift
 df['EarningsSurprise'] = df['epspxq'] - df['epspxq_l12'] - df['Drift']
 
 # Drop grtemp lag columns
 df = df.drop(columns=grtemp_lag_cols)
 
-# foreach n of numlist 3(3)24: gen temp`n' = l`n'.EarningsSurprise
-# Create calendar-based lags 3, 6, 9, 12, 15, 18, 21, 24 months of EarningsSurprise for SD calculation
+# Create lagged earnings surprise values for volatility calculation
 for n in range(3, 25, 3):
     df[f'date_lag{n}'] = df['time_avail_m'] - pd.DateOffset(months=n)
     temp_merge = df[['permno', 'time_avail_m', 'EarningsSurprise']].copy()
@@ -63,22 +60,20 @@ for n in range(3, 25, 3):
     df = df.merge(temp_merge, on=['permno', f'date_lag{n}'], how='left')
     df = df.drop(f'date_lag{n}', axis=1)
 
-# egen SD = rowsd(temp*)
-# Stata's rowsd() uses sample std with n-1 denominator (ddof=1)
+# Calculate standard deviation of historical earnings surprises
 es_lag_cols = [f'es_lag{n}' for n in range(3, 25, 3)]
 df['SD'] = df[es_lag_cols].std(axis=1, ddof=1)
 
-# replace EarningsSurprise = EarningsSurprise/SD
-# Stata divides by SD even when SD is extremely small, creating large values
+# Standardize earnings surprise by dividing by historical volatility
 df['EarningsSurprise'] = df['EarningsSurprise'] / df['SD']
-# Replace inf/-inf with NaN to match Stata's behavior when SD = 0 exactly
+# Replace infinite values with missing when standard deviation is zero
 df['EarningsSurprise'] = df['EarningsSurprise'].replace([np.inf, -np.inf], np.nan)
 
-# Keep only observations with valid EarningsSurprise and reliable SD
-# Stata appears to filter out observations with unreliable SD calculations
+# Keep only observations with valid standardized earnings surprise
 df = df.dropna(subset=['EarningsSurprise'])
-df = df.dropna(subset=['SD'])  # Remove observations where SD = NaN  
-df = df[df['SD'] > 1e-10]  # Remove observations where SD is essentially zero
+# Remove observations with missing or near-zero standard deviation
+df = df.dropna(subset=['SD'])
+df = df[df['SD'] > 1e-10]
 
 # Keep only required columns for final output
 result = df[['permno', 'time_avail_m', 'EarningsSurprise']].copy()
@@ -86,7 +81,7 @@ result = df[['permno', 'time_avail_m', 'EarningsSurprise']].copy()
 # Convert time_avail_m to yyyymm format
 result['yyyymm'] = result['time_avail_m'].dt.year * 100 + result['time_avail_m'].dt.month
 
-# Final format matching Stata output
+# Final output format
 result = result[['permno', 'yyyymm', 'EarningsSurprise']]
 
 # Convert permno and yyyymm to int

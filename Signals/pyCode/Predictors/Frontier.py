@@ -1,4 +1,4 @@
-# ABOUTME: Optimized version of Frontier.do for faster processing with optional year filtering
+# ABOUTME: Calculates Frontier predictor using cross-sectional regressions with optional year filtering
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/Frontier.py [--max-year YEAR]
 
 # Run from pyCode/ directory
@@ -45,8 +45,7 @@ if args.max_year:
     filtered_len = len(df)
     print(f"Reduced data from {original_len:,} to {filtered_len:,} rows ({100*filtered_len/original_len:.1f}%)")
 
-# Create time_avail as numeric time variable (Stata monthly format)
-# Use Stata's tm format: months since 1960m1 = 0
+# Create time_avail as numeric time variable (months since 1960m1)
 df['time_avail'] = ((df['time_avail_m'].dt.year - 1960) * 12 + 
                     (df['time_avail_m'].dt.month - 1))
 
@@ -54,7 +53,7 @@ df['time_avail'] = ((df['time_avail_m'].dt.year - 1960) * 12 +
 # Replace missing xad with 0
 df['xad'] = df['xad'].fillna(0)
 
-# Create variables - handle infinite values like Stata (set to NaN)
+# Create variables - handle infinite values by setting to NaN
 df['YtempBM'] = np.log(df['mve_c'])
 df['YtempBM'] = df['YtempBM'].replace([np.inf, -np.inf], np.nan)
 
@@ -93,10 +92,10 @@ last_period_time = time.time()
 predictions_stored = 0
 
 for i, current_date in enumerate(unique_dates):
-    # Convert current_date to time_avail for comparison (Stata tm format)
+    # Convert current_date to time_avail for comparison
     current_time_avail = ((current_date.year - 1960) * 12 + (current_date.month - 1))
     
-    # Calendar-based 60 months back (like Stata `t' - 60)
+    # Calendar-based 60 months back
     months_back_60 = current_time_avail - 60
     
     # Get training data: time_avail <= current AND time_avail > 60 time units back
@@ -104,7 +103,7 @@ for i, current_date in enumerate(unique_dates):
     train_data = df[train_mask].copy()
     train_data = train_data.dropna(subset=['YtempBM'] + reg_vars)
     
-    if len(train_data) < 3:  # Match Stata's minimal threshold
+    if len(train_data) < 3:  # Require minimal sample size
         continue
         
     # Get current period data for prediction

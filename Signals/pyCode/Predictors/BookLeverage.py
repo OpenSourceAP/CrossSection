@@ -1,5 +1,5 @@
 # ABOUTME: BookLeverage.py - calculates BookLeverage predictor using book leverage ratio
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/BookLeverage.do
+# ABOUTME: Computes book leverage as total assets divided by book equity (with deferred taxes adjusted)
 
 """
 BookLeverage.py
@@ -33,7 +33,7 @@ print("Starting BookLeverage.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use permno time_avail_m at lt txditc pstk pstkrv pstkl seq ceq using "$pathDataIntermediate/m_aCompustat", clear
+# Load monthly Compustat data with required balance sheet variables
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -50,40 +50,35 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations by keeping first occurrence for each firm-month
 print("Deduplicating by permno time_avail_m...")
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplication: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# replace txditc = 0 if mi(txditc)
+# Set deferred tax credits to zero when missing
 df['txditc'] = df['txditc'].fillna(0)
 
-# gen tempPS = pstk
-# replace tempPS = pstkrv if mi(tempPS)
-# replace tempPS = pstkl if mi(tempPS)
+# Calculate preferred stock using hierarchical fallback: pstk, then pstkrv, then pstkl
 print("Calculating tempPS with fallback logic...")
 df['tempPS'] = df['pstk'].copy()
 df['tempPS'] = df['tempPS'].fillna(df['pstkrv'])
 df['tempPS'] = df['tempPS'].fillna(df['pstkl'])
 
-# gen tempSE = seq
-# replace tempSE = ceq + tempPS if mi(tempSE)
-# replace tempSE = at - lt if mi(tempSE)
+# Calculate stockholders equity using hierarchical fallback: seq, then ceq+preferred stock, then assets minus liabilities
 print("Calculating tempSE with fallback logic...")
 df['tempSE'] = df['seq'].copy()
 df['tempSE'] = df['tempSE'].fillna(df['ceq'] + df['tempPS'])
 df['tempSE'] = df['tempSE'].fillna(df['at'] - df['lt'])
 
-# gen BookLeverage = at/(tempSE + txditc - tempPS)
+# Calculate book leverage as total assets divided by book equity (stockholders equity plus deferred taxes minus preferred stock)
 print("Calculating BookLeverage...")
 
 # Calculate book equity (denominator)
 df['book_equity'] = df['tempSE'] + df['txditc'] - df['tempPS']
 
-# Calculate book leverage with domain-aware missing value handling
-# Following missing/missing = 1.0 pattern for division operations
+# Handle division by zero and missing value cases appropriately
 df['BookLeverage'] = np.where(
     df['book_equity'] == 0,
     np.nan,  # Division by zero = missing
@@ -97,7 +92,7 @@ df['BookLeverage'] = np.where(
 print(f"Calculated BookLeverage for {df['BookLeverage'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" BookLeverage
+# Save the predictor using standardized format
 save_predictor(df, 'BookLeverage')
 
 print("BookLeverage.py completed successfully")

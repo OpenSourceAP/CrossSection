@@ -98,7 +98,7 @@ df['cfp'] = np.where(
     )
 )
 
-# Replace with oancf/mve_c if oancf is available (equivalent to replace cfp = oancf/mve_c if oancf !=.)
+# Update with oancf/mve_c if oancf is available (equivalent to Replace oancf/mve_c if oancf ! to.)
 mask_oancf_available = df['oancf'].notna()
 df.loc[mask_oancf_available, 'cfp'] = np.where(
     df.loc[mask_oancf_available, 'mve_c'] == 0,

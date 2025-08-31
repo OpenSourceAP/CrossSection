@@ -13,24 +13,24 @@ import numpy as np
 print("Starting ShareIss5Y calculation...")
 
 # DATA LOAD
-# use permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", clear
+# Load signal master table with permno and time_avail_m
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', columns=['permno', 'time_avail_m'])
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keepusing(shrout cfacshr) nogenerate keep(match)
+# Merge with monthly CRSP data to get shares outstanding and cumulative adjustment factor
 monthly_crsp = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet', columns=['permno', 'time_avail_m', 'shrout', 'cfacshr'])
 df = pd.merge(signal_master, monthly_crsp, on=['permno', 'time_avail_m'], how='inner', validate='1:1')
 
 print(f"After merge: {len(df)} observations")
 
 # SIGNAL CONSTRUCTION
-# gen temp = shrout*cfacshr
+# Calculate adjusted shares outstanding
 df['temp'] = df['shrout'] * df['cfacshr']
 
 # Sort for lag operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create time-based lags (not position-based)
-# l5.temp means 5 months ago, l65.temp means 65 months ago
+# Create time-based lags for adjusted shares outstanding
+# Get values from 5 months and 65 months ago
 df['time_lag5'] = df['time_avail_m'] - pd.DateOffset(months=5)
 df['time_lag65'] = df['time_avail_m'] - pd.DateOffset(months=65)
 
@@ -45,13 +45,13 @@ lag65_data.columns = ['permno', 'time_lag65', 'l65_temp']
 df = df.merge(lag5_data, on=['permno', 'time_lag5'], how='left')
 df = df.merge(lag65_data, on=['permno', 'time_lag65'], how='left')
 
-# gen ShareIss5Y = (l5.temp - l65.temp)/l65.temp
+# Calculate 5-year share issuance: (shares 5mo ago - shares 65mo ago) / shares 65mo ago
 df['ShareIss5Y'] = (df['l5_temp'] - df['l65_temp']) / df['l65_temp']
 
 print(f"ShareIss5Y calculated for {df['ShareIss5Y'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" ShareIss5Y
+# Save ShareIss5Y predictor to CSV file
 result = df[['permno', 'time_avail_m', 'ShareIss5Y']].copy()
 result = result.dropna(subset=['ShareIss5Y'])
 

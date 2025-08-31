@@ -35,7 +35,7 @@ df.loc[valid_mask, 'temp'] = np.log(df.loc[valid_mask, 'revt']) - np.log(df.loc[
 # gsort time_avail_m -temp
 df = df.sort_values(['time_avail_m', 'temp'], ascending=[True, False], na_position='last')
 
-# by time_avail_m: gen tempRank = _n if temp !=.
+# Generate within-month ranking for non-missing temp values
 df['tempRank'] = np.nan
 df['row_num'] = df.groupby('time_avail_m').cumcount() + 1
 df.loc[df['temp'].notna(), 'tempRank'] = df.loc[df['temp'].notna(), 'row_num']

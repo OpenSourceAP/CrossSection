@@ -28,66 +28,59 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
 
-# use permno time_avail_m secid prc shrcd using SignalMasterTable
+# Load required columns from SignalMasterTable
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                      columns=['permno', 'time_avail_m', 'secid', 'prc', 'shrcd'])
 
-# add stock volume
-# merge 1:1 permno time_avail_m using monthlyCRSP, keep(master match) nogenerate keepusing(vol)
+# Merge with monthly CRSP data to get stock volume
 crsp = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
                        columns=['permno', 'time_avail_m', 'vol'])
 df = df.merge(crsp, on=['permno', 'time_avail_m'], how='left')
 
-# preserve
-# keep if mi(secid)
-# save temp, replace
-# restore
-# drop if mi(secid)
+# Temporarily separate observations with missing secid before option volume merge
 temp = df[df['secid'].isna()].copy()
 df = df[df['secid'].notna()].copy()
 
-# add option volume
-# merge m:1 secid time_avail_m using OptionMetricsVolume, keep(master match) nogenerate keepusing(optvolume)
+# Merge with OptionMetrics data to get option volume
 optmetrics = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolume.parquet',
                              columns=['secid', 'time_avail_m', 'optvolume'])
 df = df.merge(optmetrics, on=['secid', 'time_avail_m'], how='left')
 
-# append using temp
+# Recombine with observations that had missing secid
 df = pd.concat([df, temp], ignore_index=True)
 
 # SIGNAL CONSTRUCTION
-# xtset permno time_avail_m
+# Sort by permno and time for time series operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen OptionVolume1 = optvolume/vol
+# Calculate OptionVolume1 as ratio of option volume to stock volume
 df['OptionVolume1'] = df['optvolume'] / df['vol']
 
-# replace OptionVolume1 = . if mi(l1.optvolume) | mi(l1.vol)
+# Set OptionVolume1 to missing if prior period option or stock volume is missing
 # Create lagged optvolume and vol for the condition check
 df['l1_optvolume'] = df.groupby('permno')['optvolume'].shift(1)
 df['l1_vol'] = df.groupby('permno')['vol'].shift(1)
 df.loc[df['l1_optvolume'].isna() | df['l1_vol'].isna(), 'OptionVolume1'] = np.nan
 
-# foreach n of numlist 1/6
-# gen tempVol`n' = l`n'.OptionVolume1
+# Create 6 lags of OptionVolume1 for calculating 6-month moving average
 for n in range(1, 7):
     df[f'tempVol{n}'] = df.groupby('permno')['OptionVolume1'].shift(n)
 
-# egen tempMean = rowmean(tempVol*)
+# Calculate 6-month moving average of OptionVolume1
 temp_cols = [f'tempVol{n}' for n in range(1, 7)]
 df['tempMean'] = df[temp_cols].mean(axis=1)
 
-# gen OptionVolume2 = OptionVolume1/tempMean
+# Calculate OptionVolume2 as current ratio divided by 6-month average
 df['OptionVolume2'] = df['OptionVolume1'] / df['tempMean']
 
-# label var OptionVolume1 "Option Volume"
-# label var OptionVolume2 "Option Volume (abnormal)"
+# OptionVolume1: Option Volume
+# OptionVolume2: Option Volume (abnormal)
 
 # SAVE
-# do "$pathCode/savepredictor" OptionVolume1
+# Save OptionVolume1 predictor
 save_predictor(df[['permno', 'time_avail_m', 'OptionVolume1']], 'OptionVolume1')
 print("ZZ1_OptionVolume1_OptionVolume2.py completed successfully")
 
-# do "$pathCode/savepredictor" OptionVolume2
+# Save OptionVolume2 predictor
 save_predictor(df[['permno', 'time_avail_m', 'OptionVolume2']], 'OptionVolume2')
 print("ZZ1_OptionVolume1_OptionVolume2.py completed successfully")

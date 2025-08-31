@@ -1,5 +1,5 @@
-# ABOUTME: CF.py - calculates CF predictor using cash flow scaled by market value
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/CF.do
+# ABOUTME: CF predictor - calculates cash flow to market value ratio  
+# ABOUTME: Run: python3 pyCode/Predictors/CF.py
 
 """
 CF.py
@@ -34,7 +34,7 @@ print("Starting CF.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use gvkey permno time_avail_m ib dp using "$pathDataIntermediate/m_aCompustat", clear
+# Load monthly Compustat data with income and depreciation information
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -51,12 +51,12 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate permno-month observations, keeping first occurrence
 print("Deduplicating by permno time_avail_m...")
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplication: {df.shape[0]} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(mve_c)
+# Merge with SignalMasterTable to get market value data, keeping only matched observations
 print("Merging with SignalMasterTable...")
 
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -77,7 +77,7 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# gen CF = (ib + dp)/mve_c
+# Generate (ib + dp)/mve_c
 print("Calculating CF...")
 
 # Calculate cash flow (ib + dp)
@@ -98,7 +98,7 @@ df['CF'] = np.where(
 print(f"Calculated CF for {df['CF'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" CF
+# Save the CF predictor using standardized format
 save_predictor(df, 'CF')
 
 print("CF.py completed successfully")

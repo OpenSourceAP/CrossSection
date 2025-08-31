@@ -23,22 +23,21 @@ import pandas as pd
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
                                columns=['permno', 'gvkey', 'time_avail_m', 'mve_c'])
 
-# Keep only observations with non-missing gvkey (equivalent to Stata's keep if !mi(gvkey))
+# Keep only observations with valid company identifiers
 signal_master = signal_master[~signal_master['gvkey'].isna()].copy()
 
 # Load and prepare quarterly Compustat data
 qcompustat = pd.read_parquet("../pyData/Intermediate/m_QCompustat.parquet", 
                             columns=['gvkey', 'time_avail_m', 'atq', 'ibq'])
 
-# Merge quarterly data - only keep observations that match in both datasets (like Stata's keep(match))
+# Merge quarterly data - only keep observations available in both datasets
 df = pd.merge(signal_master, qcompustat, on=['gvkey', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-# Sort for proper lagging (equivalent to Stata's xtset permno time_avail_m)
+# Sort by company and time for historical data lookups
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 3-month lagged assets using calendar-based approach (not position-based)
-# This replicates Stata's l3.atq which looks back exactly 3 months in calendar time
+# Get assets from 3 months ago for each observation
 df['time_lag3'] = df['time_avail_m'] - pd.DateOffset(months=3)
 
 # Self-merge to get 3-month lagged values
@@ -47,7 +46,7 @@ df_lag.columns = ['permno', 'time_lag3', 'atq_lag3']
 
 df = pd.merge(df, df_lag, on=['permno', 'time_lag3'], how='left')
 
-# Calculate roaq (matching Stata's ibq/l3.atq)
+# Calculate quarterly return on assets: quarterly income divided by lagged assets
 df['roaq'] = df['ibq'] / df['atq_lag3']
 
 # Drop missing values

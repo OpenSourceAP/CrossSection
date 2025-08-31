@@ -19,13 +19,13 @@ print("=" * 80)
 
 # DATA LOAD
 print("📊 Loading a_aCompustat data...")
-# use gvkey permno time_avail_m fyear datadate at oancf fopt act che lct dlc ib sale ppegt ni sic using "$pathDataIntermediate/a_aCompustat", clear
+# Load required Compustat annual data variables
 df = pl.read_parquet("../pyData/Intermediate/a_aCompustat.parquet")
 df = df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "at", "oancf", "fopt", 
                "act", "che", "lct", "dlc", "ib", "sale", "ppegt", "ni", "sic"])
 print(f"Loaded a_aCompustat: {len(df):,} observations")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(master match) keepusing(exchcd)
+# Merge with exchange code data from SignalMasterTable
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 signal_master = signal_master.select(["permno", "time_avail_m", "exchcd"])
 
@@ -61,17 +61,17 @@ df = df.with_columns(
     .alias("tempCFO")
 )
 
-# gen tempAccruals = (ib - tempCFO) / l.at
+# Generate (ib - tempCFO) / l.at
 df = df.with_columns(
     ((pl.col("ib") - pl.col("tempCFO")) / pl.col("l_at")).alias("tempAccruals")
 )
 
-# gen tempInvTA = 1/l.at
+# Generate 1/l.at
 df = df.with_columns(
     (1 / pl.col("l_at")).alias("tempInvTA")
 )
 
-# gen tempDelRev = (sale - l.sale)/l.at
+# Generate (sale - l.sale)/l.at
 df = df.with_columns([
     pl.col("sale").shift(1).over("gvkey").alias("l_sale")
 ])
@@ -80,22 +80,20 @@ df = df.with_columns(
     ((pl.col("sale") - pl.col("l_sale")) / pl.col("l_at")).alias("tempDelRev")
 )
 
-# gen tempPPE = ppegt/l.at
+# Generate ppegt/l.at
 df = df.with_columns(
     (pl.col("ppegt") / pl.col("l_at")).alias("tempPPE")
 )
 
 print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 
-# winsor2 temp*, replace cuts(0.1 99.9) trim by(fyear)
-# Note: Modified to better match Stata's behavior - trim rows where ANY variable is extreme
+# Apply winsorization to handle extreme values - trim rows where ANY variable is extreme
 temp_cols = ["tempAccruals", "tempInvTA", "tempDelRev", "tempPPE"]
 df = winsor2(df, temp_cols, replace=True, trim=True, cuts=[0.1, 99.9], by=["fyear"])
 
 print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 
-# destring sic, replace
-# gen sic2 = floor(sic/100)
+# Create 2-digit SIC code for industry grouping
 # Convert to pandas for proven SIC handling, then back to polars
 df_pandas_temp = df.to_pandas()
 df_pandas_temp['sic'] = pd.to_numeric(df_pandas_temp['sic'], errors='coerce')
@@ -103,8 +101,7 @@ df_pandas_temp['sic2'] = np.floor(df_pandas_temp['sic'] / 100).astype('Int32')
 df = pl.from_pandas(df_pandas_temp)
 
 
-# bys fyear sic2: asreg tempAccruals tempInvTA tempDelRev tempPPE, fitted
-# This runs cross-sectional regressions by year and industry using enhanced asreg helper
+# Run cross-sectional regressions by year and industry to extract residuals
 df_with_residuals = df.with_columns(
     pl.col("tempAccruals").least_squares.ols(
         pl.col("tempInvTA"), pl.col("tempDelRev"), pl.col("tempPPE"),
@@ -114,42 +111,38 @@ df_with_residuals = df.with_columns(
     ).over(['fyear', 'sic2']).alias("resid")
 )
 
-# Add the observation count for filtering (replicating _Nobs from Stata asreg)
+# Add the observation count for filtering
 df_with_residuals = df_with_residuals.with_columns(
     pl.col("tempAccruals").count().over(["fyear", "sic2"]).alias("_Nobs")
 )
 
-# Rename residuals to match Stata's _residuals variable
+# Rename residuals for consistency
 df_with_residuals = df_with_residuals.with_columns(
     pl.col("resid").alias("_residuals")
 ).drop("resid")
 
-# drop if _Nobs < 6 // p 360
+# Filter groups with insufficient observations (minimum 6 per Xie 2001)
 df_with_residuals = df_with_residuals.filter(pl.col("_Nobs") >= 6)
 
-# drop if exchcd == 3 & fyear < 1982
+# Remove NASDAQ observations before 1982 (data quality issues)
 df_with_residuals = df_with_residuals.filter(
     ~((pl.col("exchcd") == 3) & (pl.col("fyear") < 1982))
 )
 
 
-# rename _residuals AbnormalAccruals
+# Set final AbnormalAccruals variable
 df_with_residuals = df_with_residuals.with_columns(
     pl.col("_residuals").alias("AbnormalAccruals")
 )
 
-# drop a few duplicates
-# sort permno fyear
-# by permno fyear: keep if _n == 1
+# Remove duplicates, keeping first observation per permno-fyear
 df_with_residuals = df_with_residuals.sort(["permno", "fyear"])
 df_with_residuals = df_with_residuals.group_by(["permno", "fyear"], maintain_order=True).first()
 
 print(f"After cross-sectional regressions and filtering: {len(df_with_residuals):,} observations")
 
 
-# Abnormal Accruals Percent
-# xtset permno fyear
-# gen AbnormalAccrualsPercent = AbnormalAccruals*l.at/abs(ni)
+# Calculate Abnormal Accruals as percentage of net income
 df_with_residuals = df_with_residuals.sort(["permno", "fyear"])
 df_with_residuals = df_with_residuals.with_columns([
     pl.col("at").shift(1).over("permno").alias("l_at_permno")

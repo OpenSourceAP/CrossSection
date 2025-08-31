@@ -1,4 +1,4 @@
-# ABOUTME: Translates OrderBacklog.do to create order backlog predictor
+# ABOUTME: Creates order backlog predictor
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/OrderBacklog.py
 
 # Run from pyCode/ directory

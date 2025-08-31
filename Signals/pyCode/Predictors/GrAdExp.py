@@ -1,5 +1,5 @@
-# ABOUTME: GrAdExp.py - calculates GrAdExp (Growth in advertising expenses) predictor
-# ABOUTME: Direct line-by-line translation from Stata Code/Predictors/GrAdExp.do
+# ABOUTME: Calculates GrAdExp (Growth in advertising expenses) predictor
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/GrAdExp.py
 
 """
 GrAdExp.py
@@ -35,7 +35,7 @@ print("Starting GrAdExp.py...")
 # DATA LOAD
 print("Loading m_aCompustat data...")
 
-# Load m_aCompustat - equivalent to Stata: use permno time_avail_m at xad using "$pathDataIntermediate/m_aCompustat", clear
+# Load m_aCompustat
 m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
 if not m_aCompustat_path.exists():
     raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
@@ -52,7 +52,7 @@ df = df[required_cols].copy()
 
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate observations by permno and time_avail_m
 print("Removing duplicate observations...")
 initial_count = df.shape[0]
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
@@ -60,7 +60,7 @@ duplicates_removed = initial_count - df.shape[0]
 if duplicates_removed > 0:
     print(f"Removed {duplicates_removed} duplicate observations")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(master match) nogenerate keepusing(mve_c)
+# Merge with SignalMasterTable to get market value data
 print("Merging with SignalMasterTable...")
 
 signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -74,18 +74,18 @@ if 'mve_c' not in signal_master.columns:
 # Keep only required columns from SignalMasterTable
 signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
 
-# Merge (equivalent to keep(master match) - left join)
+# Left join to preserve all master records
 df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='left')
 
 print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# xtset permno time_avail_m
+# Sort data for lag calculations
 print("Sorting data by permno and time_avail_m...")
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen GrAdExp = log(xad) - log(l12.xad)
+# Calculate growth in advertising expenses as log difference
 print("Calculating GrAdExp...")
 
 # First calculate log of xad for current and lagged values
@@ -98,7 +98,7 @@ df['log_xad_l12'] = df.groupby('permno')['log_xad'].shift(12)
 # Calculate GrAdExp as difference in logs
 df['GrAdExp'] = df['log_xad'] - df['log_xad_l12']
 
-# egen tempSize = fastxtile(mve_c), n(10) by(time_avail)
+# Calculate size deciles for filtering
 print("Calculating size deciles...")
 
 # Extract time_avail from time_avail_m for grouping (YYYY-MM format)
@@ -107,7 +107,7 @@ df['time_avail'] = df['time_avail_m']
 # Calculate size deciles using standardized fastxtile
 df['tempSize'] = fastxtile(df, 'mve_c', by='time_avail', n=10)
 
-# replace GrAdExp = . if xad < .1 | tempSize == 1
+# Filter out small advertising expenses and smallest size decile
 print("Applying filters...")
 initial_valid = df['GrAdExp'].notna().sum()
 
@@ -123,7 +123,7 @@ print(f"Final GrAdExp calculated for {final_valid} observations")
 df = df.drop(['at', 'xad', 'log_xad', 'log_xad_l12', 'mve_c', 'tempSize', 'time_avail'], axis=1)
 
 # SAVE
-# do "$pathCode/savepredictor" GrAdExp
+# Save the predictor
 save_predictor(df, 'GrAdExp')
 
 print("GrAdExp.py completed successfully")

@@ -22,19 +22,11 @@ Outputs:
     - ../pyData/Predictors/OperProf.csv (permno, yyyymm, OperProf)
 """
 
-# stata notes:
-# // dirty simulation of NYSE size breakpoints:
-# // Fama and French use NYSE market cap median to form size groups,
-# // independently sort on OperProf, and then equally weight the two
-# // size groups with high OperProf in the long portfolio 
-# // (see RFS paper footnote to Table 1)
-# // This effectively overweights large cap stocks.  We can do
-# // that by simply excluding small cap here.
-# // Hou Xue Zhang do something similar
-
-#       * more complicated denominator (ceq-pstk+min(txdi,0)) does not help
-
-#       * removing xsga helps a _lot_, and is pretty much the Novy Marx signal
+# Notes:
+# Excludes smallest size tercile to simulate NYSE size breakpoints
+# This approach follows Fama-French methodology which overweights large cap stocks
+# Operating profitability = (revenue - cogs - sga - interest) / equity
+# Removing SGA expenses significantly improves signal strength (similar to Novy-Marx)
 
 import pandas as pd
 import numpy as np
