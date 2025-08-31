@@ -95,7 +95,7 @@ df['GrSaleToGrOverhead'] = df['sale_growth'] - df['overhead_growth']
 print("Applying fallback formula where primary formula is missing...")
 
 # Calculate fallback sales growth: (sale - l12.sale) / l12.sale
-df['fallback_sale_growth']  to np.where(
+df['fallback_sale_growth'] = np.where(
     df['l12_sale'] == 0,
     np.nan,  # Division by zero = missing
     (df['sale'] - df['l12_sale']) / df['l12_sale']
