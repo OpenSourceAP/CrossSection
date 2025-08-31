@@ -104,4 +104,16 @@ ShortInterest:
   details: |
     Like the other short interest predictors, the only test here that is really informative is the t-stat, and the t-stat test passes.    
 
-    
+Cash:
+  status: accepted
+  reviewed_on: 2025-08-31
+  reviewed_by: ac
+  details: |
+    Cash.py is producing 7.2% more rows than Stata but is matching everything else extremely well. The additional rows seem to be due to the conversion of quarterly rdq into monthly time_avail_m. I checked several rows in the python code that were missing from stata and they all look correct. 
+
+AbnormalAccruals:
+  status: accepted
+  reviewed_on: 2025-08-31
+  reviewed_by: ac
+  details: |
+    Precision1 is failing at 9.0%. But this is a complicated predictor with custom accounting variables (including ones with missing values), many lags, regressions by sic code and window. One can only expect that there will be deviations of more than 0.01 standard deviations. The long-short t-stat is nearly identical to the 2024 10 release.
