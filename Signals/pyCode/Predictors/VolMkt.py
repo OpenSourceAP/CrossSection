@@ -1,0 +1,60 @@
+# ABOUTME: Volume to market equity following Haugen and Baker 1996, Table 1, trading volume / market cap
+# ABOUTME: calculates 12-month average dollar volume scaled by market value of equity
+"""
+Usage:
+    python3 Predictors/VolMkt.py
+
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol, prc, shrout]
+
+Outputs:
+    - VolMkt.csv: CSV file with columns [permno, yyyymm, VolMkt]
+    - VolMkt = 12-month rolling mean of dollar volume / market value of equity
+"""
+
+import polars as pl
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
+
+print("Starting VolMkt.py...")
+
+# Data load
+print("Loading monthly CRSP data...")
+monthly_crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
+
+# Select required columns
+df = monthly_crsp.select(["permno", "time_avail_m", "vol", "prc", "shrout"])
+print(f"Loaded data: {df.shape[0]} rows")
+
+# Signal construction
+print("Calculating market value and dollar volume...")
+df = df.with_columns([
+    # Market value
+    (pl.col("shrout") * pl.col("prc").abs()).alias("mve_c"),
+    # Dollar volume
+    (pl.col("vol") * pl.col("prc").abs()).alias("temp")
+])
+
+# 12-month rolling mean of dollar volume
+print("Creating 12-month rolling mean of dollar volume...")
+df = df.with_columns([
+    pl.col("temp")
+    .rolling_mean(window_size=12, min_samples=10)
+    .over("permno")
+    .alias("tempMean")
+])
+
+# Volume to market equity ratio
+df = df.with_columns([
+    (pl.col("tempMean") / pl.col("mve_c")).alias("VolMkt")
+])
+
+# Select final data
+result = df.select(["permno", "time_avail_m", "VolMkt"])
+print(f"Calculated VolMkt for {result.shape[0]} observations")
+
+# Save predictor
+save_predictor(result, "VolMkt")
+print("VolMkt.py completed successfully")

@@ -11,13 +11,12 @@
 *.o*
 *.Rout
 
+# Data
 Results/
 Portfolios/Data/*
+Portfolios/pyData/*
 Signals/Data/*
-Signals/Logs/*
 Signals/pyData/*
-
-*.html
 
 # Credentials
 .env
@@ -27,12 +26,16 @@ Signals/pyData/*
 
 # Python
 .venv
-__pycache__/
+__*__*
 
 # Testing and archive
 deleteme*
-Signals/pyCode/Debug/
+Signals/Debug/*
+Signals/pyCode/Debug/*
 Signals/zzz-archive/*
-Signals/Journal/*
-Signals/StataDocs/*
-.claude/
+Signals/Human/*
+
+# Other
+Portfolios/Code/Rplots.pdf
+
+

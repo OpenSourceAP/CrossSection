@@ -1,0 +1,995 @@
+Accruals.py:
+  created: 'yes'
+  predictors:
+  - Accruals.csv
+  placebos: []
+AccrualsBM.py:
+  created: 'yes'
+  predictors:
+  - AccrualsBM.csv
+  placebos: []
+AdExp.py:
+  created: 'yes'
+  predictors:
+  - AdExp.csv
+  placebos: []
+AgeIPO.py:
+  created: 'yes'
+  predictors:
+  - AgeIPO.csv
+  placebos: []
+AM.py:
+  created: 'yes'
+  predictors:
+  - AM.csv
+  placebos: []
+AnalystRevision.py:
+  created: 'yes'
+  predictors:
+  - AnalystRevision.csv
+  placebos: []
+AssetGrowth.py:
+  created: 'yes'
+  predictors:
+  - AssetGrowth.csv
+  placebos: []
+Beta.py:
+  created: 'yes'
+  predictors:
+  - Beta.csv
+  placebos: []
+BetaLiquidityPS.py:
+  created: 'yes'
+  predictors:
+  - BetaLiquidityPS.csv
+  placebos: []
+BetaTailRisk.py:
+  created: 'yes'
+  predictors:
+  - BetaTailRisk.csv
+  placebos: []
+BidAskSpread.py:
+  created: 'yes'
+  predictors:
+  - BidAskSpread.csv
+  placebos: []
+BM.py:
+  created: 'yes'
+  predictors:
+  - BM.csv
+  placebos: []
+BMdec.py:
+  created: 'yes'
+  predictors:
+  - BMdec.csv
+  placebos: []
+BookLeverage.py:
+  created: 'yes'
+  predictors:
+  - BookLeverage.csv
+  placebos: []
+BrandInvest.py:
+  created: 'yes'
+  predictors:
+  - BrandInvest.csv
+  placebos: []
+Cash.py:
+  created: 'yes'
+  predictors:
+  - Cash.csv
+  placebos: []
+CashProd.py:
+  created: 'yes'
+  predictors:
+  - CashProd.csv
+  placebos: []
+CBOperProf.py:
+  created: 'yes'
+  predictors:
+  - CBOperProf.csv
+  placebos: []
+CF.py:
+  created: 'yes'
+  predictors:
+  - CF.csv
+  placebos: []
+cfp.py:
+  created: 'yes'
+  predictors:
+  - cfp.csv
+  placebos: []
+ChangeInRecommendation.py:
+  created: 'no'
+  predictors:
+  - ChangeInRecommendation.csv
+  placebos: []
+ChAssetTurnover.py:
+  created: 'yes'
+  predictors:
+  - ChAssetTurnover.csv
+  placebos: []
+ChEQ.py:
+  created: 'yes'
+  predictors:
+  - ChEQ.csv
+  placebos: []
+ChForecastAccrual.py:
+  created: 'yes'
+  predictors:
+  - ChForecastAccrual.csv
+  placebos: []
+ChInv.py:
+  created: 'yes'
+  predictors:
+  - ChInv.csv
+  placebos: []
+ChInvIA.py:
+  created: 'yes'
+  predictors:
+  - ChInvIA.csv
+  placebos: []
+ChNAnalyst.py:
+  created: 'yes'
+  predictors:
+  - ChNAnalyst.csv
+  placebos: []
+ChNNCOA.py:
+  created: 'yes'
+  predictors:
+  - ChNNCOA.csv
+  placebos: []
+ChNWC.py:
+  created: 'yes'
+  predictors:
+  - ChNWC.csv
+  placebos: []
+ChTax.py:
+  created: 'yes'
+  predictors:
+  - ChTax.csv
+  placebos: []
+CitationsRD.py:
+  created: 'yes'
+  predictors:
+  - CitationsRD.csv
+  placebos: []
+CompEquIss.py:
+  created: 'yes'
+  predictors:
+  - CompEquIss.csv
+  placebos: []
+CompositeDebtIssuance.py:
+  created: 'yes'
+  predictors:
+  - CompositeDebtIssuance.csv
+  placebos: []
+ConsRecomm.py:
+  created: 'yes'
+  predictors:
+  - ConsRecomm.csv
+  placebos: []
+ConvDebt.py:
+  created: 'yes'
+  predictors:
+  - ConvDebt.csv
+  placebos: []
+CoskewACX.py:
+  created: 'yes'
+  predictors:
+  - CoskewACX.csv
+  placebos: []
+Coskewness.py:
+  created: 'yes'
+  predictors:
+  - Coskewness.csv
+  placebos: []
+CPVolSpread.py:
+  created: 'yes'
+  predictors:
+  - CPVolSpread.csv
+  placebos: []
+CredRatDG.py:
+  created: 'yes'
+  predictors:
+  - CredRatDG.csv
+  placebos: []
+CustomerMomentum.py:
+  created: 'yes'
+  predictors:
+  - CustomerMomentum.csv
+  placebos: []
+dCPVolSpread.py:
+  created: 'yes'
+  predictors:
+  - dCPVolSpread.csv
+  placebos: []
+DebtIssuance.py:
+  created: 'yes'
+  predictors:
+  - DebtIssuance.csv
+  placebos: []
+DelBreadth.py:
+  created: 'yes'
+  predictors:
+  - DelBreadth.csv
+  placebos: []
+DelCOA.py:
+  created: 'yes'
+  predictors:
+  - DelCOA.csv
+  placebos: []
+DelCOL.py:
+  created: 'yes'
+  predictors:
+  - DelCOL.csv
+  placebos: []
+DelDRC.py:
+  created: 'yes'
+  predictors:
+  - DelDRC.csv
+  placebos: []
+DelEqu.py:
+  created: 'yes'
+  predictors:
+  - DelEqu.csv
+  placebos: []
+DelFINL.py:
+  created: 'yes'
+  predictors:
+  - DelFINL.csv
+  placebos: []
+DelLTI.py:
+  created: 'yes'
+  predictors:
+  - DelLTI.csv
+  placebos: []
+DelNetFin.py:
+  created: 'yes'
+  predictors:
+  - DelNetFin.csv
+  placebos: []
+DivInit.py:
+  created: 'yes'
+  predictors:
+  - DivInit.csv
+  placebos: []
+DivOmit.py:
+  created: 'yes'
+  predictors:
+  - DivOmit.csv
+  placebos: []
+DivSeason.py:
+  created: 'yes'
+  predictors:
+  - DivSeason.csv
+  placebos: []
+DivYieldST.py:
+  created: 'yes'
+  predictors:
+  - DivYieldST.csv
+  placebos: []
+dNoa.py:
+  created: 'yes'
+  predictors:
+  - dNoa.csv
+  placebos: []
+DolVol.py:
+  created: 'yes'
+  predictors:
+  - DolVol.csv
+  placebos: []
+DownRecomm.py:
+  created: 'no'
+  predictors:
+  - DownRecomm.csv
+  placebos: []
+dVolCall.py:
+  created: 'yes'
+  predictors:
+  - dVolCall.csv
+  placebos: []
+dVolPut.py:
+  created: 'yes'
+  predictors:
+  - dVolPut.csv
+  placebos: []
+EarningsConsistency.py:
+  created: 'no'
+  predictors:
+  - EarningsConsistency.csv
+  placebos: []
+EarningsForecastDisparity.py:
+  created: 'no'
+  predictors:
+  - EarningsForecastDisparity.csv
+  placebos: []
+EarningsStreak.py:
+  created: 'no'
+  predictors:
+  - EarningsStreak.csv
+  placebos: []
+EarningsSurprise.py:
+  created: 'no'
+  predictors:
+  - EarningsSurprise.csv
+  placebos: []
+EarnSupBig.py:
+  created: 'yes'
+  predictors:
+  - EarnSupBig.csv
+  placebos: []
+EntMult.py:
+  created: 'yes'
+  predictors:
+  - EntMult.csv
+  placebos: []
+EP.py:
+  created: 'yes'
+  predictors:
+  - EP.csv
+  placebos: []
+EquityDuration.py:
+  created: 'yes'
+  predictors:
+  - EquityDuration.csv
+  placebos: []
+ExchSwitch.py:
+  created: 'yes'
+  predictors:
+  - ExchSwitch.csv
+  placebos: []
+ExclExp.py:
+  created: 'yes'
+  predictors:
+  - ExclExp.csv
+  placebos: []
+FEPS.py:
+  created: 'no'
+  predictors:
+  - FEPS.csv
+  placebos: []
+fgr5yrLag.py:
+  created: 'yes'
+  predictors:
+  - fgr5yrLag.csv
+  placebos: []
+FirmAge.py:
+  created: 'yes'
+  predictors:
+  - FirmAge.csv
+  placebos: []
+FirmAgeMom.py:
+  created: 'yes'
+  predictors:
+  - FirmAgeMom.csv
+  placebos: []
+ForecastDispersion.py:
+  created: 'no'
+  predictors:
+  - ForecastDispersion.csv
+  placebos: []
+Frontier.py:
+  created: 'yes'
+  predictors:
+  - Frontier.csv
+  placebos: []
+Governance.py:
+  created: 'yes'
+  predictors:
+  - Governance.csv
+  placebos: []
+GP.py:
+  created: 'yes'
+  predictors:
+  - GP.csv
+  placebos: []
+GrAdExp.py:
+  created: 'no'
+  predictors:
+  - GrAdExp.csv
+  placebos: []
+GrLTNOA.py:
+  created: 'no'
+  predictors:
+  - GrLTNOA.csv
+  placebos: []
+GrSaleToGrInv.py:
+  created: 'no'
+  predictors:
+  - GrSaleToGrInv.csv
+  placebos: []
+GrSaleToGrOverhead.py:
+  created: 'no'
+  predictors:
+  - GrSaleToGrOverhead.csv
+  placebos: []
+Herf.py:
+  created: 'yes'
+  predictors:
+  - Herf.csv
+  placebos: []
+HerfAsset.py:
+  created: 'yes'
+  predictors:
+  - HerfAsset.csv
+  placebos: []
+HerfBE.py:
+  created: 'yes'
+  predictors:
+  - HerfBE.csv
+  placebos: []
+High52.py:
+  created: 'no'
+  predictors:
+  - High52.csv
+  placebos: []
+hire.py:
+  created: 'yes'
+  predictors:
+  - hire.csv
+  placebos: []
+Illiquidity.py:
+  created: 'yes'
+  predictors:
+  - Illiquidity.csv
+  placebos: []
+IndIPO.py:
+  created: 'yes'
+  predictors:
+  - IndIPO.csv
+  placebos: []
+IndMom.py:
+  created: 'yes'
+  predictors:
+  - IndMom.csv
+  placebos: []
+IndRetBig.py:
+  created: 'yes'
+  predictors:
+  - IndRetBig.csv
+  placebos: []
+IntMom.py:
+  created: 'yes'
+  predictors:
+  - IntMom.csv
+  placebos: []
+Investment.py:
+  created: 'yes'
+  predictors:
+  - Investment.csv
+  placebos: []
+InvestPPEInv.py:
+  created: 'no'
+  predictors:
+  - InvestPPEInv.csv
+  placebos: []
+InvGrowth.py:
+  created: 'yes'
+  predictors:
+  - InvGrowth.csv
+  placebos: []
+IO_ShortInterest.py:
+  created: 'no'
+  predictors:
+  - IO_ShortInterest.csv
+  placebos: []
+iomom_cust.py:
+  created: 'yes'
+  predictors:
+  - iomom_cust.csv
+  placebos: []
+iomom_supp.py:
+  created: 'yes'
+  predictors:
+  - iomom_supp.csv
+  placebos: []
+Leverage.py:
+  created: 'yes'
+  predictors:
+  - Leverage.csv
+  placebos: []
+LRreversal.py:
+  created: 'yes'
+  predictors:
+  - LRreversal.csv
+  placebos: []
+MaxRet.py:
+  created: 'yes'
+  predictors:
+  - MaxRet.csv
+  placebos: []
+MeanRankRevGrowth.py:
+  created: 'yes'
+  predictors:
+  - MeanRankRevGrowth.csv
+  placebos: []
+Mom12m.py:
+  created: 'yes'
+  predictors:
+  - Mom12m.csv
+  placebos: []
+Mom12mOffSeason.py:
+  created: 'yes'
+  predictors:
+  - Mom12mOffSeason.csv
+  placebos: []
+Mom6m.py:
+  created: 'yes'
+  predictors:
+  - Mom6m.csv
+  placebos: []
+Mom6mJunk.py:
+  created: 'yes'
+  predictors:
+  - Mom6mJunk.csv
+  placebos: []
+MomOffSeason.py:
+  created: 'yes'
+  predictors:
+  - MomOffSeason.csv
+  placebos: []
+MomOffSeason06YrPlus.py:
+  created: 'yes'
+  predictors:
+  - MomOffSeason06YrPlus.csv
+  placebos: []
+MomOffSeason11YrPlus.py:
+  created: 'yes'
+  predictors:
+  - MomOffSeason11YrPlus.csv
+  placebos: []
+MomOffSeason16YrPlus.py:
+  created: 'yes'
+  predictors:
+  - MomOffSeason16YrPlus.csv
+  placebos: []
+MomRev.py:
+  created: 'yes'
+  predictors:
+  - MomRev.csv
+  placebos: []
+MomSeason.py:
+  created: 'yes'
+  predictors:
+  - MomSeason.csv
+  placebos: []
+MomSeason06YrPlus.py:
+  created: 'yes'
+  predictors:
+  - MomSeason06YrPlus.csv
+  placebos: []
+MomSeason11YrPlus.py:
+  created: 'yes'
+  predictors:
+  - MomSeason11YrPlus.csv
+  placebos: []
+MomSeason16YrPlus.py:
+  created: 'yes'
+  predictors:
+  - MomSeason16YrPlus.csv
+  placebos: []
+MomSeasonShort.py:
+  created: 'yes'
+  predictors:
+  - MomSeasonShort.csv
+  placebos: []
+MomVol.py:
+  created: 'yes'
+  predictors:
+  - MomVol.csv
+  placebos: []
+MRreversal.py:
+  created: 'yes'
+  predictors:
+  - MRreversal.csv
+  placebos: []
+MS.py:
+  created: 'yes'
+  predictors:
+  - MS.csv
+  placebos: []
+NetDebtFinance.py:
+  created: 'no'
+  predictors:
+  - NetDebtFinance.csv
+  placebos: []
+NetDebtPrice.py:
+  created: 'yes'
+  predictors:
+  - NetDebtPrice.csv
+  placebos: []
+NetEquityFinance.py:
+  created: 'no'
+  predictors:
+  - NetEquityFinance.csv
+  placebos: []
+NetPayoutYield.py:
+  created: 'no'
+  predictors:
+  - NetPayoutYield.csv
+  placebos: []
+NOA.py:
+  created: 'no'
+  predictors:
+  - NOA.csv
+  placebos: []
+NumEarnIncrease.py:
+  created: 'no'
+  predictors:
+  - NumEarnIncrease.csv
+  placebos: []
+OperProf.py:
+  created: 'yes'
+  predictors:
+  - OperProf.csv
+  placebos: []
+OperProfRD.py:
+  created: 'yes'
+  predictors:
+  - OperProfRD.csv
+  placebos: []
+OPLeverage.py:
+  created: 'yes'
+  predictors:
+  - OPLeverage.csv
+  placebos: []
+OrderBacklog.py:
+  created: 'yes'
+  predictors:
+  - OrderBacklog.csv
+  placebos: []
+OrderBacklogChg.py:
+  created: 'yes'
+  predictors:
+  - OrderBacklogChg.csv
+  placebos: []
+OScore.py:
+  created: 'yes'
+  predictors:
+  - OScore.csv
+  placebos: []
+PatentsRD.py:
+  created: 'yes'
+  predictors:
+  - PatentsRD.csv
+  placebos: []
+PayoutYield.py:
+  created: 'no'
+  predictors:
+  - PayoutYield.csv
+  placebos: []
+PctAcc.py:
+  created: 'yes'
+  predictors:
+  - PctAcc.csv
+  placebos: []
+PctTotAcc.py:
+  created: 'yes'
+  predictors:
+  - PctTotAcc.csv
+  placebos: []
+Price.py:
+  created: 'yes'
+  predictors:
+  - Price.csv
+  placebos: []
+ProbInformedTrading.py:
+  created: 'yes'
+  predictors:
+  - ProbInformedTrading.csv
+  placebos: []
+PS.py:
+  created: 'yes'
+  predictors:
+  - PS.csv
+  placebos: []
+RD.py:
+  created: 'yes'
+  predictors:
+  - RD.csv
+  placebos: []
+RDAbility.py:
+  created: 'yes'
+  predictors:
+  - RDAbility.csv
+  placebos: []
+RDcap.py:
+  created: 'yes'
+  predictors:
+  - RDcap.csv
+  placebos: []
+RDIPO.py:
+  created: 'yes'
+  predictors:
+  - RDIPO.csv
+  placebos: []
+RDS.py:
+  created: 'yes'
+  predictors:
+  - RDS.csv
+  placebos: []
+realestate.py:
+  created: 'yes'
+  predictors:
+  - realestate.csv
+  placebos: []
+Recomm_ShortInterest.py:
+  created: 'yes'
+  predictors:
+  - Recomm_ShortInterest.csv
+  placebos: []
+retConglomerate.py:
+  created: 'yes'
+  predictors:
+  - retConglomerate.csv
+  placebos: []
+ReturnSkew.py:
+  created: 'yes'
+  predictors:
+  - ReturnSkew.csv
+  placebos: []
+REV6.py:
+  created: 'yes'
+  predictors:
+  - REV6.csv
+  placebos: []
+RevenueSurprise.py:
+  created: 'no'
+  predictors:
+  - RevenueSurprise.csv
+  placebos: []
+roaq.py:
+  created: 'yes'
+  predictors:
+  - roaq.csv
+  placebos: []
+RoE.py:
+  created: 'yes'
+  predictors:
+  - RoE.csv
+  placebos: []
+sfe.py:
+  created: 'yes'
+  predictors:
+  - sfe.csv
+  placebos: []
+ShareIss1Y.py:
+  created: 'no'
+  predictors:
+  - ShareIss1Y.csv
+  - ShareIss1Y.csv
+  placebos: []
+ShareIss5Y.py:
+  created: 'no'
+  predictors:
+  - ShareIss5Y.csv
+  placebos: []
+ShareRepurchase.py:
+  created: 'no'
+  predictors:
+  - ShareRepurchase.csv
+  placebos: []
+ShareVol.py:
+  created: 'yes'
+  predictors:
+  - ShareVol.csv
+  placebos: []
+ShortInterest.py:
+  created: 'no'
+  predictors:
+  - ShortInterest.csv
+  placebos: []
+sinAlgo.py:
+  created: 'yes'
+  predictors:
+  - sinAlgo.csv
+  placebos: []
+Size.py:
+  created: 'yes'
+  predictors:
+  - Size.csv
+  placebos: []
+skew1.py:
+  created: 'yes'
+  predictors:
+  - skew1.csv
+  placebos: []
+SmileSlope.py:
+  created: 'yes'
+  predictors:
+  - SmileSlope.csv
+  placebos: []
+SP.py:
+  created: 'yes'
+  predictors:
+  - SP.csv
+  placebos: []
+Spinoff.py:
+  created: 'yes'
+  predictors:
+  - Spinoff.csv
+  placebos: []
+std_turn.py:
+  created: 'yes'
+  predictors:
+  - std_turn.csv
+  placebos: []
+STreversal.py:
+  created: 'yes'
+  predictors:
+  - STreversal.csv
+  placebos: []
+SurpriseRD.py:
+  created: 'yes'
+  predictors:
+  - SurpriseRD.csv
+  placebos: []
+tang.py:
+  created: 'yes'
+  predictors:
+  - tang.csv
+  placebos: []
+Tax.py:
+  created: 'yes'
+  predictors:
+  - Tax.csv
+  placebos: []
+TotalAccruals.py:
+  created: 'yes'
+  predictors:
+  - TotalAccruals.csv
+  placebos: []
+TrendFactor.py:
+  created: 'yes'
+  predictors:
+  - TrendFactor.csv
+  placebos: []
+UpRecomm.py:
+  created: 'no'
+  predictors:
+  - UpRecomm.csv
+  placebos: []
+VarCF.py:
+  created: 'yes'
+  predictors:
+  - VarCF.csv
+  placebos: []
+VolMkt.py:
+  created: 'yes'
+  predictors:
+  - VolMkt.csv
+  placebos: []
+VolSD.py:
+  created: 'yes'
+  predictors:
+  - VolSD.csv
+  placebos: []
+VolumeTrend.py:
+  created: 'yes'
+  predictors:
+  - VolumeTrend.csv
+  placebos: []
+XFIN.py:
+  created: 'yes'
+  predictors:
+  - XFIN.csv
+  placebos: []
+ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py:
+  created: 'yes'
+  predictors:
+  - RealizedVol.csv
+  - IdioVol3F.csv
+  - ReturnSkew3F.csv
+  placebos: []
+ZZ1_Activism1_Activism2.py:
+  created: 'yes'
+  predictors:
+  - Activism1.csv
+  - Activism2.csv
+  placebos: []
+ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py:
+  created: 'yes'
+  predictors:
+  - AnalystValue.csv
+  - AOP.csv
+  - PredictedFE.csv
+  placebos:
+  - IntrinsicValue.csv
+ZZ1_EBM_BPEBM.py:
+  created: 'yes'
+  predictors:
+  - EBM.csv
+  - BPEBM.csv
+  placebos: []
+ZZ1_FR_FRbook.py:
+  created: 'yes'
+  predictors:
+  - FR.csv
+  placebos:
+  - FRbook.csv
+ZZ1_grcapx_grcapx1y_grcapx3y.py:
+  created: 'no'
+  predictors:
+  - grcapx.csv
+  - grcapx3y.csv
+  placebos:
+  - grcapx1y.csv
+ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py:
+  created: 'yes'
+  predictors:
+  - IntanBM.csv
+  - IntanSP.csv
+  - IntanCFP.csv
+  - IntanEP.csv
+  placebos: []
+ZZ1_OptionVolume1_OptionVolume2.py:
+  created: 'yes'
+  predictors:
+  - OptionVolume1.csv
+  - OptionVolume2.csv
+  placebos: []
+ZZ1_OrgCap_OrgCapNoAdj.py:
+  created: 'no'
+  predictors:
+  - OrgCap.csv
+  placebos:
+  - OrgCapNoAdj.csv
+ZZ1_ResidualMomentum6m_ResidualMomentum.py:
+  created: 'yes'
+  predictors:
+  - ResidualMomentum.csv
+  placebos:
+  - ResidualMomentum6m.csv
+ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py:
+  created: 'yes'
+  predictors:
+  - RIO_MB.csv
+  - RIO_Disp.csv
+  - RIO_Turnover.csv
+  - RIO_Volatility.csv
+  placebos: []
+ZZ1_RIVolSpread.py:
+  created: 'yes'
+  predictors:
+  - RIVolSpread.csv
+  placebos: []
+ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py:
+  created: 'yes'
+  predictors:
+  - zerotrade1M.csv
+  - zerotrade6M.csv
+  - zerotrade12M.csv
+  placebos: []
+ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py:
+  created: 'yes'
+  predictors:
+  - AbnormalAccruals.csv
+  placebos:
+  - AbnormalAccrualsPercent.csv
+ZZ2_AnnouncementReturn.py:
+  created: 'yes'
+  predictors:
+  - AnnouncementReturn.csv
+  placebos: []
+ZZ2_BetaFP.py:
+  created: 'no'
+  predictors:
+  - BetaFP.csv
+  placebos: []
+ZZ2_betaVIX.py:
+  created: 'no'
+  predictors:
+  - betaVIX.csv
+  placebos: []
+ZZ2_IdioVolAHT.py:
+  created: 'yes'
+  predictors:
+  - IdioVolAHT.csv
+  placebos: []
+ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py:
+  created: 'yes'
+  predictors:
+  - PriceDelaySlope.csv
+  - PriceDelayRsq.csv
+  - PriceDelayTstat.csv
+  placebos: []

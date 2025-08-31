@@ -1,0 +1,55 @@
+# ABOUTME: Composite equity issuance following Daniel and Titman 2006, Table 3
+# ABOUTME: calculates 5 year growth rate of market value minus 5 year stock return
+
+"""
+Inputs: SignalMasterTable.parquet (permno, time_avail_m, ret, mve_c)
+Outputs: CompEquIss.csv (permno, yyyymm, CompEquIss)
+"""
+
+import pandas as pd
+import numpy as np
+import sys
+import os
+
+# Add utils directory to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
+from utils.save_standardized import save_predictor
+
+
+print("Starting CompEquIss predictor...")
+
+# DATA LOAD
+print("Loading SignalMasterTable...")
+df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
+                    columns=['permno', 'time_avail_m', 'ret', 'mve_c'])
+
+print(f"Loaded {len(df):,} SignalMasterTable observations")
+
+# SIGNAL CONSTRUCTION
+print("Constructing CompEquIss signal...")
+
+# Sort data by permno and time for lag operations
+df = df.sort_values(['permno', 'time_avail_m'])
+
+# Create cumulative return index starting at 1 for each permno
+df['tempIdx'] = df.groupby('permno')['ret'].transform(lambda x: (1 + x).cumprod())
+
+# Create 60-month lags with calendar validation
+print("Creating 60-month lags with calendar validation...")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempIdx', [60])
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'mve_c', [60])
+
+# Calculate buy-and-hold returns over 60 months
+df['tempBH'] = (df['tempIdx'] - df['tempIdx_lag60']) / df['tempIdx_lag60']
+
+# Calculate composite equity issuance as log growth in market value minus buy-and-hold returns
+df['CompEquIss'] = np.log(df['mve_c'] / df['mve_c_lag60']) - df['tempBH']
+
+print(f"Generated CompEquIss values for {df['CompEquIss'].notna().sum():,} observations")
+    
+# SAVE
+print("Saving predictor...")
+save_predictor(df, 'CompEquIss')
+
+print("CompEquIss predictor completed successfully!")
