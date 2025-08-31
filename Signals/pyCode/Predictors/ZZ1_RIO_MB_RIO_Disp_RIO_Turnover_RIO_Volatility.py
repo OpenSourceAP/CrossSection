@@ -1,5 +1,4 @@
-#%%
-# ABOUTME: RIO predictors combining institutional ownership with various characteristics
+# ABOUTME: Real Investment Opportunities (RIO) predictors combining institutional ownership with various characteristics
 # ABOUTME: Usage: python3 ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py (run from pyCode/ directory)
 
 import polars as pl
@@ -8,11 +7,9 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-from utils.stata_fastxtile import fastxtile, fastxtile_pd
+from utils.stata_fastxtile import fastxtile
 from utils.asrol import asrol
-from utils.stata_replication import stata_multi_lag
-import numpy as np
-from utils.stata_replication import stata_multi_lag, stata_quantile
+
 
 print("=" * 80)
 print("🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py")
@@ -24,20 +21,17 @@ print("📊 Preparing IBES data...")
 # Prep IBES data
 # use "$pathDataIntermediate/IBES_EPS_Unadj", replace
 # keep if fpi == "1" 
-ibes_eps = pl.read_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet").filter(
-    pl.col("fpi") == "1"
-).select(["tickerIBES", "time_avail_m", "stdev"])
-
-print(f"IBES EPS data: {len(ibes_eps):,} observations")
+ibes_eps = pl.read_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet")
+temp_ibes = ibes_eps.filter(pl.col("fpi") == "1")
+temp_ibes = temp_ibes.select(["tickerIBES", "time_avail_m", "stdev"])
+print(f"IBES EPS data: {len(temp_ibes):,} observations")
 
 print("📊 Loading main data sources...")
 
 # DATA LOAD
 # use permno tickerIBES time_avail_m exchcd mve_c using "$pathDataIntermediate/SignalMasterTable", clear
-df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select(
-    ["permno", "tickerIBES", "time_avail_m", "exchcd", "mve_c"]
-)
-
+signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
+df = signal_master.select(["permno", "tickerIBES", "time_avail_m", "exchcd", "mve_c"])
 print(f"SignalMasterTable: {len(df):,} observations")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/TR_13F", keep(master match) nogenerate keepusing(instown_perc)
@@ -53,105 +47,203 @@ crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 df = df.join(crsp.select(["permno", "time_avail_m", "vol", "shrout", "ret"]), on=["permno", "time_avail_m"], how="left")
 
 # merge m:1 tickerIBES time_avail_m using tempIBES, keep(master match) nogenerate keepusing (stdev)
-df = df.join(ibes_eps, on=["tickerIBES", "time_avail_m"], how="left")
+df = df.join(temp_ibes, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging all data sources: {len(df):,} observations")
 
-#%% Drop stocks in bottom NYSE/AMEX size quintile
-# pedantically replicate old Stata code
-from utils.stata_replication import stata_multi_lag, stata_quantile
 
-# calculate 20th percentile of NYSE/AMEX mve_c, using stata's exact method
-me_pd = df.select(['permno', 'time_avail_m', 'mve_c', 'exchcd']).filter(
-    (pl.col("exchcd") == 1) | (pl.col("exchcd") == 2)
-).to_pandas()
-me_pd = (
-    me_pd.groupby("time_avail_m").agg(
-        me_20pct = ("mve_c", lambda x: stata_quantile(x, 0.2))
-    ).reset_index()
-)
-me_pd = pl.from_pandas(me_pd)
+print("🔍 Applying size filters...")
 
-# applying size filter
-print("Removing stocks in bottom NYSE/AMEX size quintile...")
-
-df = df.join(me_pd, on="time_avail_m", how="left").filter(
-    (pl.col("mve_c") > pl.col("me_20pct")) & (pl.col("mve_c").is_not_null())
+# filter below 20th pct NYSE me 
+# do before indep sort
+# bys time_avail_m: astile sizecat = mve_c, qc(exchcd==1 | exchcd == 2) nq(5)
+# This creates NYSE/AMEX-based size quintiles but assigns them to ALL observations
+# First, compute percentile breakpoints based ONLY on NYSE/AMEX stocks
+df = df.with_columns(
+    pl.when((pl.col("exchcd") == 1) | (pl.col("exchcd") == 2))
+    .then(pl.col("mve_c"))
+    .otherwise(None)
+    .alias("nyse_amex_mve")
 )
 
+# Calculate quintile breakpoints for each time_avail_m using only NYSE/AMEX stocks
+df = df.with_columns(
+    pl.col("nyse_amex_mve").quantile(0.2).over("time_avail_m").alias("p20"),
+    pl.col("nyse_amex_mve").quantile(0.4).over("time_avail_m").alias("p40"),
+    pl.col("nyse_amex_mve").quantile(0.6).over("time_avail_m").alias("p60"),
+    pl.col("nyse_amex_mve").quantile(0.8).over("time_avail_m").alias("p80")
+)
+
+# Assign ALL observations to quintiles based on NYSE/AMEX breakpoints
+df = df.with_columns(
+    pl.when(pl.col("mve_c") <= pl.col("p20")).then(1)
+    .when(pl.col("mve_c") <= pl.col("p40")).then(2)
+    .when(pl.col("mve_c") <= pl.col("p60")).then(3)  
+    .when(pl.col("mve_c") <= pl.col("p80")).then(4)
+    .otherwise(5)
+    .alias("sizecat")
+)
+
+# drop if sizecat == 1
+df = df.filter(pl.col("sizecat") != 1)
 print(f"After filtering bottom size quintile: {len(df):,} observations")
 
-#%%
+
+# Clean up temporary columns
+df = df.drop(["nyse_amex_mve", "p20", "p40", "p60", "p80", "sizecat"])
+
 print("🏛️ Computing Residual Institutional Ownership (RIO)...")
 
-# construct cleaned institutional ownership
+# Residual Institutional Ownership sort
+# CRITICAL FIX: Match Stata's sequential replace logic exactly
+# gen temp = instown_perc/100
 df = df.with_columns(
-    instown = (pl.col("instown_perc") / 100)
-).with_columns(
-    pl.when(pl.col("instown").is_null()).then(0.0).otherwise(pl.col("instown")).alias("instown")
-).with_columns(
-    pl.when(pl.col("instown") > 0.9999).then(0.9999).otherwise(pl.col("instown")).alias("instown")
-).with_columns(
-    pl.when(pl.col("instown") < 0.0001).then(0.0001).otherwise(pl.col("instown")).alias("instown")
+    pl.when(pl.col("instown_perc").is_null())
+    .then(None)  # Keep as null initially
+    .otherwise(pl.col("instown_perc") / 100)
+    .alias("temp")
 )
 
-# construct residual institutional ownership (RIO)
+# replace temp = 0 if mi(temp)
 df = df.with_columns(
-    log_me = np.log(pl.col("mve_c"))
-).with_columns(
-    RIO = np.log(pl.col("instown") / (1 - pl.col("instown"))) + 23.66 - 2.89 * pl.col("log_me") + 0.08 * (pl.col("log_me")).pow(2)
+    pl.when(pl.col("temp").is_null())
+    .then(0.0)
+    .otherwise(pl.col("temp"))
+    .alias("temp")
 )
 
-# form RIO quintiles, based on lagged RIO
-df = stata_multi_lag(df, "permno", "time_avail_m", "RIO", [6], freq="M", prefix="l")
+# replace temp = .9999 if temp > .9999
 df = df.with_columns(
-    cat_RIO = fastxtile(df, "l6_RIO", by="time_avail_m", n=5)
+    pl.when(pl.col("temp") > 0.9999)
+    .then(0.9999)
+    .otherwise(pl.col("temp"))
+    .alias("temp")
 )
 
-print("📊 Computing interaction signals")
-
+# replace temp = .0001 if temp < .0001 (this catches temp=0 from missing data!)
 df = df.with_columns(
-    pl.col('txditc').fill_null(0.0),
-    pl.when(pl.col('ceq')+pl.col('txditc') > 0).then(
-        pl.col('mve_c') / (pl.col('ceq') + pl.col('txditc'))
-    ).otherwise(None)
-    .alias('MB')
-).with_columns(
-    pl.when(pl.col('stdev') > 0).then(pl.col('stdev') / pl.col('at')).otherwise(None)
-    .alias('Disp')
-).with_columns(
-    (pl.col('vol') / pl.col('shrout'))
-    .alias('Turnover')
+    pl.when(pl.col("temp") < 0.0001)
+    .then(0.0001)
+    .otherwise(pl.col("temp"))
+    .alias("temp")
 )
 
-df = asrol(df, 'permno', 'time_avail_m', '1mo', 12, 'ret', 'std',
-    new_col_name='Volatility', min_samples=6)
+# gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
+df = df.with_columns(
+    (
+        (pl.col("temp") / (1 - pl.col("temp"))).log() + 
+        23.66 - 
+        2.89 * pl.col("mve_c").log() + 
+        0.08 * (pl.col("mve_c").log()).pow(2)
+    ).alias("RIO")
+)
 
-# patch to imitate stata, which does not fill gaps as much as stata_multi_lag and asrol
-df = df.filter(pl.col('mve_c').is_not_null())    
+
+# xtset permno time_avail_m
+# gen RIOlag = l6.RIO
+# CRITICAL FIX: Use calendar-based lag (6 months) instead of position-based shift(6)
+# This matches Stata's l6. behavior which goes back 6 calendar months
+df = df.sort(["permno", "time_avail_m"])
+
+# Convert to pandas for easier date arithmetic
+df_pandas = df.to_pandas()
+
+# Calculate the exact 6-month lag date for each observation
+df_pandas['lag_date'] = df_pandas['time_avail_m'] - pd.DateOffset(months=6)
+
+# Create lookup for RIO values by permno and date
+rio_lookup = df_pandas.set_index(['permno', 'time_avail_m'])['RIO']
+
+# Get RIOlag by looking up RIO at lag_date
+df_pandas['RIOlag'] = df_pandas.apply(
+    lambda row: rio_lookup.get((row['permno'], row['lag_date']), None), 
+    axis=1
+)
+
+# Convert back to polars (lag_date was already used and not in dataframe)
+df = pl.from_pandas(df_pandas)
+
+# egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
+# Convert to pandas for fastxtile operation
+df_pandas = df.to_pandas()
+df_pandas['cat_RIO'] = fastxtile(df_pandas, 'RIOlag', by='time_avail_m', n=5)
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
+
+
+print("📊 Computing characteristic variables...")
+
+# Forecast dispersion, market-to-book, turnover, volatiltity sorts
+# replace txditc = 0 if mi(txditc)
+df = df.with_columns(
+    pl.when(pl.col("txditc").is_null()).then(0.0).otherwise(pl.col("txditc")).alias("txditc")
+)
+
+# gen MB = mve_c/(ceq + txditc)
+# replace MB = . if (ceq + txditc) < 0
+df = df.with_columns(
+    pl.when((pl.col("ceq") + pl.col("txditc")) < 0)
+    .then(None)
+    .otherwise(pl.col("mve_c") / (pl.col("ceq") + pl.col("txditc")))
+    .alias("MB")
+)
+
+# gen Disp = stdev/at if stdev > 0
+df = df.with_columns(
+    pl.when(pl.col("stdev") > 0)
+    .then(pl.col("stdev") / pl.col("at"))
+    .otherwise(None)
+    .alias("Disp")
+)
+
+# gen Turnover = vol/shrout
+df = df.with_columns(
+    (pl.col("vol") / pl.col("shrout")).alias("Turnover")
+)
+
+# bys permno: asrol ret, gen(Volatility) stat(sd) window(time_avail_m 12) min(6)
+# Use asrol_legacy for rolling standard deviation
+df_pandas_vol = df.to_pandas()
+
+df_pandas_vol = asrol(
+    df_pandas_vol,
+    group_col='permno',
+    time_col='time_avail_m',
+    freq='1mo',
+    window=12,
+    value_col='ret',
+    stat='std',
+    new_col_name='Volatility',
+    min_samples=6
+)
+
+df = pl.from_pandas(df_pandas_vol)
+
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 
 # Create characteristic quintiles and RIO interactions
 variables = ["MB", "Disp", "Volatility", "Turnover"]
 
+# Convert to pandas for fastxtile operations
+df_pandas = df.to_pandas()
+
 for var in variables:
-    # eGenerate fastxtile(`v'), n(5) by(time_avail_m)
-    df = df.with_columns(
-        fastxtile(df, var, by='time_avail_m', n=5).alias(f'cat_{var}')
-    )
+    # egen cat_`v' = fastxtile(`v'), n(5) by(time_avail_m)
+    df_pandas[f'cat_{var}'] = fastxtile(df_pandas, var, by='time_avail_m', n=5)
     
-    # Generate cat_RIO if cat_`v' == 5
-    df = df.with_columns(
-        pl.when(pl.col(f'cat_{var}') == 5).then(pl.col('cat_RIO')).otherwise(None).alias(f'RIO_{var}')
-    )
+    # gen RIO_`v' = cat_RIO if cat_`v' == 5
+    df_pandas[f'RIO_{var}'] = df_pandas['cat_RIO'].where(df_pandas[f'cat_{var}'] == 5)
+
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
+
 
 # patch for Dispersion
-# Update cat_RIO if cat_Disp > to 4 & cat_Disp != .
+# replace RIO_Disp = cat_RIO if cat_Disp >= 4 & cat_Disp != .
 df = df.with_columns(
-    pl.when(
-        (pl.col("cat_Disp") >= 4) & (pl.col("cat_Disp").is_not_null()) & (pl.col("cat_Disp").is_not_nan())
-    ).then(pl.col("cat_RIO"))
+    pl.when((pl.col("cat_Disp") >= 4) & (pl.col("cat_Disp").is_not_null()))
+    .then(pl.col("cat_RIO"))
     .otherwise(pl.col("RIO_Disp"))
     .alias("RIO_Disp")
 )
