@@ -14,7 +14,10 @@ Outputs:
 """
 
 import pandas as pd
-from asrol import asrol
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.asrol import asrol
 
 # Read SignalMasterTable 
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')

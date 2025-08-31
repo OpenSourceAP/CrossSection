@@ -109,9 +109,13 @@ df = df.with_columns([
     (pl.col('betaVolTrend') / pl.col('meanX')).alias('VolumeTrend')
 ])
 
+# Stata: winsor2 VolumeTrend, cut(1 99) replace trim
+# The "trim" option sets values outside bounds to missing (not winsorized)
+# Filter out NaN/inf values before calculating quantiles
+clean_data = df.filter(pl.col('VolumeTrend').is_finite())
 
 # Stata: winsor2 VolumeTrend, cut(1 99) Update df.filter(pl.col('VolumeTrend').is_finite())
-lower  to clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
+lower = clean_data.select(pl.col('VolumeTrend').quantile(0.01)).item()
 upper = clean_data.select(pl.col('VolumeTrend').quantile(0.99)).item()
 
 df = df.with_columns([

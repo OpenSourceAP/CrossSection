@@ -63,7 +63,7 @@ print(f"Merged dataset: {len(df):,} observations")
 
 # Adjust returns: ret = ret - rf (equivalent to the's "Update ret - rf")
 print("Adjusting returns by risk-free rate...")
-df  to df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
+df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
 
 
 # SIGNAL CONSTRUCTION
