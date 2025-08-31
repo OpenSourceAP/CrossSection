@@ -1,5 +1,5 @@
-# ABOUTME: Creates equity duration measure using cash flow projections and discount rates
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/EquityDuration.py
+# ABOUTME: Equity Duration following Dechow, Sloan and Soliman 2004, Table 6A HDMLD
+# ABOUTME: creates equity duration measure using cash flow projections and discount rates
 
 # OP uses FF style: HDMLD is (S/HD + B/HD)/2 - (S/LD + B/LD)/2
 
@@ -28,7 +28,8 @@ longrun_growth = 0.06
 # Compute ROE, book equity growth, and cash distributions to equity
 df['tempRoE'] = df['ib'] / df.groupby('gvkey')['ceq'].shift(1)
 
-# Handle division by zero: Update df.groupby('gvkey')['sale'].shift(1)
+# Create sale_lag while handling division by zero
+sale_lag = df.groupby('gvkey')['sale'].shift(1)
 df['temp_g_eq'] = df['sale'] / sale_lag - 1
 df['temp_g_eq'] = df['temp_g_eq'].replace([np.inf, -np.inf], np.nan)
 
