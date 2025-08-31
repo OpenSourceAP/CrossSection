@@ -37,7 +37,7 @@ options sasautos=('/wrds/wrdsmacros/', SASAUTOS) MAUTOSOURCE;
 %let obsmax = max; * use max for full production, use 20 for debugging;
 
 * output path;
-%let path_dl_me = ~/data_prep/;
+%let path_dl_me = ./data_for_dl/;
 
 * start timer; 
 %let _sdtm=%sysfunc(datetime());

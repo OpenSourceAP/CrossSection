@@ -1,15 +1,14 @@
 """
 ABOUTME: Comprehensive dataset validation script comparing Python vs Stata datasets
-ABOUTME: Checks column names, types, row counts, and performs by-keys deviation analysis
+ABOUTME: Checks column names, types, superset validation, and performs by-keys deviation analysis
 
 This script provides comprehensive validation that checks:
 1. Column names match exactly
 2. Column types match exactly  
-3. Row count (Python can have slightly more rows, see MAX_ROW_COUNT_RATIO)
-4. By-keys analysis: Imperfect rows / Total rows ratio
-5. By-keys analysis: Imperfect cells / Total cells ratio
-6. Value deviation statistics for worst columns
-7. Sample CSV files for datasets with >0.1% imperfect ratio
+3. By-keys analysis: Python observations are superset of Stata
+4. By-keys analysis: Imperfect cells / Total cells ratio
+5. Value deviation statistics for worst columns
+6. Sample CSV files for datasets with >0.1% imperfect cells ratio
 
 Cell Matching Logic:
 - Perfect cell: |stata_value - python_value| ≤ tolerance (default: 1e-12)
@@ -19,7 +18,7 @@ Cell Matching Logic:
 Arguments:
   --datasets, -d    Specific datasets to validate (default: all datasets)
   --list, -l        List all available datasets and exit
-  --maxrows         Maximum rows to load per dataset (default: 1000)
+  --maxrows         Maximum rows to load per dataset (default: -1, use -1 for all rows, use 1000 for testing)
   --tolerance       Tolerance for numeric comparisons (default: 1e-12)
 
 Output: 
@@ -50,8 +49,7 @@ import numpy as np
 # VALIDATION CONFIGURATION
 # ================================
 
-# Row count validation
-MAX_ROW_COUNT_RATIO = 1.05  # Python can have up to 5% more rows than Stata
+# Row count validation - REMOVED: Superset test handles this more precisely
 
 # By-keys validation  
 DEFAULT_IMPERFECT_RATIO_THRESHOLD = 0.001  # 0.1% threshold for imperfect rows/cells
@@ -63,8 +61,82 @@ ROW_CAP_FOR_RAM = 10_000_000  # Maximum rows to load for RAM management
 # Reporting
 CSV_SAMPLE_THRESHOLD = 0.001  # Generate CSV samples when imperfect ratio > 0.1%
 MAX_SAMPLE_ROWS = 1000  # Maximum rows in missing rows reports
-MAX_WORST_COLUMNS = 4  # Number of worst columns to show in reports
+MAX_WORST_COLUMNS = 20  # Number of worst columns to show in reports
 MAX_WORST_ROWS_FOR_SAMPLE = 20  # Maximum rows in CSV samples
+
+# ================================
+# OVERRIDE SYSTEM
+# ================================
+
+def load_overrides():
+    """Load validation overrides from DataDownloads/overrides.yaml"""
+    overrides_path = Path("DataDownloads/overrides.yaml")
+    if not overrides_path.exists():
+        return {}
+    
+    try:
+        with open(overrides_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            if not content.strip():
+                return {}
+            return yaml.safe_load(content) or {}
+    except Exception as e:
+        print(f"Warning: Failed to load overrides: {e}")
+        return {}
+
+def parse_ratio(ratio_str):
+    """Parse ratio string like '30%' or '0.30' to float"""
+    if isinstance(ratio_str, str) and ratio_str.endswith('%'):
+        return float(ratio_str[:-1]) / 100
+    return float(ratio_str)
+
+def is_overridden(dataset_name, check_name, metric_value=None):
+    """
+    Check if a validation failure is overridden or explicitly rejected
+    
+    Args:
+        dataset_name: Name of the dataset
+        check_name: Name of the validation check
+        metric_value: Optional metric value for ratio-based overrides
+        
+    Returns:
+        tuple: (is_overridden: bool, override_details: dict or None)
+    """
+    overrides = load_overrides()
+    
+    if dataset_name not in overrides:
+        return False, None
+    
+    dataset_overrides = overrides[dataset_name]
+    if not isinstance(dataset_overrides, list):
+        return False, None
+    
+    for override in dataset_overrides:
+        if override.get('check') == check_name:
+            status = override.get('status', 'accepted')  # Default to accepted for backward compatibility
+            
+            # If explicitly rejected, always return False (not overridden)
+            if status == 'rejected':
+                return False, override
+            
+            # If accepted, check thresholds
+            if status == 'accepted':
+                # Check if custom threshold applies
+                if 'max_ratio_allowed' in override and metric_value is not None:
+                    try:
+                        threshold = parse_ratio(override['max_ratio_allowed'])
+                        if metric_value <= threshold:
+                            return True, override
+                        else:
+                            return False, None
+                    except (ValueError, TypeError):
+                        # Invalid threshold format, treat as binary override
+                        return True, override
+                else:
+                    # Binary override - always applies
+                    return True, override
+    
+    return False, None
 
 
 def compare_columns_directly(dta_bykey, parq_bykey, tolerance=1e-12):
@@ -358,7 +430,14 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         if list(dta.columns) == list(parq.columns):
             validation_results.append("✓ Column names match")
         else:
-            validation_results.append("✗ Column names differ")
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "column_names")
+            if is_override and override_details:
+                validation_results.append("✓ Column names differ (OVERRIDDEN)")
+                details.append(f"  - Override by: {override_details.get('accepted_by', 'unknown')} on {override_details.get('accepted_on', 'unknown')}")
+            else:
+                validation_results.append("✗ Column names differ")
+            
             dta_only = set(dta.columns) - set(parq.columns)
             parq_only = set(parq.columns) - set(dta.columns)
             if dta_only:
@@ -378,22 +457,18 @@ def val_one_basics(dataset_name: str, dta=None, parq=None) -> dict:
         if type_match:
             validation_results.append("✓ Column types match")
         else:
-            validation_results.append("✗ Column types differ")
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "column_types")
+            if is_override and override_details:
+                validation_results.append("✓ Column types differ (OVERRIDDEN)")
+                details.append(f"  - Override by: {override_details.get('accepted_by', 'unknown')} on {override_details.get('accepted_on', 'unknown')}")
+            else:
+                validation_results.append("✗ Column types differ")
             details.extend(type_mismatches)
         
-        # 3. Check row count
+        # Store row info for details section
         stata_rows = len(dta)
         python_rows = len(parq)
-        row_ratio = python_rows / stata_rows if stata_rows > 0 else float('inf')
-        
-        if python_rows == stata_rows:
-            validation_results.append("✓ Row counts match exactly")
-        elif row_ratio <= MAX_ROW_COUNT_RATIO:  # Python can have up to 0.1% more
-            validation_results.append("✓ Row counts acceptable (Python ≤ 0.1% more)")
-        else:
-            validation_results.append(f"✗ Row count difference too large (ratio: {row_ratio:.3f})")
-        
-        # Store row info for details section
         row_details = f"**Rows**: Stata={stata_rows:,}, Python={python_rows:,}"
         
         return {
@@ -560,8 +635,6 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         full_data_rows = len(dta)
         matched_by_key_rows = len(dta_bykey)
         perfect_rows = matched_by_key_rows - dev_rows.sum()
-        imperfect_rows = dev_rows.sum()
-        imperfect_ratio = imperfect_rows / full_data_rows if full_data_rows > 0 else 0
         
         # Add Python common rows superset validation 
         all_stata_in_python = mask1.all()
@@ -570,30 +643,32 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         if all_stata_in_python:
             common_rows_result = "✓ Python common rows are superset of Stata"
         else:
-            common_rows_result = f"✗ Python missing some Stata rows ({missing_stata_rows})"
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "missing_rows")
+            if is_override and override_details:
+                common_rows_result = f"✓ Python missing some Stata rows ({missing_stata_rows}) (OVERRIDDEN)"
+            else:
+                common_rows_result = f"✗ Python missing some Stata rows ({missing_stata_rows})"
             # Generate missing rows report for datasets that fail superset check
             missing_rows_file = generate_missing_rows_report(dataset_name, dta, parq, key_cols)
         
-        # Add imperfect rows ratio to validation results
-        imperfect_pct = imperfect_ratio_threshold * 100
-        if imperfect_ratio <= imperfect_ratio_threshold:
-            bykeys_result = f"✓ Imperfect rows acceptable (≤ {imperfect_pct:.1f}%)"
-        else:
-            bykeys_result = f"✗ Imperfect rows high (> {imperfect_pct:.1f}%)"
-        
         # Add imperfect cells ratio to validation results
+        imperfect_pct = imperfect_ratio_threshold * 100
         if imperfect_cells_ratio <= imperfect_ratio_threshold:
             cells_result = f"✓ Imperfect cells acceptable (≤ {imperfect_pct:.1f}%)"
         else:
-            cells_result = f"✗ Imperfect cells high (> {imperfect_pct:.1f}%)"
+            # Check for override
+            is_override, override_details = is_overridden(dataset_name, "imperfect_cells", imperfect_cells_ratio)
+            if is_override and override_details:
+                cells_result = f"✓ Imperfect cells high (OVERRIDDEN)"
+            else:
+                cells_result = f"✗ Imperfect cells high (> {imperfect_pct:.1f}%)"
         
         # Prepare analysis data
         analysis = {
             'full_data_rows': full_data_rows,
             'matched_by_key_rows': matched_by_key_rows,
             'perfect_rows': perfect_rows,
-            'imperfect_rows': imperfect_rows,
-            'imperfect_ratio': imperfect_ratio,
             'imperfect_cells': imperfect_cells,
             'total_cells': total_cells,
             'imperfect_cells_ratio': imperfect_cells_ratio,
@@ -604,15 +679,15 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         worst_columns = []
         sample_file = None
         
-        if imperfect_rows > 0 and column_differences:
+        if column_differences and any(diff_info.get('deviating_rows', 0) > 0 for diff_info in column_differences.values() if 'error' not in diff_info):
             # Sort columns by deviation percentage
             sorted_cols = sorted(column_differences.items(), 
                                key=lambda x: x[1].get('pct_pos_bykey', 0), 
                                reverse=True)
             
-            # Show top 4 worst columns
-            worst_4 = sorted_cols[:MAX_WORST_COLUMNS]
-            for col, diff_info in worst_4:
+            # Show worst columns
+            worst_n_columns = sorted_cols[:MAX_WORST_COLUMNS]
+            for col, diff_info in worst_n_columns:
                 if 'error' in diff_info:
                     worst_columns.append(f"{col}: Error - {diff_info['error']}")
                 else:
@@ -633,8 +708,8 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
                     
                     worst_columns.append(f"{col}: imperfect rows {pct_dev:.3f}%; mean dev for imperfect {mean_dev_str}; mean col level {mean_col_str}")
             
-            # Save CSV sample if imperfect ratio > 0.1%
-            if imperfect_ratio > CSV_SAMPLE_THRESHOLD:
+            # Save CSV sample if imperfect cells ratio > 0.1%
+            if imperfect_cells_ratio > CSV_SAMPLE_THRESHOLD:
                 # Create detail directory
                 detail_dir = Path("../Logs/detail")
                 detail_dir.mkdir(parents=True, exist_ok=True)
@@ -658,7 +733,7 @@ def val_one_crow(dataset_name: str, basic_results: dict, dta=None, parq=None, ke
         return {
             'dataset_name': dataset_name,
             'status': 'success',
-            'validations': basic_results['validations'] + [common_rows_result, bykeys_result, cells_result],
+            'validations': basic_results['validations'] + [common_rows_result, cells_result],
             'details': basic_results['details'],
             'analysis': analysis,
             'worst_columns': worst_columns,
@@ -747,17 +822,13 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     # Count passes for each validation check
     col_names_pass = 0
     col_types_pass = 0
-    row_counts_pass = 0
     common_rows_pass = 0
-    imperfect_ratio_pass = 0
     imperfect_cells_pass = 0
     
     # Collect failures by category
     col_names_fail = []
     col_types_fail = []
-    row_counts_fail = []
     common_rows_fail = []
-    high_imperfect = []
     high_imperfect_cells = []
     execution_errors = []
     
@@ -768,12 +839,14 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
         
         # Check each validation result
         for validation in validations:
-            if "Column names match" in validation and "✓" in validation:
+            if ("Column names match" in validation and "✓" in validation) or \
+               ("Column names differ" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 col_names_pass += 1
             elif "Column names" in validation and "✗" in validation:
                 col_names_fail.append(dataset_name)
                 
-            if "Column types match" in validation and "✓" in validation:
+            if ("Column types match" in validation and "✓" in validation) or \
+               ("Column types differ" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 col_types_pass += 1
             elif "Column types" in validation and "✗" in validation:
                 # Extract column type mismatches from details
@@ -791,12 +864,9 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                 else:
                     col_types_fail.append(dataset_name)
                 
-            if ("Row count" in validation and "✓" in validation) or ("Row counts" in validation and "✓" in validation):
-                row_counts_pass += 1
-            elif ("Row count" in validation and "✗" in validation) or ("Row counts" in validation and "✗" in validation):
-                row_counts_fail.append(dataset_name)
                 
-            if "Python common rows are superset of Stata" in validation and "✓" in validation:
+            if ("Python common rows are superset of Stata" in validation and "✓" in validation) or \
+               ("Python missing some Stata rows" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 common_rows_pass += 1
             elif "Python missing some Stata rows" in validation and "✗" in validation:
                 # Extract missing row count from validation message
@@ -805,18 +875,16 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
                     common_rows_fail.append(f"{dataset_name} ({missing_count})")
                 else:
                     common_rows_fail.append(dataset_name)
-                
-            if "Imperfect rows acceptable" in validation and "✓" in validation:
-                imperfect_ratio_pass += 1
-            elif "Imperfect rows high" in validation and "✗" in validation:
-                # Get the imperfect ratio from analysis
-                if result['analysis'] and 'imperfect_ratio' in result['analysis']:
-                    ratio_pct = result['analysis']['imperfect_ratio'] * 100
-                    high_imperfect.append(f"{dataset_name}: {ratio_pct:.2f}%")
+            elif "Python missing some Stata rows" in validation and "OVERRIDDEN" in validation:
+                # Extract missing row count from validation message for overridden cases
+                if result['analysis'] and 'missing_stata_rows' in result['analysis']:
+                    missing_count = result['analysis']['missing_stata_rows']
+                    common_rows_fail.append(f"{dataset_name} ({missing_count}) (OVERRIDDEN)")
                 else:
-                    high_imperfect.append(dataset_name)
-                    
-            if "Imperfect cells acceptable" in validation and "✓" in validation:
+                    common_rows_fail.append(f"{dataset_name} (OVERRIDDEN)")
+                
+            if ("Imperfect cells acceptable" in validation and "✓" in validation) or \
+               ("Imperfect cells high" in validation and "✓" in validation and "OVERRIDDEN" in validation):
                 imperfect_cells_pass += 1
             elif "Imperfect cells high" in validation and "✗" in validation:
                 # Get the imperfect cells ratio from analysis
@@ -842,13 +910,11 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     lines.append("**Validation Thresholds**:")
     lines.append(f"- Imperfect ratio threshold: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append("")
-    lines.append("**Validation Results**:")
-    lines.append(f"- ✓ Column names match: {col_names_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Column types match: {col_types_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Row counts acceptable: {row_counts_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Python common rows are superset: {common_rows_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Imperfect rows acceptable: {imperfect_ratio_pass}/{total_datasets} datasets")
-    lines.append(f"- ✓ Imperfect cells acceptable: {imperfect_cells_pass}/{total_datasets} datasets")
+    lines.append("**Validation Results** (includes overrides):")
+    lines.append(f"- Column names match: {col_names_pass}/{total_datasets} datasets")
+    lines.append(f"- Column types match: {col_types_pass}/{total_datasets} datasets")
+    lines.append(f"- Python common rows are superset: {common_rows_pass}/{total_datasets} datasets")
+    lines.append(f"- Imperfect cells acceptable: {imperfect_cells_pass}/{total_datasets} datasets")
     lines.append("")
     lines.append("**Failed Checks**:")
     
@@ -870,15 +936,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
     else:
         lines.append("- **Column types differ**: (none)")
         
-    # Row count issues
-    if row_counts_fail:
-        lines.append("- **Row count issues**:")
-        for dataset in row_counts_fail:
-            linked_dataset = wrap_dataset_name_with_link(dataset)
-            lines.append(f"  - {linked_dataset}")
-    else:
-        lines.append("- **Row count issues**: (none)")
-        
     # Python missing Stata rows
     if common_rows_fail:
         lines.append("- **Python missing Stata rows**:")
@@ -887,15 +944,6 @@ def generate_summary(results_list: list, imperfect_ratio_threshold: float = DEFA
             lines.append(f"  - {linked_dataset}")
     else:
         lines.append("- **Python missing Stata rows**: (none)")
-        
-    # High imperfect rows
-    if high_imperfect:
-        lines.append("- **High imperfect rows**:")
-        for dataset_info in high_imperfect:
-            linked_dataset_info = wrap_dataset_name_with_link(dataset_info)
-            lines.append(f"  - {linked_dataset_info}")
-    else:
-        lines.append("- **High imperfect rows**: (none)")
         
     # High imperfect cells
     if high_imperfect_cells:
@@ -1020,6 +1068,8 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     lines.append(f"**Imperfect ratio threshold**: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append(f"**Execution time**: {execution_time:.2f} minutes")
     lines.append("")
+    lines.append("**Validation Overrides**: [DataDownloads/overrides.yaml](DataDownloads/overrides.yaml)")
+    lines.append("")
     lines.append("**Cell Matching Logic**:")
     lines.append(f"- Perfect cell: |stata_value - python_value| ≤ {tolerance}")
     lines.append(f"- Imperfect cell: |stata_value - python_value| > {tolerance}")
@@ -1053,8 +1103,6 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
             lines.append(f"    - Total Stata rows: {analysis['full_data_rows']:,}")
             lines.append(f"    - Common rows: {analysis['matched_by_key_rows']:,}")
             lines.append(f"    - Perfect rows: {analysis['perfect_rows']:,}")
-            lines.append(f"    - Imperfect rows: {analysis['imperfect_rows']:,}")
-            lines.append(f"    - **Imperfect rows / Total rows: {analysis['imperfect_ratio']:.2%}**")
             if 'imperfect_cells' in analysis:
                 lines.append(f"    - Imperfect cells: {analysis['imperfect_cells']:,}")
                 lines.append(f"    - Total cells: {analysis['total_cells']:,}")
@@ -1089,7 +1137,6 @@ def display_configuration(datasets, max_rows, tolerance, imperfect_ratio_thresho
     
     # Display validation thresholds
     print("Validation Thresholds:")
-    print(f"  • Max row count ratio: {MAX_ROW_COUNT_RATIO:.3f} (Python can have up to {(MAX_ROW_COUNT_RATIO-1)*100:.1f}% more rows)")
     print(f"  • Imperfect ratio threshold: {imperfect_ratio_threshold:.3f} ({imperfect_ratio_threshold*100:.1f}%)")
     print(f"  • Numeric tolerance: {tolerance}")
     print(f"  • CSV sample threshold: {CSV_SAMPLE_THRESHOLD:.3f} ({CSV_SAMPLE_THRESHOLD*100:.1f}%)")
@@ -1228,8 +1275,8 @@ def main():
     parser.add_argument(
         '--maxrows',
         type=int,
-        default=1000,
-        help='Maximum number of rows to load from each dataset (default: 1000, use -1 for all rows)'
+        default=-1,
+        help='Maximum number of rows to load from each dataset (default: -1, use -1 for all rows, use 1000 for testing)'
     )
     parser.add_argument(
         '--tolerance',

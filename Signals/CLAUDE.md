@@ -127,11 +127,9 @@ Signals/
 - **✅ RIGHT**: Research StataDocs and trace Stata's exact processing logic
 - **Key Discovery**: Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
 
-
 ## **Write Debugging py scripts**
 - **WRONG**: Run a long bash command that to generate test output.
 - **RIGHT**: Write a py script in `pyCode/Debug/` that generates test output.
-
 
 # Journal, Documentation, and Planning
 
