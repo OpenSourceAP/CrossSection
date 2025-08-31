@@ -30,17 +30,11 @@ df = pl.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
                      columns=['permno', 'time_avail_m', 'vol'])
 
 # SIGNAL CONSTRUCTION - Time-based rolling regression
-print("Calculating time-based rolling regressions by permno...")
-
-# Sort data first
+print("Rolling window regressions of volume on time...")
 df = df.sort(['permno', 'time_avail_m'])
-
-# Convert time_avail_m to numeric form for regression (months since 1960-01, Stata format)
 df = df.with_columns([
     ((pl.col('time_avail_m').dt.year() - 1960) * 12 + pl.col('time_avail_m').dt.month() - 1).alias('time_numeric')
 ])
-
-print("Rolling window regressions of volume on time...")
 df = df.with_columns(
     pl.col('vol').least_squares.rolling_ols(
         pl.col('time_numeric'),
