@@ -30,6 +30,43 @@ wrds <- dbConnect(Postgres(),
 # this code is so involved I decided to make it separate - Andrew 2019 10
 # Whole thing takes about 3 hours to run
 
+# 1/3 Option Volume -------------------------------------------------------
+# from opvold dataset
+# about 2 min for all data, since it's at the (dailydate,secid,cpflag) level
+
+rm(list = ls(pattern = 'temp'))
+
+# download volume data
+start_time = Sys.time()
+res = dbSendQuery(conn = wrds, statement = 
+                    "select a.*
+                      from optionm.opvold as a
+                      where a.cp_flag != 'NaN'"
+) 
+tempd = res %>% dbFetch()
+tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
+dbClearResult(res)
+end_time = Sys.time()
+print(end_time-start_time)
+
+# sum volume over month by secid, month, calls and puts together
+tempm = tempd %>% group_by(secid, time_avail_m) %>%
+  summarize(
+    optVolume = sum(volume), optInterest = sum(open_interest)
+  )
+
+# save
+optVolall = tempm
+
+# write to csv
+data.table::fwrite(optVolall,
+                   file = paste0(
+                     path_dl_me
+                     , 'OptionMetricsVolume.csv'
+                   )
+)
+
+
 # 2/3: Vol Surface -----------------------------------------------------
 # Used in Smile Slope a.k.a. Slope (Yan) 
 # also used in An Ang Bali Cakici 2014
