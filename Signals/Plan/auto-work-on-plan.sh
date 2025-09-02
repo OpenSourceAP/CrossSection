@@ -8,8 +8,9 @@
 # Usage: ./auto-work-on-plan.sh 5
 # (where 5 is the number of iterations)
 
-
 alias claude="/Users/chen1678/.claude/local/claude"
+PLAN_NAME="plan-dl-streamline.md"
+THINK_INSTRUCTION="" # e.g. "", "Think.", "Ultrathink.'"
 
 cd ..
 
@@ -21,7 +22,7 @@ do
   echo "working on iteration $i"  
 
   claude -p --model claude-sonnet-4-20250514 "
-  Work on Plan/plan-fastxtile-removal.md. Continue where we left off previously. Work on only one script. 
+  Work on Plan/$PLAN_NAME. Continue where we left off previously. Work on only one script. $THINK_INSTRUCTION
   "
 done
 
