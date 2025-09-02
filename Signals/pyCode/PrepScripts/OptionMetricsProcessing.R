@@ -30,7 +30,7 @@ wrds <- dbConnect(Postgres(),
 # this code is so involved I decided to make it separate - Andrew 2019 10
 # Whole thing takes about 3 hours to run
 
-# 1/2: Vol Surface -----------------------------------------------------
+# 2/3: Vol Surface -----------------------------------------------------
 # Used in Smile Slope a.k.a. Slope (Yan) 
 # also used in An Ang Bali Cakici 2014
 # right now we DL delta = 50 (NTM) and days in (30,91) but we can adjust later
@@ -121,7 +121,7 @@ data.table::fwrite(vsurfall,
 
 
 
-# 2/2: Smirk a.k.a. Skew1 (Xing Zhang, Zhao 2010) --------------------
+# 3/3: Smirk a.k.a. Skew1 (Xing Zhang, Zhao 2010) --------------------
 # from opprcd dataset (option prices)
 # this dataset is too big to download more generally, so we 
 # calculate for specific uses 

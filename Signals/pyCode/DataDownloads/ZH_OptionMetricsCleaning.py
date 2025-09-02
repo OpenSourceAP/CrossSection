@@ -24,6 +24,8 @@ print("Processing OptionMetrics data...")
 # Create output directory
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
+# tbc: OptionMetricsVolume cleaning
+
 # Process OptionMetrics Volatility Surface data
 print("Processing OptionMetricsVolSurf...")
 vol_surf_data = pd.read_csv("../pyData/Prep/OptionMetricsVolSurf.csv")

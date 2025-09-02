@@ -1,3 +1,11 @@
+#%%
+
+import os
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+os.chdir("..")
+os.listdir()
+
+
 # %%
 
 # ABOUTME: ZL_CRSPOPTIONMETRICS.py makes pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet with columns permno, time_avail_m, secid, score, sdate_m, edate_m, volume
@@ -50,9 +58,6 @@ engine.dispose()
 # load CRSP monthly data
 crspm = pd.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet", columns=['permno', 'time_avail_m'])
 
-# load option volume data
-opvold = pd.read_parquet("../pyData/Intermediate/OptionMetricsVolume.parquet", columns=['secid', 'date','volume'])
-
 # %% Convert link dates to monthly
 omlink = omlink0.copy()
 
@@ -66,12 +71,6 @@ omlink["edate_m"] = (
 
 omlink.drop(columns=['sdate', 'edate'], inplace=True)
 
-# %% Convert option volume data to monthly
-
-opvold['time_avail_m'] = opvold['date'].dt.to_period('M').dt.to_timestamp()
-opvolm = opvold.groupby(['secid','time_avail_m'])['volume'].sum().reset_index()
-
-
 # %% join data
 
 # full join
@@ -79,26 +78,24 @@ df0 = omlink.merge(crspm, on=['permno'], how='outer').query(
     "secid.notna()" # keep if a link exists
 ).query(
     "time_avail_m >= sdate_m & time_avail_m <= edate_m" # keep if link date is valid
-).merge(opvolm, on=['secid','time_avail_m'], how='left')
+)
 
 print(f'joined om-crsp link, crspm, and option volume data: {len(df0)} rows')
 
 #%% remove duplicates
 
-# first keep the lowest score
+# keep the lowest score
 # (comparing old data based on Code/PrepScripts/oclink_to_csv.sas with new data, lowest score is the best)
 df = df0.sort_values(['permno','time_avail_m','score']).groupby(['permno','time_avail_m']).first().reset_index()
+
 print(f'removed duplicates by score: {len(df)} rows')
 
-# then keep highest volume 
-# (this actually doesn't make any difference right now)
-df = df.sort_values(['permno','time_avail_m','volume'], ascending=[True, True, False]).groupby(['permno','time_avail_m']).first().reset_index()
-print(f'removed duplicates by volume: {len(df)} rows')
-
 #%% standardize columns
+
 df = standardize_columns(df, "OPTIONMETRICSCRSPLinkingTable")
 
 #%%
+
 # save
 df.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)
 

@@ -336,7 +336,7 @@ OptionMetricsVolume:
   stata_file: (n/a) # the OM vol data is being updated
   python_file: OptionMetricsVolume.parquet
   stata_script: (n/a)
-  python_script: ZH1_OptionVolume.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 OptionMetricsVolSurf:
   key1: secid
@@ -346,7 +346,7 @@ OptionMetricsVolSurf:
   stata_file: OptionMetricsVolSurf.dta
   python_file: OptionMetricsVolSurf.parquet
   stata_script: ZH_OptionMetrics.do
-  python_script: ZH3_OptionMetricsCleaning.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 OptionMetricsXZZ:
   key1: secid
@@ -354,7 +354,7 @@ OptionMetricsXZZ:
   stata_file: OptionMetricsXZZ.dta
   python_file: OptionMetricsXZZ.parquet
   stata_script: ZH_OptionMetrics.do
-  python_script: ZH3_OptionMetricsCleaning.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 OptionMetricsBH:
   key1: secid
@@ -363,7 +363,7 @@ OptionMetricsBH:
   stata_file: OptionMetricsBH.dta
   python_file: OptionMetricsBH.parquet
   stata_script: ZH_OptionMetrics.do
-  python_script: ZH3_OptionMetricsCleaning.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 # Linking Tables (no time filtering needed)
 IBESCRSPLinkingTable:
