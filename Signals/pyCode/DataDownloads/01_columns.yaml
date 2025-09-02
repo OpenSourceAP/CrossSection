@@ -321,9 +321,11 @@ IBESCRSPLinkingTable:
   int32: permno
 
 OPTIONMETRICSCRSPLinkingTable:
-  column_order: secid, permno, om_score
+  column_order: permno, time_avail_m, secid, score, sdate_m, edate_m, volume
   int32: secid, permno
-  int8: om_score
+  int8: score
+  datetime64[ns]: sdate_m, edate_m
+  float64: volume
 
 PatentDataProcessed:
   column_order: gvkey, year, npat, ncitscale

@@ -1,3 +1,11 @@
+#%%
+import os
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+os.chdir("..")
+os.listdir()
+
+#%%
+
 # ABOUTME: Option trading volume predictors following Johnson and So 2012 JFE, Table 2A
 # ABOUTME: OptionVolume1 = option to stock volume ratio, OptionVolume2 = abnormal option volume (current/6-month average)
 
@@ -45,6 +53,14 @@ df = df[df['secid'].notna()].copy()
 optmetrics = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolume.parquet',
                              columns=['secid', 'time_avail_m', 'optvolume'])
 df = df.merge(optmetrics, on=['secid', 'time_avail_m'], how='left')
+
+
+#%%
+
+df.groupby(['permno', 'time_avail_m'])['secid'].nunique().sort_values(ascending=False).head(20)
+
+
+#%%
 
 # Recombine with observations that had missing secid
 df = pd.concat([df, temp], ignore_index=True)

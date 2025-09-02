@@ -7,7 +7,7 @@ Usage:
 Outputs:
     - pyData/Intermediate/OptionMetricsVolume.parquet
 
-Philosphy is: Option volume is generally useful for working with the option data. So we download the whole thing and use it elsewhere. Importantly, we'll use it in ZH2_CRSPOPTIONMETRICSLINK
+Philosphy is: Option volume is generally useful for working with the option data. So we download the whole thing and use it elsewhere. 
 """
 
 import time
