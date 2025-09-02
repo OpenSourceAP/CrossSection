@@ -1290,6 +1290,11 @@ def main():
         default=DEFAULT_IMPERFECT_RATIO_THRESHOLD,
         help=f'Maximum ratio for imperfect rows/cells acceptance (default: {DEFAULT_IMPERFECT_RATIO_THRESHOLD})'
     )
+    parser.add_argument(
+        '--skipcheck',
+        action='store_true',
+        help='Skip confirmation prompt and proceed with validation'
+    )
     
     args = parser.parse_args()
     
@@ -1326,9 +1331,9 @@ def main():
     else:
         datasets_to_validate = None  # Will validate all
     
-    # Display configuration and ask for confirmation
+    # Display configuration and ask for confirmation (unless --skipcheck is used)
     display_configuration(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold)
-    if not confirm_execution():
+    if not args.skipcheck and not confirm_execution():
         return
     
     # Run validation
