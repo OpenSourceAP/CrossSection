@@ -82,13 +82,17 @@ echo "ADDING PERMNOS TO IID AND ISSM AND COPYING TO data_for_dl/"
 sas taq-chen-velikov/add_permnos.sas -log log/add_permnos.log
 cp temp_output/hf_monthly.csv data_for_dl/
 
-# # ==== OPTION METRICS LINK, ====
-echo "CREATING OPTION METRICS LINK (fast)"
-sas oclink_to_csv.sas -log log/oclink_to_csv.log
+# ==== OPTION METRICS: Volume ====
+echo "CREATING OPTION METRICS VOLUME (fast)"
+R CMD BATCH --no-save --no-restore OptionMetricsVolume.R log/OptionMetricsVolume.log
 
-# ==== OPTION METRICS ====
-echo "CREATING OPTION METRICS DATA (about 3 hours)"
-R CMD BATCH --no-save --no-restore OptionMetricsProcessing.R log/OptionMetricsProcessing.log
+# ==== OPTION METRICS: Vol Surface ====
+echo "CREATING OPTION METRICS VOL SURFACE (about 1 hour)"
+R CMD BATCH --no-save --no-restore OptionMetricsVolSurf.R log/OptionMetricsVolSurf.log
+
+# ==== OPTION METRICS: Skew1 ====
+echo "CREATING OPTION METRICS SKEW1 (about 2 hours)"
+R CMD BATCH --no-save --no-restore OptionMetricsSkew1.R log/OptionMetricsSkew1.log
 
 # ==== OPTION METRICS: Bali-Hovak ====
 echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"
