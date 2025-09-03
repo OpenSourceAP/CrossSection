@@ -1,11 +1,3 @@
-#%%
-
-import os
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
-os.chdir("..")
-os.listdir()
-
-
 # %%
 
 # ABOUTME: ZL_CRSPOPTIONMETRICS.py makes pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet with columns permno, time_avail_m, secid, score, sdate_m, edate_m, volume

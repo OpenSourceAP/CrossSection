@@ -26,37 +26,58 @@ wrds <- dbConnect(Postgres(),
                   dbname='wrds',
                   sslmode='require')
 
+# Set up loop -------------------------------------------------------------
+temp_dat = dbGetQuery(wrds, "SELECT table_name FROM information_schema.tables 
+                      WHERE table_schema = 'optionm' AND table_name like 'opprcd%'")                  
+yearlist = substr(temp_dat$table_name, 7,12)
 
-# Option Volume -------------------------------------------------------
-# from opvold dataset
-# about 2 min for all data, since it's at the (dailydate,secid,cpflag) level
+yearlist
 
-rm(list = ls(pattern = 'temp'))
+volume_many = list()
 
-# download volume data
-start_time = Sys.time()
-res = dbSendQuery(conn = wrds, statement = 
-                    "select a.*
-                      from optionm.opvold as a
-                      where a.cp_flag != 'NaN'"
-) 
-tempd = res %>% dbFetch()
-tempd = tempd %>% mutate(time_avail_m = ceiling_date(date, unit = "month")-1)  
-dbClearResult(res)
-end_time = Sys.time()
-print(end_time-start_time)
+# Loop over years -------------------------------------------------------------
 
-# sum volume over month by secid, month, calls and puts together
-tempm = tempd %>% group_by(secid, time_avail_m) %>%
-  summarize(
-    optVolume = sum(volume), optInterest = sum(open_interest)
+# From Page 268 of the paper "Specifically, OPVOLi,w equals the total volume in 
+# option contracts across all strikes for options expiring in the 30 trading days 
+# beginning five days after the trade date."
+
+querylimit = 'all'
+i = 1
+for (year in yearlist) {
+  print(Sys.time())
+  tic = Sys.time()
+  print("Processing Volume for Year:")
+  print(year)
+  
+  # download data with lots of filters
+  # 30 trading days after 5 days after trade date
+  query = paste0(
+    "select secid, date, exdate, volume
+    from optionm.opprcd", year, "
+    where cp_flag != 'NaN' and
+      exdate - date >= 5 and
+      exdate - date <= 5+30*(365/252) 
+    limit ", querylimit
   )
+  
+  res = dbSendQuery(wrds, query)
+  temp = res %>% dbFetch()
+  
+  volume_many[[i]] = temp
+  
+  toc = Sys.time()
+  
+  print((toc - tic))
+}
 
-# save
-optVolall = tempm
+
+# Bind and save -----------------------------------------------------------
+
+# finally, merge years together
+volume_all = do.call(rbind,volume_many)
 
 # write to csv
-data.table::fwrite(optVolall,
+data.table::fwrite(volume_all,
                    file = paste0(
                      path_dl_me
                      , 'OptionMetricsVolume.csv'
@@ -65,5 +86,3 @@ data.table::fwrite(optVolall,
 
 # Disconnect from WRDS
 dbDisconnect(wrds)
-
-print("Option Volume data complete: OptionMetricsVolume.csv")
