@@ -82,8 +82,8 @@ echo "ADDING PERMNOS TO IID AND ISSM AND COPYING TO data_for_dl/"
 sas taq-chen-velikov/add_permnos.sas -log log/add_permnos.log
 cp temp_output/hf_monthly.csv data_for_dl/
 
-# ==== OPTION METRICS: Volume ====
-echo "CREATING OPTION METRICS VOLUME (fast)"
+# # ==== OPTION METRICS: Volume ====
+echo "CREATING OPTION METRICS VOLUME (about 20 minutes)"
 R CMD BATCH --no-save --no-restore OptionMetricsVolume.R log/OptionMetricsVolume.log
 
 # ==== OPTION METRICS: Vol Surface ====

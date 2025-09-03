@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # run this from Signals/pyCode/
-# philosphy is: two distinct projects:
+# philosophy is: two distinct projects:
 # 1. Signals/pyCode/
 # 2. Portfolios/Code/
 # ( Signals/Code/ is deprecated Stata code)
