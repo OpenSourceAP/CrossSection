@@ -23,7 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
 
 print("Starting pchdepr.py")
 
@@ -45,6 +45,14 @@ print(f"After dropping duplicates: {len(df)} rows")
 # xtset permno time_avail_m
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
+
+# Forward-fill ppent to handle missing values (same as KZ)
+print("Forward-filling missing ppent values...")
+df = df.with_columns([
+    pl.col('ppent').forward_fill().over('permno').alias('ppent')
+])
+
+print("ppent forward-fill completed")
 
 # gen pchdepr = ((dp/ppent)-(l12.dp/l12.ppent))/(l12.dp/l12.ppent)
 print("Computing 12-month lag and pchdepr...")

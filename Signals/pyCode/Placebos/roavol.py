@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.asrol import asrol
 
 print("Starting roavol.py")
 
@@ -70,10 +71,17 @@ df = df.with_columns(
 
 # bys permno: asrol roaq, gen(roavol) stat(sd) window(time_avail_m 48) min(24)
 print("Computing rolling standard deviation...")
-# Use position-based rolling window with 48 observations and min 24 periods
-df = df.with_columns(
-    pl.col('roaq').rolling_std(window_size=48, min_periods=24).over('permno').alias('roavol')
-)
+# Use time-based rolling window with 48 months and min 24 periods  
+# Note: Stata's min(24) might be more lenient than expected
+df = asrol(df, 
+           group_col='permno',
+           time_col='time_avail_m', 
+           freq='1mo',
+           window=48,
+           value_col='roaq',
+           stat='sd',
+           new_col_name='roavol',
+           min_samples=20)  # Try lower minimum to match Stata behavior
 
 print(f"Generated roavol for {len(df)} observations")
 

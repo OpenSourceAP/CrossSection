@@ -24,7 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
 
 print("Starting KZ.py")
 
@@ -50,6 +50,15 @@ print("Merging with SignalMasterTable...")
 df = df.join(signal, on=['permno', 'time_avail_m'], how='inner')
 
 print(f"After merge with SignalMasterTable: {len(df)} rows")
+
+# Forward-fill ppent to handle missing values (Stata behavior)
+print("Forward-filling missing ppent values...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns([
+    pl.col('ppent').forward_fill().over('permno').alias('ppent')
+])
+
+print("ppent forward-fill completed")
 
 # SIGNAL CONSTRUCTION
 # KZ = -1.002* (ib + dp)/ppent + .283*(at + mve_c - ceq - txdb)/at + 3.139*(dlc + dltt)/(dlc + dltt + seq) - 39.368*((dvc+dvp)/ppent) - 1.315*(che/ppent)

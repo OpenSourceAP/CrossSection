@@ -24,7 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
 from utils.stata_fastxtile import fastxtile
 
 print("Starting OperProfLag.py")
@@ -79,6 +79,11 @@ lag_df = lag_df.rename(columns={'ceq': 'l12_ceq', 'time_avail_m': 'target_lag_da
 df_pd = df_pd.merge(lag_df, on=['permno', 'target_lag_date'], how='left')
 
 print("Computing tempprof...")
+# Fill missing values with 0 to match Stata behavior
+df_pd['revt'] = df_pd['revt'].fillna(0)
+df_pd['cogs'] = df_pd['cogs'].fillna(0)
+df_pd['xsga'] = df_pd['xsga'].fillna(0)
+df_pd['xint'] = df_pd['xint'].fillna(0)
 df_pd['tempprof'] = (df_pd['revt'] - df_pd['cogs'] - df_pd['xsga'] - df_pd['xint']) / df_pd['l12_ceq']
 
 # egen tempsizeq = fastxtile(mve_c), by(time_avail_m) n(3)

@@ -29,7 +29,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting ZZ2_FailureProbability_FailureProbabilityJune.py")
 
@@ -53,19 +54,19 @@ ff = pl.read_parquet("../pyData/Intermediate/monthlyFF.parquet")
 ff = ff.select(['time_avail_m', 'mktrf'])
 df = df.join(ff, on=['time_avail_m'], how='inner')
 
-# Merge with quarterly Compustat
+# Merge with quarterly Compustat (Stata: keep(match) = inner join)
 print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'atq', 'ceqq', 'ltq', 'cheq', 'ibq'])
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Float64))  # Match gvkey type
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
 
-# Merge with annual Compustat
+# Merge with annual Compustat (Stata: keep(match) = inner join)  
 print("Loading m_aCompustat...")
 acomp = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 acomp = acomp.select(['gvkey', 'time_avail_m', 'txditc', 'seq', 'ceq', 'at', 'lt', 'pstk', 'pstkrv', 'pstkl', 'txdb'])
 acomp = acomp.with_columns(pl.col('gvkey').cast(pl.Float64))  # Match gvkey type
-df = df.join(acomp, on=['gvkey', 'time_avail_m'], how='left')
+df = df.join(acomp, on=['gvkey', 'time_avail_m'], how='inner')
 
 print(f"After merges: {len(df)} rows")
 
@@ -107,7 +108,7 @@ sigma_df = sigma_df.select(['permno', 'time_avail_m', 'SIGMA'])
 
 print(f"Generated SIGMA for {len(sigma_df)} permno-months")
 
-# Merge SIGMA back to main dataframe
+# Merge SIGMA back to main dataframe (Stata: keep(master match) = left join but keep both)
 print("Merging SIGMA with main data...")
 df = df.join(sigma_df, on=['permno', 'time_avail_m'], how='left')
 
@@ -146,17 +147,17 @@ df = df.with_columns([
 
 # NIMTA - net income to market plus total assets
 df = df.with_columns([
-    (pl.col('ibq') / (pl.col('tempMV') + pl.col('ltq'))).alias('tempNIMTA')
+    (pl.col('ibq').fill_null(0) / (pl.col('tempMV') + pl.col('ltq').fill_null(0))).alias('tempNIMTA')
 ])
 
 # TLMTA - total liabilities to market plus total assets  
 df = df.with_columns([
-    (pl.col('ltq') / (pl.col('tempMV') + pl.col('ltq'))).alias('tempTLMTA')
+    (pl.col('ltq').fill_null(0) / (pl.col('tempMV') + pl.col('ltq').fill_null(0))).alias('tempTLMTA')
 ])
 
 # CASHMTA - cash to market plus total assets
 df = df.with_columns([
-    (pl.col('cheq') / (pl.col('tempMV') + pl.col('ltq'))).alias('tempCASHMTA')
+    (pl.col('cheq').fill_null(0) / (pl.col('tempMV') + pl.col('ltq').fill_null(0))).alias('tempCASHMTA')
 ])
 
 # Apply basic winsorization (5/95 percentiles)
@@ -188,12 +189,9 @@ df = df.with_columns([
 print("Computing exponentially weighted averages...")
 rho = 2**(-1/3)
 
-# Create lags for NIMTA and EXRET (all 12 lags as in Stata)
-for lag in range(1, 13):  # 1 through 12
-    df = df.with_columns([
-        pl.col('tempNIMTA').shift(lag).over('permno').alias(f'l{lag}_tempNIMTA'),
-        pl.col('tempEXRET').shift(lag).over('permno').alias(f'l{lag}_tempEXRET')
-    ])
+# Create lags for NIMTA and EXRET using stata_multi_lag
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempNIMTA', list(range(1, 13)), prefix='l')
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempEXRET', list(range(1, 13)), prefix='l')
 
 # Compute weighted averages (matching Stata exactly)
 df = df.with_columns([
@@ -221,13 +219,13 @@ df = df.with_columns([
     pl.col('txditc').fill_null(0).alias('txditc'),
     pl.when(pl.col('pstk').is_not_null()).then(pl.col('pstk'))
     .when(pl.col('pstkrv').is_not_null()).then(pl.col('pstkrv'))
-    .otherwise(pl.col('pstkl')).alias('tempPS')
+    .otherwise(pl.col('pstkl').fill_null(0)).alias('tempPS')
 ])
 
 df = df.with_columns([
     pl.when(pl.col('seq').is_not_null()).then(pl.col('seq'))
-    .when(pl.col('ceq').is_not_null()).then(pl.col('ceq') + pl.col('tempPS'))
-    .otherwise(pl.col('at') - pl.col('lt')).alias('tempSE')
+    .when(pl.col('ceq').is_not_null()).then(pl.col('ceq').fill_null(0) + pl.col('tempPS'))
+    .otherwise(pl.col('at').fill_null(0) - pl.col('lt').fill_null(0)).alias('tempSE')
 ])
 
 df = df.with_columns([
