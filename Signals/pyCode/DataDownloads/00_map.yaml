@@ -333,10 +333,10 @@ hf_spread:
 OptionMetricsVolume:
   key1: secid
   key2: time_avail_m
-  stata_file: OptionMetricsVolume.dta
+  stata_file: (n/a) # the OM vol data is being updated
   python_file: OptionMetricsVolume.parquet
-  stata_script: ZH_OptionMetrics.do
-  python_script: ZH_OptionMetrics.py
+  stata_script: (n/a)
+  python_script: ZH_OptionMetricsCleaning.py
 
 OptionMetricsVolSurf:
   key1: secid
@@ -346,7 +346,7 @@ OptionMetricsVolSurf:
   stata_file: OptionMetricsVolSurf.dta
   python_file: OptionMetricsVolSurf.parquet
   stata_script: ZH_OptionMetrics.do
-  python_script: ZH_OptionMetrics.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 OptionMetricsXZZ:
   key1: secid
@@ -354,7 +354,7 @@ OptionMetricsXZZ:
   stata_file: OptionMetricsXZZ.dta
   python_file: OptionMetricsXZZ.parquet
   stata_script: ZH_OptionMetrics.do
-  python_script: ZH_OptionMetrics.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 OptionMetricsBH:
   key1: secid
@@ -363,7 +363,7 @@ OptionMetricsBH:
   stata_file: OptionMetricsBH.dta
   python_file: OptionMetricsBH.parquet
   stata_script: ZH_OptionMetrics.do
-  python_script: ZH_OptionMetrics.py
+  python_script: ZH_OptionMetricsCleaning.py
 
 # Linking Tables (no time filtering needed)
 IBESCRSPLinkingTable:
@@ -377,8 +377,8 @@ OPTIONMETRICSCRSPLinkingTable:
   key1: permno
   stata_file: OPTIONMETRICSCRSPLinkingTable.dta
   python_file: OPTIONMETRICSCRSPLinkingTable.parquet
-  stata_script: ZL_CRSPOPTIONMETRICS.do
-  python_script: ZL_CRSPOPTIONMETRICS.py
+  stata_script: N/A # We're now using the WRDS linkttable directly
+  python_script: ZH2_OptionMetricsCRSPLink.py
 
 # Patent Data
 PatentDataProcessed:

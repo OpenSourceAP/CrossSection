@@ -1,3 +1,11 @@
+#%%
+import os
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+os.chdir("..")
+os.listdir()
+
+#%%
+
 # ABOUTME: Option trading volume predictors following Johnson and So 2012 JFE, Table 2A
 # ABOUTME: OptionVolume1 = option to stock volume ratio, OptionVolume2 = abnormal option volume (current/6-month average)
 
@@ -28,6 +36,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
 
+print("Started ZZ1_OptionVolume1_OptionVolume2.py...")
+
 # Load required columns from SignalMasterTable
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
                      columns=['permno', 'time_avail_m', 'secid', 'prc', 'shrcd'])
@@ -37,17 +47,18 @@ crsp = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
                        columns=['permno', 'time_avail_m', 'vol'])
 df = df.merge(crsp, on=['permno', 'time_avail_m'], how='left')
 
-# Temporarily separate observations with missing secid before option volume merge
-temp = df[df['secid'].isna()].copy()
-df = df[df['secid'].notna()].copy()
+# Load daily option volume
+optvold = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolume.parquet',
+                           columns=['secid', 'date', 'volume']).rename(columns={'volume': 'optvolume'})
 
-# Merge with OptionMetrics data to get option volume
-optmetrics = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolume.parquet',
-                             columns=['secid', 'time_avail_m', 'optvolume'])
-df = df.merge(optmetrics, on=['secid', 'time_avail_m'], how='left')
+# aggregate option volume to monthly
+# OP aggregates to weekly (Table 2, also page 7). But for simplicity we aggregate to monthly
+# time to expiration filters were already applied in PrepScripts/OptionMetricsVolume.R
+optvold['time_avail_m'] = pd.to_datetime(optvold['date']).dt.to_period('M').dt.start_time
+optvolm = optvold.groupby(['secid', 'time_avail_m'])['optvolume'].sum().reset_index()
 
-# Recombine with observations that had missing secid
-df = pd.concat([df, temp], ignore_index=True)
+# merge option volume to df
+df = df.merge(optvolm, on=['secid', 'time_avail_m'], how='left')
 
 # SIGNAL CONSTRUCTION
 # Sort by permno and time for time series operations

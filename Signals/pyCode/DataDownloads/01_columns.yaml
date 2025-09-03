@@ -287,9 +287,11 @@ hf_spread:
   float32: hf_spread
 
 OptionMetricsVolume:
-  column_order: secid, optvolume, optinterest, time_avail_m
-  int32: secid, optvolume, optinterest
-  datetime64[ns]: time_avail_m
+  column_order: secid, date, cp_flag, volume, open_interest
+  int32: secid, 
+  datetime64[ns]: date
+  object: cp_flag
+  float64: volume, open_interest
 
 OptionMetricsVolSurf:
   column_order: secid, days, delta, cp_flag, time_avail_m, date, impl_vol
@@ -319,9 +321,11 @@ IBESCRSPLinkingTable:
   int32: permno
 
 OPTIONMETRICSCRSPLinkingTable:
-  column_order: secid, permno, om_score
+  column_order: permno, time_avail_m, secid, score, sdate_m, edate_m, volume
   int32: secid, permno
-  int8: om_score
+  int8: score
+  datetime64[ns]: sdate_m, edate_m
+  float64: volume
 
 PatentDataProcessed:
   column_order: gvkey, year, npat, ncitscale

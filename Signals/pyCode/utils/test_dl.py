@@ -1179,7 +1179,7 @@ def confirm_execution():
             print("Please enter 'y' for yes or 'n' for no.")
 
 
-def validate_all_datasets(datasets=None, max_rows=-1, tolerance=DEFAULT_TOLERANCE, imperfect_ratio_threshold=DEFAULT_IMPERFECT_RATIO_THRESHOLD):
+def validate_all_datasets(datasets=None, max_rows=-1, tolerance=DEFAULT_TOLERANCE, imperfect_ratio_threshold=DEFAULT_IMPERFECT_RATIO_THRESHOLD, output_name="testout_dl"):
     """Validate all or specified datasets and save to markdown file."""
 
     start_time = time.time()
@@ -1237,7 +1237,7 @@ def validate_all_datasets(datasets=None, max_rows=-1, tolerance=DEFAULT_TOLERANC
     # Reorder markdown content for file output (failed datasets first)
     reordered_markdown = reorder_markdown_by_failure_priority(markdown_content)
     
-    output_file = log_dir / "testout_dl.md"
+    output_file = log_dir / f"{output_name}.md"
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(reordered_markdown)
     
@@ -1290,6 +1290,17 @@ def main():
         default=DEFAULT_IMPERFECT_RATIO_THRESHOLD,
         help=f'Maximum ratio for imperfect rows/cells acceptance (default: {DEFAULT_IMPERFECT_RATIO_THRESHOLD})'
     )
+    parser.add_argument(
+        '--skipcheck',
+        action='store_true',
+        help='Skip confirmation prompt and proceed with validation'
+    )
+    parser.add_argument(
+        '--outputname',
+        type=str,
+        default='testout_dl',
+        help='Name for the output markdown file (saved to ../Logs/{outputname}.md, default: testout_dl)'
+    )
     
     args = parser.parse_args()
     
@@ -1326,13 +1337,13 @@ def main():
     else:
         datasets_to_validate = None  # Will validate all
     
-    # Display configuration and ask for confirmation
+    # Display configuration and ask for confirmation (unless --skipcheck is used)
     display_configuration(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold)
-    if not confirm_execution():
+    if not args.skipcheck and not confirm_execution():
         return
     
     # Run validation
-    validate_all_datasets(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold)
+    validate_all_datasets(datasets_to_validate, args.maxrows, args.tolerance, args.imperfect_ratio_threshold, args.outputname)
 
 
 if __name__ == "__main__":

@@ -27,8 +27,20 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
+from config import PATCH_OPTIONM_IV
 
 print("Starting dVolPut.py...")
+
+# Check for Option Metrics patch
+if PATCH_OPTIONM_IV:
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    from openassetpricing import OpenAP
+    openap = OpenAP(2023)
+    df = openap.dl_signal('polars', ['dVolPut'])
+    df = df.rename({'yyyymm': 'time_avail_m'})
+    save_predictor(df, 'dVolPut')
+    sys.exit()
 
 # DATA LOAD
 print("Loading data...")

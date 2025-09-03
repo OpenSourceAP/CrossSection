@@ -28,9 +28,21 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
+from config import PATCH_OPTIONM_IV
 
 
 print("Starting CPVolSpread.py...")
+
+# Patch Option Metrics IV data if configured
+if PATCH_OPTIONM_IV:
+    print("PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing...")
+    from openassetpricing import OpenAP
+    openap = OpenAP(2023)
+    df = openap.dl_signal('polars', ['CPVolSpread'])
+    df = df.rename({'yyyymm': 'time_avail_m'})
+    save_predictor(df, 'CPVolSpread')
+    print("CPVolSpread.py completed successfully with 2023 vintage patch")
+    sys.exit()
 
 # Clean OptionMetrics data 
 print("Loading and cleaning OptionMetrics data...")
