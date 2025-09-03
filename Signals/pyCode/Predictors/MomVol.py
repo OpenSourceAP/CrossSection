@@ -1,12 +1,13 @@
-# ABOUTME: Momentum among high volume stocks - independent double sort by momentum and volume
+# ABOUTME: Calculates momentum in high volume stocks following Lee and Swaminathan 2000 Table 2 J=6 K=3 V3 R10-R1
 # ABOUTME: Usage: python3 MomVol.py (run from pyCode/ directory)
 
 import polars as pl
 import sys
 import os
-sys.path.append('.')
-from utils.savepredictor import save_predictor
-from utils.stata_fastxtile import fastxtile
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
+from utils.asrol import asrol
+from utils.stata_replication import stata_multi_lag
 
 # Data load
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -22,9 +23,6 @@ df = df.join(
     how="inner"
 )
 
-# Sort by permno and time_avail_m (critical for proper lag operations)
-df = df.sort(["permno", "time_avail_m"])
-
 # Signal construction
 df = df.with_columns([
     # Clean volume (set negative to null)
@@ -36,42 +34,58 @@ df = df.with_columns([
     pl.col("ret").fill_null(0)
 ])
 
-# Calculate 6-month momentum using calendar-based lags (like Stata l.ret, l2.ret, etc.)
-df = df.with_columns([
-    pl.col("ret").shift(1).over("permno").alias("l1_ret"),
-    pl.col("ret").shift(2).over("permno").alias("l2_ret"),
-    pl.col("ret").shift(3).over("permno").alias("l3_ret"),
-    pl.col("ret").shift(4).over("permno").alias("l4_ret"),
-    pl.col("ret").shift(5).over("permno").alias("l5_ret")
-])
-
-df = df.with_columns([
-    ((1 + pl.col("l1_ret")) *
-     (1 + pl.col("l2_ret")) *
-     (1 + pl.col("l3_ret")) *
-     (1 + pl.col("l4_ret")) *
-     (1 + pl.col("l5_ret")) - 1).alias("Mom6m")
-])
-
-# Calculate 6-month rolling mean volume (like Stata asrol)
-df = df.with_columns([
-    pl.col("vol")
-    .rolling_mean(window_size=6, min_samples=5)
-    .over("permno")
-    .alias("temp")
-])
-
-# Convert to pandas for proper quantile operations (fastxtile equivalent)
+# Calculate 6-month momentum using stata_multi_lag for calendar validation
+# Convert to pandas for calendar-based lag operations
 import pandas as pd
 import numpy as np
 
 df_pd = df.to_pandas()
+df_pd = df_pd.sort_values(['permno', 'time_avail_m'])
+
+# Use stata_multi_lag for calendar-validated lag operations
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
+
+# Calculate 6-month momentum: (1+l.ret)*(1+l2.ret)*...*(1+l5.ret) - 1
+df_pd['Mom6m'] = (
+    (1 + df_pd['ret_lag1']) *
+    (1 + df_pd['ret_lag2']) *
+    (1 + df_pd['ret_lag3']) *
+    (1 + df_pd['ret_lag4']) *
+    (1 + df_pd['ret_lag5']) - 1
+)
+
+
+# Calculate 6-month calendar-based rolling mean volume (like Stata asrol window(time_avail_m 6))
+# Use the asrol utility but with calendar-based approach
+print("Calculating 6-month calendar-based rolling mean volume...")
+df_pd = asrol(
+    df_pd, 
+    group_col='permno', 
+    time_col='time_avail_m', 
+    freq='1mo',
+    window=6, 
+    value_col='vol', 
+    stat='mean', 
+    new_col_name='temp', 
+    min_samples=5
+)
+
+# time_avail_m is already a column, no need to reset index
 
 # Create momentum deciles within each time_avail_m (like fastxtile)
-df_pd['catMom'] = fastxtile(df_pd, 'Mom6m', by='time_avail_m', n=10)
-df_pd['catVol'] = fastxtile(df_pd, 'temp', by='time_avail_m', n=3)
+df_pd['catMom'] = (
+    df_pd.groupby('time_avail_m')['Mom6m']
+    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+)
 
-# Convert back to polars
+
+# Volume terciles within each time_avail_m
+df_pd['catVol'] = (
+    df_pd.groupby('time_avail_m')['temp']
+    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+)
+
+# Convert back to polars (we're already in pandas from lag calculation)
 df = pl.from_pandas(df_pd)
 
 # MomVol = momentum decile only for high volume stocks (tercile 3)
@@ -95,11 +109,5 @@ df = df.with_columns([
     .alias("MomVol")
 ])
 
-# Drop temporary columns
-df = df.drop(["l1_ret", "l2_ret", "l3_ret", "l4_ret", "l5_ret", "obs_num", "temp"])
-
-# Select final data
-result = df.select(["permno", "time_avail_m", "MomVol"])
-
 # Save predictor
-save_predictor(result, "MomVol")
+save_predictor(df, "MomVol")

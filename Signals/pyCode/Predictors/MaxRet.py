@@ -1,5 +1,5 @@
-# ABOUTME: Translates MaxRet.do to create maximum return over month predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MaxRet.py
+# ABOUTME: Maximum return following Bali, Cakici, and Whitelaw 2011, Table 1 VW 10-1
+# ABOUTME: calculates maximum of daily returns over the previous month
 
 # Run from pyCode/ directory
 # Inputs: dailyCRSP.parquet

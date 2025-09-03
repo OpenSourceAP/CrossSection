@@ -5,6 +5,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run current script from pyCode/",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/pyCode/"
+    },
+    {
       "name": "Debug BM.py",
       "type": "debugpy",
       "request": "launch",

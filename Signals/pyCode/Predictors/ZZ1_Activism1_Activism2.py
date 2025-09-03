@@ -1,5 +1,5 @@
-# ABOUTME: ZZ1_Activism1_Activism2.py - translates ZZ1_Activism1_Activism2.do from Stata to Python
-# ABOUTME: Replicates activism proxy generation line-by-line, outputs both Activism1 and Activism2 signals
+# ABOUTME: Activism1 (takeover vulnerability) and Activism2 (active shareholders) following Cremers and Nair 2005, Tables 3A and 4A
+# ABOUTME: Creates shareholder activism proxy predictors based on institutional ownership and governance metrics
 
 """
 ZZ1_Activism1_Activism2.py
@@ -24,22 +24,24 @@ Signal Construction:
 
 import pandas as pd
 import polars as pl
+import numpy as np
 from pathlib import Path
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
+from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
 print("Loading SignalMasterTable...")
-# use permno time_avail_m ticker exchcd mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# Load main signal table with key variables
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select([
     'permno', 'time_avail_m', 'ticker', 'exchcd', 'mve_c'
 ])
 
 print(f"Initial data loaded: {df.shape[0]} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/TR_13F", keep(master match) nogenerate keepusing(maxinstown_perc)
+# Merge with 13F data to get maximum institutional ownership percentages
 print("Merging with TR_13F...")
 tr13f = pl.read_parquet("../pyData/Intermediate/TR_13F.parquet").select([
     'permno', 'time_avail_m', 'maxinstown_perc'
@@ -48,7 +50,7 @@ tr13f = pl.read_parquet("../pyData/Intermediate/TR_13F.parquet").select([
 df = df.join(tr13f, on=['permno', 'time_avail_m'], how='left')
 print(f"After TR_13F merge: {df.shape[0]} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(shrcls)
+# Merge with monthly CRSP data to get share class information
 print("Merging with monthlyCRSP...")
 mcrsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet").select([
     'permno', 'time_avail_m', 'shrcls'
@@ -57,11 +59,7 @@ mcrsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet").select([
 df = df.join(mcrsp, on=['permno', 'time_avail_m'], how='left')
 print(f"After monthlyCRSP merge: {df.shape[0]} rows")
 
-# * Add ticker-based data (many to one match due to permno-ticker not being unique in crsp)
-# preserve
-#     keep if mi(ticker)
-#     save "$pathtemp/temp", replace
-# restore
+# Handle ticker-based merging by preserving records with missing tickers separately
 
 print("Handling ticker-based merge with GovIndex...")
 # Split data into records with missing ticker and non-missing ticker
@@ -71,13 +69,11 @@ df = df.filter(pl.col('ticker').is_not_null())
 print(f"Records with ticker: {df.shape[0]}")
 print(f"Records without ticker: {temp_missing_ticker.shape[0]}")
 
-# drop if mi(ticker)
-# merge m:1 ticker time_avail_m using "$pathDataIntermediate/GovIndex", keep(master match) nogenerate
+# Merge governance index data by ticker for records with valid tickers
 gov = pl.read_parquet("../pyData/Intermediate/GovIndex.parquet")
 df = df.join(gov, on=['ticker', 'time_avail_m'], how='left')
 
-# append using "$pathtemp/temp"
-# Need to add the missing columns from GovIndex to temp_missing_ticker with null values
+# Recombine records with missing tickers, adding null governance columns
 gov_columns = [col for col in df.columns if col not in temp_missing_ticker.columns]
 for col in gov_columns:
     temp_missing_ticker = temp_missing_ticker.with_columns(pl.lit(None).alias(col))
@@ -87,32 +83,29 @@ print(f"After GovIndex merge and append: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# * Shareholder activism proxy 1
+# Shareholder activism proxy 1: External governance for firms with large institutional blockholdings
 print("Constructing Activism1 signal...")
 
-# gen tempBLOCK = maxinstown_perc if maxinstown_perc > 5
-# replace tempBLOCK = 0 if tempBLOCK == .
+# Create temporary blockholder variable: keep institutional ownership if >5%, otherwise set to 0
 tempBLOCK = pl.when(pl.col('maxinstown_perc') > 5).then(pl.col('maxinstown_perc')).otherwise(0)
 df = df.with_columns(tempBLOCK.alias('tempBLOCK'))
 
-# egen tempBLOCKQuant = fastxtile(tempBLOCK), n(4) by(time_avail_m)
+# Calculate quartiles of blockholder variable within each time period
 print("Calculating block holding quartiles by time_avail_m...")
-# Use polars qcut with proper 1-based indexing to match Stata fastxtile behavior
-df = df.with_columns(
-    (pl.col('tempBLOCK').qcut(4, allow_duplicates=True).over('time_avail_m').cast(pl.Int32) + 1)
-    .alias('tempBLOCKQuant')
-)
+# Convert to pandas for fastxtile, then back to polars
+with np.errstate(over='ignore', invalid='ignore'):
+    df_pandas = df.to_pandas()
+    df_pandas['tempBLOCKQuant'] = fastxtile(df_pandas, 'tempBLOCK', by='time_avail_m', n=4)
+    df = pl.from_pandas(df_pandas)
 
-# gen tempEXT = 24 - G
-# replace tempEXT = . if G == . 
+# Create external governance measure: 24 minus G-index (higher values = better external governance) 
 df = df.with_columns(
     pl.when(pl.col('G').is_null()).then(None)
     .otherwise(24 - pl.col('G'))
     .alias('tempEXT')
 )
 
-# replace tempEXT = . if tempBLOCKQuant <= 3
-# replace tempEXT = . if !mi(shrcls) // Exclude dual class shares
+# Restrict to top quartile of blockholder firms and exclude dual-class shares
 df = df.with_columns(
     pl.when(pl.col('tempBLOCKQuant') <= 3).then(None)  # Keep only quartile 4 (now correctly 1-based)
     .when(pl.col('shrcls') != '').then(None)  # Exclude dual class shares (non-empty shrcls)
@@ -120,8 +113,7 @@ df = df.with_columns(
     .alias('tempEXT')
 )
 
-# gen Activism1 = tempEXT
-# label var Activism1 "Shareholder activism I: External Gov among Large Blockheld"
+# Final Activism1 signal: external governance among large blockheld firms
 df = df.with_columns(pl.col('tempEXT').alias('Activism1'))
 
 print(f"Activism1 signal constructed")
@@ -130,19 +122,17 @@ print(f"Activism1 signal constructed")
 non_missing_count = df.filter(pl.col('Activism1').is_not_null()).shape[0]
 print(f"Non-missing Activism1 values: {non_missing_count}")
 
-# drop temp*
+# Clean up temporary variables
 df = df.drop(['tempBLOCK', 'tempBLOCKQuant', 'tempEXT'])
 
-# * Shareholder activism proxy 2
+# Shareholder activism proxy 2: Blockholdings among high external governance firms
 print("Constructing Activism2 signal...")
 
-# gen tempBLOCK = maxinstown_perc if maxinstown_perc > 5
-# replace tempBLOCK = 0 if tempBLOCK == .
+# Create blockholder variable: keep institutional ownership if >5%, otherwise set to 0
 tempBLOCK = pl.when(pl.col('maxinstown_perc') > 5).then(pl.col('maxinstown_perc')).otherwise(0)
 df = df.with_columns(tempBLOCK.alias('tempBLOCK'))
 
-# replace tempBLOCK = . if G == .
-# replace tempBLOCK = . if !mi(shrcls) // Exclude dual class shares
+# Exclude firms with missing governance data and dual-class shares
 df = df.with_columns(
     pl.when(pl.col('G').is_null()).then(None)
     .when((pl.col('shrcls') != '') & (pl.col('shrcls').is_not_null())).then(None)  # Exclude dual class shares
@@ -150,15 +140,14 @@ df = df.with_columns(
     .alias('tempBLOCK')
 )
 
-# replace tempBLOCK = . if 24 - G < 19
+# Restrict to firms with high external governance (external governance >= 19)
 df = df.with_columns(
     pl.when((24 - pl.col('G')) < 19).then(None)
     .otherwise(pl.col('tempBLOCK'))
     .alias('tempBLOCK')
 )
 
-# gen Activism2 = tempBLOCK
-# label var Activism2 "Shareholder activism II: Blockholdings among High Ext Gov"
+# Final Activism2 signal: blockholdings among high external governance firms
 df = df.with_columns(pl.col('tempBLOCK').alias('Activism2'))
 
 print(f"Activism2 signal constructed")
@@ -168,8 +157,7 @@ non_missing_count = df.filter(pl.col('Activism2').is_not_null()).shape[0]
 print(f"Non-missing Activism2 values: {non_missing_count}")
 
 # SAVE
-# do "$pathCode/savepredictor" Activism1
-# do "$pathCode/savepredictor" Activism2
+# Save both predictor signals
 print("Saving Activism1...")
 save_predictor(df.to_pandas(), 'Activism1')
 

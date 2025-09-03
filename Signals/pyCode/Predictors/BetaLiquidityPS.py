@@ -1,12 +1,12 @@
-# ABOUTME: BetaLiquidityPS.py - generates Pastor-Stambaugh liquidity beta using asreg rolling regressions
-# ABOUTME: Python translation of BetaLiquidityPS.do using polars and asreg helper for exact Stata replication
+# ABOUTME: Pastor-Stambaugh liquidity beta following Pastor and Stambaugh 2003, Table 4A CAPM 10-1
+# ABOUTME: calculates liquidity risk exposure coefficient from rolling window regressions
 
 """
 BetaLiquidityPS.py
 
 Generates Pastor-Stambaugh liquidity beta predictor from 4-factor rolling regressions:
-- BetaLiquidityPS: Coefficient of ps_innov from regression retrf ~ ps_innov + mktrf + hml + smb
-- Exact replication of Stata: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)
+- BetaLiquidityPS: Coefficient of liquidity innovation from 4-factor model regression
+- Rolling 60-observation windows with minimum 36 observations, computed separately for each stock
 
 Usage:
     cd pyCode/
@@ -24,15 +24,15 @@ Outputs:
 Requirements:
     - Rolling 60-observation windows (not 60 months) with minimum 36 observations per window
     - 4-factor regression: retrf = alpha + beta_ps*ps_innov + beta_mkt*mktrf + beta_hml*hml + beta_smb*smb + residual
-    - Exact replication of Stata's asreg behavior
+    - Sequential window-based regression estimation for each stock
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.savepredictor import save_predictor
-from utils.asreg import asreg
+from utils.save_standardized import save_predictor
 
 print("=" * 80)
 print("🏗️  BetaLiquidityPS.py")
@@ -67,34 +67,41 @@ df = (crsp
 print(f"After merging: {len(df):,} observations")
 
 # SIGNAL CONSTRUCTION
-print("🧮 Computing Pastor-Stambaugh liquidity beta using asreg rolling 60-observation 4-factor regressions...")
+print("🧮 Computing Pastor-Stambaugh liquidity beta using direct polars-ols rolling 60-observation 4-factor regressions...")
 
-# Create excess returns (matching Stata exactly)
+# Create excess returns
 df = df.with_columns([
     (pl.col("ret") - pl.col("rf")).alias("retrf")
 ])
 
-# Add time sequence for each permno (replicates Stata's time_temp = _n)
+# Add observation sequence number for rolling window identification
 df = df.with_columns(
     pl.int_range(pl.len()).over("permno").add(1).alias("time_temp")
 )
 
 print(f"Computing rolling 4-factor regressions for {df['permno'].n_unique():,} unique permnos...")
-print("This matches: asreg retrf ps_innov mktrf hml smb, window(time_temp 60) min(36) by(permno)")
+print("Using 60-observation rolling windows with 36-observation minimum for each stock")
 
-# Apply asreg rolling 4-factor regression
-df_with_beta = asreg(
-    df,
-    y="retrf", 
-    X=["ps_innov", "mktrf", "hml", "smb"],
-    by=["permno"], 
-    t="time_temp",
-    mode="rolling", 
-    window_size=60, 
-    min_samples=36,
-    outputs=("coef",),
-    coef_prefix="b_"
-)
+# Apply direct polars-ols rolling 4-factor regression
+# Sort by permno and time_temp for deterministic window order
+df = df.sort(["permno", "time_temp"])
+
+df_with_beta = df.with_columns(
+    pl.col("retrf").least_squares.rolling_ols(
+        pl.col("ps_innov"), pl.col("mktrf"), pl.col("hml"), pl.col("smb"),
+        window_size=60,
+        min_periods=36,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("ps_innov").alias("b_ps_innov"),
+    pl.col("coef").struct.field("mktrf").alias("b_mktrf"),
+    pl.col("coef").struct.field("hml").alias("b_hml"),
+    pl.col("coef").struct.field("smb").alias("b_smb")
+])
 
 # Extract Pastor-Stambaugh liquidity beta coefficient and filter to non-null values
 df_final = (df_with_beta
@@ -125,5 +132,5 @@ else:
     
 print("=" * 80)
 print("✅ BetaLiquidityPS.py Complete")
-print("Pastor-Stambaugh liquidity beta predictor generated using polars asreg exact Stata replication")
+print("Pastor-Stambaugh liquidity beta predictor generated using rolling 4-factor regressions")
 print("=" * 80)

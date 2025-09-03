@@ -1,9 +1,16 @@
-# ABOUTME: Translates OrderBacklog.do to create order backlog predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/OrderBacklog.py
+# ABOUTME: Order backlog following Rajgopal, Shevlin, Venkatachalam 2003, Table 3A gamma1
+# ABOUTME: calculates order backlog predictor scaled by average total assets
+"""
+Usage:
+    python3 Predictors/OrderBacklog.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/OrderBacklog.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ob, at]
+
+Outputs:
+    - OrderBacklog.csv: CSV file with columns [permno, yyyymm, OrderBacklog]
+    - OrderBacklog = ob / (0.5 * (at + at_lag12)), set to missing if ob = 0
+"""
 
 import pandas as pd
 import numpy as np

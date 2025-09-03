@@ -1,5 +1,5 @@
-# ABOUTME: ChInvIA.py - calculates change in capital investment (industry adjusted) predictor
-# ABOUTME: Line-by-line translation of ChInvIA.do following CLAUDE.md translation philosophy
+# ABOUTME: Change in capital investment (industry adjusted) following Abarbanell and Bushee 1998, Table 2b RCAPX
+# ABOUTME: Calculates growth in capital expenditure minus average growth in same industry (two-digit SIC)
 
 """
 ChInvIA.py
@@ -22,26 +22,26 @@ import numpy as np
 from pathlib import Path
 
 # DATA LOAD
-# use gvkey permno time_avail_m capx ppent at using "$pathDataIntermediate/m_aCompustat", clear
+# Load Compustat data with capital expenditures, PP&E, and total assets
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                      columns=['gvkey', 'permno', 'time_avail_m', 'capx', 'ppent', 'at'])
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(using match) nogenerate keepusing(sicCRSP)
+# Merge with signal master table to get industry classification (SIC codes)
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
                                columns=['permno', 'time_avail_m', 'sicCRSP'])
 df = pd.merge(signal_master, df, on=['permno', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-# xtset permno time_avail_m
+# Sort by permno and time for lag operations
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 
-# tostring sicCRSP, replace
+# Convert SIC codes to string for industry classification
 df['sicCRSP'] = df['sicCRSP'].astype(str)
 
-# gen sic2D = substr(sicCRSP,1,2)
+# Extract 2-digit SIC code for industry grouping
 df['sic2D'] = df['sicCRSP'].str[:2]
 
-# replace capx = ppent - l12.ppent if capx ==.
+# Fill missing capital expenditures using change in PP&E when capx is missing
 # Use calendar-based lag (12 months back) instead of positional lag
 df['ppent_l12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
 ppent_lag = df[['permno', 'time_avail_m', 'ppent']].rename(columns={'time_avail_m': 'ppent_l12_date', 'ppent': 'ppent_l12'})
@@ -50,7 +50,7 @@ df = df.drop(columns=['ppent_l12_date'])
 
 df['capx'] = df['capx'].fillna(df['ppent'] - df['ppent_l12'])
 
-# gen pchcapx = (capx- .5*(l12.capx + l24.capx))/(.5*(l12.capx + l24.capx))
+# Calculate percentage change in capx relative to average of 12 and 24 month lags
 # Use calendar-based lags for capx
 df['capx_l12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
 capx_lag12 = df[['permno', 'time_avail_m', 'capx']].rename(columns={'time_avail_m': 'capx_l12_date', 'capx': 'capx_l12'})
@@ -70,7 +70,7 @@ df['pchcapx'] = np.where(
     (df['capx'] - df['avg_lag_capx']) / df['avg_lag_capx']
 )
 
-# replace pchcapx = (capx-l12.capx)/l12.capx if mi(pchcapx)
+# For missing values, use simple percentage change from 12 months ago
 mask_missing = df['pchcapx'].isna()
 df.loc[mask_missing, 'pchcapx'] = np.where(
     df.loc[mask_missing, 'capx_l12'] == 0,
@@ -78,13 +78,13 @@ df.loc[mask_missing, 'pchcapx'] = np.where(
     (df.loc[mask_missing, 'capx'] - df.loc[mask_missing, 'capx_l12']) / df.loc[mask_missing, 'capx_l12']
 )
 
-# egen temp = mean(pchcapx), by(sic2D time_avail_m)
+# Calculate industry average percentage change in capx by 2-digit SIC and time
 df['temp'] = df.groupby(['sic2D', 'time_avail_m'])['pchcapx'].transform('mean')
 
-# gen ChInvIA = pchcapx - temp
+# Industry-adjusted capital investment change (firm minus industry average)
 df['ChInvIA'] = df['pchcapx'] - df['temp']
 
-# drop temp
+# Remove temporary variable
 df = df.drop(columns=['temp'])
 
 # Keep only needed columns and non-missing values

@@ -1,9 +1,16 @@
-# ABOUTME: Translates DolVol.do to create dollar volume predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DolVol.py
+# ABOUTME: Dollar volume predictor following Brennan, Chordia, Subra 1998, Table 6A
+# ABOUTME: calculates log of two-month lagged trading volume times two-month lagged price
+"""
+Usage:
+    python3 Predictors/DolVol.py
 
-# Run from pyCode/ directory
-# Inputs: monthlyCRSP.parquet
-# Output: ../pyData/Predictors/DolVol.csv
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol, prc]
+
+Outputs:
+    - DolVol.csv: CSV file with columns [permno, yyyymm, DolVol]
+    - DolVol = log(vol_lag2 * |prc_lag2|), where lag2 means 2-month lag
+"""
 
 import pandas as pd
 import numpy as np

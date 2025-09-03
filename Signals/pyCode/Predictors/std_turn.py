@@ -1,14 +1,28 @@
-# ABOUTME: Turnover volatility predictor using 36-month rolling standard deviation of turnover
-# ABOUTME: Usage: python3 std_turn.py (run from pyCode/ directory)
+# ABOUTME: Share turnover volatility following Chordia, Subrahmanyam and Anshuman 2001, Table 5B
+# ABOUTME: calculates standard deviation of turnover (vol/shrout) over the past 36 months
+"""
+Usage:
+    python3 Predictors/std_turn.py
+
+Inputs:
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol, shrout, prc]
+
+Outputs:
+    - std_turn.csv: CSV file with columns [permno, yyyymm, std_turn]
+    - std_turn = standard deviation of turnover over past 36 months, set to missing for size quintiles 4-5
+"""
 
 import polars as pl
+import pandas as pd
 import sys
 import os
-sys.path.append('.')
-from utils.savepredictor import save_predictor
-from utils.stata_fastxtile import fastxtile
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
+
+print("Starting std_turn.py...")
 
 # Data load
+print("Loading data...")
 monthly_crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 df = monthly_crsp.select(["permno", "time_avail_m", "vol", "shrout", "prc"])
 
@@ -31,10 +45,12 @@ df = df.with_columns(
     .alias("std_turn")
 )
 
-# Size quintiles by time_avail_m using fastxtile helper
-# Convert to pandas for fastxtile, then back to polars
+# Size quintiles by time_avail_m using groupby+qcut pattern
 df_pandas = df.to_pandas()
-df_pandas['tempqsize'] = fastxtile(df_pandas, 'mve_c', by='time_avail_m', n=5)
+df_pandas['tempqsize'] = (
+    df_pandas.groupby('time_avail_m')['mve_c']
+    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+)
 df = pl.from_pandas(df_pandas)
 
 # Set to null for size quintiles 4 and 5 (tiny spread per OP Tab3B)
@@ -50,3 +66,4 @@ result = df.select(["permno", "time_avail_m", "std_turn"])
 
 # Save predictor
 save_predictor(result, "std_turn")
+print("std_turn.py completed successfully")

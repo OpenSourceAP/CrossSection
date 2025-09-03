@@ -1,5 +1,6 @@
 # ABOUTME: RD.py - calculates R&D intensity predictor
 # ABOUTME: R&D intensity as R&D expenditure (xrd) divided by market value of equity (mve_c)
+# ABOUTME: Reference: Chan, Lakonishok and Sougiannis 2001, Table 4, first year
 
 """
 RD predictor calculation

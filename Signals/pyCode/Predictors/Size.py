@@ -1,19 +1,15 @@
-# ABOUTME: Size.py - calculates market capitalization size predictor
-# ABOUTME: Simple log transformation of market value of equity (mve_c) from SignalMasterTable
-
+# ABOUTME: Size following Banz 1981, Table 3, alpha_1 n=50
+# ABOUTME: calculates log of market value of equity as size predictor
 """
-Size predictor calculation
-
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
     python3 Predictors/Size.py
 
 Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c]
 
 Outputs:
-    - ../pyData/Predictors/Size.csv (permno, yyyymm, Size)
+    - Size.csv: CSV file with columns [permno, yyyymm, Size]
+    - Size = log(mve_c), log transformation of market value of equity
 """
 
 import pandas as pd

@@ -1,6 +1,8 @@
 # ABOUTME: dVolCall.py - calculates change in call option implied volatility
 # ABOUTME: Change in 30-day, 50-delta call option implied volatility from previous month
 
+# An Ang Bali Cakici 2014 Table II A
+
 """
 dVolCall predictor calculation
 
@@ -23,10 +25,13 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
+
+print("Starting dVolCall.py...")
 
 # DATA LOAD
+print("Loading data...")
 # Clean OptionMetrics data
 options_df = pd.read_parquet("../pyData/Intermediate/OptionMetricsVolSurf.parquet", 
                             columns=['secid', 'time_avail_m', 'days', 'delta', 'cp_flag', 'impl_vol'])
@@ -59,4 +64,7 @@ df = signal_df.merge(temp_df, on=['secid', 'time_avail_m'], how='left')
 df = df[['permno', 'time_avail_m', 'dVolCall']].copy()
 
 # SAVE
+print(f"Calculated dVolCall for {df['dVolCall'].notna().sum()} observations")
+
 save_predictor(df, 'dVolCall')
+print("dVolCall.py completed successfully") 

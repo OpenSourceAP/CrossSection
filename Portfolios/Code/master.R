@@ -27,11 +27,13 @@
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder & location of SignalDoc.csv)
 # if using Rstudio, pathProject = paste0(getwd(), '/') should work
-pathProject = 'd:/Dropbox/Open-AP-ac/CrossSection/'
+pathProject = '/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/'
+
+SignalSource = "Python" # use "Stata" for legacy signals (Signals/Data/) or "Python" for new signals (Signals/pyData/)
 
 quickrun =  F # use T if you want to run quickly for testing
 quickrunlist = c('Accruals','AM') # list of signals to use for quickrun
-skipdaily = F # use T to skip daily CRSP which is very slow
+skipdaily = T # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
 # Check whether project path is set correctly

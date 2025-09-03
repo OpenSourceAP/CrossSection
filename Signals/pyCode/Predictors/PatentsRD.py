@@ -1,5 +1,5 @@
-# ABOUTME: Translates PatentsRD.do - calculates patent efficiency scaled by R&D capital 
-# ABOUTME: Implements double-sorted portfolio approach linking patent counts to accumulated R&D capital
+# ABOUTME: Patents to RD expenses following Hirschleifer, Hsu and Li 2013, Table 9A EMI1
+# ABOUTME: Calculates patent efficiency scaled by R&D capital with double-sorted portfolio approach
 
 # Run: python3 Predictors/PatentsRD.py
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet, PatentDataProcessed.parquet
@@ -9,7 +9,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import sys
-sys.path.append('.')
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.stata_fastxtile import fastxtile
 
 # DATA LOAD
@@ -36,7 +37,7 @@ df = df.merge(patents[['gvkey', 'year', 'npat']], on=['gvkey', 'year'], how='lef
 df = df.sort_values(['permno', 'time_avail_m'])
 df = df.set_index(['permno', 'time_avail_m'])
 
-# Lag patent data by 6 months (l6.npat)
+# Lag patent data by 6 months
 df['temp'] = df.groupby('permno')['npat'].shift(6)
 df['temp'] = df['temp'].fillna(0)
 df['npat'] = df['temp']
@@ -49,6 +50,8 @@ df = df.reset_index()
 df = df[df['time_avail_m'] % 100 == 6]  # month == 6
 df = df[df['time_avail_m'] >= 197501]  # Takes into account xrd data standardized after 1975
 
+# Efficiency in year t is patents in year t scaled by R&D capital (sum of depreciated past R&D)
+# Portfolios are computed from July of year t to June of year t+1
 # Replace missing R&D with 0
 df['xrd'] = df['xrd'].fillna(0)
 
@@ -62,13 +65,13 @@ df['comp3'] = 0
 df['comp4'] = 0
 df['comp5'] = 0
 
-# Create lagged R&D components (June-only data: shift by years, not months)
+# Create lagged R&D components with depreciation (June-only data: shift by years)
 grouped = df.groupby('permno')['xrd']
-comp1_lag = grouped.shift(2)  # 2 years back (was shift(24) - WRONG!)
-comp2_lag = 0.8 * grouped.shift(3)  # 3 years back (was shift(36) - WRONG!)
-comp3_lag = 0.6 * grouped.shift(4)  # 4 years back (was shift(48) - WRONG!)
-comp4_lag = 0.4 * grouped.shift(5)  # 5 years back (was shift(60) - WRONG!)
-comp5_lag = 0.2 * grouped.shift(6)  # 6 years back (was shift(72) - WRONG!)
+comp1_lag = grouped.shift(2)  # 2 years back
+comp2_lag = 0.8 * grouped.shift(3)  # 3 years back, depreciated 20%
+comp3_lag = 0.6 * grouped.shift(4)  # 4 years back, depreciated 40%
+comp4_lag = 0.4 * grouped.shift(5)  # 5 years back, depreciated 60%
+comp5_lag = 0.2 * grouped.shift(6)  # 6 years back, depreciated 80%
 
 df['comp1'] = np.where(comp1_lag.notna(), comp1_lag, 0.0)
 df['comp2'] = np.where(comp2_lag.notna(), comp2_lag, 0.0)
@@ -79,13 +82,17 @@ df['comp5'] = np.where(comp5_lag.notna(), comp5_lag, 0.0)
 df['RDcap'] = df['comp1'] + df['comp2'] + df['comp3'] + df['comp4'] + df['comp5']
 df['tempPatentsRD'] = np.where(df['RDcap'] > 0, df['npat'] / df['RDcap'], np.nan)
 
+# Patent efficiency ratio: number of patents divided by R&D capital
+
 df = df.reset_index()
 
 # Filter
 df = df.sort_values(['gvkey', 'time_avail_m'])
 df = df.groupby('gvkey').apply(lambda x: x.iloc[2:] if len(x) > 2 else x.iloc[0:0]).reset_index(drop=True)
+    
 df = df[~((df['sicCRSP'] >= 6000) & (df['sicCRSP'] <= 6999))]
-df = df[df['ceq'] >= 0]
+    
+df = df[~(df['ceq'] < 0)]
 
 # Double independent sort
 # Size categories
@@ -110,8 +117,9 @@ for time_month, group in df.groupby('time_avail_m'):
     if len(valid_group) > 0:
         try:
             # Use fastxtile to match Stata behavior
-            valid_group['maincat'] = fastxtile(valid_group['tempPatentsRD'], n=3)
-            valid_group['maincat'] = valid_group['maincat'].astype(int)
+            valid_group = valid_group.copy()  # Make explicit copy to avoid warning
+            valid_group.loc[:, 'maincat'] = fastxtile(valid_group['tempPatentsRD'], n=3)
+            valid_group.loc[:, 'maincat'] = valid_group['maincat'].astype(int)
             
             # Merge categories back to all observations
             group = group.merge(valid_group[['permno', 'time_avail_m', 'maincat']], 
@@ -125,6 +133,7 @@ for time_month, group in df.groupby('time_avail_m'):
         
     patents_cuts.append(group)
 df = pd.concat(patents_cuts, ignore_index=True)
+
 
 # Create PatentsRD signal (binary: 1 for small/high, 0 for small/low)
 df['PatentsRD'] = np.nan

@@ -1,5 +1,5 @@
-# ABOUTME: Tax_fixed.py - calculates taxable income to income ratio predictor with correct missing value handling
-# ABOUTME: Tax rate adjusted measure using historical corporate tax rates by year
+# ABOUTME: Taxable income to income following Lev and Nissim 2004, Table 5A R_TAX
+# ABOUTME: calculates taxable income to income ratio predictor with correct missing value handling
 
 """
 Tax predictor calculation
@@ -37,14 +37,15 @@ df.loc[df['year'] == 1987, 'tr'] = 0.4
 df.loc[(df['year'] >= 1988) & (df['year'] <= 1992), 'tr'] = 0.34
 df.loc[df['year'] >= 1993, 'tr'] = 0.35
 
-# Step 1: gen Tax = ((txfo+txfed)/tr)/ib
+
+# Step 1: Calculate Tax as ratio of tax expense to income
 df['Tax'] = ((df['txfo'] + df['txfed']) / df['tr']) / df['ib']
 
-# Step 2: replace Tax = ((txt-txdi)/tr)/ib if txfo ==. | txfed ==.
+# Step 2: Use alternative tax calculation when foreign or federal taxes missing
 condition_missing = df['txfo'].isna() | df['txfed'].isna()
 df.loc[condition_missing, 'Tax'] = ((df['txt'] - df['txdi']) / df['tr']) / df['ib']
 
-# Step 3: replace Tax = 1 if (txfo + txfed > 0 | txt > txdi) & ib <=0
+# Step 3: Set Tax to 1 when company has tax expense but negative income
 # Handle the division by zero case first (ib = 0)
 # When ib = 0, any tax activity should result in Tax = 1
 div_by_zero = (df['ib'] == 0) & (
@@ -60,10 +61,21 @@ cond_step3_simple = df['Tax'].isna() & (df['ib'] <= 0).fillna(False)
 df.loc[cond_step3_simple, 'Tax'] = 1.0
 
 # Handle standard Stata condition: (txfo + txfed > 0 | txt > txdi) & ib <=0
-cond_txfo_txfed = ((df['txfo'] + df['txfed']) > 0).fillna(False)
+# When txfed is missing but txfo > 0, Stata treats this as txfo + txfed > 0
+cond_txfo_txfed_fixed = (
+    (df['txfed'].isna() & (df['txfo'] > 0).fillna(False)) |
+    (~df['txfed'].isna() & (df['txfo'] + df['txfed'] > 0).fillna(False))
+)
 cond_txt_txdi = (df['txt'] > df['txdi']).fillna(False)
-cond_standard = (cond_txfo_txfed | cond_txt_txdi) & (df['ib'] <= 0).fillna(False)
+
+# Additional condition: when both txfo and txfed are missing but there's tax activity and ib <= 0
+cond_both_missing = (df['txfo'].isna() & df['txfed'].isna() & 
+                     ((df['txt'].notna() & (df['txt'] != 0)) | (df['txdi'].notna() & (df['txdi'] != 0))) &
+                     (df['ib'] <= 0).fillna(False))
+
+cond_standard = (cond_txfo_txfed_fixed | cond_txt_txdi | cond_both_missing) & (df['ib'] <= 0).fillna(False)
 df.loc[cond_standard, 'Tax'] = 1.0
+
 
 # Convert time_avail_m to yyyymm
 df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month

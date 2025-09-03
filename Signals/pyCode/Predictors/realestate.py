@@ -1,7 +1,6 @@
-# ABOUTME: Translates realestate.do to create real estate holdings predictor
+# ABOUTME: Calculates industry-adjusted real estate holdings following Tuzel 2010 Table 5
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/realestate.py
 
-# Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/realestate.csv
 
@@ -33,9 +32,14 @@ df = df[(df['ppent'].notna()) | (df['ppegt'].notna())].copy()
 df['re_old'] = (df['ppenb'] + df['ppenls']) / df['ppent']
 df['re_new'] = (df['fatb'] + df['fatl']) / df['ppegt']
 
+
 # Use new method, fallback to old method if new is missing
 df['re'] = df['re_new']
 df.loc[df['re_new'].isna(), 're'] = df['re_old']
+
+# Convert infinite values to NaN (division by zero)
+df['re'] = df['re'].replace([np.inf, -np.inf], np.nan)
+
 
 # Extract year and decade
 df['year'] = df['time_avail_m'].dt.year
@@ -43,7 +47,10 @@ df['decade'] = (df['year'] // 10) * 10
 
 # Industry adjustment - subtract industry mean
 df['tempMean'] = df.groupby(['sic2D', 'time_avail_m'])['re'].transform('mean')
+
+
 df['realestate'] = df['re'] - df['tempMean']
+
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'realestate']].copy()

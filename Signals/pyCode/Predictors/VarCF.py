@@ -1,15 +1,25 @@
-# ABOUTME: Translates VarCF.do to create cash-flow variance predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/VarCF.py
+# ABOUTME: Cash-flow to price variance following Haugen and Baker 1996, Table 1 variability in cf to price
+# ABOUTME: Rolling variance of (ib+dp)/mve_c over the past 60 months (minimum 24 months data required)
+"""
+Usage:
+    python3 Predictors/VarCF.py
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/VarCF.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ib, dp]
+
+Outputs:
+    - VarCF.csv: CSV file with columns [permno, yyyymm, VarCF]
+    - VarCF = Rolling variance of (ib+dp)/mve_c over past 60 months with minimum 24 months required
+"""
 
 import pandas as pd
-import numpy as np
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.asrol import asrol
 
-# DATA LOAD
-# Start with SignalMasterTable like Stata's "using" dataset
+# Read SignalMasterTable 
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = smt[['permno', 'time_avail_m', 'mve_c']].copy()
 
@@ -18,55 +28,25 @@ compustat = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
 compustat = compustat[['permno', 'time_avail_m', 'ib', 'dp']].copy()
 df = df.merge(compustat, on=['permno', 'time_avail_m'], how='left')
 
-# Note: This replicates Stata's "merge 1:1 permno time_avail_m using SignalMasterTable, keep(using match)"
-# We keep all SignalMasterTable observations, with ib/dp missing for observations not in m_aCompustat
-
 # Sort for rolling operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
-# Create temporary cash flow measure
+# Calculate cash flow to price ratio
 df['tempCF'] = (df['ib'] + df['dp']) / df['mve_c']
 
-# Calculate rolling standard deviation like Stata's asrol
+# Calculate rolling standard deviation using asrol (60-month window, min 24 periods)
 print(f"Calculating rolling statistics for {df['permno'].nunique()} firms...")
 
 # Sort data for rolling operations
 df = df.sort_values(['permno', 'time_avail_m'])
 
-def compute_rolling_std_asrol(group):
-    """
-    Replicate Stata's asrol behavior exactly but efficiently:
-    - For EVERY observation, calculate rolling std using 60-month calendar window
-    - Use all valid tempCF values within the window
-    - Minimum 24 valid observations required
-    """
-    group = group.copy().sort_values('time_avail_m')
-    group['sigma'] = np.nan
-    
-    # Use pandas rolling with time-based window for efficiency
-    group = group.set_index('time_avail_m')
-    
-    # Apply rolling standard deviation with 60-month window and min 24 periods
-    group['sigma'] = group['tempCF'].rolling(
-        window='1826D',  # 60 months ≈ 5 years = 1826 days
-        min_periods=24
-    ).std()
-    
-    return group.reset_index()
-
-# Apply to each permno group
-rolling_results = []
-for permno, group in df.groupby('permno'):
-    result = compute_rolling_std_asrol(group)
-    rolling_results.append(result)
-
-# Combine results
-df = pd.concat(rolling_results, ignore_index=True)
+# Use asrol for 60-month rolling standard deviation with minimum 24 periods
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 60, 'tempCF', 'std', 'sigma', min_samples=24)
 
 print("Rolling statistics calculation completed")
 
-# VarCF = sigma^2
+# Calculate variance from standard deviation
 df['VarCF'] = df['sigma'] ** 2
 
 # Keep only necessary columns for output

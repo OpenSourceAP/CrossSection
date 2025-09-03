@@ -1,5 +1,5 @@
-# ABOUTME: DelLTI.py - calculates change in long-term investments scaled by average total assets
-# ABOUTME: Change in long-term investments (ivao) from prior 12 months divided by average total assets
+# ABOUTME: Change in long-term investment following Richardson et al. 2005, Table 8C  
+# ABOUTME: calculates difference in investment and advances (ivao) scaled by average total assets
 
 """
 DelLTI predictor calculation

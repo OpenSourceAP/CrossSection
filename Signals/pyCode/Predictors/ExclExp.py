@@ -1,9 +1,19 @@
-# ABOUTME: Translates ExclExp.do to create excluded expenses predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/ExclExp.py
+# ABOUTME: Excluded Expenses following Doyle, Lundholm and Soliman 2003, Table 5, total exclusions
+# ABOUTME: calculates difference between IBES unadjusted earnings and Compustat quarterly EPS
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, m_QCompustat.parquet, IBES_UnadjustedActuals.parquet
-# Output: ../pyData/Predictors/ExclExp.csv
+"""
+Usage:
+    python3 Predictors/ExclExp.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with gvkey and tickerIBES mappings
+    - m_QCompustat.parquet: Monthly quarterly Compustat data with epspiq
+    - IBES_UnadjustedActuals.parquet: IBES unadjusted actual earnings with int0a
+
+Outputs:
+    - ExclExp.csv: CSV file with columns [permno, yyyymm, ExclExp]
+    - ExclExp = int0a - epspiq, winsorized at 1% and 99% levels
+"""
 
 import pandas as pd
 import numpy as np

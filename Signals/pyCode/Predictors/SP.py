@@ -1,5 +1,5 @@
-# ABOUTME: SP.py - calculates sales-to-price ratio predictor
-# ABOUTME: Sales-to-price ratio as sales (sale) divided by market value of equity (mve_c)
+# ABOUTME: Sales-to-price following Barbee, Mukherji and Raines 1996, Table 2 model 1
+# ABOUTME: calculates sales-to-price ratio as sales (sale) divided by market value of equity (mve_c)
 
 """
 SP predictor calculation

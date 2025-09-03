@@ -1,5 +1,5 @@
-# ABOUTME: BetaTailRisk.py - generates tail risk beta using custom tail risk factor and asreg rolling regressions
-# ABOUTME: Python translation of BetaTailRisk.do using polars for tail risk calculation and asreg helper for exact Stata replication
+# ABOUTME: Tail risk beta following Kelly and Jiang 2014, RFS, Table 4A EW
+# ABOUTME: calculates tail risk beta from rolling regression of returns on tail risk factor
 
 """
 BetaTailRisk.py
@@ -7,7 +7,7 @@ BetaTailRisk.py
 Generates tail risk beta predictor from daily and monthly return data:
 - Creates monthly tail risk factor from daily returns (5th percentile tail excess returns)
 - BetaTailRisk: Coefficient from regression ret ~ tailex over 120-month rolling windows
-- Exact replication of Stata: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)
+- Rolling 120-month regression of returns on tail risk factor with minimum 72 observations per window
 
 Usage:
     cd pyCode/
@@ -26,15 +26,15 @@ Requirements:
     - Tail risk factor: log(ret/retp5) for returns in bottom 5% each month
     - Rolling 120-month windows with minimum 72 observations per window
     - Filter out non-common stocks (shrcd > 11)
-    - Exact replication of Stata's asreg behavior
+    - Rolling window regression behavior with proper minimum observation constraints
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.savepredictor import save_predictor
-from utils.asreg import asreg
+from utils.save_standardized import save_predictor
 
 print("=" * 80)
 print("🏗️  BetaTailRisk.py")
@@ -49,18 +49,21 @@ print("Loading dailyCRSP.parquet...")
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet").select(["permno", "time_d", "ret"])
 print(f"Loaded daily CRSP: {len(daily_crsp):,} daily observations")
 
-# Convert daily dates to monthly (equivalent to mofd() in Stata)
+# Convert daily dates to monthly
 daily_crsp = daily_crsp.with_columns([
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 ])
 
+
 print("Calculating 5th percentile returns by month...")
 # Calculate 5th percentile of returns by month (retp5)
+# Use "lower" interpolation method for 5th percentile calculation
 monthly_p5 = daily_crsp.group_by("time_avail_m").agg([
-    pl.col("ret").quantile(0.05).alias("retp5")
+    pl.col("ret").quantile(0.05, interpolation="lower").alias("retp5")
 ])
 
 print(f"Generated monthly 5th percentiles for {len(monthly_p5):,} months")
+
 
 # Merge back to daily data
 daily_with_p5 = daily_crsp.join(monthly_p5, on="time_avail_m", how="inner")
@@ -69,10 +72,14 @@ print("Filtering to tail observations (bottom 5%) and calculating tail excess re
 # Keep only observations where ret <= retp5 (tail observations)
 tail_data = daily_with_p5.filter(
     pl.col("ret") <= pl.col("retp5")
-).with_columns([
-    # Calculate tail excess return: tailex = log(ret/retp5)
+)
+
+
+# Calculate tail excess return: tailex = log(ret/retp5)
+tail_data = tail_data.with_columns([
     (pl.col("ret") / pl.col("retp5")).log().alias("tailex")
 ])
+
 
 print(f"Filtered to {len(tail_data):,} tail observations")
 
@@ -100,28 +107,34 @@ print("Merging with tail risk factor...")
 df = monthly_crsp.join(monthly_tailrisk, on="time_avail_m", how="left").sort(["permno", "time_avail_m"])
 print(f"After merging: {len(df):,} observations")
 
-# Convert time_avail_m to integer for window-based asreg (matching Stata's mofd function)
-# Stata time starts from Jan 1960 = 0
+
+
+# Convert time_avail_m to integer for window-based regression
+# Time starts from Jan 1960 = 0
 df = df.with_columns([
     ((pl.col("time_avail_m").dt.year() - 1960) * 12 + (pl.col("time_avail_m").dt.month() - 1)).alias("time_avail_m_int")
 ])
 
 print(f"Computing rolling 120-month tail risk betas for {df['permno'].n_unique():,} unique permnos...")
-print("This matches: asreg ret tailex, window(time_avail_m 120) min(72) by(permno)")
+print("Rolling 120-month regression windows with minimum 72 observations per permno")
 
-# Apply asreg rolling regression
-df_with_beta = asreg(
-    df,
-    y="ret", 
-    X=["tailex"],
-    by=["permno"], 
-    t="time_avail_m_int",
-    mode="rolling", 
-    window_size=120, 
-    min_samples=72,
-    outputs=("coef",),
-    coef_prefix="b_"
-)
+# Apply direct polars-ols rolling regression
+# Sort by permno and time_avail_m_int for deterministic window order
+df = df.sort(["permno", "time_avail_m_int"])
+
+df_with_beta = df.with_columns(
+    pl.col("ret").least_squares.rolling_ols(
+        pl.col("tailex"),
+        window_size=120,
+        min_periods=72,
+        mode="coefficients",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("coef")
+).with_columns([
+    pl.col("coef").struct.field("const").alias("b_const"),
+    pl.col("coef").struct.field("tailex").alias("b_tailex")
+])
 
 # Extract tail risk beta coefficient
 df_with_beta = df_with_beta.with_columns(
@@ -133,6 +146,7 @@ df_final = df_with_beta.filter(
     pl.col("BetaTailRisk").is_not_null() & 
     (pl.col("shrcd") <= 11)
 ).select(["permno", "time_avail_m", "BetaTailRisk"])
+
 
 print(f"Generated BetaTailRisk values: {len(df_final):,} observations")
 
@@ -155,5 +169,5 @@ else:
     
 print("=" * 80)
 print("✅ BetaTailRisk.py Complete")
-print("Tail risk beta predictor generated using polars asreg exact Stata replication")
+print("Tail risk beta predictor generated using polars rolling window regression")
 print("=" * 80)

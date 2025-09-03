@@ -1,9 +1,17 @@
-# ABOUTME: Translates skew1.do to create smirk skewness predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/skew1.py
+# ABOUTME: Volatility smirk near the money following Xing, Zhang, and Zhao 2010, Table 3A
+# ABOUTME: calculates volatility smirk predictor using OptionMetrics implied volatility differences
+"""
+Usage:
+    python3 Predictors/skew1.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, OptionMetricsXZZ.parquet
-# Output: ../pyData/Predictors/skew1.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, secid]
+    - OptionMetricsXZZ.parquet: Options data with skew1 already calculated
+
+Outputs:
+    - skew1.csv: CSV file with columns [permno, yyyymm, skew1]
+    - skew1 = IV of put (moneyness closest to but above 1) minus IV of call (moneyness closest to but below 1)
+"""
 
 import pandas as pd
 import numpy as np

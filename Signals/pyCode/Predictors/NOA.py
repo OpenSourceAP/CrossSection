@@ -1,10 +1,8 @@
-# ABOUTME: Translates NOA.do - calculates Net Operating Assets
+# ABOUTME: Calculates Net Operating Assets following Hirshleifer et al. 2004 Table 4
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/NOA.py
 
-# Inputs:
-#   - ../pyData/Intermediate/m_aCompustat.parquet
-# Outputs:
-#   - ../pyData/Predictors/NOA.csv
+# Inputs: m_aCompustat.parquet
+# Output: ../pyData/Predictors/NOA.csv
 
 import pandas as pd
 import numpy as np
@@ -12,28 +10,26 @@ import numpy as np
 print("Starting NOA calculation...")
 
 # DATA LOAD
-# use gvkey permno time_avail_m at che dltt mib dc ceq using "$pathDataIntermediate/m_aCompustat", clear
 m_aCompustat = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                                columns=['gvkey', 'permno', 'time_avail_m', 'at', 'che', 'dltt', 'mib', 'dc', 'ceq'])
 df = m_aCompustat.copy()
 print(f"Loaded m_aCompustat data: {len(df)} observations")
 
 # SIGNAL CONSTRUCTION
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate permno-month observations
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 print(f"After deduplicating by permno time_avail_m: {len(df)} observations")
 
-# xtset permno time_avail_m
+# Sort by panel structure
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# gen OA = at - che
+# Calculate Operating Assets (OA = total assets - cash)
 df['OA'] = df['at'] - df['che']
 
-# gen OL = at - dltt - mib - dc - ceq
+# Calculate Operating Liabilities (OL = total assets - long-term debt - minority interest - deferred charges - book equity)
 df['OL'] = df['at'] - df['dltt'] - df['mib'] - df['dc'] - df['ceq']
 
-# gen NOA = (OA - OL)/l12.at
-# Create 12-month lag of at
+# Calculate NOA = (OA - OL) scaled by lagged total assets
 df['l12_at'] = df.groupby('permno')['at'].shift(12)
 
 # Calculate NOA
@@ -42,7 +38,6 @@ df['NOA'] = (df['OA'] - df['OL']) / df['l12_at']
 print(f"NOA calculated for {df['NOA'].notna().sum()} observations")
 
 # SAVE
-# do "$pathCode/savepredictor" NOA
 result = df[['permno', 'time_avail_m', 'NOA']].copy()
 result = result.dropna(subset=['NOA'])
 

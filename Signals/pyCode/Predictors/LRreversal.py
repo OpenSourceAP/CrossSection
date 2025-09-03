@@ -1,9 +1,16 @@
-# ABOUTME: Translates LRreversal.do to create long-term reversal predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/LRreversal.py
+# ABOUTME: Long-run reversal following De Bondt and Thaler 1985, Table 1, three-year
+# ABOUTME: calculates stock return between months t-36 and t-13 for long-term reversal signal
+"""
+Usage:
+    python3 Predictors/LRreversal.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/LRreversal.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - LRreversal.csv: CSV file with columns [permno, yyyymm, LRreversal]
+    - LRreversal = compound return from months t-36 to t-13 (expecting reversal)
+"""
 
 import pandas as pd
 import numpy as np
@@ -16,19 +23,18 @@ df = df[['permno', 'time_avail_m', 'ret']].copy()
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # SIGNAL CONSTRUCTION
-# Replace missing returns with 0
+# Replace missing returns with 0 for momentum calculations
 df['ret'] = df['ret'].fillna(0)
 
-# Calculate lags for months 13-36
+# Create 24 monthly lags (t-13 to t-36) for long-term reversal calculation
 lag_cols = []
 for i in range(13, 37):
     lag_col = f'ret_lag{i}'
     df[lag_col] = df.groupby('permno')['ret'].shift(i)
-    # Fill missing lagged returns with 0 (to match Stata's behavior for insufficient history)
-    df[lag_col] = df[lag_col].fillna(0)
+    # Keep missing values as NaN to match Stata's behavior
     lag_cols.append(lag_col)
 
-# Calculate long-term reversal (geometric return over months 13-36)
+# Compounds monthly returns over months t-36 to t-13 to create long-term reversal signal
 product = df[lag_cols[0]] * 0 + 1  # Initialize to 1
 for col in lag_cols:
     product = product * (1 + df[col])

@@ -1,4 +1,4 @@
-# ABOUTME: DelNetFin.py - calculates change in net financial assets scaled by average total assets
+# ABOUTME: Change in net financial assets following Richardson et al. 2005, Table 8B DeltaFin
 # ABOUTME: Change in net financial assets (financial assets minus liabilities) from prior 12 months divided by average total assets
 
 """

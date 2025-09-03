@@ -1,10 +1,17 @@
-# ABOUTME: Translates NetDebtFinance.do - calculates net debt financing activity
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/NetDebtFinance.py
+# ABOUTME: Net debt financing following Bradshaw, Richardson, Sloan 2006, Table 3
+# ABOUTME: calculates net debt financing activity scaled by average total assets
+"""
+Usage:
+    python3 Predictors/NetDebtFinance.py
 
-# Inputs:
-#   - ../pyData/Intermediate/m_aCompustat.parquet
-# Outputs:
-#   - ../pyData/Predictors/NetDebtFinance.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, dlcch, dltis, dltr, at]
+
+Outputs:
+    - NetDebtFinance.csv: CSV file with columns [permno, yyyymm, NetDebtFinance]
+    - NetDebtFinance = (dltis - dltr + dlcch) / (0.5 * (at + l12.at))
+    - Missing dlcch values replaced with 0, excluded if abs(ratio) > 1
+"""
 
 import pandas as pd
 import numpy as np
@@ -26,17 +33,17 @@ print(f"After deduplicating by permno time_avail_m: {len(df)} observations")
 # xtset permno time_avail_m
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# replace dlcch = 0 if mi(dlcch)
+# Update 0 if mi(dlcch)
 df['dlcch'] = df['dlcch'].fillna(0)
 
-# gen NetDebtFinance = (dltis - dltr + dlcch)/(.5*(at + l12.at))
+# Generate (dltis - dltr + dlcch)/(.5*(at + l12.at))
 # Create 12-month lag of at
 df['l12_at'] = df.groupby('permno')['at'].shift(12)
 
 # Calculate NetDebtFinance
 df['NetDebtFinance'] = (df['dltis'] - df['dltr'] + df['dlcch']) / (0.5 * (df['at'] + df['l12_at']))
 
-# replace NetDebtFinance = . if abs(NetDebtFinance) > 1
+# Update . if abs(NetDebtFinance) > 1
 df.loc[df['NetDebtFinance'].abs() > 1, 'NetDebtFinance'] = np.nan
 
 print(f"NetDebtFinance calculated for {df['NetDebtFinance'].notna().sum()} observations")

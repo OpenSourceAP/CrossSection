@@ -1,15 +1,14 @@
-# ABOUTME: Translates OScore.do to create O-Score bankruptcy predictor
+# ABOUTME: Calculates O-Score bankruptcy predictor following Dichev 1998 Table 5
 # ABOUTME: Run from pyCode/ directory: python3 Predictors/OScore.py
 
-# Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet, SignalMasterTable.parquet, GNPdefl.parquet
 # Output: ../pyData/Predictors/OScore.csv
 
 import pandas as pd
 import numpy as np
 import sys
-sys.path.append('.')
-from utils.stata_fastxtile import fastxtile
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # DATA LOAD
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet')
@@ -41,8 +40,7 @@ df_lag = df_lag.rename(columns={'time_avail_m': 'time_avail_m_lag12', 'ib': 'ib_
 df = df.merge(df_lag, on=['permno', 'time_avail_m_lag12'], how='left')
 df = df.drop('time_avail_m_lag12', axis=1)
 
-# O-Score calculation with proper handling of infinite values
-# Handle division by zero and log of negative values like Stata
+# Calculate O-Score using Dichev formula with safe math operations
 def safe_divide(a, b):
     return np.where((b == 0) | b.isna(), np.nan, a / b)
 
@@ -64,7 +62,10 @@ df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 df.loc[((df['sic'] > 3999) & (df['sic'] < 5000)) | (df['sic'] > 5999), 'OScore'] = np.nan
 
 # Create deciles and form long-short following Table 5
-df['tempsort'] = fastxtile(df, 'OScore', by='time_avail_m', n=10)
+df['tempsort'] = (
+    df.groupby('time_avail_m')['OScore']
+    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+)
 
 # Reset OScore and create binary signal
 df['OScore'] = np.nan

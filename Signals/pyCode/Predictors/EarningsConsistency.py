@@ -1,71 +1,73 @@
-# ABOUTME: Translates EarningsConsistency.do from Stata to Python
-# ABOUTME: Calculates earnings consistency measure based on standardized earnings changes
-
-# How to run: python3 EarningsConsistency.py
+# ABOUTME: Calculates earnings consistency following Alwathainani 2009 Table 11A CLG-CHG
+# ABOUTME: Average earnings growth over previous 48 months with sign consistency filters
+# 
 # Inputs: ../pyData/Intermediate/m_aCompustat.parquet
 # Outputs: ../pyData/Predictors/EarningsConsistency.csv
+# How to run: python3 EarningsConsistency.py
 
 import pandas as pd
 import numpy as np
 
+# set path for utils
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
+
+print("Starting EarningsConsistency.py...")
+
 # DATA LOAD
+print("Loading m_aCompustat data...")
 df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
                      columns=['permno', 'time_avail_m', 'epspx'])
+print(f"Loaded data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
-# Sort data (equivalent to xtset permno time_avail_m)
+print("Setting up panel data structure...")
+# Sort data by permno and time for panel structure
 df = df.sort_values(['permno', 'time_avail_m'])
 
-# Create 12-month and 24-month lags of epspx using merge-based calendar approach
-def create_calendar_lag_merge(df, column, lag_months):
-    """Create calendar-based lag using merge approach (faster)"""
-    df_copy = df[['permno', 'time_avail_m', column]].copy()
-    df_copy['lag_time'] = df_copy['time_avail_m'] + pd.DateOffset(months=lag_months)
-    df_copy = df_copy.rename(columns={column: f'lag{lag_months}_{column}'})
-    
-    result = df.merge(df_copy[['permno', 'lag_time', f'lag{lag_months}_{column}']], 
-                     left_on=['permno', 'time_avail_m'], 
-                     right_on=['permno', 'lag_time'], 
-                     how='left')
-    return result[f'lag{lag_months}_{column}']
-
-df['l12_epspx'] = create_calendar_lag_merge(df, 'epspx', 12)
-df['l24_epspx'] = create_calendar_lag_merge(df, 'epspx', 24)
-
-# Calculate temp variable: (epspx - l12.epspx)/(.5*(abs(l12.epspx) + abs(l24.epspx)))
-# Handle division by zero like Stata (set to missing)
-denominator = 0.5 * (abs(df['l12_epspx']) + abs(df['l24_epspx']))
-df['temp'] = np.where(denominator == 0, np.nan, (df['epspx'] - df['l12_epspx']) / denominator)
-
-# Create lagged versions of temp for 12, 24, 36, 48 months using calendar-based approach
-for n in [12, 24, 36, 48]:
-    df[f'temp{n}'] = create_calendar_lag_merge(df, 'temp', n)
-
-# Calculate EarningsConsistency as row mean of temp variables
-temp_cols = ['temp', 'temp12', 'temp24', 'temp36', 'temp48']
-df['EarningsConsistency'] = df[temp_cols].mean(axis=1)
-
-# Create 12-month lag of temp for filtering using calendar-based approach
-df['l12_temp'] = create_calendar_lag_merge(df, 'temp', 12)
-
-# Apply filters: set EarningsConsistency to missing if:
-# 1. abs(epspx/l12.epspx) > 6 OR
-# 2. (temp > 0 & l12.temp < 0 & !mi(temp)) OR (temp < 0 & l12.temp > 0 & !mi(temp))
-# Handle division by zero in filter condition
-epspx_ratio = np.where(df['l12_epspx'] == 0, np.nan, abs(df['epspx'] / df['l12_epspx']))
-filter_condition = (
-    (epspx_ratio > 6) |
-    ((df['temp'] > 0) & (df['l12_temp'] < 0) & df['temp'].notna()) |
-    ((df['temp'] < 0) & (df['l12_temp'] > 0) & df['temp'].notna())
+# Calculate earnings growth: (EPS - EPS_12m_ago) / average(abs(EPS_12m_ago), abs(EPS_24m_ago))
+print("Creating lag variables for earnings...")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'epspx', [12, 24], prefix='l')
+df = df.assign(
+    egrowth = lambda x: (x['epspx'] - x['l12_epspx']) / (0.5 * (abs(x['l12_epspx']) + abs(x['l24_epspx'])))
 )
 
-df.loc[filter_condition, 'EarningsConsistency'] = np.nan
+# Replace infinite values from division by zero with NaN
+df['egrowth'] = df['egrowth'].replace([np.inf, -np.inf], np.nan)
 
-# Create yyyymm variable
-df['yyyymm'] = (df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month).astype(int)
+# Calculate earnings consistency as mean of current and lagged earnings growth over 48 months
+print("Creating additional lag variables for earnings growth...")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'egrowth', [12, 24, 36, 48], prefix='l')
+print("Calculating earnings consistency...")
+temp_cols = ['egrowth', 'l12_egrowth', 'l24_egrowth', 'l36_egrowth', 'l48_egrowth']
+df['EarningsConsistency'] = df[temp_cols].mean(axis=1,skipna=True)
 
-# Keep only required columns and remove missing values
-result = df[['permno', 'yyyymm', 'EarningsConsistency']].dropna()
+# Apply exclusion filters: missing earnings, extreme growth (>600%), or sign changes
+df = df.assign(
+    exception=lambda x: (
+        (
+            x["epspx"].isna()
+            | x["l12_epspx"].isna()  # missing earnings current or prior year
+        )
+        | (abs(x["epspx"] / x["l12_epspx"]) > 6)  # earnings growth exceeds 600%
+        | (
+            (x["egrowth"] > 0)
+            & (x["l12_egrowth"] < 0)
+            & x["egrowth"].notna()  # positive growth following negative growth
+        )
+        | (
+            (x["egrowth"] < 0)
+            & ((x["l12_egrowth"] > 0) | x["l12_egrowth"].isna())
+            & x["egrowth"].notna()  # negative growth following positive/missing growth
+        )
+    ) # end lambda
+)
+df.loc[df["exception"], "EarningsConsistency"] = np.nan
+print(f"Calculated EarningsConsistency for {df['EarningsConsistency'].notna().sum()} observations")
 
 # Save the predictor
-result.to_csv('../pyData/Predictors/EarningsConsistency.csv', index=False)
+save_predictor(df, 'EarningsConsistency')
+print("EarningsConsistency.py completed successfully")

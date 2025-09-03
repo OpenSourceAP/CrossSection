@@ -1,5 +1,5 @@
-# ABOUTME: Translates CoskewACX.do to generate coskewness following Ang, Chen, Xing 2006 with 12-month batched processing
-# ABOUTME: Replicates ACX appendix equation B-9 using daily CRSP data processed in monthly batches (Jan-Dec)
+# ABOUTME: Coskewness using daily returns following Ang, Chen and Xing 2006, Table 8B
+# ABOUTME: Calculates sample counterpart of E[r*m²]/(SD[r]*SD[m]²) using de-meaned returns
 #
 # This script translates Code/Predictors/CoskewACX.do to Python
 # Following Appendix and Table 8 caption from Ang, Chen, Xing 2006
@@ -33,11 +33,11 @@ predictors_path.mkdir(exist_ok=True)
 
 print("Loading daily CRSP data...")
 
-# Load daily CRSP data - equivalent to: use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta"
+# Load daily CRSP data
 daily_crsp = pl.read_parquet(intermediate_path / "dailyCRSP.parquet")
 print(f"Loaded dailyCRSP: {daily_crsp.shape} rows")
 
-# Keep only data from 1962-07-02 onwards - equivalent to: keep if time_d >= date("19620702","YMD")
+# Keep only data from 1962-07-02 onwards
 daily_crsp = daily_crsp.filter(
     pl.col("time_d") >= pl.date(1962, 7, 2)
 )
@@ -45,13 +45,13 @@ print(f"After 1962-07-02 filter: {daily_crsp.shape} rows")
 
 print("Loading daily Fama-French data...")
 
-# Load daily FF data - equivalent to: merge m:1 time_d using "$pathDataIntermediate/dailyFF"
+# Load daily Fama-French data
 daily_ff = pl.read_parquet(intermediate_path / "dailyFF.parquet")
 print(f"Loaded dailyFF: {daily_ff.shape} rows")
 
 print("Merging CRSP and FF data...")
 
-# Merge with FF data - equivalent to: merge m:1 time_d using ... nogenerate keep(match) keepusing(mktrf rf)
+# Merge with Fama-French data, keeping only matching dates with valid mktrf and rf
 merged_data = daily_crsp.join(
     daily_ff.select(["time_d", "mktrf", "rf"]),
     on="time_d",
@@ -62,16 +62,14 @@ merged_data = daily_crsp.join(
 
 print(f"After merging with FF: {merged_data.shape} rows")
 
-# Create market return - equivalent to: gen mkt = mktrf + rf
+# Create market return by adding risk-free rate to market excess return
 merged_data = merged_data.with_columns([
     (pl.col("mktrf") + pl.col("rf")).alias("mkt")
 ])
 
 print("Converting to continuous-time compounded returns...")
 
-# Convert to continuous-time compounded excess returns - equivalent to:
-# replace mkt = log(1+mkt) - log(1+rf) 
-# replace ret = log(1+ret) - log(1+rf)
+# Convert to continuous-time compounded excess returns using natural log transformation
 merged_data = merged_data.with_columns([
     (pl.col("mkt").add(1).log() - pl.col("rf").add(1).log()).alias("mkt"),
     (pl.col("ret").add(1).log() - pl.col("rf").add(1).log()).alias("ret")
@@ -79,8 +77,7 @@ merged_data = merged_data.with_columns([
 
 print(f"Data ready for processing: {merged_data.shape} rows")
 
-# Set up for 12-month periods - equivalent to Stata's reverse time sorting
-# Sort by permno and reverse time (temptime = -time_d, then sort permno temptime)
+# Sort by permno and reverse chronological order for rolling window calculations
 merged_data = merged_data.sort(["permno", "time_d"], descending=[False, True])
 
 print("Starting 12-month batch processing loop...")
@@ -88,15 +85,14 @@ print("Starting 12-month batch processing loop...")
 # Initialize list to store results from each batch
 batch_results = []
 
-# Process 12 batches (m=1 to 12 for Jan to Dec) - equivalent to: forvalues m=1/12
+# Process 12 batches, one for each month (January through December)
 for m in range(1, 13):
     print(f"Processing batch {m}/12...")
     
     # Start with the merged data for this batch
     batch_df = merged_data.clone()
     
-    # Create time_avail_m for month m - equivalent to:
-    # gen time_avail_m = mofd(time_d) if month(time_d) == `m'
+    # Create time availability marker for observations in month m
     batch_df = batch_df.with_columns([
         pl.when(pl.col("time_d").dt.month() == m)
         .then((pl.col("time_d").dt.year() - 1960) * 12 + (pl.col("time_d").dt.month() - 1))
@@ -104,48 +100,40 @@ for m in range(1, 13):
         .alias("time_avail_m")
     ])
     
-    # Forward fill time_avail_m within permno groups - equivalent to:
-    # by permno: replace time_avail_m = time_avail_m[_n-1] if time_avail_m == .
+    # Forward fill time markers within each security to create rolling 12-month periods
     batch_df = batch_df.with_columns([
         pl.col("time_avail_m").forward_fill().over("permno").alias("time_avail_m_filled")
     ])
     
-    # Drop observations that couldn't be forward-filled - equivalent to: drop if time_avail_m == .
+    # Remove observations without valid time periods
     batch_df = batch_df.filter(pl.col("time_avail_m_filled").is_not_null())
     
-    # Drop time_d as it's no longer needed - equivalent to: drop time_d
+    # Remove daily date column as it's no longer needed
     batch_df = batch_df.drop("time_d")
     
     print(f"  Batch {m}: {batch_df.shape[0]} observations after time assignment")
     
-    # Demean returns within each 12-month period - equivalent to:
-    # gcollapse (mean) E_ret = ret E_mkt = mkt, by(permno time_avail_m) merge
+    # Calculate mean returns for each security-period to enable demeaning
     means_df = batch_df.group_by(["permno", "time_avail_m_filled"]).agg([
         pl.col("ret").mean().alias("E_ret"),
         pl.col("mkt").mean().alias("E_mkt")
     ])
     
-    # Merge means back and create demeaned returns - equivalent to merge operation and:
-    # replace ret = ret - E_ret // called \tilde{r}_{it} in ACX appendix
-    # replace mkt = mkt - E_mkt // called \tilde{r}_{mt} in ACX appendix
+    # Create demeaned returns by subtracting period means (tilde notation in ACX appendix)
     batch_df = batch_df.join(means_df, on=["permno", "time_avail_m_filled"], how="inner")
     batch_df = batch_df.with_columns([
         (pl.col("ret") - pl.col("E_ret")).alias("ret_demeaned"),
         (pl.col("mkt") - pl.col("E_mkt")).alias("mkt_demeaned")
     ]).drop(["E_ret", "E_mkt"])
     
-    # Calculate moment terms - equivalent to:
-    # gen ret2 = ret^2
-    # gen mkt2 = mkt^2  
-    # gen ret_mkt2 = ret*mkt2
+    # Calculate squared terms and cross-products needed for coskewness formula
     batch_df = batch_df.with_columns([
         pl.col("ret_demeaned").pow(2).alias("ret2"),
         pl.col("mkt_demeaned").pow(2).alias("mkt2"),
         (pl.col("ret_demeaned") * pl.col("mkt_demeaned").pow(2)).alias("ret_mkt2")
     ])
     
-    # Calculate coskewness with sample moments - equivalent to:
-    # gcollapse (mean) E_ret_mkt2=ret_mkt2 E_ret2=ret2 E_mkt2=mkt2 (count) nobs=ret, by(permno time_avail_m)
+    # Calculate sample moments: E[r*m²], E[r²], E[m²] for each security-period
     coskew_df = batch_df.group_by(["permno", "time_avail_m_filled"]).agg([
         pl.col("ret_mkt2").mean().alias("E_ret_mkt2"),
         pl.col("ret2").mean().alias("E_ret2"),
@@ -153,14 +141,12 @@ for m in range(1, 13):
         pl.col("ret_demeaned").count().alias("nobs")
     ])
     
-    # Calculate CoskewACX - equivalent to: gen CoskewACX = E_ret_mkt2 / (sqrt(E_ret2) * E_mkt2)
+    # Calculate coskewness using ACX formula: E[r*m²] / (sqrt(E[r²]) * E[m²])
     coskew_df = coskew_df.with_columns([
         (pl.col("E_ret_mkt2") / (pl.col("E_ret2").sqrt() * pl.col("E_mkt2"))).alias("CoskewACX")
     ])
     
-    # Filter observations with too many missing values - equivalent to:
-    # gcollapse (max) max_nobs = nobs, by (time_avail_m) merge
-    # drop if max_nobs - nobs > 5
+    # Filter out observations with insufficient data (>5 missing vs maximum in period)
     max_nobs_df = coskew_df.group_by("time_avail_m_filled").agg([
         pl.col("nobs").max().alias("max_nobs")
     ])
@@ -182,7 +168,7 @@ for m in range(1, 13):
 
 print("Combining all batches...")
 
-# Combine all 12 batches - equivalent to append using operations in Stata
+# Combine results from all 12 monthly batches
 final_result = pl.concat(batch_results)
 
 print(f"Final combined dataset: {final_result.shape} rows")
@@ -205,7 +191,7 @@ print(final_result.describe())
 
 print("Saving to CSV...")
 
-# Save final result - equivalent to: do "$pathCode/savepredictor" CoskewACX
+# Save final coskewness predictor results
 final_result.write_csv(predictors_path / "CoskewACX.csv")
 
 print(f"✅ CoskewACX.csv saved with {final_result.shape[0]} observations")

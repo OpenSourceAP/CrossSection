@@ -1,5 +1,5 @@
-# ABOUTME: Translates OrderBacklogChg.do to create change in order backlog to assets predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/OrderBacklogChg.py
+# ABOUTME: Change in Order Backlog predictor from Baik and Ahn 2007, Table 2 High-Low
+# ABOUTME: Calculates change in normalized order backlog (order backlog divided by average total assets)
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet

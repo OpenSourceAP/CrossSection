@@ -19,14 +19,14 @@ go directory with files and use ls to find a good date
 */
 
 * where the many datasets are;
-libname many "~/temp_output/";
+libname many "./temp_output/";
 
 * goodyear is for initializing;
 %let goodyear = 1983; * be careful with this;
 
 * target files;
-%let dailyname   = '~/temp_output/issm_daily.csv';
-%let monthlyname = '~/temp_output/issm_monthly.csv';
+%let dailyname   = './temp_output/issm_daily.csv';
+%let monthlyname = './temp_output/issm_monthly.csv';
 
 
 

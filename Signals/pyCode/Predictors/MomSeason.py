@@ -1,80 +1,52 @@
-# ABOUTME: Return Seasonality (years 2 to 5) predictor translation from Stata
-# ABOUTME: Calculates seasonal momentum by averaging returns from lags 23-59 months
+# ABOUTME: Calculates seasonal momentum following Heston and Sadka 2008 Table 2 Years 2-5 Annual
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeason.py
+
+# Run from pyCode/ directory
+# Inputs: SignalMasterTable.parquet
+# Output: ../pyData/Predictors/MomSeason.csv
 
 import pandas as pd
 import numpy as np
+import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
+from utils.save_standardized import save_predictor
+
+print("Starting MomSeason.py...")
 
 # DATA LOAD
+print("Loading SignalMasterTable...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
-
-# Sort data for processing
-df = df.sort_values(['permno', 'time_avail_m'])
+print(f"Loaded data: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
-# Replace missing returns with 0 (equivalent to Stata: replace ret = 0 if mi(ret))
+print("Filling missing returns with 0...")
+# Update 0 if mi(ret)
 df['ret'] = df['ret'].fillna(0)
 
-# Create temp columns for each lag using calendar-based lookups
-# foreach n of numlist 23(12)59 { gen temp`n' = l`n'.ret }
-temp_columns = []
-for n in [23, 35, 47, 59]:
-    col_name = f'temp{n}'
-    temp_columns.append(col_name)
-    
-    # Calculate target date (n months before each observation)
-    df['target_date'] = df['time_avail_m'] - pd.DateOffset(months=n)
-    
-    # Create lookup table for lagged returns
-    lag_lookup = df[['permno', 'time_avail_m', 'ret']].rename(columns={
-        'time_avail_m': 'lag_date',
-        'ret': 'lag_ret'
-    })
-    
-    # Merge to get lagged values (equivalent to Stata's l23.ret, l35.ret, etc.)
-    merged = df.merge(
-        lag_lookup,
-        left_on=['permno', 'target_date'],
-        right_on=['permno', 'lag_date'],
-        how='left'
-    )
-    
-    # Store the lagged return (NaN if no data available for that exact date)
-    df[col_name] = merged['lag_ret']
-    
-    # Clean up temporary columns
-    df = df.drop(columns=['target_date'])
+# foreach n of numlist 23(12)59 { Generate l`n'.ret }
+# This creates lags for periods: 23, 35, 47, 59 months
+print("Creating lag variables for returns (23, 35, 47, 59 months)...")
+lag_periods = [23, 35, 47, 59]
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
 
-# Calculate row totals and counts like Stata
-# egen retTemp1 = rowtotal(temp*), missing
-df['retTemp1'] = df[temp_columns].sum(axis=1, skipna=True)
+# eGenerate rowtotal(temp*), missing
+print("Calculating seasonal momentum signal...")
+lag_cols = [f'ret_lag{n}' for n in lag_periods]
+df['retTemp1'] = df[lag_cols].sum(axis=1)
+# Handle case where all values are NaN - should return NaN, not 0
+all_missing = df[lag_cols].isna().all(axis=1)
+df.loc[all_missing, 'retTemp1'] = np.nan
 
-# egen retTemp2 = rownonmiss(temp*)
-df['retTemp2'] = df[temp_columns].notna().sum(axis=1)
+# eGenerate rownonmiss(temp*)
+df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 
-# Generate MomSeason = retTemp1/retTemp2
+# Generate retTemp1/retTemp2
 df['MomSeason'] = df['retTemp1'] / df['retTemp2']
-
-# Set to NaN where retTemp2 is 0 to handle division by zero
-df.loc[df['retTemp2'] == 0, 'MomSeason'] = np.nan
+print(f"Calculated MomSeason for {df['MomSeason'].notna().sum()} observations")
 
 # SAVE
-# Clean up - drop rows where MomSeason is missing (equivalent to Stata: drop if MomSeason == .)
-df_output = df.dropna(subset=['MomSeason']).copy()
-
-# Convert time_avail_m to yyyymm format (equivalent to Stata date conversion)
-df_output['yyyymm'] = df_output['time_avail_m'].dt.year * 100 + df_output['time_avail_m'].dt.month
-
-# Keep only required columns and ensure correct order
-df_final = df_output[['permno', 'yyyymm', 'MomSeason']].copy()
-
-# Save to CSV
-output_path = '../pyData/Predictors/MomSeason.csv'
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-df_final.to_csv(output_path, index=False)
-
-print(f"MomSeason predictor saved to {output_path}")
-print(f"Output shape: {df_final.shape}")
-print("First few rows:")
-print(df_final.head())
+save_predictor(df, 'MomSeason')
+print("MomSeason.py completed successfully")

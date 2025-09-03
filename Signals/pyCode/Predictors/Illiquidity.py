@@ -1,19 +1,15 @@
-# ABOUTME: Creates Illiquidity predictor using Amihud illiquidity measure
-# ABOUTME: Run: python3 Predictors/Illiquidity.py
-
+# ABOUTME: Amihud's illiquidity following Amihud 2002, Table 2
+# ABOUTME: calculates past twelve month average of daily return divided by turnover
 """
-Illiquidity Predictor
-
-Implements the Amihud illiquidity measure:
-- Daily illiquidity = |return| / (|price| * volume)
-- Monthly average of daily illiquidity
-- 12-month rolling mean of monthly illiquidity
+Usage:
+    python3 Predictors/Illiquidity.py
 
 Inputs:
-- ../pyData/Intermediate/dailyCRSP.parquet
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret, prc, vol]
 
-Outputs:  
-- ../pyData/Predictors/Illiquidity.csv
+Outputs:
+    - Illiquidity.csv: CSV file with columns [permno, yyyymm, Illiquidity]
+    - Illiquidity = past twelve month average of: daily |ret| / (|prc| * vol)
 """
 
 import pandas as pd
@@ -55,10 +51,20 @@ monthly_ill['ill_lag10'] = monthly_ill.groupby('permno')['ill'].shift(10)
 monthly_ill['ill_lag11'] = monthly_ill.groupby('permno')['ill'].shift(11)
 
 # Calculate 12-month rolling mean
+# Require ALL 12 values to be non-missing for the calculation
+# If any value is missing, the result is missing
 illiquidity_cols = ['ill', 'ill_lag1', 'ill_lag2', 'ill_lag3', 'ill_lag4', 'ill_lag5',
                    'ill_lag6', 'ill_lag7', 'ill_lag8', 'ill_lag9', 'ill_lag10', 'ill_lag11']
 
-monthly_ill['Illiquidity'] = monthly_ill[illiquidity_cols].mean(axis=1)
+# Count non-missing values for each observation
+monthly_ill['non_missing_count'] = monthly_ill[illiquidity_cols].count(axis=1)
+
+# Calculate mean, but only if ALL 12 values are present (matching Stata's behavior)
+monthly_ill['Illiquidity'] = np.where(
+    monthly_ill['non_missing_count'] == 12,
+    monthly_ill[illiquidity_cols].mean(axis=1),
+    np.nan
+)
 
 # Prepare final output - rename time_avail_m to yyyymm for consistency
 result = monthly_ill[['permno', 'time_avail_m', 'Illiquidity']].copy()

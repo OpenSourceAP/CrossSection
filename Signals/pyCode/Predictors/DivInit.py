@@ -1,21 +1,42 @@
-# ABOUTME: Translates DivInit.do to create dividend initiation predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DivInit.py
+# ABOUTME: Dividend initiation following Michaely, Thaler and Womack 1995, Table 3 init
+# ABOUTME: Identifies firms that paid dividends after 24 months of no dividends, held for 6 months
 
-# Run from pyCode/ directory
-# Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/DivInit.csv
+"""
+DivInit predictor calculation
+
+Usage:
+    cd pyCode/
+    source .venv/bin/activate
+    python3 Predictors/DivInit.py
+
+Inputs:
+    - ../pyData/Intermediate/CRSPdistributions.parquet (permno, exdt, cd2, divamt)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, exchcd, shrcd)
+
+Outputs:
+    - ../pyData/Predictors/DivInit.csv (permno, yyyymm, DivInit)
+"""
 
 import pandas as pd
 import numpy as np
 import sys
 import os
+import sys
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.data_utils import asrol
+from utils.asrol import asrol
+from utils.save_standardized import save_predictor
+
+print("=" * 80)
+print("🏗️  DivInit.py")
+print("Creating dividend initiation predictor")
+print("=" * 80)
 
 # PREP DISTRIBUTIONS DATA
+print("📊 Loading distributions data...")
 dist_df = pd.read_parquet('../pyData/Intermediate/CRSPdistributions.parquet')
+print(f"Loaded distributions: {len(dist_df):,} observations")
 
 # Cash dividends only (cd2 == 2 | cd2 == 3)
 dist_df = dist_df[(dist_df['cd2'] == 2) | (dist_df['cd2'] == 3)]
@@ -35,43 +56,34 @@ df = df[['permno', 'time_avail_m', 'exchcd', 'shrcd']].copy()
 df = df.merge(tempdivamt, on=['permno', 'time_avail_m'], how='left')
 
 # SIGNAL CONSTRUCTION
+print("🧮 Computing dividend initiation signal...")
 # Replace missing dividend amounts with 0
 df['divamt'] = df['divamt'].fillna(0)
 
 # Rolling 24-month sum of dividends using asrol
-df = asrol(df, 'permno', 'time_avail_m', 'divamt', 24, stat='sum', new_col_name='divsum')
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 24, 'divamt', 'sum', 'divamt_sum', min_samples=1)
 
 # Sort by permno and time_avail_m for lag calculation
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Create dividend initiation indicator
-# temp = divamt > 0 & l1.divsum == 0
-df['divsum_lag1'] = df.groupby('permno')['divsum'].shift(1)
+# Flag firms paying dividends after 24 months of no dividends
+df['divsum_lag1'] = df.groupby('permno')['divamt_sum'].shift(1)
 df['temp'] = (df['divamt'] > 0) & (df['divsum_lag1'] == 0)
-df['temp'] = df['temp'].fillna(False)
+df['temp'] = df['temp'].fillna(False).astype(int)  # Convert boolean to numeric
 
 # Keep for 6 months using asrol
-df = asrol(df, 'permno', 'time_avail_m', 'temp', 6, stat='sum', new_col_name='initsum')
+df = asrol(df, 'permno', 'time_avail_m', '1mo', 6, 'temp', 'sum', 'temp_sum', min_samples=1)
 
-# Create final DivInit signal (initsum == 1)
-df['DivInit'] = (df['initsum'] == 1).astype(int)
+# Create final DivInit signal - indicator equals 1 if dividend initiation occurred in past 6 months
+df['DivInit'] = (df['temp_sum'] == 1).astype(int)
 
-# Keep only necessary columns for output
-df_final = df[['permno', 'time_avail_m', 'DivInit']].copy()
-df_final = df_final.dropna(subset=['DivInit'])
+# save
+print("💾 Saving DivInit predictor...")
+save_predictor(df, 'DivInit')
+print("✅ DivInit.csv saved successfully")
 
-# Convert time_avail_m to yyyymm format like other predictors
-df_final['yyyymm'] = df_final['time_avail_m'].dt.year * 100 + df_final['time_avail_m'].dt.month
-
-# Convert to integers for consistency with other predictors
-df_final['permno'] = df_final['permno'].astype('int64')
-df_final['yyyymm'] = df_final['yyyymm'].astype('int64')
-
-# Keep only required columns and set index
-df_final = df_final[['permno', 'yyyymm', 'DivInit']].copy()
-df_final = df_final.set_index(['permno', 'yyyymm'])
-
-# SAVE
-df_final.to_csv('../pyData/Predictors/DivInit.csv')
-
-print("DivInit predictor saved successfully")
+print("=" * 80)
+print("✅ DivInit.py Complete")
+print("Dividend initiation predictor generated successfully")
+print("=" * 80)

@@ -1,5 +1,8 @@
-# ABOUTME: Translates OperProfRD.do to create R&D-adjusted operating profitability predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/OperProfRD.py
+# ABOUTME: Operating profitability R&D adjusted following Ball et al. 2016, Table 4A Oper PRof
+# ABOUTME: calculates R&D-adjusted operating profitability predictor scaled by total assets
+
+# Note: Uses current period assets in denominator (not lagged)
+# This approach produces results closer to original Ohlson-Penman specification
 
 # Run from pyCode/ directory
 # Inputs: SignalMasterTable.parquet, m_aCompustat.parquet
@@ -22,13 +25,11 @@ df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 # Drop duplicates
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 
-# Handle missing R&D and other expense components (like Stata)
+# Handle missing R&D by setting to zero
 df['tempXRD'] = df['xrd'].fillna(0)
-df['tempXSGA'] = df['xsga'].fillna(0)
-df['tempCOGS'] = df['cogs'].fillna(0)
 
 # Calculate R&D-adjusted operating profitability
-df['OperProfRD'] = (df['revt'] - df['tempCOGS'] - df['tempXSGA'] + df['tempXRD']) / df['at']
+df['OperProfRD'] = (df['revt'] - df['cogs'] - df['xsga'] + df['tempXRD']) / df['at']
 
 # Apply filters
 df = df[

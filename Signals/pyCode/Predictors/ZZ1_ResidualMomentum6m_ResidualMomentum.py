@@ -1,12 +1,11 @@
-# ABOUTME: ZZ1_ResidualMomentum6m_ResidualMomentum.py - generates ResidualMomentum6m and ResidualMomentum predictors
-# ABOUTME: Python translation of ZZ1_ResidualMomentum6m_ResidualMomentum.do using polars for rolling FF3 regressions
+# ABOUTME: Generates ResidualMomentum following Blitz, Huij and Martens 2011, Table 2B 1M
+# ABOUTME: Python implementation using polars for rolling FF3 regressions
 
 """
 ZZ1_ResidualMomentum6m_ResidualMomentum.py
 
-Generates two momentum predictors based on Fama-French 3-factor model residuals:
-- ResidualMomentum6m: 6-month residual momentum (placebo)
-- ResidualMomentum: 12-month residual momentum based on FF3 residuals (predictor)
+Generates ResidualMomentum predictor based on Fama-French 3-factor model residuals:
+- ResidualMomentum: momentum based on FF3 residuals following Blitz, Huij and Martens 2011
 
 Usage:
     cd pyCode/
@@ -28,14 +27,14 @@ Requirements:
 """
 
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import polars.selectors as cs
 import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.savepredictor import save_predictor
-from utils.saveplacebo import save_placebo
-from utils.asreg import asreg
+from utils.save_standardized import save_predictor, save_placebo
+
 
 print("=" * 80)
 print("🏗️  ZZ1_ResidualMomentum6m_ResidualMomentum.py")
@@ -67,6 +66,8 @@ print("\n🔧 Starting signal construction...")
 print("Calculating excess returns (retrf = ret - rf)...")
 df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("retrf"))
 
+
+
 # Sort by permno and time_avail_m (important for time series operations)
 df = df.sort(["permno", "time_avail_m"])
 
@@ -76,48 +77,51 @@ df = df.with_columns(
     pl.int_range(pl.len()).over("permno").alias("time_temp")
 )
 
-print("Running rolling 36-observation FF3 regressions by permno using asreg helper...")
+
+print("Running rolling 36-observation FF3 regressions by permno using direct polars-ols helper...")
 print("Processing", df['permno'].n_unique(), "unique permnos...")
 
-# Use asreg helper for rolling FF3 regression with residuals
+# Use asreg helper for rolling FF3 regression with residuals  
 # Rolling 36-observation windows with minimum 36 observations (exact Stata asreg match)
-# Use time_temp (position-based) instead of time_avail_m (calendar-based)
-df = asreg(
-    df,
-    y="retrf",
-    X=["mktrf", "hml", "smb"],
-    by=["permno"],
-    t="time_temp", 
-    mode="rolling",
-    window_size=36,
-    min_samples=36,
-    add_intercept=True,  # Explicit parameter to match Stata asreg default behavior
-    outputs=("resid",),
-    null_policy="ignore",  # Match Stata's handling of missing values
-    solve_method="svd",  # Match Stata's OLS solver method
-    collect=True
+# Use time_temp (position-based) to match Stata's approach exactly
+# Sort by permno and time_temp for deterministic window order
+df = df.sort(["permno", "time_temp"])
+
+df = df.with_columns(
+    pl.col("retrf").least_squares.rolling_ols(
+        pl.col("mktrf"), pl.col("hml"), pl.col("smb"),
+        window_size=36,
+        min_periods=36,
+        mode="residuals",
+        add_intercept=True,
+        null_policy="drop"
+    ).over("permno").alias("_residuals")
 )
 
-# Rename residual column to match existing code
-df = df.with_columns(
-    pl.col("resid").alias("_residuals")
-).drop("resid")
 
 print(f"Completed rolling regressions for {len(df):,} observations")
+
 
 # Calculate lagged residuals and rolling momentum signals using pure Polars
 print("Calculating lagged residuals and momentum signals...")
 df = df.with_columns([
     # Lag residuals by 1 observation: temp = l1._residuals
     pl.col("_residuals").shift(1).over("permno").alias("temp")
-]).with_columns([
-    # 6-observation rolling statistics (position-based, min 6 observations)
+])
+
+
+
+df = df.with_columns([
+    # 6-observation rolling statistics (position-based, min 6 observations)  
     pl.col("temp").rolling_mean(window_size=6, min_samples=6).over("permno").alias("mean6_temp"),
-    pl.col("temp").rolling_std(window_size=6, min_samples=6).over("permno").alias("sd6_temp"),
+    pl.col("temp").rolling_std(window_size=6, min_samples=6, ddof=1).over("permno").alias("sd6_temp"),
     # 11-observation rolling statistics (position-based, min 11 observations)
-    pl.col("temp").rolling_mean(window_size=11, min_samples=11).over("permno").alias("mean11_temp"),
-    pl.col("temp").rolling_std(window_size=11, min_samples=11).over("permno").alias("sd11_temp")
-]).with_columns([
+    pl.col("temp").rolling_mean(window_size=11, min_samples=11).over("permno").alias("mean11_temp"), 
+    pl.col("temp").rolling_std(window_size=11, min_samples=11, ddof=1).over("permno").alias("sd11_temp")
+])
+
+
+df = df.with_columns([
     # Calculate momentum signals
     (pl.col("mean6_temp") / pl.col("sd6_temp")).alias("ResidualMomentum6m"),
     (pl.col("mean11_temp") / pl.col("sd11_temp")).alias("ResidualMomentum")
@@ -125,12 +129,15 @@ df = df.with_columns([
 
 print("Calculating 6-observation and 11-observation rolling momentum signals...")
 
+
+
 # Display signal summary statistics
 print("\n📈 Signal summary statistics:")
 print(f"ResidualMomentum6m - Mean: {df.select(pl.col('ResidualMomentum6m').mean()).item():.4f}, Std: {df.select(pl.col('ResidualMomentum6m').std()).item():.4f}")
 print(f"ResidualMomentum - Mean: {df.select(pl.col('ResidualMomentum').mean()).item():.4f}, Std: {df.select(pl.col('ResidualMomentum').std()).item():.4f}")
 print(f"Non-missing ResidualMomentum6m: {df.select(pl.col('ResidualMomentum6m').is_not_null().sum()).item():,}")
 print(f"Non-missing ResidualMomentum: {df.select(pl.col('ResidualMomentum').is_not_null().sum()).item():,}")
+
 
 # SAVE
 print("\n💾 Saving signals...")

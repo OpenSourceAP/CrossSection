@@ -1,13 +1,35 @@
-# ABOUTME: Real Investment Opportunities (RIO) predictors combining institutional ownership with various characteristics
-# ABOUTME: Usage: python3 ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py (run from pyCode/ directory)
+#%%
+# ABOUTME: Residual Institutional Ownership (RIO) predictors following Nagel 2005, Table 2B, 2, 2, 2E
+# ABOUTME: RIO_MB, RIO_Disp, RIO_Turnover, RIO_Volatility combining institutional ownership with market-to-book, forecast dispersion, turnover, and volatility
+"""
+Usage:
+    python3 Predictors/ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+
+Inputs:
+    - IBES_EPS_Unadj.parquet: IBES forecast data with columns [tickerIBES, time_avail_m, stdev]
+    - MSigma_InstitutionalOwnership.parquet: Institutional ownership data
+    - SignalMasterTable.parquet: Monthly master table with market cap and other variables
+    - MSigma_Vol_m.parquet: Monthly volume data
+    - m_crsp.parquet: CRSP monthly returns
+
+Outputs:
+    - RIO_MB.csv: RIO quintile for stocks in highest MB quintile
+    - RIO_Disp.csv: RIO quintile for stocks in high forecast dispersion quintiles  
+    - RIO_Turnover.csv: RIO quintile for stocks in highest turnover quintile
+    - RIO_Volatility.csv: RIO quintile for stocks in highest volatility quintile
+    
+All predictors use residual institutional ownership (RIO) which controls for size effects in institutional holdings
+"""
 
 import polars as pl
 import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.savepredictor import save_predictor
+from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
+from utils.asrol import asrol
+
 
 print("=" * 80)
 print("🏗️  ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py")
@@ -49,6 +71,7 @@ df = df.join(temp_ibes, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging all data sources: {len(df):,} observations")
 
+
 print("🔍 Applying size filters...")
 
 # filter below 20th pct NYSE me 
@@ -84,6 +107,7 @@ df = df.with_columns(
 # drop if sizecat == 1
 df = df.filter(pl.col("sizecat") != 1)
 print(f"After filtering bottom size quintile: {len(df):,} observations")
+
 
 # Clean up temporary columns
 df = df.drop(["nyse_amex_mve", "p20", "p40", "p60", "p80", "sizecat"])
@@ -134,12 +158,30 @@ df = df.with_columns(
     ).alias("RIO")
 )
 
+
 # xtset permno time_avail_m
 # gen RIOlag = l6.RIO
+# CRITICAL FIX: Use calendar-based lag (6 months) instead of position-based shift(6)
+# This matches Stata's l6. behavior which goes back 6 calendar months
 df = df.sort(["permno", "time_avail_m"])
-df = df.with_columns(
-    pl.col("RIO").shift(6).over("permno").alias("RIOlag")
+
+# Convert to pandas for easier date arithmetic
+df_pandas = df.to_pandas()
+
+# Calculate the exact 6-month lag date for each observation
+df_pandas['lag_date'] = df_pandas['time_avail_m'] - pd.DateOffset(months=6)
+
+# Create lookup for RIO values by permno and date
+rio_lookup = df_pandas.set_index(['permno', 'time_avail_m'])['RIO']
+
+# Get RIOlag by looking up RIO at lag_date
+df_pandas['RIOlag'] = df_pandas.apply(
+    lambda row: rio_lookup.get((row['permno'], row['lag_date']), None), 
+    axis=1
 )
+
+# Convert back to polars (lag_date was already used and not in dataframe)
+df = pl.from_pandas(df_pandas)
 
 # egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
 # Convert to pandas for fastxtile operation
@@ -147,6 +189,7 @@ df_pandas = df.to_pandas()
 df_pandas['cat_RIO'] = fastxtile(df_pandas, 'RIOlag', by='time_avail_m', n=5)
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
+
 
 print("📊 Computing characteristic variables...")
 
@@ -179,12 +222,26 @@ df = df.with_columns(
 )
 
 # bys permno: asrol ret, gen(Volatility) stat(sd) window(time_avail_m 12) min(6)
-df = df.with_columns(
-    pl.col("ret")
-    .rolling_std(window_size=12, min_samples=6)
-    .over("permno")
-    .alias("Volatility")
+# Use asrol_legacy for rolling standard deviation
+df_pandas_vol = df.to_pandas()
+
+df_pandas_vol = asrol(
+    df_pandas_vol,
+    group_col='permno',
+    time_col='time_avail_m',
+    freq='1mo',
+    window=12,
+    value_col='ret',
+    stat='std',
+    new_col_name='Volatility',
+    min_samples=6
 )
+
+df = pl.from_pandas(df_pandas_vol)
+
+# drop rows missing mve_c
+# it seems our asrol fills in gaps too aggressively
+df = df.filter(pl.col("mve_c").is_not_null())
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 
@@ -204,6 +261,7 @@ for var in variables:
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
+
 # patch for Dispersion
 # replace RIO_Disp = cat_RIO if cat_Disp >= 4 & cat_Disp != .
 df = df.with_columns(
@@ -212,6 +270,7 @@ df = df.with_columns(
     .otherwise(pl.col("RIO_Disp"))
     .alias("RIO_Disp")
 )
+
 
 print("💾 Saving RIO predictors...")
 

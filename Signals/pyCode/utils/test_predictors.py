@@ -7,12 +7,14 @@ test_predictors.py
 Usage:
     cd pyCode/
     source .venv/bin/activate
-    python3 utils/test_predictors.py                    # Test all predictors
+    python3 utils/test_predictors.py --all             # Test all predictors
     python3 utils/test_predictors.py --predictors Accruals  # Test specific predictor
+    python3 utils/test_predictors.py --all --tstat     # With t-stat check enabled
+    python3 utils/test_predictors.py --predictors BM Size --tstat  # With t-stat check for specific predictors
 
-Precision Validation (per CLAUDE.md:290-304):
-1. Columns: Column names and order match exactly
-2. Superset: Python observations are a superset of Stata observations
+Precision Validation (per CLAUDE.md updated requirements):
+1. Superset: Python observations are a superset of Stata observations
+2. NumRows: Python rows don't exceed Stata rows by more than TOL_NUMROWS percent
 3. Precision1: For common observations, percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
 4. Precision2: For common observations, Pth percentile standardized difference < TOL_DIFF_2
    - std_diff = (python_value - stata_value) / std(all_stata_values)
@@ -44,6 +46,7 @@ import yaml
 import statsmodels.formula.api as smf
 import numpy as np
 
+
 # ================================
 # VALIDATION CONFIGURATION
 # ================================
@@ -51,13 +54,20 @@ import numpy as np
 # Superset test
 TOL_SUPERSET = 1.0  # Max allowed percentage of missing observations (units: percent)
 
-# Precision1
-TOL_DIFF_1 = 0.01  # Threshold for identifying imperfect observations (Precision1)
-TOL_OBS_1 = 10  # Max allowed percentage of imperfect observations (units: percent)
+# NumRows test
+TOL_NUMROWS = 5.0  # Max allowed percentage by which Python rows can exceed Stata rows (units: percent)
 
-# Precision2
-EXTREME_Q = 0.99  # Quantile for extreme deviation (not percentile)
-TOL_DIFF_2 = 1.00  # Tolerance for Pth percentile standardized difference (Precision2)
+# Precision1: goal is 0.01, 1
+TOL_DIFF_1 = 0.01  # Standardized difference threshold for imperfect observations
+TOL_OBS_1 = 1  # Max allowed percentage of imperfect observations (units: percent)
+
+# Precision2: goal is 0.10, 0.999
+TOL_DIFF_2 = 0.10  # Tolerance for Pth percentile standardized difference (Precision2)
+EXTREME_Q = 0.999  # Quantile for extreme deviation (not percentile)
+
+# T-stat test
+TOL_TSTAT = 0.2  # Tolerance for t-stat difference from last year's run
+
 INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
 def load_overrides():
@@ -84,36 +94,38 @@ def load_overrides():
 def load_csv_robust_polars(file_path):
     """Load CSV file with polars for performance, robust error handling"""
     try:
-        # First try normal read
-        df = pl.read_csv(file_path)
+        # Get the predictor name from the file path
+        predictor_name = Path(file_path).stem
+        
+        # Always use schema overrides for predictor files
+        schema_overrides = {
+            'permno': pl.Int64,
+            'yyyymm': pl.Int64,
+            predictor_name: pl.Float64
+        }
+        
+        df = pl.read_csv(file_path, schema_overrides=schema_overrides)
+        
+        # Filter out rows where the predictor value is null or NaN
+        if predictor_name in df.columns:
+            df = df.filter(pl.col(predictor_name).is_finite())
+        
         return df
     except Exception as e:
-        print(f"Error loading {file_path}: {e}")
-        print(f"Might be because the signals look like integers but are actually floats")
-        print(f"Trying with schema overrides for mixed int/float columns")
-        # Try with schema overrides for mixed int/float columns
-        try:
-            # Get the predictor name from the file path
-            predictor_name = Path(file_path).stem
-            
-            # For predictor files, override the predictor column to be Float64
-            schema_overrides = {
-                'permno': pl.Int64,
-                'yyyymm': pl.Int64,
-                predictor_name: pl.Float64
-            }
-            
-            df = pl.read_csv(file_path, schema_overrides=schema_overrides)
-            print(f"Successfully loaded {file_path} with schema overrides")
-            return df
-        except Exception as e2:
-            print(f"Failed to load {file_path} even with schema overrides: {e2}")
-            return None
+        print(f"Failed to load {file_path}: {e}")
+        return None
 
-def validate_precision_requirements(stata_df, python_df, predictor_name):
+def validate_precision_requirements(stata_df, python_df, predictor_name, tstat_comparison_df=None):
     """
     Perform precision validation following CLAUDE.md requirements using polars
     Returns (passed, results_dict)
+    
+    Tests (in order of importance):
+    1. Superset: Python observations are a superset of Stata observations
+    2. NumRows: Python rows don't exceed Stata rows by more than TOL_NUMROWS percent
+    3. Precision1: For common observations, percentage with std_diff >= TOL_DIFF_1 < TOL_OBS_1
+    4. Precision2: For common observations, Pth percentile standardized difference < TOL_DIFF_2
+    5. T-stat: Portfolio t-statistic within TOL_TSTAT of last year's value (if tstat_comparison_df provided)
     """
     results = {}
     
@@ -121,10 +133,6 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     results['stata_obs_count'] = 0
     results['python_obs_count'] = 0
     results['common_obs_count'] = 0
-    
-    # Initialize test results
-    cols_match = True
-    is_superset = True
     
     # Check if required index columns exist
     stata_cols = stata_df.columns
@@ -136,24 +144,14 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
             results['error'] = f'Missing index columns: {col}'
             return False, results
     
-    # 1. Column names and order match exactly
-    # Get data columns (excluding index columns)
-    stata_data_cols = [col for col in stata_cols if col not in INDEX_COLS]
-    python_data_cols = [col for col in python_cols if col not in INDEX_COLS]
-    
-    cols_match = stata_data_cols == python_data_cols
-    results['columns_match'] = cols_match
-    results['stata_columns'] = stata_data_cols
-    results['python_columns'] = python_data_cols
-    
-    # 2. Python observations are superset of Stata observations
-    # Use polars for efficient join-based superset check
+    # Get unique observations for both datasets
     stata_indexed = stata_df.select(INDEX_COLS).unique()
     python_indexed = python_df.select(INDEX_COLS).unique()
     
     results['stata_obs_count'] = stata_indexed.height
     results['python_obs_count'] = python_indexed.height
     
+    # Test 1: Superset - Python observations are superset of Stata observations
     # Find missing observations using anti-join (more efficient than set operations)
     missing_obs_df = stata_indexed.join(python_indexed, on=INDEX_COLS, how="anti")
     missing_count = missing_obs_df.height
@@ -170,7 +168,6 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
     results['missing_percentage'] = missing_percentage
     
     if not is_superset:
-        
         # Get sample of missing observations with all columns for feedback
         missing_with_data = stata_df.join(missing_obs_df, on=INDEX_COLS, how="inner")
         missing_sample = missing_with_data.sort(INDEX_COLS).head(10)
@@ -179,7 +176,17 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
         missing_sample_pd = missing_sample.to_pandas().reset_index()
         results['missing_observations_sample'] = missing_sample_pd
     
-    # 3. Find common observations using inner join (more efficient than intersection)
+    # Test 2: NumRows - Python rows don't exceed Stata rows by more than TOL_NUMROWS percent
+    if results['stata_obs_count'] > 0:
+        numrows_ratio = (results['python_obs_count'] / results['stata_obs_count'] - 1) * 100
+    else:
+        numrows_ratio = 0.0
+    
+    numrows_ok = numrows_ratio <= TOL_NUMROWS
+    results['numrows_ok'] = numrows_ok
+    results['numrows_ratio'] = numrows_ratio
+    
+    # Test 3: Find common observations using inner join (more efficient than intersection)
     common_obs_df = stata_indexed.join(python_indexed, on=INDEX_COLS, how="inner")
     results['common_obs_count'] = common_obs_df.height
     
@@ -301,14 +308,72 @@ def validate_precision_requirements(stata_df, python_df, predictor_name):
                 # Observations with largest differences (sorted by absolute diff descending)
                 largest_diff = feedback_df.with_columns(pl.col("diff").abs().alias("abs_diff_sort")).sort("abs_diff_sort", descending=True).drop("abs_diff_sort").head(10)
                 results['largest_diff'] = largest_diff.to_pandas()
+                
+                # Observations with largest differences before 1950 (yyyymm < 195001)
+                feedback_df_before1950 = feedback_df.filter(pl.col("yyyymm") < 195001)
+                if feedback_df_before1950.height > 0:
+                    largest_diff_before1950 = feedback_df_before1950.with_columns(pl.col("diff").abs().alias("abs_diff_sort")).sort("abs_diff_sort", descending=True).drop("abs_diff_sort").head(10)
+                    results['largest_diff_before1950'] = largest_diff_before1950.to_pandas()
+                else:
+                    results['largest_diff_before1950'] = None
     
-    # Store individual test results
-    results['test_1_passed'] = cols_match
-    results['test_2_passed'] = is_superset
+    # Test 5: T-stat check using pre-loaded comparison data
+    tstat_ok = True
+    if tstat_comparison_df is None:
+        # Skip t-stat check if no comparison data provided (--tstat not enabled)
+        results['current_tstat'] = None
+        results['old_tstat'] = None
+        results['tstat_diff'] = None
+        results['tstat_diff_signed'] = None
+        tstat_ok = None  # Mark as skipped
+        results['tstat_skipped'] = True
+    else:
+        try:
+            # Look up the predictor in the pre-loaded comparison results
+            predictor_row = tstat_comparison_df[tstat_comparison_df['signalname'] == predictor_name]
+            
+            if not predictor_row.empty:
+                current_tstat = predictor_row['new'].iloc[0]
+                old_tstat = predictor_row['old'].iloc[0]
+                tstat_diff_signed = predictor_row['diff'].iloc[0]
+                
+                results['current_tstat'] = current_tstat
+                results['old_tstat'] = old_tstat
+                results['tstat_diff_signed'] = tstat_diff_signed
+                results['tstat_diff'] = abs(tstat_diff_signed)  # Keep for backward compatibility
+                
+                # Check if diff is within tolerance
+                tstat_ok = abs(tstat_diff_signed) < TOL_TSTAT
+            else:
+                results['tstat_error'] = f"Predictor {predictor_name} not found in comparison results"
+                results['current_tstat'] = None
+                results['old_tstat'] = None
+                results['tstat_diff'] = None
+                results['tstat_diff_signed'] = None
+                tstat_ok = None
+                    
+        except Exception as e:
+            # If t-stat check fails, record error but don't fail validation
+            results['tstat_error'] = str(e)
+            results['current_tstat'] = None
+            results['old_tstat'] = None
+            results['tstat_diff'] = None
+            results['tstat_diff_signed'] = None
+            tstat_ok = None
+    
+    # Store individual test results (in new order)
+    results['test_1_passed'] = is_superset
+    results['test_2_passed'] = numrows_ok
     results['test_3_passed'] = precision1_ok
     results['test_4_passed'] = precision2_ok
+    results['test_5_passed'] = tstat_ok
     
-    return cols_match and is_superset and precision1_ok and precision2_ok, results
+    # Overall pass requires all tests to pass (or be None for unavailable tests)
+    all_tests_pass = is_superset and numrows_ok and precision1_ok and precision2_ok
+    if tstat_ok is not None:
+        all_tests_pass = all_tests_pass and tstat_ok
+    
+    return all_tests_pass, results
 
 def analyze_python_only(predictor_name):
     """Analyze Python-only CSV file when Stata CSV is missing"""
@@ -340,11 +405,12 @@ def analyze_python_only(predictor_name):
         'python_columns': [col for col in python_df.columns if col not in INDEX_COLS],
         'stata_columns': [],
         
-        # Test results for summary table
-        'test_1_passed': False,  # ❌ for Columns since no Stata to compare
-        'test_2_passed': None,   # NA for Superset 
+        # Test results for summary table (in new order)
+        'test_1_passed': None,   # NA for Superset since no Stata to compare
+        'test_2_passed': None,   # NA for NumRows since no Stata to compare
         'test_3_passed': None,   # NA for Precision1
         'test_4_passed': None,   # NA for Precision2
+        'test_5_passed': None,   # NA for T-stat since no Stata to compare
         
         # Additional info about the Python CSV
         'date_range': None,
@@ -381,26 +447,15 @@ def output_predictor_results(predictor_name, results, overall_passed):
             "---\n"
         ]
     
-    # Test 1: Column names
+    # Test 1: Superset check
     test1 = results.get('test_1_passed', None)
     if test1 is True:
-        print(f"  ✅ Test 1 - Column names: PASSED")
-    elif test1 is False:
-        print(f"  ❌ Test 1 - Column names: FAILED")
-        print(f"    Stata:  {results.get('stata_columns', [])}")
-        print(f"    Python: {results.get('python_columns', [])}")
-    else:
-        print(f"  NA Test 1 - Column names: N/A (No Stata CSV to compare)")
-    
-    # Test 2: Superset check
-    test2 = results.get('test_2_passed', None)
-    if test2 is True:
         missing_pct = results.get('missing_percentage', 0)
-        print(f"  ✅ Test 2 - Superset check: PASSED (Missing {missing_pct:.2f}% <= {TOL_SUPERSET}% threshold)")
-    elif test2 is False:
+        print(f"  ✅ Test 1 - Superset check: PASSED (Missing {missing_pct:.2f}% <= {TOL_SUPERSET}% threshold)")
+    elif test1 is False:
         missing_count = results.get('missing_count', 0)
         missing_pct = results.get('missing_percentage', 0)
-        print(f"  ❌ Test 2 - Superset check: FAILED (Missing {missing_pct:.2f}% > {TOL_SUPERSET}% threshold, {missing_count} observations)")
+        print(f"  ❌ Test 1 - Superset check: FAILED (Missing {missing_pct:.2f}% > {TOL_SUPERSET}% threshold, {missing_count} observations)")
         
         # Show sample of missing observations
         if 'missing_observations_sample' in results:
@@ -408,7 +463,18 @@ def output_predictor_results(predictor_name, results, overall_passed):
             sample_df = results['missing_observations_sample']
             print(f"  {sample_df.to_string(index=False)}")
     else:
-        print(f"  NA Test 2 - Superset check: N/A (No Stata CSV to compare)")
+        print(f"  NA Test 1 - Superset check: N/A (No Stata CSV to compare)")
+    
+    # Test 2: NumRows check
+    test2 = results.get('test_2_passed', None)
+    if test2 is True:
+        numrows_ratio = results.get('numrows_ratio', 0)
+        print(f"  ✅ Test 2 - NumRows check: PASSED (Python has {numrows_ratio:+.2f}% rows vs Stata, <= {TOL_NUMROWS}% threshold)")
+    elif test2 is False:
+        numrows_ratio = results.get('numrows_ratio', 0)
+        print(f"  ❌ Test 2 - NumRows check: FAILED (Python has {numrows_ratio:+.2f}% rows vs Stata, > {TOL_NUMROWS}% threshold)")
+    else:
+        print(f"  NA Test 2 - NumRows check: N/A (No Stata CSV to compare)")
     
     # Test 3: Precision1 check
     test3 = results.get('test_3_passed', None)
@@ -435,6 +501,26 @@ def output_predictor_results(predictor_name, results, overall_passed):
         print(f"  ❌ Test 4 - Precision2 check: FAILED ({EXTREME_Q*100:.0f}th percentile diff = {pth_diff:.2e} >= {TOL_DIFF_2:.2e})")
     else:
         print(f"  NA Test 4 - Precision2 check: N/A (No Stata CSV to compare)")
+    
+    # Test 5: T-stat check
+    test5 = results.get('test_5_passed', None)
+    if test5 == True:
+        current_tstat = results.get('current_tstat', 0)
+        old_tstat = results.get('old_tstat', 0)
+        tstat_diff_signed = results.get('tstat_diff_signed', 0)
+        print(f"  ✅ Test 5 - T-stat check: PASSED ({current_tstat:.2f} - {old_tstat:.2f} = {tstat_diff_signed:+.2f}, |{tstat_diff_signed:.2f}| < {TOL_TSTAT})")
+    elif test5 == False:
+        current_tstat = results.get('current_tstat', 0)
+        old_tstat = results.get('old_tstat', 0)
+        tstat_diff_signed = results.get('tstat_diff_signed', 0)
+        print(f"  ❌ Test 5 - T-stat check: FAILED ({current_tstat:.2f} - {old_tstat:.2f} = {tstat_diff_signed:+.2f}, |{tstat_diff_signed:.2f}| >= {TOL_TSTAT})")
+    else:
+        if results.get('tstat_skipped'):
+            print(f"  NA Test 5 - T-stat check: N/A (Skipped - use --tstat to enable)")
+        elif 'tstat_error' in results:
+            print(f"  NA Test 5 - T-stat check: N/A (Error: {results['tstat_error']})")
+        else:
+            print(f"  NA Test 5 - T-stat check: N/A (Missing data)")
     
     # Show Python-only specific info
     if results.get('stata_csv_available') is False and results.get('python_csv_available') is True:
@@ -486,21 +572,45 @@ def output_predictor_results(predictor_name, results, overall_passed):
     test2_status = "✅ PASSED" if results.get('test_2_passed', False) else "❌ FAILED"
     test3_status = "✅ PASSED" if results.get('test_3_passed', False) else "❌ FAILED"
     test4_status = "✅ PASSED" if results.get('test_4_passed', False) else "❌ FAILED"
+    test5_status = "✅ PASSED" if results.get('test_5_passed', None) is True else ("❌ FAILED" if results.get('test_5_passed', None) is False else "NA")
     
-    md_lines.append(f"- Test 1 - Column names: {test1_status}\n")
-    
-    # Add missing count information for Test 2
-    if results.get('test_2_passed', False):
-        md_lines.append(f"- Test 2 - Superset check: {test2_status}\n")
+    # Add missing count information for Test 1 (Superset)
+    if results.get('test_1_passed', False):
+        md_lines.append(f"- Test 1 - Superset check: {test1_status}\n")
     else:
         missing_count = results.get('missing_count', 0)
-        md_lines.append(f"- Test 2 - Superset check: {test2_status} (Python missing {missing_count} Stata observations)\n")
+        md_lines.append(f"- Test 1 - Superset check: {test1_status} (Python missing {missing_count} Stata observations)\n")
+    
+    # Add ratio information for Test 2 (NumRows)
+    if results.get('test_2_passed') is not None:
+        numrows_ratio = results.get('numrows_ratio', 0)
+        md_lines.append(f"- Test 2 - NumRows check: {test2_status} (Python has {numrows_ratio:+.2f}% rows vs Stata)\n")
+    else:
+        md_lines.append(f"- Test 2 - NumRows check: {test2_status}\n")
     
     md_lines.append(f"- Test 3 - Precision1 check: {test3_status}\n")
-    md_lines.append(f"- Test 4 - Precision2 check: {test4_status}\n\n")
+    md_lines.append(f"- Test 4 - Precision2 check: {test4_status}\n")
+    
+    # Add t-stat information for Test 5
+    if results.get('test_5_passed') is True:
+        current_tstat = results.get('current_tstat', 0)
+        old_tstat = results.get('old_tstat', 0)
+        tstat_diff_signed = results.get('tstat_diff_signed', 0)
+        md_lines.append(f"- Test 5 - T-stat check: {test5_status} (Current: {current_tstat:.2f}, Old: {old_tstat:.2f}, Diff: {tstat_diff_signed:+.2f})\n")
+    elif results.get('test_5_passed') is False:
+        current_tstat = results.get('current_tstat', 0)
+        old_tstat = results.get('old_tstat', 0)
+        tstat_diff_signed = results.get('tstat_diff_signed', 0)
+        md_lines.append(f"- Test 5 - T-stat check: {test5_status} (Current: {current_tstat:.2f}, Old: {old_tstat:.2f}, Diff: {tstat_diff_signed:+.2f})\n")
+    else:
+        if results.get('tstat_skipped'):
+            md_lines.append(f"- Test 5 - T-stat check: {test5_status} (Skipped - use --tstat to enable)\n")
+        else:
+            md_lines.append(f"- Test 5 - T-stat check: {test5_status}\n")
+    
+    md_lines.append("\n")
     
     # Basic info
-    md_lines.append(f"**Columns**: {results.get('stata_columns', 'N/A')}\n\n")
     md_lines.append("**Observations**:\n")
     md_lines.append(f"- Stata:  {results.get('stata_obs_count', 0):,}\n")
     md_lines.append(f"- Python: {results.get('python_obs_count', 0):,}\n")
@@ -619,12 +729,20 @@ def output_predictor_results(predictor_name, results, overall_passed):
         if 'largest_diff' in results and len(results['largest_diff']) > 0:
             md_lines.append("**Largest Differences**:\n")
             md_lines.append(f"```\n{results['largest_diff'].to_string()}\n```\n\n")
+        
+        if 'largest_diff_before1950' in results:
+            if results['largest_diff_before1950'] is not None and len(results['largest_diff_before1950']) > 0:
+                md_lines.append("**Largest Differences Before 1950**:\n")
+                md_lines.append(f"```\n{results['largest_diff_before1950'].to_string()}\n```\n\n")
+            else:
+                md_lines.append("**Largest Differences Before 1950**:\n")
+                md_lines.append("```\nNo data before 1950\n```\n\n")
     
     md_lines.append("---\n\n")
     
     return md_lines
 
-def validate_predictor(predictor_name):
+def validate_predictor(predictor_name, tstat_comparison_df=None):
     """Validate a single predictor against Stata output using polars optimization"""
     
     # Load Stata CSV with polars
@@ -663,7 +781,7 @@ def validate_predictor(predictor_name):
         return False, results, md_lines
     
     # Perform precision validation
-    passed, results = validate_precision_requirements(stata_df, python_df, predictor_name)
+    passed, results = validate_precision_requirements(stata_df, python_df, predictor_name, tstat_comparison_df)
     
     # Check for overrides
     overrides = load_overrides()
@@ -709,17 +827,21 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         f.write(f"**Configuration**:\n")
         f.write(f"- TOL_SUPERSET: {TOL_SUPERSET}%\n")
+        f.write(f"- TOL_NUMROWS: {TOL_NUMROWS}%\n")
         f.write(f"- TOL_DIFF_1: {TOL_DIFF_1}\n")
         f.write(f"- TOL_OBS_1: {TOL_OBS_1}%\n")
         f.write(f"- EXTREME_Q: {EXTREME_Q}\n")
         f.write(f"- TOL_DIFF_2: {TOL_DIFF_2}\n")
+        f.write(f"- TOL_TSTAT: {TOL_TSTAT}\n")
         f.write(f"- INDEX_COLS: {INDEX_COLS}\n\n")
         
         f.write(f"## Summary\n\n")
+
+        f.write(f"Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.\n\n")
         
         # Create summary table with Python CSV column
-        f.write("| Predictor                 | Python CSV | Columns  | Superset  | Precision1   | Precision2              |\n")
-        f.write("|---------------------------|------------|----------|-----------|--------------|-------------------------|\n")
+        f.write("| Predictor                 | Python CSV | Superset   | NumRows       | Precision1   | Precision2    | T-stat     |\n")
+        f.write("|---------------------------|------------|------------|---------------|--------------|---------------|------------|\n")
         
         # Sort predictors by test results - worst to best
         def sort_key(predictor):
@@ -728,23 +850,29 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             # Python CSV: False (missing) sorts before True (available)
             python_csv_available = results.get('python_csv_available', False)
             
-            # Columns: False (failed) sorts before True (passed), None last
+            # Superset (Test 1): Higher failure percentages sort first
             test1 = results.get('test_1_passed', None)
-            columns_sort = 0 if test1 == False else (1 if test1 == True else 2)
-            
-            # Superset: Higher failure percentages sort first
-            test2 = results.get('test_2_passed', None)
-            if test2 == False:
+            if test1 == False:
                 missing_count = results.get('missing_count', 0)
                 stata_obs_count = results.get('stata_obs_count', 0)
                 if stata_obs_count > 0:
                     superset_sort = (missing_count / stata_obs_count) * 100
                 else:
                     superset_sort = 100  # Treat as worst case
-            elif test2 == True:
+            elif test1 == True:
                 superset_sort = -1  # Passed tests sort last
             else:
                 superset_sort = 999  # NA sorts at end
+            
+            # NumRows (Test 2): Higher excess percentages sort first
+            test2 = results.get('test_2_passed', None)
+            if test2 == False:
+                numrows_ratio = results.get('numrows_ratio', 0)
+                numrows_sort = numrows_ratio
+            elif test2 == True:
+                numrows_sort = -1  # Passed tests sort last
+            else:
+                numrows_sort = 999  # NA sorts at end
             
             # Precision1: Higher bad observation percentages sort first
             test3 = results.get('test_3_passed', None)
@@ -759,8 +887,15 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
                 precision2_sort = results.get('pth_percentile_diff', 0)
             else:
                 precision2_sort = 999  # NA sorts at end
+                
+            # T-stat: Higher t-stat differences sort first
+            test5 = results.get('test_5_passed', None)
+            if test5 is not None:
+                tstat_sort = results.get('tstat_diff', 0)
+            else:
+                tstat_sort = 999  # NA sorts at end
             
-            return (not python_csv_available, columns_sort, -superset_sort, -precision1_sort, -precision2_sort)
+            return (not python_csv_available, -superset_sort, -numrows_sort, -precision1_sort, -precision2_sort, -tstat_sort)
         
         sorted_predictors = sorted(test_predictors, key=sort_key)
         
@@ -776,51 +911,72 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             test2 = results.get('test_2_passed', None) 
             test3 = results.get('test_3_passed', None)
             test4 = results.get('test_4_passed', None)
+            test5 = results.get('test_5_passed', None)
             
-            # Format symbols (emojis for pass/fail, NA for None)
-            col1 = "✅" if test1 == True else ("❌" if test1 == False else "NA")
-            
-            # Format superset column with missing percentage for both pass/fail
-            if test2 == True:
+            # Format superset column (Test 1) with missing percentage for both pass/fail
+            if test1 == True:
                 missing_pct = results.get('missing_percentage', 0)
-                col2 = f"✅ ({missing_pct:.2f}%)"
-            elif test2 == False:
+                col1 = f"✅ ({missing_pct:.2f}%)"
+            elif test1 == False:
                 # Include failure percentage when superset test fails
                 missing_count = results.get('missing_count', 0)
                 stata_obs_count = results.get('stata_obs_count', 0)
                 if stata_obs_count > 0:
                     failure_pct = (missing_count / stata_obs_count) * 100
-                    col2 = f"❌ ({failure_pct:.2f}%)"
+                    col1 = f"❌ ({failure_pct:.2f}%)"
                 else:
-                    col2 = "❌"
+                    col1 = "❌"
             else:
-                col2 = "NA"
+                col1 = "NA       "
+            
+            # Format NumRows column (Test 2) with ratio information
+            if test2 == True:
+                numrows_ratio = results.get('numrows_ratio', 0)
+                col2 = f"✅ ({numrows_ratio:+.1f}%)"
+            elif test2 == False:
+                numrows_ratio = results.get('numrows_ratio', 0)
+                col2 = f"❌ ({numrows_ratio:+.1f}%)"
+            else:
+                col2 = "NA "
             
             # Format precision1 column with percentage information
             if test3 == True:
                 bad_pct = results.get('bad_obs_percentage', 0)
-                col3 = f"✅ ({bad_pct:.2f}%)"
+                col3 = f"✅ ({bad_pct:.1f}%)"
             elif test3 == False:
                 bad_pct = results.get('bad_obs_percentage', 0)
-                col3 = f"❌ ({bad_pct:.2f}%)"
+                col3 = f"❌ ({bad_pct:.1f}%)"
             else:
-                col3 = "NA"
+                col3 = "NA  "
             # Format precision2 column with diff value information  
             if test4 == True:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"✅ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
+                col4 = f"✅ ({pth_diff:.1E})"
             elif test4 == False:
                 pth_diff = results.get('pth_percentile_diff', 0)
-                col4 = f"❌ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
+                col4 = f"❌ ({pth_diff:.1E})"
             else:
                 col4 = "NA"
+            
+            # Format t-stat column (Test 5)
+            if test5 == True:
+                tstat_diff_signed = results.get('tstat_diff_signed', 0)
+                col5 = f"✅ ({tstat_diff_signed:+.2f})"
+            elif test5 == False:
+                tstat_diff_signed = results.get('tstat_diff_signed', 0)
+                col5 = f"❌ ({tstat_diff_signed:+.2f})"
+            else:
+                if results.get('tstat_skipped'):
+                    col5 = "SKIP"
+                else:
+                    col5 = "NA"
             
             # Add asterisk if override was applied
             predictor_display = predictor
             if results.get('override_applied'):
                 predictor_display = f"{predictor}*"
             
-            f.write(f"| {predictor_display:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<23} |\n")
+            f.write(f"| {predictor_display:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<13} | {col5:<10} |\n")
         
         # Count available predictors and overrides for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
@@ -840,141 +996,15 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
     
     print(f"\nDetailed results written to: {log_path}")
 
-def format_predictor_statuses(results):
-    """Format all status strings for a predictor based on its results"""
-    # Python CSV status
-    python_csv = "yes" if results.get('python_csv_available', False) else "no"
-    
-    # Superset status
-    test2 = results.get('test_2_passed', None)
-    if test2 is True:
-        superset_status = "yes (100%)"
-    elif test2 is False:
-        missing_count = results.get('missing_count', 0)
-        stata_obs_count = results.get('stata_obs_count', 1)
-        failure_pct = (missing_count / stata_obs_count) * 100
-        superset_status = f"no ({failure_pct:.2f}%) ❌"
-    else:
-        superset_status = "no data ❌"
-    
-    # Precision1 status
-    test3 = results.get('test_3_passed', None)
-    if test3 is True:
-        bad_pct = results.get('bad_obs_percentage', 0)
-        precision1_status = f"yes ({bad_pct:.2f}%)"
-    elif test3 is False:
-        bad_pct = results.get('bad_obs_percentage', 0)
-        precision1_status = f"no ({bad_pct:.2f}%) ❌"
-    else:
-        precision1_status = "no data ❌"
-    
-    # Precision2 status
-    test4 = results.get('test_4_passed', None)
-    if test4 is True:
-        pth_diff = results.get('pth_percentile_diff', 0)
-        precision2_status = f"yes ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
-    elif test4 is False:
-        pth_diff = results.get('pth_percentile_diff', 0)
-        precision2_status = f"no ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E}) ❌"
-    else:
-        precision2_status = "no data ❌"
-    
-    return python_csv, superset_status, precision1_status, precision2_status
 
 
-def write_predictor_entry(f, predictor, script_name, python_csv, superset_status, precision1_status, precision2_status):
-    """Write a single predictor entry to the markdown file"""
-    f.write(f"- **{predictor}**\n")
-    f.write(f"  - Script: {script_name}\n")
-    f.write(f"  - Python CSV: {python_csv}\n")
-    f.write(f"  - Superset: {superset_status}\n")
-    f.write(f"  - Precision1: {precision1_status}\n")
-    f.write(f"  - Precision2: {precision2_status}\n\n")
-
-
-def write_worst_predictors_log(all_results, test_predictors):
-    """Write focused report on worst performing predictors"""
-    log_path = Path("../Logs/testworst_predictors.md")
-    
-    # Load YAML mapping file to get script names
-    yaml_path = Path("Predictors/00_map_predictors.yaml")
-    script_mapping = {}
-    try:
-        with open(yaml_path, 'r') as f:
-            yaml_data = yaml.safe_load(f)
-            for script_name, script_info in yaml_data.items():
-                if 'predictors' in script_info:
-                    for predictor_csv in script_info['predictors']:
-                        predictor_name = predictor_csv.replace('.csv', '')
-                        script_mapping[predictor_name] = script_name.replace('.py', '')
-    except Exception as e:
-        print(f"Warning: Could not load YAML mapping file: {e}")
-        # If YAML fails, use predictor name as script name
-        for predictor in test_predictors:
-            script_mapping[predictor] = predictor
-
-    # Get all predictors that have results (both tested and missing)
-    all_predictors_with_results = list(all_results.keys())
-    
-    # Sort predictors by superset failure (highest failure percentage first)
-    def superset_sort_key(predictor):
-        results = all_results.get(predictor, {})
-        test2 = results.get('test_2_passed', None)
-        if test2 == False:
-            missing_count = results.get('missing_count', 0)
-            stata_obs_count = results.get('stata_obs_count', 1)  # Avoid division by zero
-            return (missing_count / stata_obs_count) * 100
-        elif test2 == True:
-            return -1  # Passed tests go to end
-        else:
-            return -2  # NA/not tested go to very end
-    
-    # Sort predictors by precision1 failure (highest bad obs percentage first) 
-    def precision1_sort_key(predictor):
-        results = all_results.get(predictor, {})
-        test3 = results.get('test_3_passed', None)
-        if test3 is not None:
-            return results.get('bad_obs_percentage', 0)
-        else:
-            return -1  # NA/not tested go to end
-    
-    # Get worst 20 for each category
-    superset_worst = sorted(all_predictors_with_results, key=superset_sort_key, reverse=True)[:20]
-    precision1_worst = sorted(all_predictors_with_results, key=precision1_sort_key, reverse=True)[:20]
-    
-    with open(log_path, 'w') as f:
-        f.write(f"# Worst Performing Predictors Report\n\n")
-        f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write(f"This report focuses on the 20 worst predictors by Superset and Precision1 metrics.\n\n")
-        
-        # Worst Superset section
-        f.write("## Worst Superset\n\n")
-        f.write("Predictors with highest superset failure rates (Python missing the most Stata observations):\n\n")
-        
-        for predictor in superset_worst:
-            results = all_results.get(predictor, {})
-            script_name = script_mapping.get(predictor, predictor)
-            
-            python_csv, superset_status, precision1_status, precision2_status = format_predictor_statuses(results)
-            write_predictor_entry(f, predictor, script_name, python_csv, superset_status, precision1_status, precision2_status)
-        
-        # Worst Precision1 section
-        f.write("## Worst Precision1\n\n")
-        f.write("Predictors with highest precision1 failure rates (highest percentage of observations with significant differences):\n\n")
-        
-        for predictor in precision1_worst:
-            results = all_results.get(predictor, {})
-            script_name = script_mapping.get(predictor, predictor)
-            
-            python_csv, superset_status, precision1_status, precision2_status = format_predictor_statuses(results)
-            write_predictor_entry(f, predictor, script_name, python_csv, superset_status, precision1_status, precision2_status)
-    
-    print(f"\nWorst predictors report written to: {log_path}")
 
 def main():
     parser = argparse.ArgumentParser(description='Validate Python predictor outputs against Stata CSV files')
     parser.add_argument('--predictors', '-p', nargs='+', help='Specific predictors to validate')
     parser.add_argument('--list', '-l', action='store_true', help='List available predictors and exit')
+    parser.add_argument('--all', '-a', action='store_true', help='Test all available predictors')
+    parser.add_argument('--tstat', action='store_true', help='Enable t-stat check (Test 5) by running PredictorSummaryComparison and comparing results')
     
     args = parser.parse_args()
     
@@ -991,6 +1021,10 @@ def main():
         for pred in python_only_csvs:
             print(f"  {pred}")
         return
+    
+    # Check that user provided either --all or --predictors
+    if not args.all and not args.predictors:
+        parser.error("Must specify either --all to test all predictors or --predictors to test specific ones")
     
     # Select predictors to test
     if args.predictors:
@@ -1009,7 +1043,7 @@ def main():
         test_predictors = available_to_test
         include_missing = missing_to_include
         include_python_only = python_only_to_include
-    else:
+    elif args.all:
         test_predictors = available_predictors
         include_missing = missing_python_csvs
         include_python_only = python_only_csvs
@@ -1024,13 +1058,41 @@ def main():
     if include_python_only:
         print(f"Including {len(include_python_only)} Python-only CSVs in summary: {include_python_only}")
     
+    # Run PredictorSummaryComparison.py once if t-stat validation is enabled
+    tstat_comparison_df = None
+    if args.tstat:
+        print(f"\n=== Running PredictorSummaryComparison.py for t-stat validation ===")
+
+        import subprocess
+        import os
+        
+        # Get the path to the utils directory PredictorSummaryComparison.py
+        script_path = os.path.join('utils', 'PredictorSummaryComparison.py')
+        
+        # Run the script from the pyCode directory
+        result = subprocess.run(['python3', script_path], cwd='.')
+        
+        if result.returncode != 0:
+            print(f"Warning: PredictorSummaryComparison.py failed: {result.stderr}")
+            print("T-stat validation will be skipped for all predictors")
+        else:
+            # Read the comparison results
+            comparison_path = os.path.join('..', 'Logs', 'PredictorSummaryComparison.csv')
+            
+            if os.path.exists(comparison_path):
+                tstat_comparison_df = pd.read_csv(comparison_path)
+                print(f"Loaded t-stat comparison data for {len(tstat_comparison_df)} predictors")
+            else:
+                print(f"Warning: Comparison results file not found: {comparison_path}")
+                print("T-stat validation will be skipped for all predictors")                
+    
     # Validate each available predictor
     all_md_lines = []
     all_results = {}
     passed_count = 0
     
     for predictor in test_predictors:
-        passed, results, md_lines = validate_predictor(predictor)
+        passed, results, md_lines = validate_predictor(predictor, tstat_comparison_df)
         results['python_csv_available'] = True
         all_md_lines.append(md_lines)
         all_results[predictor] = results
@@ -1045,10 +1107,11 @@ def main():
         # Create dummy results for missing Python CSV
         dummy_results = {
             'python_csv_available': False,
-            'test_1_passed': None,
-            'test_2_passed': None, 
-            'test_3_passed': None,
-            'test_4_passed': None,
+            'test_1_passed': None,  # Superset
+            'test_2_passed': None,  # NumRows
+            'test_3_passed': None,  # Precision1
+            'test_4_passed': None,  # Precision2
+            'test_5_passed': None,  # T-stat
             'error': 'Python CSV file not found'
         }
         all_results[predictor] = dummy_results
@@ -1064,7 +1127,7 @@ def main():
     
     # Add results for Python-only CSVs
     for predictor in include_python_only:
-        passed, results, md_lines = validate_predictor(predictor)
+        passed, results, md_lines = validate_predictor(predictor, tstat_comparison_df)
         all_md_lines.append(md_lines)
         all_results[predictor] = results
         # Python-only predictors cannot "pass" validation since there's no Stata baseline
@@ -1075,8 +1138,6 @@ def main():
     # Write markdown log
     write_markdown_log(all_md_lines, all_predictors, passed_count, all_results)
     
-    # Write worst predictors report
-    write_worst_predictors_log(all_results, all_predictors)
     
     # Count overrides
     override_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('override_applied', False))

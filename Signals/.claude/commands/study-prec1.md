@@ -1,1 +1,0 @@
-investigate the source of the worst Precision1 failures in @Logs/testout_predictors.md. study and look for patterns or themes. do not try to fix the code. just document in Journal/. think hard, these are tricky! we've been stuck here for some time.        

@@ -1,80 +1,49 @@
-# ABOUTME: Return Seasonality (16-20 years) predictor translation from Stata
-# ABOUTME: Calculates seasonal momentum by averaging returns from lags 191, 203, 215, 227, 239 months
+# ABOUTME: Calculates seasonal momentum (years 16-20) following Heston and Sadka 2008 Table 2 Years 16-20 Annual
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeason16YrPlus.py
+
+# Run from pyCode/ directory
+# Inputs: SignalMasterTable.parquet
+# Output: ../pyData/Predictors/MomSeason16YrPlus.csv
 
 import pandas as pd
 import numpy as np
+import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
+from utils.save_standardized import save_predictor
+
+print("Starting MomSeason16YrPlus.py...")
 
 # DATA LOAD
+print("Loading data...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
 
-# Sort data for lag operations
-df = df.sort_values(['permno', 'time_avail_m'])
-
 # SIGNAL CONSTRUCTION
-# Replace missing returns with 0 (equivalent to Stata: replace ret = 0 if mi(ret))
+# Update 0 if mi(ret)
 df['ret'] = df['ret'].fillna(0)
 
-# Create time-based lags for months 191(12)240 (191, 203, 215, 227, 239)
-# This matches Stata's numlist pattern 191(12)240 which generates 191, 191+12=203, 191+24=215, 191+36=227, 191+48=239
-# Use time-based lags instead of position-based to handle gaps in data correctly
-for n in [191, 203, 215, 227, 239]:
-    temp_col = f'temp{n}'
-    
-    # Create time-based lag by merging with shifted time periods
-    df['time_lag'] = pd.to_datetime(df['time_avail_m']) - pd.DateOffset(months=n)
-    
-    # Create lag data to merge
-    lag_data = df[['permno', 'time_avail_m', 'ret']].copy()
-    lag_data.columns = ['permno', 'time_lag', temp_col]
-    lag_data['time_lag'] = pd.to_datetime(lag_data['time_lag'])
-    
-    # Merge to get lagged values
-    df['time_avail_m_dt'] = pd.to_datetime(df['time_avail_m'])
-    df = df.merge(lag_data[['permno', 'time_lag', temp_col]], 
-                  left_on=['permno', 'time_lag'], 
-                  right_on=['permno', 'time_lag'], 
-                  how='left')
-    
-    # Clean up temporary columns
-    df = df.drop(['time_lag'], axis=1)
+# foreach n of numlist 191(12)240 { Generate l`n'.ret }
+# This creates lags for periods: 191, 203, 215, 227, 239 months
+lag_periods = list(range(191, 241, 12))  # 191, 203, 215, 227, 239
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', lag_periods)
 
-# Clean up the datetime column
-df = df.drop(['time_avail_m_dt'], axis=1)
+# eGenerate rowtotal(temp*), missing
+lag_cols = [f'ret_lag{n}' for n in lag_periods]
+df['retTemp1'] = df[lag_cols].sum(axis=1)
+# Handle case where all values are NaN - should return NaN, not 0
+all_missing = df[lag_cols].isna().all(axis=1)
+df.loc[all_missing, 'retTemp1'] = np.nan
 
-# Get list of temp columns
-temp_cols = [f'temp{n}' for n in [191, 203, 215, 227, 239]]
+# eGenerate rownonmiss(temp*)
+df['retTemp2'] = df[lag_cols].notna().sum(axis=1)
 
-# Calculate row total and row non-missing count (equivalent to Stata egen commands)
-# egen retTemp1 = rowtotal(temp*), missing
-df['retTemp1'] = df[temp_cols].sum(axis=1, skipna=True)
-
-# egen retTemp2 = rownonmiss(temp*)  
-df['retTemp2'] = df[temp_cols].notna().sum(axis=1)
-
-# Generate MomSeason16YrPlus = retTemp1/retTemp2
+# Generate retTemp1/retTemp2
 df['MomSeason16YrPlus'] = df['retTemp1'] / df['retTemp2']
 
-# Set to NaN where retTemp2 is 0 to handle division by zero
-df.loc[df['retTemp2'] == 0, 'MomSeason16YrPlus'] = np.nan
-
 # SAVE
-# Clean up - drop rows where MomSeason16YrPlus is missing (equivalent to Stata: drop if MomSeason16YrPlus == .)
-df_clean = df.dropna(subset=['MomSeason16YrPlus']).copy()
+print(f"Calculated MomSeason16YrPlus for {df['MomSeason16YrPlus'].notna().sum()} observations")
 
-# Convert time_avail_m to yyyymm format (equivalent to Stata date conversion)
-df_clean['yyyymm'] = pd.to_datetime(df_clean['time_avail_m']).dt.year * 100 + pd.to_datetime(df_clean['time_avail_m']).dt.month
-
-# Keep only required columns and ensure correct order
-df_output = df_clean[['permno', 'yyyymm', 'MomSeason16YrPlus']].copy()
-
-# Save to CSV
-output_path = '../pyData/Predictors/MomSeason16YrPlus.csv'
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-df_output.to_csv(output_path, index=False)
-
-print(f"MomSeason16YrPlus predictor saved to {output_path}")
-print(f"Output shape: {df_output.shape}")
-print("First few rows:")
-print(df_output.head())
+save_predictor(df, 'MomSeason16YrPlus')
+print("MomSeason16YrPlus.py completed successfully")

@@ -1,9 +1,18 @@
-# ABOUTME: Translates DelBreadth.do to create change in product breadth predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/DelBreadth.py
+# ABOUTME: Change in breadth of ownership following Chen, Hong and Stein 2002, Table 4A
+# ABOUTME: calculates quarterly change in number of institutional owners from 13F data
+"""
+Usage:
+    python3 Predictors/DelBreadth.py
 
-# Run from pyCode/ directory  
-# Inputs: SignalMasterTable.parquet, TR_13F.parquet
-# Output: ../pyData/Predictors/DelBreadth.csv
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, exchcd, mve_c]
+    - TR_13F.parquet: 13F data with columns [permno, time_avail_m, dbreadth]
+
+Outputs:
+    - DelBreadth.csv: CSV file with columns [permno, yyyymm, DelBreadth]
+    - DelBreadth = quarterly change in number of institutional owners (dbreadth)
+    - Excludes stocks in lowest quintile by market value of equity (based on NYSE stocks only)
+"""
 
 import pandas as pd
 import numpy as np
@@ -17,13 +26,6 @@ tr_13f = pd.read_parquet('../pyData/Intermediate/TR_13F.parquet')
 tr_13f = tr_13f[['permno', 'time_avail_m', 'dbreadth']].copy()
 
 df = df.merge(tr_13f, on=['permno', 'time_avail_m'], how='left')
-
-# Forward-fill TR_13F data within each permno (quarterly data -> monthly)
-df = df.sort_values(['permno', 'time_avail_m'])
-df['dbreadth'] = df.groupby('permno')['dbreadth'].fillna(method='ffill')
-
-# Also backward-fill to capture observations that need data from subsequent periods
-df['dbreadth'] = df.groupby('permno')['dbreadth'].fillna(method='bfill')
 
 # SIGNAL CONSTRUCTION
 df['DelBreadth'] = df['dbreadth']
@@ -40,9 +42,7 @@ percentile_20.columns = ['time_avail_m', 'temp']
 df = df.merge(percentile_20, on='time_avail_m', how='left')
 
 # Replace DelBreadth with missing if mve_c < temp (20th percentile cutoff)
-# Increase tolerance to match Stata behavior better
-tolerance = 10.0  # Allow observations within $10M market cap to match Stata
-df.loc[df['mve_c'] < (df['temp'] - tolerance), 'DelBreadth'] = np.nan
+df.loc[df['mve_c'] < df['temp'], 'DelBreadth'] = np.nan
 
 # Clean up
 df = df.drop(columns=['temp'])

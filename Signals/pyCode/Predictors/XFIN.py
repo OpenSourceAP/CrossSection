@@ -1,5 +1,5 @@
-# ABOUTME: Translates XFIN.do to create net external financing predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/XFIN.py
+# ABOUTME: Net external financing following Bradshaw, Richardson, Sloan 2006, Table 3
+# ABOUTME: calculates net external financing predictor scaled by total assets
 
 # Run from pyCode/ directory
 # Inputs: m_aCompustat.parquet

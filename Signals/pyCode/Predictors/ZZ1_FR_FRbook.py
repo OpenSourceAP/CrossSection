@@ -1,4 +1,4 @@
-# ABOUTME: Translates ZZ1_FR_FRbook.do - calculates pension funding ratios FR and FRbook
+# ABOUTME: Pension Funding Status following Franzoni and Marin 2006, Table 3B
 # ABOUTME: Computes funding status metrics using pension plan asset/obligation data from Compustat
 
 # Run: python3 Predictors/ZZ1_FR_FRbook.py

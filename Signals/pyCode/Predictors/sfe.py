@@ -1,5 +1,5 @@
-# ABOUTME: Translates sfe.do to create sales forecast error predictor
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/sfe.py
+# ABOUTME: Earnings Forecast to price following Elgers, Lo and Pfeiffer 2001, Table 4A, FAF_t+1 lower coverage
+# ABOUTME: calculates median EPS forecast divided by stock price for December fiscal year ends with low analyst coverage
 
 # Run from pyCode/ directory
 # Inputs: IBES_EPS_Unadj.parquet, SignalMasterTable.parquet, m_aCompustat.parquet
@@ -8,13 +8,14 @@
 import pandas as pd
 import numpy as np
 import sys
-sys.path.append('.')
-from utils.stata_fastxtile import fastxtile
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# fastxtile import removed - using pandas qcut directly
 
 # Prep IBES data
 ibes = pd.read_parquet('../pyData/Intermediate/IBES_EPS_Unadj.parquet')
 ibes = ibes[ibes['fpi'] == '1'].copy()
-ibes = ibes[pd.to_datetime(ibes['statpers']).dt.month == 3].copy()  # March forecasts
+ibes = ibes[pd.to_datetime(ibes['statpers']).dt.month == 3].copy()  # Use March forecasts
 ibes = ibes[(~ibes['fpedats'].isna()) & (ibes['fpedats'] > ibes['statpers'] + pd.Timedelta(days=90))].copy()
 
 # For merge with dec stock price
@@ -36,7 +37,10 @@ df = df.merge(comp, on=['permno', 'time_avail_m'], how='inner')
 df = df[pd.to_datetime(df['datadate']).dt.month == 12].copy()
 
 # Lower analyst coverage only
-df['tempcoverage'] = fastxtile(df, 'numest', by='time_avail_m', n=2)
+df['tempcoverage'] = (
+    df.groupby('time_avail_m')['numest']
+    .transform(lambda x: pd.qcut(x, q=2, labels=False, duplicates='drop') + 1)
+)
 df = df[df['tempcoverage'] == 1].copy()
 
 # SIGNAL CONSTRUCTION

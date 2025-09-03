@@ -1,5 +1,5 @@
-# ABOUTME: ChAssetTurnover.py - calculates change in asset turnover predictor
-# ABOUTME: Line-by-line translation of ChAssetTurnover.do following CLAUDE.md translation philosophy
+# ABOUTME: Change in Asset Turnover following Soliman 2008, Table 7, Model 1 DeltaATO
+# ABOUTME: calculates annual change in asset turnover predictor (sales growth economic category)
 
 """
 ChAssetTurnover.py
@@ -25,22 +25,20 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet',
                      columns=['gvkey', 'permno', 'time_avail_m', 'rect', 'invt', 'aco', 'ppent', 'intan', 'ap', 'lco', 'lo', 'sale'])
 
 # SIGNAL CONSTRUCTION
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
+# Remove duplicate permno-month observations, keeping first occurrence
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first').copy()
 
-# xtset permno time_avail_m
+# Sort by permno and time for panel data operations
 df = df.sort_values(['permno', 'time_avail_m']).reset_index(drop=True)
 
-# Handle missing values consistent with Stata's behavior
 # Forward-fill missing ppent values within each permno group
 df['ppent'] = df.groupby('permno')['ppent'].ffill()
 
-# gen temp = (rect + invt + aco + ppent + intan - ap - lco - lo) 
+# Calculate total assets: current assets + fixed assets - current liabilities - other liabilities
 df['temp'] = df['rect'] + df['invt'] + df['aco'] + df['ppent'] + df['intan'] - df['ap'] - df['lco'] - df['lo']
 
-# gen AssetTurnover = sale/((temp + l12.temp)/2)
-# Use calendar-based lag (12 months back) instead of positional lag
-# Optimized version using merge for better performance
+# Calculate asset turnover as sales divided by average total assets over 12 months
+# Use calendar-based lag (12 months back) rather than positional lag
 df['temp_l12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
 temp_lag = df[['permno', 'time_avail_m', 'temp']].rename(columns={'time_avail_m': 'temp_l12_date', 'temp': 'temp_l12'})
 df = df.merge(temp_lag, on=['permno', 'temp_l12_date'], how='left')
@@ -48,13 +46,13 @@ df = df.drop(columns=['temp_l12_date'])
 
 df['AssetTurnover'] = df['sale'] / ((df['temp'] + df['temp_l12']) / 2)
 
-# drop temp
+# Remove temporary variables
 df = df.drop(columns=['temp', 'temp_l12'])
 
-# replace AssetTurnover = . if AssetTurnover < 0
+# Set negative asset turnover values to missing
 df.loc[df['AssetTurnover'] < 0, 'AssetTurnover'] = np.nan
 
-# gen ChAssetTurnover = AssetTurnover - l12.AssetTurnover
+# Calculate change in asset turnover as current minus 12-month lagged value
 df['AssetTurnover_l12_date'] = df['time_avail_m'] - pd.DateOffset(months=12)
 asset_turnover_lag = df[['permno', 'time_avail_m', 'AssetTurnover']].rename(columns={'time_avail_m': 'AssetTurnover_l12_date', 'AssetTurnover': 'AssetTurnover_l12'})
 df = df.merge(asset_turnover_lag, on=['permno', 'AssetTurnover_l12_date'], how='left')

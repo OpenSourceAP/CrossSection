@@ -1,5 +1,5 @@
-# ABOUTME: Creates zero trading day predictors (1M, 6M, 12M versions) from daily CRSP data
-# ABOUTME: Calculates daily turnover and counts zero-volume trading days with deflators
+# ABOUTME: Liquidity measures (LM1, LM6, LM12) following Liu 2006, Journal of Financial Economics 82, 631-671
+# ABOUTME: Calculates turnover-adjusted number of zero daily trading volumes over 1M, 6M, and 12M periods
 
 # How to run: python3 ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
 # Inputs: ../pyData/Intermediate/dailyCRSP.parquet
@@ -10,7 +10,10 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
+print("Starting ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py...")
+
 # DATA LOAD
+print("Loading data...")
 df = pd.read_parquet('../pyData/Intermediate/dailyCRSP.parquet')
 
 # SIGNAL CONSTRUCTION

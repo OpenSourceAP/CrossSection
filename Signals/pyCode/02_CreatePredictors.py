@@ -148,7 +148,7 @@ def find_predictor_scripts():
             py_files.append(file.name)
     
     # Sort alphabetically (like Stata's sort filenameLower)
-    py_files.sort()
+    py_files.sort(key=str.lower)
     
     print(f"Found {len(py_files)} predictor scripts:")
     for file in py_files:

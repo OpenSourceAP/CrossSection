@@ -1,41 +1,58 @@
-# ABOUTME: Frazzini-Pedersen beta using rolling correlations and volatility ratios
-# ABOUTME: Usage: python3 BetaFP.py (run from pyCode/ directory)
+# ABOUTME: Frazzini-Pedersen Beta following Frazzini and Pedersen 2014, Table 3 BAB
+# ABOUTME: calculates beta using R-squared from 3-day overlapping returns regressed on market, times ratio of stock to market volatility
+"""
+Usage:
+    python3 Predictors/ZZ2_BetaFP.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP returns with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, rf, mktrf]
+
+Outputs:
+    - BetaFP.csv: CSV file with columns [permno, yyyymm, BetaFP]
+    - BetaFP = sqrt(R²) × (σ_stock/σ_market) where R² from 3-day overlapping returns regression
+"""
 
 import polars as pl
-import polars_ols  # Enable polars-ols functionality
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
-from savepredictor import save_predictor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_predictor
+
+
+print("=" * 80)
+print("🏗️  ZZ2_BetaFP.py")
+print("Generating Frazzini-Pedersen beta using rolling correlations")
+print("=" * 80)
 
 # Data load
-daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
-daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
+print("📊 Loading daily CRSP and Fama-French data...")
+df = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet",
+    columns=["permno", "time_d", "ret"])
+print(f"Loaded CRSP: {len(df):,} daily observations")
 
-# Select required columns
-df = daily_crsp.select(["permno", "time_d", "ret"])
+ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
+print(f"Loaded FF factors: {len(ff):,} daily observations")
 
 # Merge with FF data
-df = df.join(
-    daily_ff.select(["time_d", "rf", "mktrf"]),
-    on="time_d",
-    how="inner"
-)
+df = df.join(ff.select(["time_d", "rf", "mktrf"]), on="time_d", how="inner")
+print(f"Merged dataset: {len(df):,} observations")
 
-# Calculate excess return
+print("\n🔧 Starting signal construction...")
+print("Calculating excess log returns...")
 df = df.with_columns([
     (pl.col("ret") - pl.col("rf")).alias("ret"),
     pl.col("ret").log1p().alias("LogRet"),
     pl.col("mktrf").log1p().alias("LogMkt")
 ])
 
-# Set up time index for rolling window
+# sort
 df = df.sort(["permno", "time_d"])
-df = df.with_columns([
-    pl.int_range(pl.len()).over("permno").alias("time_temp")
-])
 
-# Calculate 252-day rolling standard deviations
+# == Calculate 252-day return volatility ==
+print("Computing 252-day rolling volatilities...")
+
+# Standard deviations of log returns
 df = df.with_columns([
     pl.col("LogRet")
     .rolling_std(window_size=252, min_samples=120)
@@ -47,7 +64,10 @@ df = df.with_columns([
     .alias("sd252_LogMkt")
 ])
 
-# Create 3-day overlapping returns
+# == Calculate R-sq from regressing 3-day stock returns on 3-day market returns ==
+print("Creating 3-day overlapping returns...")
+
+# Create 3-day returns
 df = df.with_columns([
     (pl.col("LogRet").shift(2).over("permno") + 
      pl.col("LogRet").shift(1).over("permno") + 
@@ -57,44 +77,61 @@ df = df.with_columns([
      pl.col("LogMkt")).alias("tempRm")
 ])
 
-# Rolling regression on 1260-day window (5 years) with min 750 observations
-# Calculate R-squared using rolling correlation coefficient approach 
-# Since polars doesn't have rolling_corr, we'll use the mathematical relationship:
-# R² = corr² = (cov(x,y) / (std(x) * std(y)))²
+print("Calculating rolling R-squared (1260-day window, min 500 obs)...")
+# Calculate R-squared using simple correlation approach: R² = corr²
+# This is mathematically equivalent to the regression R² and avoids numerical issues
 df = df.with_columns([
-    # Rolling covariance between tempRi and tempRm
-    ((pl.col("tempRi") * pl.col("tempRm")).rolling_mean(window_size=1260, min_samples=750).over("permno") -
-     pl.col("tempRi").rolling_mean(window_size=1260, min_samples=750).over("permno") *
-     pl.col("tempRm").rolling_mean(window_size=1260, min_samples=750).over("permno")).alias("cov_temp"),
+    # Rolling correlation between tempRi and tempRm using covariance formula
+    # corr = cov(x,y) / (std(x) * std(y))
+    ((pl.col("tempRi") * pl.col("tempRm")).rolling_mean(window_size=1260, min_samples=500).over("permno") -
+     pl.col("tempRi").rolling_mean(window_size=1260, min_samples=500).over("permno") *
+     pl.col("tempRm").rolling_mean(window_size=1260, min_samples=500).over("permno")).alias("cov_temp"),
     
-    # Rolling standard deviations
-    pl.col("tempRi").rolling_std(window_size=1260, min_samples=750).over("permno").alias("std_tempRi"),
-    pl.col("tempRm").rolling_std(window_size=1260, min_samples=750).over("permno").alias("std_tempRm")
+    pl.col("tempRi").rolling_std(window_size=1260, min_samples=500).over("permno").alias("std_tempRi"),
+    pl.col("tempRm").rolling_std(window_size=1260, min_samples=500).over("permno").alias("std_tempRm")
 ])
 
-# Calculate correlation and then R-squared
 df = df.with_columns([
+    # R² = corr² = (cov / (std_x * std_y))²
     (pl.col("cov_temp") / (pl.col("std_tempRi") * pl.col("std_tempRm"))).pow(2).alias("_R2")
 ])
 
-# Calculate Frazzini-Pedersen beta
+# == Calculate Frazzini-Pedersen beta ==
+print("Computing Frazzini-Pedersen beta...")
+
 df = df.with_columns([
     (pl.col("_R2").abs().sqrt() * (pl.col("sd252_LogRet") / pl.col("sd252_LogMkt"))).alias("BetaFP")
 ])
 
+
+print("\n📅 Converting to monthly frequency...")
 # Convert to monthly and keep last observation per month
 df = df.with_columns([
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
 ])
 
-# Keep last non-missing BetaFP per permno-month
-df = df.sort(["permno", "time_avail_m", "time_d"])
-df = df.group_by(["permno", "time_avail_m"]).agg([
-    pl.col("BetaFP").drop_nulls().last().alias("BetaFP")
-])
+print("Aggregating to permno-month level...")
 
-# Select final data
-result = df.select(["permno", "time_avail_m", "BetaFP"])
+# save last non-missing BetaFP per permno-month
+df_monthly = df.select(['permno', 'time_avail_m', 'time_d', 'BetaFP']).filter(
+    pl.col("BetaFP").is_finite()
+).sort(["permno", "time_avail_m", "time_d"]).group_by(
+    ["permno", "time_avail_m"]
+).agg(
+    pl.col("BetaFP").last().alias("BetaFP")
+)
 
+print(f"Generated predictors: {len(df_monthly):,} permno-month observations")
+
+# Show summary statistics
+print("\n📈 Predictor summary statistics:")
+print(df_monthly.select("BetaFP").describe())
+
+print("\n💾 Saving predictor...")
 # Save predictor
-save_predictor(result, "BetaFP")
+save_predictor(df_monthly, "BetaFP")
+
+print("\n" + "=" * 80)
+print("✅ ZZ2_BetaFP.py completed successfully")
+print("Generated predictor: BetaFP (Frazzini-Pedersen Beta)")
+print("=" * 80)

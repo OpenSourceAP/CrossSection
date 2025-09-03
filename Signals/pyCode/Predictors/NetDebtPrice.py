@@ -1,4 +1,4 @@
-# ABOUTME: NetDebtPrice.py - calculates net debt to market value ratio for non-financial firms in top 3 BM quintiles
+# ABOUTME: Net debt to price following Penman, Richardson and Tuna 2007, Table 4A
 # ABOUTME: Net debt (debt + preferred stock - cash) divided by market value, excluding financial firms and low BM firms
 
 """
@@ -51,7 +51,8 @@ df.loc[(df['sic'] >= 6000) & (df['sic'] <= 6999), 'NetDebtPrice'] = np.nan
 df.loc[(df['at'].isna()) | (df['ib'].isna()) | (df['csho'].isna()) | (df['ceq'].isna()) | (df['prcc_f'].isna()), 'NetDebtPrice'] = np.nan
 
 # Keep constant B/M - exclude bottom 2 BM quintiles
-df['BM'] = np.log(df['ceq'] / df['mve_c'])
+with np.errstate(divide='ignore', invalid='ignore'):
+    df['BM'] = np.log(df['ceq'] / df['mve_c'])
 # Handle infinite values in BM
 df['BM_clean'] = df['BM'].replace([np.inf, -np.inf], np.nan)
 # Use Stata-equivalent fastxtile for BM quintiles

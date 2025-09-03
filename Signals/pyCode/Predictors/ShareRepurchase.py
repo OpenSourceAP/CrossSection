@@ -1,9 +1,16 @@
-# ABOUTME: Translates ShareRepurchase.do to calculate share repurchase indicator
-# ABOUTME: Run with: python3 Predictors/ShareRepurchase.py
+# ABOUTME: Share repurchases following Ikenberry, Lakonishok, Vermaelen 1995, Table 3, All firms Year 1
+# ABOUTME: Binary variable equal to 1 if stock repurchase indicated in cash flow statement
+"""
+Usage:
+    python3 Predictors/ShareRepurchase.py
 
-# Calculates binary indicator for share repurchases using Compustat data
-# Input: ../pyData/Intermediate/m_aCompustat.parquet
-# Output: ../pyData/Predictors/ShareRepurchase.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, prstkc]
+
+Outputs:
+    - ShareRepurchase.csv: CSV file with columns [permno, yyyymm, ShareRepurchase]
+    - ShareRepurchase = 1 if prstkc > 0, 0 if prstkc = 0, missing otherwise
+"""
 
 import pandas as pd
 import numpy as np
@@ -14,10 +21,10 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet',
                      columns=['gvkey', 'permno', 'time_avail_m', 'prstkc'])
 
 # SIGNAL CONSTRUCTION
-# gen ShareRepurchase = (prstkc > 0 & !mi(prstkc))
+# Create binary indicator: 1 if positive share repurchases, 0 otherwise
 df['ShareRepurchase'] = ((df['prstkc'] > 0) & (df['prstkc'].notna())).astype(int)
 
-# replace ShareRepurchase = . if mi(prstkc)
+# Set to missing when underlying data is missing
 df.loc[df['prstkc'].isna(), 'ShareRepurchase'] = np.nan
 
 # Keep only observations with valid ShareRepurchase (not missing)
