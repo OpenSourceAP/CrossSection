@@ -23,7 +23,7 @@ ibes['prc_time'] = ibes['time_avail_m'] - pd.DateOffset(months=3)
 
 # Merge with CRSP/Comp
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-smt = smt[['permno', 'time_avail_m', 'tickerIBES', 'prc', 'mve_c']].copy()
+smt = smt[['permno', 'time_avail_m', 'tickerIBES', 'prc']].copy()
 smt = smt.rename(columns={'time_avail_m': 'prc_time'})
 
 df = smt.merge(ibes, on=['tickerIBES', 'prc_time'], how='inner')

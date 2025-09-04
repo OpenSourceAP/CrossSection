@@ -36,7 +36,7 @@ from utils.stata_fastxtile import fastxtile
 print("Loading SignalMasterTable...")
 # Load main signal table with key variables
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select([
-    'permno', 'time_avail_m', 'ticker', 'exchcd', 'mve_c'
+    'permno', 'time_avail_m', 'ticker', 'exchcd'
 ])
 
 print(f"Initial data loaded: {df.shape[0]} rows")
