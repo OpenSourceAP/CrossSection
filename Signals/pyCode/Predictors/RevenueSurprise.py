@@ -11,7 +11,7 @@ import numpy as np
 # DATA LOAD
 # Load SignalMasterTable with specific columns
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
-                     columns=['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+                     columns=['permno', 'gvkey', 'time_avail_m'])
 
 # Keep observations with valid gvkey
 df = df.dropna(subset=['gvkey'])

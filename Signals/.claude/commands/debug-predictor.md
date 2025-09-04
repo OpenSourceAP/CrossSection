@@ -6,8 +6,8 @@ allowed-tools:
   # Quick file‑existence check for guard clause
   - Bash(test -f Code/Predictors/*)
   # Create debug scipts
-  - Write(ClaudeDebug/*.py)
-  - Edit(ClaudeDebug/*.py)
+  - Write(Debug/*.py)
+  - Edit(Debug/*.py)
   # Edit the py script
   - Edit(pyCode/Predictors/*.py)
 examples: 

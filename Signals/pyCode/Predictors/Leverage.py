@@ -11,7 +11,7 @@ Usage:
 
 Inputs:
     - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, lt)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_permco)
 
 Outputs:
     - ../pyData/Predictors/Leverage.csv (permno, yyyymm, Leverage)
@@ -29,13 +29,13 @@ compustat = compustat.groupby(['permno', 'time_avail_m']).first().reset_index()
 
 # Merge with SignalMasterTable
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                               columns=['permno', 'time_avail_m', 'mve_c'])
+                               columns=['permno', 'time_avail_m', 'mve_permco'])
 
 df = pd.merge(signal_master, compustat[['permno', 'time_avail_m', 'lt']], 
               on=['permno', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-df['Leverage'] = df['lt'] / df['mve_c']
+df['Leverage'] = df['lt'] / df['mve_permco']
 
 # Drop missing values
 df = df.dropna(subset=['Leverage'])

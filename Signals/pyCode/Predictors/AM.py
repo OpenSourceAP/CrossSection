@@ -6,11 +6,11 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - AM.csv: CSV file with columns [permno, yyyymm, AM]
-    - AM = at/mve_c (total assets divided by market value of equity)
+    - AM = at/mve_permco (total assets divided by market value of equity)
 """
 
 import pandas as pd
@@ -23,14 +23,14 @@ df = df[['permno', 'time_avail_m', 'at']].copy()
 # Drop duplicates
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 
-# Merge with SignalMasterTable to get mve_c
+# Merge with SignalMasterTable to get mve_permco
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-smt = smt[['permno', 'time_avail_m', 'mve_c']].copy()
+smt = smt[['permno', 'time_avail_m', 'mve_permco']].copy()
 
 df = df.merge(smt, on=['permno', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
-df['AM'] = df['at'] / df['mve_c']
+df['AM'] = df['at'] / df['mve_permco']
 
 # Keep only necessary columns for output
 df_final = df[['permno', 'time_avail_m', 'AM']].copy()

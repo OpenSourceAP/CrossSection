@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 CRSP Monthly data download script - Python equivalent of I_CRSPmonthly.do
 
@@ -84,7 +83,7 @@ crsp_data['time_avail_m'] = crsp_data['date'].dt.to_period('M').dt.to_timestamp(
 # Drop original date column
 crsp_data = crsp_data.drop('date', axis=1)
 
-# Incorporate delisting return
+# === Incorporate delisting return ===
 # Replace missing dlret with -0.35 for specific delisting codes on NYSE/AMEX
 mask1 = (crsp_data['dlret'].isna() &
          ((crsp_data['dlstcd'] == 500) |
@@ -113,13 +112,21 @@ crsp_data['ret'] = (1 + crsp_data['ret']) * (1 + crsp_data['dlret']) - 1
 mask3 = crsp_data['ret'].isna() & (crsp_data['dlret'] != 0)
 crsp_data.loc[mask3, 'ret'] = crsp_data.loc[mask3, 'dlret']
 
-# Compute market value of equity
+# === Compute market value of equity ===
+
 # Converting units (shares in thousands, volume in ten-thousands)
 crsp_data['shrout'] = crsp_data['shrout'] / 1000
 crsp_data['vol'] = crsp_data['vol'] / 10000
 
 # Market value = Common shares outstanding * |Price|
 crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
+
+# Add mve_permco = market value at the company level
+permco_dat = crsp_data.query('~mve_c.isna()').groupby(['permco','time_avail_m']).agg(
+    mve_permco=("mve_c", "sum")
+).reset_index()
+
+crsp_data = crsp_data.merge(permco_dat, on=['permco', 'time_avail_m'], how='left')
 
 # Housekeeping - drop columns
 crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)

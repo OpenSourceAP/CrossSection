@@ -128,12 +128,12 @@ df = df.with_columns(
 
 # Calculate market value of equity
 df = df.with_columns(
-    (pl.col("shrout") * pl.col("prc").abs()).alias("mve_c")
+    (pl.col("shrout") * pl.col("prc").abs()).alias("mve_permco")
 )
 
 # Calculate book-to-market ratio
 df = df.with_columns(
-    (pl.col("ceq") / pl.col("mve_c")).alias("BM")
+    (pl.col("ceq") / pl.col("mve_permco")).alias("BM")
 )
 
 # Calculate dividend payout ratio
@@ -241,7 +241,7 @@ df = df.with_columns([
 
 # Sum the terms and divide by market value
 df = df.with_columns(
-    ((pl.col("av_term1") + pl.col("av_term2") + pl.col("av_term3") + pl.col("av_term4")) / pl.col("mve_c"))
+    ((pl.col("av_term1") + pl.col("av_term2") + pl.col("av_term3") + pl.col("av_term4")) / pl.col("mve_permco"))
     .alias("AnalystValue")
 )
 
@@ -257,7 +257,7 @@ df = df.with_columns([
 
 # Sum the terms and divide by market value
 df = df.with_columns(
-    ((pl.col("iv_term1") + pl.col("iv_term2") + pl.col("iv_term3")) / pl.col("mve_c"))
+    ((pl.col("iv_term1") + pl.col("iv_term2") + pl.col("iv_term3")) / pl.col("mve_permco"))
     .alias("IntrinsicValue")
 )
 

@@ -19,7 +19,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 """
 
-PREDICTOR_SCRIPTS = "ZZ2_IdioVolAHT"
+PREDICTOR_SCRIPTS = "Governance RevenueSurprise sfe ZZ1_Activism1_Activism2"
 
 def load_predictor_mapping():
     """Load predictor mapping from YAML file and return the mapping dict"""

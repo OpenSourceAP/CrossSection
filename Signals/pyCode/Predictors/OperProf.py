@@ -11,7 +11,7 @@ Usage:
     python3 Predictors/OperProf.py
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with mve_c for size filtering
+    - SignalMasterTable.parquet: Monthly master table with mve_permco for size filtering
     - m_aCompustat.parquet: Monthly Compustat data with revt, cogs, xsga, xint, ceq
 
 Outputs:
@@ -34,7 +34,7 @@ sys.path.insert(0, '.')
 
 # DATA LOAD
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                               columns=['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+                               columns=['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # Drop observations with missing gvkey
 df = signal_master.dropna(subset=['gvkey']).copy()
@@ -53,7 +53,7 @@ with np.errstate(over='ignore', invalid='ignore'):
 
 # Create size terciles by time_avail_m and exclude smallest tercile
 df['tempsizeq'] = (
-    df.groupby('time_avail_m')['mve_c']
+    df.groupby('time_avail_m')['mve_permco']
     .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
 )
 

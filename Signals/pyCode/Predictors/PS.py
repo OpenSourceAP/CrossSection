@@ -17,7 +17,7 @@ Usage:
 
 Inputs:
     - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, fopt, oancf, ib, at, dltt, act, lct, txt, xint, sale, ceq)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_permco)
     - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, shrout)
 
 Outputs:
@@ -43,7 +43,7 @@ compustat_df = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet",
 # Merge with SignalMasterTable
 print("Merging with SignalMasterTable...")
 signal_df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                           columns=['permno', 'time_avail_m', 'mve_c'])
+                           columns=['permno', 'time_avail_m', 'mve_permco'])
 df = compustat_df.merge(signal_df, on=['permno', 'time_avail_m'], how='inner')
 
 # Merge with monthlyCRSP
@@ -157,7 +157,7 @@ df = (
     df.assign(
         ceq = lambda x: np.where(x['ceq'] > 0, x['ceq'], np.nan)
     ).assign(
-        BM = lambda x: np.log(x['ceq'] / x['mve_c'])
+        BM = lambda x: np.log(x['ceq'] / x['mve_permco'])
     )
 )
 df['BM_quintile'] = (

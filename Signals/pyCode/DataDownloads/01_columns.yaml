@@ -129,9 +129,9 @@ mCRSP:
 
 monthlyCRSP:
   column_order: permno, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D,
-    time_avail_m, mve_c
+    time_avail_m, mve_c, mve_permco
   int32: permno
-  float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, sic2D
+  float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, sic2D, mve_c, mve_permco
   object: ticker, shrcls
   datetime64[ns]: time_avail_m
   float32: mve_c

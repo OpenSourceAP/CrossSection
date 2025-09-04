@@ -9,7 +9,7 @@
 # (where 5 is the number of iterations)
 
 alias claude="/Users/chen1678/.claude/local/claude"
-PLAN_NAME="plan-dl-streamline.md"
+PLAN_NAME="mve-permco-update.md"
 THINK_INSTRUCTION="" # e.g. "", "Think.", "Ultrathink.'"
 
 cd ..
@@ -19,7 +19,7 @@ NUM_ITERS=${1:-1}
 
 for i in {1..$NUM_ITERS}
 do
-  echo "working on iteration $i"  
+  echo "working on iteration $i out of $NUM_ITERS for $PLAN_NAME"
 
   claude -p --model claude-sonnet-4-20250514 "
   Work on Plan/$PLAN_NAME. Continue where we left off previously. Work on only one script. $THINK_INSTRUCTION

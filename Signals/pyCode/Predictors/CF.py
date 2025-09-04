@@ -11,11 +11,11 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ib, dp]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - CF.csv: CSV file with columns [permno, yyyymm, CF]
-    - CF = (ib + dp)/mve_c (Cash flow to market value ratio)
+    - CF = (ib + dp)/mve_permco (Cash flow to market value ratio)
 """
 
 import pandas as pd
@@ -64,11 +64,11 @@ if not signal_master_path.exists():
     raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
 
 signal_master = pd.read_parquet(signal_master_path)
-if 'mve_c' not in signal_master.columns:
-    raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
+if 'mve_permco' not in signal_master.columns:
+    raise ValueError("Missing required column 'mve_permco' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
+signal_master = signal_master[['permno', 'time_avail_m', 'mve_permco']].copy()
 
 # Merge (equivalent to keep(using match) - right join)
 df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
@@ -77,7 +77,7 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# Generate (ib + dp)/mve_c
+# Generate (ib + dp)/mve_permco
 print("Calculating CF...")
 
 # Calculate cash flow (ib + dp)
@@ -86,12 +86,12 @@ df['cash_flow'] = df['ib'] + df['dp']
 # Calculate CF with domain-aware missing value handling
 # Following missing/missing = 1.0 pattern for division operations
 df['CF'] = np.where(
-    df['mve_c'] == 0,
+    df['mve_permco'] == 0,
     np.nan,  # Division by zero = missing
     np.where(
-        df['cash_flow'].isna() & df['mve_c'].isna(),
+        df['cash_flow'].isna() & df['mve_permco'].isna(),
         1.0,  # missing/missing = 1.0 (no change)
-        df['cash_flow'] / df['mve_c']
+        df['cash_flow'] / df['mve_permco']
     )
 )
 

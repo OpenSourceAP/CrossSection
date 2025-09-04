@@ -7,7 +7,7 @@ CBOperProf Predictor
 Cash-based Operating Profitability calculation with working capital adjustments.
 
 Inputs:
-- SignalMasterTable.parquet (permno, gvkey, time_avail_m, exchcd, sicCRSP, shrcd, mve_c)
+- SignalMasterTable.parquet (permno, gvkey, time_avail_m, exchcd, sicCRSP, shrcd, mve_permco)
 - m_aCompustat.parquet (permno, time_avail_m, revt, cogs, xsga, xrd, rect, invt, xpp, drc, drlt, ap, xacc, at, ceq)
 
 Outputs:
@@ -32,7 +32,7 @@ print("Starting CBOperProf predictor...")
 print("Loading SignalMasterTable...")
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
                                columns=['permno', 'gvkey', 'time_avail_m', 'exchcd', 
-                                       'sicCRSP', 'shrcd', 'mve_c'])
+                                       'sicCRSP', 'shrcd', 'mve_permco'])
 
 print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
 
@@ -95,14 +95,14 @@ df['CBOperProf'] = (
 # Scale by total assets (equivalent to replace CBOperProf = CBOperProf/at)
 df['CBOperProf'] = df['CBOperProf'] / df['at']
 
-# Calculate BM for filtering (equivalent to gen BM = log(ceq/mve_c))
-df['BM'] = np.log(df['ceq'] / df['mve_c'])
+# Calculate BM for filtering (equivalent to gen BM = log(ceq/mve_permco))
+df['BM'] = np.log(df['ceq'] / df['mve_permco'])
 
 # Apply exclusion criteria
-# replace CBOperProf = . if shrcd > 11 | mi(mve_c) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
+# replace CBOperProf = . if shrcd > 11 | mi(mve_permco) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
 exclusion_mask = (
     (df['shrcd'] > 11) |
-    df['mve_c'].isna() |
+    df['mve_permco'].isna() |
     df['BM'].isna() |
     df['at'].isna() |
     ((df['sicCRSP'] >= 6000) & (df['sicCRSP'] < 7000))

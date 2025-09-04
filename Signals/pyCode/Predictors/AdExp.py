@@ -6,11 +6,11 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, xad]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - AdExp.csv: CSV file with columns [permno, yyyymm, AdExp]
-    - AdExp = xad/mve_c, set to missing if xad <= 0 (following Table VII)
+    - AdExp = xad/mve_permco, set to missing if xad <= 0 (following Table VII)
 """
 
 import pandas as pd
@@ -54,11 +54,11 @@ if not signal_master_path.exists():
     raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
 
 signal_master = pd.read_parquet(signal_master_path)
-if 'mve_c' not in signal_master.columns:
-    raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
+if 'mve_permco' not in signal_master.columns:
+    raise ValueError("Missing required column 'mve_permco' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
+signal_master = signal_master[['permno', 'time_avail_m', 'mve_permco']].copy()
 
 # Use right join to keep only observations present in SignalMasterTable
 df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
@@ -69,7 +69,7 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # Calculate advertising expense scaled by market value of equity
 print("Calculating AdExp...")
-df['AdExp'] = df['xad'] / df['mve_c']
+df['AdExp'] = df['xad'] / df['mve_permco']
 
 # Set to missing for non-positive advertising expense values
 df.loc[df['xad'] <= 0, 'AdExp'] = np.nan

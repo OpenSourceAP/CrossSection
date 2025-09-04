@@ -7,11 +7,11 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, dvc, prstkc, sstk, sic, ceq]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - NetPayoutYield.csv: CSV file with columns [permno, yyyymm, NetPayoutYield]
-    - NetPayoutYield = (dvc + prstkc - sstk) / mve_c_l6, excludes zeros and financials (following Table 6D)
+    - NetPayoutYield = (dvc + prstkc - sstk) / mve_permco_l6, excludes zeros and financials (following Table 6D)
 """
 
 import pandas as pd
@@ -27,7 +27,7 @@ df = df.drop_duplicates(['permno', 'time_avail_m'], keep='first')
 
 # Merge with SignalMasterTable to get market value of equity
 signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
-                                columns=['permno', 'time_avail_m', 'mve_c'])
+                                columns=['permno', 'time_avail_m', 'mve_permco'])
 
 df = df.merge(signal_master, on=['permno', 'time_avail_m'], how='inner')
 
@@ -41,14 +41,14 @@ df = df.sort_values(['permno', 'time_avail_m'])
 df['lag6_date'] = df['time_avail_m'] - pd.DateOffset(months=6)
 
 # Create lag lookup table
-lag_lookup = df[['permno', 'time_avail_m', 'mve_c']].copy()
-lag_lookup = lag_lookup.rename(columns={'time_avail_m': 'lag6_date', 'mve_c': 'mve_c_l6'})
+lag_lookup = df[['permno', 'time_avail_m', 'mve_permco']].copy()
+lag_lookup = lag_lookup.rename(columns={'time_avail_m': 'lag6_date', 'mve_permco': 'mve_permco_l6'})
 
 # Merge to get 6-month lagged values
 df = df.merge(lag_lookup, on=['permno', 'lag6_date'], how='left')
 
 # Calculate net payout yield as net payouts scaled by lagged market value
-df['NetPayoutYield'] = (df['dvc'] + df['prstkc'] - df['sstk']) / df['mve_c_l6']
+df['NetPayoutYield'] = (df['dvc'] + df['prstkc'] - df['sstk']) / df['mve_permco_l6']
 
 # Remove observations with zero net payout yield
 # Handle floating point precision to match Stata behavior

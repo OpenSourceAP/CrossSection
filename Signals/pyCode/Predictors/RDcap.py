@@ -21,8 +21,8 @@ df = df.drop_duplicates(subset=['permno', 'time_avail_m'])
 
 # Merge with SignalMasterTable (keep master match like Stata)
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet',
-                      columns=['permno', 'time_avail_m', 'mve_c'])
-df = df.merge(smt[['permno', 'time_avail_m', 'mve_c']], on=['permno', 'time_avail_m'], how='left')
+                      columns=['permno', 'time_avail_m', 'mve_permco'])
+df = df.merge(smt[['permno', 'time_avail_m', 'mve_permco']], on=['permno', 'time_avail_m'], how='left')
 
 # SIGNAL CONSTRUCTION
 
@@ -47,7 +47,7 @@ df.loc[df['time_avail_m'].dt.year < 1980, 'RDcap'] = np.nan
 
 # Create size tertiles - RDcap only works in small firms
 df['tempsizeq'] = (
-    df.groupby('time_avail_m')['mve_c']
+    df.groupby('time_avail_m')['mve_permco']
     .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
 )
 df.loc[df['tempsizeq'] >= 2, 'RDcap'] = np.nan
