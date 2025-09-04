@@ -147,4 +147,4 @@ The notes go in the following folders:
 **IMPORTANT**: all of these documents may become out of date. Only rely on them if the user asks you to.
 
 # Context for Current Task
-We're working on the following leg: `DocsForClaude/leg1-DataDownloads.md`.
+We're working on the following leg: `DocsForClaude/leg3-Predictors.md`.

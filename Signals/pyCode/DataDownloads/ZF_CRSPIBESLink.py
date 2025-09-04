@@ -2,91 +2,82 @@
 """
 CRSP-IBES Linking data script - Python equivalent of ZF_CRSPIBESLink.do
 
-Processes IBES-CRSP linking table from preprocessed file.
+Queries IBES-CRSP linking table directly from WRDS database.
 """
 
 import os
 import pandas as pd
-from pathlib import Path
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
 from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
-def main():
-    """Process CRSP-IBES linking data"""
-    print("Processing CRSP-IBES linking data...")
+print("Processing CRSP-IBES linking data...")
 
-    # Ensure directories exist
-    os.makedirs("../pyData/Intermediate", exist_ok=True)
+# Ensure directories exist
+os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-    # Check for iclink.csv in Prep folder
-    iclink_path = Path("../pyData/Prep/iclink.csv")
+# Query WRDS database
+print("Querying IBES-CRSP link from WRDS database...")
 
-    if iclink_path.exists():
-        # Read the iclink file
-        iclink_data = pd.read_csv(iclink_path)
-        print(f"Loaded {len(iclink_data)} linking records from iclink.csv")
+engine = create_engine(
+    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
+)
 
-        # Keep only high-quality links (score <= 2)
-        if 'SCORE' in iclink_data.columns:
-            initial_count = len(iclink_data)
-            iclink_data = iclink_data[iclink_data['SCORE'] <= 2]
-            print(f"Filtered to {len(iclink_data)} records with SCORE <= 2")
+QUERY = """
+SELECT ticker, permno, ncusip, sdate, edate, score
+FROM wrdsapps.ibcrsphist as a
+WHERE permno is not null
+"""
 
-        # Keep best match for each permno (lowest score, then highest ticker as tie-breaker)
-        if 'PERMNO' in iclink_data.columns and 'SCORE' in iclink_data.columns:
-            iclink_data = iclink_data.sort_values(['PERMNO', 'SCORE', 'TICKER'], ascending=[True, True, False])
-            iclink_data = iclink_data.drop_duplicates(['PERMNO'], keep='first')
-            print(f"After keeping best match per PERMNO: {len(iclink_data)} records")
+iblink_raw = pd.read_sql_query(QUERY, engine)
+print(f"Loaded {len(iblink_raw)} IBES-CRSP linking records from WRDS")
 
-        # Rename columns to match expected output
-        column_mapping = {
-            'TICKER': 'tickerIBES',
-            'PERMNO': 'permno'
-        }
-        iclink_data = iclink_data.rename(columns=column_mapping)
+engine.dispose()
 
-        # Keep only necessary columns
-        keep_cols = ['tickerIBES', 'permno']
-        available_cols = [col for col in keep_cols if col in iclink_data.columns]
-        final_data = iclink_data[available_cols]
+# Convert dates to monthly format
+iclink = iblink_raw.copy()
+iclink['sdate_m'] = pd.to_datetime(iclink['sdate']).dt.to_period('M').dt.to_timestamp()
+iclink['edate_m'] = (
+    pd.to_datetime(iclink['edate']).dt.to_period('M') - 1
+).dt.to_timestamp()
+iclink.drop(columns=['sdate', 'edate'], inplace=True)
 
-    else:
-        print("WARNING: iclink.csv not found in ../pyData/Prep/")
-        print("Creating placeholder linking table")
+# Load CRSP monthly data for date filtering
+crspm = pd.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet", columns=['permno', 'time_avail_m'])
 
-        # Create placeholder data
-        final_data = pd.DataFrame({
-            'tickerIBES': ['AAPL', 'MSFT', 'GOOGL'],
-            'permno': [14593, 10107, 90319]
-        })
+# Join with CRSP data and filter by valid date ranges
+df0 = iclink.merge(crspm, on=['permno'], how='outer').query(
+    "ticker.notna()"
+).query(
+    "time_avail_m >= sdate_m & time_avail_m <= edate_m"
+)
 
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+print(f'Joined IBES-CRSP link with CRSP monthly data: {len(df0)} rows')
 
-    # Save the data
-    # Apply column standardization
-    final_data = standardize_columns(final_data, 'IBESCRSPLinkingTable')
-    final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet", index=False)
+# Remove duplicates - keep the lowest score
+df = df0.sort_values(['permno', 'time_avail_m', 'score']).groupby(['permno', 'time_avail_m']).first().reset_index()
+print(f'Removed duplicates by score: {len(df)} rows')
 
-    print(f"IBES-CRSP Linking Table saved with {len(final_data)} records")
+# Rename columns to match expected output
+df = df.rename(columns={'ticker': 'tickerIBES'})
 
-    # Show summary statistics
-    if 'permno' in final_data.columns:
-        print(f"Unique permnos: {final_data['permno'].nunique()}")
+# Save the data
+final_data = standardize_columns(df, 'IBESCRSPLinkingTable')
+final_data.to_parquet("../pyData/Intermediate/IBESCRSPLinkingTable.parquet", index=False)
 
-    if 'tickerIBES' in final_data.columns:
-        print(f"Unique IBES tickers: {final_data['tickerIBES'].nunique()}")
+print(f"IBES-CRSP Linking Table saved with {len(final_data)} records")
 
-    print("\nSample data:")
-    print(final_data.head())
+# Show summary statistics
+if 'permno' in final_data.columns:
+    print(f"Unique permnos: {final_data['permno'].nunique()}")
 
-if __name__ == "__main__":
-    main()
+if 'tickerIBES' in final_data.columns:
+    print(f"Unique IBES tickers: {final_data['tickerIBES'].nunique()}")
+
+print("\nSample data:")
+print(final_data.head())

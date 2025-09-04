@@ -47,10 +47,7 @@ mkdir ~/temp_prep/log/
 # Change to temp_prep directory for relative paths
 cd ~/temp_prep/
 
-# # ==== IBES-CRSP LINK, TR 13F ====
-echo "CREATING IBES-CRSP LINK (fast)"
-sas iclink_to_csv.sas -log log/iclink_to_csv.log
-
+# ==== TR 13F ====
 echo "CREATING 13F DATA (10 min?)"
 sas tr13f_pmg_edit.sas -log log/tr13f_pmg_edit.log
 
@@ -64,7 +61,6 @@ echo "RUNNING CHEN-VELIKOV FORTH, JFQA HF SPREADS"
 
 echo "WRDS IID SPREADS, OUTPUTS TO temp_output/ (15 min?)"
 sas taq-chen-velikov/iid_to_monthly.sas -log log/iid_to_monthly.log
-
 
 echo "CALCULATING ISSM SPREADS, OUTPUTS TO temp_output/ (about 1 hour)"
 # run spreads code day by day (full issm sample is 1983-1992)

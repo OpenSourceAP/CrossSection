@@ -316,9 +316,10 @@ OptionMetricsBH:
   int16: nobs
 
 IBESCRSPLinkingTable:
-  column_order: tickerIBES, permno
+  column_order: tickerIBES, permno, time_avail_m, score
   object: tickerIBES
-  int32: permno
+  int32: permno, score
+  datetime64[ns]: time_avail_m
 
 OPTIONMETRICSCRSPLinkingTable:
   column_order: permno, time_avail_m, secid, score, sdate_m, edate_m, volume

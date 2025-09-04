@@ -111,7 +111,7 @@ if IBESCRSPLink_path.exists():
     ibes_link = pd.read_parquet(IBESCRSPLink_path)
     
     # Merge on permno (many-to-one)
-    df = df.merge(ibes_link, on='permno', how='left')
+    df = df.merge(ibes_link, on=['permno', 'time_avail_m'], how='left')
     
     # Standardize IBES ticker string format to match Stata (handle None -> empty string)
     if 'tickerIBES' in df.columns:
