@@ -51,7 +51,7 @@ df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', columns=comp
 df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
 
 # Merge with SignalMasterTable
-signalmaster = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', columns=['permno', 'time_avail_m', 'ret', 'mve_c'])
+signalmaster = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', columns=['permno', 'time_avail_m', 'ret', 'mve_permco'])
 df = pd.merge(df, signalmaster, on=['permno', 'time_avail_m'], how='inner')
 
 print(f"Data loaded. Shape: {df.shape}")
@@ -59,12 +59,12 @@ print(f"Data loaded. Shape: {df.shape}")
 # SIGNAL CONSTRUCTION
 print("Constructing signals...")
 # Generate temporary accounting measures
-# Handle cases where ceq/mve_c <= 0 (Stata would treat log of negative/zero as missing)
-df['ceq_mve_ratio'] = df['ceq'] / df['mve_c']
+# Handle cases where ceq/mve_permco <= 0 (Stata would treat log of negative/zero as missing)
+df['ceq_mve_ratio'] = df['ceq'] / df['mve_permco']
 df['tempAccBM'] = np.where(df['ceq_mve_ratio'] > 0, np.log(df['ceq_mve_ratio']), np.nan)
-df['tempAccSP'] = df['sale'] / df['mve_c']
-df['tempAccCFP'] = (df['ib'] + df['dp']) / df['mve_c'] 
-df['tempAccEP'] = df['ni'] / df['mve_c']
+df['tempAccSP'] = df['sale'] / df['mve_permco']
+df['tempAccCFP'] = (df['ib'] + df['dp']) / df['mve_permco'] 
+df['tempAccEP'] = df['ni'] / df['mve_permco']
 
 # Set panel data (equivalent to xtset permno time_avail_m)
 df = df.sort_values(['permno', 'time_avail_m'])

@@ -11,7 +11,7 @@ Usage:
 
 Inputs:
     - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, at, dltt, dlc, pstk, dvpa, tstkp, che, sic, ib, csho, ceq, prcc_f)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_permco)
 
 Outputs:
     - ../pyData/Predictors/NetDebtPrice.csv (permno, yyyymm, NetDebtPrice)
@@ -34,7 +34,7 @@ compustat_df = compustat_df.drop_duplicates(subset=['permno', 'time_avail_m'], k
 
 # Merge with SignalMasterTable
 signal_df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                           columns=['permno', 'time_avail_m', 'mve_c'])
+                           columns=['permno', 'time_avail_m', 'mve_permco'])
 df = compustat_df.merge(signal_df, on=['permno', 'time_avail_m'], how='inner')
 
 # SIGNAL CONSTRUCTION
@@ -42,7 +42,7 @@ df = compustat_df.merge(signal_df, on=['permno', 'time_avail_m'], how='inner')
 df['sic'] = pd.to_numeric(df['sic'], errors='coerce')
 
 # Calculate net debt to price ratio
-df['NetDebtPrice'] = ((df['dltt'] + df['dlc'] + df['pstk'] + df['dvpa'] - df['tstkp']) - df['che']) / df['mve_c']
+df['NetDebtPrice'] = ((df['dltt'] + df['dlc'] + df['pstk'] + df['dvpa'] - df['tstkp']) - df['che']) / df['mve_permco']
 
 # Exclude financial firms (SIC 6000-6999)
 df.loc[(df['sic'] >= 6000) & (df['sic'] <= 6999), 'NetDebtPrice'] = np.nan
@@ -52,7 +52,7 @@ df.loc[(df['at'].isna()) | (df['ib'].isna()) | (df['csho'].isna()) | (df['ceq'].
 
 # Keep constant B/M - exclude bottom 2 BM quintiles
 with np.errstate(divide='ignore', invalid='ignore'):
-    df['BM'] = np.log(df['ceq'] / df['mve_c'])
+    df['BM'] = np.log(df['ceq'] / df['mve_permco'])
 # Handle infinite values in BM
 df['BM_clean'] = df['BM'].replace([np.inf, -np.inf], np.nan)
 # Use Stata-equivalent fastxtile for BM quintiles

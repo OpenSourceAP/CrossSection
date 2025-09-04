@@ -58,7 +58,7 @@ print(f"After deduplication: {len(compustat):,} observations")
 # Load SignalMasterTable for market value and SIC codes
 print("Loading SignalMasterTable.parquet...")
 smt = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select([
-    "permno", "time_avail_m", "mve_c", "sicCRSP"
+    "permno", "time_avail_m", "mve_permco", "sicCRSP"
 ])
 print(f"Loaded SignalMasterTable: {len(smt):,} observations")
 
@@ -88,7 +88,7 @@ print("🎯 Applying sample selection criteria...")
 # a measure ranging from zero to eight...."
 
 df = df.with_columns([
-    (pl.col("ceq") / pl.col("mve_c")).log().alias("BM")
+    (pl.col("ceq") / pl.col("mve_permco")).log().alias("BM")
 ]).filter(
     pl.col("ceq") > 0  # Positive book equity
 )

@@ -11,7 +11,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ceq, act, che, lct, dlc, txp, at]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - AccrualsBM.csv: CSV file with columns [permno, yyyymm, AccrualsBM]
@@ -64,11 +64,11 @@ if not signal_master_path.exists():
     raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
 
 signal_master = pd.read_parquet(signal_master_path)
-if 'mve_c' not in signal_master.columns:
-    raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
+if 'mve_permco' not in signal_master.columns:
+    raise ValueError("Missing required column 'mve_permco' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
+signal_master = signal_master[['permno', 'time_avail_m', 'mve_permco']].copy()
 
 # Merge (equivalent to keep(using match) - right join to keep all SignalMasterTable obs)
 df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
@@ -83,7 +83,7 @@ df = df.sort_values(['permno', 'time_avail_m'])
 
 # Calculate log book-to-market ratio
 print("Calculating BM...")
-df['BM'] = np.log(df['ceq'] / df['mve_c'])
+df['BM'] = np.log(df['ceq'] / df['mve_permco'])
 
 # Create lag variables for accruals calculation
 print("Creating lag variables for accruals...")

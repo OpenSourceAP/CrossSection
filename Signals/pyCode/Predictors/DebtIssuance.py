@@ -33,7 +33,7 @@ print(f"Loaded {len(df):,} Compustat observations")
 # Merge with SignalMasterTable to get market value and share code data
 print("Loading SignalMasterTable...")
 smt = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
-                      columns=['permno', 'time_avail_m', 'mve_c', 'shrcd'])
+                      columns=['permno', 'time_avail_m', 'mve_permco', 'shrcd'])
 print(f"Loaded {len(smt):,} SignalMasterTable observations")
 
 print("Merging data...")
@@ -45,7 +45,7 @@ print("Constructing DebtIssuance signal...")
 
 # SIGNAL CONSTRUCTION
 # Calculate book-to-market ratio
-df['BM'] = np.log(df['ceq'] / df['mve_c'])
+df['BM'] = np.log(df['ceq'] / df['mve_permco'])
 
 # Create debt issuance indicator for positive debt issuances
 df['DebtIssuance'] = ((df['dltis'] > 0) & df['dltis'].notna()).astype(int)
