@@ -24,7 +24,7 @@ import os
 import pandas as pd
 import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.save_standardized import save_predictor
+from utils.save_standardized import save_predictor, save_placebo
 from utils.sicff import sicff
 
 # DATA LOAD
@@ -177,6 +177,6 @@ save_predictor(df_orgcap, 'OrgCap')
 
 # Save OrgCapNoAdj predictor  
 df_orgcapnoadj = df[['permno', 'time_avail_m', 'OrgCapNoAdj']].dropna(subset=['OrgCapNoAdj']).copy()
-save_predictor(df_orgcapnoadj, 'OrgCapNoAdj')
+save_placebo(df_orgcapnoadj, 'OrgCapNoAdj')
 
 print("OrgCap and OrgCapNoAdj calculation completed successfully!")
