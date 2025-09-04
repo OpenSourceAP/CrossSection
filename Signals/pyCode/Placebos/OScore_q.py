@@ -26,7 +26,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
 from utils.stata_fastxtile import fastxtile
 
 print("Starting OScore_q.py")

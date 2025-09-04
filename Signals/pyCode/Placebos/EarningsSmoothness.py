@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting EarningsSmoothness.py")
 
@@ -44,10 +45,16 @@ df = df.sort(['gvkey', 'fyear'])
 # Convert to pandas for lag and rolling operations
 df_pd = df.to_pandas()
 
-# Create lag for at, act, lct, che, dlc by fyear
+# Create 1-year lag using stata_multi_lag
+print("Computing 1-year lags using stata_multi_lag...")
 lag_vars = ['at', 'act', 'lct', 'che', 'dlc']
 for var in lag_vars:
-    df_pd[f'l1_{var}'] = df_pd.groupby('gvkey')[var].shift(1)
+    df_pd = stata_multi_lag(df_pd, 'gvkey', 'fyear', var, [1], freq='Y', prefix='l')
+    # Rename to match expected column names
+    if f'l1_{var}' in df_pd.columns:
+        df_pd = df_pd.rename(columns={f'l1_{var}': f'l1_{var}'})
+    else:
+        df_pd[f'l1_{var}'] = df_pd[f'l1_{var}']
 
 # gen tempEarnings = ib/l.at
 print("Computing tempEarnings...")

@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting sgr_q.py")
 
@@ -59,38 +60,20 @@ print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen sgr_q = (saleq/l12.saleq)-1
-print("Computing 12-month calendar-based lag and sgr_q...")
+print("Computing 12-month lag using stata_multi_lag...")
 
-# Convert to pandas for calendar-based lag operations
-df_pd = df.to_pandas()
-
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lag data for merging
-lag_data = df_pd[['permno', 'time_avail_m', 'saleq']].copy()
-lag_data.columns = ['permno', 'time_lag12', 'l12_saleq']
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+# Convert to pandas for stata_multi_lag
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'saleq', [12], freq='M', prefix='l')
 
 # Convert back to polars
-df = pl.from_pandas(df_pd)
+df = pl.from_pandas(df_pandas)
 
-# Calculate sgr_q with Stata-compatible missing value handling
-# Stata treats missing saleq as 0 in ratio calculations
-df = df.with_columns([
-    # If current saleq is missing, treat as 0; if lag saleq is missing, treat as 0 (but avoid division by zero)
-    pl.when(pl.col('saleq').is_null()).then(0.0).otherwise(pl.col('saleq')).alias('saleq_filled'),
-    pl.when(pl.col('l12_saleq').is_null()).then(pl.lit(float('inf'))).otherwise(pl.col('l12_saleq')).alias('l12_saleq_filled')
-])
-
+print("Computing sgr_q...")
 df = df.with_columns(
-    pl.when(pl.col('l12_saleq_filled') == float('inf'))
-    .then(None)  # If denominator was missing, result is missing
-    .when(pl.col('l12_saleq_filled') == 0.0) 
+    pl.when(pl.col('l12_saleq') == 0)
     .then(None)  # Avoid division by zero
-    .otherwise((pl.col('saleq_filled') / pl.col('l12_saleq_filled')) - 1)
+    .otherwise((pl.col('saleq') / pl.col('l12_saleq')) - 1)
     .alias('sgr_q')
 )
 

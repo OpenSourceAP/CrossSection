@@ -62,30 +62,27 @@ INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 def load_csv_robust_polars(file_path):
     """Load CSV file with polars for performance, robust error handling"""
     try:
-        # First try normal read
-        df = pl.read_csv(file_path)
+        # Get the placebo name from the file path
+        placebo_name = Path(file_path).stem
+        
+        # Always use schema overrides to handle Stata's leading dot format (e.g. .0123 instead of 0.0123)
+        schema_overrides = {
+            'permno': pl.Int64,
+            'yyyymm': pl.Int64,
+            placebo_name: pl.Float64
+        }
+        
+        df = pl.read_csv(file_path, schema_overrides=schema_overrides)
         return df
     except Exception as e:
         print(f"Error loading {file_path}: {e}")
-        print(f"Might be because the signals look like integers but are actually floats")
-        print(f"Trying with schema overrides for mixed int/float columns")
-        # Try with schema overrides for mixed int/float columns
+        print(f"Trying fallback method...")
+        # Try basic read if schema overrides fail
         try:
-            # Get the placebo name from the file path
-            placebo_name = Path(file_path).stem
-            
-            # For placebo files, override the placebo column to be Float64
-            schema_overrides = {
-                'permno': pl.Int64,
-                'yyyymm': pl.Int64,
-                placebo_name: pl.Float64
-            }
-            
-            df = pl.read_csv(file_path, schema_overrides=schema_overrides)
-            print(f"Successfully loaded {file_path} with schema overrides")
+            df = pl.read_csv(file_path)
             return df
         except Exception as e2:
-            print(f"Failed to load {file_path} even with schema overrides: {e2}")
+            print(f"Failed to load {file_path} completely: {e2}")
             return None
 
 def validate_precision_requirements(stata_df, python_df, placebo_name):

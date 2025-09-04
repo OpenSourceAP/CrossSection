@@ -25,7 +25,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
 from utils.sicff import sicff
 
 print("Starting ZZ2_AccrualQuality_AccrualQualityJune.py")
@@ -114,47 +114,56 @@ df_pandas = df_pandas[df_pandas['FF48'].notna()].copy()
 
 print(f"After adding FF48 industries: {len(df_pandas)} rows")
 
-# Run regressions for each year and industry to get residuals
+# Run regressions for each year and industry to get residuals using Stata-compatible regression
 print("Running year-industry regressions...")
+from utils.stata_regress import regress
+import statsmodels.api as sm
+
 df_pandas['tempResid'] = np.nan
 
 # Group by year and industry to run regressions (matching Stata's approach)
 for (year, industry), group in df_pandas.groupby(['fyear', 'FF48']):
-    # Attempt regression for all groups (like Stata), but will nullify small groups later
-    if len(group) >= 10:  # Minimum threshold for attempting regression
-        # Prepare regression variables (handle missing values)
-        y = group['tempCAcc']
-        X = group[['l1_tempCFO', 'tempCFO', 'f1_tempCFO', 'tempDelRev', 'tempPPE']]
-        
-        # Remove rows with any missing values
-        valid_mask = y.notna() & X.notna().all(axis=1)
-        
-        if valid_mask.sum() >= 6:  # Need minimum observations for regression
-            y_valid = y[valid_mask]
-            X_valid = X[valid_mask]
-            
-            try:
-                from sklearn.linear_model import LinearRegression
-                reg = LinearRegression()
-                reg.fit(X_valid, y_valid)
-                
-                # Predict and get residuals for all observations in group
-                y_pred = reg.predict(X.fillna(0))  # Fill NaN with 0 for prediction
-                residuals = y - y_pred
-                
-                # Only keep residuals for valid observations
-                residuals = residuals.where(valid_mask, np.nan)
-                
-                # Assign back to dataframe
-                df_pandas.loc[group.index, 'tempResid'] = residuals
-            except:
-                pass  # Skip if regression fails
-
-# Apply the 20-observation threshold after regression (matching Stata line 33)
-print("Applying 20-observation threshold...")
-for (year, industry), group in df_pandas.groupby(['fyear', 'FF48']):
+    # Apply 20-observation threshold first (matching Stata line 33)
     if len(group) < 20:
-        df_pandas.loc[group.index, 'tempResid'] = np.nan
+        continue  # Skip groups with < 20 observations
+    
+    # Prepare regression variables
+    y = group['tempCAcc']
+    X_cols = ['l1_tempCFO', 'tempCFO', 'f1_tempCFO', 'tempDelRev', 'tempPPE']
+    X = group[X_cols]
+    
+    # Replace infinity values with NaN
+    X = X.replace([np.inf, -np.inf], np.nan)
+    y = y.replace([np.inf, -np.inf], np.nan)
+    
+    # Check if we have enough valid observations
+    valid_mask = y.notna() & X.notna().all(axis=1)
+    
+    if valid_mask.sum() >= 6:  # Need minimum observations for regression
+        try:
+            # Use Stata-compatible regress function 
+            # This matches Stata's exact regression behavior including collinearity handling
+            model, keep_cols, drop_cols, reasons, full_coefs = regress(
+                X.loc[valid_mask], 
+                y.loc[valid_mask], 
+                add_constant=True, 
+                omit_collinear=True
+            )
+            
+            # Predict for all observations in group (including invalid ones)
+            # Build design matrix with constant
+            X_with_const = sm.add_constant(X.fillna(0))  # Fill NaN with 0 for prediction
+            y_pred = model.predict(X_with_const)
+            
+            # Calculate residuals, but only keep for valid observations
+            residuals = y - y_pred
+            residuals = residuals.where(valid_mask, np.nan)
+            
+            # Assign back to dataframe
+            df_pandas.loc[group.index, 'tempResid'] = residuals
+            
+        except Exception as e:
+            pass  # Skip if regression fails
 
 # Compute rolling standard deviation of residuals
 print("Computing rolling standard deviation of residuals...")
@@ -198,9 +207,12 @@ df_expanded = pd.concat([df_pandas_final] * 12, ignore_index=True)
 df_expanded = df_expanded.sort_values(['gvkey', 'time_avail_m', 'datadate'])
 df_expanded['month_offset'] = df_expanded.groupby(['gvkey', 'time_avail_m', 'datadate']).cumcount()
 
-# Update time_avail_m by adding months (equivalent to Stata's time_avail_m + _n - 1)
+# Update time_avail_m to match Stata's exact output pattern
+# Key insight: AccrualQuality for fyear N becomes available from (fyear N time_avail_m - 12 months) to (fyear N time_avail_m - 1 month)
+# So fyear 1986 (time_avail_m = 1987-06) → available from 1986-06 to 1987-05
+# This means: base_time_avail_m + [month_offset - 12] where month_offset = 0,1,2,...,11  
 df_expanded['time_avail_m'] = df_expanded.apply(
-    lambda row: row['time_avail_m'] + pd.DateOffset(months=int(row['month_offset'])), axis=1
+    lambda row: row['time_avail_m'] + pd.DateOffset(months=int(row['month_offset']) - 12), axis=1
 )
 
 # Drop the temporary column

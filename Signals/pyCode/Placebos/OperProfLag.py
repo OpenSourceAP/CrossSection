@@ -26,6 +26,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
 from utils.stata_fastxtile import fastxtile
+from utils.stata_replication import stata_multi_lag
 
 print("Starting OperProfLag.py")
 
@@ -67,16 +68,9 @@ print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen tempprof = (revt - cogs - xsga - xint)/l12.ceq
-print("Computing 12-month calendar lag for ceq...")
+print("Computing 12-month lag using stata_multi_lag...")
 df_pd = df.to_pandas()
-df_pd['target_lag_date'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lagged data
-lag_df = df_pd[['permno', 'time_avail_m', 'ceq']].copy()
-lag_df = lag_df.rename(columns={'ceq': 'l12_ceq', 'time_avail_m': 'target_lag_date'})
-
-# Merge to get lagged values
-df_pd = df_pd.merge(lag_df, on=['permno', 'target_lag_date'], how='left')
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'ceq', [12], freq='M', prefix='l')
 
 print("Computing tempprof...")
 # Fill missing values with 0 to match Stata behavior

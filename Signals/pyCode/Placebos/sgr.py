@@ -23,7 +23,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting sgr.py")
 
@@ -47,13 +48,21 @@ print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen sgr = (sale/l12.sale)-1
-print("Computing 12-month lag and sgr...")
-df = df.with_columns(
-    pl.col('sale').shift(12).over('permno').alias('l12_sale')
-)
+print("Computing 12-month lag using stata_multi_lag...")
 
+# Convert to pandas for stata_multi_lag
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'sale', [12], freq='M', prefix='l')
+
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
+
+print("Computing sgr...")
 df = df.with_columns(
-    ((pl.col('sale') / pl.col('l12_sale')) - 1).alias('sgr')
+    pl.when(pl.col('l12_sale') == 0)
+    .then(None)  # Avoid division by zero
+    .otherwise((pl.col('sale') / pl.col('l12_sale')) - 1)
+    .alias('sgr')
 )
 
 print(f"Generated sgr for {len(df)} observations")

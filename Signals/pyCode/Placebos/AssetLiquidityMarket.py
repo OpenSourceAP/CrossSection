@@ -23,7 +23,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting AssetLiquidityMarket.py")
 
@@ -46,22 +47,17 @@ print(f"After dropping duplicates: {len(df)} rows")
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# Convert to pandas for lag operations
+# Convert to pandas for stata_multi_lag
 df_pd = df.to_pandas()
 
-# Create 1-month lag date
-df_pd['time_lag1'] = df_pd['time_avail_m'] - pd.DateOffset(months=1)
-
-# Create lag data for merging
+# Create 1-month lags using stata_multi_lag
+print("Computing 1-month lags using stata_multi_lag...")
 lag_vars = ['at', 'prcc_f', 'csho', 'ceq']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag1'] + [f'l1_{var}' for var in lag_vars]
-
-# Merge lag data
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag1'], how='left')
+for var in lag_vars:
+    df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', var, [1], freq='M', prefix='l')
 
 # Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['time_lag1']))
+df = pl.from_pandas(df_pd)
 
 # gen AssetLiquidityMarket = (che + .75*(act - che) + .5*(at - act - gdwl - intan))/(l.at + l.prcc_f*l.csho - l.ceq)
 print("Computing AssetLiquidityMarket...")

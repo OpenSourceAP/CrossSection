@@ -24,7 +24,9 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_fastxtile import fastxtile
+from utils.stata_replication import stata_multi_lag_pl
 
 print("Starting DivYield.py")
 
@@ -84,27 +86,18 @@ df = df.with_columns(
     pl.col('divamt').fill_null(0).alias('temp')
 )
 
-# Convert to pandas for lag operations (need many lags: l1 through l11)
-df_pd = df.to_pandas()
-
-# Create lags for temp
-print("Computing multiple lags...")
-for lag_months in range(1, 12):  # l1 through l11
-    df_pd[f'time_lag{lag_months}'] = df_pd['time_avail_m'] - pd.DateOffset(months=lag_months)
-    
-    # Create lag data
-    lag_data = df_pd[['permno', 'time_avail_m', 'temp']].copy()
-    lag_data.columns = ['permno', f'time_lag{lag_months}', f'l{lag_months}_temp']
-    
-    # Merge lag data
-    df_pd = df_pd.merge(lag_data, on=['permno', f'time_lag{lag_months}'], how='left')
-
-# Drop lag date columns
-lag_columns = [f'time_lag{i}' for i in range(1, 12)]
-df_pd = df_pd.drop(columns=lag_columns)
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+# Create calendar-based lags for temp (l1 through l11) to match Stata l. syntax
+print("Computing multiple calendar-based lags...")
+df = stata_multi_lag_pl(
+    df,
+    group_col='permno',
+    time_col='time_avail_m', 
+    value_col=['temp'],
+    lag_list=list(range(1, 12)),  # l1 through l11
+    freq='M',
+    prefix='l',
+    fill_gaps=True
+)
 
 # gen tempdy = 4*max(temp, l1.temp, l2.temp)/abs(prc)
 print("Computing tempdy...")
@@ -113,27 +106,19 @@ df = df.with_columns(
 )
 
 # Complex conditional for tempdypos - replace tempdypos = . if multiple conditions
-# Fixed: In Stata, missing values in conditions evaluate to FALSE, not TRUE
-# We need to explicitly check for non-null values before applying <= 0 conditions
+# Fixed: Stata uses < 0, not <= 0, in the conditional logic
+# Missing values automatically evaluate to false in < comparisons
 print("Computing tempdypos...")
 df = df.with_columns(
     pl.when(
-        # Condition 1: All three values must be non-null AND <= 0
-        ((pl.col('temp').is_not_null() & (pl.col('temp') <= 0)) & 
-         (pl.col('l1_temp').is_not_null() & (pl.col('l1_temp') <= 0)) & 
-         (pl.col('l2_temp').is_not_null() & (pl.col('l2_temp') <= 0))) |
-        # Condition 2: All three values must be non-null AND <= 0
-        ((pl.col('l3_temp').is_not_null() & (pl.col('l3_temp') <= 0)) & 
-         (pl.col('l4_temp').is_not_null() & (pl.col('l4_temp') <= 0)) & 
-         (pl.col('l5_temp').is_not_null() & (pl.col('l5_temp') <= 0))) |
-        # Condition 3: All three values must be non-null AND <= 0
-        ((pl.col('l6_temp').is_not_null() & (pl.col('l6_temp') <= 0)) & 
-         (pl.col('l7_temp').is_not_null() & (pl.col('l7_temp') <= 0)) & 
-         (pl.col('l8_temp').is_not_null() & (pl.col('l8_temp') <= 0))) |
-        # Condition 4: All three values must be non-null AND <= 0
-        ((pl.col('l9_temp').is_not_null() & (pl.col('l9_temp') <= 0)) & 
-         (pl.col('l10_temp').is_not_null() & (pl.col('l10_temp') <= 0)) & 
-         (pl.col('l11_temp').is_not_null() & (pl.col('l11_temp') <= 0)))
+        # Condition 1: All three values < 0 (missing values are false)
+        ((pl.col('temp') < 0) & (pl.col('l1_temp') < 0) & (pl.col('l2_temp') < 0)) |
+        # Condition 2: All three values < 0
+        ((pl.col('l3_temp') < 0) & (pl.col('l4_temp') < 0) & (pl.col('l5_temp') < 0)) |
+        # Condition 3: All three values < 0
+        ((pl.col('l6_temp') < 0) & (pl.col('l7_temp') < 0) & (pl.col('l8_temp') < 0)) |
+        # Condition 4: All three values < 0
+        ((pl.col('l9_temp') < 0) & (pl.col('l10_temp') < 0) & (pl.col('l11_temp') < 0))
     )
     .then(None)
     .otherwise(pl.col('tempdy'))
@@ -148,8 +133,8 @@ df = df.with_columns(pl.col('tempdypos').alias('DivYield'))
 df_pd = df.to_pandas()
 
 # egen tempsize = fastxtile(mve_c), by(time_avail_m) n(4)
-print("Computing size quintiles...")
-df_pd['tempsize'] = df_pd.groupby('time_avail_m')['mve_c'].transform(lambda x: pd.qcut(x, 4, labels=False, duplicates='drop') + 1)
+print("Computing size quartiles...")
+df_pd['tempsize'] = fastxtile(df_pd, 'mve_c', by='time_avail_m', n=4)
 
 # Convert back to polars
 df = pl.from_pandas(df_pd)

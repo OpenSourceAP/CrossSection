@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting AssetGrowth_q.py")
 
@@ -59,23 +60,10 @@ print(f"After merge: {len(df)} rows")
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-print("Computing 12-month calendar-based lag...")
-
-# Convert to pandas for calendar-based lag operations
-df_pd = df.to_pandas()
-
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lag data for merging
-lag_data = df_pd[['permno', 'time_avail_m', 'atq']].copy()
-lag_data.columns = ['permno', 'time_lag12', 'l12_atq']
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+print("Computing 12-month lag using stata_multi_lag...")
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'atq', [12], freq='M', prefix='l')
+df = pl.from_pandas(df_pandas)
 
 print("Computing AssetGrowth_q...")
 df = df.with_columns(

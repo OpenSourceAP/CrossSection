@@ -18,13 +18,15 @@ Usage:
 
 import pandas as pd
 import polars as pl
+import numpy as np
 import sys
 import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
 from utils.forward_fill import apply_quarterly_fill_to_compustat
+from utils.stata_replication import stata_multi_lag
 
 print("Starting pchquick.py")
 
@@ -51,11 +53,32 @@ print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen pchquick = ( (act-invt)/lct - (l12.act-l12.invt)/l12.lct ) /  ((l12.act-l12.invt)/l12.lct)
-print("Computing 12-month lag and pchquick...")
+print("Computing 12-month position lag and pchquick...")
+# Fill missing values with 0 to match Stata behavior
 df = df.with_columns([
-    pl.col('act').shift(12).over('permno').alias('l12_act'),
-    pl.col('invt').shift(12).over('permno').alias('l12_invt'),
-    pl.col('lct').shift(12).over('permno').alias('l12_lct')
+    pl.col('act').fill_null(0),
+    pl.col('invt').fill_null(0), 
+    pl.col('lct').fill_null(0)
+])
+
+# Create calendar-based lags (matching Stata's l12.)
+print("Calculating 12-month calendar-based lags...")
+df = stata_multi_lag(
+    df,
+    group_col='permno',
+    time_col='time_avail_m',
+    value_col=['act', 'invt', 'lct'],
+    lag_list=[12],
+    freq='M',
+    prefix='l',
+    fill_gaps=True
+)
+
+# Fill lag nulls with 0 as well
+df = df.with_columns([
+    pl.col('l12_act').fill_null(0),
+    pl.col('l12_invt').fill_null(0),
+    pl.col('l12_lct').fill_null(0)
 ])
 
 # Calculate current and lagged quick ratios (handle division by zero)
@@ -72,27 +95,24 @@ df = df.with_columns([
 
 # Calculate percent change (handle division by zero)
 df = df.with_columns(
-    pl.when(pl.col('lag_quick') == 0)
+    pl.when((pl.col('lag_quick') == 0) | pl.col('lag_quick').is_null() | pl.col('current_quick').is_null())
     .then(None)
     .otherwise((pl.col('current_quick') - pl.col('lag_quick')) / pl.col('lag_quick'))
     .alias('pchquick')
 )
 
+# Convert to pandas for the iterative missing value logic
+df_pd = df.to_pandas()
+
 # replace pchquick = 0 if pchquick ==. & l12.pchquick ==.
 # This is the key Stata logic that creates the 0.0 values that Python is missing
 print("Applying Stata's special missing value logic...")
-
-# Convert to pandas for more precise control over the recursive logic
-df_pd = df.to_pandas()
-
-# Sort to ensure proper lag calculations
-df_pd = df_pd.sort_values(['permno', 'time_avail_m'])
 
 # Apply the rule iteratively until no more changes
 print("Applying Stata's special rule iteratively...")
 
 for pass_num in range(10):  # Allow multiple passes for full propagation
-    # Calculate 12-month lag of pchquick (position-based like Stata)
+    # Calculate 12-month lag of pchquick (position-based like Stata's l12.)
     df_pd['l12_pchquick'] = df_pd.groupby('permno')['pchquick'].shift(12)
     
     # Identify observations where both pchquick and l12_pchquick are missing
@@ -109,10 +129,10 @@ for pass_num in range(10):  # Allow multiple passes for full propagation
 # Convert back to polars
 df = pl.from_pandas(df_pd)
 
-print(f"Generated pchquick for {len(df)} observations")
+print(f"Generated pchquick for {len(df_pd)} observations")
 
-# Keep only required columns for output
-df_final = df.select(['permno', 'time_avail_m', 'pchquick'])
+# Convert back to polars and keep only required columns for output
+df_final = pl.from_pandas(df_pd[['permno', 'time_avail_m', 'pchquick']])
 
 # SAVE
 # do "$pathCode/saveplacebo" pchquick

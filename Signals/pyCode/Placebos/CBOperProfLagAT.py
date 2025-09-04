@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting CBOperProfLagAT.py")
 
@@ -58,22 +59,17 @@ vars_to_fill = ['revt', 'cogs', 'xsga', 'xrd', 'rect', 'invt', 'xpp', 'drc', 'dr
 for var in vars_to_fill:
     df = df.with_columns(pl.col(var).fill_null(0))
 
-# Convert to pandas for lag operations
+# Convert to pandas for stata_multi_lag
 df_pd = df.to_pandas()
 
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lag data for merging
+# Create 12-month lags using stata_multi_lag
+print("Computing 12-month lags using stata_multi_lag...")
 lag_vars = ['rect', 'invt', 'xpp', 'drc', 'drlt', 'ap', 'xacc', 'at']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag12'] + [f'l12_{var}' for var in lag_vars]
-
-# Merge lag data
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
+for var in lag_vars:
+    df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', var, [12], freq='M', prefix='l')
 
 # Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['time_lag12']))
+df = pl.from_pandas(df_pd)
 
 # gen CBOperProfLagAT = (revt - cogs - (xsga - xrd)) - (rect - l12.rect) - (invt - l12.invt) - (xpp - l12.xpp) + (drc + drlt - l12.drc - l12.drlt) + (ap - l12.ap) + (xacc - l12.xacc)
 print("Computing CBOperProfLagAT...")

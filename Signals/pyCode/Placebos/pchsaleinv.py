@@ -23,7 +23,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting pchsaleinv.py")
 
@@ -47,26 +48,36 @@ print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen pchsaleinv = ( (sale/invt)-(l12.sale/l12.invt) ) / (l12.sale/l12.invt)
-print("Computing lags and pchsaleinv...")
+print("Computing 12-month lags using stata_multi_lag...")
 
-# Create 12-month lags
-df = df.with_columns([
-    pl.col('sale').shift(12).over('permno').alias('l12_sale'),
-    pl.col('invt').shift(12).over('permno').alias('l12_invt')
-])
+# Convert to pandas for stata_multi_lag
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', ['sale', 'invt'], [12], freq='M', prefix='l')
 
-# Calculate the components
+# Convert back to polars
+df = pl.from_pandas(df_pandas)
+
+print("Computing pchsaleinv...")
+# Calculate the components with proper null handling
 df = df.with_columns([
     # Current sale-to-inventory ratio
-    (pl.col('sale') / pl.col('invt')).alias('saleinv_current'),
+    pl.when(pl.col('invt') == 0)
+    .then(None)
+    .otherwise(pl.col('sale') / pl.col('invt'))
+    .alias('saleinv_current'),
     # Lagged sale-to-inventory ratio
-    (pl.col('l12_sale') / pl.col('l12_invt')).alias('saleinv_lagged')
+    pl.when(pl.col('l12_invt') == 0)
+    .then(None)
+    .otherwise(pl.col('l12_sale') / pl.col('l12_invt'))
+    .alias('saleinv_lagged')
 ])
 
 # Calculate pchsaleinv = (saleinv_current - saleinv_lagged) / saleinv_lagged
 df = df.with_columns(
-    ((pl.col('saleinv_current') - pl.col('saleinv_lagged')) / 
-     pl.col('saleinv_lagged')).alias('pchsaleinv')
+    pl.when(pl.col('saleinv_lagged') == 0)
+    .then(None)
+    .otherwise((pl.col('saleinv_current') - pl.col('saleinv_lagged')) / pl.col('saleinv_lagged'))
+    .alias('pchsaleinv')
 )
 
 print(f"Generated pchsaleinv for {len(df)} observations")

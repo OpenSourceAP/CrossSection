@@ -1,112 +1,113 @@
-# ABOUTME: ZZ2_IdioVolCAPM_ReturnSkewCAPM_fixed.py - Chunked processing for CAPM idiosyncratic volatility and skewness
-# ABOUTME: Efficient implementation using chunked daily data processing to handle 107M+ rows
+# ABOUTME: ZZ2_IdioVolCAPM_ReturnSkewCAPM.py - calculates CAPM idiosyncratic volatility and skewness placebos
+# ABOUTME: Python equivalent of ZZ2_IdioVolCAPM_ReturnSkewCAPM.do, translates line-by-line from Stata code
 
 import pandas as pd
 import numpy as np
 import polars as pl
 import sys
 import os
-from sklearn.linear_model import LinearRegression
 from scipy.stats import skew
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_regress import asreg
 
-print("Starting ZZ2_IdioVolCAPM_ReturnSkewCAPM.py (CHUNKED PROCESSING)")
+print("Starting ZZ2_IdioVolCAPM_ReturnSkewCAPM.py")
 
-# Load daily Fama-French factors first (small dataset)
-print("Loading daily Fama-French factors...")
-daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
-print(f"Loaded {len(daily_ff):,} daily FF rows")
-
-# Process daily CRSP in chunks to handle 107M+ rows
-print("Loading daily CRSP in chunks...")
-chunk_size = 5000000  # 5M rows per chunk
-results = []
-
-# Read CRSP data in chunks, filter to FF overlap period
+# DATA LOAD
+# use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
+print("Loading dailyCRSP...")
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
-# Filter to periods where FF data exists (starts 1926-07-01)
-daily_crsp = daily_crsp.filter(pl.col('time_d') >= pl.datetime(1926, 7, 1))
-total_rows = len(daily_crsp)
-print(f"Total daily CRSP rows: {total_rows:,}")
 
-# Process in chunks
-n_chunks = (total_rows + chunk_size - 1) // chunk_size
-print(f"Processing in {n_chunks} chunks of {chunk_size:,} rows each")
+# merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match) keepusing(rf mktrf)
+print("Loading dailyFF...")
+daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
 
-for chunk_i in range(n_chunks):
-    start_idx = chunk_i * chunk_size
-    end_idx = min((chunk_i + 1) * chunk_size, total_rows)
+print("Merging with dailyFF...")
+# keep(match) means inner join
+df = daily_crsp.join(daily_ff, on='time_d', how='inner')
+
+print(f"After merge: {len(df)} rows")
+
+# replace ret = ret - rf
+print("Computing excess returns...")
+df = df.with_columns([
+    (pl.col('ret') - pl.col('rf')).alias('ret')
+])
+
+# drop rf
+df = df.drop('rf')
+
+# SIGNAL CONSTRUCTION
+# sort permno time_d
+print("Sorting by permno time_d...")
+df = df.sort(['permno', 'time_d'])
+
+# create time_avail_m that is just the year-month of each year-day
+# gen time_avail_m = mofd(time_d)
+print("Creating time_avail_m...")
+df = df.with_columns([
+    pl.col('time_d').dt.truncate('1mo').alias('time_avail_m')
+])
+
+# Convert to pandas for asreg processing
+print("Converting to pandas for asreg processing...")
+df_pandas = df.to_pandas()
+
+# get CAPM residuals within each month
+# bys permno time_avail_m: asreg ret mktrf, fit
+print("Running CAPM regressions by permno-month using asreg...")
+df_pandas = asreg(
+    df_pandas, 
+    y='ret', 
+    X='mktrf',
+    by=['permno', 'time_avail_m'], 
+    min_obs=3,  # Reduce minimum to match Stata behavior
+    add_constant=True
+)
+
+print(f"After asreg: {len(df_pandas)} rows")
+
+# collapse into second and third moments
+# gcollapse (sd) IdioVolCAPM = _residuals (skewness) ReturnSkewCAPM = _residuals, by(permno time_avail_m)
+print("Calculating moments of residuals...")
+
+# Filter to observations that have valid residuals
+df_with_residuals = df_pandas[df_pandas['_residuals'].notna()].copy()
+print(f"Observations with valid residuals: {len(df_with_residuals)}")
+
+# Group by permno-month and calculate moments
+results = []
+groups = df_with_residuals.groupby(['permno', 'time_avail_m'])
+
+print(f"Processing {len(groups):,} permno-month groups for moment calculation...")
+
+for (permno, time_avail_m), group in groups:
+    residuals = group['_residuals'].values
     
-    print(f"\nProcessing chunk {chunk_i + 1}/{n_chunks} (rows {start_idx:,} to {end_idx:,})")
-    
-    # Get chunk of daily CRSP data
-    chunk = daily_crsp.slice(start_idx, end_idx - start_idx)
-    print(f"  Chunk size: {len(chunk):,} rows")
-    
-    # Merge with Fama-French factors
-    chunk = chunk.join(daily_ff, on='time_d', how='inner')
-    
-    if len(chunk) == 0:
-        print(f"  No data after FF merge, skipping chunk")
-        continue
-    
-    # Calculate excess returns
-    chunk = chunk.with_columns([
-        (pl.col('ret') - pl.col('rf')).alias('ret_excess')
-    ])
-    
-    # Create monthly time variable
-    chunk = chunk.with_columns([
-        pl.col('time_d').dt.truncate('1mo').alias('time_avail_m')
-    ])
-    
-    # Convert to pandas for regression processing
-    chunk_pandas = chunk.select(['permno', 'time_avail_m', 'ret_excess', 'mktrf']).to_pandas()
-    chunk_pandas = chunk_pandas.dropna()
-    
-    if len(chunk_pandas) == 0:
-        print(f"  No data after cleaning, skipping chunk")
-        continue
-    
-    # Group by permno-month and run regressions
-    chunk_results = []
-    groups = chunk_pandas.groupby(['permno', 'time_avail_m'])
-    
-    print(f"  Processing {len(groups):,} permno-month groups...")
-    
-    for (permno, time_avail_m), group in groups:
-        # Need at least 10 observations for meaningful regression
-        if len(group) >= 10:
+    # Calculate standard deviation and skewness
+    if len(residuals) >= 1:  # At least 1 observation for std
+        idio_vol = np.std(residuals, ddof=1) if len(residuals) > 1 else 0.0
+        
+        # For skewness, need at least 3 observations
+        if len(residuals) >= 3:
             try:
-                y = group['ret_excess'].values
-                X = group['mktrf'].values.reshape(-1, 1)
-                
-                # Run CAPM regression
-                reg = LinearRegression().fit(X, y)
-                residuals = y - reg.predict(X)
-                
-                # Calculate standard deviation and skewness of residuals
-                if len(residuals) >= 3:
-                    idio_vol = np.std(residuals, ddof=1)
-                    return_skew = skew(residuals)
-                    
-                    chunk_results.append({
-                        'permno': int(permno),
-                        'time_avail_m': time_avail_m,
-                        'IdioVolCAPM': idio_vol,
-                        'ReturnSkewCAPM': return_skew
-                    })
+                return_skew = skew(residuals, nan_policy='omit')
+                # Handle NaN skewness by setting to 0 or keeping as NaN based on Stata behavior
+                if np.isnan(return_skew):
+                    return_skew = 0.0  # Or could be NaN depending on Stata handling
             except:
-                # Skip groups with regression issues
-                pass
-    
-    print(f"  Generated {len(chunk_results):,} results from chunk")
-    results.extend(chunk_results)
-
-print(f"\nCompleted processing all chunks: {len(results):,} total results")
+                return_skew = 0.0
+        else:
+            return_skew = np.nan if len(residuals) < 3 else 0.0
+        
+        results.append({
+            'permno': int(permno),
+            'time_avail_m': time_avail_m,
+            'IdioVolCAPM': idio_vol,
+            'ReturnSkewCAPM': return_skew
+        })
 
 # Convert results to DataFrames
 if len(results) > 0:
@@ -118,7 +119,7 @@ if len(results) > 0:
     
 else:
     print("ERROR: No results generated!")
-    # Create empty DataFrames rather than placeholders
+    # Create empty DataFrames
     df_vol = pl.DataFrame({
         'permno': pl.Series([], dtype=pl.Int64),
         'time_avail_m': pl.Series([], dtype=pl.Datetime),
@@ -131,8 +132,12 @@ else:
         'ReturnSkewCAPM': pl.Series([], dtype=pl.Float64)
     })
 
+print(f"Generated {len(results):,} total results")
+
 # SAVE
+# do "$pathCode/saveplacebo" IdioVolCAPM
 save_placebo(df_vol, 'IdioVolCAPM')
+# do "$pathCode/saveplacebo" ReturnSkewCAPM  
 save_placebo(df_skew, 'ReturnSkewCAPM')
 
 print(f"Generated {len(df_vol):,} IdioVolCAPM observations")

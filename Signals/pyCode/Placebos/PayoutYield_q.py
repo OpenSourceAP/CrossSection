@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 from utils.forward_fill import apply_quarterly_fill_to_compustat
 
 print("Starting PayoutYield_q.py")
@@ -129,21 +130,10 @@ df_pd['mve_c'] = df_pd['mve_c'].replace(0, 0.0001)  # Replace zero with tiny pos
 df_pd['pstkq'] = df_pd['pstkq'].fillna(0.0)  # Default preferred stock to 0
 
 
-# Create 3-month and 6-month lag dates
-df_pd['time_lag3'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)
-df_pd['time_lag6'] = df_pd['time_avail_m'] - pd.DateOffset(months=6)
-
-# Create lag data for merging (3-month lag for pstkq)
-lag3_data = df_pd[['permno', 'time_avail_m', 'pstkq']].copy()
-lag3_data.columns = ['permno', 'time_lag3', 'l3_pstkq']
-
-# Create lag data for merging (6-month lag for mve_c)
-lag6_data = df_pd[['permno', 'time_avail_m', 'mve_c']].copy()
-lag6_data.columns = ['permno', 'time_lag6', 'l6_mve_c']
-
-# Merge to get lagged values
-df_pd = df_pd.merge(lag3_data, on=['permno', 'time_lag3'], how='left')
-df_pd = df_pd.merge(lag6_data, on=['permno', 'time_lag6'], how='left')
+# Create lags using stata_multi_lag
+print("Computing lags using stata_multi_lag...")
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'pstkq', [3], freq='M', prefix='l')
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'mve_c', [6], freq='M', prefix='l')
 
 # Convert back to polars
 df = pl.from_pandas(df_pd)

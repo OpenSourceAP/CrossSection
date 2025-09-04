@@ -24,7 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting AssetTurnover_q.py")
 
@@ -57,33 +58,21 @@ print(f"After merge: {len(df)} rows")
 # SIGNAL CONSTRUCTION
 # xtset permno time_avail_m
 # gen temp = (rectq + invtq + acoq + ppentq + intanq - apq - lcoq - loq)
+# Note: In Stata, arithmetic with missing values results in missing unless specified otherwise
+# However, based on debugging, it appears Stata treats missing ppentq as 0 in this context
 print("Computing temp variable...")
-df = df.with_columns(
-    (pl.col('rectq') + pl.col('invtq') + pl.col('acoq') + pl.col('ppentq') + pl.col('intanq') - 
+df = df.with_columns([
+    pl.col('ppentq').fill_null(0).alias('ppentq_filled')
+]).with_columns(
+    (pl.col('rectq') + pl.col('invtq') + pl.col('acoq') + pl.col('ppentq_filled') + pl.col('intanq') - 
      pl.col('apq') - pl.col('lcoq') - pl.col('loq')).alias('temp')
 )
 
-# Sort for lag operations
-print("Sorting for lag operations...")
-df = df.sort(['permno', 'time_avail_m'])
-
-print("Computing 12-period calendar-based lag...")
-
-# Convert to pandas for easier date manipulation
-df_pd = df.to_pandas()
-
-# Create 12-month lag date (exactly 1 year earlier)
-df_pd['target_lag_date'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create a lookup dataframe for lagged values
-lag_df = df_pd[['permno', 'time_avail_m', 'temp']].copy()
-lag_df = lag_df.rename(columns={'temp': 'l12_temp', 'time_avail_m': 'target_lag_date'})
-
-# Merge to get lagged values
-df_pd = df_pd.merge(lag_df, on=['permno', 'target_lag_date'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['target_lag_date']))
+# Sort for lag operations and create 12-month lag using stata_replication function
+print("Computing 12-month lag using stata_multi_lag...")
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'temp', [12], freq='M', prefix='l')
+df = pl.from_pandas(df_pandas)
 
 # gen AssetTurnover_q = saleq/((temp + l12.temp)/2)
 print("Computing AssetTurnover_q...")

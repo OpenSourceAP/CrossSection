@@ -24,8 +24,8 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
-from utils.forward_fill import apply_quarterly_fill_to_compustat
+from utils.save_standardized import save_placebo
+from utils.stata_replication import stata_multi_lag
 
 print("Starting EPq.py")
 
@@ -49,31 +49,9 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'ibq'])
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
-# Apply comprehensive group-wise forward+backward fill for complete data coverage
-print("Applying comprehensive group-wise forward+backward fill for quarterly data...")
-qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
-qcomp = qcomp.with_columns([
-    pl.col('ibq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ibq')
-])
-
-# Also apply backward fill to SignalMasterTable mve_c to ensure lag coverage
-print("Applying backward fill to SignalMasterTable mve_c...")
-df = df.sort(['permno', 'time_avail_m'])
-df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
-])
-
-# Apply comprehensive backward fill to SignalMasterTable for better lag coverage
-print("Applying comprehensive backward fill to SignalMasterTable data...")
-df = df.sort(['permno', 'time_avail_m'])
-df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
-])
-
 print("Merging with m_QCompustat...")
-# Use left join to preserve SignalMasterTable observations
-# Stata's keep(match) might be more lenient about missing values
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
+# keep(match) means inner join
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
 
 print(f"After merge: {len(df)} rows")
 
@@ -83,30 +61,15 @@ print(f"After merge: {len(df)} rows")
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# Calculate calendar-based 6-month lag (not position-based)
-print("Computing calendar-based 6-month lag for mve_c...")
+# Calculate 6-month lag using stata_multi_lag
+print("Computing 6-month lag using stata_multi_lag...")
 
-# Additional aggressive fill for lag data
-print("Applying additional aggressive fill for lag coverage...")
-# Also fill the lag data more aggressively  
-df_pd = df_pd.copy()
-df_pd['mve_c'] = df_pd.groupby('permno')['mve_c'].fillna(method='ffill').fillna(method='bfill')
-
-# Convert to pandas for calendar-based lag operations
-df_pd = df.to_pandas()
-
-# Create 6-month lag date
-df_pd['time_lag6'] = df_pd['time_avail_m'] - pd.DateOffset(months=6)
-
-# Create lag data for merging
-lag_data = df_pd[['permno', 'time_avail_m', 'mve_c']].copy()
-lag_data.columns = ['permno', 'time_lag6', 'l6_mve_c']
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag6'], how='left')
+# Convert to pandas for stata_multi_lag
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'mve_c', [6], freq='M', prefix='l')
 
 # Convert back to polars
-df = pl.from_pandas(df_pd)
+df = pl.from_pandas(df_pandas)
 
 df = df.with_columns(
     (pl.col('ibq') / pl.col('l6_mve_c')).alias('EPq')
