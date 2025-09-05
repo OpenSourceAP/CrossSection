@@ -107,8 +107,8 @@ CompustatSegmentDataCustomers:
   object: cnms, ctype, gareac, gareat, stype, datadate
 
 monthlyShortInterest:
-  column_order: gvkey, time_avail_m, shortint, shortintadj
-  int32: gvkey
+  column_order: permno, time_avail_m, shortint, shortintadj, gvkey
+  int32: permno, gvkey
   datetime64[ns]: time_avail_m
   float64: shortint, shortintadj
 
