@@ -15,10 +15,22 @@ local sql_statement
 
 odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
+* Add permno
+rename iid liid
+joinby gvkey liid using "$pathDataIntermediate/CCMLinkingTable", update unmatched(none)
+
+* Use only if data date is within the validity period of the link
+gen temp = (timeLinkStart_d <= datadate  & datadate <= timeLinkEnd_d)
+tab temp
+keep if temp == 1
+drop temp conm tic cusip cik sic naics linkprim linktype lpermco timeLinkStart_d timeLinkEnd_d
+rename liid iid
+
 gen time_avail_m = mofd(datadate)
 format time_avail_m %tm
 
-gcollapse (firstnm) shortint shortintadj, by(gvkey time_avail_m)  // Data reported bi-weekly and made available with a four day lag (according to
+sort gvkey permno iid time_avail_m datadate
+gcollapse (firstnm) shortint shortintadj, by(gvkey permno iid time_avail_m)  // Data reported bi-weekly and made available with a four day lag (according to
 			        	                                         // Rapach et al. (2016). As they do, we use the mid-month observation to make sure 
                                                                  // Data would be available in real time
 
@@ -37,22 +49,34 @@ local sql_statement
 
 odbc load, exec("`sql_statement'") dsn($wrdsConnection) clear
 
+* Add permno
+rename iid liid
+joinby gvkey liid using "$pathDataIntermediate/CCMLinkingTable", update unmatched(none)
+
+* Use only if data date is within the validity period of the link
+gen temp = (timeLinkStart_d <= datadate  & datadate <= timeLinkEnd_d)
+tab temp
+keep if temp == 1
+drop temp conm tic cusip cik sic naics linkprim linktype lpermco timeLinkStart_d timeLinkEnd_d
+rename liid iid
+
 gen time_avail_m = mofd(datadate)
 format time_avail_m %tm
 
-gcollapse (firstnm) shortint shortintadj, by(gvkey time_avail_m)  // Data reported bi-weekly and made available with a four day lag (according to
+sort gvkey permno iid time_avail_m datadate
+gcollapse (firstnm) shortint shortintadj, by(gvkey permno iid time_avail_m)  // Data reported bi-weekly and made available with a four day lag (according to
 			        	                                         // Rapach et al. (2016). As they do, we use the mid-month observation to make sure 
                                                                  // Data would be available in real time
 
 * Combine
 append using tmp
 * Keep legacy data if two observations for same firm in same month
-bys gvkey time_avail_m: gen nobs = _N
+bys gvkey permno iid time_avail_m: gen nobs = _N
 drop if nobs >1 & legacy !=1
 drop nobs legacyFile
 
 * check whether no repeated observations 
-bys gvkey time_avail_m: assert _N == 1
+bys gvkey permno iid time_avail_m: assert _N == 1
 
 * Wrap up
 replace shortint = shortint/10^6  // for consistency as we also use shares outstanding in millions of shares (see I_CRSPmonthly.do)
@@ -60,6 +84,7 @@ replace shortintadj = shortintadj/10^6
 																 
 destring gvkey, replace
 compress
+
 save "$pathDataIntermediate/monthlyShortInterest", replace
 
 * Housekeeping
