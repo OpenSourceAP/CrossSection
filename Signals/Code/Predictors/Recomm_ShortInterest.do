@@ -31,10 +31,9 @@ gcollapse (mean) ireccd12, by(tickerIBES time_avail_m)
 save tempRec, replace
 
 // DATA LOAD
-use permno gvkey tickerIBES time_avail_m bh1m using "$pathDataIntermediate/SignalMasterTable", clear
-drop if mi(gvkey) | mi(tickerIBES)
+use gvkey permno iid time_avail_m shortint using "$pathDataIntermediate/monthlyShortInterest", clear
 merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(match) nogenerate keepusing(shrout)
-merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/monthlyShortInterest", keep(match) nogenerate keepusing(shortint)
+merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(tickerIBES)
 merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
 
 // SIGNAL CONSTRUCTION
