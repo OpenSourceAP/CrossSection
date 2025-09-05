@@ -32,8 +32,8 @@ save tempRec, replace
 
 // DATA LOAD
 use gvkey permno iid time_avail_m shortint using "$pathDataIntermediate/monthlyShortInterest", clear
-merge m:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(match) nogenerate keepusing(shrout)
-merge m:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(tickerIBES bh1m)
+merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(match) nogenerate keepusing(shrout)
+merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(tickerIBES)
 merge m:1 tickerIBES time_avail_m using tempRec, keep(match) nogenerate
 
 // SIGNAL CONSTRUCTION
