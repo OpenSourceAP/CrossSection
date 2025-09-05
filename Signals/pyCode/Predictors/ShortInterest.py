@@ -21,11 +21,7 @@ print("Starting ShortInterest calculation...")
 
 # DATA LOAD
 # Load base universe of stocks with company identifiers
-signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', columns=['permno', 'gvkey', 'time_avail_m'])
-
-# Require valid company identifier for short interest matching
-signal_master = signal_master[signal_master['gvkey'].notna()]
-print(f"After dropping missing gvkey: {len(signal_master)} observations")
+signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', columns=['permno', 'time_avail_m'])
 
 # Add shares outstanding data from monthly CRSP
 monthly_crsp = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet', columns=['permno', 'time_avail_m', 'shrout'])
@@ -33,8 +29,8 @@ df = pd.merge(signal_master, monthly_crsp, on=['permno', 'time_avail_m'], how='i
 print(f"After merge with monthlyCRSP: {len(df)} observations")
 
 # Add short interest data
-monthly_short = pd.read_parquet('../pyData/Intermediate/monthlyShortInterest.parquet', columns=['gvkey', 'time_avail_m', 'shortint'])
-df = pd.merge(df, monthly_short, on=['gvkey', 'time_avail_m'], how='inner', validate='1:1')
+monthly_short = pd.read_parquet('../pyData/Intermediate/monthlyShortInterest.parquet', columns=['permno', 'time_avail_m', 'shortint'])
+df = pd.merge(df, monthly_short, on=['permno', 'time_avail_m'], how='inner', validate='1:1')
 print(f"After merge with monthlyShortInterest: {len(df)} observations")
 
 # SIGNAL CONSTRUCTION
