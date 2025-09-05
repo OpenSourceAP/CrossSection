@@ -190,17 +190,10 @@ assert not duplicates_permno.any(), f"Found {duplicates_permno.sum()} duplicate 
 monthly_si['shortint'] = monthly_si['shortint'] / 1e6
 monthly_si['shortintadj'] = monthly_si['shortintadj'] / 1e6
 
-# Convert gvkey to numeric
-monthly_si['gvkey'] = pd.to_numeric(monthly_si['gvkey'], errors='coerce')
-
-# Keep only needed columns in final order: gvkey, time_avail_m, shortint, shortintadj, permno
-monthly_si = monthly_si[['gvkey', 'time_avail_m', 'shortint', 'shortintadj', 'permno']]
-
 # Apply column standardization with data type enforcement
 # Note: The YAML expects gvkey and time_avail_m, shortint, shortintadj only
 # So we need to drop permno before standardization or update the YAML
-monthly_si_for_save = monthly_si[['gvkey', 'time_avail_m', 'shortint', 'shortintadj']]
-monthly_si_for_save = standardize_columns(monthly_si_for_save, "monthlyShortInterest")
+monthly_si_for_save = standardize_columns(monthly_si, "monthlyShortInterest")
 
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
