@@ -1,12 +1,4 @@
 #%%
-
-# debug
-import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir('..')
-from polars import col as cc
-import pandas as pd
-
 # ABOUTME: Analyst Recommendations and Short Interest following Drake, Rees and Swanson 2011, Table 7b
 # ABOUTME: Binary signal: 1 for lowest quintile short interest & recommendations, 0 for highest quintiles
 """
@@ -53,23 +45,61 @@ ibes_recs = pl.read_parquet("../pyData/Intermediate/IBES_Recommendations.parquet
 
 print(f"Loaded IBES Recommendations: {len(ibes_recs):,} observations")
 
+# for duplicate tickerIBES-amaskcd-anndats, take the mean recommendation
+ibes_recs = ibes_recs.group_by(["tickerIBES", "amaskcd", "time_avail_m", "anndats"]).agg(
+    pl.col("ireccd").mean()
+)
+
+#%%
+
+# drop if anndats is after the IBES consensus recommendation date (approximately)
+# page 5 says "We also require that the individual analyst recommendations be issued on or before the IBES consensus recommendation date" and "IBES calculates consensus recommendation on the Thursday before the third Friday of the month (ranging from the 14th to the 20th of the month)."
+# Let's approximate with the 17th of the month
+
+ibes_recs = ibes_recs.with_columns(
+    ibes_cons_date = pl.col('time_avail_m').dt.offset_by('16d')
+).with_columns(
+    ireccd_ok = pl.when(
+        pl.col('anndats') <= pl.col('ibes_cons_date')
+    ).then(
+        pl.col('ireccd')
+    ).otherwise(
+        None
+    )    
+)
+
+#%%
+# keep last recommendation for each tickerIBES-amaskcd-time_avail_m
+# p 5 "We use only the most recent individual analyst recommendation"
+ibes_recs = ibes_recs.group_by(
+    ["tickerIBES", "time_avail_m", "amaskcd"], maintain_order=True).last()
+
+
+# assume recommendation is valid for recc_extension months after the anndats
+# Table 7 "we construct portfolios monthly
+# based on the quintile rank of analyst recommendations and short interest selected in the current month and in each of the past five months six-month holding period"
+
+rec_extension = '5mo'
+
 # fill in time-series gaps by tickerIBES-amaskcd
 ibes_recs = ibes_recs.with_columns(
     ticker_analyst = pl.concat_str([pl.col("tickerIBES"), pl.col("amaskcd")], separator="_")
 )
-ibes_recs = fill_date_gaps(ibes_recs,"ticker_analyst","time_avail_m","1mo").with_columns(
+ibes_recs = fill_date_gaps(ibes_recs,"ticker_analyst","time_avail_m","1mo",
+    end_padding=rec_extension # allow recommendations to be extended after the last rec
+).with_columns(
     pl.col('ticker_analyst').str.split("_").list.get(0).alias("tickerIBES")
 ).sort(['ticker_analyst', 'time_avail_m'])
 
-# define ireccd12: the latest recommendation within 12 months
+# define ireccd12: the latest recommendation within rec_extension months
 ibes_recs = ibes_recs.with_columns(
-    ireccd12 = pl.col('ireccd') 
+    ireccd12 = pl.col('ireccd_ok') 
 ).with_columns(
     pl.col('anndats').forward_fill().over('ticker_analyst'),
     pl.col('ireccd12').forward_fill().over('ticker_analyst')
 ).with_columns(
     pl.when(
-        pl.col('time_avail_m') > pl.col('anndats').dt.offset_by('11mo')
+        pl.col('time_avail_m') > pl.col('anndats').dt.offset_by(rec_extension)
     ).then(
         None
     ).otherwise(
@@ -80,7 +110,7 @@ ibes_recs = ibes_recs.with_columns(
 
 #%%
 
-# take mean recommendation within each stock-month
+# take mean across analysts for each stock-month
 stock_rec = ibes_recs.with_columns(
     pl.col('tickerIBES').forward_fill().over('ticker_analyst')
 ).group_by(["tickerIBES", "time_avail_m"]).agg(
