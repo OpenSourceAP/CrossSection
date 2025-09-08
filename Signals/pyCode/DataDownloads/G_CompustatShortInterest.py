@@ -1,7 +1,6 @@
+# ABOUTME: Downloads and processes Compustat short interest data, combining legacy and new sources
+# ABOUTME: Joins with CCMLinkingTable to add permno and aggregates to monthly permno-level data
 """
-ABOUTME: Downloads and processes Compustat short interest data, combining legacy and new sources
-ABOUTME: Joins with CCMLinkingTable to add permno and aggregates to monthly permno-level data
-
 Inputs:
 - comp.sec_shortint_legacy (1973-2024)
 - comp.sec_shortint (2006+)
