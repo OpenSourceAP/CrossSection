@@ -35,14 +35,13 @@ def main():
     logger.info(f"Loaded customer segments: {len(seg_customer):,} rows")
     
     # Load CCM linking table
-    ccm = pd.read_csv(data_path / "CCMLinkingTable.csv")
-    ccm['linkdt'] = pd.to_datetime(ccm['linkdt'], format='%d%b%Y')
-    ccm['linkenddt'] = pd.to_datetime(ccm['linkenddt'], format='%d%b%Y', errors='coerce')
+    ccm = pd.read_parquet(data_path / "CCMLinkingTable.parquet")
+    ccm = ccm.rename(columns={'timeLinkStart_d': 'linkdt', 'timeLinkEnd_d': 'linkenddt', 'permno': 'lpermno'})
     logger.info(f"Loaded CCM linking: {len(ccm):,} rows")
     
     # Load CRSP monthly data
-    m_crsp = pd.read_csv(data_path / "mCRSP.csv")
-    m_crsp['date'] = pd.to_datetime(m_crsp['date'], format='%d%b%Y')
+    m_crsp = pd.read_parquet(data_path / "monthlyCRSP.parquet")
+    m_crsp = m_crsp.rename(columns={'time_avail_m': 'date'})
     logger.info(f"Loaded CRSP monthly: {len(m_crsp):,} rows")
     
     # Step 2: Clean customer data exactly like R script (lines 41-65)
