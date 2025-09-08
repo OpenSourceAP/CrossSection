@@ -17,10 +17,12 @@ If no script is specified, work on the first TBC script.
 
 ## Progress Tracking
 
-1. A_CCMLinkingTable.py: TBC
-   - 91 lines
-2. B_CompustatAnnual.py: TBC
-   - 232 lines 
+1. A_CCMLinkingTable.py: ✅ COMPLETED
+   - 91 lines → 67 lines (26% reduction)
+   - Summary statistics IDENTICAL to original
+2. B_CompustatAnnual.py: ✅ COMPLETED
+   - 232 lines → 154 lines (34% reduction)
+   - Summary statistics IDENTICAL to original 
 3. C_CompustatQuarterly.py: TBC
    - 258 lines 
 4. D_CompustatPensions.py: TBC
