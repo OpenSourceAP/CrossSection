@@ -1,0 +1,1207 @@
+Data Download Log - Started at 2025-09-08 10:02:56
+================================================================================
+
+
+🔄 Starting: A_CCMLinkingTable.py
+============================================================
+============================================================
+🔗 A_CCMLinkingTable.py - CRSP-Compustat Linking Table
+============================================================
+CCMLinkingTable.csv: Starting column standardization with data type enforcement
+CCMLinkingTable.csv: Column order standardized successfully
+CCMLinkingTable.csv: Warning - Could not convert column 'cusip' to int64: Cannot convert non-finite values (NA or inf) to integer
+CCMLinkingTable.csv: Warning - Could not convert column 'liid' to int64: Cannot convert non-finite values (NA or inf) to integer
+CCMLinkingTable.csv: Successfully converted 12 columns to target dtypes
+CCMLinkingTable: Starting column standardization with data type enforcement
+CCMLinkingTable: Column order standardized successfully
+CCMLinkingTable: Successfully converted 14 columns to target dtypes
+CCM Linking Table downloaded with 31905 records
+Unique companies (gvkey): 27857
+Unique stocks (lpermno): 28265
+============================================================
+✅ A_CCMLinkingTable.py completed successfully
+============================================================
+============================================================
+✅ Completed: A_CCMLinkingTable.py
+Execution time: 1.90 seconds
+
+
+🔄 Starting: B_CompustatAnnual.py
+============================================================
+============================================================
+📈 B_CompustatAnnual.py - Compustat Annual Fundamentals
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+Downloaded 10000 annual records
+CompustatAnnual.csv saved with 10000 records
+After requiring AT, PRCC_C, NI: 7776 records
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/DataDownloads/B_CompustatAnnual.py:129: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '[0.033 0.85  1.117 ... 0.037 0.117 0.192]' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  compustat_data.loc[compustat_data['xint'].notna(), 'xint0'] = compustat_data['xint']
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/DataDownloads/B_CompustatAnnual.py:132: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '[ 0.431  9.42  10.548 ...  3.855  3.926  4.727]' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  compustat_data.loc[compustat_data['xsga'].notna(), 'xsga0'] = compustat_data['xsga']
+After merging with CCM links: 11014 records
+After filtering for valid link dates: 6628 records
+a_aCompustat: Starting column standardization with data type enforcement
+a_aCompustat: Column order standardized successfully
+a_aCompustat: Successfully converted 122 columns to target dtypes
+Annual version saved with 6628 records
+m_aCompustat: Starting column standardization with data type enforcement
+m_aCompustat: Column order standardized successfully
+m_aCompustat: Successfully converted 122 columns to target dtypes
+Monthly version saved with 79455 records
+============================================================
+✅ B_CompustatAnnual.py completed successfully
+============================================================
+============================================================
+✅ Completed: B_CompustatAnnual.py
+Execution time: 2.25 seconds
+
+
+🔄 Starting: C_CompustatQuarterly.py
+============================================================
+============================================================
+📊 C_CompustatQuarterly.py - Compustat Quarterly Fundamentals
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+Downloaded 10,000 quarterly records
+Processing with Polars for optimal performance...
+After removing duplicates: 10,000 records
+After removing late releases: 9,973 records
+After removing time duplicates: 9,960 records
+Converting year-to-date items to quarterly...
+Expanding quarterly data to monthly...
+Expanded to 29,880 monthly records
+m_QCompustat: Starting column standardization with data type enforcement
+m_QCompustat: Column order standardized successfully
+m_QCompustat: Successfully converted 68 columns to target dtypes
+Compustat Quarterly data saved with 29,717 monthly records
+Date range: 1962-01-01 00:00:00 to 2025-11-01 00:00:00
+============================================================
+✅ C_CompustatQuarterly.py completed successfully
+============================================================
+============================================================
+✅ Completed: C_CompustatQuarterly.py
+Execution time: 2.01 seconds
+
+
+🔄 Starting: D_CompustatPensions.py
+============================================================
+============================================================
+🏦 D_CompustatPensions.py - Compustat Pension Fund Data
+============================================================
+Downloaded 152946 pension records
+After keeping first obs per gvkey/year: 152711 records
+
+Missing data summary:
+  paddml: 122,541 missing (80.2%)
+  pbnaa: 128,065 missing (83.9%)
+  pbnvv: 128,245 missing (84.0%)
+  pbpro: 62,639 missing (41.0%)
+  pbpru: 127,564 missing (83.5%)
+  pcupsu: 128,072 missing (83.9%)
+  pplao: 61,287 missing (40.1%)
+  pplau: 126,994 missing (83.2%)
+CompustatPensions: Starting column standardization with data type enforcement
+CompustatPensions: Column order standardized successfully
+CompustatPensions: Successfully converted 10 columns to target dtypes
+
+Compustat Pensions data saved with 152711 records
+Year range: 1974 to 2026
+
+Sample data:
+   gvkey  paddml  pbnaa  pbnvv  pbpro  pbpru  pcupsu  pplao  pplau  year
+0   1000     NaN    NaN    NaN    NaN    NaN     NaN    NaN    NaN  1974
+1   1000     NaN    NaN    NaN    NaN    NaN     NaN    NaN    NaN  1975
+2   1000     NaN    NaN    NaN    NaN    NaN     NaN    NaN    NaN  1976
+3   1000     NaN    NaN    NaN    NaN    NaN     NaN    NaN    NaN  1977
+4   1000     NaN    NaN    NaN    NaN    NaN     NaN    NaN    NaN  1978
+============================================================
+✅ D_CompustatPensions.py completed successfully
+============================================================
+============================================================
+✅ Completed: D_CompustatPensions.py
+Execution time: 2.46 seconds
+
+
+🔄 Starting: E_CompustatBusinessSegments.py
+============================================================
+============================================================
+🏢 E_CompustatBusinessSegments.py - Business Segment Data
+============================================================
+Downloaded 2766341 business segment records
+CompustatSegments: Starting column standardization with data type enforcement
+CompustatSegments: Column order standardized successfully
+CompustatSegments: Successfully converted 9 columns to target dtypes
+Compustat Business Segments data saved with 2766341 records
+
+Segment types:
+stype
+GEOSEG    1343967
+BUSSEG    1243287
+OPSEG      174163
+STSEG        4924
+Name: count, dtype: int64
+
+Date range:
+  1976-06-30 to 2025-03-31
+
+Unique companies: 29635
+
+Sample data:
+   gvkey   datadate   stype  sid  ...    srcdate naicsh  sics1              snms
+0   1000 1976-12-31  BUSSEG    1  ... 1976-12-31    NaN    NaN         PACKAGING
+1   1000 1976-12-31  BUSSEG    2  ... 1976-12-31    NaN    NaN             SIGNS
+2   1000 1976-12-31  BUSSEG    3  ... 1976-12-31    NaN    NaN  LEISURE PRODUCTS
+3   1000 1977-12-31  BUSSEG    1  ... 1977-12-31    NaN    NaN         PACKAGING
+4   1000 1977-12-31  BUSSEG    2  ... 1977-12-31    NaN    NaN             SIGNS
+
+[5 rows x 9 columns]
+============================================================
+✅ E_CompustatBusinessSegments.py completed successfully
+============================================================
+============================================================
+✅ Completed: E_CompustatBusinessSegments.py
+Execution time: 47.03 seconds
+
+
+🔄 Starting: F_CompustatCustomerSegments.py
+============================================================
+Downloaded 704826 customer segment records
+CompustatSegmentDataCustomers: Starting column standardization with data type enforcement
+CompustatSegmentDataCustomers: Column order standardized successfully
+CompustatSegmentDataCustomers: Warning - Could not convert column 'salecs' to int64: cannot safely cast non-equivalent object to int64
+CompustatSegmentDataCustomers: Successfully converted 9 columns to target dtypes
+Compustat Customer Segments data saved with 704826 records
+Date range: 28feb1977 to 31oct2024
+Unique companies: 19586
+
+Sample data:
+   gvkey  cid cnms   ctype gareac gareat  salecs  sid   stype   datadate
+0   1004    1       GOVDOM                   2.0    0  BUSSEG  31may1980
+1   1004    1       GOVDOM                   4.0    0  BUSSEG  31may1981
+2   1004    1       GOVDOM                  27.0    0  BUSSEG  31may1982
+3   1004    1       GOVDOM                  27.1    0  BUSSEG  31may1983
+4   1004    1       GOVDOM                  34.0    0  BUSSEG  31may1984
+============================================================
+✅ Completed: F_CompustatCustomerSegments.py
+Execution time: 13.45 seconds
+
+
+🔄 Starting: G_CompustatShortInterest.py
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+Downloaded 10000 legacy short interest records
+After monthly aggregation: 7518 legacy records
+Legacy link validity check: {True: 7093, False: 1352}
+Legacy edge cases (permno shifts within month): 0
+Downloaded 10000 new short interest records
+After monthly aggregation: 5080 new records
+New link validity check: {True: 3881, False: 2112}
+New edge cases (permno shifts within month): 0
+After combining: 10974 total records
+Duplicate permno-time_avail_m observations: 0
+monthlyShortInterest: Starting column standardization with data type enforcement
+monthlyShortInterest: Column order standardized successfully
+monthlyShortInterest: Successfully converted 5 columns to target dtypes
+Monthly Short Interest data saved with 8516 records
+Date range: 1973-02-01 00:00:00 to 2025-08-01 00:00:00
+Unique companies: 48
+
+Sample data:
+   permno time_avail_m  shortint  shortintadj  gvkey
+0   10014   1974-02-01    0.0057       0.0057   1031
+1   10014   1974-03-01    0.0062       0.0062   1031
+2   10014   1974-06-01    0.0001       0.0001   1031
+3   10014   1974-07-01    0.0039       0.0039   1031
+4   10014   1974-08-01    0.0055       0.0055   1031
+
+Missing data:
+shortint: 0 missing
+shortintadj: 0 missing
+============================================================
+✅ Completed: G_CompustatShortInterest.py
+Execution time: 1.64 seconds
+
+
+🔄 Starting: H_CRSPDistributions.py
+============================================================
+============================================================
+💰 H_CRSPDistributions.py - CRSP Dividends & Distributions
+============================================================
+Downloaded 1064791 distribution records
+Removed 706 duplicate records
+CRSPdistributions: Starting column standardization with data type enforcement
+CRSPdistributions: Column order standardized successfully
+CRSPdistributions: Successfully converted 11 columns to target dtypes
+CRSP Distributions data saved with 1064085 records
+
+Sample distribution codes:
+distcd
+1232    592645
+1222    156124
+1223     88345
+1212     63055
+5523     23708
+1242     20524
+1272     20154
+5533     15731
+2216      9218
+1252      8805
+Name: count, dtype: int64
+============================================================
+✅ H_CRSPDistributions.py completed successfully
+============================================================
+============================================================
+✅ Completed: H_CRSPDistributions.py
+Execution time: 10.38 seconds
+
+
+🔄 Starting: I2_CRSPmonthlyraw.py
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+Downloaded 10000 CRSP raw monthly records
+monthlyCRSPraw: Starting column standardization with data type enforcement
+monthlyCRSPraw: Column order standardized successfully
+monthlyCRSPraw: Successfully converted 17 columns to target dtypes
+CRSP Monthly Raw data saved with 10000 records
+Date range: 1925-12-01 00:00:00 to 2024-12-01 00:00:00
+Note: This is raw data WITHOUT delisting return adjustments
+============================================================
+✅ Completed: I2_CRSPmonthlyraw.py
+Execution time: 1.21 seconds
+
+
+🔄 Starting: I_CRSPmonthly.py
+============================================================
+============================================================
+📊 I_CRSPmonthly.py - CRSP Monthly Stock Data
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+monthlyCRSP: Starting column standardization with data type enforcement
+monthlyCRSP: Column order standardized successfully
+monthlyCRSP: Successfully converted 19 columns to target dtypes
+CRSP Monthly data downloaded with 10000 records
+Date range: 1925-12-01 00:00:00 to 2024-12-01 00:00:00
+============================================================
+✅ I_CRSPmonthly.py completed successfully
+============================================================
+============================================================
+✅ Completed: I_CRSPmonthly.py
+Execution time: 1.18 seconds
+
+
+🔄 Starting: J_CRSPdaily.py
+============================================================
+Starting CRSP Daily data download...
+DEBUG MODE: Only downloading year 1932 (instead of 1926-2025)
+Processing year 1932...
+Downloaded 220833 records for year 1932
+Combining all years of data...
+Total records downloaded: 220833
+dailyCRSP: Starting column standardization with data type enforcement
+dailyCRSP: Column order standardized successfully
+dailyCRSP: Successfully converted 7 columns to target dtypes
+Saved full daily CRSP data with 220833 records
+dailyCRSPprc: Starting column standardization with data type enforcement
+dailyCRSPprc: Column order standardized successfully
+dailyCRSPprc: Successfully converted 5 columns to target dtypes
+Saved price-only daily CRSP data with 220833 records
+Date range: 1932-01-02 to 1932-12-31
+============================================================
+✅ Completed: J_CRSPdaily.py
+Execution time: 3.24 seconds
+
+
+🔄 Starting: K_CRSPAcquisitions.py
+============================================================
+Downloaded 1064791 distribution records
+Filtered to 9259 records with acperm > 999
+After removing missing exdt: 9258 records
+Removed 3626 duplicate records
+m_CRSPAcquisitions: Starting column standardization with data type enforcement
+m_CRSPAcquisitions: Column order standardized successfully
+m_CRSPAcquisitions: Successfully converted 2 columns to target dtypes
+CRSP Acquisitions data saved with 5632 unique spinoff companies
+
+Sample data:
+     permno  SpinoffCo
+243   35263          1
+253   10569          1
+498   23588          1
+567   13856          1
+602   45356          1
+
+Unique spinoff companies: 5632
+Total records: 5632
+============================================================
+✅ Completed: K_CRSPAcquisitions.py
+Execution time: 3.25 seconds
+
+
+🔄 Starting: L2_IBES_EPS_Adj.py
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+Downloaded 10000 IBES EPS adjusted records
+Removed 0 records with missing meanest
+After keeping last obs per month: 10000 records
+IBES_EPS_Adj: Starting column standardization with data type enforcement
+IBES_EPS_Adj: Column order standardized successfully
+IBES_EPS_Adj: Successfully converted 14 columns to target dtypes
+IBES EPS Adjusted data saved with 10000 records
+Date range: 2014-03-01 00:00:00 to 2025-05-01 00:00:00
+
+Sample data:
+   fpi tickerIBES   statpers    fpedats  ...     prdays  price   shout  time_avail_m
+12   1       0000 2014-04-17 2014-12-31  ... 2014-04-16  13.75  72.276    2014-04-01
+13   1       0000 2014-05-15 2014-12-31  ... 2014-05-14  13.30  69.978    2014-05-01
+14   1       0000 2014-06-19 2014-12-31  ... 2014-06-18  14.40  69.992    2014-06-01
+15   1       0000 2014-07-17 2014-12-31  ... 2014-07-16  14.11  69.992    2014-07-01
+16   1       0000 2014-08-14 2014-12-31  ... 2014-08-13  13.76  70.451    2014-08-01
+
+[5 rows x 14 columns]
+============================================================
+✅ Completed: L2_IBES_EPS_Adj.py
+Execution time: 1.70 seconds
+
+
+🔄 Starting: L_IBES_EPS_Unadj.py
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+Downloaded 10000 IBES EPS records
+Removed 0 records with missing meanest
+After keeping last obs per month: 10000 records
+IBES_EPS_Unadj: Starting column standardization with data type enforcement
+IBES_EPS_Unadj: Column order standardized successfully
+IBES_EPS_Unadj: Successfully converted 9 columns to target dtypes
+IBES EPS Unadjusted data saved with 10000 records
+
+Records by FPI (Forecast Period Indicator):
+fpi
+0    1019
+1    3020
+2    2977
+6    2984
+Name: count, dtype: int64
+
+Date range: 2014-03-01 00:00:00 to 2025-05-01 00:00:00
+
+Sample data:
+   tickerIBES   statpers fpi  numest  ...  meanest  stdev    fpedats time_avail_m
+7        0000 2014-04-17   1       4  ...     0.52   0.03 2014-12-31   2014-04-01
+8        0000 2014-05-15   1       4  ...     0.56   0.04 2014-12-31   2014-05-01
+9        0000 2014-06-19   1       4  ...     0.56   0.04 2014-12-31   2014-06-01
+10       0000 2014-07-17   1       3  ...     0.56   0.05 2014-12-31   2014-07-01
+11       0000 2014-08-14   1       5  ...     1.18   0.06 2014-12-31   2014-08-01
+
+[5 rows x 9 columns]
+============================================================
+✅ Completed: L_IBES_EPS_Unadj.py
+Execution time: 1.41 seconds
+
+
+🔄 Starting: M_IBES_Recommendations.py
+============================================================
+Downloaded 864152 IBES recommendation records
+Removed 63 records with missing ireccd
+IBES_Recommendations: Starting column standardization with data type enforcement
+IBES_Recommendations: Column order standardized successfully
+IBES_Recommendations: Successfully converted 11 columns to target dtypes
+IBES Recommendations data saved with 864089 records
+
+Recommendation distribution:
+  1 (Strong Buy): 186,332
+  2 (Buy): 268,203
+  3 (Hold): 343,820
+  4 (Underperform): 47,763
+  5 (Sell): 17,971
+
+Date range: 1992-12-01 00:00:00 to 2025-05-01 00:00:00
+
+Sample data:
+  tickerIBES  amaskcd    anndats time_avail_m  ireccd
+0       0000    71182 2014-03-10   2014-03-01       2
+1       0000    79092 2014-03-10   2014-03-01       2
+2       0000   119962 2014-03-09   2014-03-01       2
+3       0000    80474 2014-03-10   2014-03-01       1
+4       0000    50789 2014-03-10   2014-03-01       3
+============================================================
+✅ Completed: M_IBES_Recommendations.py
+Execution time: 7.36 seconds
+
+
+🔄 Starting: N_IBES_UnadjustedActuals.py
+============================================================
+DEBUG MODE: Limiting to 10000 rows
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/DataDownloads/N_IBES_UnadjustedActuals.py:92: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  actuals_data = actuals_data.groupby('ticker').apply(fill_ticker_gaps).reset_index(drop=True)
+Downloaded 10000 IBES actual earnings records
+After removing within-month duplicates: 10000 records
+Filling time series gaps...
+After filling time series gaps: 10285 records
+IBES_UnadjustedActuals: Starting column standardization with data type enforcement
+IBES_UnadjustedActuals: Column order standardized successfully
+IBES_UnadjustedActuals: Successfully converted 19 columns to target dtypes
+IBES Unadjusted Actuals data saved with 10285 records
+Date range: 1984-06-01 00:00:00 to 2025-05-01 00:00:00
+Unique tickers: 117
+
+Sample data:
+  tickerIBES time_avail_m  int0a  fy0a
+0       0000   2014-04-01    NaN   NaN
+1       0000   2014-05-01   0.12   NaN
+2       0000   2014-06-01   0.12   NaN
+3       0000   2014-07-01   0.12   NaN
+4       0000   2014-08-01   0.27   NaN
+============================================================
+✅ Completed: N_IBES_UnadjustedActuals.py
+Execution time: 1.21 seconds
+
+
+🔄 Starting: O_Daily_Fama-French.py
+============================================================
+============================================================
+📈 O_Daily_Fama-French.py - Daily Fama-French Factors
+============================================================
+dailyFF: Starting column standardization with data type enforcement
+dailyFF: Column order standardized successfully
+dailyFF: Successfully converted 6 columns to target dtypes
+Daily Fama-French factors downloaded with 26023 records
+Date range: 1926-07-01 to 2025-06-30
+
+Sample data:
+      time_d   mktrf     smb     hml       rf  umd
+0 1926-07-01  0.0009 -0.0025 -0.0027  0.00009  NaN
+1 1926-07-02  0.0045 -0.0033 -0.0006  0.00009  NaN
+2 1926-07-06  0.0017  0.0030 -0.0039  0.00009  NaN
+3 1926-07-07  0.0009 -0.0058  0.0002  0.00009  NaN
+4 1926-07-08  0.0022 -0.0038  0.0019  0.00009  NaN
+============================================================
+✅ O_Daily_Fama-French.py completed successfully
+============================================================
+============================================================
+✅ Completed: O_Daily_Fama-French.py
+Execution time: 1.29 seconds
+
+
+🔄 Starting: P_Monthly_Fama-French.py
+============================================================
+monthlyFF: Starting column standardization with data type enforcement
+monthlyFF: Column order standardized successfully
+monthlyFF: Successfully converted 6 columns to target dtypes
+Monthly Fama-French factors downloaded with 1188 records
+Date range: 1926-07-01 00:00:00 to 2025-06-01 00:00:00
+
+Sample data:
+    mktrf     smb     hml      rf  umd time_avail_m
+0  0.0289 -0.0255 -0.0239  0.0022  NaN   1926-07-01
+1  0.0264 -0.0114  0.0381  0.0025  NaN   1926-08-01
+2  0.0038 -0.0136  0.0005  0.0023  NaN   1926-09-01
+3 -0.0327 -0.0014  0.0082  0.0032  NaN   1926-10-01
+4  0.0254 -0.0011 -0.0061  0.0031  NaN   1926-11-01
+============================================================
+✅ Completed: P_Monthly_Fama-French.py
+Execution time: 0.96 seconds
+
+
+🔄 Starting: Q_MarketReturns.py
+============================================================
+monthlyMarket: Starting column standardization with data type enforcement
+monthlyMarket: Column order standardized successfully
+monthlyMarket: Successfully converted 4 columns to target dtypes
+Monthly Market Returns downloaded with 1189 records
+Date range: 1925-12-01 00:00:00 to 2024-12-01 00:00:00
+
+Sample data:
+     vwretd    ewretd      usdval time_avail_m
+0       NaN       NaN         NaN   1925-12-01
+1  0.000561  0.023174  27412916.2   1926-01-01
+2 -0.033046 -0.053510  27600952.1   1926-02-01
+3 -0.064002 -0.096824  26683758.1   1926-03-01
+4  0.037029  0.032975  24920555.6   1926-04-01
+
+Summary statistics:
+Value-weighted return - Mean: 0.0093, Std: 0.0531
+Equal-weighted return - Mean: 0.0119, Std: 0.0708
+============================================================
+✅ Completed: Q_MarketReturns.py
+Execution time: 0.94 seconds
+
+
+🔄 Starting: R_MonthlyLiquidityFactor.py
+============================================================
+monthlyLiquidity: Starting column standardization with data type enforcement
+monthlyLiquidity: Column order standardized successfully
+monthlyLiquidity: Successfully converted 2 columns to target dtypes
+Monthly Liquidity Factor downloaded with 749 records
+Date range: 1962-08-01 00:00:00 to 2024-12-01 00:00:00
+
+Sample data:
+   ps_innov time_avail_m
+0  0.004260   1962-08-01
+1  0.011763   1962-09-01
+2 -0.074041   1962-10-01
+3  0.028183   1962-11-01
+4  0.012929   1962-12-01
+
+Liquidity factor summary:
+Mean: 0.000006
+Std: 0.056199
+============================================================
+✅ Completed: R_MonthlyLiquidityFactor.py
+Execution time: 1.05 seconds
+
+
+🔄 Starting: S_QFactorModel.py
+============================================================
+Downloading Q-factor model data...
+Downloaded 13340 Q-factor records
+d_qfactor: Starting column standardization with data type enforcement
+d_qfactor: Column order standardized successfully
+d_qfactor: Successfully converted 6 columns to target dtypes
+Q-factor model data saved with 13340 records
+Date range: 1967-01-03 to 2019-12-31
+
+Sample data:
+   r_f_qfac  r_mkt_qfac  r_me_qfac  r_ia_qfac  r_roe_qfac     time_d
+0  0.000187    0.000767   0.004675   0.001528   -0.007185 1967-01-03
+1  0.000187    0.001548  -0.003560  -0.000422   -0.002235 1967-01-04
+2  0.000187    0.012869   0.004346  -0.005605    0.000651 1967-01-05
+3  0.000187    0.007257   0.006548   0.008974    0.003557 1967-01-06
+4  0.000187    0.008521   0.006059   0.000231    0.005118 1967-01-09
+
+Factor columns:
+  r_f_qfac
+  r_mkt_qfac
+  r_me_qfac
+  r_ia_qfac
+  r_roe_qfac
+============================================================
+✅ Completed: S_QFactorModel.py
+Execution time: 0.86 seconds
+
+
+🔄 Starting: T_VIX.py
+============================================================
+Downloading VIX data from FRED...
+Downloading VXOCLS (attempt 1...)
+Successfully downloaded 9321 observations
+Downloading VIXCLS (attempt 1...)
+Successfully downloaded 9309 observations
+d_vix: Starting column standardization with data type enforcement
+d_vix: Column order standardized successfully
+d_vix: Successfully converted 3 columns to target dtypes
+VIX data saved with 10352 records
+Date range: 1986-01-02 to 2025-09-05
+
+Sample data:
+      time_d        vix      dVIX
+0 1986-01-02  18.070000       NaN
+1 1986-01-03  17.959999 -0.110001
+2 1986-01-06  17.049999 -0.910000
+3 1986-01-07  17.389999  0.340000
+4 1986-01-08  19.969999  2.580000
+
+VIX summary:
+Total records: 10352
+Missing VIX values: 333
+Missing dVIX values: 662
+Mean: 20.08
+Std: 8.84
+Min: 6.32
+Max: 150.19
+============================================================
+✅ Completed: T_VIX.py
+Execution time: 0.76 seconds
+
+
+🔄 Starting: U_GNPDeflator.py
+============================================================
+Downloading GNP Deflator from FRED...
+Downloading GNPCTPI (attempt 1...)
+Successfully downloaded 314 observations
+GNPdefl: Starting column standardization with data type enforcement
+GNPdefl: Column order standardized successfully
+GNPdefl: Successfully converted 2 columns to target dtypes
+GNP Deflator data saved with 942 monthly records
+Date range: 1947-04-01 00:00:00 to 2025-09-01 00:00:00
+
+Sample data:
+  time_avail_m  gnpdefl
+0   1947-04-01  0.11127
+0   1947-05-01  0.11127
+0   1947-06-01  0.11127
+1   1947-07-01  0.11280
+1   1947-08-01  0.11280
+
+GNP Deflator summary:
+Mean: 0.533
+Min: 0.111
+Max: 1.280
+============================================================
+✅ Completed: U_GNPDeflator.py
+Execution time: 0.55 seconds
+
+
+🔄 Starting: V_TBill3M.py
+============================================================
+Processing 3-month T-bill rate...
+Downloading TB3MS from FRED...
+Downloaded 1100 monthly observations
+Aggregated to 367 quarterly observations
+Final dataset: 367 quarterly records
+Date range: 1934Q1 to 2025Q3
+TBill3M: Starting column standardization with data type enforcement
+TBill3M: Column order standardized successfully
+TBill3M: Successfully converted 3 columns to target dtypes
+3-month T-bill rate data saved successfully
+
+Sample data:
+   TbillRate3M  qtr  year
+0     0.005267    1  1934
+1     0.001533    2  1934
+2     0.001833    3  1934
+3     0.002500    4  1934
+4     0.001800    1  1935
+
+T-bill rate summary:
+Mean: 0.034172
+Std: 0.030906
+Min: 0.000133
+Max: 0.150533
+============================================================
+✅ Completed: V_TBill3M.py
+Execution time: 0.55 seconds
+
+
+🔄 Starting: W_BrokerDealerLeverage.py
+============================================================
+Processing broker-dealer leverage data...
+Downloading FRED series...
+Downloaded 300 observations for BOGZ1FL664090005Q
+Downloaded 300 observations for BOGZ1FL664190005Q
+Downloaded 300 observations for BOGZ1FL665080003Q
+Processed 229 quarterly observations
+brokerLev: Starting column standardization with data type enforcement
+brokerLev: Column order standardized successfully
+brokerLev: Successfully converted 3 columns to target dtypes
+Saved 229 records to ../pyData/Intermediate/brokerLev.parquet
+Broker-dealer leverage processing completed successfully.
+============================================================
+✅ Completed: W_BrokerDealerLeverage.py
+Execution time: 0.65 seconds
+
+
+🔄 Starting: X2_CIQCreditRatings.py
+============================================================
+Downloading CIQ Credit Ratings...
+Warning: this can take ~5 minutes to run.
+Downloading entity ratings...
+DEBUG MODE: Limiting entity query to 10000 rows
+Downloaded 10000 entity rating records in 61.7 seconds
+Downloading instrument ratings...
+DEBUG MODE: Limiting instrument query to 10000 rows
+Downloaded 10000 instrument rating records in 0.4 seconds
+Downloading security ratings...
+DEBUG MODE: Limiting security query to 10000 rows
+Downloaded 10000 security rating records in 0.6 seconds
+After removing date duplicates: 10767 records
+CIQ Credit Ratings data saved with 10767 records
+Date range: 1970-01-01 to 2025-08-21
+
+Source distribution:
+  1 (Entity): 5,568
+  2 (Instrument): 3,215
+  3 (Security): 1,984
+
+Sample data:
+       gvkey  ratingdate  currentratingnum  anydowngrade  source
+0     001004  1987-05-28              14.0             0       1
+5569  001004  1989-08-14               0.0             0       2
+5570  001004  1989-08-15               0.0             0       2
+9498  001004  1989-10-26              14.0             0       3
+5571  001004  1991-08-27               0.0             0       2
+============================================================
+✅ Completed: X2_CIQCreditRatings.py
+Execution time: 62.97 seconds
+
+
+🔄 Starting: X_SPCreditRatings.py
+============================================================
+Downloaded 3023652 credit rating records
+m_SP_creditratings: Starting column standardization with data type enforcement
+m_SP_creditratings: Column order standardized successfully
+m_SP_creditratings: Successfully converted 3 columns to target dtypes
+S&P Credit Ratings data saved with 3023652 records
+Date range: 1978-11-01 00:00:00 to 2017-02-01 00:00:00
+Unique companies: 25987
+
+Credit rating distribution:
+  0 (Unknown (0)): 2,323,986
+  1 (D): 7,514
+  2 (C): 42
+  3 (CC): 1,727
+  4 (CCC-): 2,052
+  5 (CCC): 4,869
+  6 (CCC+): 8,819
+  7 (B-): 21,375
+  8 (B): 43,572
+  9 (B+): 69,645
+  10 (BB-): 57,047
+  11 (BB): 45,416
+  12 (BB+): 35,609
+  13 (BBB-): 58,164
+  14 (BBB): 75,841
+  15 (BBB+): 61,895
+  16 (A-): 52,839
+  17 (A): 56,821
+  18 (A+): 38,430
+  19 (AA-): 23,788
+  20 (AA): 18,569
+  21 (AA+): 5,321
+  22 (AAA): 10,311
+
+Sample data:
+   gvkey time_avail_m  credrat
+0   1003   2004-06-01        0
+1   1003   2004-07-01        0
+2   1003   2004-08-01        0
+3   1003   2004-09-01        0
+4   1003   2004-10-01        0
+============================================================
+✅ Completed: X_SPCreditRatings.py
+Execution time: 7.09 seconds
+
+
+🔄 Starting: ZA_IPODates.py
+============================================================
+Downloading IPO dates from Ritter's website...
+Downloaded 15697 IPO records
+Filtered from 15697 to 14998 records after cleaning permno
+After keeping first obs per permno: 14985 records
+IPODates: Starting column standardization with data type enforcement
+IPODates: Column order standardized successfully
+IPODates: Successfully converted 3 columns to target dtypes
+IPO Dates data saved with 14985 records
+IPO date range: 1975-01-01 00:00:00 to 2023-12-01 00:00:00
+Founding year range: 1774 to 2023
+
+Sample data:
+    permno  FoundingYear    IPOdate
+0  67898.0        1901.0 1975-01-01
+1  63044.0        1908.0 1975-06-01
+2  59248.0        1901.0 1975-06-01
+3  61989.0        1965.0 1975-07-01
+4  58579.0        1909.0 1975-08-01
+============================================================
+✅ Completed: ZA_IPODates.py
+Execution time: 1.71 seconds
+
+
+🔄 Starting: ZB_PIN.py
+============================================================
+Downloading PIN data from Dropbox...
+Attempting to download from: https://www.dropbox.com/scl/fi/wjjb1rgwbzn8z8cbllzig/cpie_data.zip?rlkey=yz7nzy7phgs8lxsajuvec1mr3&dl=1
+Content-Type: application/binary
+Starting download... (this may take a few minutes)
+Downloaded 9.8 MB...
+Downloaded 19.5 MB...
+Downloaded 29.3 MB...
+Downloaded 39.1 MB...
+Downloaded 48.8 MB...
+Downloaded 58.6 MB...
+Downloaded 68.4 MB...
+Downloaded 78.1 MB...
+Downloaded 87.9 MB...
+Downloaded 97.7 MB...
+Downloaded 107.4 MB...
+Downloaded 117.2 MB...
+Downloaded 127.0 MB...
+Downloaded 136.7 MB...
+Downloaded 146.5 MB...
+Downloaded 156.2 MB...
+Downloaded 166.0 MB...
+Downloaded 175.8 MB...
+Downloaded 185.5 MB...
+Downloaded 195.3 MB...
+Downloaded 205.1 MB...
+Downloaded 214.8 MB...
+Downloaded 224.6 MB...
+Downloaded 234.4 MB...
+Downloaded 244.1 MB...
+Downloaded 253.9 MB...
+Download stream completed, checking file...
+Download complete: 272975922 bytes
+ZIP contains 5 files: ['cpie_daily.csv', 'dy_yearly.csv', 'gpin_yearly.csv', 'owr_yearly.csv', 'pin_yearly.csv']...
+Successfully loaded PIN data from zip file
+Downloaded 21206 PIN yearly records
+Expanded to 254472 monthly PIN records
+DEBUG MODE: Limited to 10000 rows
+pin_monthly: Starting column standardization with data type enforcement
+pin_monthly: Column order standardized successfully
+pin_monthly: Successfully converted 10 columns to target dtypes
+PIN monthly data saved with 10000 records
+Date range: 1993-12-01 00:00:00 to 2013-11-01 00:00:00
+Unique permnos: 87
+a summary - Mean: 0.3572, Std: 0.1179
+eb summary - Mean: 1149.4012, Std: 3810.9106
+es summary - Mean: 1115.3446, Std: 3754.7659
+u summary - Mean: 259.8076, Std: 498.2361
+d summary - Mean: 0.6136, Std: 0.1939
+
+Sample data:
+   permno  year  month time_avail_m  ...        eb        es          u         d
+0   10057  1993      1   1993-12-01  ...  5.469714  5.743333  10.506811  0.605181
+0   10057  1993      2   1994-01-01  ...  5.469714  5.743333  10.506811  0.605181
+0   10057  1993      3   1994-02-01  ...  5.469714  5.743333  10.506811  0.605181
+0   10057  1993      4   1994-03-01  ...  5.469714  5.743333  10.506811  0.605181
+0   10057  1993      5   1994-04-01  ...  5.469714  5.743333  10.506811  0.605181
+
+[5 rows x 9 columns]
+============================================================
+✅ Completed: ZB_PIN.py
+Execution time: 100.65 seconds
+
+
+🔄 Starting: ZC_GovernanceIndex.py
+============================================================
+Downloading Governance Index data...
+Downloaded 14000 governance records
+After removing ticker-year duplicates: 13999 records
+Interpolating time series...
+After interpolation: 511674 records
+GovIndex: Starting column standardization with data type enforcement
+GovIndex: Column order standardized successfully
+GovIndex: Successfully converted 3 columns to target dtypes
+Governance Index data saved with 511674 records
+Date range: 1990-09-01 00:00:00 to 2007-01-01 00:00:00
+Unique tickers: 4017
+G-Index summary - Mean: 8.90, Std: 2.77
+
+Sample data:
+  ticker  G time_avail_m
+0      A  7   2002-01-01
+1      A  7   2002-02-01
+2      A  7   2002-03-01
+3      A  7   2002-04-01
+4      A  7   2002-05-01
+============================================================
+✅ Completed: ZC_GovernanceIndex.py
+Execution time: 6.74 seconds
+
+
+🔄 Starting: ZD_CorwinSchultz.py
+============================================================
+Processing Corwin-Schultz bid-ask spread data...
+Loaded 4481622 records from ../pyData/Prep/corwin_schultz_spread.csv
+After dropping missing PERMNO: 4481622 records
+BAspreadsCorwin: Starting column standardization with data type enforcement
+BAspreadsCorwin: Column order standardized successfully
+BAspreadsCorwin: Successfully converted 3 columns to target dtypes
+Saved 4481622 records to ../pyData/Intermediate/BAspreadsCorwin.parquet
+Corwin-Schultz bid-ask spread processing completed successfully.
+============================================================
+✅ Completed: ZD_CorwinSchultz.py
+Execution time: 2.82 seconds
+
+
+🔄 Starting: ZE_13F.py
+============================================================
+Processing Thomson Reuters 13F holdings data...
+Loaded 865717 records from ../pyData/Prep/tr_13f.csv
+After dropping missing PERMNO: 865717 records
+After forward-fill and cleanup: 2628653 records
+time_avail_m dtype: datetime64[ns]
+Pattern 1 fix: Verified time_avail_m format
+TR_13F: Starting column standardization with data type enforcement
+TR_13F: Column order standardized successfully
+TR_13F: Successfully converted 7 columns to target dtypes
+Saved 2628653 records to ../pyData/Intermediate/TR_13F.parquet
+Thomson Reuters 13F holdings processing completed successfully.
+============================================================
+✅ Completed: ZE_13F.py
+Execution time: 27.14 seconds
+
+
+🔄 Starting: ZF_CRSPIBESLink.py
+============================================================
+Processing CRSP-IBES linking data...
+Querying IBES-CRSP link from WRDS database...
+Loaded 29751 IBES-CRSP linking records from WRDS
+Joined IBES-CRSP link with CRSP monthly data: 5121 rows
+Removed duplicates by score: 5121 rows
+IBESCRSPLinkingTable: Starting column standardization with data type enforcement
+IBESCRSPLinkingTable: Removing extra columns: ['ncusip', 'sdate_m', 'edate_m']
+IBESCRSPLinkingTable: Column order standardized successfully
+IBESCRSPLinkingTable: Successfully converted 4 columns to target dtypes
+IBES-CRSP Linking Table saved with 5121 records
+Unique permnos: 33
+Unique IBES tickers: 33
+
+Sample data:
+  tickerIBES  permno time_avail_m  score
+0       GFGC   10001   1989-03-01      1
+1       GFGC   10001   1989-04-01      1
+2       GFGC   10001   1989-05-01      1
+3       GFGC   10001   1989-06-01      1
+4       GFGC   10001   1989-07-01      1
+============================================================
+✅ Completed: ZF_CRSPIBESLink.py
+Execution time: 1.13 seconds
+
+
+🔄 Starting: ZG_BidaskTAQ.py
+============================================================
+/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/DataDownloads/ZG_BidaskTAQ.py:28: DtypeWarning: Columns (7) have mixed types. Specify dtype option on import or set low_memory=False.
+  data = pd.read_csv(input_file)
+Processing high-frequency bid-ask spread data...
+Loaded 3262927 records from ../pyData/Prep/hf_monthly.csv
+After dropping missing values: 3262927 records
+hf_spread: Starting column standardization with data type enforcement
+hf_spread: Column order standardized successfully
+hf_spread: Successfully converted 3 columns to target dtypes
+Saved 3262927 records to ../pyData/Intermediate/hf_spread.parquet
+High-frequency bid-ask spread processing completed successfully.
+============================================================
+✅ Completed: ZG_BidaskTAQ.py
+Execution time: 2.63 seconds
+
+
+🔄 Starting: ZH2_OptionMetricsCRSPLink.py
+============================================================
+Processing CRSP-OptionMetrics data...
+Loaded 32379 OptionMetrics linking records from WRDS
+joined om-crsp link, crspm, and option volume data: 3360 rows
+removed duplicates by score: 3360 rows
+OPTIONMETRICSCRSPLinkingTable: Starting column standardization with data type enforcement
+OPTIONMETRICSCRSPLinkingTable: Adding missing columns: ['volume']
+OPTIONMETRICSCRSPLinkingTable: Column order standardized successfully
+OPTIONMETRICSCRSPLinkingTable: Successfully converted 6 columns to target dtypes
+OptionMetrics linking data saved with 3360 records
+============================================================
+✅ Completed: ZH2_OptionMetricsCRSPLink.py
+Execution time: 1.34 seconds
+
+
+🔄 Starting: ZH_OptionMetricsCleaning.py
+============================================================
+Processing OptionMetrics data...
+Processing OptionMetricsVolSurf...
+OptionMetricsVolSurf: Starting column standardization with data type enforcement
+OptionMetricsVolSurf: Column order standardized successfully
+OptionMetricsVolSurf: Successfully converted 7 columns to target dtypes
+Saved OptionMetricsVolSurf: 4617772 records
+Processing OptionMetricsXZZ...
+OptionMetricsXZZ: Starting column standardization with data type enforcement
+OptionMetricsXZZ: Column order standardized successfully
+OptionMetricsXZZ: Successfully converted 3 columns to target dtypes
+Saved OptionMetricsXZZ: 611701 records
+Processing OptionMetricsBH...
+OptionMetricsBH: Starting column standardization with data type enforcement
+OptionMetricsBH: Removing extra columns: ['date']
+OptionMetricsBH: Column order standardized successfully
+OptionMetricsBH: Successfully converted 7 columns to target dtypes
+Saved OptionMetricsBH: 2852712 records
+OptionMetrics data processing completed successfully.
+============================================================
+✅ Completed: ZH_OptionMetricsCleaning.py
+Execution time: 3.42 seconds
+
+
+🔄 Starting: ZI_PatentCitations.py
+============================================================
+2025-09-08 10:08:23,499 - INFO - Starting Patent Citations processing with pure Python implementation...
+2025-09-08 10:08:23,499 - INFO - Downloading NBER patent datasets...
+2025-09-08 10:08:23,499 - INFO - Downloading http://www.nber.org/~jbessen/dynass.dta.zip
+2025-09-08 10:08:24,008 - INFO - Downloaded dynass: 13,458 rows
+2025-09-08 10:08:24,008 - INFO - Downloading http://www.nber.org/~jbessen/cite76_06.dta.zip
+2025-09-08 10:08:54,243 - INFO - Downloaded cite76_06: 23,650,891 rows
+2025-09-08 10:08:54,243 - INFO - Downloading http://www.nber.org/~jbessen/pat76_06_assg.dta.zip
+2025-09-08 10:13:23,449 - INFO - Downloaded pat76_06_assg: 3,279,509 rows
+2025-09-08 10:13:23,449 - INFO - Processing patent counts...
+2025-09-08 10:13:23,760 - INFO - Created patent counts: 59,464 rows
+2025-09-08 10:13:23,760 - INFO - Processing patent citations...
+2025-09-08 10:13:34,018 - INFO - Created citation data: 8,234,166 rows
+2025-09-08 10:13:34,018 - INFO - Scaling citations by subcategory...
+2025-09-08 10:13:34,884 - INFO - Created scaled citations: 28,763 rows
+2025-09-08 10:13:34,884 - INFO - Merging patents and citations...
+2025-09-08 10:13:34,891 - INFO - Merged data: 39,846 rows
+2025-09-08 10:13:34,891 - INFO - Creating balanced panel...
+2025-09-08 10:13:34,955 - INFO - Balanced panel: 196,664 rows
+2025-09-08 10:13:34,991 - INFO - Successfully saved 196,664 rows to ../pyData/Intermediate/PatentDataProcessed.parquet
+2025-09-08 10:13:34,991 - INFO - Patent Citations processing completed successfully!
+2025-09-08 10:13:34,991 - INFO - Sample data:
+2025-09-08 10:13:34,993 - INFO -     gvkey    year  npat  ncitscale
+0  1000.0  1976.0   4.0        0.0
+1  1000.0  1977.0   2.0        0.0
+2  1000.0  1978.0   0.0        0.0
+3  1000.0  1979.0   0.0        0.0
+4  1000.0  1980.0   0.0        0.0
+2025-09-08 10:13:34,993 - INFO - Summary statistics:
+2025-09-08 10:13:34,994 - INFO - npat: mean=5.832242, std=57.718896, count=196664
+2025-09-08 10:13:34,995 - INFO - ncitscale: mean=2.053202, std=19.921014, count=196664
+PatentDataProcessed: Starting column standardization with data type enforcement
+PatentDataProcessed: Column order standardized successfully
+PatentDataProcessed: Successfully converted 4 columns to target dtypes
+============================================================
+✅ Completed: ZI_PatentCitations.py
+Execution time: 312.14 seconds
+
+
+🔄 Starting: ZJ_InputOutputMomentum.py
+============================================================
+2025-09-08 10:13:35,730 - INFO - Starting InputOutputMomentum processing using R script...
+2025-09-08 10:13:35,730 - INFO - Calling R script...
+2025-09-08 10:13:36,490 - ERROR - R script failed with return code 1
+2025-09-08 10:13:36,490 - ERROR - STDERR: ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.2     ✔ tibble    3.2.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.0.4
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:lubridate’:
+
+    hour, isoweek, mday, minute, month, quarter, second, wday, week,
+    yday, year
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Error: CompustatAnnual.csv is less than 1000*50 rows.
+This likely means that DataDownloads/B_CompustatAnnual.py was run with MAX_ROWS_DL != -1.
+InputOutputMomentum will not work without complete CompustatAnnual data.
+Please run DataDownloads/B_CompustatAnnual.py with MAX_ROWS_DL = -1
+and try again.
+Also you probably want to run DataDownloads/I_CRSPmonthly.py with MAX_ROWS_DL = -1
+Execution halted
+
+2025-09-08 10:13:36,490 - ERROR - STDOUT:
+2025-09-08 10:13:36,490 - ERROR - Error running R script: R script execution failed: ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.2     ✔ tibble    3.2.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.0.4
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:lubridate’:
+
+    hour, isoweek, mday, minute, month, quarter, second, wday, week,
+    yday, year
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Error: CompustatAnnual.csv is less than 1000*50 rows.
+This likely means that DataDownloads/B_CompustatAnnual.py was run with MAX_ROWS_DL != -1.
+InputOutputMomentum will not work without complete CompustatAnnual data.
+Please run DataDownloads/B_CompustatAnnual.py with MAX_ROWS_DL = -1
+and try again.
+Also you probably want to run DataDownloads/I_CRSPmonthly.py with MAX_ROWS_DL = -1
+Execution halted
+
+Traceback (most recent call last):
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/DataDownloads/ZJ_InputOutputMomentum.py", line 136, in <module>
+    main()
+    ~~~~^^
+  File "/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/Signals/pyCode/DataDownloads/ZJ_InputOutputMomentum.py", line 43, in main
+    raise RuntimeError(f"R script execution failed: {result.stderr}")
+RuntimeError: R script execution failed: ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.1.4     ✔ readr     2.1.5
+✔ forcats   1.0.0     ✔ stringr   1.5.1
+✔ ggplot2   3.5.2     ✔ tibble    3.2.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+✔ purrr     1.0.4
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:lubridate’:
+
+    hour, isoweek, mday, minute, month, quarter, second, wday, week,
+    yday, year
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+Error: CompustatAnnual.csv is less than 1000*50 rows.
+This likely means that DataDownloads/B_CompustatAnnual.py was run with MAX_ROWS_DL != -1.
+InputOutputMomentum will not work without complete CompustatAnnual data.
+Please run DataDownloads/B_CompustatAnnual.py with MAX_ROWS_DL = -1
+and try again.
+Also you probably want to run DataDownloads/I_CRSPmonthly.py with MAX_ROWS_DL = -1
+Execution halted
+
+============================================================
+❌ ERROR in ZJ_InputOutputMomentum.py: Return code 1
+Error details: Script failed with return code 1
+Execution time: 1.11 seconds
+
+
+🔄 Starting: ZK_CustomerMomentum.py
+============================================================
+2025-09-08 10:13:36,733 - INFO - Starting customer momentum processing...
+2025-09-08 10:13:36,733 - INFO - Loading input data...
+2025-09-08 10:13:36,971 - INFO - Loaded customer segments: 704,826 rows
+2025-09-08 10:13:37,030 - INFO - Loaded CCM linking: 31,905 rows
+2025-09-08 10:13:37,044 - INFO - Loaded CRSP monthly: 10,000 rows
+2025-09-08 10:13:37,044 - INFO - Cleaning customer data...
+2025-09-08 10:13:37,754 - INFO - After cleaning customer data: 224,325 rows
+2025-09-08 10:13:37,754 - INFO - Cleaning CCM data...
+2025-09-08 10:13:37,836 - INFO - Cleaned CCM data: 31,905 rows
+2025-09-08 10:13:37,836 - INFO - Adding permno data...
+2025-09-08 10:13:37,868 - INFO - After inner join with CCM: 253,132 rows
+2025-09-08 10:13:37,893 - INFO - After date filtering: 181,366 rows
+2025-09-08 10:13:37,918 - INFO - After customer name matching: 210,449 rows
+2025-09-08 10:13:37,921 - INFO - After customer filtering: 45,711 rows
+2025-09-08 10:13:37,926 - INFO - Final customer-firm relationships: 45,711 rows
+2025-09-08 10:13:37,926 - INFO - Creating monthly frame...
+2025-09-08 10:13:37,928 - INFO - Monthly frame: 1,359 rows
+2025-09-08 10:13:37,928 - INFO - Creating wide customer data...
+2025-09-08 10:13:37,957 - INFO - Wide format data: 26,903 rows, 26 customer columns
+2025-09-08 10:13:37,965 - INFO - Wide customer data with stop rows: 31,832 rows
+2025-09-08 10:13:37,965 - INFO - Merging and filling customer data...
+2025-09-08 10:13:37,974 - INFO - Long customer data after fill: 732 rows
+2025-09-08 10:13:37,974 - INFO - Calculating customer momentum...
+2025-09-08 10:13:37,974 - INFO - Customer returns: 0 rows
+2025-09-08 10:13:37,975 - INFO - After merging customer returns: 0 rows
+2025-09-08 10:13:37,976 - INFO - Final customer momentum: 0 rows
+2025-09-08 10:13:38,006 - INFO - Successfully saved 0 rows to ../pyData/Intermediate/customerMom.parquet
+2025-09-08 10:13:38,006 - INFO - Customer momentum processing completed!
+customerMom: Starting column standardization with data type enforcement
+customerMom: Column order standardized successfully
+customerMom: Successfully converted 3 columns to target dtypes
+============================================================
+✅ Completed: ZK_CustomerMomentum.py
+Execution time: 1.52 seconds
+
+Log completed at 2025-09-08 10:13:38

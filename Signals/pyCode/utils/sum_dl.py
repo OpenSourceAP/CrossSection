@@ -5,7 +5,7 @@ ABOUTME: Computes counts, means, std dev, and percentiles for datasets
 
 This script takes a DataDownloads script name, finds all datasets it produces
 from 00_map.yaml, loads each dataset, and computes summary statistics for all
-columns.
+columns. Can process single scripts or all scripts in DataDownloads directory.
 
 For all columns: count of non-missing values
 For numeric columns: mean, standard deviation, 25th and 75th percentiles
@@ -13,14 +13,16 @@ For numeric columns: mean, standard deviation, 25th and 75th percentiles
 
 Arguments:
   script_name    Name of the DataDownloads script (e.g., 'B_CompustatAnnual')
+  --all          Process all Python scripts in DataDownloads directory
 
 Output:
-  Saves summary statistics to ../Logs/sum_dl_[script_name].md in markdown
-  format
+  Saves summary statistics to ../Logs/sumout_dl_[script_name].md in markdown
+  format (one file per script)
 
 Usage examples:
-  python3 utils/sum_dl.py B_CompustatAnnual  # Summarize annual outputs
-  python3 utils/sum_dl.py I_CRSPmonthly     # Summarize monthly outputs
+  python3 utils/sum_dl.py B_CompustatAnnual  # Summarize specific script
+  python3 utils/sum_dl.py I_CRSPmonthly     # Summarize specific script
+  python3 utils/sum_dl.py --all             # Summarize all scripts
 """
 
 import pandas as pd
@@ -30,6 +32,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 import numpy as np
+import glob
+import argparse
 
 
 def load_dataset_map():
@@ -206,35 +210,15 @@ def format_stats_to_markdown(results, script_name):
     return "\n".join(lines)
 
 
-def main():
-    """Main execution function."""
-    if len(sys.argv) != 2:
-        print("Usage: python3 utils/sum_dl.py <script_name>")
-        print("Example: python3 utils/sum_dl.py B_CompustatAnnual")
-        sys.exit(1)
-
-    script_name = sys.argv[1]
-
-    # Check that script is being run from the correct directory (pyCode/)
-    if not Path("01_DownloadData.py").exists():
-        print("ERROR: This script must be run from the pyCode/ directory.")
-        print("Usage: cd pyCode/ && python3 utils/sum_dl.py <script_name>")
-        sys.exit(1)
-
+def process_single_script(script_name, dataset_map):
+    """Process a single script and return success status."""
     print(f"🔍 Finding datasets for script: {script_name}")
-
-    # Load dataset mapping
-    try:
-        dataset_map = load_dataset_map()
-    except Exception as e:
-        print(f"Error loading dataset map: {e}")
-        sys.exit(1)
 
     # Find datasets for this script
     datasets = find_datasets_by_script(script_name, dataset_map)
     if not datasets:
         print(f"No datasets found for script: {script_name}")
-        sys.exit(1)
+        return False
 
     print(f"📊 Found {len(datasets)} datasets: {', '.join(datasets)}")
 
@@ -258,7 +242,7 @@ def main():
 
     if not results:
         print("No datasets could be processed successfully.")
-        sys.exit(1)
+        return False
 
     # Generate markdown report
     markdown_content = format_stats_to_markdown(results, script_name)
@@ -273,6 +257,98 @@ def main():
 
     print(f"✅ Summary statistics saved to: {output_file}")
     print(f"📈 Processed {len(results)} datasets successfully")
+    return True
+
+
+def get_all_datadownloads_scripts():
+    """Get list of all Python scripts in DataDownloads directory."""
+    script_files = glob.glob("DataDownloads/*.py")
+    script_names = []
+    for script_file in script_files:
+        # Extract script name without path and .py extension
+        script_name = os.path.basename(script_file)[:-3]  # Remove .py
+        script_names.append(script_name)
+    return sorted(script_names)
+
+
+def main():
+    """Main execution function."""
+    parser = argparse.ArgumentParser(
+        description='Generate summary statistics for DataDownloads script outputs',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  python3 utils/sum_dl.py B_CompustatAnnual  # Summarize specific script
+  python3 utils/sum_dl.py --all              # Summarize all scripts
+        ''')
+    
+    parser.add_argument('script_name', nargs='?', 
+                        help='Name of the DataDownloads script (e.g., B_CompustatAnnual)')
+    parser.add_argument('--all', action='store_true',
+                        help='Process all Python scripts in DataDownloads directory')
+    
+    args = parser.parse_args()
+
+    # Check for conflicting arguments
+    if args.all and args.script_name:
+        print("ERROR: Cannot specify both --all and a script name")
+        sys.exit(1)
+    
+    if not args.all and not args.script_name:
+        print("ERROR: Must specify either --all or a script name")
+        parser.print_help()
+        sys.exit(1)
+
+    # Check that script is being run from the correct directory (pyCode/)
+    if not Path("01_DownloadData.py").exists():
+        print("ERROR: This script must be run from the pyCode/ directory.")
+        print("Usage: cd pyCode/ && python3 utils/sum_dl.py <script_name>")
+        sys.exit(1)
+
+    # Load dataset mapping
+    try:
+        dataset_map = load_dataset_map()
+    except Exception as e:
+        print(f"Error loading dataset map: {e}")
+        sys.exit(1)
+
+    if args.all:
+        # Process all scripts
+        script_names = get_all_datadownloads_scripts()
+        if not script_names:
+            print("No Python scripts found in DataDownloads directory")
+            sys.exit(1)
+        
+        print(f"🔄 Processing {len(script_names)} scripts in DataDownloads directory...")
+        print("")
+        
+        successful_scripts = 0
+        failed_scripts = []
+        
+        for script_name in script_names:
+            print(f"{'='*60}")
+            print(f"Processing script: {script_name}")
+            print(f"{'='*60}")
+            
+            success = process_single_script(script_name, dataset_map)
+            if success:
+                successful_scripts += 1
+            else:
+                failed_scripts.append(script_name)
+            print("")
+        
+        # Final summary
+        print(f"{'='*60}")
+        print(f"FINAL SUMMARY")
+        print(f"{'='*60}")
+        print(f"✅ Successfully processed: {successful_scripts}/{len(script_names)} scripts")
+        if failed_scripts:
+            print(f"❌ Failed scripts: {', '.join(failed_scripts)}")
+    else:
+        # Process single script
+        success = process_single_script(args.script_name, dataset_map)
+        if not success:
+            sys.exit(1)
 
 
 if __name__ == "__main__":

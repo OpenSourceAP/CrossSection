@@ -9,8 +9,8 @@
 # (where 5 is the number of iterations)
 
 alias claude="/Users/chen1678/.claude/local/claude"
-PLAN_NAME="plan-max-rows-removal.md"
-THINK_INSTRUCTION="Think hard." # e.g. "", "Think.", "Ultrathink.'"
+PLAN_NAME="plan-dl-streamline.md"
+THINK_INSTRUCTION="" # e.g. "", "Think.", "Ultrathink.'"
 
 cd ..
 
@@ -28,5 +28,6 @@ do
   "\
     --model claude-sonnet-4-20250514 \
     --permission-mode acceptEdits \
-    --verbose
+    --verbose \
+    --output-format stream-json
 done
