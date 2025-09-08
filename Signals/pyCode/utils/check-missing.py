@@ -3,7 +3,7 @@ import pandas as pd
 import polars as pl
 
 placebo_name = 'AssetGrowth_q'
-compq_varlist = ['atq', 'saleq']
+compq_varlist = ['atq']
 
 #%%
 # find missing obs
@@ -12,8 +12,8 @@ compq_varlist = ['atq', 'saleq']
 stata_file = f"../Data/Placebos/{placebo_name}.csv"
 python_file = f"../pyData/Placebos/{placebo_name}.csv"
 
-stata_df = pl.read_csv(stata_file).rename({'AssetGrowth_q': 'stata'})
-python_df = pl.read_csv(python_file).rename({'AssetGrowth_q': 'python'})
+stata_df = pl.read_csv(stata_file).rename({placebo_name: 'stata'})
+python_df = pl.read_csv(python_file).rename({placebo_name: 'python'})
 
 both = python_df.join(stata_df, on=['permno', 'yyyymm'], how='full', coalesce=True)
 

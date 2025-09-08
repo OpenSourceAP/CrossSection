@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# ABOUTME: Liquidity betas using asreg utility for rolling regressions
-# ABOUTME: Simplified implementation using utils/stata_regress.py asreg function
+# ABOUTME: Liquidity betas following Acharya and Pedersen (2005) exact Stata replication
+# ABOUTME: Fixed implementation matching Stata preserve/restore logic and data filtering
 
-import polars as pl
 import pandas as pd
 import numpy as np
 import sys
@@ -58,7 +57,6 @@ else:
     july_1962_market = df['usdval'].dropna().iloc[0] if len(df) > 0 else 1.0
 
 df['MarketCapitalization'] = df['usdval'] / july_1962_market
-
 print(f"Market cap base (July 1962): {july_1962_market}")
 
 # Set panel structure (sorting equivalent to xtset)
@@ -81,8 +79,6 @@ market_subset = df[
 
 # Market calculations on filtered subset
 market_subset['mktcap'] = market_subset['shrout'] * market_subset['prc'].abs()
-# CORRECTED: Use Stata's formula for market aggregation (line 40)
-# temp2 = min(ill, (30-.25)/(.3*MarketCapitalization)) 
 market_subset['temp2'] = np.minimum(
     market_subset['ill'], 
     (30.0 - 0.25) / (0.3 * market_subset['MarketCapitalization'])
@@ -147,13 +143,7 @@ if len(market_clean) > 60:
         market_agg['_b_templ2'] * market_agg['templ2']
     )
     
-    valid_illiq_innovations = market_agg['eps_c_M'].count()
-    print(f"Market illiquidity innovations computed: {valid_illiq_innovations} observations")
-    
-    # Check date range of valid innovations
-    valid_illiq_dates = market_agg.dropna(subset=['eps_c_M'])
-    if len(valid_illiq_dates) > 0:
-        print(f"  Valid illiquidity innovations from {valid_illiq_dates['time_avail_m'].min().strftime('%Y-%m')} to {valid_illiq_dates['time_avail_m'].max().strftime('%Y-%m')}")
+    print(f"Market illiquidity innovations computed: {market_agg['eps_c_M'].count()} observations")
 else:
     print("Insufficient data for market illiquidity regression")
     market_agg['eps_c_M'] = np.nan
@@ -192,34 +182,6 @@ if len(market_ret_clean) > 60:
     )
     
     print(f"Market return innovations computed: {market_agg['eps_r_M'].count()} observations")
-    
-    # Check date range of valid return innovations  
-    valid_ret_dates = market_agg.dropna(subset=['eps_r_M'])
-    if len(valid_ret_dates) > 0:
-        print(f"  Valid return innovations from {valid_ret_dates['time_avail_m'].min().strftime('%Y-%m')} to {valid_ret_dates['time_avail_m'].max().strftime('%Y-%m')}")
-        
-    # DEBUG: Check market innovation magnitudes around problematic period
-    print(f"\n=== MARKET INNOVATION DIAGNOSTICS ===")
-    target_period = market_agg[
-        (market_agg['time_avail_m'] >= pd.to_datetime('2017-01-01')) &
-        (market_agg['time_avail_m'] <= pd.to_datetime('2017-05-01'))
-    ]
-    
-    if len(target_period) > 0:
-        print(f"Market innovations around target period (2017-01 to 2017-05):")
-        for _, row in target_period.iterrows():
-            date_str = row['time_avail_m'].strftime('%Y-%m')
-            eps_c_M = row.get('eps_c_M', np.nan)
-            eps_r_M = row.get('eps_r_M', np.nan)
-            print(f"  {date_str}: eps_c_M = {eps_c_M:.8f}, eps_r_M = {eps_r_M:.8f}")
-            
-    # Check overall market innovation statistics
-    eps_c_M_stats = market_agg['eps_c_M'].describe()
-    eps_r_M_stats = market_agg['eps_r_M'].describe()
-    print(f"\nOverall market innovation statistics:")
-    print(f"eps_c_M: mean = {eps_c_M_stats['mean']:.6f}, std = {eps_c_M_stats['std']:.6f}")
-    print(f"eps_r_M: mean = {eps_r_M_stats['mean']:.6f}, std = {eps_r_M_stats['std']:.6f}")
-        
 else:
     print("Insufficient data for market return regression") 
     market_agg['eps_r_M'] = np.nan
@@ -271,8 +233,7 @@ if len(df_work) > 0:
     df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'eps_c_i', 'mean', 'mean60_eps_c_i', min_samples=24)
     df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'eps_c_M', 'mean', 'mean60_eps_c_M', min_samples=24)
     
-    # Variance of difference (eps_r_M - eps_c_M) - BY STOCK over time
-    # NOTE: Stata line 83 DOES use "by(permno)" - variance calculated per stock over time
+    # Variance of difference (eps_r_M - eps_c_M)
     df_work['tempEpsDiff'] = df_work['eps_r_M'] - df_work['eps_c_M']
     df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'tempEpsDiff', 'std', 'sd60_tempEpsDiff', min_samples=24)
     df_work['sd60_tempEpsDiff'] = df_work['sd60_tempEpsDiff'] ** 2
@@ -297,89 +258,9 @@ if len(df_work) > 0:
     df_work['betaCC'] = df_work['mean60_tempCC'] / df_work['sd60_tempEpsDiff']
     df_work['betaRC'] = df_work['mean60_tempRC'] / df_work['sd60_tempEpsDiff']
     df_work['betaCR'] = df_work['mean60_tempCR'] / df_work['sd60_tempEpsDiff']
-    
-    # Debug specific problematic observation through full calculation
-    target_permno = 13030
-    target_date = pd.to_datetime('2017-05-01')
-    debug_obs = df_work[(df_work['permno'] == target_permno) & (df_work['time_avail_m'] == target_date)]
-    
-    if len(debug_obs) > 0:
-        obs = debug_obs.iloc[0]
-        print(f"\n=== COMPREHENSIVE DEBUG: permno {target_permno}, date {target_date.strftime('%Y-%m')} ===")
-        print(f"Target: Stata betaCC = 0.33517909, Python betaCC = {obs['betaCC']:.8f}")
-        
-        print(f"\nStep 6: Rolling covariance and final beta")
-        print(f"  mean60_tempCC: {obs['mean60_tempCC']:.8f}")
-        print(f"  sd60_tempEpsDiff: {obs['sd60_tempEpsDiff']:.8f}")
-        print(f"  betaCC = {obs['mean60_tempCC']:.8f} / {obs['sd60_tempEpsDiff']:.8f} = {obs['betaCC']:.8f}")
-        
-        expected_mean60_tempCC = 0.33517909 * obs['sd60_tempEpsDiff']
-        print(f"  Expected mean60_tempCC for Stata result: {expected_mean60_tempCC:.8f}")
-        print(f"  Actual mean60_tempCC: {obs['mean60_tempCC']:.8f}")
-        print(f"  Ratio (expected/actual): {expected_mean60_tempCC/obs['mean60_tempCC']:.2f}")
-        
-        # INVESTIGATE: Check historical tempCC values for this stock
-        print(f"\n=== HISTORICAL tempCC ANALYSIS ===")
-        target_stock_history = df_work[
-            (df_work['permno'] == target_permno) & 
-            (df_work['time_avail_m'] >= target_date - pd.DateOffset(months=60)) &
-            (df_work['time_avail_m'] <= target_date)
-        ].copy()
-        
-        target_stock_history = target_stock_history.sort_values('time_avail_m')
-        
-        print(f"Historical data available: {len(target_stock_history)} months")
-        
-        if len(target_stock_history) >= 10:
-            # Show recent tempCC values
-            print(f"Last 10 months of tempCC values:")
-            recent_10 = target_stock_history.tail(10)
-            for _, row in recent_10.iterrows():
-                date_str = row['time_avail_m'].strftime('%Y-%m')
-                tempCC = row.get('tempCC', np.nan)
-                print(f"  {date_str}: tempCC = {tempCC:.8f}")
-            
-            # Manual calculation of rolling mean for verification
-            tempCC_values = target_stock_history['tempCC'].dropna()
-            if len(tempCC_values) >= 24:  # min_samples requirement
-                manual_mean = tempCC_values.tail(60).mean()  # Last 60 values (or fewer if not available)
-                print(f"\nManual verification:")
-                print(f"  Available tempCC observations: {len(tempCC_values)}")
-                print(f"  Used for rolling mean: {min(60, len(tempCC_values))} observations")
-                print(f"  Manual mean60_tempCC: {manual_mean:.8f}")
-                print(f"  asrol mean60_tempCC: {obs['mean60_tempCC']:.8f}")
-                print(f"  Match: {'✅' if abs(manual_mean - obs['mean60_tempCC']) < 1e-8 else '❌'}")
-                
-                # Check if tempCC values are reasonable
-                tempCC_mean = tempCC_values.mean()
-                tempCC_std = tempCC_values.std()
-                print(f"\nHistorical tempCC statistics:")
-                print(f"  Overall mean: {tempCC_mean:.8f}")
-                print(f"  Overall std: {tempCC_std:.8f}")
-                print(f"  Min: {tempCC_values.min():.8f}")
-                print(f"  Max: {tempCC_values.max():.8f}")
-            else:
-                print(f"Insufficient tempCC observations for analysis: {len(tempCC_values)}")
-        
-    else:
-        print(f"\nDEBUG: Target observation not found")
-    
-    # Check for inf/nan in component betas before computing betaNet
-    for beta in ['betaRR', 'betaCC', 'betaRC', 'betaCR']:
-        inf_count = np.isinf(df_work[beta]).sum()
-        if inf_count > 0:
-            print(f"  {beta}: {inf_count:,} inf values")
-            df_work[beta] = df_work[beta].replace([np.inf, -np.inf], np.nan)
-    
     df_work['betaNet'] = df_work['betaRR'] + df_work['betaCC'] - df_work['betaRC'] - df_work['betaCR']
     
-    # Check betaNet for inf values
-    betanet_inf = np.isinf(df_work['betaNet']).sum()
-    if betanet_inf > 0:
-        print(f"  betaNet: {betanet_inf:,} inf values - replacing with nan")
-        df_work['betaNet'] = df_work['betaNet'].replace([np.inf, -np.inf], np.nan)
-    
-    # Apply price filter (exact Stata condition) - filter applied to all observations
+    # Apply price filter (exact Stata condition)
     print("Applying price filter...")
     for beta_name in ['betaRR', 'betaCC', 'betaRC', 'betaCR', 'betaNet']:
         df_work.loc[df_work['prc'].abs() > 1000, beta_name] = np.nan
@@ -407,7 +288,7 @@ if len(df_work) > 0:
             output_path = f"../pyData/Placebos/{beta_name}.csv"
             empty_df.to_csv(output_path, index=False)
             print(f"❌ Saved 0 {beta_name} observations to {beta_name}.csv")
-            
+
 else:
     print("❌ No valid data after filtering - saving empty files")
     for beta_name in ['betaRR', 'betaCC', 'betaRC', 'betaCR', 'betaNet']:

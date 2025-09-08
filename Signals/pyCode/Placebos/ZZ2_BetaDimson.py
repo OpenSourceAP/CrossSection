@@ -1,128 +1,116 @@
-# ABOUTME: ZZ2_BetaDimson.py - calculates Dimson beta placebo using daily data
-# ABOUTME: Python equivalent of ZZ2_BetaDimson.do, translates line-by-line from Stata code
+# ABOUTME: BetaDimson placebo - Dimson beta using lead, contemporaneous, and lagged market returns
+# ABOUTME: Rolling regression of daily stock returns on lead, current, and lagged market returns
 
 """
-ZZ2_BetaDimson.py
+Usage:
+    python3 Placebos/ZZ2_BetaDimson.py
 
 Inputs:
-    - dailyCRSP.parquet: permno, time_d, ret columns
-    - dailyFF.parquet: time_d, rf, mktrf columns
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, rf, mktrf]
 
 Outputs:
-    - BetaDimson.csv: permno, yyyymm, BetaDimson columns
-
-Usage:
-    cd pyCode
-    source .venv/bin/activate  
-    python3 Placebos/ZZ2_BetaDimson.py
+    - BetaDimson.csv: CSV file with columns [permno, yyyymm, BetaDimson]
+    - BetaDimson = sum of coefficients from rolling regression on lead, current, and lag market returns
 """
 
-import pandas as pd
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.save_standardized import save_placebo
 
-# Add parent directory to path to import utils
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
-from utils.asreg import asreg
-
-print("Starting ZZ2_BetaDimson.py")
+print("Starting ZZ2_BetaDimson.py...")
 
 # DATA LOAD
-# use permno time_d ret using "$pathDataIntermediate/dailyCRSP.dta", clear
-print("Loading dailyCRSP...")
-df = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
-df = df.select(['permno', 'time_d', 'ret'])
+print("Loading FF data...")
+daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
+ff_data = daily_ff.select(["time_d", "rf", "mktrf"])
 
-print(f"Loaded dailyCRSP: {len(df)} rows")
+print("Loading CRSP data...")
+daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
 
-# merge m:1 time_d using "$pathDataIntermediate/dailyFF", nogenerate keep(match) keepusing(rf mktrf)
-print("Loading dailyFF...")
-ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
-ff = ff.select(['time_d', 'rf', 'mktrf'])
+# Get unique permnos and process in batches to manage memory
+unique_permnos = daily_crsp['permno'].unique().sort()
+print(f"Processing {len(unique_permnos)} permnos in batches...")
 
-print("Merging with dailyFF...")
-df = df.join(ff, on=['time_d'], how='inner')
+batch_size = 100  # Process 100 permnos at a time
+results = []
 
-print(f"After merge: {len(df)} rows")
-
-# replace ret = ret - rf
-# drop rf
-print("Converting to excess returns...")
-df = df.with_columns([
-    (pl.col('ret') - pl.col('rf')).alias('ret')
-])
-df = df.drop('rf')
-
-# SIGNAL CONSTRUCTION
-# bys permno (time_d): gen time_temp = _n
-# xtset permno time_temp
-print("Creating time index and sorting...")
-df = df.sort(['permno', 'time_d'])
-df = df.with_columns([
-    pl.int_range(1, pl.len() + 1).over('permno').alias('time_temp')
-])
-
-# gen tempMktLead = f.mktrf
-# gen tempMktLag  = l.mktrf
-print("Creating lead and lag market returns...")
-df = df.with_columns([
-    pl.col('mktrf').shift(-1).over('permno').alias('tempMktLead'),
-    pl.col('mktrf').shift(1).over('permno').alias('tempMktLag')
-])
-
-# asreg ret tempMktLead mktrf tempMktLag, window(time_temp 20) min(15) by(permno)
-print("Running rolling Dimson regressions...")
-df_regression = asreg(
-    df, 
-    y="ret", 
-    X=["tempMktLead", "mktrf", "tempMktLag"], 
-    by=["permno"], 
-    t="time_temp", 
-    mode="rolling", 
-    window_size=20, 
-    min_samples=15,
-    outputs=["coef"]
-)
-
-# gen BetaDimson = _b_tempMktLead + _b_mktrf + _b_tempMktLag
-print("Computing BetaDimson...")
-print(f"Columns in df_regression: {df_regression.columns}")
-
-# Check if coef struct exists, otherwise use individual coefficient columns
-try:
-    df_regression = df_regression.with_columns([
-        (pl.col('coef').struct.field('tempMktLead') + 
-         pl.col('coef').struct.field('mktrf') + 
-         pl.col('coef').struct.field('tempMktLag')).alias('BetaDimson')
+for i in range(0, len(unique_permnos), batch_size):
+    batch_permnos = unique_permnos[i:i+batch_size]
+    print(f"Processing batch {i//batch_size + 1}/{(len(unique_permnos)-1)//batch_size + 1} (permnos {batch_permnos[0]} to {batch_permnos[-1]})")
+    
+    # Filter CRSP data for this batch
+    df_batch = daily_crsp.filter(pl.col("permno").is_in(batch_permnos.to_list()))
+    df_batch = df_batch.select(["permno", "time_d", "ret"])
+    
+    # Merge with FF data
+    df_batch = df_batch.join(ff_data, on="time_d", how="inner")
+    
+    # Calculate excess return (ret - rf)
+    df_batch = df_batch.with_columns([
+        (pl.col("ret") - pl.col("rf")).alias("ret")
     ])
-except:
-    # Fallback: use individual coefficient columns with prefix
-    df_regression = df_regression.with_columns([
-        (pl.col('b_tempMktLead') + pl.col('b_mktrf') + pl.col('b_tempMktLag')).alias('BetaDimson')
+    df_batch = df_batch.drop("rf")
+    
+    # SIGNAL CONSTRUCTION
+    # Sort data by permno and time_d
+    df_batch = df_batch.sort(["permno", "time_d"])
+    
+    # Set up time index for rolling window and create lead/lag variables
+    df_batch = df_batch.with_columns([
+        pl.int_range(pl.len()).over("permno").alias("time_temp")
     ])
+    
+    # Create lead and lag market returns within each permno group
+    df_batch = df_batch.with_columns([
+        pl.col("mktrf").shift(-1).over("permno").alias("tempMktLead"),  # f.mktrf
+        pl.col("mktrf").shift(1).over("permno").alias("tempMktLag")     # l.mktrf
+    ])
+    
+    # Use polars-ols for rolling regression
+    df_batch = df_batch.with_columns(
+        pl.col("ret").least_squares.rolling_ols(
+            pl.col("tempMktLead"), pl.col("mktrf"), pl.col("tempMktLag"),
+            window_size=20,
+            min_periods=15,
+            mode="coefficients",
+            add_intercept=True,
+            null_policy="drop"
+        ).over("permno").alias("coef")
+    ).with_columns([
+        pl.col("coef").struct.field("tempMktLead").alias("_b_tempMktLead"),
+        pl.col("coef").struct.field("mktrf").alias("_b_mktrf"),
+        pl.col("coef").struct.field("tempMktLag").alias("_b_tempMktLag")
+    ])
+    
+    # Calculate BetaDimson = sum of all three beta coefficients
+    df_batch = df_batch.with_columns([
+        (pl.col("_b_tempMktLead") + pl.col("_b_mktrf") + pl.col("_b_tempMktLag")).alias("BetaDimson")
+    ])
+    
+    # Convert to monthly and collapse
+    df_batch = df_batch.with_columns([
+        pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
+    ])
+    
+    # Sort and collapse to keep last non-missing BetaDimson per permno-month
+    df_batch = df_batch.sort(["permno", "time_avail_m", "time_d"])
+    batch_monthly = df_batch.group_by(["permno", "time_avail_m"]).agg([
+        pl.col("BetaDimson").drop_nulls().last().alias("BetaDimson")
+    ])
+    
+    # Add to results
+    results.append(batch_monthly.select(["permno", "time_avail_m", "BetaDimson"]))
+    
+    print(f"Batch complete: {len(batch_monthly)} monthly observations")
 
-# gen time_avail_m = mofd(time_d)
-df_regression = df_regression.with_columns([
-    pl.col('time_d').dt.truncate('1mo').alias('time_avail_m')
-])
-
-# sort permno time_avail_m time_d
-# gcollapse (lastnm) BetaDimson, by(permno time_avail_m)
-print("Collapsing to monthly data...")
-df_regression = df_regression.sort(['permno', 'time_avail_m', 'time_d'])
-df_monthly = df_regression.group_by(['permno', 'time_avail_m']).agg([
-    pl.col('BetaDimson').last().alias('BetaDimson')
-])
-
-print(f"Generated BetaDimson for {len(df_monthly)} observations")
-
-# Keep only required columns
-df_final = df_monthly.select(['permno', 'time_avail_m', 'BetaDimson'])
+# Combine all batches
+print("Combining all batches...")
+result = pl.concat(results)
 
 # SAVE
-# do "$pathCode/saveplacebo" BetaDimson
-save_placebo(df_final, 'BetaDimson')
-
-print("ZZ2_BetaDimson.py completed")
+save_placebo(result, "BetaDimson")
+print("ZZ2_BetaDimson.py completed successfully")
