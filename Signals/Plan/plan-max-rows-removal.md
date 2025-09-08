@@ -10,41 +10,58 @@ if MAX_ROWS_DL > 0:
 
 This is not needed for many scripts that are fast to download.
 
+# Preparation
+
+1. Check if you have permission to edit `pyCode/DataDownloads/*.py`.
+2. Check if you have permission to edit `Plan/*`.
+
+If you don't have permission, stop.
+
 # Task
 
 For a given script, 
-1. Remove the MAX_ROWS_DL code. 
-2. Run the script to make sure it works.
-3. Update the progress tracking below.
-    - Mark with ✅ if the MAX_ROWS_DL code is removed and the script works.
+1. Check if the script uses MAX_ROWS_DL.
+    - if not, then mark with ✅ and stop.
+2. Remove the MAX_ROWS_DL code. 
+3. Run the script to make sure it works. Fix any errors.
+4. Update the progress tracking below.
+    - Mark the script with ✅ if the MAX_ROWS_DL code is removed and the script works.
 
 # Progress tracking
 
 The following scripts are fast:
 
-- V_TBill3M.py
-- U_GNPDeflator.py
-- W_BrokerDealerLeverage.py
-- T_VIX.py
-- S_QFactorModel.py
-- R_MonthlyLiquidityFactor.py
-- Q_MarketReturns.py
-- P_Monthly_Fama-French.py
-- O_Daily_Fama-French.py
-- ZA_IPODates.py
-- A_CCMLinkingTable.py
-- ZH2_OptionMetricsCRSPLink.py
-- D_CompustatPensions.py
-- ZG_BidaskTAQ.py
-- ZF_CRSPIBESLink.py
-- ZD_CorwinSchultz.py
-- K_CRSPAcquisitions.py
-- ZH_OptionMetricsCleaning.py
-- ZC_GovernanceIndex.py
-- M_IBES_Recommendations.py
-- X_SPCreditRatings.py
-- F_CompustatCustomerSegments.py
-- H_CRSPDistributions.py
-- ZK_CustomerMomentum.py
-- E_CompustatBusinessSegments.py
-- ZE_13F.py
+Group 1 (1 to 10)
+- V_TBill3M.py ✅
+- U_GNPDeflator.py ✅
+- W_BrokerDealerLeverage.py ✅
+- T_VIX.py ✅
+- S_QFactorModel.py ✅
+
+- R_MonthlyLiquidityFactor.py ✅
+- Q_MarketReturns.py ✅
+- P_Monthly_Fama-French.py ✅
+- O_Daily_Fama-French.py ✅
+- ZA_IPODates.py ✅
+
+Group 2 (11 to 20)
+- A_CCMLinkingTable.py ✅
+- ZH2_OptionMetricsCRSPLink.py ✅
+- D_CompustatPensions.py ✅
+- ZG_BidaskTAQ.py ✅
+- ZF_CRSPIBESLink.py ✅
+
+- ZD_CorwinSchultz.py ✅
+- K_CRSPAcquisitions.py ✅
+- ZH_OptionMetricsCleaning.py ✅
+- ZC_GovernanceIndex.py ✅
+- M_IBES_Recommendations.py ✅
+
+Group 3 (21 to 26)
+- X_SPCreditRatings.py ✅
+- F_CompustatCustomerSegments.py ✅
+- H_CRSPDistributions.py ✅
+- ZK_CustomerMomentum.py ✅
+- E_CompustatBusinessSegments.py ✅
+
+- ZE_13F.py ✅

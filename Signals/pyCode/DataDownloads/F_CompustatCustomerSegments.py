@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-# from config import MAX_ROWS_DL # do not use for this script
 from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
@@ -30,10 +29,6 @@ SELECT a.*
 FROM compseg.wrds_seg_customer as a
 """
 
-# # Add row limit for debugging if configured (do not use for this script)
-# if MAX_ROWS_DL > 0:
-#     QUERY += f" LIMIT {MAX_ROWS_DL}"
-#     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 customer_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()

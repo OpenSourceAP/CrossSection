@@ -9,8 +9,8 @@
 # (where 5 is the number of iterations)
 
 alias claude="/Users/chen1678/.claude/local/claude"
-PLAN_NAME="mve-permco-update.md"
-THINK_INSTRUCTION="" # e.g. "", "Think.", "Ultrathink.'"
+PLAN_NAME="plan-max-rows-removal.md"
+THINK_INSTRUCTION="Think hard." # e.g. "", "Think.", "Ultrathink.'"
 
 cd ..
 
@@ -19,11 +19,14 @@ NUM_ITERS=${1:-1}
 
 for i in {1..$NUM_ITERS}
 do
+  echo "================================================"
   echo "working on iteration $i out of $NUM_ITERS for $PLAN_NAME"
+  echo "================================================"
 
-  claude -p --model claude-sonnet-4-20250514 "
+  claude -p "
   Work on Plan/$PLAN_NAME. Continue where we left off previously. Work on only one script. $THINK_INSTRUCTION
-  "
+  "\
+    --model claude-sonnet-4-20250514 \
+    --permission-mode acceptEdits \
+    --verbose
 done
-
-/usr/bin/osascript -e 'tell application "Messages" to send "auto-work-on-plan.sh done" to buddy "+12404465313"'

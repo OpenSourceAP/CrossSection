@@ -12,7 +12,6 @@ from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
 from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
@@ -27,10 +26,6 @@ SELECT date, ps_innov
 FROM ff.liq_ps
 """
 
-# Add row limit for debugging if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
 liquidity_data = pd.read_sql_query(QUERY, engine)
 

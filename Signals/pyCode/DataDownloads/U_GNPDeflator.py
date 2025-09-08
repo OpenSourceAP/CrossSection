@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
 from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
@@ -163,10 +162,6 @@ def main():
     # Remove duplicates (in case of overlapping quarters)
     final_data = final_data.drop_duplicates(subset=['time_avail_m'])
 
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     # Save the data
     # Apply column standardization
