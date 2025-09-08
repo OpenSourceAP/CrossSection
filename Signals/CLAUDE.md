@@ -1,7 +1,9 @@
-# CrossSection Signals - Python Translation Project
+# CrossSection Signals
 
 ## Project Overview
-This project aims to translate Stata code in `Code/` to Python equivalents in `pyCode/`, replicating the exact data processing pipeline while outputting to Parquet/CSV format instead of DTA/CSV.
+This project replicates a very large set of asset pricing signals (stock-month level characteristics).
+
+It previously used Stata (`Code/`), but has been translated to Python (`pyCode/`).
 
 # Project Structure
 
@@ -111,25 +113,6 @@ Signals/
 - **✅ ALWAYS**: Keep code simple and focused on the specific requirements
 - **Principle**: **ONLY BUILD WHAT IS ASKED FOR**
 
-# Debugging Philosophy
-
-## **Do Not Speculate That the Test Failed Because of Real Data Differences**
-- **❌ NEVER**: Stop debugging because of "data availability issues," "historical data differences," or "real data differences"
-- **✅ ALWAYS**: Keep checking the logic for what is causing the test to fail
-- **✅ ALWAYS**: Check with the user before giving up.
-
-## **Debug by Understanding Problematic Observations**
-- **✅ ALWAYS**: Focus on a specific permno-yyyymm observation that is causing the test to fail. Understand what step of the code is causing this specific observation to be problematic.
-- **❌ NEVER**: Debug my modifying code without understanding why the modification may affect a specific problematic observation.
-
-## **Understand Stata's Exact Behavior First**
-- **❌ WRONG**: Assume Python pandas methods match Stata operators
-- **✅ RIGHT**: Research StataDocs and trace Stata's exact processing logic
-- **Key Discovery**: Stata's `l6.` uses calendar-based lags, not position-based `shift(6)`
-
-## **Write Debugging py scripts**
-- **WRONG**: Run a long bash command that to generate test output.
-- **RIGHT**: Write a py script in `pyCode/Debug/` that generates test output.
 
 # Journal, Documentation, and Planning
 
@@ -147,4 +130,4 @@ The notes go in the following folders:
 **IMPORTANT**: all of these documents may become out of date. Only rely on them if the user asks you to.
 
 # Context for Current Task
-We're working on the following leg: `DocsForClaude/leg3-Predictors.md`.
+We're working on the following leg: `DocsForClaude/leg2-DataDownloads.md`. We're trying to streamline it while maintaining the exact same results as we previously had. The previous results are in `pyData/checkIntermediate/`.
