@@ -352,36 +352,24 @@ if (nrow(comp0) < 1000*50){
 
 
 
-# Make table before 1997
-download.file("https://apps.bea.gov/industry/xls/io-annual/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx",
-              destfile = paste0(arg1, '/pyData/Intermediate/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx'), 
-              method = dlmethod,
-              mode = 'wb'
-              )
+# BEA Input-Output files are now downloaded by BEA_InputOutput.py
+# Find the actual Supply and Use table files
+supply_files = list.files(paste0(arg1, '/pyData/Intermediate'), pattern = "Supply_Tables_1997.*_Summary\\.xlsx", full.names = FALSE)
+use_files = list.files(paste0(arg1, '/pyData/Intermediate'), pattern = ".*Supply-Use.*Framework.*1997.*_Summary\\.xlsx", full.names = FALSE)
 
-# Use table before 1997
-download.file("https://apps.bea.gov/industry/xls/io-annual/IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx",
-              destfile = paste0(arg1, '/pyData/Intermediate/IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx'),
-              method = dlmethod,
-              mode = 'wb')
+if (length(supply_files) != 1) {
+  stop(paste("Expected 1 Supply table file, found", length(supply_files), ":", paste(supply_files, collapse = ", ")))
+}
 
-# Tables starting in 1997
-tmp = tempfile()
-download.file("https://apps.bea.gov//industry/iTables%20Static%20Files/AllTablesSUP.zip",
-              destfile = tmp, 
-              method = dlmethod)
+if (length(use_files) != 1) {
+  stop(paste("Expected 1 Use table file, found", length(use_files), ":", paste(use_files, collapse = ", ")))
+}
 
-# Find relevant files in zip archive
-fls = unzip(tmp, list = TRUE)
-pathSupply = fls$Name[grepl("Supply_Tables_1997-2[0-9]{3}_Summary.xlsx", fls$Name, ignore.case = TRUE)]
-pathUse    = fls$Name[grepl("Supply-Use_Framework_1997-2[0-9]{3}_Summary.xlsx", fls$Name, ignore.case = TRUE)]
+pathSupply = supply_files[1]
+pathUse = use_files[1]
 
-stopifnot(length(pathSupply) == 1)
-stopifnot(length(pathUse) == 1)
-
-unzip(tmp, 
-      files = c(pathSupply, pathUse),
-      exdir = paste0(arg1, '/pyData/Intermediate'))
+message(paste("Using Supply table:", pathSupply))
+message(paste("Using Use table:", pathUse))
 
 
 # Generate Momentum -------------------------------------------------------
