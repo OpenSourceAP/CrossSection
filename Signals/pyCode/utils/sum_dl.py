@@ -15,7 +15,8 @@ Arguments:
   script_name    Name of the DataDownloads script (e.g., 'B_CompustatAnnual')
 
 Output:
-  Saves summary statistics to ../Logs/sum_dl_[script_name].md in markdown format
+  Saves summary statistics to ../Logs/sum_dl_[script_name].md in markdown
+  format
 
 Usage examples:
   python3 utils/sum_dl.py B_CompustatAnnual  # Summarize annual outputs
@@ -36,6 +37,7 @@ def load_dataset_map():
     with open('DataDownloads/00_map.yaml', 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
+
 def find_datasets_by_script(script_name, dataset_map):
     """Find all datasets produced by a given script."""
     datasets = []
@@ -45,6 +47,7 @@ def find_datasets_by_script(script_name, dataset_map):
                 python_script == f"{script_name}.py"):
             datasets.append(dataset_name)
     return datasets
+
 
 
 def compute_column_stats(df, column_name):
@@ -76,6 +79,7 @@ def compute_column_stats(df, column_name):
         stats['p75'] = 'N/A'
 
     return stats
+
 
 def summarize_dataset(dataset_name, dataset_map):
     """Compute summary statistics for a single dataset."""
@@ -117,7 +121,8 @@ def format_stats_to_markdown(results, script_name):
 
     # Header
     lines.append(f"# Summary Statistics: {script_name}")
-    lines.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    lines.append(f"Generated on: {timestamp}")
     lines.append("")
 
     if not results:
@@ -138,35 +143,68 @@ def format_stats_to_markdown(results, script_name):
         lines.append(f"**Dimensions**: {dimensions}")
         lines.append("")
 
-        # Create fixed-width statistics table
-        lines.append("|      Variable      | Count |   Mean   | Std Dev  |  25th %  |  75th %  |")
-        lines.append("|--------------------|-------|----------|----------|----------|----------|")
+        # Configurable column width for statistics columns
+        col_width = 10
+        
+        # Create dynamic statistics table header
+        var_col = "Variable".center(20)
+        count_col = "Count".center(col_width)
+        mean_col = "Mean".center(col_width)
+        std_col = "Std Dev".center(col_width)
+        p25_col = "25th %".center(col_width)
+        p75_col = "75th %".center(col_width)
+        
+        header = (f"| {var_col} | {count_col} | {mean_col} | "
+                 f"{std_col} | {p25_col} | {p75_col} |")
+        lines.append(header)
+        
+        # Create dynamic separator line
+        var_sep = "-" * 22
+        stat_sep = "-" * (col_width+2)
+        separator = (f"|{var_sep}|{stat_sep}|{stat_sep}|"
+                    f"{stat_sep}|{stat_sep}|{stat_sep}|")
+        lines.append(separator)
 
         for col_name, stats in result['column_stats'].items():
-            count = f"{stats['count']:,}"
+            # Format count with comma separators, right-aligned in column
+            count_str = f"{stats['count']:,}"
+            count_formatted = count_str.rjust(col_width)[:col_width]
 
-            # Format numeric statistics
+            # Format numeric statistics to fit within col_width
             if stats['mean'] == 'N/A':
-                mean = std = p25 = p75 = '  N/A    '
+                mean = std = p25 = p75 = 'N/A'.center(col_width)
             else:
                 if pd.isna(stats['mean']):
-                    mean = std = p25 = p75 = '  N/A    '
+                    mean = std = p25 = p75 = 'N/A'.center(col_width)
                 else:
-                    mean = f"{stats['mean']:8.4f}"
-                    std = f"{stats['std']:8.4f}"
-                    p25 = f"{stats['p25']:8.4f}"
-                    p75 = f"{stats['p75']:8.4f}"
+                    # Determine precision based on column width
+                    if col_width >= 10:
+                        precision = 4
+                    elif col_width >= 8:
+                        precision = 2
+                    else:
+                        precision = 1
+                    
+                    mean_val = f"{stats['mean']:.{precision}f}"
+                    mean = mean_val.rjust(col_width)[:col_width]
+                    std_val = f"{stats['std']:.{precision}f}"
+                    std = std_val.rjust(col_width)[:col_width]
+                    p25_val = f"{stats['p25']:.{precision}f}"
+                    p25 = p25_val.rjust(col_width)[:col_width]
+                    p75_val = f"{stats['p75']:.{precision}f}"
+                    p75 = p75_val.rjust(col_width)[:col_width]
 
-            # Ensure column name fits 
-            col_display = col_name[:17].ljust(17)
+            # Ensure column name fits in 20 characters
+            col_display = col_name[:20].ljust(20)
 
-            line = f"| {col_display} | {count:>5} | {mean} | {std} | "
+            line = f"| {col_display} | {count_formatted} | {mean} | {std} | "
             line += f"{p25} | {p75} |"
             lines.append(line)
 
         lines.append("")
 
     return "\n".join(lines)
+
 
 def main():
     """Main execution function."""
