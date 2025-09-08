@@ -56,8 +56,6 @@ tbc
 
 ## Folder Structure
 
-
-
 ```
 Signals/
 ├── Code/                    # Original Stata code
@@ -87,6 +85,7 @@ Signals/
 │   ├── Placebos/          # Python placebo generation
 │   └── temp/              # Temporary Python files
 ├── Logs/                   # Processing logs
+├── Logs/prev-sum/          # Previous summary statistics
 ├── Journal/                # Claude's Journal
 ├── DocsForClaude/          # Claude's Docs
 ├── Plan/                   # Claude's Planning docs
@@ -112,25 +111,7 @@ Signals/
 - `Journal/` contains messy notes about the project
   - Recent Journal/ entries may be helpful for passing tests.
 
-# Translation Philosophy
-
-## **Line-by-Line Translation**
-- **❌ NEVER**: Add functions, abstractions, or "improvements" during translation
-- **✅ ALWAYS**: Translate Stata code line-by-line, preserving exact order
-- **✅ ALWAYS**: Use linear, procedural structure matching Stata
-- **Lesson**: Overengineering caused 40% data loss in CompustatAnnual
-
-## **Execution Order is Critical**
-- **❌ NEVER**: Change the timing of data saves or processing steps
-- **✅ ALWAYS**: Match exact execution order from Stata script
-- **Example**: Stata saves CSV immediately after download, Python must do same
-- **Lesson**: Wrong save timing caused major shape mismatches
-
-## **Missing Data Handling**
-- **Stata**: Missing dates often mean "infinity" or "still active" → TRUE
-- **Python**: `datadate <= NaT` → FALSE  
-- **✅ ALWAYS**: Use explicit null handling: `(condition) | column.isna()`
-- **Lesson**: Missing data logic differences lost 19% of records
+# Coding Philosophy
 
 ## **Simplicity Over Cleverness**  
 - **❌ NEVER**: Add complex dtype handling, YAML standardization, helper functions
