@@ -335,6 +335,20 @@ crsp0 = fread(paste0(arg1, '/pyData/Intermediate/mCRSP.csv')) %>%
   ) %>%
   filter(!is.na(ret),!is.na(mve_c))
 
+# check for complete CompustatAnnual data
+if (nrow(comp0) < 1000*50){
+  error_message = paste(
+    "CompustatAnnual.csv is less than 1000*50 rows.",
+    "This likely means that DataDownloads/B_CompustatAnnual.py was run with MAX_ROWS_DL != -1.",
+    "InputOutputMomentum will not work without complete CompustatAnnual data.",
+    "Please run DataDownloads/B_CompustatAnnual.py with MAX_ROWS_DL = -1",
+    "and try again.",
+    "Also you probably want to run DataDownloads/I_CRSPmonthly.py with MAX_ROWS_DL = -1",
+    sep = "\n"
+  )
+  stop(error_message)
+}
+
 # read ccm, replacing missing linkenddt with date of apocalypse fortold (fourtold?) in lost papyrus
 ccm0  = fread(paste0(arg1, '/pyData/Intermediate/CCMLinkingTable.csv')) %>%
   mutate(linkenddt = ifelse(linkenddt=="", "31dec3000", linkenddt)) %>% 
