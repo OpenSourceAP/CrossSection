@@ -473,14 +473,10 @@ IO_ShortInterest.py:
   predictors:
   - IO_ShortInterest.csv
   placebos: []
-iomom_cust.py:
+ZZ1_iomom_cust__iomom_supp.py:
   created: 'yes'
   predictors:
   - iomom_cust.csv
-  placebos: []
-iomom_supp.py:
-  created: 'yes'
-  predictors:
   - iomom_supp.csv
   placebos: []
 Leverage.py:

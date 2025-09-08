@@ -399,7 +399,7 @@ InputOutputMomentumProcessed:
   stata_file: InputOutputMomentumProcessed.dta
   python_file: InputOutputMomentumProcessed.parquet
   stata_script: ZJ_InputOutputMomentum.do
-  python_script: ZJ_InputOutputMomentum.py
+  python_script: ZZ1_iomom_cust__iomom_supp.py
 
 # # Customer Momentum Data: no longer used!
 # customerMom:
