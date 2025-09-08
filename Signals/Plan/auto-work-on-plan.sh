@@ -11,6 +11,7 @@
 alias claude="/Users/chen1678/.claude/local/claude"
 PLAN_NAME="plan-dl-streamline.md"
 THINK_INSTRUCTION="" # e.g. "", "Think.", "Ultrathink.'"
+OUTPUT_FORMAT="stream-json" # text, stream-json
 
 cd ..
 
@@ -29,5 +30,5 @@ do
     --model claude-sonnet-4-20250514 \
     --permission-mode acceptEdits \
     --verbose \
-    --output-format stream-json
+    --output-format $OUTPUT_FORMAT | jq -r '.'
 done
