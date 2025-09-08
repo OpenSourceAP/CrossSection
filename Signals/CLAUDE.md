@@ -4,6 +4,8 @@ Check the user's `~/.claude/CLAUDE.md` for full path of `Signals/`
 - search for "SIGNALSPATH"
 - if "SIGNALSPATH" is not found, ask the user to add it to `~/.claude/CLAUDE.md`
 
+**IMPORTANT**: all python scripts must be executed from `[SIGNALSPATH]/pyCode/`
+
 ## Project Overview
 This project replicates a very large set of asset pricing signals (stock-month level characteristics).
 
