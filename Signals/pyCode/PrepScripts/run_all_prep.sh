@@ -6,7 +6,7 @@
 #   qsub -m e -M Harvey_Liu_Zhu_2016_is_seriously_flawed@gmail.com master.sh
 
 # 2022 02 Andrew Chen
-# creates ibes-crsp link, 13f data, option metrics stuff, and hf (taq-issm) spreads
+# creates 13f data, option metrics stuff, and hf (taq-issm) spreads
 # takes about four hours, mostly for option metrics
 # the hf stuff is not really being used right now (it's a placebo, pretty much)
 # so it's okay if the code breaks before then.
@@ -25,9 +25,9 @@
 # Instructions: 
 # - upload PrepScripts/ to wrds server 
 # - ssh into wrds
-# - cd PrepScripts/, run "qsub master.sh"
-# - download ~/data_sas/* to $pathProject/Signals/Data/Prep/* 
-# 	(i.e. ibes crsp link should be in $pathProject/Signals/Data/Prep/iclink.csv
+# - cd PrepScripts/, run "qsub run_all_prep.sh"
+# - download ~/temp_prep/data_for_dl/* to $pathProject/Signals/pyData/Prep/* 
+# 	(i.e. tr_13f.csv, corwin_schultz_spread.csv, hf_monthly.csv, OptionMetrics*.csv, bali_hovak_imp_vol.csv)
 
 # Heads up: Option Metrics data requires .pgpass is set up on WRDS
 # https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-the-web/
@@ -86,9 +86,9 @@ R CMD BATCH --no-save --no-restore OptionMetricsVolume.R log/OptionMetricsVolume
 echo "CREATING OPTION METRICS VOL SURFACE (about 1 hour)"
 R CMD BATCH --no-save --no-restore OptionMetricsVolSurf.R log/OptionMetricsVolSurf.log
 
-# ==== OPTION METRICS: Skew1 ====
-echo "CREATING OPTION METRICS SKEW1 (about 2 hours)"
-R CMD BATCH --no-save --no-restore OptionMetricsSkew1.R log/OptionMetricsSkew1.log
+# ==== OPTION METRICS: XZZ (Smirk/Skew1) ====
+echo "CREATING OPTION METRICS XZZ (Smirk/Skew1, about 2 hours)"
+R CMD BATCH --no-save --no-restore OptionMetricsXZZ.R log/OptionMetricsXZZ.log
 
 # ==== OPTION METRICS: Bali-Hovak ====
 echo "CREATING BALI-HOVAK IMPLIED VOL (about 30 min)"

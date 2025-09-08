@@ -218,10 +218,13 @@ def check_optional_files():
     print("Checking for optional preprocessed files...")
     
     optional_files = [
-        "../pyData/Prep/iclink.csv",
-        "../pyData/Prep/OptionMetrics.csv", 
         "../pyData/Prep/tr_13f.csv",
-        "../pyData/Prep/corwin_schultz_spread.csv"
+        "../pyData/Prep/corwin_schultz_spread.csv",
+        "../pyData/Prep/hf_monthly.csv",
+        "../pyData/Prep/bali_hovak_imp_vol.csv",
+        "../pyData/Prep/OptionMetricsVolume.csv",
+        "../pyData/Prep/OptionMetricsVolSurf.csv",
+        "../pyData/Prep/OptionMetricsXZZ.csv"
     ]
     
     missing_files = []
