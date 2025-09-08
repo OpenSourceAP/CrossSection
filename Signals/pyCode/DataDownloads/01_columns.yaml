@@ -4,12 +4,6 @@
 
 '# Example Types': int32, int64, float32, float64, datetime64[ns], object
 
-CCMLinkingTable.csv:
-  column_order: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid, lpermno, lpermco, linkdt, linkenddt
-  int64: gvkey, cusip, sic, liid, lpermno, lpermco
-  object: conm, tic, linkprim, linktype, linkdt, linkenddt
-  float64: cik, naics
-
 CCMLinkingTable:
   column_order: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid, permno, lpermco, timeLinkStart_d, timeLinkEnd_d
   object: gvkey, conm, tic, cusip, cik, sic, naics, linkprim, linktype, liid
@@ -337,12 +331,6 @@ InputOutputMomentumProcessed:
   int32: gvkey
   datetime64[ns]: time_avail_m
   float64: retmatchcustomer, portindcustomer, retmatchsupplier, portindsupplier
-
-customerMom:
-  column_order: permno, custmom, time_avail_m
-  int32: permno
-  float32: custmom
-  datetime64[ns]: time_avail_m
 
 IPODates:
   column_order: permno, FoundingYear, IPOdate
