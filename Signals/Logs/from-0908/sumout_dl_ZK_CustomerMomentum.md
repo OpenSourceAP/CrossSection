@@ -1,15 +1,15 @@
 # Summary Statistics: ZK_CustomerMomentum
-Generated on: 2025-09-08 11:17:28
+Generated on: 2025-09-08 13:14:30
 
 **Total datasets**: 1
 
 ## customerMom
 
 **File**: `../pyData/Intermediate/customerMom.parquet`
-**Dimensions**: 0 rows × 3 columns
+**Dimensions**: 356,474 rows × 3 columns
 
 |       Variable       |   Count    |    Mean    |  Std Dev   |   25th %   |   75th %   |
 |----------------------|------------|------------|------------|------------|------------|
-| permno               |          0 |    N/A     |    N/A     |    N/A     |    N/A     |
-| custmom              |          0 |    N/A     |    N/A     |    N/A     |    N/A     |
-| time_avail_m         |          0 |    N/A     |    N/A     |    N/A     |    N/A     |
+| permno               |    356,474 | 60845.6824 | 28896.1842 | 32110.0000 | 84607.0000 |
+| custmom              |    356,474 |     0.0114 |     0.1116 |    -0.0407 |     0.0606 |
+| time_avail_m         |    356,474 |    N/A     |    N/A     |    N/A     |    N/A     |
