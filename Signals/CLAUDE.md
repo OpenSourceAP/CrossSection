@@ -1,28 +1,60 @@
 # CrossSection Signals
 
+Check the user's `~/.claude/CLAUDE.md` for full path of `Signals/`
+- search for "SIGNALSPATH"
+- if "SIGNALSPATH" is not found, ask the user to add it to `~/.claude/CLAUDE.md`
+
 ## Project Overview
 This project replicates a very large set of asset pricing signals (stock-month level characteristics).
 
-It previously used Stata (`Code/`), but has been translated to Python (`pyCode/`).
+It previously used Stata (`[SIGNALSPATH]/Code/`), but has been translated to Python (`[SIGNALSPATH]/pyCode/`).
 
 # Project Structure
 
-There are four main legs of the project:
-- Download data (`DataDownloads/`)
-- Create signal master table (`SignalMasterTable`)
-- Generate predictors (`Predictors/`)
-- Generate placebos (`Placebos/`)
+## Project Legs
 
-**IMPORTANT**: work on each leg in isolation. do not run validation scripts from the DownloadData leg when working on the Predictors leg.
+There are four main legs of the project
 
-The `pyCode/` folder contains the Python equivalents of the Stata code.
-The `pyData/` folder contains the Python data files.
+### DataDownloads Leg
+
+Downloads data from various sources and saves it to `pyData/Intermediate/`
+
+Scripts are found in `[SIGNALSPATH]/pyCode/DataDownloads/*.py`
+
+For guidance:
+- `pyCode/DataDownloads/00_map.yaml`: to see which scripts should be used to download a given dataset.
+- `pyCode/DataDownloads/column_schemas.yaml`: to see the exact column names and data types for each dataset.
+
+For testing:
+- `pyCode/utils/sum_dl.py [script_name]` to get summary statistics for a given script
+  - Output is in `[SIGNALSPATH]/Logs/sumout_dl_[script_name].md`
+  - Compare with previous results in `[SIGNALSPATH]/Logs/prev-sum/sumout_dl_[script_name].md`
+
+### SignalMasterTable Leg
+
+Creates `pyData/Intermediate/SignalMasterTable.parquet`
+
+### Predictors Leg
+
+Creates `pyData/Predictors/*.csv`
+
+Scripts are found in `[SIGNALSPATH]/pyCode/Predictors/*.py`
+
+For guidance:
+- `pyCode/Predictors/00_map_predictors.yaml`: to see which scripts should be used to create a given predictor.
+
+For testing:
+- `pyCode/utils/sum_pred.py [script_name]` to get summary statistics for a given script
+  - Output is in `[SIGNALSPATH]/Logs/sumout_p_[script_name].md`
+  - Compare with previous results in `[SIGNALSPATH]/Logs/prev-sum/sumout_p_[script_name].md`
+
+### Placebos Leg
+
+tbc
 
 ## Folder Structure
 
-Check the user's `~/.claude/CLAUDE.md` for full path of `Signals`
-- search for "SIGNALSPATH"
-- if "SIGNALSPATH" is not found, ask the user to add it to `~/.claude/CLAUDE.md`
+
 
 ```
 Signals/
@@ -43,6 +75,7 @@ Signals/
 │   ├── Placebos/          # Python placebo generation (tbc)
 │   ├── requirements.txt    # Python dependencies
 │   ├── 01_DownloadData.py  # Main download orchestrator
+|   ├── 02_CreatePredictors.py  # Main predictor creation orchestrator
 |   ├── utils/              # Utility functions and persistent testing scripts
 |   ├── Debug/              # Debugging scripts
 ├── pyData/                 # Python data files
@@ -60,15 +93,14 @@ Signals/
 # Coding Environment, Tools, and Docs
 
 ## Working Directory
-- **All Python scripts must be executed from `pyCode/`**
-  - Check SIGNALSPATH for full path of `Signals/pyCode/`
+- **All Python scripts must be executed from `[SIGNALSPATH]/pyCode/`**
 - **Virtual environment is located at `pyCode/.venv/`**
   - Do not create any new virtual environments.
-- **Data paths are relative to `pyCode/` (e.g., `../pyData/Intermediate/`)**
+- **Data paths are relative to `[SIGNALSPATH]/pyCode/` (e.g., `../pyData/Intermediate/`)**
 
 ## Tools 
 - Do not use long Bash commands. 
-  - If a Bash command is more then 3 lines, write a py script in `pyCode/Debug/` that generates test output instead.
+  - If a Bash command is more then 3 lines, write a py script in `[SIGNALSPATH]/pyCode/Debug/` that generates test output instead.
   - This ensures that the permissions are correct and avoids unneeded user intervention.
 
 ## Docs
@@ -130,8 +162,6 @@ The notes go in the following folders:
 **IMPORTANT**: all of these documents may become out of date. Only rely on them if the user asks you to.
 
 # Context for Current Task
-We're trying to streamline `pyCode/DataDownloads/*.py` while maintaining the exact same results as we previously had. The previous results are in `pyData/checkIntermediate/`. 
+We're trying to streamline `pyCode/DataDownloads/*.py` while maintaining the exact same results as we previously had. 
 
 The scripts and outputs are a bit complicated. Use these files to help you:
-- `pyCode/DataDownloads/00_map.yaml`: to see which scripts should be used to download a given dataset.
-- `pyCode/DataDownloads/column_schemas.yaml`: to see the exact column names and data types for each dataset.
