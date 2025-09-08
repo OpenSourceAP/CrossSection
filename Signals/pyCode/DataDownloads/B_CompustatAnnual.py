@@ -48,7 +48,6 @@ AND a.curcd = 'USD'
 AND a.indfmt = 'INDL'
 """
 
-# Add row limit for debugging if configured
 if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
@@ -59,21 +58,12 @@ engine.dispose()
 print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
 
 # Fix column types to match Stata behavior - convert object columns with all None to float64
-# This addresses the dvpd and gwo column type mismatch issue
 for col in compustat_data_raw.columns:
     if (compustat_data_raw[col].dtype == 'object' and 
         compustat_data_raw[col].isna().all()):
         compustat_data_raw[col] = compustat_data_raw[col].astype('float64')
 
-# Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
-
-# Save CompustatAnnual.csv IMMEDIATELY - exact match to Stata line 30
-# Convert datadate to Stata format to match Stata's CSV output exactly
-compustat_csv = compustat_data_raw.copy()
-compustat_csv['datadate'] = pd.to_datetime(compustat_csv['datadate']).dt.strftime('%d%b%Y').str.lower()
-compustat_csv.to_csv("../pyData/Intermediate/CompustatAnnual.csv", index=False)
-print(f"CompustatAnnual.csv saved with {len(compustat_csv)} records", flush=True)
 
 # Create working copy for processing
 compustat_data = compustat_data_raw.copy()
@@ -85,52 +75,21 @@ print(f"After requiring AT, PRCC_C, NI: {len(compustat_data)} records", flush=Tr
 # 6 digit CUSIP (Stata line 36)
 compustat_data['cnum'] = compustat_data['cusip'].str[:6]
 
-# Create derived variables - exact match to Stata logic
-
 # Deferred revenue (dr) - Stata lines 42-45
-compustat_data['dr'] = np.nan
-# Case 1: Both drc and drlt exist
-mask1 = compustat_data['drc'].notna() & compustat_data['drlt'].notna()
-compustat_data.loc[mask1, 'dr'] = (
-    compustat_data.loc[mask1, 'drc'] + compustat_data.loc[mask1, 'drlt']
-)
-# Case 2: Only drc exists
-mask2 = compustat_data['drc'].notna() & compustat_data['drlt'].isna()
-compustat_data.loc[mask2, 'dr'] = compustat_data.loc[mask2, 'drc']
-# Case 3: Only drlt exists
-mask3 = compustat_data['drc'].isna() & compustat_data['drlt'].notna()
-compustat_data.loc[mask3, 'dr'] = compustat_data.loc[mask3, 'drlt']
+compustat_data['dr'] = compustat_data['drc'].fillna(0) + compustat_data['drlt'].fillna(0)
+compustat_data.loc[compustat_data['drc'].isna() & compustat_data['drlt'].isna(), 'dr'] = np.nan
 
 # Convertible debt (dc) - Stata lines 48-50
 compustat_data['dc'] = np.nan
-# Case 1: dc = dcpstk - pstk if dcpstk > pstk & pstk !=. & dcpstk !=. & dcvt ==.
-mask_dc1 = (
-    (compustat_data['dcpstk'] > compustat_data['pstk']) &
-    compustat_data['pstk'].notna() &
-    compustat_data['dcpstk'].notna() &
-    compustat_data['dcvt'].isna()
-)
-compustat_data.loc[mask_dc1, 'dc'] = (
-    compustat_data.loc[mask_dc1, 'dcpstk'] - compustat_data.loc[mask_dc1, 'pstk']
-)
-# Case 2: dc = dcpstk if pstk ==. & dcpstk !=. & dcvt ==.
-mask_dc2 = (
-    compustat_data['pstk'].isna() &
-    compustat_data['dcpstk'].notna() &
-    compustat_data['dcvt'].isna()
-)
-compustat_data.loc[mask_dc2, 'dc'] = compustat_data.loc[mask_dc2, 'dcpstk']
-# Case 3: dc = dcvt if dc is still missing
-mask_dc3 = compustat_data['dc'].isna()
-compustat_data.loc[mask_dc3, 'dc'] = compustat_data.loc[mask_dc3, 'dcvt']
+dc1 = (compustat_data['dcpstk'] > compustat_data['pstk']) & compustat_data['pstk'].notna() & compustat_data['dcpstk'].notna() & compustat_data['dcvt'].isna()
+dc2 = compustat_data['pstk'].isna() & compustat_data['dcpstk'].notna() & compustat_data['dcvt'].isna()
+compustat_data.loc[dc1, 'dc'] = compustat_data.loc[dc1, 'dcpstk'] - compustat_data.loc[dc1, 'pstk']
+compustat_data.loc[dc2, 'dc'] = compustat_data.loc[dc2, 'dcpstk']
+compustat_data.loc[compustat_data['dc'].isna(), 'dc'] = compustat_data.loc[compustat_data['dc'].isna(), 'dcvt']
 
 # Create zero-filled expense variables - Stata lines 53-60
-compustat_data['xint0'] = 0
-compustat_data.loc[compustat_data['xint'].notna(), 'xint0'] = compustat_data['xint']
-
-compustat_data['xsga0'] = 0
-compustat_data.loc[compustat_data['xsga'].notna(), 'xsga0'] = compustat_data['xsga']
-
+compustat_data['xint0'] = compustat_data['xint'].fillna(0)
+compustat_data['xsga0'] = compustat_data['xsga'].fillna(0)
 compustat_data['xad0'] = compustat_data['xad'].fillna(0)
 
 # Variables where missing is assumed to be 0 - Stata lines 63-69
@@ -145,20 +104,9 @@ for var in zero_fill_vars:
 
 # Load CCM linking table and merge - Stata line 72 (joinby equivalent)
 ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
-
-# Replicate Stata's "joinby update" behavior - drop duplicate columns from CCM to avoid suffixes
-# In Stata joinby update, the original columns (conm, cusip, tic) are kept and updated
-ccm_columns_to_drop = ['conm', 'cusip', 'tic']  # Keep these from compustat_data
-ccm_merge_data = ccm_data.drop(columns=[col for col in ccm_columns_to_drop if col in ccm_data.columns])
-
-# Clean merge without duplicate columns (replicates Stata joinby update behavior)
+ccm_merge_data = ccm_data.drop(columns=['conm', 'cusip', 'tic'], errors='ignore')
 compustat_data = compustat_data.merge(ccm_merge_data, on='gvkey', how='inner')
 print(f"After merging with CCM links: {len(compustat_data)} records", flush=True)
-
-# Verify no duplicate column suffixes exist (validation check)
-duplicate_suffixes = [col for col in compustat_data.columns if col.endswith(('_x', '_y'))]
-if duplicate_suffixes:
-    raise ValueError(f"Unexpected duplicate columns after merge: {duplicate_suffixes}")
 
 # Date validity filtering - Stata lines 75-78
 compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
@@ -166,65 +114,33 @@ compustat_data['timeLinkStart_d'] = pd.to_datetime(compustat_data['timeLinkStart
 compustat_data['timeLinkEnd_d'] = pd.to_datetime(compustat_data['timeLinkEnd_d'])
 
 # Replicate Stata's date filtering logic exactly
-# In Stata, missing timeLinkEnd_d is treated as infinity (link still active)
-temp = (
+compustat_data = compustat_data[
     (compustat_data['timeLinkStart_d'] <= compustat_data['datadate']) &
-    ((compustat_data['datadate'] <= compustat_data['timeLinkEnd_d']) | 
-     compustat_data['timeLinkEnd_d'].isna())
-)
-compustat_data = compustat_data[temp]
+    ((compustat_data['datadate'] <= compustat_data['timeLinkEnd_d']) | compustat_data['timeLinkEnd_d'].isna())
+]
 print(f"After filtering for valid link dates: {len(compustat_data)} records", flush=True)
 
 # Create annual version - Stata lines 83-90
-annual_data = compustat_data.copy()
-
-# Drop columns as in Stata line 83
-annual_data = annual_data.drop(columns=['timeLinkStart_d', 'timeLinkEnd_d', 'linkprim', 'liid', 'linktype'])
-
-# Convert gvkey to numeric as in Stata line 84
+annual_data = compustat_data.drop(columns=['timeLinkStart_d', 'timeLinkEnd_d', 'linkprim', 'liid', 'linktype'])
 annual_data['gvkey'] = pd.to_numeric(annual_data['gvkey'])
+annual_data['time_avail_m'] = (annual_data['datadate'].dt.to_period('M') + 6).dt.to_timestamp()
 
-# Assume 6 month reporting lag - Stata line 87
-annual_data['time_avail_m'] = (
-    annual_data['datadate'].dt.to_period('M') + 6
-).dt.to_timestamp()
-
-# Apply column standardization for annual version
 annual_data = standardize_columns(annual_data, 'a_aCompustat')
-# Save annual version
 annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
 
 # Create monthly version - Stata lines 92-104
-monthly_data = annual_data.copy()
-
-# Expand 12 times (Stata lines 93-95)
-monthly_data = pd.concat([monthly_data] * 12, ignore_index=True)
-
-# Replicate Stata's logic: bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1
+monthly_data = pd.concat([annual_data] * 12, ignore_index=True)
 monthly_data = monthly_data.sort_values(['gvkey', 'time_avail_m']).reset_index(drop=True)
-monthly_data['tempTime'] = monthly_data['time_avail_m']
-monthly_data['month_offset'] = monthly_data.groupby(['gvkey', 'tempTime']).cumcount()
-
-# Add months using period arithmetic to match Stata's monthly format
-monthly_data['time_avail_m'] = (
-    monthly_data['time_avail_m'].dt.to_period('M') + monthly_data['month_offset']
-).dt.to_timestamp()
-
-monthly_data = monthly_data.drop('tempTime', axis=1)
+monthly_data['month_offset'] = monthly_data.groupby(['gvkey', 'time_avail_m']).cumcount()
+monthly_data['time_avail_m'] = (monthly_data['time_avail_m'].dt.to_period('M') + monthly_data['month_offset']).dt.to_timestamp()
 
 # Keep only the most recent info for duplicate time periods - Stata lines 101-102
-monthly_data = monthly_data.sort_values(['gvkey', 'time_avail_m', 'datadate'])
-monthly_data = monthly_data.drop_duplicates(['gvkey', 'time_avail_m'], keep='last')
-
-monthly_data = monthly_data.sort_values(['permno', 'time_avail_m', 'datadate'])
-monthly_data = monthly_data.drop_duplicates(['permno', 'time_avail_m'], keep='last')
-
+monthly_data = monthly_data.sort_values(['gvkey', 'time_avail_m', 'datadate']).drop_duplicates(['gvkey', 'time_avail_m'], keep='last')
+monthly_data = monthly_data.sort_values(['permno', 'time_avail_m', 'datadate']).drop_duplicates(['permno', 'time_avail_m'], keep='last')
 monthly_data = monthly_data.drop(columns=['month_offset'])
 
-# Apply column standardization for monthly version
 monthly_data = standardize_columns(monthly_data, 'm_aCompustat')
-# Save monthly version
 monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)
 

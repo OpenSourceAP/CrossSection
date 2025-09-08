@@ -4,6 +4,8 @@
 # Stata scripts extracted from 00_Stata_DataDownloadsDoc.md
 
 # CCM Linking Tables
+
+# csv version of CCM Linking Table: No longer used!
 CCMLinkingTable.csv:
   key1: lpermno
   key2: linkdt
@@ -20,7 +22,7 @@ CCMLinkingTable:
   stata_script: A_CCMLinkingTable.do
   python_script: A_CCMLinkingTable.py
 
-# Compustat Annual/Quarterly
+# Compustat Annual/Quarterly: No longer used!
 CompustatAnnual:
   key1: gvkey
   key2: datadate
@@ -103,6 +105,7 @@ CRSPdistributions:
   stata_script: H_CRSPDistributions.do
   python_script: H_CRSPDistributions.py
 
+# csv version of CRSP monthly: No longer used!
 mCRSP:
   key1: permno
   key2: date

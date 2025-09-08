@@ -29,7 +29,7 @@
 rm(list = ls())
 
 # Check for and potentially install missing packages
-required_packages <- c('tidyverse', 'zoo', 'tm', 'data.table')
+required_packages <- c('tidyverse', 'zoo', 'tm', 'data.table', 'arrow')
 missing_packages <- setdiff(required_packages, rownames(installed.packages()))
 
 if (length(missing_packages) > 0) {
@@ -43,6 +43,7 @@ library(data.table)
 library(stringr)
 library(readxl)
 library(lubridate)
+library(arrow)
 
 # Parse arguments
 args = commandArgs(trailingOnly = "TRUE")
@@ -197,13 +198,13 @@ generate_one_iomom = function(sheet63,sheet97) {
   rm(list = ls(pattern = '^temp'))
   
   ### CREATE BEA INDUSTRY RETURNS
-  # add gvkey to crsp
+  # add gvkey to crsp (no CCM needed since comp0 already has both gvkey and permno)
   temp1 = crsp0 %>%
     left_join(
-      ccm0
+      comp0 %>% select(gvkey, permno) %>% distinct()
       , by = c("permno")
     ) %>%
-    filter(date >= linkdt, date <= linkenddt) %>%
+    filter(!is.na(gvkey)) %>%
     select(permno,date,ret,mve_c,gvkey) %>%
     mutate(year = year(date), month = month(date))
   # add bea industries
@@ -311,54 +312,43 @@ generate_one_iomom = function(sheet63,sheet97) {
 
 # Read in Raw Data  -------------------------------------------------------
 
-# read compustat, turn to annual, lag data by one year for simplicity
-# being lazy about timing, this is ridiculously conservative.  Code doesn't handle monthly cleanly
-comp0 = fread(paste0(arg1, '/pyData/Intermediate/CompustatAnnual.csv')) %>%
+# read a_aCompustat (already linked with CCM, has permno)
+# this already has time_avail_m calculated and is linked to CRSP
+comp0 = read_parquet(paste0(arg1, '/pyData/Intermediate/a_aCompustat.parquet')) %>%
   as.data.frame()  %>%
   mutate(
     naicsstr = str_pad(
       as.character(naicsh), 6, side = c("right"), pad = "0"
     )
     , naics6 = as.numeric(naicsstr)
-    , year_avail = year(dmy(datadate) %m+% months(6) )+1
+    , year_avail = year(time_avail_m)
   ) %>%
   filter(!is.na(naics6)) %>%
-  select(gvkey, year_avail, naics6, datadate)
+  select(gvkey, permno, year_avail, naics6, datadate)
 
-# read crsp
-crsp0 = fread(paste0(arg1, '/pyData/Intermediate/mCRSP.csv')) %>%
+# read monthlyCRSP (already has mve_c calculated and proper dates)
+crsp0 = read_parquet(paste0(arg1, '/pyData/Intermediate/monthlyCRSP.parquet')) %>%
   transmute(
     permno
-    , date = dmy(date)
-    , ret=100*ret
-    , mve_c = abs(prc)*shrout
+    , date = as.Date(time_avail_m)
+    , ret = 100*ret
+    , mve_c
   ) %>%
   filter(!is.na(ret),!is.na(mve_c))
 
-# check for complete CompustatAnnual data
+# check for complete a_aCompustat data  
 if (nrow(comp0) < 1000*50){
   error_message = paste(
-    "CompustatAnnual.csv is less than 1000*50 rows.",
+    "a_aCompustat.parquet is less than 1000*50 rows.",
     "This likely means that DataDownloads/B_CompustatAnnual.py was run with MAX_ROWS_DL != -1.",
-    "InputOutputMomentum will not work without complete CompustatAnnual data.",
+    "InputOutputMomentum will not work without complete Compustat data.",
     "Please run DataDownloads/B_CompustatAnnual.py with MAX_ROWS_DL = -1",
     "and try again.",
     "Also you probably want to run DataDownloads/I_CRSPmonthly.py with MAX_ROWS_DL = -1",
     sep = "\n"
   )
   stop(error_message)
-}
-
-# read ccm, replacing missing linkenddt with date of apocalypse fortold (fourtold?) in lost papyrus
-ccm0  = fread(paste0(arg1, '/pyData/Intermediate/CCMLinkingTable.csv')) %>%
-  mutate(linkenddt = ifelse(linkenddt=="", "31dec3000", linkenddt)) %>% 
-  transmute(
-    gvkey
-    , permno = lpermno
-    , linkprim
-    , linkdt = dmy(linkdt)
-    , linkenddt = dmy(linkenddt)
-  ) 
+} 
 
 
 
