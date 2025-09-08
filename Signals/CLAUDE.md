@@ -130,4 +130,8 @@ The notes go in the following folders:
 **IMPORTANT**: all of these documents may become out of date. Only rely on them if the user asks you to.
 
 # Context for Current Task
-We're working on the following leg: `DocsForClaude/leg2-DataDownloads.md`. We're trying to streamline it while maintaining the exact same results as we previously had. The previous results are in `pyData/checkIntermediate/`.
+We're trying to streamline `pyCode/DataDownloads/*.py` while maintaining the exact same results as we previously had. The previous results are in `pyData/checkIntermediate/`. 
+
+The scripts and outputs are a bit complicated. Use these files to help you:
+- `pyCode/DataDownloads/00_map.yaml`: to see which scripts should be used to download a given dataset.
+- `pyCode/DataDownloads/column_schemas.yaml`: to see the exact column names and data types for each dataset.
