@@ -1,4 +1,4 @@
-Data Download Log - Started at 2025-09-08 11:56:59
+Data Download Log - Started at 2025-09-08 21:53:50
 ================================================================================
 
 
@@ -7,11 +7,6 @@ Data Download Log - Started at 2025-09-08 11:56:59
 ============================================================
 🔗 A_CCMLinkingTable.py - CRSP-Compustat Linking Table
 ============================================================
-CCMLinkingTable.csv: Starting column standardization with data type enforcement
-CCMLinkingTable.csv: Column order standardized successfully
-CCMLinkingTable.csv: Warning - Could not convert column 'cusip' to int64: Cannot convert non-finite values (NA or inf) to integer
-CCMLinkingTable.csv: Warning - Could not convert column 'liid' to int64: Cannot convert non-finite values (NA or inf) to integer
-CCMLinkingTable.csv: Successfully converted 12 columns to target dtypes
 CCMLinkingTable: Starting column standardization with data type enforcement
 CCMLinkingTable: Column order standardized successfully
 CCMLinkingTable: Successfully converted 14 columns to target dtypes
@@ -26,13 +21,20 @@ Unique stocks (lpermno): 28265
 Execution time: 1.72 seconds
 
 
+🔄 Starting: BEA_InputOutput.py
+============================================================
+✅ BEA Input-Output tables downloaded successfully
+============================================================
+✅ Completed: BEA_InputOutput.py
+Execution time: 1.70 seconds
+
+
 🔄 Starting: B_CompustatAnnual.py
 ============================================================
 ============================================================
 📈 B_CompustatAnnual.py - Compustat Annual Fundamentals
 ============================================================
 Downloaded 516959 annual records
-CompustatAnnual.csv saved with 516959 records
 After requiring AT, PRCC_C, NI: 366358 records
 After merging with CCM links: 433091 records
 After filtering for valid link dates: 302417 records
@@ -49,7 +51,7 @@ Monthly version saved with 3626583 records
 ============================================================
 ============================================================
 ✅ Completed: B_CompustatAnnual.py
-Execution time: 77.49 seconds
+Execution time: 54.45 seconds
 
 
 🔄 Starting: C_CompustatQuarterly.py
@@ -75,7 +77,7 @@ Date range: 1961-06-01 00:00:00 to 2026-01-01 00:00:00
 ============================================================
 ============================================================
 ✅ Completed: C_CompustatQuarterly.py
-Execution time: 122.83 seconds
+Execution time: 101.02 seconds
 
 
 🔄 Starting: D_CompustatPensions.py
@@ -114,7 +116,7 @@ Sample data:
 ============================================================
 ============================================================
 ✅ Completed: D_CompustatPensions.py
-Execution time: 6.21 seconds
+Execution time: 2.22 seconds
 
 
 🔄 Starting: E_CompustatBusinessSegments.py
@@ -155,7 +157,7 @@ Sample data:
 ============================================================
 ============================================================
 ✅ Completed: E_CompustatBusinessSegments.py
-Execution time: 27.52 seconds
+Execution time: 19.28 seconds
 
 
 🔄 Starting: F_CompustatCustomerSegments.py
@@ -178,7 +180,7 @@ Sample data:
 4   1004    1       GOVDOM                  34.0    0  BUSSEG  31may1984
 ============================================================
 ✅ Completed: F_CompustatCustomerSegments.py
-Execution time: 7.42 seconds
+Execution time: 8.01 seconds
 
 
 🔄 Starting: G_CompustatShortInterest.py
@@ -213,7 +215,7 @@ shortint: 0 missing
 shortintadj: 0 missing
 ============================================================
 ✅ Completed: G_CompustatShortInterest.py
-Execution time: 241.04 seconds
+Execution time: 253.71 seconds
 
 
 🔄 Starting: H_CRSPDistributions.py
@@ -246,7 +248,7 @@ Name: count, dtype: int64
 ============================================================
 ============================================================
 ✅ Completed: H_CRSPDistributions.py
-Execution time: 9.00 seconds
+Execution time: 9.25 seconds
 
 
 🔄 Starting: I2_CRSPmonthlyraw.py
@@ -260,7 +262,7 @@ Date range: 1925-12-01 00:00:00 to 2024-12-01 00:00:00
 Note: This is raw data WITHOUT delisting return adjustments
 ============================================================
 ✅ Completed: I2_CRSPmonthlyraw.py
-Execution time: 69.55 seconds
+Execution time: 70.59 seconds
 
 
 🔄 Starting: I_CRSPmonthly.py
@@ -278,7 +280,7 @@ Date range: 1925-12-01 00:00:00 to 2024-12-01 00:00:00
 ============================================================
 ============================================================
 ✅ Completed: I_CRSPmonthly.py
-Execution time: 92.96 seconds
+Execution time: 69.52 seconds
 
 
 🔄 Starting: J_CRSPdaily.py
@@ -498,7 +500,7 @@ Saved price-only daily CRSP data with 107662961 records
 Date range: 1926-01-02 to 2024-12-31
 ============================================================
 ✅ Completed: J_CRSPdaily.py
-Execution time: 819.24 seconds
+Execution time: 760.33 seconds
 
 
 🔄 Starting: K_CRSPAcquisitions.py
@@ -524,7 +526,7 @@ Unique spinoff companies: 5632
 Total records: 5632
 ============================================================
 ✅ Completed: K_CRSPAcquisitions.py
-Execution time: 3.39 seconds
+Execution time: 3.69 seconds
 
 
 🔄 Starting: L2_IBES_EPS_Adj.py
@@ -539,17 +541,17 @@ IBES EPS Adjusted data saved with 14596983 records
 Date range: 1976-01-01 00:00:00 to 2025-05-01 00:00:00
 
 Sample data:
-   fpi tickerIBES   statpers    fpedats  ...     prdays  price   shout  time_avail_m
-3    1       0000 2014-04-17 2014-12-31  ... 2014-04-16  13.75  72.276    2014-04-01
-12   1       0000 2014-05-15 2014-12-31  ... 2014-05-14  13.30  69.978    2014-05-01
-22   1       0000 2014-06-19 2014-12-31  ... 2014-06-18  14.40  69.992    2014-06-01
-27   1       0000 2014-07-17 2014-12-31  ... 2014-07-16  14.11  69.992    2014-07-01
-38   1       0000 2014-08-14 2014-12-31  ... 2014-08-13  13.76  70.451    2014-08-01
+       fpi tickerIBES   statpers  ...  price   shout  time_avail_m
+7643     1       0000 2014-04-17  ...  13.75  72.276    2014-04-01
+7650     1       0000 2014-05-15  ...  13.30  69.978    2014-05-01
+131696   1       0000 2014-06-19  ...  14.40  69.992    2014-06-01
+131853   1       0000 2014-07-17  ...  14.11  69.992    2014-07-01
+131857   1       0000 2014-08-14  ...  13.76  70.451    2014-08-01
 
 [5 rows x 14 columns]
 ============================================================
 ✅ Completed: L2_IBES_EPS_Adj.py
-Execution time: 115.85 seconds
+Execution time: 107.32 seconds
 
 
 🔄 Starting: L_IBES_EPS_Unadj.py
@@ -583,7 +585,7 @@ Sample data:
 [5 rows x 9 columns]
 ============================================================
 ✅ Completed: L_IBES_EPS_Unadj.py
-Execution time: 42.95 seconds
+Execution time: 36.86 seconds
 
 
 🔄 Starting: M_IBES_Recommendations.py
@@ -613,7 +615,7 @@ Sample data:
 4       0000    50789 2014-03-10   2014-03-01       3
 ============================================================
 ✅ Completed: M_IBES_Recommendations.py
-Execution time: 7.59 seconds
+Execution time: 7.24 seconds
 
 
 🔄 Starting: N_IBES_UnadjustedActuals.py
@@ -640,7 +642,7 @@ Sample data:
 4       0000   2014-08-01   0.27   NaN
 ============================================================
 ✅ Completed: N_IBES_UnadjustedActuals.py
-Execution time: 52.98 seconds
+Execution time: 54.08 seconds
 
 
 🔄 Starting: O_Daily_Fama-French.py
@@ -666,7 +668,7 @@ Sample data:
 ============================================================
 ============================================================
 ✅ Completed: O_Daily_Fama-French.py
-Execution time: 1.32 seconds
+Execution time: 1.44 seconds
 
 
 🔄 Starting: P_Monthly_Fama-French.py
@@ -686,7 +688,7 @@ Sample data:
 4  0.0254 -0.0011 -0.0061  0.0031  NaN   1926-11-01
 ============================================================
 ✅ Completed: P_Monthly_Fama-French.py
-Execution time: 1.02 seconds
+Execution time: 1.12 seconds
 
 
 🔄 Starting: Q_MarketReturns.py
@@ -710,7 +712,7 @@ Value-weighted return - Mean: 0.0093, Std: 0.0531
 Equal-weighted return - Mean: 0.0119, Std: 0.0708
 ============================================================
 ✅ Completed: Q_MarketReturns.py
-Execution time: 0.98 seconds
+Execution time: 1.12 seconds
 
 
 🔄 Starting: R_MonthlyLiquidityFactor.py
@@ -734,7 +736,7 @@ Mean: 0.000006
 Std: 0.056199
 ============================================================
 ✅ Completed: R_MonthlyLiquidityFactor.py
-Execution time: 0.93 seconds
+Execution time: 1.21 seconds
 
 
 🔄 Starting: S_QFactorModel.py
@@ -763,7 +765,7 @@ Factor columns:
   r_roe_qfac
 ============================================================
 ✅ Completed: S_QFactorModel.py
-Execution time: 0.81 seconds
+Execution time: 1.12 seconds
 
 
 🔄 Starting: T_VIX.py
@@ -797,7 +799,7 @@ Min: 6.32
 Max: 150.19
 ============================================================
 ✅ Completed: T_VIX.py
-Execution time: 2.25 seconds
+Execution time: 0.78 seconds
 
 
 🔄 Starting: U_GNPDeflator.py
@@ -825,7 +827,7 @@ Min: 0.111
 Max: 1.280
 ============================================================
 ✅ Completed: U_GNPDeflator.py
-Execution time: 0.77 seconds
+Execution time: 0.60 seconds
 
 
 🔄 Starting: V_TBill3M.py
@@ -856,7 +858,7 @@ Min: 0.000133
 Max: 0.150533
 ============================================================
 ✅ Completed: V_TBill3M.py
-Execution time: 0.72 seconds
+Execution time: 0.64 seconds
 
 
 🔄 Starting: W_BrokerDealerLeverage.py
@@ -874,7 +876,7 @@ Saved 229 records to ../pyData/Intermediate/brokerLev.parquet
 Broker-dealer leverage processing completed successfully.
 ============================================================
 ✅ Completed: W_BrokerDealerLeverage.py
-Execution time: 1.36 seconds
+Execution time: 0.90 seconds
 
 
 🔄 Starting: X2_CIQCreditRatings.py
@@ -882,11 +884,11 @@ Execution time: 1.36 seconds
 Downloading CIQ Credit Ratings...
 Warning: this can take ~5 minutes to run.
 Downloading entity ratings...
-Downloaded 99374 entity rating records in 187.3 seconds
+Downloaded 99374 entity rating records in 195.2 seconds
 Downloading instrument ratings...
-Downloaded 144489 instrument rating records in 4.7 seconds
+Downloaded 144489 instrument rating records in 3.5 seconds
 Downloading security ratings...
-Downloaded 7179305 security rating records in 51.5 seconds
+Downloaded 7179305 security rating records in 45.6 seconds
 After removing date duplicates: 722012 records
 CIQ Credit Ratings data saved with 722012 records
 Date range: 1970-01-01 to 2025-08-29
@@ -905,7 +907,7 @@ Sample data:
 56296   001004  1991-08-27               0.0             0       2
 ============================================================
 ✅ Completed: X2_CIQCreditRatings.py
-Execution time: 247.09 seconds
+Execution time: 248.50 seconds
 
 
 🔄 Starting: X_SPCreditRatings.py
@@ -952,7 +954,7 @@ Sample data:
 4   1003   2004-10-01        0
 ============================================================
 ✅ Completed: X_SPCreditRatings.py
-Execution time: 7.26 seconds
+Execution time: 7.47 seconds
 
 
 🔄 Starting: ZA_IPODates.py
@@ -977,7 +979,7 @@ Sample data:
 4  58579.0        1909.0 1975-08-01
 ============================================================
 ✅ Completed: ZA_IPODates.py
-Execution time: 1.37 seconds
+Execution time: 1.77 seconds
 
 
 🔄 Starting: ZB_PIN.py
@@ -1041,7 +1043,7 @@ Sample data:
 [5 rows x 9 columns]
 ============================================================
 ✅ Completed: ZB_PIN.py
-Execution time: 96.08 seconds
+Execution time: 100.44 seconds
 
 
 🔄 Starting: ZC_GovernanceIndex.py
@@ -1068,7 +1070,7 @@ Sample data:
 4      A  7   2002-05-01
 ============================================================
 ✅ Completed: ZC_GovernanceIndex.py
-Execution time: 6.89 seconds
+Execution time: 7.36 seconds
 
 
 🔄 Starting: ZD_CorwinSchultz.py
@@ -1083,7 +1085,7 @@ Saved 4481622 records to ../pyData/Intermediate/BAspreadsCorwin.parquet
 Corwin-Schultz bid-ask spread processing completed successfully.
 ============================================================
 ✅ Completed: ZD_CorwinSchultz.py
-Execution time: 2.88 seconds
+Execution time: 3.12 seconds
 
 
 🔄 Starting: ZE_13F.py
@@ -1101,7 +1103,7 @@ Saved 2628653 records to ../pyData/Intermediate/TR_13F.parquet
 Thomson Reuters 13F holdings processing completed successfully.
 ============================================================
 ✅ Completed: ZE_13F.py
-Execution time: 27.74 seconds
+Execution time: 28.76 seconds
 
 
 🔄 Starting: ZF_CRSPIBESLink.py
@@ -1128,7 +1130,7 @@ Sample data:
 4       GFGC   10001   1989-07-01      1
 ============================================================
 ✅ Completed: ZF_CRSPIBESLink.py
-Execution time: 2.81 seconds
+Execution time: 3.00 seconds
 
 
 🔄 Starting: ZG_BidaskTAQ.py
@@ -1145,7 +1147,7 @@ Saved 3262927 records to ../pyData/Intermediate/hf_spread.parquet
 High-frequency bid-ask spread processing completed successfully.
 ============================================================
 ✅ Completed: ZG_BidaskTAQ.py
-Execution time: 2.66 seconds
+Execution time: 2.95 seconds
 
 
 🔄 Starting: ZH2_OptionMetricsCRSPLink.py
@@ -1161,12 +1163,19 @@ OPTIONMETRICSCRSPLinkingTable: Successfully converted 6 columns to target dtypes
 OptionMetrics linking data saved with 2640297 records
 ============================================================
 ✅ Completed: ZH2_OptionMetricsCRSPLink.py
-Execution time: 1.82 seconds
+Execution time: 2.62 seconds
 
 
 🔄 Starting: ZH_OptionMetricsCleaning.py
 ============================================================
 Processing OptionMetrics data...
+Processing OptionMetricsVolume...
+OptionMetricsVolume: Starting column standardization with data type enforcement
+OptionMetricsVolume: Adding missing columns: ['cp_flag', 'open_interest']
+OptionMetricsVolume: Removing extra columns: ['exdate']
+OptionMetricsVolume: Column order standardized successfully
+OptionMetricsVolume: Successfully converted 5 columns to target dtypes
+Saved OptionMetricsVolume: 64867671 records
 Processing OptionMetricsVolSurf...
 OptionMetricsVolSurf: Starting column standardization with data type enforcement
 OptionMetricsVolSurf: Column order standardized successfully
@@ -1186,148 +1195,46 @@ Saved OptionMetricsBH: 2852712 records
 OptionMetrics data processing completed successfully.
 ============================================================
 ✅ Completed: ZH_OptionMetricsCleaning.py
-Execution time: 3.47 seconds
+Execution time: 21.40 seconds
 
 
 🔄 Starting: ZI_PatentCitations.py
 ============================================================
-2025-09-08 12:32:07,557 - INFO - Starting Patent Citations processing with pure Python implementation...
-2025-09-08 12:32:07,557 - INFO - Downloading NBER patent datasets...
-2025-09-08 12:32:07,557 - INFO - Downloading http://www.nber.org/~jbessen/dynass.dta.zip
-2025-09-08 12:32:08,032 - INFO - Downloaded dynass: 13,458 rows
-2025-09-08 12:32:08,032 - INFO - Downloading http://www.nber.org/~jbessen/cite76_06.dta.zip
-2025-09-08 12:32:44,797 - INFO - Downloaded cite76_06: 23,650,891 rows
-2025-09-08 12:32:44,798 - INFO - Downloading http://www.nber.org/~jbessen/pat76_06_assg.dta.zip
-2025-09-08 12:33:27,755 - INFO - Downloaded pat76_06_assg: 3,279,509 rows
-2025-09-08 12:33:27,755 - INFO - Processing patent counts...
-2025-09-08 12:33:28,071 - INFO - Created patent counts: 59,464 rows
-2025-09-08 12:33:28,071 - INFO - Processing patent citations...
-2025-09-08 12:33:37,592 - INFO - Created citation data: 8,234,166 rows
-2025-09-08 12:33:37,592 - INFO - Scaling citations by subcategory...
-2025-09-08 12:33:38,473 - INFO - Created scaled citations: 28,763 rows
-2025-09-08 12:33:38,473 - INFO - Merging patents and citations...
-2025-09-08 12:33:38,480 - INFO - Merged data: 39,846 rows
-2025-09-08 12:33:38,480 - INFO - Creating balanced panel...
-2025-09-08 12:33:38,546 - INFO - Balanced panel: 196,664 rows
-2025-09-08 12:33:38,582 - INFO - Successfully saved 196,664 rows to ../pyData/Intermediate/PatentDataProcessed.parquet
-2025-09-08 12:33:38,582 - INFO - Patent Citations processing completed successfully!
-2025-09-08 12:33:38,582 - INFO - Sample data:
-2025-09-08 12:33:38,584 - INFO -     gvkey    year  npat  ncitscale
+2025-09-08 22:27:07,961 - INFO - Starting Patent Citations processing with pure Python implementation...
+2025-09-08 22:27:07,961 - INFO - Downloading NBER patent datasets...
+2025-09-08 22:27:07,961 - INFO - Downloading http://www.nber.org/~jbessen/dynass.dta.zip
+2025-09-08 22:27:09,035 - INFO - Downloaded dynass: 13,458 rows
+2025-09-08 22:27:09,035 - INFO - Downloading http://www.nber.org/~jbessen/cite76_06.dta.zip
+2025-09-08 22:27:46,617 - INFO - Downloaded cite76_06: 23,650,891 rows
+2025-09-08 22:27:46,617 - INFO - Downloading http://www.nber.org/~jbessen/pat76_06_assg.dta.zip
+2025-09-08 22:28:39,172 - INFO - Downloaded pat76_06_assg: 3,279,509 rows
+2025-09-08 22:28:39,172 - INFO - Processing patent counts...
+2025-09-08 22:28:39,516 - INFO - Created patent counts: 59,464 rows
+2025-09-08 22:28:39,516 - INFO - Processing patent citations...
+2025-09-08 22:28:48,785 - INFO - Created citation data: 8,234,166 rows
+2025-09-08 22:28:48,785 - INFO - Scaling citations by subcategory...
+2025-09-08 22:28:49,778 - INFO - Created scaled citations: 28,763 rows
+2025-09-08 22:28:49,778 - INFO - Merging patents and citations...
+2025-09-08 22:28:49,784 - INFO - Merged data: 39,846 rows
+2025-09-08 22:28:49,784 - INFO - Creating balanced panel...
+2025-09-08 22:28:49,851 - INFO - Balanced panel: 196,664 rows
+2025-09-08 22:28:49,885 - INFO - Successfully saved 196,664 rows to ../pyData/Intermediate/PatentDataProcessed.parquet
+2025-09-08 22:28:49,885 - INFO - Patent Citations processing completed successfully!
+2025-09-08 22:28:49,885 - INFO - Sample data:
+2025-09-08 22:28:49,886 - INFO -     gvkey    year  npat  ncitscale
 0  1000.0  1976.0   4.0        0.0
 1  1000.0  1977.0   2.0        0.0
 2  1000.0  1978.0   0.0        0.0
 3  1000.0  1979.0   0.0        0.0
 4  1000.0  1980.0   0.0        0.0
-2025-09-08 12:33:38,584 - INFO - Summary statistics:
-2025-09-08 12:33:38,585 - INFO - npat: mean=5.832242, std=57.718896, count=196664
-2025-09-08 12:33:38,585 - INFO - ncitscale: mean=2.053202, std=19.921014, count=196664
+2025-09-08 22:28:49,886 - INFO - Summary statistics:
+2025-09-08 22:28:49,887 - INFO - npat: mean=5.832242, std=57.718896, count=196664
+2025-09-08 22:28:49,888 - INFO - ncitscale: mean=2.053202, std=19.921014, count=196664
 PatentDataProcessed: Starting column standardization with data type enforcement
 PatentDataProcessed: Column order standardized successfully
 PatentDataProcessed: Successfully converted 4 columns to target dtypes
 ============================================================
 ✅ Completed: ZI_PatentCitations.py
-Execution time: 91.51 seconds
+Execution time: 102.53 seconds
 
-
-🔄 Starting: ZJ_InputOutputMomentum.py
-============================================================
-2025-09-08 12:33:39,119 - INFO - Starting InputOutputMomentum processing using R script...
-2025-09-08 12:33:39,119 - INFO - Calling R script...
-2025-09-08 12:34:08,193 - INFO - R script completed successfully
-2025-09-08 12:34:08,194 - INFO - R output: [1] "checking stock assignments:"
-# A tibble: 12 × 5
-   port     mean   vol nmonths tstat
-   <chr>   <dbl> <dbl>   <int> <dbl>
- 1 port1  0.717   6.27     240 1.77
- 2 port10 1.46    6.07     240 3.73
- 3 port2  1.03    6.22     240 2.57
- 4 port3  1.00    6.11     240 2.55
- 5 port4  1.21    5.76     240 3.26
- 6 port5  1.16    5.89     240 3.06
- 7 port6  1.30    5.63     240 3.57
- 8 port7  1.29    5.90     240 3.39
- 9 port8  1.52    5.63     240 4.18
-10 port9  1.64    6.21     240 4.09
-11 portLS 0.742   4.41     240 2.61
-12 portNA 0.0836 10.5      240 0.123
-[1] "checking stock assignments:"
-# A tibble: 12 × 5
-   port    mean   vol nmonths tstat
-   <chr>  <dbl> <dbl>   <int> <dbl>
- 1 port1  1.01   5.51     240  2.84
- 2 port10 1.51   5.74     240  4.06
- 3 port2  0.869  6.26     240  2.15
- 4 port3  1.15   6.30     240  2.82
- 5 port4  1.04   6.14     240  2.62
- 6 port5  1.10   5.86     240  2.90
- 7 port6  1.39   6.27     240  3.44
- 8 port7  1.33   5.98     240  3.46
- 9 port8  1.50   6.42     240  3.63
-10 port9  1.36   5.82     240  3.61
-11 portLS 0.496  4.35     240  1.77
-12 portNA 3.44  17.5      240  3.05
-
-2025-09-08 12:34:08,194 - INFO - Reading R script output...
-2025-09-08 12:34:08,890 - INFO - Loaded R script output: 3,982,712 rows
-2025-09-08 12:34:08,890 - INFO - Applying Stata post-processing...
-2025-09-08 12:34:09,362 - INFO - After time_avail_m creation: 3,982,712 rows
-2025-09-08 12:34:09,849 - INFO - After collapse: 3,982,664 rows
-2025-09-08 12:34:10,373 - INFO - After pivot to wide: 2,024,124 rows
-2025-09-08 12:34:10,544 - INFO - Successfully saved 2,024,124 rows to ../pyData/Intermediate/InputOutputMomentumProcessed.parquet
-2025-09-08 12:34:10,544 - INFO - InputOutputMomentum processing completed successfully!
-2025-09-08 12:34:10,544 - INFO - Sample data:
-2025-09-08 12:34:10,546 - INFO -    gvkey time_avail_m  retmatchcustomer  portindcustomer  retmatchsupplier  portindsupplier
-0   1001   1986-01-01          2.359414              7.0          2.829136              6.0
-1   1001   1986-02-01          9.647095              9.0          9.175166             10.0
-2   1001   1986-03-01          7.742961              6.0          8.277445             10.0
-3   1001   1986-04-01          4.772718             10.0          0.788214              9.0
-4   1001   1986-05-01          9.810903             10.0          6.830496             10.0
-2025-09-08 12:34:10,546 - INFO - Summary statistics:
-2025-09-08 12:34:10,555 - INFO - retmatchcustomer: mean=1.666384, std=5.952301, count=1976612
-2025-09-08 12:34:10,563 - INFO - retmatchsupplier: mean=1.594275, std=5.259261, count=2006052
-InputOutputMomentumProcessed: Starting column standardization with data type enforcement
-InputOutputMomentumProcessed: Column order standardized successfully
-InputOutputMomentumProcessed: Successfully converted 6 columns to target dtypes
-============================================================
-✅ Completed: ZJ_InputOutputMomentum.py
-Execution time: 31.80 seconds
-
-
-🔄 Starting: ZK_CustomerMomentum.py
-============================================================
-2025-09-08 12:34:10,903 - INFO - Starting customer momentum processing...
-2025-09-08 12:34:10,903 - INFO - Loading input data...
-2025-09-08 12:34:11,141 - INFO - Loaded customer segments: 704,826 rows
-2025-09-08 12:34:11,199 - INFO - Loaded CCM linking: 31,905 rows
-2025-09-08 12:34:17,536 - INFO - Loaded CRSP monthly: 5,153,763 rows
-2025-09-08 12:34:17,536 - INFO - Cleaning customer data...
-2025-09-08 12:34:18,252 - INFO - After cleaning customer data: 224,325 rows
-2025-09-08 12:34:18,252 - INFO - Cleaning CCM data...
-2025-09-08 12:34:18,335 - INFO - Cleaned CCM data: 31,905 rows
-2025-09-08 12:34:18,335 - INFO - Adding permno data...
-2025-09-08 12:34:18,369 - INFO - After inner join with CCM: 253,132 rows
-2025-09-08 12:34:18,395 - INFO - After date filtering: 181,366 rows
-2025-09-08 12:34:18,422 - INFO - After customer name matching: 210,449 rows
-2025-09-08 12:34:18,426 - INFO - After customer filtering: 45,711 rows
-2025-09-08 12:34:18,431 - INFO - Final customer-firm relationships: 45,711 rows
-2025-09-08 12:34:18,431 - INFO - Creating monthly frame...
-2025-09-08 12:34:18,571 - INFO - Monthly frame: 1,037,578 rows
-2025-09-08 12:34:18,571 - INFO - Creating wide customer data...
-2025-09-08 12:34:18,602 - INFO - Wide format data: 26,903 rows, 26 customer columns
-2025-09-08 12:34:18,610 - INFO - Wide customer data with stop rows: 31,832 rows
-2025-09-08 12:34:18,610 - INFO - Merging and filling customer data...
-2025-09-08 12:34:19,212 - INFO - Long customer data after fill: 601,537 rows
-2025-09-08 12:34:19,212 - INFO - Calculating customer momentum...
-2025-09-08 12:34:19,314 - INFO - Customer returns: 697,410 rows
-2025-09-08 12:34:19,362 - INFO - After merging customer returns: 561,276 rows
-2025-09-08 12:34:19,411 - INFO - Final customer momentum: 356,474 rows
-2025-09-08 12:34:19,456 - INFO - Successfully saved 356,474 rows to ../pyData/Intermediate/customerMom.parquet
-2025-09-08 12:34:19,456 - INFO - Customer momentum processing completed!
-customerMom: Starting column standardization with data type enforcement
-customerMom: Column order standardized successfully
-customerMom: Successfully converted 3 columns to target dtypes
-============================================================
-✅ Completed: ZK_CustomerMomentum.py
-Execution time: 8.91 seconds
-
-Log completed at 2025-09-08 12:34:19
+Log completed at 2025-09-08 22:28:50

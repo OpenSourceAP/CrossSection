@@ -1,7 +1,20 @@
 # Summary Statistics: ZH_OptionMetricsCleaning
-Generated on: 2025-09-08 13:14:30
+Generated on: 2025-09-09 06:22:17
 
-**Total datasets**: 3
+**Total datasets**: 4
+
+## OptionMetricsVolume
+
+**File**: `../pyData/Intermediate/OptionMetricsVolume.parquet`
+**Dimensions**: 64,867,671 rows × 5 columns
+
+|       Variable       |   Count    |    Mean    |  Std Dev   |   25th %   |   75th %   |
+|----------------------|------------|------------|------------|------------|------------|
+| secid                | 64,867,671 | 145182.549 | 44576.1762 | 107899.000 | 205208.000 |
+| date                 | 64,867,671 |    N/A     |    N/A     |    N/A     |    N/A     |
+| cp_flag              | 64,867,671 |    N/A     |    N/A     |    N/A     |    N/A     |
+| volume               | 64,867,671 |    34.2470 |   585.7393 |     0.0000 |     0.0000 |
+| open_interest        |          0 |    N/A     |    N/A     |    N/A     |    N/A     |
 
 ## OptionMetricsVolSurf
 

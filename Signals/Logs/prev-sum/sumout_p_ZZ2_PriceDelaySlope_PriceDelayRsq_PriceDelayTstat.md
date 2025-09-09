@@ -1,5 +1,5 @@
 # Summary Statistics: ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat
-Generated on: 2025-09-08 13:57:23
+Generated on: 2025-09-09 06:31:34
 
 **Total predictor datasets**: 3
 

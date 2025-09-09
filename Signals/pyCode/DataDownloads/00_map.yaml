@@ -409,3 +409,6 @@ InputOutputMomentumProcessed:
 #   python_file: customerMom.parquet
 #   stata_script: ZK_CustomerMomentum.do
 #   python_script: ZK_CustomerMomentum.py
+
+# BEA Input-Output Data
+# The output of BEA_InputOutput.py is xlsx files, which is different than everything else here, so let's not worry about this for now. 

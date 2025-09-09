@@ -1,5 +1,5 @@
 # Summary Statistics: ZZ2_AbnormalAccruals_AbnormalAccrualsPercent
-Generated on: 2025-09-08 13:57:18
+Generated on: 2025-09-09 06:31:29
 
 **Total predictor datasets**: 1
 

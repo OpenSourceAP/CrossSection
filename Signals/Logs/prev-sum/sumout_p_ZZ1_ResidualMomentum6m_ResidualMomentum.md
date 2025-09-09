@@ -1,5 +1,5 @@
 # Summary Statistics: ZZ1_ResidualMomentum6m_ResidualMomentum
-Generated on: 2025-09-08 13:57:15
+Generated on: 2025-09-09 06:31:25
 
 **Total predictor datasets**: 1
 

@@ -1,18 +1,18 @@
 # Summary Statistics: EarningsStreak
-Generated on: 2025-09-08 13:56:34
+Generated on: 2025-09-09 06:30:38
 
 **Total predictor datasets**: 1
 
 ## EarningsStreak.csv
 
 **File**: `../pyData/Predictors/EarningsStreak.csv`
-**Dimensions**: 1,228,755 rows × 3 columns
+**Dimensions**: 1,228,756 rows × 3 columns
 
 | Statistic    |      permno     |      yyyymm     |  EarningsStrea  |
 |------------|---------------|---------------|---------------|
-| Count        |       1,228,755 |       1,228,755 |       1,228,755 |
-| Mean         |        59557.56 |       200613.58 |       N/A       |
-| Std Dev      |        29500.12 |         1073.80 |       N/A       |
+| Count        |       1,228,756 |       1,228,756 |       1,228,756 |
+| Mean         |        59557.62 |       200613.58 |       N/A       |
+| Std Dev      |        29500.15 |         1073.80 |       N/A       |
 | 5th %        |        11762.00 |       198906.00 |           -0.04 |
 | 10th %       |        14141.00 |       199204.00 |           -0.02 |
 | 25th %       |        25129.00 |       199710.00 |           -0.00 |
