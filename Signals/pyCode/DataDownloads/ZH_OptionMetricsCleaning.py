@@ -23,7 +23,12 @@ print("Processing OptionMetrics data...")
 # Create output directory
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# tbc: OptionMetricsVolume cleaning
+# Process OptionMetrics Volume data
+print("Processing OptionMetricsVolume...")
+vol_data = pd.read_csv("../pyData/Prep/OptionMetricsVolume.csv")
+vol_data = standardize_columns(vol_data, "OptionMetricsVolume")
+vol_data.to_parquet("../pyData/Intermediate/OptionMetricsVolume.parquet", index=False)
+print(f"Saved OptionMetricsVolume: {len(vol_data)} records")
 
 # Process OptionMetrics Volatility Surface data
 print("Processing OptionMetricsVolSurf...")
