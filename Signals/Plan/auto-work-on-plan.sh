@@ -30,5 +30,5 @@ do
     --model claude-sonnet-4-20250514 \
     --permission-mode acceptEdits \
     --verbose \
-    --output-format $OUTPUT_FORMAT | jq -r '.'
+    --output-format $OUTPUT_FORMAT | jq -C '.' | sed -l 's/\\n/\n/g'
 done
