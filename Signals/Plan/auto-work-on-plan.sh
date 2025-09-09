@@ -1,4 +1,7 @@
 #! /bin/zsh
+# Usage: ./auto-work-on-plan.sh plan-dl-streamline.md 5 "Think carefully."
+# default to 1 iteration and no think instruction
+#        ./auto-work-on-plan.sh plan-comment-update.md
 
 # - `claude --model claude-opus-4-20250514`    
 # - `claude --model claude-opus-4-1-20250805`    
@@ -9,14 +12,14 @@
 # (where 5 is the number of iterations)
 
 alias claude="/Users/chen1678/.claude/local/claude"
-PLAN_NAME="plan-dl-streamline.md"
-THINK_INSTRUCTION="" # e.g. "", "Think.", "Ultrathink.'"
+PLAN_NAME=$1 # e.g. "plan-dl-streamline.md"
+THINK_INSTRUCTION=${3:-""} # e.g. "", "Think.", "Ultrathink.'", default to ""
 OUTPUT_FORMAT="stream-json" # text, stream-json
 
 cd ..
 
-# Take the first argument, default to 1 if not provided
-NUM_ITERS=${1:-1}
+# Take the second argument, default to 1 if not provided
+NUM_ITERS=${2:-1}
 
 for i in {1..$NUM_ITERS}
 do
