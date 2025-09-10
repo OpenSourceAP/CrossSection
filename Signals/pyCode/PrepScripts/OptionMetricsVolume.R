@@ -1,6 +1,6 @@
 # Option Volume Data from OptionMetrics
 # Created 2020 Andrew
-# Updated 2025-09
+# Updated 2025-09 to more closely match Johnson and So 2012 JFE
 # Separated from OptionMetricsProcessing.R
 # Downloads option volume data and aggregates by month
 
@@ -60,29 +60,24 @@ for (year in yearlist) {
   )
   
   res = dbSendQuery(wrds, query)
-  temp = res %>% dbFetch()
+  volume_for_year = res %>% dbFetch()
   
-  volume_many[[i]] = temp
-  i = i + 1
+  # write to csv
+  # Do for each year to try to avoid crashes
+  print(paste0('Writing to ', path_dl_me, 'OMVolumeDaily', year, '.csv'))
+  data.table::fwrite(volume_for_year,
+                     file = paste0(
+                       path_dl_me
+                       , 'OMVolumeDaily'
+                       , year
+                       , '.csv'
+                     )
+  )
   
   toc = Sys.time()
   
   print((toc - tic))
 }
-
-
-# Bind and save -----------------------------------------------------------
-
-# finally, merge years together
-volume_all = do.call(rbind,volume_many)
-
-# write to csv
-data.table::fwrite(volume_all,
-                   file = paste0(
-                     path_dl_me
-                     , 'OptionMetricsVolume.csv'
-                   )
-)
 
 # Disconnect from WRDS
 dbDisconnect(wrds)
