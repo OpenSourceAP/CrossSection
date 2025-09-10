@@ -74,9 +74,8 @@ do
 done    
 sas taq-chen-velikov/combine_and_average.sas -log log/combine_and_average.log
 
-echo "ADDING PERMNOS TO IID AND ISSM AND COPYING TO data_for_dl/"
+echo "ADDING PERMNOS TO IID AND ISSM"
 sas taq-chen-velikov/add_permnos.sas -log log/add_permnos.log
-cp temp_output/hf_monthly.csv data_for_dl/
 
 # # ==== OPTION METRICS: Volume ====
 echo "CREATING OPTION METRICS VOLUME (about 20 minutes)"
