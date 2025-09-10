@@ -1,7 +1,7 @@
 # DataDownloads Dataset Mapping
 # This file maps each dataset to its identifiers, file names, and generating scripts
-# Generated from DATASET_IDENTIFIERS and SCRIPT_OUTPUT_MAPPING in utils/update_01_dd_doc.py
-# Stata scripts extracted from 00_Stata_DataDownloadsDoc.md
+# used for testing scripts:
+# sum_dl.py, test_dl.py, approve_failure.py
 
 # CCM Linking Tables
 
