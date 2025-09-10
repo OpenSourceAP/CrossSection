@@ -1,7 +1,6 @@
 #!/bin/bash
 #$ -cwd
 #$ -m abe
-#$ -M andrew.y.chen@frb.gov
 # creates monthly dataset effective spreads from issm and wrds iid data
 # to execute: "qsub main.sh"
 # takes about an hour, mostly for issm
