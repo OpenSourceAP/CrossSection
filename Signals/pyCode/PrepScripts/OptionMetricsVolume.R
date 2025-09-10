@@ -1,6 +1,6 @@
 # Option Volume Data from OptionMetrics
 # Created 2020 Andrew
-# Updated 2022-02
+# Updated 2025-09
 # Separated from OptionMetricsProcessing.R
 # Downloads option volume data and aggregates by month
 
@@ -8,7 +8,7 @@
 
 rm(list = ls())
 
-querylimit = 'all' # use 'all' for full data, '20' for debugging
+querylimit = 'all' # use 'all' for full data, '1000' for debugging
 
 path_dl_me = './data_for_dl/'
 
@@ -27,12 +27,12 @@ wrds <- dbConnect(Postgres(),
                   sslmode='require')
 
 # Set up loop -------------------------------------------------------------
+
+# get list of years 
+# each year has a different table (e.g. opprcd2023)
 temp_dat = dbGetQuery(wrds, "SELECT table_name FROM information_schema.tables 
                       WHERE table_schema = 'optionm' AND table_name like 'opprcd%'")                  
 yearlist = substr(temp_dat$table_name, 7,12)
-
-yearlist
-
 volume_many = list()
 
 # Loop over years -------------------------------------------------------------
@@ -41,7 +41,6 @@ volume_many = list()
 # option contracts across all strikes for options expiring in the 30 trading days 
 # beginning five days after the trade date."
 
-querylimit = 'all'
 i = 1
 for (year in yearlist) {
   print(Sys.time())
