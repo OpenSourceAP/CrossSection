@@ -49,7 +49,7 @@ for (year in yearlist) {
   print("Processing Volume for Year:")
   print(year)
   
-  # download data with lots of filters
+  # download data with exdate filter
   # 30 trading days after 5 days after trade date
   query = paste0(
     "select secid, date, exdate, volume
@@ -64,6 +64,7 @@ for (year in yearlist) {
   temp = res %>% dbFetch()
   
   volume_many[[i]] = temp
+  i = i + 1
   
   toc = Sys.time()
   
