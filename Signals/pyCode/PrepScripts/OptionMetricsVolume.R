@@ -17,6 +17,7 @@ dir.create(path_dl_me)
 library(RPostgres)
 library(tidyverse)
 library(lubridate)
+library(data.table)
 
 # heads up: this assumes (1) running on wrds server and (2) pgpass is set up following this:
 # https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-the-web/
@@ -42,6 +43,7 @@ volume_many = list()
 # beginning five days after the trade date."
 
 i = 1
+dat_by_year = list()
 for (year in yearlist) {
   print(Sys.time())
   tic = Sys.time()
@@ -51,33 +53,50 @@ for (year in yearlist) {
   # download data with exdate filter
   # 30 trading days after 5 days after trade date
   query = paste0(
-    "select secid, date, exdate, volume
+    "select secid, optionid, date, exdate, volume
     from optionm.opprcd", year, "
     where cp_flag != 'NaN' and
+      volume > 0 and
       exdate - date >= 5 and
       exdate - date <= 5+30*(365/252) 
     limit ", querylimit
   )
+  option_day = dbSendQuery(wrds, query) %>% dbFetch() %>% setDT() 
   
-  res = dbSendQuery(wrds, query)
-  volume_for_year = res %>% dbFetch()
-  
-  # write to csv
-  # Do for each year to try to avoid crashes
-  print(paste0('Writing to ', path_dl_me, 'OMVolumeDaily', year, '.csv'))
-  data.table::fwrite(volume_for_year,
-                     file = paste0(
-                       path_dl_me
-                       , 'OMVolumeDaily'
-                       , year
-                       , '.csv'
-                     )
-  )
-  
+  # aggregate to stock-day
+  stock_day = option_day[
+    !is.na(volume)
+    , .(
+      optvolume_js16 = sum(volume), # option volume as defined in Johnson and So 2016
+      expir_mean = mean(exdate - date),
+      expir_min = min(exdate - date),
+      expir_max = max(exdate - date)
+    ),
+    by = c('secid','date')
+  ]
+
+  # save and advance
+  dat_by_year[[i]] = stock_day
+  i = i + 1
+    
   toc = Sys.time()
   
+  
   print((toc - tic))
-}
+} # end for year
+
+
+# Bind and save -----------------------------------------------------------
+
+optvolall = do.call(rbind, dat_by_year)
+fwrite(optvolall,
+       file = paste0(
+         path_dl_me
+         , 'OptionMetricsVolume.csv'
+       )
+ )
+
+
 
 # Disconnect from WRDS
 dbDisconnect(wrds)
