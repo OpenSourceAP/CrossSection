@@ -98,6 +98,7 @@ Signals/
 - **Virtual environment is located at `pyCode/.venv/`**
   - Do not create any new virtual environments.
 - **Data paths are relative to `[SIGNALSPATH]/pyCode/` (e.g., `../pyData/Intermediate/`)**
+- **Always cd back to `[SIGNALSPATH]` after using `cd [ANYTHING]`**
 
 ## Tools 
 - Do not use long Bash commands. 

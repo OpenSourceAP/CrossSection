@@ -94,8 +94,8 @@ If no script is specified, work on the first TBC script.
     - 78 lines
 35. ZH2_OptionMetricsCRSPLink.py: TBC
     - 93 lines
-36. ZH_OptionMetricsCleaning.py ✅ COMPLETED
-    - 57 lines
+36. ZH_OptionMetricsCleaning.py SKIP
+    - Needs custom streamlining. Likely will delete the whole thing and move the logic downstream.
 37. ZI_PatentCitations.py: SKIP
     - 258 lines
     - Requires unzipping many files, will need custom streamlining
