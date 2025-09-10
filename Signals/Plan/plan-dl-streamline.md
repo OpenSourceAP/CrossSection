@@ -12,6 +12,8 @@ Some files are excessively long and complicated.
 4. If the new summary statistics are different, try to fix it.
 5. Report the results below.
     - mark with ✅ if the script is simplified and the summary statistics are IDENTICAL to the original
+    - If the summary statistics are NOT IDENTICAL, mark with 🤔 and describe the differences
+    - **IMPORTANT**: DO NOT mark with ✅ if the summary statistics are NOT IDENTICAL
 
 If no script is specified, work on the first TBC script.
 
@@ -20,13 +22,12 @@ If no script is specified, work on the first TBC script.
 1. A_CCMLinkingTable.py: ✅ COMPLETED
    - 91 lines → 67 lines (26% reduction)
    - Summary statistics IDENTICAL to original
-2. B_CompustatAnnual.py: ✅ COMPLETED
-   - 232 lines → 154 lines (34% reduction)
-   - Summary statistics IDENTICAL to original 
+2. B_CompustatAnnual.py: TBC
+   - 232 lines 
 3. C_CompustatQuarterly.py: TBC
    - 258 lines 
 4. D_CompustatPensions.py: TBC
-   - 97 lines
+   - 93 lines 
 5. E_CompustatBusinessSegments.py: SKIP
    - 83 lines
    - Slow, will need custom streamlining
@@ -102,5 +103,3 @@ If no script is specified, work on the first TBC script.
     - 258 lines
     - This interacts with B_CompustatAnnual.py and I_CRSPmonthly.py
     - We ultimately want to move this to `pyCode/Predictors/`
-39. ZJ_InputOutputMomentum.py: TBC
-    - 135 lines
