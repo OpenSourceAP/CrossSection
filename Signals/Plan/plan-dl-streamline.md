@@ -22,10 +22,12 @@ If no script is specified, work on the first TBC script.
 1. A_CCMLinkingTable.py: ✅ COMPLETED
    - 91 lines → 67 lines (26% reduction)
    - Summary statistics IDENTICAL to original
-2. B_CompustatAnnual.py: TBC
-   - 232 lines 
-3. C_CompustatQuarterly.py: TBC
-   - 258 lines 
+2. B_CompustatAnnual.py: ✅ COMPLETED
+   - 149 lines → 108 lines (28% reduction)
+   - Summary statistics IDENTICAL to original 
+3. C_CompustatQuarterly.py: ✅ COMPLETED
+   - 181 lines → 130 lines (28% reduction)
+   - Summary statistics IDENTICAL to original 
 4. D_CompustatPensions.py: TBC
    - 93 lines 
 5. E_CompustatBusinessSegments.py: SKIP

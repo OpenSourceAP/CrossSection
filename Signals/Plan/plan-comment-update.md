@@ -28,8 +28,8 @@ If no script is specified, work on the first TBC script.
 # Progress tracking 
 
 - A_CCMLinkingTable.py ✅
-- B_CompustatAnnual.py: TBC
-- C_CompustatQuarterly.py: TBC
+- B_CompustatAnnual.py ✅
+- C_CompustatQuarterly.py ✅
 - D_CompustatPensions.py: TBC
 - E_CompustatBusinessSegments.py: TBC
 - F_CompustatCustomerSegments.py: TBC
