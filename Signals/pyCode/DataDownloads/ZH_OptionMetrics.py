@@ -54,24 +54,6 @@ def main():
     """Process OptionMetrics data files."""
     print("Processing OptionMetrics data...")
     
-    # Process OptionMetrics Volume data
-    print("Processing OptionMetricsVolume with case-sensitive column fixes...")
-    vol_data = pd.read_csv("../pyData/Prep/OptionMetricsVolume.csv")
-    # Fix column names case before processing
-    vol_data = vol_data.rename(columns={'optVolume': 'optvolume', 'optInterest': 'optinterest'})
-    
-    # Convert time_avail_m to proper format - create datetime64[ns] directly (start of month)
-    vol_data['time_avail_m'] = pd.to_datetime(vol_data['time_avail_m']).dt.to_period('M').dt.to_timestamp()
-    
-    # Standardize columns using YAML schema
-    vol_data = standardize_columns(vol_data, "OptionMetricsVolume")
-    
-    # Save the data
-    output_file = "../pyData/Intermediate/OptionMetricsVolume.parquet"
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    vol_data.to_parquet(output_file, index=False)
-    print(f"Saved OptionMetricsVolume: {len(vol_data)} records")
-    
     # Process OptionMetrics Volatility Surface data
     vol_surf_data = process_options_file(
         "../pyData/Prep/OptionMetricsVolSurf.csv",
