@@ -330,13 +330,8 @@ hf_spread:
   python_script: ZG_BidaskTAQ.py
 
 # OptionMetrics Data
-OptionMetricsVolume:
-  key1: secid
-  key2: time_avail_m
-  stata_file: OptionMetricsVolume.dta
-  python_file: OptionMetricsVolume.parquet
-  stata_script: ZH_OptionMetrics.do
-  python_script: ZH_OptionMetrics.py
+
+# note: OptionMetricsVolume.parquet is skipped over. The Predictors directory source the csv from PrepScripts
 
 OptionMetricsVolSurf:
   key1: secid

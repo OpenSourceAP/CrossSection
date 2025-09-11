@@ -3,7 +3,7 @@
 
 # An Ang Bali Cakici 2014 Table II C
 # Run from pyCode/ directory
-# Inputs: OptionMetricsVolSurf.parquet, SignalMasterTable.parquet
+# Inputs: OptionMetricsVolSurf.csv, SignalMasterTable.parquet
 # Output: ../pyData/Predictors/dCPVolSpread.csv
 
 import pandas as pd
@@ -14,12 +14,25 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
+from config import PATCH_OPTIONM_IV
 
 print("Starting dCPVolSpread.py...")
 
+# Check for Option Metrics patch
+if PATCH_OPTIONM_IV:
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    from openassetpricing import OpenAP
+    openap = OpenAP(2023)
+    df = openap.dl_signal('polars', ['dCPVolSpread'])
+    df = df.rename({'yyyymm': 'time_avail_m'})
+    save_predictor(df, 'dCPVolSpread')
+    sys.exit()
+
 # Clean OptionMetrics data
 print("Loading OptionMetrics volatility surface data...")
-options = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolSurf.parquet')
+options = pd.read_csv('../pyData/Prep/OptionMetricsVolSurf.csv')
+options['time_avail_m'] = pd.to_datetime(options['time_avail_m']).dt.to_period('M').dt.to_timestamp()
 
 print(f"Loaded options data: {options.shape[0]} rows")
 # Screen (page 2283): keep if days == 30 & abs(delta) == 50

@@ -34,6 +34,9 @@ Signals/Debug/*
 Signals/pyCode/Debug/*
 Signals/zzz-archive/*
 Signals/Human/*
+dev_run_pred.sh
+devone.sh
+run_batch_predictors.py
 
 # Other
 Portfolios/Code/Rplots.pdf

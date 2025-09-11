@@ -1,0 +1,7 @@
+# WRDS Database Credentials
+# Copy this file to .env and fill in your credentials
+WRDS_USERNAME=your_wrds_username
+WRDS_PASSWORD=your_wrds_password
+
+# Data paths (adjust as needed)
+PATH_DATA_INTERMEDIATE=../data_intermediate

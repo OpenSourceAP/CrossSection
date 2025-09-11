@@ -6,7 +6,7 @@ Usage:
     python3 Predictors/SmileSlope.py
 
 Inputs:
-    - pyData/Intermediate/OptionMetricsVolSurf.parquet
+    - pyData/Prep/OptionMetricsVolSurf.csv
     - pyData/Intermediate/SignalMasterTable.parquet
 
 Outputs:
@@ -22,9 +22,22 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
+from config import PATCH_OPTIONM_IV
+
+# Check for Option Metrics patch
+if PATCH_OPTIONM_IV:
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    from openassetpricing import OpenAP
+    openap = OpenAP(2023)
+    df = openap.dl_signal('polars', ['SmileSlope'])
+    df = df.rename({'yyyymm': 'time_avail_m'})
+    save_predictor(df, 'SmileSlope')
+    sys.exit()
 
 # Load option volatility surface data
-df = pd.read_parquet('../pyData/Intermediate/OptionMetricsVolSurf.parquet')
+df = pd.read_csv('../pyData/Prep/OptionMetricsVolSurf.csv')
+df['time_avail_m'] = pd.to_datetime(df['time_avail_m']).dt.to_period('M').dt.to_timestamp()
 
 # Filter to 30-day options with 50 delta (per page 221)
 df = df[(df['days'] == 30) & (np.abs(df['delta']) == 50)]
