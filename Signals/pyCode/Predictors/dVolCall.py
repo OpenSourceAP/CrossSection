@@ -12,7 +12,7 @@ Usage:
     python3 Predictors/dVolCall.py
 
 Inputs:
-    - ../pyData/Intermediate/OptionMetricsVolSurf.parquet (secid, time_avail_m, days, delta, cp_flag, impl_vol)
+    - ../pyData/Prep/OptionMetricsVolSurf.csv (secid, time_avail_m, days, delta, cp_flag, impl_vol)
     - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, secid)
 
 Outputs:
@@ -27,14 +27,27 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
+from config import PATCH_OPTIONM_IV
 
 print("Starting dVolCall.py...")
+
+# Check for Option Metrics patch
+if PATCH_OPTIONM_IV:
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    from openassetpricing import OpenAP
+    openap = OpenAP(2023)
+    df = openap.dl_signal('polars', ['dVolCall'])
+    df = df.rename({'yyyymm': 'time_avail_m'})
+    save_predictor(df, 'dVolCall')
+    sys.exit()
 
 # DATA LOAD
 print("Loading data...")
 # Clean OptionMetrics data
-options_df = pd.read_parquet("../pyData/Intermediate/OptionMetricsVolSurf.parquet", 
-                            columns=['secid', 'time_avail_m', 'days', 'delta', 'cp_flag', 'impl_vol'])
+options_df = pd.read_csv("../pyData/Prep/OptionMetricsVolSurf.csv")
+options_df['time_avail_m'] = pd.to_datetime(options_df['time_avail_m']).dt.to_period('M').dt.to_timestamp()
+options_df = options_df[['secid', 'time_avail_m', 'days', 'delta', 'cp_flag', 'impl_vol']]
 
 # SIGNAL CONSTRUCTION
 # Screen: 30 days and delta = 50

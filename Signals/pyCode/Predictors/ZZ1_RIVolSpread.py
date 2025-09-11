@@ -6,7 +6,7 @@ Usage:
     python3 Predictors/ZZ1_RIVolSpread.py
 
 Inputs:
-    - pyData/Intermediate/OptionMetricsBH.parquet
+    - pyData/Prep/bali_hovak_imp_vol.csv
     - pyData/Predictors/RealizedVol.csv
     - pyData/Intermediate/SignalMasterTable.parquet
 
@@ -23,9 +23,22 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
+from config import PATCH_OPTIONM_IV
+
+# Check for Option Metrics patch
+if PATCH_OPTIONM_IV:
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    from openassetpricing import OpenAP
+    openap = OpenAP(2023)
+    df = openap.dl_signal('polars', ['RIVolSpread'])
+    df = df.rename({'yyyymm': 'time_avail_m'})
+    save_predictor(df, 'RIVolSpread')
+    sys.exit()
 
 # Clean OptionMetrics data
-df_bh = pd.read_parquet('../pyData/Intermediate/OptionMetricsBH.parquet')
+df_bh = pd.read_csv('../pyData/Prep/bali_hovak_imp_vol.csv')
+df_bh['time_avail_m'] = pd.to_datetime(df_bh['date']).dt.to_period('M').dt.to_timestamp()
 
 # Rename implied volatility column
 df_bh = df_bh.rename(columns={'mean_imp_vol': 'impvol'})
