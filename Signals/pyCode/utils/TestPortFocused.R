@@ -7,8 +7,17 @@ setwd(paste0(pathProject,'Portfolios/Code/'))
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
 
-quickrun =  T # use T if you want to run quickly for testing
-quickrunlist = c('OptionVolume1','OptionVolume2')
+# Get command line arguments
+args <- commandArgs(trailingOnly = TRUE)
+
+# Default values
+quickrun = T # use T if you want to run quickly for testing
+quickrunlist = c('OptionVolume1','OptionVolume2') # default list
+
+# Parse command line arguments for quickrunlist
+if (length(args) > 0) {
+  quickrunlist = args
+}
 skipdaily = T # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
@@ -63,7 +72,7 @@ list.files(paste0(pathProject, 'Signals/DocsForClaude/'))
 
 sumold0 = read_xlsx(paste0(pathProject, 'Signals/DocsForClaude/PredictorSummary2024.xlsx'))
 
-sumold %>% select(signalname, tstat, rbar, vol, T, Nlong, Nshort)  %>% 
+sumold = sumold0 %>% select(signalname, tstat, rbar, vol, T, Nlong, Nshort)  %>% 
   filter(signalname %in% quickrunlist)
 
 new_vs = sumnew0 %>% 
@@ -78,7 +87,8 @@ new_vs = sumnew0 %>%
     diff = new - old
   )
 
-print('New vs old portfolios:')
+print('===============================================')
+print('\n\n New vs old portfolios:')
 print(new_vs)
 
 #%%

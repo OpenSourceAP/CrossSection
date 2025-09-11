@@ -293,7 +293,7 @@ checkport = function(
                      ){
 
     
-    sumportmonth(port,Nstocksmin=1) %>%
+    sumport = sumportmonth(port,Nstocksmin=1) %>%
         filter(samptype == 'insamp') %>%
         as.data.frame %>%
         print()
@@ -310,6 +310,8 @@ checkport = function(
                   , names_prefix = 't w/ ') %>%
         as.data.frame %>%
         print()
+
+    return(sumport)
     
     
 } # end function
