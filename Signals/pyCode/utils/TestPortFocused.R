@@ -1,3 +1,7 @@
+#%%
+
+args = commandArgs(trailingOnly=TRUE)
+
 #%% ====
 # From master.R 
 pathProject = '/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/'
@@ -6,9 +10,6 @@ SignalSource = "Python" # use "Stata" for legacy signals (Signals/Data/) or "Pyt
 setwd(paste0(pathProject,'Portfolios/Code/'))
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
-
-# Get command line arguments
-args <- commandArgs(trailingOnly = TRUE)
 
 # Default values
 quickrun = T # use T if you want to run quickly for testing
@@ -21,7 +22,7 @@ if (length(args) > 0) {
 skipdaily = T # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
-# ENVIRONMENT AND DATA ====
+# ENVIRONMENT AND DATA 
 crspinfo = read.fst(
   paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
 ) %>% # me, screens, 
@@ -55,7 +56,7 @@ if (dim(missing)[1]>0){
   if (temp=='quit'){print('erroring out'); stop()}
 }
 
-# BASE PORTS ====
+# BASE PORTS 
 port <- loop_over_strategies(
   strategylist0
 )
@@ -90,5 +91,24 @@ new_vs = sumnew0 %>%
 print('===============================================')
 print('\n\n New vs old portfolios:')
 print(new_vs)
+
+#%%
+# save  to md file
+
+# first jsut t-stats
+tstat = new_vs %>% filter(metric == 'tstat')
+
+txt <- capture.output(print(format(tstat, justify = "right"), row.names = FALSE))
+writeLines(txt, paste0(pathProject, 'Signals/Logs/TestOutPortFocused.md'))
+
+# then all 
+cat('\n\n All metrics:\n', file = paste0(pathProject, 'Signals/Logs/TestOutPortFocused.md'), append = TRUE)
+
+
+txt <- capture.output(print(format(new_vs, justify = "right"), row.names = FALSE))
+cat(
+  paste0(txt, '\n'), 
+  file = paste0(pathProject, 'Signals/Logs/TestOutPortFocused.md'), 
+  append = TRUE)
 
 #%%

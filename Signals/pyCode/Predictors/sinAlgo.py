@@ -83,7 +83,7 @@ first_year = first_year.rename(columns={
 # DATA LOAD (Firm-level industry codes)
 print("Loading SignalMasterTable...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-df = df[['permno', 'gvkey', 'time_avail_m', 'sicCRSP', 'shrcd', 'bh1m']].copy()
+df = df[['permno', 'gvkey', 'time_avail_m', 'sicCRSP', 'shrcd']].copy()
 print(f"Loaded SignalMasterTable: {df.shape[0]} rows")
 
 # Add NAICS codes from Compustat annual data
