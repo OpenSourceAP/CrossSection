@@ -839,9 +839,9 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
 
         f.write(f"Numbers report the **FAILURE** rate. ❌ (100.00%) is BAD.\n\n")
         
-        # Create summary table with Python CSV column
-        f.write("| Predictor                 | Python CSV | Superset   | NumRows       | Precision1   | Precision2    | T-stat     |\n")
-        f.write("|---------------------------|------------|------------|---------------|--------------|---------------|------------|\n")
+        # Create summary table
+        f.write("| Predictor                 | Superset   | NumRows       | Precision1   | Precision2    | T-stat     |\n")
+        f.write("|---------------------------|------------|---------------|--------------|---------------|------------|\n")
         
         # Sort predictors by test results - worst to best
         def sort_key(predictor):
@@ -901,10 +901,6 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
         
         for predictor in sorted_predictors:
             results = all_results.get(predictor, {})
-            
-            # Get Python CSV availability
-            python_csv_available = results.get('python_csv_available', False)
-            csv_status = "✅" if python_csv_available else "❌"
             
             # Get test results with fallback
             test1 = results.get('test_1_passed', None)
@@ -976,7 +972,7 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             if results.get('override_applied'):
                 predictor_display = f"{predictor}*"
             
-            f.write(f"| {predictor_display:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<13} | {col5:<10} |\n")
+            f.write(f"| {predictor_display:<25} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<13} | {col5:<10} |\n")
         
         # Count available predictors and overrides for summary
         available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
@@ -1058,32 +1054,35 @@ def main():
     if include_python_only:
         print(f"Including {len(include_python_only)} Python-only CSVs in summary: {include_python_only}")
     
-    # Run PredictorSummaryComparison.py once if t-stat validation is enabled
+    # Run TestPortFocused.R with only the predictors being validated
     tstat_comparison_df = None
     if args.tstat:
-        print(f"\n=== Running PredictorSummaryComparison.py for t-stat validation ===")
-
+        print(f"\n=== Running TestPortFocused.R for t-stat validation ===")
+        
         import subprocess
         import os
         
-        # Get the path to the utils directory PredictorSummaryComparison.py
-        script_path = os.path.join('utils', 'PredictorSummaryComparison.py')
+        # Get the path to TestPortFocused.R
+        script_path = os.path.join('utils', 'TestPortFocused.R')
         
-        # Run the script from the pyCode directory
-        result = subprocess.run(['python3', script_path], cwd='.')
+        # Prepare command with predictor list
+        cmd = ['Rscript', script_path] + test_predictors
+        
+        # Run the R script from the pyCode directory  
+        result = subprocess.run(cmd, cwd='.')
         
         if result.returncode != 0:
-            print(f"Warning: PredictorSummaryComparison.py failed: {result.stderr}")
+            print(f"Warning: TestPortFocused.R failed")
             print("T-stat validation will be skipped for all predictors")
         else:
-            # Read the comparison results
-            comparison_path = os.path.join('..', 'Logs', 'PredictorSummaryComparison.csv')
+            # Read the focused comparison results
+            comparison_path = os.path.join('..', 'Logs', 'TestOutPortFocused.csv')
             
             if os.path.exists(comparison_path):
                 tstat_comparison_df = pd.read_csv(comparison_path)
                 print(f"Loaded t-stat comparison data for {len(tstat_comparison_df)} predictors")
             else:
-                print(f"Warning: Comparison results file not found: {comparison_path}")
+                print(f"Warning: Focused comparison results file not found: {comparison_path}")
                 print("T-stat validation will be skipped for all predictors")                
     
     # Validate each available predictor
