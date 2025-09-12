@@ -46,5 +46,5 @@ How to interpret various variable types found in pyData/Intermediate/
 2. NumRows: The number of rows in the Python data exceeds the number of rows in the Stata data by at most a few percent.
 3. Precision1: For common observations, the percentage for which std_diff >= TOL_DIFF_1 is less than TOL_OBS_1. std_diff is the difference between the python and stata values, divided by the standard deviation of all stata values.
 4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
-5. t-stat: The utils/portcheck.py finds a t-stat that is within TOL_TSTAT of the old t-stat (from last year's data)
+5. t-stat: The PredictorSummaryComparison.py finds a t-stat that is within TOL_TSTAT of the old t-stat (from last year's data)
 
