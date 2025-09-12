@@ -16,7 +16,7 @@ Inputs:
 
 Outputs:
     - ../pyData/Predictors/OrgCap.csv (permno, yyyymm, OrgCap)
-    - ../pyData/Predictors/OrgCapNoAdj.csv (permno, yyyymm, OrgCapNoAdj)
+    - ../pyData/Placebos/OrgCapNoAdj.csv (permno, yyyymm, OrgCapNoAdj)
 """
 
 import sys
@@ -24,7 +24,7 @@ import os
 import pandas as pd
 import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.save_standardized import save_predictor
+from utils.save_standardized import save_predictor, save_placebo
 from utils.sicff import sicff
 
 # DATA LOAD
@@ -175,8 +175,8 @@ print(f"Final OrgCap values: {df['OrgCap'].notna().sum():,} non-missing")
 df_orgcap = df[['permno', 'time_avail_m', 'OrgCap']].dropna(subset=['OrgCap']).copy()
 save_predictor(df_orgcap, 'OrgCap')
 
-# Save OrgCapNoAdj predictor  
+# Save OrgCapNoAdj placebo  
 df_orgcapnoadj = df[['permno', 'time_avail_m', 'OrgCapNoAdj']].dropna(subset=['OrgCapNoAdj']).copy()
-save_predictor(df_orgcapnoadj, 'OrgCapNoAdj')
+save_placebo(df_orgcapnoadj, 'OrgCapNoAdj')
 
 print("OrgCap and OrgCapNoAdj calculation completed successfully!")
