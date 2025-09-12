@@ -1,60 +1,102 @@
 Accruals.py:
+  inputs:
+  - m_aCompustat.parquet
   predictors:
   - Accruals.csv
   placebos: []
 AccrualsBM.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
   predictors:
   - AccrualsBM.csv
   placebos: []
 AdExp.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
   predictors:
   - AdExp.csv
   placebos: []
 AgeIPO.py:
+  inputs:
+  - SignalMasterTable.parquet
+  - IPODates.parquet
   predictors:
   - AgeIPO.csv
   placebos: []
 AM.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
   predictors:
   - AM.csv
   placebos: []
 AnalystRevision.py:
+  inputs:
+  - IBES_EPS_Unadj.parquet
+  - SignalMasterTable.parquet
   predictors:
   - AnalystRevision.csv
   placebos: []
 AssetGrowth.py:
+  inputs:
+  - m_aCompustat.parquet
   predictors:
   - AssetGrowth.csv
   placebos: []
 Beta.py:
+  inputs:
+  - monthlyCRSP.parquet
+  - monthlyFF.parquet
+  - monthlyMarket.parquet
   predictors:
   - Beta.csv
   placebos: []
 BetaLiquidityPS.py:
+  inputs:
+  - monthlyCRSP.parquet
+  - monthlyFF.parquet
+  - monthlyLiquidity.parquet
   predictors:
   - BetaLiquidityPS.csv
   placebos: []
 BetaTailRisk.py:
+  inputs:
+  - dailyCRSP.parquet
+  - monthlyCRSP.parquet
   predictors:
   - BetaTailRisk.csv
   placebos: []
 BidAskSpread.py:
+  inputs:
+  - BAspreadsCorwin.parquet
   predictors:
   - BidAskSpread.csv
   placebos: []
 BM.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
   predictors:
   - BM.csv
   placebos: []
 BMdec.py:
+  inputs:
+  - m_aCompustat.parquet
+  - monthlyCRSP.parquet
   predictors:
   - BMdec.csv
   placebos: []
 BookLeverage.py:
+  inputs:
+  - m_aCompustat.parquet
   predictors:
   - BookLeverage.csv
   placebos: []
 BrandInvest.py:
+  inputs:
+  - a_aCompustat.parquet
   predictors:
   - BrandInvest.csv
   placebos: []
