@@ -29,6 +29,8 @@ Signals/pyData/*
 __*__*
 
 # Testing and archive
+Journal/
+Plan/
 Logs/
 deleteme*
 Signals/Debug/*

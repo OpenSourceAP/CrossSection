@@ -133,11 +133,10 @@ Signals/
 
 # Journal, Documentation, and Planning
 
-We keep organized by making notes in md format. **IMPORTANT**: all notes filenames have the format "[MMDD]n[id]-[title].md" (e.g. "0814n1-editdo-superset.md")
-
 The notes go in the following folders:
 - `Journal/`
   - This is a messy folder, put whatever you want in it.
+  - format filenames like "[MMDD]n[id]-[title].md" 
 - `DocsForClaude/`
   - This folder has long-term docs about the project. It includes important lessons from `Journal/`
 - `Plan/`
