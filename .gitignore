@@ -37,8 +37,7 @@ Signals/Debug/*
 Signals/pyCode/Debug/*
 Signals/zzz-archive/*
 Signals/Human/*
-dev*.sh
-dev_batch_predictors.py
+Signals/pyCode/dev/*
 
 # Testing exceptions
 !Logs/testout_predictors.md
