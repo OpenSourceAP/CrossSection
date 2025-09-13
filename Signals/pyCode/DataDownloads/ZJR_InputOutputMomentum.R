@@ -43,6 +43,7 @@ library(data.table)
 library(stringr)
 library(readxl)
 library(lubridate)
+library(arrow)
 
 # Parse arguments
 args = commandArgs(trailingOnly = "TRUE")
@@ -326,24 +327,24 @@ comp0 = fread(paste0(arg1, '/pyData/Intermediate/CompustatAnnual.csv')) %>%
   select(gvkey, year_avail, naics6, datadate)
 
 # read crsp
-crsp0 = fread(paste0(arg1, '/pyData/Intermediate/mCRSP.csv')) %>%
+crsp0 = read_parquet(paste0(arg1, '/pyData/Intermediate/monthlyCRSP.parquet')) %>%
   transmute(
     permno
-    , date = dmy(date)
+    , date = as.Date(time_avail_m)
     , ret=100*ret
     , mve_c = abs(prc)*shrout
   ) %>%
   filter(!is.na(ret),!is.na(mve_c))
 
 # read ccm, replacing missing linkenddt with date of apocalypse fortold (fourtold?) in lost papyrus
-ccm0  = fread(paste0(arg1, '/pyData/Intermediate/CCMLinkingTable.csv')) %>%
-  mutate(linkenddt = ifelse(linkenddt=="", "31dec3000", linkenddt)) %>% 
+ccm0  = read_parquet(paste0(arg1, '/pyData/Intermediate/CCMLinkingTable.parquet')) %>%
+  mutate(linkenddt = ifelse(is.na(timeLinkEnd_d), as.Date("3000-12-31"), as.Date(timeLinkEnd_d))) %>%
   transmute(
-    gvkey
-    , permno = lpermno
+    gvkey = as.numeric(gvkey)
+    , permno = permno
     , linkprim
-    , linkdt = dmy(linkdt)
-    , linkenddt = dmy(linkenddt)
+    , linkdt = as.Date(timeLinkStart_d)
+    , linkenddt = linkenddt
   ) 
 
 
