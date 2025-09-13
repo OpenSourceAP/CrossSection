@@ -3,13 +3,13 @@
 """
 Inputs:
 - ../pyData/Intermediate/CompustatSegmentDataCustomers.csv
-- ../pyData/Intermediate/CCMLinkingTable.csv
-- ../pyData/Intermediate/mCRSP.csv
+- ../pyData/Intermediate/CCMLinkingTable.parquet
+- ../pyData/Intermediate/monthlyCRSP.parquet
 
 Outputs:
-- ../pyData/Predictors/CustomerMomentum.csv
+- ../pyData/Predictors/CustomerMomentum.parquet
 
-How to run: python3 CustomerMomentum.py
+How to run: python CustomerMomentum.py
 """
 
 import pandas as pd
