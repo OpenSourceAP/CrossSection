@@ -40,6 +40,9 @@ Signals/Human/*
 dev*.sh
 dev_batch_predictors.py
 
+# Testing exceptions
+!Logs/testout_predictors.md
+
 # Other
 Portfolios/Code/Rplots.pdf
 
