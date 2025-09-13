@@ -155,12 +155,12 @@ When modifying predictor scripts, use `utils/sum_pred.py` for validation:
 
 **Before changes:**
 ```bash
-python utils/sum_pred.py [ScriptName] --vintage before_changes
+python utils/sum_pred.py [ScriptName] --vintage before
 ```
 
 **After changes:**
 ```bash
-python utils/sum_pred.py [ScriptName] --vintage after_changes
+python utils/sum_pred.py [ScriptName] --vintage after
 ```
 
 **Validation criteria:**
