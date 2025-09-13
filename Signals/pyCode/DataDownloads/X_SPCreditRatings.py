@@ -1,8 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads S&P credit ratings from Compustat and converts text ratings to numerical scale
+# ABOUTME: Creates time_avail_m monthly variable and saves gvkey-month level credit rating data
 """
-S&P Credit Ratings data download script - Python equivalent of X_SPCreditRatings.do
+Inputs:
+- comp.adsprate (gvkey, datadate, splticrm)
 
-Downloads S&P credit ratings and converts to numerical scale.
+Outputs:
+- ../pyData/Intermediate/m_SP_creditratings.parquet
+
+How to run: python3 X_SPCreditRatings.py
 """
 
 import os
@@ -17,17 +22,17 @@ from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
-# Create SQLAlchemy engine for database connection
+# Connect to WRDS database
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
+# Download S&P credit ratings from Compustat
 QUERY = """
 SELECT gvkey, datadate, splticrm
 FROM comp.adsprate
 """
 
-# Add row limit for debugging if configured
 if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
@@ -37,19 +42,17 @@ engine.dispose()
 
 print(f"Downloaded {len(rating_data)} credit rating records")
 
-# Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Create monthly time variable
+# Convert datadate to monthly time variable
 rating_data['datadate'] = pd.to_datetime(rating_data['datadate'])
-# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
 rating_data['time_avail_m'] = rating_data['datadate'].dt.to_period('M').dt.to_timestamp()
 rating_data = rating_data.drop('datadate', axis=1)
 
-# Rename splticrm to sp for easier reference
+# Rename column for easier reference
 rating_data = rating_data.rename(columns={'splticrm': 'sp'})
 
-# Create numerical rating (higher number = better rating)
+# Define rating to numerical mapping (higher number = better rating)
 rating_map = {
     'D': 1,
     'C': 2,
@@ -75,26 +78,21 @@ rating_map = {
     'AAA': 22
 }
 
-# Apply rating mapping
+# Convert text ratings to numerical scale
 rating_data['credrat'] = rating_data['sp'].map(rating_map).fillna(0)
-
-# Drop sp column
 rating_data = rating_data.drop('sp', axis=1)
 
-# Convert gvkey to numeric
+# Clean data types
 rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
-
-# Preserve int8 dtype for credrat column to match DTA format
 rating_data['credrat'] = rating_data['credrat'].astype('int8')
 
-# Save the data
-# Apply column standardization
+# Apply column standardization and save data
 rating_data = standardize_columns(rating_data, 'm_SP_creditratings')
 rating_data.to_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
 
 print(f"S&P Credit Ratings data saved with {len(rating_data)} records")
 
-# Show summary statistics
+# Display summary statistics
 print(f"Date range: {rating_data['time_avail_m'].min()} to {rating_data['time_avail_m'].max()}")
 print(f"Unique companies: {rating_data['gvkey'].nunique()}")
 

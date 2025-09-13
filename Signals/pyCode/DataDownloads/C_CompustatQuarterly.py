@@ -1,13 +1,17 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads Compustat quarterly fundamental data and expands to monthly availability
+# ABOUTME: Processes quarterly data with proper timing lags and converts YTD items to quarterly
 """
-Compustat Quarterly data download script.
+Inputs:
+- comp.fundq (Compustat quarterly fundamentals from WRDS)
 
-Python equivalent of C_CompustatQuarterly.do
-Downloads Compustat quarterly fundamental data and creates monthly version.
+Outputs:
+- ../pyData/Intermediate/m_QCompustat.parquet
+- ../pyData/Intermediate/CompustatQuarterly.parquet
 
-tbc: check ivaoq is at least sometimes stored as int64 instead of float64
+How to run: python3 C_CompustatQuarterly.py
 """
 
+# Import required libraries
 import os
 import pandas as pd
 import polars as pl
@@ -20,6 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
 from utils.column_standardizer_yaml import standardize_columns
 
+# Print script header
 print("=" * 60, flush=True)
 print(
     "📊 C_CompustatQuarterly.py - Compustat Quarterly Fundamentals",
@@ -27,13 +32,14 @@ print(
 )
 print("=" * 60, flush=True)
 
+# Load environment variables and create database connection
 load_dotenv()
-
-# Create SQLAlchemy engine for database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
+# Define SQL query to download quarterly fundamental data
+# Filters for consolidated (C), primary (D), standardized (STD), USD, industrial format
 QUERY = """
 SELECT a.gvkey, a.datadate, a.fyearq, a.fqtr, a.datacqtr,
     a.datafqtr, a.acoq, a.actq,a.ajexq,a.apq,a.atq,a.ceqq,a.cheq,
@@ -52,91 +58,66 @@ AND a.curcdq = 'USD'
 AND a.indfmt = 'INDL'
 """
 
-# Add row limit for debugging if configured
+# Apply debug row limit if configured
 if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
-# Load data with pandas first
+# Download data from WRDS and convert to polars for faster processing
 compustat_q_pd = pd.read_sql_query(QUERY, engine)
 engine.dispose()
-
 print(f"Downloaded {len(compustat_q_pd):,} quarterly records", flush=True)
-
-# Convert to polars for much faster processing
 compustat_q = pl.from_pandas(compustat_q_pd)
-del compustat_q_pd  # Free memory
+del compustat_q_pd
 
-# Ensure directories exist
+# Create output directory
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 print("Processing with Polars for optimal performance...", flush=True)
 
-# Keep only the most recent data for each fiscal quarter
-# (equivalent to bys gvkey fyearq fqtr (datadate): keep if _n == _N)
+# Remove duplicate records by keeping most recent data for each fiscal quarter
 compustat_q = (
     compustat_q
     .sort(['gvkey', 'fyearq', 'fqtr', 'datadate'])
     .group_by(['gvkey', 'fyearq', 'fqtr'])
     .last()
 )
-
 print(f"After removing duplicates: {len(compustat_q):,} records", flush=True)
 
-# Data availability assumed with 3 month lag and patch with rdq
-# (equivalent to gen time_avail_m = mofd(datadate) + 3)
-# Note: Stata's mofd() + 3 creates beginning-of-month dates
+# Calculate data availability timing with 3-month lag assumption
 compustat_q = compustat_q.with_columns([
-    # Convert dates to proper datetime first
     pl.col('datadate').cast(pl.Date),
     pl.col('rdq').cast(pl.Date)
 ])
 
-# Convert to pandas temporarily for proper period arithmetic (matching Stata's mofd() behavior)
+# Convert to pandas for period arithmetic to match Stata's mofd() + 3 behavior
 temp_df = compustat_q.to_pandas()
-# Replicate Stata's mofd(datadate) + 3 logic: beginning-of-month + 3 months
 temp_df['time_avail_m'] = (
     temp_df['datadate'].dt.to_period('M') + 3
 ).dt.to_timestamp()
-
-# Convert back to polars
 compustat_q = pl.from_pandas(temp_df)
-del temp_df  # Free memory
+del temp_df
 
-# Patch cases with later data availability using rdq
-# (equivalent to replace time_avail_m = mofd(rdq) if !mi(rdq) & mofd(rdq) > time_avail_m)
-# This handles cases where actual filing date is later than the 3-month assumption
+# Adjust availability timing using actual filing dates when later than 3-month assumption
 temp_df = compustat_q.to_pandas()
-# Apply Stata's mofd() logic to rdq as well
 rdq_monthly = temp_df['rdq'].dt.to_period('M').dt.to_timestamp()
-# Update time_avail_m with rdq if rdq is not null and rdq > time_avail_m
 mask = temp_df['rdq'].notna() & (rdq_monthly > temp_df['time_avail_m'])
 temp_df.loc[mask, 'time_avail_m'] = rdq_monthly[mask]
-
-# Convert back to polars
 compustat_q = pl.from_pandas(temp_df)
-del temp_df  # Free memory
+del temp_df
 
-# Drop cases with very late release (> 6 months)
-# (equivalent to drop if mofd(rdq) - mofd(datadate) > 6 & !mi(rdq))
-# Need to convert to pandas temporarily to replicate Stata's month arithmetic
+# Remove records with excessively late filings (> 6 months after quarter end)
 temp_df = compustat_q.to_pandas()
-# Calculate month difference using period arithmetic to match Stata exactly
 rdq_months = temp_df['rdq'].dt.to_period('M')
 datadate_months = temp_df['datadate'].dt.to_period('M')
-# Convert period difference to integer months
 month_diff = (rdq_months - datadate_months).apply(lambda x: x.n if pd.notna(x) else 0)
-# Drop rows where month difference > 6 and rdq is not null
 drop_mask = temp_df['rdq'].notna() & (month_diff > 6)
 temp_df = temp_df[~drop_mask]
-# Convert back to polars
 compustat_q = pl.from_pandas(temp_df)
-del temp_df  # Free memory
-
+del temp_df
 print(f"After removing late releases: {len(compustat_q):,} records", flush=True)
 
-# Keep most recent info for same gvkey/time_avail_m combinations
-# (equivalent to bys gvkey time_avail_m (datadate): keep if _n == _N)
+# Remove duplicates by keeping most recent data for each company-month combination
 compustat_q = (
     compustat_q
     .sort(['gvkey', 'time_avail_m', 'datadate'])
@@ -146,7 +127,7 @@ compustat_q = (
 
 print(f"After removing time duplicates: {len(compustat_q):,} records", flush=True)
 
-# For these variables, missing is assumed to be 0
+# Fill missing values with zero for balance sheet and cash flow variables
 zero_fill_vars = [
     'acoq', 'actq', 'apq', 'cheq', 'dpq', 'drcq', 'invtq', 'intanq',
     'ivaoq', 'gdwlq', 'lcoq', 'lctq', 'loq', 'mibq', 'prstkcy',
@@ -166,7 +147,7 @@ for var in zero_fill_vars:
 if zero_fill_exprs:
     compustat_q = compustat_q.with_columns(zero_fill_exprs)
 
-# Prepare year-to-date items (convert to quarterly) - OPTIMIZED WITH POLARS
+# Convert year-to-date items to quarterly by taking differences
 print("Converting year-to-date items to quarterly...", flush=True)
 compustat_q = compustat_q.sort(['gvkey', 'fyearq', 'fqtr'])
 
@@ -190,7 +171,7 @@ for var in ytd_vars:
 if ytd_exprs:
     compustat_q = compustat_q.with_columns(ytd_exprs)
 
-# Convert to monthly by expanding each quarter to 3 months
+# Expand quarterly data to monthly by creating 3 monthly records per quarter
 print("Expanding quarterly data to monthly...", flush=True)
 
 # Create month offsets (0, 1, 2) for expansion
@@ -237,11 +218,10 @@ monthly_compustat_pd = monthly_compustat.to_pandas()
 # time_avail_m is already in proper datetime64[ns] format from period arithmetic above
 # No additional conversion needed - it already matches Stata's format
 
-# Standardize columns using YAML schema
+# Standardize column names and data types using YAML schema
 monthly_compustat_pd = standardize_columns(monthly_compustat_pd, "m_QCompustat")
 
-# Save the data in both pickle and parquet formats
-# Use timestamp format that preserves nanosecond precision to match Stata
+# Save data to parquet files with timestamp precision matching Stata
 monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False, use_deprecated_int96_timestamps=True)
 monthly_compustat_pd.to_parquet("../pyData/Intermediate/CompustatQuarterly.parquet", index=False, use_deprecated_int96_timestamps=True)
 

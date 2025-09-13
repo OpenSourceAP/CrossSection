@@ -85,11 +85,11 @@ crsp_raw['mve_c'] = crsp_raw['shrout'] * np.abs(crsp_raw['prc'])
 # Housekeeping - drop columns (note: NOT processing delisting returns)
 crsp_raw = crsp_raw.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
-# Standardize columns to match DTA file
+# Standardize column names and types
 from utils.column_standardizer_yaml import standardize_columns
 crsp_raw = standardize_columns(crsp_raw, "monthlyCRSPraw")
 
-# Save the data
+# Save processed data to parquet
 crsp_raw.to_parquet("../pyData/Intermediate/monthlyCRSPraw.parquet")
 
 print(f"CRSP Monthly Raw data saved with {len(crsp_raw)} records")

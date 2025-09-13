@@ -1,9 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Processes high-frequency bid-ask spread data from preprocessed CSV file
+# ABOUTME: Converts yearm format to time_avail_m and creates hf_spread from espread_pct_mean
 """
-High-frequency bid-ask spread processing - Python equivalent of ZG_BidaskTAQ.do
+Inputs:
+- ../pyData/Prep/hf_monthly.csv (preprocessed high-frequency data with yearm and espread_pct_mean)
 
-Processes high-frequency bid-ask spread data from preprocessed CSV file.
-Created via Chen-Velikov JFQA code, includes ISSM spreads.
+Outputs:
+- ../pyData/Intermediate/hf_spread.parquet
+
+How to run: python3 ZG_BidaskTAQ.py
 """
 
 import os
@@ -16,61 +20,50 @@ from utils.column_standardizer_yaml import standardize_columns
 
 
 def main():
-    """Process high-frequency bid-ask spread data."""
     print("Processing high-frequency bid-ask spread data...")
-    
-    # Load the CSV data
+
+    # Load input data from preprocessed CSV
     input_file = "../pyData/Prep/hf_monthly.csv"
-    
+
     if not os.path.exists(input_file):
         raise FileNotFoundError(f"Input file not found: {input_file}")
-    
-    # Read CSV with headers
+
     data = pd.read_csv(input_file)
     print(f"Loaded {len(data)} records from {input_file}")
-    
-    # Convert yearm column to string for processing
+
+    # Parse yearm string format (YYYYMM) into year and month components
     data['yearm'] = data['yearm'].astype(str)
-    
-    # Extract year and month from yearm string (format: YYYYMM)
     data['y'] = data['yearm'].str[:4].astype(int)
     data['m'] = data['yearm'].str[4:6].astype(int)
-    
-    # Create time_avail_m as period (monthly)
+
+    # Create monthly period index from year and month
     data['time_avail_m'] = pd.PeriodIndex.from_fields(
         year=data['y'], month=data['m'], freq='M'
     )
-    
-    # Create hf_spread from espread_pct_mean
+
+    # Create hf_spread variable from espread_pct_mean
     data['hf_spread'] = data['espread_pct_mean']
-    
-    # Keep only required columns
+
+    # Select final columns and clean data
     data = data[['permno', 'time_avail_m', 'hf_spread']].copy()
-    
-    # Drop rows with missing values
     data = data.dropna()
     print(f"After dropping missing values: {len(data)} records")
-    
-    # Ensure optimal data types
+
+    # Optimize data types
     data['permno'] = data['permno'].astype('int64')
-    
-    # Apply Pattern 1 fix: Convert Period to datetime64[ns] BEFORE saving
     data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
-    
-    # Save to parquet
-    output_file = "../pyData/Intermediate/hf_spread.parquet"
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    
-    # Apply row limit for debugging if configured
+
+    # Apply debugging row limit if configured
     if MAX_ROWS_DL > 0:
         data = data.head(MAX_ROWS_DL)
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
-    # Save the data
-    # Apply column standardization
+    # Save processed data to parquet
+    output_file = "../pyData/Intermediate/hf_spread.parquet"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     data = standardize_columns(data, 'hf_spread')
     data.to_parquet(output_file, index=False)
-    
+
     print(f"Saved {len(data)} records to {output_file}")
     print("High-frequency bid-ask spread processing completed successfully.")
 

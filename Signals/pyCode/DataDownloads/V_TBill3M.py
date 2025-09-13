@@ -1,5 +1,15 @@
 # ABOUTME: Downloads 3-month T-bill rate from FRED and aggregates to quarterly averages
-# ABOUTME: Complete rewrite following Stata script V_TBill3M.do exactly
+# ABOUTME: Creates year-quarter-level dataset with TbillRate3M variable for downstream analysis
+"""
+Inputs:
+- FRED API TB3MS series (monthly 3-month Treasury bill rates)
+- FRED_API_KEY environment variable
+
+Outputs:
+- ../pyData/Intermediate/TBill3M.parquet
+
+How to run: python V_TBill3M.py
+"""
 
 import os
 import pandas as pd
@@ -14,7 +24,6 @@ load_dotenv()
 
 
 def download_fred_tb3ms(api_key):
-    """Download TB3MS series from FRED API exactly as Stata import fred command."""
     print("Downloading TB3MS from FRED...")
 
     url = "https://api.stlouisfed.org/fred/series/observations"
@@ -42,46 +51,43 @@ def download_fred_tb3ms(api_key):
 
 
 def main():
-    """Main function exactly following Stata V_TBill3M.do logic."""
     print("Processing 3-month T-bill rate...")
     
-    # Get FRED API key
+    # Get FRED API key from environment
     fred_api_key = os.getenv("FRED_API_KEY")
     if not fred_api_key:
         print("ERROR: FRED_API_KEY not found in environment variables")
         return
     
-    # Ensure output directory exists
+    # Create output directory if needed
     os.makedirs("../pyData/Intermediate", exist_ok=True)
     
-    # Stata: import fred TB3MS, clear aggregate(q, avg)
-    # Download monthly data first
+    # Download monthly T-bill data from FRED
     monthly_data = download_fred_tb3ms(fred_api_key)
     
-    # Set date as index for resampling
+    # Prepare data for quarterly aggregation
     monthly_data = monthly_data.set_index('date')
     
-    
-    # Aggregate to quarterly averages using pandas resample to match Stata exactly
-    # Stata's aggregate(q, avg) uses quarterly means in double precision
+
+    # Aggregate monthly data to quarterly averages
     quarterly_data = monthly_data.resample('QE').mean()
     quarterly_data = quarterly_data.dropna().reset_index()
 
     print(f"Aggregated to {len(quarterly_data)} quarterly observations")
 
-    # Stata: gen TbillRate3M = TB3MS/100
-    # Use double precision (float64) like Stata does for all calculations
+    # Convert T-bill rate from percentage to decimal
     quarterly_data['TbillRate3M'] = quarterly_data['TB3MS'] / 100.0
     
-    # Stata: gen qtr = quarter(daten)
+    # Extract quarter from date
     quarterly_data['qtr'] = quarterly_data['date'].dt.quarter
 
-    # Stata: gen year = yofd(daten)
+    # Extract year from date
     quarterly_data['year'] = quarterly_data['date'].dt.year
 
-    # Stata: keep year qtr TbillRate3M
+    # Keep only required columns
     final_data = quarterly_data[['year', 'qtr', 'TbillRate3M']].copy()
 
+    # Display summary information
     print(f"Final dataset: {len(final_data)} quarterly records")
     date_range_start = (
         f"{final_data['year'].min()}Q"
@@ -93,18 +99,16 @@ def main():
     )
     print(f"Date range: {date_range_start} to {date_range_end}")
 
-    # Stata: save (equivalent)
-    # Apply column standardization
+    # Apply standardization and save to parquet
     final_data = standardize_columns(final_data, 'TBill3M')
     final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet", index=False)
 
     print("3-month T-bill rate data saved successfully")
 
-    # Show sample data
+    # Display sample data and summary statistics
     print("\nSample data:")
     print(final_data.head())
 
-    # Show summary statistics
     print("\nT-bill rate summary:")
     print(f"Mean: {final_data['TbillRate3M'].mean():.6f}")
     print(f"Std: {final_data['TbillRate3M'].std():.6f}")

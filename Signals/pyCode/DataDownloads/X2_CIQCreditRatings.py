@@ -1,15 +1,19 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads CIQ credit ratings from entity, instrument, and security ratings tables
+# ABOUTME: Aggregates ratings data by gvkey and date, mapping ratings to numeric scale and tracking downgrades
 """
-CIQ Credit Ratings data download script - Python equivalent of X2_CIQCreditRatings.do
+Inputs:
+- ciq.wrds_erating (entity ratings)
+- ciq.wrds_irating (instrument ratings) 
+- ciq.wrds_srating (security ratings)
+- ciq.ratings_ids (linking table)
 
-Downloads CIQ credit ratings from entity, instrument, and security ratings tables.
-Extends coverage beyond Compustat ratings which end in 2017.
+Outputs:
+- ../pyData/Intermediate/m_CIQ_creditratings.parquet
 
-this guy was hand-coded by andrew since the stata code needed significant improvements
+How to run: python3 X2_CIQCreditRatings.py
 """
 
-#%%
-# setup
+# Import libraries and setup environment
 
 import sys
 import os
@@ -27,8 +31,7 @@ from sqlalchemy import create_engine
 
 load_dotenv()
 
-
-"""Main function to download and process CIQ credit ratings"""
+# Download CIQ credit ratings data from WRDS
 print("Downloading CIQ Credit Ratings...")
 print("Warning: this can take ~5 minutes to run.")
 
@@ -44,10 +47,7 @@ engine = create_engine(
 # Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-
-#%%
-
-# Download entity ratings (like Stata's first query)
+# Download entity ratings from wrds_erating table
 print("Downloading entity ratings...")
 entity_query = """
 SELECT DISTINCT b.gvkey, b.ticker, a.ratingdate, a.ratingtime, a.ratingactionword, a.currentratingsymbol, b.entity_id
@@ -67,15 +67,14 @@ try:
     entity_ratings = pd.read_sql_query(entity_query, engine)
     print(f"Downloaded {len(entity_ratings)} entity rating records in {time.time() - start_time:.1f} seconds")
     
-    # Fill in missing columns (like Stata's gen str6 commands)
+    # Fill in missing columns for consistency across rating types
     entity_ratings['instrument_id'] = ''
     entity_ratings['security_id'] = ''
         
 except Exception as e:
     print(f"Error downloading entity ratings: {e}")
 
-
-# Download instrument ratings (like Stata's second query)
+# Download instrument ratings from wrds_irating table
 print("Downloading instrument ratings...")
 instrument_query = """
 SELECT DISTINCT b.gvkey, b.ticker, a.ratingdate, a.ratingtime, a.ratingactionword, a.currentratingsymbol, b.instrument_id
@@ -95,14 +94,14 @@ try:
     instrument_ratings = pd.read_sql_query(instrument_query, engine)
     print(f"Downloaded {len(instrument_ratings)} instrument rating records in {time.time() - start_time:.1f} seconds")
     
-    # Fill in missing columns
+    # Fill in missing columns for consistency across rating types
     instrument_ratings['entity_id'] = ''
     instrument_ratings['security_id'] = ''
         
 except Exception as e:
     print(f"Error downloading instrument ratings: {e}")
 
-# Download security ratings (like Stata's third query)
+# Download security ratings from wrds_srating table
 print("Downloading security ratings...")
 security_query = """
 SELECT DISTINCT b.gvkey, b.ticker, a.ratingdate, a.ratingtime, a.ratingactionword, a.currentratingsymbol, b.security_id
@@ -122,7 +121,7 @@ try:
     security_ratings = pd.read_sql_query(security_query, engine)
     print(f"Downloaded {len(security_ratings)} security rating records in {time.time() - start_time:.1f} seconds")
     
-    # Fill in missing columns
+    # Fill in missing columns for consistency across rating types
     security_ratings['entity_id'] = ''
     security_ratings['instrument_id'] = ''
         
@@ -131,10 +130,9 @@ except Exception as e:
 
 engine.dispose()
 
-#%%
-# clean and collapse (new, not in stata)
+# Process and aggregate ratings data
 
-# define stuff for collapsing (taking means and maxes)
+# Define mapping from rating symbols to numeric values for aggregation
 rating_map = {
     "D":   1,
     "C":   2,
@@ -161,15 +159,9 @@ rating_map = {
 }
 
 def collapse_ratings(df: pd.DataFrame, source_id: int) -> pd.DataFrame:
-    """
-    • Map ratings to numbers (missing → 0)  
-    • Flag downgrades as 0/1  
-    • Collapse to (gvkey, ratingdate) with the desired aggregates  
-    • Tag the provenance with `source_id`
-    """
     return (
         df
-        # 1️⃣ create helper columns
+        # Create helper columns: map ratings to numbers and flag downgrades
         .assign(
             currentratingnum=lambda d: d['currentratingsymbol']
                                           .map(rating_map)
@@ -178,47 +170,42 @@ def collapse_ratings(df: pd.DataFrame, source_id: int) -> pd.DataFrame:
                                           .eq('Downgrade')
                                           .astype(int)
         )
-        # 2️⃣ aggregate
+        # Aggregate by gvkey and rating date
         .groupby(['gvkey', 'ratingdate'], as_index=False)
         .agg(
             currentratingnum=('currentratingnum', 'mean'),
             anydowngrade   =('anydowngrade',   'max')
         )
-        # 3️⃣ mark the source
+        # Tag with source identifier
         .assign(source=source_id)
     )
 
-# --- run it for each table ----------------------------------------------------
+# Apply aggregation function to each rating table
 entity_agg, instrument_agg, security_agg = [
     collapse_ratings(df, src)
     for df, src in zip(
         [entity_ratings, instrument_ratings, security_ratings],
-        [1, 2, 3]       # ← your source codes
+        [1, 2, 3]       # Source codes: 1=Entity, 2=Instrument, 3=Security
     )
 ]
 
-# Concatenate
+# Combine all rating sources
 ratings_agg = pd.concat([entity_agg, instrument_agg, security_agg], ignore_index=True)
 
-#%%
-# finishing up
+# Clean and finalize the data
 
-# For each gvkey-ratingdate, keep the best source 
+# For each gvkey-ratingdate combination, keep the best source (entity=1 preferred over instrument=2 over security=3)
 ratings = ratings_agg.sort_values(['gvkey', 'ratingdate', 'source'])
 ratings = ratings.drop_duplicates(subset=['gvkey', 'ratingdate'], keep='first')
 print(f"After removing date duplicates: {len(ratings)} records")
 
-# note: stata code converted to time_avail_m, but this led to some inconsistencies with the use of stale data. Mom6mJunk.do for example filled all missing ciq credit ratings with the most recent obs, but it did not do this for the S&P credit ratings. We should revisit this and CredRatDG. These are the only two signals that use this data.
-
-
-# Save the data
-# skip standardizing (does not make sense, we're ignoring stata)
+# Save the processed data
 ratings.to_parquet("../pyData/Intermediate/m_CIQ_creditratings.parquet", index=False)
 
 print(f"CIQ Credit Ratings data saved with {len(ratings)} records")
 print(f"Date range: {ratings['ratingdate'].min()} to {ratings['ratingdate'].max()}")
 
-# Show source distribution
+# Display summary statistics
 print("\nSource distribution:")
 source_dist = ratings['source'].value_counts().sort_index()
 source_labels = {1: 'Entity', 2: 'Instrument', 3: 'Security'}

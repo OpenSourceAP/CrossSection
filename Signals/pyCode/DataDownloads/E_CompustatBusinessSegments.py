@@ -1,8 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads and processes Compustat business segment data from WRDS
+# ABOUTME: Converts data types and applies column standardization to match expected format
 """
-Compustat Business Segments data download script - Python equivalent of E_CompustatBusinessSegments.do
+Inputs:
+- compseg.wrds_segmerged (WRDS database)
 
-Downloads Compustat business segment data from the WRDS merged segments file.
+Outputs:
+- ../pyData/Intermediate/CompustatSegments.parquet
+
+How to run: python3 E_CompustatBusinessSegments.py
 """
 
 import os
@@ -19,13 +24,15 @@ print("=" * 60, flush=True)
 print("🏢 E_CompustatBusinessSegments.py - Business Segment Data", flush=True)
 print("=" * 60, flush=True)
 
+# Load environment variables for database connection
 load_dotenv()
 
-# Create SQLAlchemy engine for database connection
+# Create database connection to WRDS
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
+# Define SQL query to extract business segment data
 QUERY = """
 SELECT a.gvkey, a.datadate, a.stype, a.sid, a.sales, a.srcdate, a.naicsh, a.sics1, a.snms
 FROM compseg.wrds_segmerged as a
@@ -36,35 +43,34 @@ if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
+# Execute query and download data
 segments_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
 print(f"Downloaded {len(segments_data)} business segment records")
 
-# Ensure directories exist
+# Create output directory if it doesn't exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Convert columns to numeric (equivalent to destring gvkey sics1 naicsh, replace)
+# Convert numeric columns from string to numeric format
 segments_data['gvkey'] = pd.to_numeric(segments_data['gvkey'], errors='coerce')
 segments_data['sics1'] = pd.to_numeric(segments_data['sics1'], errors='coerce')
 segments_data['naicsh'] = pd.to_numeric(segments_data['naicsh'], errors='coerce')
 
-# Convert date columns to datetime format to match Stata output
+# Convert date columns to datetime format
 segments_data['datadate'] = pd.to_datetime(segments_data['datadate'])
 segments_data['srcdate'] = pd.to_datetime(segments_data['srcdate'])
 
-# Apply IBES Pattern: Convert None/NaN to empty string for string columns (snms)
-# This matches Stata's treatment of missing string values
+# Handle missing string values by converting NaN to empty strings
 segments_data['snms'] = segments_data['snms'].fillna('')
 
-# Apply column standardization
+# Apply column standardization and save data
 segments_data = standardize_columns(segments_data, 'CompustatSegments')
-# Save the data
 segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 
 print(f"Compustat Business Segments data saved with {len(segments_data)} records")
 
-# Show summary statistics
+# Display summary statistics and sample data
 print("\nSegment types:")
 if 'stype' in segments_data.columns:
     print(segments_data['stype'].value_counts())
@@ -75,7 +81,6 @@ if 'datadate' in segments_data.columns:
 
 print(f"\nUnique companies: {segments_data['gvkey'].nunique()}")
 
-# Sample data
 print("\nSample data:", flush=True)
 print(segments_data.head(), flush=True)
 print("=" * 60, flush=True)

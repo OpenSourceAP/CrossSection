@@ -1,15 +1,14 @@
-# %%
-
-# ABOUTME: OptionMetricsCRSPLink.py makes pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet with columns permno, time_avail_m, secid, score, sdate_m, edate_m, volume
-# ABOUTME: the extra columns are for record keeping
+# ABOUTME: Downloads OptionMetrics-CRSP linking data and creates monthly permno-secid mapping
+# ABOUTME: Processes link dates, joins with CRSP monthly data, and deduplicates by score
 """
-Usage:
-    python3 DataDownloads/OptionMetricsCRSPLink.py
+Inputs:
+- wrdsapps_link_crsp_optionm.opcrsphist (WRDS database)
+- ../pyData/Intermediate/monthlyCRSP.parquet
 
 Outputs:
-    - pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet
+- ../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet
 
-Currently, even though the option volume data isn't actually helping with deduplication, we're keeping it around for clarity in case it's useful later (2025-09-02)
+How to run: python3 OptionMetricsCRSPLink.py
 """
 
 import os
@@ -25,8 +24,7 @@ from utils.column_standardizer_yaml import standardize_columns
 load_dotenv()
 
 
-# %% load data
-
+# Load OptionMetrics linking data from WRDS database
 print("Processing CRSP-OptionMetrics data...")
 
 engine = create_engine(
@@ -40,54 +38,49 @@ FROM wrdsapps_link_crsp_optionm.opcrsphist as a
 WHERE permno is not null
 """
 
-# Read from WRDS database
+# Read linking data from WRDS
 omlink0 = pd.read_sql_query(QUERY, engine)
 print(f"Loaded {len(omlink0)} OptionMetrics linking records from WRDS")
 
 engine.dispose()
 
-# load CRSP monthly data
+# Load CRSP monthly data for time_avail_m dates
 crspm = pd.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet", columns=['permno', 'time_avail_m'])
 
-# %% Convert link dates to monthly
+# Convert daily link dates to monthly periods
 omlink = omlink0.copy()
 
-# start date -> same month
+# Convert start date to first day of same month
 omlink['sdate_m'] = pd.to_datetime(omlink['sdate']).dt.to_period('M').dt.to_timestamp()
 
-# end date -> previous month (since monthly dates assume end of the month)
+# Convert end date to previous month (since monthly dates assume end of month)
 omlink["edate_m"] = (
     pd.to_datetime(omlink["edate"]).dt.to_period("M") - 1
 ).dt.to_timestamp()
 
 omlink.drop(columns=['sdate', 'edate'], inplace=True)
 
-# %% join data
-
-# full join
+# Join OptionMetrics linking data with CRSP monthly data
+# Full outer join on permno, filter for valid links and date ranges
 df0 = omlink.merge(crspm, on=['permno'], how='outer').query(
-    "secid.notna()" # keep if a link exists
+    "secid.notna()"  # Keep only records with valid OptionMetrics secid
 ).query(
-    "time_avail_m >= sdate_m & time_avail_m <= edate_m" # keep if link date is valid
+    "time_avail_m >= sdate_m & time_avail_m <= edate_m"  # Keep only valid date ranges
 )
 
 print(f'joined om-crsp link, crspm, and option volume data: {len(df0)} rows')
 
-#%% remove duplicates
-
-# keep the lowest score
-# (comparing old data based on Code/PrepScripts/oclink_to_csv.sas with new data, lowest score is the best)
+# Remove duplicates by keeping best score for each permno-month
+# Lower score indicates better match quality
 df = df0.sort_values(['permno','time_avail_m','score']).groupby(['permno','time_avail_m']).first().reset_index()
 
 print(f'removed duplicates by score: {len(df)} rows')
 
-#%% standardize columns
+# Standardize column names and types
 
 df = standardize_columns(df, "OPTIONMETRICSCRSPLinkingTable")
 
-#%%
-
-# save
+# Save final linking table
 df.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)
 
 print(f"OptionMetrics linking data saved with {len(df)} records")

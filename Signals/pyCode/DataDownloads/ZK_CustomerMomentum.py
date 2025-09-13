@@ -1,5 +1,16 @@
 # ABOUTME: Creates customer momentum signals based on Compustat customer segment data
-# ABOUTME: Direct Python translation of ZKR_CustomerSegments.R script for exact replication
+# ABOUTME: Matches customer names from segment data with CCM linking table and calculates average customer returns
+"""
+Inputs:
+- ../pyData/Intermediate/CompustatSegmentDataCustomers.csv
+- ../pyData/Intermediate/CCMLinkingTable.csv
+- ../pyData/Intermediate/mCRSP.csv
+
+Outputs:
+- ../pyData/Intermediate/customerMom.parquet
+
+How to run: python3 ZK_CustomerMomentum.py
+"""
 
 import pandas as pd
 import numpy as np
@@ -16,17 +27,13 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    """
-    Direct translation of ZKR_CustomerSegments.R script.
-    Creates customer momentum by matching customer names and calculating average returns.
-    """
     logger.info("Starting customer momentum processing...")
-    
-    # Data paths - using relative paths from pyCode directory
+
+    # Set up file paths
     data_path = Path("../pyData/Intermediate")
     output_path = Path("../pyData/Intermediate")
-    
-    # Step 1: Load data exactly like R script (lines 29-37)
+
+    # Load input datasets
     logger.info("Loading input data...")
     
     # Load customer segment data
@@ -45,26 +52,27 @@ def main():
     m_crsp['date'] = pd.to_datetime(m_crsp['date'], format='%d%b%Y')
     logger.info(f"Loaded CRSP monthly: {len(m_crsp):,} rows")
     
-    # Step 2: Clean customer data exactly like R script (lines 41-65)
+    # Clean and standardize customer segment data
     logger.info("Cleaning customer data...")
-    
+
     seg_customer = seg_customer.copy()
-    # Filter for COMPANY type first
+
+    # Filter for company-type customers only
     seg_customer = seg_customer[seg_customer['ctype'] == 'COMPANY'].copy()
-    # Handle missing values and convert to uppercase
+
+    # Standardize customer names: uppercase and remove punctuation
     seg_customer = seg_customer.dropna(subset=['cnms']).copy()
     seg_customer['cnms'] = seg_customer['cnms'].astype(str).str.upper()
-    # Remove punctuation (equivalent to R's removePunctuation)
     seg_customer['cnms'] = seg_customer['cnms'].str.replace(r'[^\w\s]', '', regex=True)
-    
-    # Filter out specific patterns
+
+    # Remove generic/uninformative customer names
     seg_customer = seg_customer[
-        (seg_customer['cnms'] != 'NOT REPORTED') & 
-        (~seg_customer['cnms'].str.endswith('CUSTOMERS')) & 
+        (seg_customer['cnms'] != 'NOT REPORTED') &
+        (~seg_customer['cnms'].str.endswith('CUSTOMERS')) &
         (~seg_customer['cnms'].str.endswith('CUSTOMER'))
     ].copy()
-    
-    # Apply name transformations in exact R order (lines 48-63)
+
+    # Remove common corporate suffixes to improve name matching
     seg_customer['cnms'] = seg_customer['cnms'].str.replace(r' INC$', '', regex=True)
     seg_customer['cnms'] = seg_customer['cnms'].str.replace(r' INC THE$', '', regex=True)
     seg_customer['cnms'] = seg_customer['cnms'].str.replace(r' CORP$', '', regex=True)
@@ -86,16 +94,17 @@ def main():
     seg_customer = seg_customer[['gvkey', 'datadate', 'cnms']].copy()
     logger.info(f"After cleaning customer data: {len(seg_customer):,} rows")
     
-    # Step 3: Clean CCM data exactly like R script (lines 68-87)
+    # Clean and standardize CCM company names using same transformations
     logger.info("Cleaning CCM data...")
-    
+
     ccm0 = ccm.copy()
-    # Handle missing values in company names
+
+    # Standardize CCM company names to match customer name format
     ccm0 = ccm0.dropna(subset=['conm']).copy()
     ccm0['conm'] = ccm0['conm'].astype(str).str.upper()
-    ccm0['conm'] = ccm0['conm'].str.replace(r'[^\w\s]', '', regex=True)  # Remove punctuation
-    
-    # Apply same transformations as customer names but to conm
+    ccm0['conm'] = ccm0['conm'].str.replace(r'[^\w\s]', '', regex=True)
+
+    # Apply identical corporate suffix removals as customer names
     ccm0['conm'] = ccm0['conm'].str.replace(r' INC$', '', regex=True)
     ccm0['conm'] = ccm0['conm'].str.replace(r' INC THE$', '', regex=True)
     ccm0['conm'] = ccm0['conm'].str.replace(r' CORP$', '', regex=True)
@@ -109,9 +118,9 @@ def main():
     ccm0['conm'] = ccm0['conm'].str.replace(r' AB$', '', regex=True)
     ccm0['conm'] = ccm0['conm'].str.replace(r' CO LTD$', '', regex=True)
     ccm0['conm'] = ccm0['conm'].str.replace(r' GROUP$', '', regex=True)
-    # Two-step space removal like R (lines 83-84)
-    ccm0['conm'] = ccm0['conm'].str.replace(r' ', '', regex=True)  # First remove single spaces
-    ccm0['conm'] = ccm0['conm'].str.replace(r'[ ]', '', regex=True)  # Then remove all spaces
+    # Remove all spaces for exact name matching
+    ccm0['conm'] = ccm0['conm'].str.replace(r' ', '', regex=True)
+    ccm0['conm'] = ccm0['conm'].str.replace(r'[ ]', '', regex=True)
     ccm0['conm'] = ccm0['conm'].str.replace(r'MTR', 'MOTORS', regex=True)
     ccm0['conm'] = ccm0['conm'].str.replace(r'MOTOR$', 'MOTORS', regex=True)
     

@@ -1,8 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads and processes Q-factor model data from Hou, Xue, and Zhang website
+# ABOUTME: Converts factor returns to decimal format and saves as standardized parquet file
 """
-Q Factor Model data download script - Python equivalent of S_QFactorModel.do
+Inputs:
+- Online data from http://global-q.org/uploads/1/2/2/6/122679606/q5_factors_daily_2019.csv
 
-Downloads Q-factor model data from Hou, Xue, and Zhang website.
+Outputs:
+- ../pyData/Intermediate/d_qfactor.parquet
+
+How to run: python S_QFactorModel.py
 """
 
 import os
@@ -18,37 +23,31 @@ from utils.column_standardizer_yaml import standardize_columns
 load_dotenv()
 
 def main():
-    """Download and process Q-factor data"""
     print("Downloading Q-factor model data...")
 
-    # Ensure directories exist
+    # Create output directory if needed
     os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-    # URL for Q-factor data
-    # ac: there's more recent data available, but this data is only used in placebos anyway, it was invented by HXZ 2020 (see ZZ2_IdioVolQF_ReturnSkewQF)
+    # Download Q-factor data from HXZ website
     webloc = "http://global-q.org/uploads/1/2/2/6/122679606/q5_factors_daily_2019.csv"
 
+    # Attempt to download data from website
     try:
-        # Try to download directly
         response = requests.get(webloc, timeout=30)
         response.raise_for_status()
 
-        # Save to temporary file and read
         temp_file = "../pyData/Intermediate/temp_qfactor.csv"
         with open(temp_file, 'wb') as f:
             f.write(response.content)
 
-        # Read the CSV
         qfactor_data = pd.read_csv(temp_file)
-
-        # Clean up temp file
         os.remove(temp_file)
 
     except Exception as e:
         print("Error downloading Q-factor data: {e}")
         print("Creating placeholder file")
 
-        # Create placeholder data
+        # Create minimal placeholder data if download fails
         qfactor_data = pd.DataFrame({
             'date': ['20200101', '20200102', '20200103'],
             'r_mkt': [0.01, -0.005, 0.002],
@@ -60,22 +59,21 @@ def main():
 
     print(f"Downloaded {len(qfactor_data)} Q-factor records")
 
-    # First, convert column names to lowercase to match Stata convention
+    # Clean and standardize column names
     qfactor_data.columns = qfactor_data.columns.str.lower()
     
-    # Drop r_eg column (as in original)
+    # Remove r_eg column as it's not needed
     if 'r_eg' in qfactor_data.columns:
         qfactor_data = qfactor_data.drop('r_eg', axis=1)
 
-    # Rename r_* variables to r_*_qfac (equivalent to rename r_* r_*_qfac)
+    # Add _qfac suffix to factor return columns
     rename_dict = {}
     for col in qfactor_data.columns:
         if col.startswith('r_') and col != 'r_eg':
             rename_dict[col] = col + '_qfac'
     qfactor_data = qfactor_data.rename(columns=rename_dict)
 
-    # Convert date string to datetime (equivalent to gen time_d = date(date, "YMD"))
-    # Handle different possible date column names
+    # Convert date column to datetime format
     date_col = None
     for col in qfactor_data.columns:
         if 'date' in col.lower():
@@ -90,19 +88,18 @@ def main():
         print("Warning: No date column found, using index as date")
         qfactor_data['time_d'] = pd.date_range(start='2020-01-01', periods=len(qfactor_data), freq='D')
 
-    # Convert factor returns from percentage to decimal (divide by 100)
+    # Convert factor returns from percentage to decimal
     factor_cols = [col for col in qfactor_data.columns if col.startswith('r_')]
     for col in factor_cols:
         qfactor_data[col] = qfactor_data[col] / 100
 
-    # Apply column standardization
+    # Apply column standardization and save to parquet
     qfactor_data = standardize_columns(qfactor_data, 'd_qfactor')
-    # Save the data
     qfactor_data.to_parquet("../pyData/Intermediate/d_qfactor.parquet")
 
     print(f"Q-factor model data saved with {len(qfactor_data)} records")
 
-    # Show date range and sample data
+    # Display summary information
     print(f"Date range: {qfactor_data['time_d'].min().strftime('%Y-%m-%d')} to {qfactor_data['time_d'].max().strftime('%Y-%m-%d')}")
 
     print("\nSample data:")

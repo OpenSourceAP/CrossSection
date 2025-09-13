@@ -1,8 +1,14 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads IBES EPS estimates (adjusted for splits) with actuals joined from statsum_epsus and actpsum_epsus
+# ABOUTME: Processes data to monthly frequency, removes missing estimates, and applies column standardization
 """
-IBES EPS Adjusted data download script - Python equivalent of L2_IBES_EPS_Adj.do
+Inputs:
+- ibes.statsum_epsus (EPS summary statistics)
+- ibes.actpsum_epsus (actual price and shares data)
 
-Downloads IBES EPS estimates (adjusted for splits) with actuals joined.
+Outputs:
+- ../pyData/Intermediate/IBES_EPS_Adj.parquet
+
+How to run: python3 L2_IBES_EPS_Adj.py
 """
 
 import os
@@ -17,7 +23,6 @@ from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
-# Create SQLAlchemy engine for database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
@@ -30,7 +35,6 @@ FROM ibes.statsum_epsus as a left join ibes.actpsum_epsus as b
 on a.ticker = b.ticker and a.statpers = b.statpers
 """
 
-# Add row limit for debugging if configured
 if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
@@ -40,38 +44,28 @@ engine.dispose()
 
 print(f"Downloaded {len(ibes_adj)} IBES EPS adjusted records")
 
-# Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Set up linking variables
 ibes_adj['statpers'] = pd.to_datetime(ibes_adj['statpers'])
-# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
 ibes_adj['time_avail_m'] = ibes_adj['statpers'].dt.to_period('M').dt.to_timestamp()
-# Ensure it's properly datetime64[ns] format to match Stata expectations
 ibes_adj['time_avail_m'] = pd.to_datetime(ibes_adj['time_avail_m'])
 
-# Convert date columns to datetime to match Stata format (NaT for missing values)
 ibes_adj['fpedats'] = pd.to_datetime(ibes_adj['fpedats'])
 ibes_adj['anndats_act'] = pd.to_datetime(ibes_adj['anndats_act'])
 ibes_adj['prdays'] = pd.to_datetime(ibes_adj['prdays'])
 
-# Rename ticker to tickerIBES
 ibes_adj = ibes_adj.rename(columns={'ticker': 'tickerIBES'})
 
-# Keep last obs each month - first remove rows with missing meanest
 initial_count = len(ibes_adj)
 ibes_adj = ibes_adj.dropna(subset=['meanest'])
 print(f"Removed {initial_count - len(ibes_adj)} records with missing meanest")
 
-# Sort and keep last observation for each tickerIBES/fpi/time_avail_m combination
 ibes_adj = ibes_adj.sort_values(['tickerIBES', 'fpi', 'time_avail_m', 'statpers'])
 ibes_adj = ibes_adj.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], keep='last')
 
 print(f"After keeping last obs per month: {len(ibes_adj)} records")
 
-# Apply column standardization
 ibes_adj = standardize_columns(ibes_adj, 'IBES_EPS_Adj')
-# Save the data
 ibes_adj.to_parquet("../pyData/Intermediate/IBES_EPS_Adj.parquet", index=False)
 
 print(f"IBES EPS Adjusted data saved with {len(ibes_adj)} records")

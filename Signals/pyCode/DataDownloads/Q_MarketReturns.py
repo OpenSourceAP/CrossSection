@@ -1,8 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads monthly equal- and value-weighted market returns from CRSP market summary index
+# ABOUTME: Converts dates to monthly timestamp format and saves as standardized parquet file
 """
-Market Returns data download script - Python equivalent of Q_MarketReturns.do
+Inputs:
+- crsp.msi (Market Summary Index)
 
-Downloads monthly equal- and value-weighted market returns from CRSP.
+Outputs:
+- ../pyData/Intermediate/monthlyMarket.parquet
+
+How to run: python3 Q_MarketReturns.py
 """
 
 import os
@@ -17,47 +22,45 @@ from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
+# Connect to WRDS database
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@"
     f"wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
+# Query for market returns data
 QUERY = """
 SELECT date, vwretd, ewretd, usdval
 FROM crsp.msi
 """
 
-# Add row limit for debugging if configured
+# Apply debug row limit if configured
 if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
 
+# Download market returns data
 market_data = pd.read_sql_query(QUERY, engine)
 
-# Ensure directories exist
+# Create output directory
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Convert date to monthly period (equivalent to gen time_avail_m = mofd(date))
+# Convert date to monthly timestamp format
 market_data['date'] = pd.to_datetime(market_data['date'])
-# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
 market_data['time_avail_m'] = market_data['date'].dt.to_period('M').dt.to_timestamp()
 
-# Drop original date column
+# Remove original date column
 market_data = market_data.drop('date', axis=1)
 
-# Save the data
-# Apply column standardization
+# Standardize columns and save data
 market_data = standardize_columns(market_data, 'monthlyMarket')
 market_data.to_parquet("../pyData/Intermediate/monthlyMarket.parquet")
 
+# Display summary information
 print(f"Monthly Market Returns downloaded with {len(market_data)} records")
-
-# Show date range and sample data
 print(f"Date range: {market_data['time_avail_m'].min()} to {market_data['time_avail_m'].max()}")
 print("\nSample data:")
 print(market_data.head())
-
-# Show summary statistics
 print("\nSummary statistics:")
 print(f"Value-weighted return - Mean: {market_data['vwretd'].mean():.4f}, Std: {market_data['vwretd'].std():.4f}")
 print(f"Equal-weighted return - Mean: {market_data['ewretd'].mean():.4f}, Std: {market_data['ewretd'].std():.4f}")

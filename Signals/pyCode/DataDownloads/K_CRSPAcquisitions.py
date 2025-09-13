@@ -1,9 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads CRSP distributions data to identify companies created in spinoffs
+# ABOUTME: Filters for acquisition permnos and creates a list of spinoff companies
 """
-CRSP Acquisitions data download script - Python equivalent of K_CRSPAcquisitions.do
+Inputs:
+- crsp.msedist (CRSP distributions data)
 
-Downloads CRSP distributions data and processes spinoff companies.
-Creates a list of permnos that were created in spinoffs.
+Outputs:
+- ../pyData/Intermediate/m_CRSPAcquisitions.parquet
+
+How to run: python3 K_CRSPAcquisitions.py
 """
 
 import os
@@ -18,7 +22,6 @@ from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
-# Create SQLAlchemy engine for database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
@@ -28,7 +31,6 @@ SELECT a.permno, a.distcd, a.exdt, a.acperm
 FROM crsp.msedist as a
 """
 
-# Add row limit for debugging if configured
 if MAX_ROWS_DL > 0:
     QUERY += f" LIMIT {MAX_ROWS_DL}"
     print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
@@ -38,62 +40,41 @@ engine.dispose()
 
 print(f"Downloaded {len(acq_data)} distribution records")
 
-# Ensure directories exist
 os.makedirs("../pyData/Intermediate", exist_ok=True)
 
-# Keep only records where acperm > 999 and not missing
-# (equivalent to keep if acperm >999 & acperm <.)
 initial_count = len(acq_data)
 acq_data = acq_data[(acq_data['acperm'] > 999) & acq_data['acperm'].notna()]
 print(f"Filtered to {len(acq_data)} records with acperm > 999")
 
-# Remove records with missing exdt (equivalent to drop if missing(time_d))
 acq_data = acq_data.dropna(subset=['exdt'])
 print(f"After removing missing exdt: {len(acq_data)} records")
 
-# Rename exdt to time_d and convert to datetime
 acq_data = acq_data.rename(columns={'exdt': 'time_d'})
 acq_data['time_d'] = pd.to_datetime(acq_data['time_d'])
 
-# Create monthly availability date (equivalent to gen time_avail_m = mofd(time_d))
-# Keep as datetime64[ns] instead of Period to maintain type compatibility with DTA format
 acq_data['time_avail_m'] = acq_data['time_d'].dt.to_period('M').dt.to_timestamp()
 
-# Drop time_d as in original Stata code
 acq_data = acq_data.drop('time_d', axis=1)
 
-# According to CRSP documentation:
-# http://www.crsp.com/products/documentation/distribution-codes
-# distcd identifies true spinoffs using distcd >= 3762 & distcd <= 3764
-# But MP don't use it, and it results in a large share of months with no spinoffs.
-# So we proceed without the distcd filter
-
-# Turn into list of permnos which were created in spinoffs
-# (equivalent to gen SpinoffCo = 1; drop permno; rename acperm permno)
 acq_data['SpinoffCo'] = 1
 acq_data = acq_data.drop('permno', axis=1)
 acq_data = acq_data.rename(columns={'acperm': 'permno'})
 
-# Keep only necessary columns
 acq_data = acq_data[['permno', 'SpinoffCo']]
 
-# Remove duplicates (equivalent to duplicates drop)
 initial_count = len(acq_data)
 acq_data = acq_data.drop_duplicates()
 duplicates_removed = initial_count - len(acq_data)
 print(f"Removed {duplicates_removed} duplicate records")
 
-# Apply column standardization
 acq_data = standardize_columns(acq_data, 'm_CRSPAcquisitions')
-# Save the data
+
 acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet", index=False)
 
 print(f"CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
 
-# Show sample data
 print("\nSample data:")
 print(acq_data.head())
 
-# Show some statistics
 print(f"\nUnique spinoff companies: {acq_data['permno'].nunique()}")
 print(f"Total records: {len(acq_data)}")

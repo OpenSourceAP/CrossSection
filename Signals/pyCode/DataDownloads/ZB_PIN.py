@@ -1,8 +1,13 @@
-#!/usr/bin/env python3
+# ABOUTME: Downloads Probability of Informed Trading (PIN) data from Easley et al. via Dropbox
+# ABOUTME: Converts yearly PIN parameters to monthly data with 11-month availability lag
 """
-Probability of Informed Trading (PIN) data download script - Python equivalent of ZB_PIN.do
+Inputs:
+- Dropbox ZIP file containing pin_yearly.csv (Easley et al. PIN data)
 
-Downloads PIN data from Easley et al. via Dropbox and converts yearly to monthly.
+Outputs:
+- ../pyData/Intermediate/pin_monthly.parquet
+
+How to run: python3 ZB_PIN.py
 """
 
 import os
@@ -20,7 +25,6 @@ from utils.column_standardizer_yaml import standardize_columns
 load_dotenv()
 
 def main():
-    """Download and process PIN data"""
     print("Downloading PIN data from Dropbox...")
 
     # Ensure directories exist
@@ -40,40 +44,43 @@ def main():
             'Upgrade-Insecure-Requests': '1',
         }
         
+        # Download ZIP file from Dropbox
         print(f"Attempting to download from: {webloc}")
         response = requests.get(webloc, headers=headers, timeout=30, allow_redirects=True, stream=True)
         response.raise_for_status()
         
-        # Check content type
+        # Verify response content type
         content_type = response.headers.get('content-type', '')
         print(f"Content-Type: {content_type}")
         
-        # Save zip file with progress tracking
+        # Save ZIP file with progress tracking
         zip_path = "../pyData/Intermediate/cpie_data.zip"
         downloaded_size = 0
         
+        # Stream download with progress updates
         print("Starting download... (this may take a few minutes)")
         with open(zip_path, 'wb') as f:
             chunk_count = 0
             for chunk in response.iter_content(chunk_size=8192):
-                if chunk:  # filter out keep-alive chunks
+                if chunk:
                     f.write(chunk)
                     downloaded_size += len(chunk)
                     chunk_count += 1
-                    # Print progress every 10MB 
-                    if chunk_count % 1250 == 0:  # ~10MB
+                    # Print progress every 10MB
+                    if chunk_count % 1250 == 0:
                         print(f"Downloaded {downloaded_size / (1024*1024):.1f} MB...")
         
+        # Validate downloaded file
         print("Download stream completed, checking file...")
         
         file_size = os.path.getsize(zip_path)
         print(f"Download complete: {file_size} bytes")
         
-        # Verify it's a zip file
+        # Check file size is reasonable
         if file_size < 1000:
             raise Exception(f"Downloaded file too small ({file_size} bytes), likely an error page")
             
-        # Check if it's actually a zip file
+        # Verify ZIP file integrity
         try:
             with zipfile.ZipFile(zip_path, 'r') as test_zip:
                 file_list = test_zip.namelist()
@@ -81,11 +88,11 @@ def main():
         except zipfile.BadZipFile:
             raise Exception("Downloaded file is not a valid ZIP archive")
 
-        # Extract zip file
+        # Extract ZIP file contents
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall("../pyData/Intermediate")
 
-        # Read the PIN yearly data
+        # Load PIN yearly data from extracted CSV
         pin_yearly_path = "../pyData/Intermediate/pin_yearly.csv"
         if not os.path.exists(pin_yearly_path):
             raise Exception("pin_yearly.csv not found in extracted files")
@@ -93,7 +100,7 @@ def main():
         pin_data = pd.read_csv(pin_yearly_path)
         print(f"Successfully loaded PIN data from zip file")
 
-        # Clean up files
+        # Clean up temporary files
         os.remove(zip_path)
         for file in ['owr_yearly.csv', 'pin_yearly.csv', 'cpie_daily.csv',
                      'gpin_yearly.csv', 'dy_yearly.csv']:
@@ -101,10 +108,10 @@ def main():
             if os.path.exists(file_path):
                 os.remove(file_path)
 
+    # Handle download failures with placeholder data
     except Timeout:
         print("Download timed out after 30 seconds")
         print("Creating placeholder file")
-        # Create placeholder data with all required columns
         pin_data = pd.DataFrame({
             'permno': [10001, 10001, 10001],
             'year': [2020, 2021, 2022],
@@ -117,7 +124,6 @@ def main():
     except RequestException as e:
         print(f"Network error downloading PIN data: {e}")
         print("Creating placeholder file")
-        # Create placeholder data with all required columns
         pin_data = pd.DataFrame({
             'permno': [10001, 10001, 10001],
             'year': [2020, 2021, 2022],
@@ -130,7 +136,6 @@ def main():
     except Exception as e:
         print(f"Error processing PIN data: {e}")
         print("Creating placeholder file")
-        # Create placeholder data with all required columns
         pin_data = pd.DataFrame({
             'permno': [10001, 10001, 10001],
             'year': [2020, 2021, 2022],
@@ -143,21 +148,20 @@ def main():
 
     print(f"Downloaded {len(pin_data)} PIN yearly records")
 
-    # Convert yearly to monthly (expand 12 times)
+    # Convert yearly data to monthly format
     monthly_data = []
 
     for _, row in pin_data.iterrows():
-        for month in range(1, 13):  # 12 months
+        # Create 12 monthly records for each yearly record
+        for month in range(1, 13):
             new_row = row.copy()
             new_row['month'] = month
 
-            # Create monthly date (equivalent to gen modate = ym(year, month))
-            # Create datetime64[ns] directly instead of Period to avoid column_standardizer issues
+            # Create monthly date variable
             modate = pd.Period(year=int(row['year']), month=month, freq='M').to_timestamp()
             new_row['modate'] = modate
 
-            # Add 11 months availability lag (equivalent to gen time_avail_m = modate + 11)
-            # Create datetime64[ns] directly
+            # Add 11-month availability lag for PIN data
             time_avail_period = pd.Period(year=int(row['year']), month=month, freq='M') + 11
             new_row['time_avail_m'] = time_avail_period.to_timestamp()
 
@@ -167,39 +171,38 @@ def main():
 
     print(f"Expanded to {len(pin_monthly)} monthly PIN records")
 
-    # Apply data type fixes
-    # Fix permno to int64 to match Stata
+    # Fix data types to match Stata output
     pin_monthly['permno'] = pin_monthly['permno'].astype('int64')
     
-    # Apply row limit for debugging if configured
+    # Apply debugging row limit if configured
     if MAX_ROWS_DL > 0:
         pin_monthly = pin_monthly.head(MAX_ROWS_DL)
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
-    # Standardize columns to match DTA file
+    # Standardize column formats
     pin_monthly = standardize_columns(pin_monthly, "pin_monthly")
 
 
-    # Save the data
+    # Save monthly PIN data to parquet
     pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet", index=False)
 
     print(f"PIN monthly data saved with {len(pin_monthly)} records")
 
-    # Show summary statistics
+    # Display summary statistics
     if 'time_avail_m' in pin_monthly.columns:
         print(f"Date range: {pin_monthly['time_avail_m'].min()} to {pin_monthly['time_avail_m'].max()}")
 
     if 'permno' in pin_monthly.columns:
         print(f"Unique permnos: {pin_monthly['permno'].nunique()}")
 
-    # Show key parameter summaries
+    # Show PIN parameter summaries
     param_cols = ['a', 'eb', 'es', 'u', 'd']
     for col in param_cols:
         if col in pin_monthly.columns:
             print(f"{col} summary - Mean: {pin_monthly[col].mean():.4f}, Std: {pin_monthly[col].std():.4f}")
 
+    # Display sample of output data
     print("\nSample data:")
-    # Show available columns
     available_cols = ['permno', 'year', 'month', 'time_avail_m'] + param_cols
     display_cols = [col for col in available_cols if col in pin_monthly.columns]
     print(pin_monthly[display_cols].head())
