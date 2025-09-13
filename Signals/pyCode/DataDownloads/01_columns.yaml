@@ -128,10 +128,10 @@ mCRSP:
   float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, siccd, ticker, shrcls, dlstcd, dlret
 
 monthlyCRSP:
-  column_order: permno, ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D,
+  column_order: permno, ret, ret_b4_dl, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, ticker, shrcls, sic2D,
     time_avail_m, mve_c
   int32: permno
-  float64: ret, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, sic2D
+  float64: ret, ret_b4_dl, retx, vol, shrout, prc, cfacshr, bidlo, askhi, shrcd, exchcd, sicCRSP, sic2D
   object: ticker, shrcls
   datetime64[ns]: time_avail_m
   float32: mve_c

@@ -49,8 +49,7 @@ def main():
     logger.info(f"Loaded CCM linking: {len(ccm):,} rows")
 
     # Load CRSP monthly data
-    m_crsp = pd.read_csv(data_path / "mCRSP.csv")
-    m_crsp['date'] = pd.to_datetime(m_crsp['date'], format='%d%b%Y')
+    m_crsp = pd.read_parquet(data_path / "monthlyCRSP.parquet")
     logger.info(f"Loaded CRSP monthly: {len(m_crsp):,} rows")
 
     # Clean and standardize customer segment data
@@ -184,8 +183,8 @@ def main():
     # Filter CRSP to firms with customer data and create time_avail_m (R lines 110-112)
     unique_permnos = seg_customer2['permno'].unique()
     tempm0 = m_crsp[m_crsp['permno'].isin(unique_permnos)].copy()
-    # R: time_avail_m = date %m-% months(1)
-    tempm0['time_avail_m'] = tempm0['date'] - pd.DateOffset(months=1)
+    # R: time_avail_m = date %m-% months(1) - parquet already has time_avail_m, shift back 1 month
+    tempm0['time_avail_m'] = tempm0['time_avail_m'] - pd.DateOffset(months=1)
     tempm0 = tempm0[['permno', 'time_avail_m']].copy()
 
     # Set day to 28 like R (line 115)
@@ -303,13 +302,12 @@ def main():
     # Get customer returns (R lines 168-174)
     unique_cust_permnos = seg_customer3['cust_permno'].unique()
     tempc = m_crsp[m_crsp['permno'].isin(unique_cust_permnos)].copy()
-    # R: time_avail_m = date (no lag for returns)
-    tempc['time_avail_m'] = tempc['date']
+    # R: time_avail_m = date (no lag for returns) - parquet already has time_avail_m
     tempc['cust_permno'] = tempc['permno']
-    tempc['cust_ret'] = tempc['ret']
+    tempc['cust_ret'] = tempc['ret_b4_dl']  # Use original returns before delisting adjustment
 
-    # Set day to 28 (R line 176)
-    tempc['time_avail_m'] = tempc['time_avail_m'].dt.to_period('M').dt.to_timestamp() + pd.Timedelta(days=27)
+    # Set day to 28 (R line 176) - parquet time_avail_m is already first of month, add 27 days
+    tempc['time_avail_m'] = tempc['time_avail_m'] + pd.Timedelta(days=27)
 
     tempc = tempc[['cust_permno', 'cust_ret', 'time_avail_m']].copy()
     tempc = tempc.dropna(subset=['cust_ret'])

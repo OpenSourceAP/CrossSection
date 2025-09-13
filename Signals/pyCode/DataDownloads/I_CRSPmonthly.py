@@ -83,6 +83,9 @@ crsp_data['date'] = pd.to_datetime(crsp_data['date'])
 crsp_data['time_avail_m'] = crsp_data['date'].dt.to_period('M').dt.to_timestamp()
 crsp_data = crsp_data.drop('date', axis=1)
 
+# Preserve original returns before delisting adjustment
+crsp_data['ret_b4_dl'] = crsp_data['ret']
+
 # Process delisting returns with exchange-specific defaults
 mask1 = (crsp_data['dlret'].isna() &
          ((crsp_data['dlstcd'] == 500) |
