@@ -4,7 +4,7 @@ ABOUTME: Summary statistics generator for Predictors script outputs
 ABOUTME: Computes counts, means, std dev, and percentiles for predictor datasets
 
 This script takes a Predictors script name, finds all predictor datasets it produces
-from 00_map_predictors.yaml, loads each dataset, and computes summary statistics for all
+from Predictors/00_map.yaml, loads each dataset, and computes summary statistics for all
 columns. Can process single scripts or all scripts in Predictors directory.
 
 For all columns: count of non-missing values
@@ -34,11 +34,12 @@ from pathlib import Path
 import numpy as np
 import glob
 import argparse
+import json
 
 
 def load_dataset_map():
     """Load the predictor mapping configuration."""
-    with open('Predictors/00_map_predictors.yaml', 'r', encoding='utf-8') as f:
+    with open('Predictors/00_map.yaml', 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
 
@@ -218,9 +219,61 @@ def format_stats_to_markdown(results, script_name):
     return "\n".join(lines)
 
 
-def process_single_script(script_name, dataset_map):
+def save_stats_to_json(results, script_name, vintage_label):
+    """Save summary statistics to JSON format for vintage comparison."""
+    # Convert numpy types to native Python types for JSON serialization
+    json_results = []
+    for result in results:
+        json_result = {
+            'dataset_name': result['dataset_name'],
+            'file_path': result['file_path'],
+            'total_rows': int(result['total_rows']),
+            'total_columns': int(result['total_columns']),
+            'column_stats': {}
+        }
+        
+        for col_name, stats in result['column_stats'].items():
+            json_stats = {}
+            for key, value in stats.items():
+                if value == 'N/A':
+                    json_stats[key] = None
+                elif pd.isna(value):
+                    json_stats[key] = None
+                elif isinstance(value, (np.integer, np.int64)):
+                    json_stats[key] = int(value)
+                elif isinstance(value, (np.floating, np.float64)):
+                    json_stats[key] = float(value)
+                else:
+                    json_stats[key] = value
+            json_result['column_stats'][col_name] = json_stats
+        
+        json_results.append(json_result)
+    
+    # Save with metadata
+    json_output = {
+        'script_name': script_name,
+        'timestamp': datetime.now().isoformat(),
+        'vintage_label': vintage_label,
+        'datasets': json_results
+    }
+    
+    # Create vintage-specific directory
+    output_dir = Path(f"../Logs/sum_pred_{vintage_label}")
+    output_dir.mkdir(exist_ok=True, parents=True)
+    
+    # Save with consistent filename (no timestamp in filename)
+    json_file = output_dir / f"{script_name}.json"
+    
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(json_output, f, indent=2)
+    
+    return json_file
+
+
+def process_single_script(script_name, dataset_map, vintage_label='unlabelled'):
     """Process a single script and return success status."""
     print(f"🔍 Finding predictor datasets for script: {script_name}")
+    print(f"📁 Vintage: {vintage_label}")
 
     # Find datasets for this script
     datasets = find_datasets_by_script(script_name, dataset_map)
@@ -255,15 +308,20 @@ def process_single_script(script_name, dataset_map):
     # Generate markdown report
     markdown_content = format_stats_to_markdown(results, script_name)
 
-    # Save to file
-    output_dir = Path("../Logs")
-    output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / f"sumout_p_{script_name}.md"
-
-    with open(output_file, 'w', encoding='utf-8') as f:
+    # Create vintage-specific directory
+    output_dir = Path(f"../Logs/sum_pred_{vintage_label}")
+    output_dir.mkdir(exist_ok=True, parents=True)
+    
+    # Save markdown file
+    md_file = output_dir / f"{script_name}.md"
+    with open(md_file, 'w', encoding='utf-8') as f:
         f.write(markdown_content)
-
-    print(f"✅ Summary statistics saved to: {output_file}")
+    print(f"✅ Markdown saved to: {md_file}")
+    
+    # Save to JSON for vintage comparison
+    json_file = save_stats_to_json(results, script_name, vintage_label)
+    print(f"📁 JSON saved to: {json_file}")
+    
     print(f"📈 Processed {len(results)} predictor datasets successfully")
     return True
 
@@ -294,6 +352,8 @@ Examples:
                         help='Name of the Predictors script (e.g., ZZ1_Activism1_Activism2)')
     parser.add_argument('--all', action='store_true',
                         help='Process all Python scripts in Predictors directory')
+    parser.add_argument('--vintage', default='unlabelled',
+                        help='Vintage label for output folder (default: unlabelled)')
     
     args = parser.parse_args()
 
@@ -338,7 +398,7 @@ Examples:
             print(f"Processing script: {script_name}")
             print(f"{'='*60}")
             
-            success = process_single_script(script_name, dataset_map)
+            success = process_single_script(script_name, dataset_map, args.vintage)
             if success:
                 successful_scripts += 1
             else:
@@ -354,7 +414,7 @@ Examples:
             print(f"❌ Failed scripts: {', '.join(failed_scripts)}")
     else:
         # Process single script
-        success = process_single_script(args.script_name, dataset_map)
+        success = process_single_script(args.script_name, dataset_map, args.vintage)
         if not success:
             sys.exit(1)
 
