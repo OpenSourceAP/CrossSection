@@ -12,7 +12,7 @@ Arguments:
   vintage2       Second vintage label to compare against
   --type         Type of data: 'dl' (DataDownloads) or 'pred' (Predictors)
   --script       Script name (e.g., 'B_CompustatAnnual')
-  --tolerance    Numeric tolerance for statistical comparisons (default: 0.01)
+  --tolerance    Numeric tolerance for statistical comparisons (default: 1e-6)
 
 Output:
   Comparison report showing differences between vintages
@@ -44,7 +44,7 @@ def load_vintage(vintage_label, data_type, script_name):
         return json.load(f)
 
 
-def compare_datasets(data1, data2, tolerance=0.01):
+def compare_datasets(data1, data2, tolerance=1e-6):
     """Compare two dataset structures and statistics."""
     differences = {
         'structure_changes': [],
@@ -146,7 +146,7 @@ def compare_datasets(data1, data2, tolerance=0.01):
     return differences
 
 
-def format_comparison_report(vintage1_data, vintage2_data, differences):
+def format_comparison_report(vintage1_data, vintage2_data, differences, vintage1_label, vintage2_label):
     """Format the comparison results as a readable report."""
     lines = []
     
@@ -156,6 +156,81 @@ def format_comparison_report(vintage1_data, vintage2_data, differences):
     lines.append(f"**Vintage 1**: {vintage1_data['timestamp']}")
     lines.append(f"**Vintage 2**: {vintage2_data['timestamp']}")
     lines.append(f"**Script**: {vintage1_data['script_name']}")
+    lines.append("")
+
+    # Vintage statistics
+    lines.append("## Vintage Statistics")
+    lines.append("")
+
+    # Use the provided vintage labels
+    v1_label = vintage1_label
+    v2_label = vintage2_label
+
+    # Show detailed statistics for each column across datasets
+    lines.append(f"| {'Statistic':<12} | {v1_label:>15} | {v2_label:>15} | {'Diff':>15} |")
+    lines.append("|--------------|-----------------|-----------------|-----------------|")
+
+    # Collect all columns from both vintages
+    all_columns = set()
+    datasets1 = {d['dataset_name']: d for d in vintage1_data['datasets']}
+    datasets2 = {d['dataset_name']: d for d in vintage2_data['datasets']}
+
+    for dataset in vintage1_data['datasets']:
+        all_columns.update(dataset['column_stats'].keys())
+    for dataset in vintage2_data['datasets']:
+        all_columns.update(dataset['column_stats'].keys())
+
+    # For each column, show detailed statistics
+    for col_name in sorted(all_columns):
+        # Skip identifier columns (permno, yyyymm) to focus on data columns
+        if col_name.lower() in ['permno', 'yyyymm']:
+            continue
+
+        lines.append(f"**{col_name}**")
+
+        # Find this column across all datasets in both vintages
+        v1_stats = None
+        v2_stats = None
+
+        for dataset_name, dataset in datasets1.items():
+            if col_name in dataset['column_stats']:
+                v1_stats = dataset['column_stats'][col_name]
+                break
+
+        for dataset_name, dataset in datasets2.items():
+            if col_name in dataset['column_stats']:
+                v2_stats = dataset['column_stats'][col_name]
+                break
+
+        if v1_stats and v2_stats:
+            # Show standard statistics
+            stat_keys = [
+                ('count', 'Count', ',.0f'),
+                ('mean', 'Mean', '.4f'),
+                ('std', 'Std Dev', '.4f'),
+                ('p05', '5th %', '.4f'),
+                ('p10', '10th %', '.4f'),
+                ('p25', '25th %', '.4f'),
+                ('p75', '75th %', '.4f'),
+                ('p90', '90th %', '.4f'),
+                ('p95', '95th %', '.4f')
+            ]
+
+            for stat_key, stat_label, fmt in stat_keys:
+                if stat_key in v1_stats and stat_key in v2_stats:
+                    v1_val = v1_stats[stat_key]
+                    v2_val = v2_stats[stat_key]
+
+                    if v1_val is not None and v2_val is not None:
+                        if 'count' in stat_key:
+                            diff = v2_val - v1_val
+                            lines.append(f"| {stat_label:<12} | {v1_val:>15,.0f} | {v2_val:>15,.0f} | {diff:>+15,.0f} |")
+                        else:
+                            diff = v2_val - v1_val
+                            lines.append(f"| {stat_label:<12} | {v1_val:>15.4f} | {v2_val:>15.4f} | {diff:>+15.4f} |")
+
+        lines.append("")
+
     lines.append("")
     
     # Structure changes
@@ -218,14 +293,69 @@ def format_comparison_report(vintage1_data, vintage2_data, differences):
                         f"statistical changes not shown*")
         lines.append("")
     
+    # Statistics on differences
+    lines.append("## Difference Statistics")
+
+    # Statistical changes
+    if differences['stat_changes']:
+        # Calculate statistics on relative differences
+        rel_diffs = [change['rel_diff'] for change in differences['stat_changes']]
+        rel_diffs.sort(reverse=True)
+
+        lines.append(f"**Statistical changes summary:**")
+        lines.append(f"- Total changes: {len(rel_diffs)}")
+        lines.append(f"- Max relative difference: {max(rel_diffs):.2%}")
+        lines.append(f"- Median relative difference: {rel_diffs[len(rel_diffs)//2]:.2%}")
+        lines.append(f"- Min relative difference: {min(rel_diffs):.2%}")
+
+        # Count changes by magnitude
+        large_changes = sum(1 for x in rel_diffs if x > 0.1)
+        medium_changes = sum(1 for x in rel_diffs if 0.01 < x <= 0.1)
+        small_changes = sum(1 for x in rel_diffs if x <= 0.01)
+
+        lines.append(f"- Large changes (>10%): {large_changes}")
+        lines.append(f"- Medium changes (1-10%): {medium_changes}")
+        lines.append(f"- Small changes (≤1%): {small_changes}")
+    else:
+        lines.append(f"**Statistical changes summary:**")
+        lines.append(f"- Total changes: 0")
+        lines.append(f"- No statistical differences detected")
+    lines.append("")
+
+    # Row changes
+    if differences['row_changes']:
+        lines.append("## Row Change Statistics")
+
+        # Calculate statistics on row changes
+        row_pct_changes = [abs(change['pct_change']) for change in differences['row_changes']]
+        total_old_rows = sum(change['old_rows'] for change in differences['row_changes'])
+        total_new_rows = sum(change['new_rows'] for change in differences['row_changes'])
+
+        lines.append(f"**Row count changes summary:**")
+        lines.append(f"- Datasets affected: {len(differences['row_changes'])}")
+        lines.append(f"- Total old rows: {total_old_rows:,}")
+        lines.append(f"- Total new rows: {total_new_rows:,}")
+        lines.append(f"- Net change: {total_new_rows - total_old_rows:+,}")
+        lines.append(f"- Overall % change: {((total_new_rows - total_old_rows) / total_old_rows * 100):+.2f}%")
+
+        if row_pct_changes:
+            lines.append(f"- Max % change: {max(row_pct_changes):.2f}%")
+            lines.append(f"- Median % change: {sorted(row_pct_changes)[len(row_pct_changes)//2]:.2f}%")
+        lines.append("")
+    else:
+        lines.append("**Row count changes summary:**")
+        lines.append(f"- Datasets affected: 0")
+        lines.append(f"- No row count differences detected")
+        lines.append("")
+
     # Summary
     lines.append("## Summary")
-    total_issues = (len(differences['structure_changes']) + 
+    total_issues = (len(differences['structure_changes']) +
                    len(differences['row_changes']) +
-                   len(differences['new_columns']) + 
+                   len(differences['new_columns']) +
                    len(differences['removed_columns']) +
                    len(differences['stat_changes']))
-    
+
     if total_issues == 0:
         lines.append("✅ No significant differences found between vintages")
     else:
@@ -277,7 +407,7 @@ Examples:
     differences = compare_datasets(vintage1_data, vintage2_data, args.tolerance)
     
     # Generate report
-    report = format_comparison_report(vintage1_data, vintage2_data, differences)
+    report = format_comparison_report(vintage1_data, vintage2_data, differences, args.vintage1, args.vintage2)
     
     # Output report
     if args.output:

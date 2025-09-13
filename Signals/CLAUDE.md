@@ -147,3 +147,62 @@ The notes go in the following folders:
 
 # Context for Current Task
 We're working on the Predictors leg: `DocsForClaude/leg3-predictors.md`.
+
+# Predictor Script Validation
+
+## Before/After Testing with sum_pred.py
+When modifying predictor scripts, use `utils/sum_pred.py` for validation:
+
+**Before changes:**
+```bash
+python utils/sum_pred.py [ScriptName] --vintage before_changes
+```
+
+**After changes:**
+```bash
+python utils/sum_pred.py [ScriptName] --vintage after_changes
+```
+
+**Validation criteria:**
+- Identical row counts in output files
+- Matching column statistics (mean, std, percentiles)
+- Same data types for all columns
+- Compare log files in `../Logs/sum_pred_[vintage]/[ScriptName].md`
+
+## Comparing Summary Statistics Between Vintages
+Use `utils/compare_sum.py` to compare summary statistics between any two vintages:
+
+**Basic usage:**
+```bash
+python utils/compare_sum.py vintage1 vintage2 --type [dl|pred] --script ScriptName
+```
+
+**Examples:**
+```bash
+# Compare predictor script changes
+python utils/compare_sum.py before_changes after_changes --type pred --script CustomerMomentum
+
+# Compare data download script changes
+python utils/compare_sum.py unlabelled v1.0_baseline --type dl --script B_CompustatAnnual
+
+# Save report to file
+python utils/compare_sum.py v1 v2 --type pred --script Beta --output comparison_report.md
+
+# Use custom tolerance for statistical differences (default: 1%)
+python utils/compare_sum.py v1 v2 --type pred --script Beta --tolerance 0.001
+```
+
+**Report includes:**
+- **Vintage Statistics**: Detailed statistical comparison table showing Count, Mean, Std Dev, and percentiles (5th, 10th, 25th, 75th, 90th, 95th) for each data column
+- **Structure Changes**: New/removed datasets
+- **Row Count Changes**: Datasets with different row counts
+- **Column Changes**: New/removed columns
+- **Statistical Changes**: Columns with significant statistical differences
+- **Difference Statistics**: Summary of change magnitudes and distributions
+- **Summary**: Overall assessment of differences found
+
+**When to use:**
+- Before and after major script modifications
+- Validating data pipeline changes
+- Debugging unexpected differences between vintages
+- Documenting the impact of code changes
