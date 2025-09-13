@@ -197,6 +197,10 @@ CredRatDG.py:
   - CredRatDG.csv
   placebos: []
 CustomerMomentum.py:
+  inputs:
+  - CompustatSegmentDataCustomers.csv
+  - CCMLinkingTable.csv
+  - mCRSP.csv
   predictors:
   - CustomerMomentum.csv
   placebos: []

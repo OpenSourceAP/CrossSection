@@ -393,11 +393,3 @@ InputOutputMomentumProcessed:
   stata_script: ZJ_InputOutputMomentum.do
   python_script: ZJ_InputOutputMomentum.py
 
-# Customer Momentum Data
-customerMom:
-  key1: permno
-  key2: time_avail_m
-  stata_file: customerMom.dta
-  python_file: customerMom.parquet
-  stata_script: ZK_CustomerMomentum.do
-  python_script: ZK_CustomerMomentum.py
