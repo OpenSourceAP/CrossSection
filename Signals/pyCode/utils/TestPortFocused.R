@@ -101,6 +101,9 @@ tstat = new_vs %>% filter(metric == 'tstat')
 txt <- capture.output(print(format(tstat, justify = "right"), row.names = FALSE))
 writeLines(txt, paste0(pathProject, 'Signals/Logs/TestOutPortFocused.md'))
 
+# Save t-stat comparison as CSV for Python integration
+write.csv(tstat, paste0(pathProject, 'Signals/Logs/TestOutPortFocused.csv'), row.names = FALSE)
+
 # then all 
 cat('\n\n All metrics:\n', file = paste0(pathProject, 'Signals/Logs/TestOutPortFocused.md'), append = TRUE)
 

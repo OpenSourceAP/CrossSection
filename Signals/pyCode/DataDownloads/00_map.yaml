@@ -373,7 +373,7 @@ OPTIONMETRICSCRSPLinkingTable:
   stata_file: OPTIONMETRICSCRSPLinkingTable.dta
   python_file: OPTIONMETRICSCRSPLinkingTable.parquet
   stata_script: ZL_CRSPOPTIONMETRICS.do
-  python_script: ZL_CRSPOPTIONMETRICS.py
+  python_script: OptionMetricsCRSPLink.py
 
 # Patent Data
 PatentDataProcessed:

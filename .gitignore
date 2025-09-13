@@ -29,6 +29,8 @@ Signals/pyData/*
 __*__*
 
 # Testing and archive
+Journal/
+Plan/
 Logs/
 deleteme*
 Signals/Debug/*
@@ -37,6 +39,9 @@ Signals/zzz-archive/*
 Signals/Human/*
 dev*.sh
 dev_batch_predictors.py
+
+# Testing exceptions
+!Logs/testout_predictors.md
 
 # Other
 Portfolios/Code/Rplots.pdf
