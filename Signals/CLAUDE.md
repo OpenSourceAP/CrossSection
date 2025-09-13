@@ -148,7 +148,7 @@ The notes go in the following folders:
 # Context for Current Task
 We're working on the Predictors leg: `DocsForClaude/leg3-predictors.md`.
 
-# Predictor Script Validation
+# sum_pred.py validation
 
 ## Before/After Testing with sum_pred.py
 When modifying predictor scripts, use `utils/sum_pred.py` for validation:
