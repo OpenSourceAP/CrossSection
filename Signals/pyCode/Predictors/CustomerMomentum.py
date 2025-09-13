@@ -38,12 +38,14 @@ def main():
     # Load customer segment data
     seg_customer = pd.read_csv(data_path / "CompustatSegmentDataCustomers.csv")
     seg_customer['datadate'] = pd.to_datetime(seg_customer['datadate'], format='%d%b%Y')
+    # Convert gvkey to string with leading zeros to match parquet format
+    seg_customer['gvkey'] = seg_customer['gvkey'].astype(str).str.zfill(6)
     logger.info(f"Loaded customer segments: {len(seg_customer):,} rows")
 
     # Load CCM linking table
-    ccm = pd.read_csv(data_path / "CCMLinkingTable.csv")
-    ccm['linkdt'] = pd.to_datetime(ccm['linkdt'], format='%d%b%Y')
-    ccm['linkenddt'] = pd.to_datetime(ccm['linkenddt'], format='%d%b%Y', errors='coerce')
+    ccm = pd.read_parquet(data_path / "CCMLinkingTable.parquet")
+    # Parquet already has datetime types, rename columns to match expected names
+    ccm = ccm.rename(columns={'timeLinkStart_d': 'linkdt', 'timeLinkEnd_d': 'linkenddt', 'permno': 'lpermno'})
     logger.info(f"Loaded CCM linking: {len(ccm):,} rows")
 
     # Load CRSP monthly data
