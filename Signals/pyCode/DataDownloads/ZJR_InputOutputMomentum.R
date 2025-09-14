@@ -282,36 +282,38 @@ ccm_data <- read_parquet(paste0(project_root, '/pyData/Intermediate/CCMLinkingTa
     linkenddt = linkenddt
   )
 
-# Download BEA Input-Output tables
-print("Downloading BEA Input-Output tables...")
+# Check for BEA Input-Output tables (downloaded separately by BEA_InputOutput.py)
+print("Checking for BEA Input-Output tables...")
 data_dir <- paste0(project_root, '/pyData/Intermediate/')
 
-# Pre-1997 tables
-download.file("https://apps.bea.gov/industry/xls/io-annual/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx",
-              destfile = paste0(data_dir, 'IOMake_Before_Redefinitions_1963-1996_Summary.xlsx'),
-              method = dlmethod, mode = 'wb')
+# Define expected file paths
+make_pre1997 <- paste0(data_dir, 'IOMake_Before_Redefinitions_1963-1996_Summary.xlsx')
+use_pre1997 <- paste0(data_dir, 'IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx')
 
-download.file("https://apps.bea.gov/industry/xls/io-annual/IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx",
-              destfile = paste0(data_dir, 'IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx'),
-              method = dlmethod, mode = 'wb')
+# Find 1997-present tables
+fls <- list.files(data_dir, full.names = TRUE)
+pathSupply <- fls[grepl("Supply_Tables_1997-2[0-9]{3}_Summary.xlsx", basename(fls), ignore.case = TRUE)]
+pathUse <- fls[grepl("Supply-Use_Framework_1997-2[0-9]{3}_Summary.xlsx", basename(fls), ignore.case = TRUE)]
 
-# 1997-present tables
-tmp <- tempfile()
-download.file("https://apps.bea.gov//industry/iTables%20Static%20Files/AllTablesSUP.zip",
-              destfile = tmp, method = dlmethod)
+# Validate all required files exist
+required_files <- c(make_pre1997, use_pre1997, pathSupply, pathUse)
+missing_files <- required_files[!file.exists(required_files)]
 
-fls <- unzip(tmp, list = TRUE)
-pathSupply <- fls$Name[grepl("Supply_Tables_1997-2[0-9]{3}_Summary.xlsx", fls$Name, ignore.case = TRUE)]
-pathUse <- fls$Name[grepl("Supply-Use_Framework_1997-2[0-9]{3}_Summary.xlsx", fls$Name, ignore.case = TRUE)]
+if (length(missing_files) > 0) {
+  cat("Missing BEA Input-Output files:\n")
+  cat(paste(" -", missing_files, collapse = "\n"), "\n")
+  stop("Please run BEA_InputOutput.py first to download required files")
+}
 
-stopifnot(length(pathSupply) == 1 && length(pathUse) == 1)
+if (length(pathSupply) != 1 || length(pathUse) != 1) {
+  stop(paste("Expected exactly 1 Supply and 1 Use file, found", length(pathSupply), "and", length(pathUse)))
+}
 
-unzip(tmp, files = c(pathSupply, pathUse), exdir = data_dir)
+print("✓ All BEA Input-Output tables found")
 
 # Process Customer Momentum
 print("Calculating customer momentum...")
-make_pre1997 <- paste0(data_dir, 'IOMake_Before_Redefinitions_1963-1996_Summary.xlsx')
-make_post1997 <- paste0(data_dir, pathSupply)
+make_post1997 <- pathSupply
 
 indweight_customer <- process_io_tables(make_pre1997, make_post1997, 'customer')
 comp_mapped_customer <- assign_firms_to_industries(comp_data, indweight_customer)
@@ -322,8 +324,7 @@ customer_momentum <- create_momentum_signal(comp_mapped_customer, matched_return
 
 # Process Supplier Momentum
 print("Calculating supplier momentum...")
-use_pre1997 <- paste0(data_dir, 'IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx')
-use_post1997 <- paste0(data_dir, pathUse)
+use_post1997 <- pathUse
 
 indweight_supplier <- process_io_tables(use_pre1997, use_post1997, 'supplier')
 comp_mapped_supplier <- assign_firms_to_industries(comp_data, indweight_supplier)
