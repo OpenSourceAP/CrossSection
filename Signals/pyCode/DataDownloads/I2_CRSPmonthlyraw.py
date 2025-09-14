@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-"""
-CRSP Monthly Raw data download script - Python equivalent of I2_CRSPmonthlyraw.do
-
-Downloads CRSP monthly data WITHOUT delisting return adjustments for testing.
-"""
+# ABOUTME: Downloads CRSP monthly data WITHOUT delisting return adjustments for testing
+# ABOUTME: Python equivalent of I2_CRSPmonthlyraw.do
+# Inputs: CRSP database via WRDS
+# Outputs: monthlyCRSPraw.parquet in ../pyData/Intermediate/
+# Run: python DataDownloads/I2_CRSPmonthlyraw.py
 
 import os
 import pandas as pd
@@ -11,7 +10,6 @@ import numpy as np
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
 
@@ -43,8 +41,6 @@ engine.dispose()
 
 print(f"Downloaded {len(crsp_raw)} CRSP raw monthly records")
 
-# Ensure directories exist
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Handle string columns that should be empty strings instead of NaN (to match Stata behavior)
 # In Stata, missing string values appear as empty strings, not NaN
@@ -85,9 +81,6 @@ crsp_raw['mve_c'] = crsp_raw['shrout'] * np.abs(crsp_raw['prc'])
 # Housekeeping - drop columns (note: NOT processing delisting returns)
 crsp_raw = crsp_raw.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
-# Standardize column names and types
-from utils.column_standardizer_yaml import standardize_columns
-crsp_raw = standardize_columns(crsp_raw, "monthlyCRSPraw")
 
 # Save processed data to parquet
 crsp_raw.to_parquet("../pyData/Intermediate/monthlyCRSPraw.parquet")

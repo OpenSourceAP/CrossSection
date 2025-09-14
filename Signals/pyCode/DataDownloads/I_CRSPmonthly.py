@@ -21,7 +21,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("📊 I_CRSPmonthly.py - CRSP Monthly Stock Data", flush=True)
@@ -55,14 +54,11 @@ if MAX_ROWS_DL > 0:
 crsp_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
-# Ensure output directories exist
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Handle missing string values to match Stata behavior (empty strings instead of NaN)
 string_columns = ['ticker', 'shrcls']
 for col in string_columns:
-    if col in crsp_data.columns:
-        crsp_data[col] = crsp_data[col].fillna('')
+    crsp_data[col] = crsp_data[col].fillna('')
 
 # Process SIC codes: rename siccd to sicCRSP and create 2-digit SIC
 crsp_data['sicCRSP'] = crsp_data['siccd']
@@ -108,8 +104,7 @@ crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
 # Clean up unnecessary columns
 crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
 
-# Standardize column names and save final dataset
-crsp_data = standardize_columns(crsp_data, "monthlyCRSP")
+# Save final dataset
 crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet", index=False)
 
 print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)

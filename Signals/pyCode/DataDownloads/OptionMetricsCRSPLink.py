@@ -17,9 +17,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -76,9 +74,8 @@ df = df0.sort_values(['permno','time_avail_m','score']).groupby(['permno','time_
 
 print(f'removed duplicates by score: {len(df)} rows')
 
-# Standardize column names and types
-
-df = standardize_columns(df, "OPTIONMETRICSCRSPLinkingTable")
+# Keep only needed columns and rename score to om_score to match original
+df = df[['permno', 'time_avail_m', 'secid', 'score']].rename(columns={'score': 'om_score'})
 
 # Save final linking table
 df.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)

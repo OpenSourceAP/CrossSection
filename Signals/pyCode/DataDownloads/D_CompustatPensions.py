@@ -19,7 +19,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("🏦 D_CompustatPensions.py - Compustat Pension Fund Data", flush=True)
@@ -54,8 +53,6 @@ engine.dispose()
 
 print(f"Downloaded {len(pensions_data)} pension records")
 
-# Ensure output directory exists
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Process data with 1-year availability lag
 pensions_data['datadate'] = pd.to_datetime(pensions_data['datadate'])
@@ -81,8 +78,6 @@ for var in pension_vars:
         missing_pct = (missing_count / total_count) * 100
         print(f"  {var}: {missing_count:,} missing ({missing_pct:.1f}%)")
 
-# Standardize column types and names
-pensions_data = standardize_columns(pensions_data, "CompustatPensions")
 
 # Save processed data to parquet
 pensions_data.to_parquet("../pyData/Intermediate/CompustatPensions.parquet", index=False)

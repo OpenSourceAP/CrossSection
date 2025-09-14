@@ -19,7 +19,6 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("💰 H_CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
@@ -49,17 +48,13 @@ if MAX_ROWS_DL > 0:
 dist_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
-# Ensure output directory exists
-os.makedirs("../pyData/Intermediate", exist_ok=True)
-
 print(f"Downloaded {len(dist_data)} distribution records")
 
 # Convert date columns to standardized format before processing
 datecols = ['rcrddt', 'exdt', 'paydt']
 for col in datecols:
-    if col in dist_data.columns:
-        dist_data[col] = pd.to_datetime(dist_data[col])
-        dist_data[col] = dist_data[col].dt.strftime('%Y-%m-%d')
+    dist_data[col] = pd.to_datetime(dist_data[col])
+    dist_data[col] = dist_data[col].dt.strftime('%Y-%m-%d')
 
 # Remove duplicate records based on permno, dates, and distribution code
 id_cols_plus = ['permno'] + datecols + ['distcd']
@@ -87,9 +82,6 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3],
 
 # Clean up temporary string column
 dist_data = dist_data.drop('distcd_str', axis=1)
-
-# Apply column standardization
-dist_data = standardize_columns(dist_data, "CRSPdistributions")
 
 # Save processed data to parquet file
 dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")

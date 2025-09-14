@@ -15,10 +15,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -41,8 +39,6 @@ rating_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
 print(f"Downloaded {len(rating_data)} credit rating records")
-
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert datadate to monthly time variable
 rating_data['datadate'] = pd.to_datetime(rating_data['datadate'])
@@ -86,8 +82,7 @@ rating_data = rating_data.drop('sp', axis=1)
 rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
 rating_data['credrat'] = rating_data['credrat'].astype('int8')
 
-# Apply column standardization and save data
-rating_data = standardize_columns(rating_data, 'm_SP_creditratings')
+# Save data
 rating_data.to_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
 
 print(f"S&P Credit Ratings data saved with {len(rating_data)} records")

@@ -19,7 +19,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -45,12 +44,8 @@ engine.dispose()
 
 print(f"Downloaded {len(actuals_data)} IBES actual earnings records")
 
-# Create output directory
-os.makedirs("../pyData/Intermediate", exist_ok=True)
-
 # Rename shout column to distinguish from adjusted version
-if 'shout' in actuals_data.columns:
-    actuals_data = actuals_data.rename(columns={'shout': 'shoutIBESUnadj'})
+actuals_data = actuals_data.rename(columns={'shout': 'shoutIBESUnadj'})
 
 # Convert statement period to monthly time variable
 actuals_data['statpers'] = pd.to_datetime(actuals_data['statpers'])
@@ -67,26 +62,25 @@ print("Filling time series gaps...")
 
 def fill_ticker_gaps(group):
     group = group.sort_values('time_avail_m')
-    
+
     if len(group) <= 1:
         return group
-    
+
     # Create full monthly time range for this ticker
     min_time = group['time_avail_m'].min()
     max_time = group['time_avail_m'].max()
     full_time_range = pd.date_range(start=min_time, end=max_time, freq='MS')
-    
+
     # Reindex to create missing months
     group = group.set_index('time_avail_m').reindex(full_time_range)
     group.index.name = 'time_avail_m'
     group = group.reset_index()
-    
+
     # Forward fill key variables into missing months
     fill_vars = ['int0a', 'fy0a', 'shoutIBESUnadj', 'ticker']
     for var in fill_vars:
-        if var in group.columns:
-            group[var] = group[var].ffill()
-    
+        group[var] = group[var].ffill()
+
     return group
 
 # Apply gap filling to each ticker
@@ -94,8 +88,7 @@ actuals_data = actuals_data.groupby('ticker').apply(fill_ticker_gaps).reset_inde
 print(f"After filling time series gaps: {len(actuals_data)} records")
 
 # Remove original statement period column
-if 'statpers' in actuals_data.columns:
-    actuals_data = actuals_data.drop('statpers', axis=1)
+actuals_data = actuals_data.drop('statpers', axis=1)
 
 # Standardize ticker column name
 actuals_data = actuals_data.rename(columns={'ticker': 'tickerIBES'})
@@ -109,17 +102,14 @@ actuals_data['time_avail_m'] = pd.to_datetime(actuals_data['time_avail_m'])
 # Handle missing values in string columns
 string_columns = ['curr_price', 'measure', 'cusip', 'cname', 'curcode', 'oftic']
 for col in string_columns:
-    if col in actuals_data.columns:
-        actuals_data[col] = actuals_data[col].fillna('')
+    actuals_data[col] = actuals_data[col].fillna('')
 
 # Handle missing values in date columns
 date_columns = ['prdays', 'fy0edats', 'int0dats']
 for col in date_columns:
-    if col in actuals_data.columns:
-        actuals_data[col] = pd.to_datetime(actuals_data[col])
+    actuals_data[col] = pd.to_datetime(actuals_data[col])
 
-# Apply column standardization and save data
-actuals_data = standardize_columns(actuals_data, 'IBES_UnadjustedActuals')
+# Save data
 actuals_data.to_parquet("../pyData/Intermediate/IBES_UnadjustedActuals.parquet")
 
 print(f"IBES Unadjusted Actuals data saved with {len(actuals_data)} records")

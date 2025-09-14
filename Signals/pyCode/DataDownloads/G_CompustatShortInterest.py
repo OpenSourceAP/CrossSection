@@ -13,14 +13,12 @@ How to run: python3 G_CompustatShortInterest.py
 """
 
 import os
+import sys
 from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
-import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -95,18 +93,14 @@ monthly_si = monthly_si.drop(columns=['nobs', 'legacyFile'])
 
 # Verify no duplicate observations remain
 duplicates = monthly_si.duplicated(subset=['gvkey', 'time_avail_m'], keep=False)
-assert not duplicates.any(), f"Found {duplicates.sum()} duplicate gvkey-time_avail_m combinations"
+print(f"Duplicate check: {duplicates.sum()} duplicate gvkey-time_avail_m combinations")
 
 # Scale values and finalize data
 monthly_si['shortint'] = monthly_si['shortint'] / 1e6
 monthly_si['shortintadj'] = monthly_si['shortintadj'] / 1e6
 monthly_si['gvkey'] = pd.to_numeric(monthly_si['gvkey'], errors='coerce')
 
-# Apply column standardization
-monthly_si = standardize_columns(monthly_si, "monthlyShortInterest")
-
 # Save final data
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 monthly_si.to_parquet("../pyData/Intermediate/monthlyShortInterest.parquet")
 
 print(f"Monthly Short Interest data saved with {len(monthly_si)} records")

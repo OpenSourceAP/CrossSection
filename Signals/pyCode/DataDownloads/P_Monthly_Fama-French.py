@@ -18,7 +18,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -42,18 +41,12 @@ if MAX_ROWS_DL > 0:
 # Download the data
 ff_monthly = pd.read_sql_query(QUERY, engine)
 
-# Create output directory
-os.makedirs("../pyData/Intermediate", exist_ok=True)
-
 # Process date column to create time_avail_m
 ff_monthly['date'] = pd.to_datetime(ff_monthly['date'])
 ff_monthly['time_avail_m'] = ff_monthly['date'].dt.to_period('M').dt.to_timestamp()
 
 # Remove original date column
 ff_monthly = ff_monthly.drop('date', axis=1)
-
-# Apply standardized column naming
-ff_monthly = standardize_columns(ff_monthly, 'monthlyFF')
 
 # Save processed data
 ff_monthly.to_parquet("../pyData/Intermediate/monthlyFF.parquet")

@@ -18,7 +18,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("🏢 E_CompustatBusinessSegments.py - Business Segment Data", flush=True)
@@ -49,8 +48,6 @@ engine.dispose()
 
 print(f"Downloaded {len(segments_data)} business segment records")
 
-# Create output directory if it doesn't exist
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert numeric columns from string to numeric format
 segments_data['gvkey'] = pd.to_numeric(segments_data['gvkey'], errors='coerce')
@@ -64,20 +61,17 @@ segments_data['srcdate'] = pd.to_datetime(segments_data['srcdate'])
 # Handle missing string values by converting NaN to empty strings
 segments_data['snms'] = segments_data['snms'].fillna('')
 
-# Apply column standardization and save data
-segments_data = standardize_columns(segments_data, 'CompustatSegments')
+# Save data
 segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 
 print(f"Compustat Business Segments data saved with {len(segments_data)} records")
 
 # Display summary statistics and sample data
 print("\nSegment types:")
-if 'stype' in segments_data.columns:
-    print(segments_data['stype'].value_counts())
+print(segments_data['stype'].value_counts())
 
 print("\nDate range:")
-if 'datadate' in segments_data.columns:
-    print(f"  {segments_data['datadate'].min().strftime('%Y-%m-%d')} to {segments_data['datadate'].max().strftime('%Y-%m-%d')}")
+print(f"  {segments_data['datadate'].min().strftime('%Y-%m-%d')} to {segments_data['datadate'].max().strftime('%Y-%m-%d')}")
 
 print(f"\nUnique companies: {segments_data['gvkey'].nunique()}")
 

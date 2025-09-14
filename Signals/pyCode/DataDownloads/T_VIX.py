@@ -1,4 +1,4 @@
-# ABOUTME: Downloads VIX volatility index data from FRED API using both VXO and VIX series  
+# ABOUTME: Downloads VIX volatility index data from FRED API using both VXO and VIX series
 # ABOUTME: Creates continuous VIX series and calculates daily VIX changes for market volatility analysis
 """
 Inputs:
@@ -12,7 +12,6 @@ How to run: python3 T_VIX.py
 """
 
 import os
-import time
 import pandas as pd
 import numpy as np
 import requests
@@ -21,12 +20,11 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
 
-def download_fred_series(series_id, api_key, max_retries=3, retry_delay=1):
+def download_fred_series(series_id, api_key):
     # Set up FRED API request parameters
     url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
@@ -36,144 +34,78 @@ def download_fred_series(series_id, api_key, max_retries=3, retry_delay=1):
         'observation_start': '1900-01-01'
     }
 
-    # Retry loop with exponential backoff
-    for attempt in range(max_retries + 1):
-        try:
-            print(f"Downloading {series_id} (attempt {attempt + 1}...)")
-            response = requests.get(url, params=params, timeout=30)
-            response.raise_for_status()
-            data = response.json()
+    print(f"Downloading {series_id}...")
+    response = requests.get(url, params=params, timeout=30)
+    response.raise_for_status()
+    data = response.json()
 
-            # Check for API errors in response
-            if 'error_code' in data:
-                raise requests.exceptions.RequestException(
-                    f"FRED API error {data['error_code']}: "
-                    f"{data.get('error_message', 'Unknown error')}"
-                )
+    # Process successful response
+    df = pd.DataFrame(data['observations'])
 
-            # Process successful response
-            if 'observations' in data:
-                df = pd.DataFrame(data['observations'])
-                if len(df) == 0:
-                    print(f"Warning: No observations found for {series_id}")
-                    return pd.DataFrame()
-
-                # Clean and format the data
-                df['date'] = pd.to_datetime(df['date'])
-                df['value'] = pd.to_numeric(df['value'], errors='coerce')
-                df = df[['date', 'value']]
-                df.columns = ['date', series_id]
-                print(f"Successfully downloaded {len(df)} observations")
-                return df
-            else:
-                print(f"No observations found for {series_id}")
-                return pd.DataFrame()
-
-        # Handle various download errors
-        except requests.exceptions.Timeout:
-            print(f"Timeout downloading {series_id} (attempt {attempt + 1})")
-        except requests.exceptions.ConnectionError:
-            print(f"Connection error downloading {series_id} "
-                  f"(attempt {attempt + 1})")
-        except requests.exceptions.RequestException as e:
-            print(f"Request error downloading {series_id}: {e}")
-            if "API key" in str(e) or "error_code" in str(e):
-                break
-        except Exception as e:
-            print(f"Unexpected error downloading {series_id}: {e}")
-
-        # Wait before retry with exponential backoff
-        if attempt < max_retries:
-            delay = retry_delay * (2 ** attempt)
-            print(f"Retrying in {delay} seconds...")
-            time.sleep(delay)
-
-    print(f"Failed to download {series_id} after {max_retries + 1} attempts")
-    return pd.DataFrame()
+    # Clean and format the data
+    df['date'] = pd.to_datetime(df['date'])
+    df['value'] = pd.to_numeric(df['value'], errors='coerce')
+    df = df[['date', 'value']]
+    df.columns = ['date', series_id]
+    print(f"Successfully downloaded {len(df)} observations")
+    return df
 
 
-def main():
-    print("Downloading VIX data from FRED...")
+print("Downloading VIX data from FRED...")
 
-    # Get FRED API key from environment
-    fred_api_key = os.getenv("FRED_API_KEY")
-    if not fred_api_key:
-        print("ERROR: FRED_API_KEY not found in environment variables")
-        print("Please set FRED_API_KEY in your .env file")
-        print("You can get a free API key from: "
-              "https://fred.stlouisfed.org/docs/api/api_key.html")
-        return
+# Get FRED API key from environment
+fred_api_key = os.getenv("FRED_API_KEY")
 
-    # Ensure directories exist
-    os.makedirs("../pyData/Intermediate", exist_ok=True)
+# Download both VIX series
+vxocls_data = download_fred_series('VXOCLS', fred_api_key)  # VXO (older series)
+vixcls_data = download_fred_series('VIXCLS', fred_api_key)  # VIX (current series)
 
-    # Download both VIX series
-    vxocls_data = download_fred_series('VXOCLS', fred_api_key)  # VXO (older series)
-    vixcls_data = download_fred_series('VIXCLS', fred_api_key)  # VIX (current series)
+# Merge the two series
+vix_data = pd.merge(vxocls_data, vixcls_data, on='date', how='outer')
+vix_data = vix_data.sort_values('date').reset_index(drop=True)
 
-    if vxocls_data.empty and vixcls_data.empty:
-        print("Failed to download any VIX data")
-        return
+# Create combined VIX series (equivalent to Stata logic)
+cutoff_date = pd.to_datetime('2021-09-23')
+vix_data['vix'] = vix_data['VXOCLS']
 
-    # Merge the two series
-    if not vxocls_data.empty and not vixcls_data.empty:
-        vix_data = pd.merge(vxocls_data, vixcls_data, on='date', how='outer')
-    elif not vxocls_data.empty:
-        vix_data = vxocls_data.copy()
-        vix_data['VIXCLS'] = np.nan
-    else:
-        vix_data = vixcls_data.copy()
-        vix_data['VXOCLS'] = np.nan
+# Fill with VIXCLS for missing VXOCLS values after cutoff date
+post_cutoff = vix_data['date'] >= cutoff_date
+missing_vxo = vix_data['VXOCLS'].isna()
+fill_mask = post_cutoff & missing_vxo
+vix_data.loc[fill_mask, 'vix'] = vix_data.loc[fill_mask, 'VIXCLS']
 
-    vix_data = vix_data.sort_values('date').reset_index(drop=True)
+# Keep only necessary columns and rename date first
+final_data = vix_data[['date', 'vix']].copy()
+final_data = final_data.rename(columns={'date': 'time_d'})
 
-    # Create combined VIX series (equivalent to Stata logic)
-    cutoff_date = pd.to_datetime('2021-09-23')
-    vix_data['vix'] = vix_data['VXOCLS']
+# Apply precision control to match Stata format
+final_data['vix'] = final_data['vix'].astype('float32')
 
-    # Fill with VIXCLS for missing VXOCLS values after cutoff date
-    post_cutoff = vix_data['date'] >= cutoff_date
-    missing_vxo = vix_data['VXOCLS'].isna()
-    fill_mask = post_cutoff & missing_vxo
-    vix_data.loc[fill_mask, 'vix'] = vix_data.loc[fill_mask, 'VIXCLS']
+# Calculate daily change in VIX (equivalent to gen dVIX = vix - l.vix)
+final_data['dVIX'] = final_data['vix'].diff().astype('float32')
 
-    # Keep only necessary columns and rename date first
-    final_data = vix_data[['date', 'vix']].copy()
-    final_data = final_data.rename(columns={'date': 'time_d'})
-    
-    # Apply precision control to match Stata format
-    final_data['vix'] = final_data['vix'].astype('float32')
-    
-    # Calculate daily change in VIX (equivalent to gen dVIX = vix - l.vix)
-    final_data['dVIX'] = final_data['vix'].diff().astype('float32')
+# Apply row limit for debugging if configured
+if MAX_ROWS_DL > 0:
+    final_data = final_data.head(MAX_ROWS_DL)
+    print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
-    # Apply row limit for debugging if configured
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+# Save the data
+final_data.to_parquet("../pyData/Intermediate/d_vix.parquet")
 
-    # Save the data (apply column standardization)
-    final_data = standardize_columns(final_data, 'd_vix')
-    final_data.to_parquet("../pyData/Intermediate/d_vix.parquet")
+# Print summary information
+print(f"VIX data saved with {len(final_data)} records")
+date_min = final_data['time_d'].min().strftime('%Y-%m-%d')
+date_max = final_data['time_d'].max().strftime('%Y-%m-%d')
+print(f"Date range: {date_min} to {date_max}")
 
-    # Print summary information
-    print(f"VIX data saved with {len(final_data)} records")
-    date_min = final_data['time_d'].min().strftime('%Y-%m-%d')
-    date_max = final_data['time_d'].max().strftime('%Y-%m-%d')
-    print(f"Date range: {date_min} to {date_max}")
+print("\nSample data:")
+print(final_data.head())
 
-    print("\nSample data:")
-    print(final_data.head())
-
-    print("\nVIX summary:")
-    print(f"Total records: {len(final_data)}")
-    print(f"Missing VIX values: {final_data['vix'].isna().sum()}")
-    print(f"Missing dVIX values: {final_data['dVIX'].isna().sum()}")
-    print(f"Mean: {final_data['vix'].mean():.2f}")
-    print(f"Std: {final_data['vix'].std():.2f}")
-    print(f"Min: {final_data['vix'].min():.2f}")
-    print(f"Max: {final_data['vix'].max():.2f}")
-
-
-if __name__ == "__main__":
-    main()
+print("\nVIX summary:")
+print(f"Total records: {len(final_data)}")
+print(f"Missing VIX values: {final_data['vix'].isna().sum()}")
+print(f"Missing dVIX values: {final_data['dVIX'].isna().sum()}")
+print(f"Mean: {final_data['vix'].mean():.2f}")
+print(f"Std: {final_data['vix'].std():.2f}")
+print(f"Min: {final_data['vix'].min():.2f}")
+print(f"Max: {final_data['vix'].max():.2f}")

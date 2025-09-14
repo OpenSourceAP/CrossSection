@@ -18,7 +18,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 print("=" * 60, flush=True)
 print("📈 O_Daily_Fama-French.py - Daily Fama-French Factors", flush=True)
@@ -47,8 +46,6 @@ if MAX_ROWS_DL > 0:
 # Download daily Fama-French factors from WRDS
 ff_daily = pd.read_sql_query(QUERY, engine)
 
-# Create output directory if it doesn't exist
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Rename date column to time_d for consistency
 ff_daily = ff_daily.rename(columns={'date': 'time_d'})
@@ -56,8 +53,7 @@ ff_daily = ff_daily.rename(columns={'date': 'time_d'})
 # Convert time_d to datetime format
 ff_daily['time_d'] = pd.to_datetime(ff_daily['time_d'])
 
-# Apply column standardization and save to parquet
-ff_daily = standardize_columns(ff_daily, 'dailyFF')
+# Save to parquet
 ff_daily.to_parquet("../pyData/Intermediate/dailyFF.parquet")
 
 # Print summary statistics

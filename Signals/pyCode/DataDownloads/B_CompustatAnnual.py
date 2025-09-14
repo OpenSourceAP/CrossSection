@@ -21,7 +21,6 @@ from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 # Print script header
 print("=" * 60, flush=True)
@@ -73,8 +72,6 @@ for col in compustat_data_raw.columns:
         compustat_data_raw[col].isna().all()):
         compustat_data_raw[col] = compustat_data_raw[col].astype('float64')
 
-# Create output directories
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Save raw CSV immediately with Stata-formatted dates
 compustat_csv = compustat_data_raw.copy()
@@ -145,8 +142,7 @@ zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
                   'mib', 'ivao', 'prstkc', 'prstkcc', 'txditc', 'ivst']
 
 for var in zero_fill_vars:
-    if var in compustat_data.columns:
-        compustat_data[var] = compustat_data[var].fillna(0)
+    compustat_data[var] = compustat_data[var].fillna(0)
 
 # Load CCM linking table and merge with Compustat data
 ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
@@ -159,10 +155,6 @@ ccm_merge_data = ccm_data.drop(columns=[col for col in ccm_columns_to_drop if co
 compustat_data = compustat_data.merge(ccm_merge_data, on='gvkey', how='inner')
 print(f"After merging with CCM links: {len(compustat_data)} records", flush=True)
 
-# Validate that no duplicate column suffixes were created during merge
-duplicate_suffixes = [col for col in compustat_data.columns if col.endswith(('_x', '_y'))]
-if duplicate_suffixes:
-    raise ValueError(f"Unexpected duplicate columns after merge: {duplicate_suffixes}")
 
 # Filter records to valid CCM link date ranges
 compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
@@ -192,8 +184,6 @@ annual_data['time_avail_m'] = (
     annual_data['datadate'].dt.to_period('M') + 6
 ).dt.to_timestamp()
 
-# Standardize column names and save annual version
-annual_data = standardize_columns(annual_data, 'a_aCompustat')
 # Save annual version
 annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
@@ -225,8 +215,6 @@ monthly_data = monthly_data.drop_duplicates(['permno', 'time_avail_m'], keep='la
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
 
-# Standardize column names and save monthly version
-monthly_data = standardize_columns(monthly_data, 'm_aCompustat')
 # Save monthly version
 monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)

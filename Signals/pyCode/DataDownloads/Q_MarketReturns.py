@@ -18,7 +18,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -42,8 +41,6 @@ if MAX_ROWS_DL > 0:
 # Download market returns data
 market_data = pd.read_sql_query(QUERY, engine)
 
-# Create output directory
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Convert date to monthly timestamp format
 market_data['date'] = pd.to_datetime(market_data['date'])
@@ -52,8 +49,7 @@ market_data['time_avail_m'] = market_data['date'].dt.to_period('M').dt.to_timest
 # Remove original date column
 market_data = market_data.drop('date', axis=1)
 
-# Standardize columns and save data
-market_data = standardize_columns(market_data, 'monthlyMarket')
+# Save data
 market_data.to_parquet("../pyData/Intermediate/monthlyMarket.parquet")
 
 # Display summary information

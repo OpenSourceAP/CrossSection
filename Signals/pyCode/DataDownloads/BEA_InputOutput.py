@@ -28,7 +28,6 @@ pre1997_urls = [
 for url, filename in pre1997_urls:
     filepath = os.path.join(data_dir, filename)
     response = requests.get(url, stream=True, timeout=300)
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
     with open(filepath, 'wb') as f:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)

@@ -15,10 +15,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -40,7 +38,6 @@ engine.dispose()
 
 print(f"Downloaded {len(acq_data)} distribution records")
 
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 initial_count = len(acq_data)
 acq_data = acq_data[(acq_data['acperm'] > 999) & acq_data['acperm'].notna()]
@@ -67,7 +64,6 @@ acq_data = acq_data.drop_duplicates()
 duplicates_removed = initial_count - len(acq_data)
 print(f"Removed {duplicates_removed} duplicate records")
 
-acq_data = standardize_columns(acq_data, 'm_CRSPAcquisitions')
 
 acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet", index=False)
 

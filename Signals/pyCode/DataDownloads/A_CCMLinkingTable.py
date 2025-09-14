@@ -15,10 +15,6 @@ import os
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.column_standardizer_yaml import standardize_columns
 
 # Display script header
 print("=" * 60, flush=True)
@@ -54,8 +50,6 @@ engine.dispose()
 ccm_data['linkdt'] = pd.to_datetime(ccm_data['linkdt'])
 ccm_data['linkenddt'] = pd.to_datetime(ccm_data['linkenddt'])
 
-# Create output directory
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 # Prepare and save Parquet version with renamed columns
 ccm_parquet_data = ccm_data.copy()
@@ -66,7 +60,6 @@ ccm_parquet_data = ccm_parquet_data.rename(columns={
 })
 ccm_parquet_data['naics'] = ccm_parquet_data['naics'].fillna('')
 ccm_parquet_data['cik'] = ccm_parquet_data['cik'].fillna('')
-ccm_parquet_data = standardize_columns(ccm_parquet_data, 'CCMLinkingTable')
 ccm_parquet_data.to_parquet("../pyData/Intermediate/CCMLinkingTable.parquet", index=False)
 
 # Display summary statistics

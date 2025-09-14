@@ -16,10 +16,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -44,7 +42,6 @@ engine.dispose()
 
 print(f"Downloaded {len(ibes_adj)} IBES EPS adjusted records")
 
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 ibes_adj['statpers'] = pd.to_datetime(ibes_adj['statpers'])
 ibes_adj['time_avail_m'] = ibes_adj['statpers'].dt.to_period('M').dt.to_timestamp()
@@ -65,7 +62,6 @@ ibes_adj = ibes_adj.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], keep=
 
 print(f"After keeping last obs per month: {len(ibes_adj)} records")
 
-ibes_adj = standardize_columns(ibes_adj, 'IBES_EPS_Adj')
 ibes_adj.to_parquet("../pyData/Intermediate/IBES_EPS_Adj.parquet", index=False)
 
 print(f"IBES EPS Adjusted data saved with {len(ibes_adj)} records")

@@ -15,10 +15,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -46,9 +44,6 @@ engine.dispose()
 
 print(f"Downloaded {len(rec_data)} IBES recommendation records")
 
-# Ensure output directory exists
-os.makedirs("../pyData/Intermediate", exist_ok=True)
-
 # Clean recommendation codes - convert to numeric and drop missing values
 rec_data['ireccd'] = pd.to_numeric(rec_data['ireccd'], errors='coerce')
 initial_count = len(rec_data)
@@ -74,8 +69,7 @@ columns_order = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd'] +
                 [col for col in rec_data.columns if col not in ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd']]
 rec_data = rec_data[columns_order]
 
-# Standardize column names and save data
-rec_data = standardize_columns(rec_data, 'IBES_Recommendations')
+# Save data
 rec_data.to_parquet("../pyData/Intermediate/IBES_Recommendations.parquet", index=False)
 
 print(f"IBES Recommendations data saved with {len(rec_data)} records")

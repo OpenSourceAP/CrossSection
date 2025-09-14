@@ -1,5 +1,5 @@
 # ABOUTME: Downloads Pastor-Stambaugh monthly liquidity factor from WRDS French library
-# ABOUTME: Creates time_avail_m variable and standardizes columns for monthly liquidity data
+# ABOUTME: Creates time_avail_m variable for monthly liquidity data
 """
 Inputs:
 - ff.liq_ps table from WRDS (date, ps_innov columns)
@@ -18,7 +18,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 load_dotenv()
 
@@ -41,9 +40,6 @@ if MAX_ROWS_DL > 0:
 # Download liquidity factor data
 liquidity_data = pd.read_sql_query(QUERY, engine)
 
-# Ensure output directory exists
-os.makedirs("../pyData/Intermediate", exist_ok=True)
-
 # Convert date to monthly time_avail_m variable
 liquidity_data['date'] = pd.to_datetime(liquidity_data['date'])
 liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M').dt.to_timestamp()
@@ -51,8 +47,7 @@ liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M').dt.to_
 # Remove original date column
 liquidity_data = liquidity_data.drop('date', axis=1)
 
-# Apply column standardization and save data
-liquidity_data = standardize_columns(liquidity_data, 'monthlyLiquidity')
+# Save data
 liquidity_data.to_parquet("../pyData/Intermediate/monthlyLiquidity.parquet")
 
 # Display summary statistics

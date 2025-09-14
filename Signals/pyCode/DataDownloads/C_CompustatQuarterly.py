@@ -22,7 +22,6 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
 
 # Print script header
 print("=" * 60, flush=True)
@@ -70,8 +69,6 @@ print(f"Downloaded {len(compustat_q_pd):,} quarterly records", flush=True)
 compustat_q = pl.from_pandas(compustat_q_pd)
 del compustat_q_pd
 
-# Create output directory
-os.makedirs("../pyData/Intermediate", exist_ok=True)
 
 print("Processing with Polars for optimal performance...", flush=True)
 
@@ -218,8 +215,6 @@ monthly_compustat_pd = monthly_compustat.to_pandas()
 # time_avail_m is already in proper datetime64[ns] format from period arithmetic above
 # No additional conversion needed - it already matches Stata's format
 
-# Standardize column names and data types using YAML schema
-monthly_compustat_pd = standardize_columns(monthly_compustat_pd, "m_QCompustat")
 
 # Save data to parquet files with timestamp precision matching Stata
 monthly_compustat_pd.to_parquet("../pyData/Intermediate/m_QCompustat.parquet", index=False, use_deprecated_int96_timestamps=True)
