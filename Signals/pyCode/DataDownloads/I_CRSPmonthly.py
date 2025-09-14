@@ -8,7 +8,6 @@ Inputs:
 
 Outputs:
 - ../pyData/Intermediate/monthlyCRSP.parquet
-- ../pyData/Intermediate/mCRSP.csv
 
 How to run: python3 I_CRSPmonthly.py
 """
@@ -64,12 +63,6 @@ string_columns = ['ticker', 'shrcls']
 for col in string_columns:
     if col in crsp_data.columns:
         crsp_data[col] = crsp_data[col].fillna('')
-
-# Create CSV export with Stata date format for R processing
-crsp_data_csv = crsp_data.copy()
-crsp_data_csv['date'] = pd.to_datetime(crsp_data_csv['date'])
-crsp_data_csv['date'] = crsp_data_csv['date'].dt.strftime('%d%b%Y').str.lower()
-crsp_data_csv.to_csv("../pyData/Intermediate/mCRSP.csv", index=False)
 
 # Process SIC codes: rename siccd to sicCRSP and create 2-digit SIC
 crsp_data['sicCRSP'] = crsp_data['siccd']

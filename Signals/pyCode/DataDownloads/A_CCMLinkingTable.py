@@ -6,7 +6,6 @@ Inputs:
 - crsp.ccmxpf_lnkhist (CRSP-Compustat link history)
 
 Outputs:
-- ../pyData/Intermediate/CCMLinkingTable.csv
 - ../pyData/Intermediate/CCMLinkingTable.parquet
 
 How to run: python3 A_CCMLinkingTable.py
@@ -57,13 +56,6 @@ ccm_data['linkenddt'] = pd.to_datetime(ccm_data['linkenddt'])
 
 # Create output directory
 os.makedirs("../pyData/Intermediate", exist_ok=True)
-
-# Prepare and save CSV version with Stata-compatible formatting
-ccm_csv_data = ccm_data.copy()
-ccm_csv_data['linkdt'] = ccm_csv_data['linkdt'].dt.strftime('%d%b%Y').str.lower()
-ccm_csv_data['linkenddt'] = ccm_csv_data['linkenddt'].dt.strftime('%d%b%Y').str.lower()
-ccm_csv_data = standardize_columns(ccm_csv_data, 'CCMLinkingTable.csv')
-ccm_csv_data.to_csv("../pyData/Intermediate/CCMLinkingTable.csv", index=False)
 
 # Prepare and save Parquet version with renamed columns
 ccm_parquet_data = ccm_data.copy()
