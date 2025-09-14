@@ -148,9 +148,9 @@ The notes go in the following folders:
 # Context for Current Task
 We're working on the Predictors leg: `DocsForClaude/leg3-predictors.md`.
 
-# sum_pred.py validation
+# Validation Tools
 
-## Before/After Testing with sum_pred.py
+## sum_pred.py - Before/After Testing for Predictor Scripts
 When modifying predictor scripts, use `utils/sum_pred.py` for validation:
 
 **Before changes:**
@@ -168,6 +168,25 @@ python utils/sum_pred.py [ScriptName] --vintage after
 - Matching column statistics (mean, std, percentiles)
 - Same data types for all columns
 - Compare log files in `../Logs/sum_pred_[vintage]/[ScriptName].md`
+
+## sum_dl.py - Before/After Testing for DataDownload Scripts
+When modifying data download scripts, use `utils/sum_dl.py` for validation:
+
+**Before changes:**
+```bash
+python utils/sum_dl.py [ScriptName] --vintage before
+```
+
+**After changes:**
+```bash
+python utils/sum_dl.py [ScriptName] --vintage after
+```
+
+**Validation criteria:**
+- Identical row counts in output files
+- Matching column statistics (mean, std, percentiles)
+- Same data types for all columns
+- Compare log files in `../Logs/sum_dl_[vintage]/[ScriptName].md`
 
 ## Comparing Summary Statistics Between Vintages
 Use `utils/compare_sum.py` to compare summary statistics between any two vintages:
