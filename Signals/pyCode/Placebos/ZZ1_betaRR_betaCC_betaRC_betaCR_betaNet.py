@@ -1,419 +1,339 @@
-#!/usr/bin/env python3
-# ABOUTME: Liquidity betas using asreg utility for rolling regressions
-# ABOUTME: Simplified implementation using utils/stata_regress.py asreg function
-
-import polars as pl
+# ABOUTME: Calculates liquidity betas (betaRR, betaCC, betaRC, betaCR, betaNet) using Acharya-Pedersen methodology
+# ABOUTME: Input: dailyCRSP, monthlyCRSP, monthlyMarket parquet files; Output: 5 CSV files in pyData/Placebos/
+#%%
 import pandas as pd
 import numpy as np
 import sys
 import os
-
-# Add utils to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.save_standardized import save_placebo
-from utils.asrol import asrol
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from utils.saveplacebo import save_placebo
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.stata_regress import asreg
+#%%
 
-print("=== Beta Placebo v3: Fixed Stata Replication ===")
-
-# Step 1: Daily illiquidity computation (exact Stata replication)
-print("Step 1: Computing daily illiquidity from dailyCRSP...")
-daily_crsp = pd.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
-daily_crsp['time_avail_m'] = daily_crsp['time_d'].dt.to_period('M').dt.start_time
-daily_crsp['ill'] = (daily_crsp['ret'].abs() / (daily_crsp['prc'].abs() * daily_crsp['vol'])) * 1_000_000
-
-# Handle inf/nan values in illiquidity before collapsing
-daily_crsp['ill'] = daily_crsp['ill'].replace([np.inf, -np.inf], np.nan)
-
-# Monthly collapse (mean) by permno time_avail_m
-temp_ill = daily_crsp.groupby(['permno', 'time_avail_m'])['ill'].mean().reset_index()
-
-# Convert to standard numpy dtypes to avoid nullable dtype issues
-temp_ill['ill'] = temp_ill['ill'].astype(float)
-
-print(f"Monthly illiquidity collapsed: {len(temp_ill):,} observations")
-
-# Step 2: Load monthly data (exact Stata order)
-print("Step 2: Loading monthly CRSP and Market data...")
-monthly_crsp = pd.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
-df = monthly_crsp[['permno', 'time_avail_m', 'ret', 'prc', 'exchcd', 'shrout']].copy()
-
-# Merge illiquidity (keep master match)
-df = df.merge(temp_ill, on=['permno', 'time_avail_m'], how='left')
-
-# Merge market data (keep match only)
-monthly_market = pd.read_parquet("../pyData/Intermediate/monthlyMarket.parquet")
-market = monthly_market[['time_avail_m', 'vwretd', 'usdval']].copy()
-df = df.merge(market, on='time_avail_m', how='inner')
-
-print(f"After merges: {len(df):,} observations")
-
-# Step 3: Market cap indexing relative to July 1962 (exact Stata logic)
-print("Step 3: Market cap indexing...")
-july_1962_data = df[(df['time_avail_m'].dt.year == 1962) & (df['time_avail_m'].dt.month == 7)]
-if len(july_1962_data) > 0:
-    july_1962_market = july_1962_data['usdval'].mean()
-else:
-    # Fallback if July 1962 not available
-    july_1962_market = df['usdval'].dropna().iloc[0] if len(df) > 0 else 1.0
-
-df['MarketCapitalization'] = df['usdval'] / july_1962_market
-
-print(f"Market cap base (July 1962): {july_1962_market}")
-
-# Set panel structure (sorting equivalent to xtset)
-df = df.sort_values(['permno', 'time_avail_m'])
-
-# Individual stock liquidity cost (exact Stata formula)
-# Note: Stata uses min(.25 + .3*ill*MarketCapitalization, 30) but this is a typo
-# The correct formula from AP2005 is min(ill, (30-.25)/(.3*MarketCapitalization))  
-df['c_i'] = np.minimum(0.25 + 0.3 * df['ill'] * df['MarketCapitalization'], 30.0)
-
-# Step 4: Market illiquidity innovation (preserve/restore logic)
-print("Step 4: Computing market illiquidity innovation...")
-
-# PRESERVE equivalent - create filtered subset for market calculations
-market_subset = df[
-    (df['prc'].abs() > 5) & 
-    (df['prc'].abs() < 1000) &
-    ((df['exchcd'] == 1) | (df['exchcd'] == 2))
-].copy()
-
-# Market calculations on filtered subset
-market_subset['mktcap'] = market_subset['shrout'] * market_subset['prc'].abs()
-# CORRECTED: Use Stata's formula for market aggregation (line 40)
-# temp2 = min(ill, (30-.25)/(.3*MarketCapitalization)) 
-market_subset['temp2'] = np.minimum(
-    market_subset['ill'], 
-    (30.0 - 0.25) / (0.3 * market_subset['MarketCapitalization'])
-)
-
-# Convert to standard dtypes to avoid nullable dtype issues
-market_subset['temp2'] = market_subset['temp2'].astype(float)
-market_subset['mktcap'] = market_subset['mktcap'].astype(float)
-
-# Remove observations with missing illiquidity or infinite values
-market_subset = market_subset.dropna(subset=['temp2', 'ill', 'MarketCapitalization'])
-market_subset = market_subset[np.isfinite(market_subset['temp2'])]
-
-print(f"Market subset after cleaning: {len(market_subset):,} observations")
-
-# Market aggregations (weighted averages by market cap)
-market_agg = market_subset.groupby('time_avail_m').apply(
-    lambda x: pd.Series({
-        'MarketIlliquidity': (x['temp2'] * x['mktcap']).sum() / x['mktcap'].sum(),
-        'rM': (x['vwretd'] * x['mktcap']).sum() / x['mktcap'].sum(),  
-        'MarketCapitalization': (x['MarketCapitalization'] * x['mktcap']).sum() / x['mktcap'].sum()
-    }),
-    include_groups=False
-).reset_index()
-
-print(f"Market aggregations: {len(market_agg):,} periods")
-
-# Sort by time for lag operations
-market_agg = market_agg.sort_values('time_avail_m')
-
-# Create lagged variables for market model
-market_agg['MarketCapitalization_lag1'] = market_agg['MarketCapitalization'].shift(1)
-market_agg['temp'] = 0.25 + market_agg['MarketIlliquidity'] * market_agg['MarketCapitalization_lag1']
-market_agg['templ1'] = 0.25 + market_agg['MarketIlliquidity'].shift(1) * market_agg['MarketCapitalization_lag1']
-market_agg['templ2'] = 0.25 + market_agg['MarketIlliquidity'].shift(2) * market_agg['MarketCapitalization_lag1']
-
-# Market illiquidity innovation regression
-print("Running market illiquidity innovation regression...")
-market_clean = market_agg.dropna(subset=['temp', 'templ1', 'templ2']).copy()
-
-if len(market_clean) > 60:
-    illiq_reg = asreg(
-        market_clean,
-        y="temp",
-        X=["templ1", "templ2"],
-        time="time_avail_m",
+def main():
+    #%%
+    print("Starting ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py")
+    
+    # DATA LOAD - Compute illiquidity from daily CRSP data
+    print("Loading daily CRSP data...")
+    daily_crsp = pd.read_parquet('../../pyData/Intermediate/dailyCRSP.parquet', 
+                                columns=['permno', 'time_d', 'ret', 'vol', 'prc'])
+    
+    # Convert time_d to monthly periods (equivalent to mofd)
+    daily_crsp['time_avail_m'] = daily_crsp['time_d'].dt.to_period('M').dt.start_time
+    
+    # Compute illiquidity with explicit null handling
+    daily_crsp['ill'] = (daily_crsp['ret'].abs() / (daily_crsp['prc'].abs() * daily_crsp['vol'])) * 1e6
+    
+    # Collapse by permno and time_avail_m to get mean illiquidity
+    temp_ill = daily_crsp.groupby(['permno', 'time_avail_m'])['ill'].mean().reset_index()
+    
+    print("Loading monthly CRSP data...")
+    # Load monthly data
+    monthly_crsp = pd.read_parquet('../../pyData/Intermediate/monthlyCRSP.parquet',
+                                  columns=['permno', 'time_avail_m', 'ret', 'prc', 'exchcd', 'shrout'])
+    
+    # Merge with illiquidity data
+    df = monthly_crsp.merge(temp_ill, on=['permno', 'time_avail_m'], how='left')
+    
+    # Merge with market data
+    market = pd.read_parquet('../../pyData/Intermediate/monthlyMarket.parquet',
+                            columns=['time_avail_m', 'vwretd', 'usdval'])
+    df = df.merge(market, on='time_avail_m', how='inner')
+    
+    # SIGNAL CONSTRUCTION
+    print("Processing signal construction...")
+    
+    # Index market capitalization relative to July 1962
+    july_1962 = pd.to_datetime('1962-07-01')
+    july_1962_val = df.loc[df['time_avail_m'] == july_1962, 'usdval'].mean()
+    if pd.isna(july_1962_val):
+        print("Warning: No July 1962 market cap data found, using first available value")
+        july_1962_val = df['usdval'].dropna().iloc[0]
+    
+    df['usdval'] = df['usdval'] / july_1962_val
+    df = df.rename(columns={'usdval': 'MarketCapitalization'})
+    
+    # Use fill_date_gaps for proper calendar-based lags
+    print("Filling date gaps for proper lag operations...")
+    df = fill_date_gaps(df, 'permno', 'time_avail_m')
+    df = df.sort_values(['permno', 'time_avail_m'])
+    
+    # Create lags using stata_multi_lag for calendar-based alignment
+    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'MarketCapitalization', [1, 2], prefix='l')
+    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ill', [1, 2], prefix='l')
+    
+    # Compute c_i with proper bounds
+    df['c_i'] = np.minimum(0.25 + 0.3 * df['ill'] * df['MarketCapitalization'], 30)
+    
+    # Compute market illiquidity innovation and market return innovation
+    print("Computing market innovations...")
+    
+    # Market filtering ONLY for market aggregation (like Stata preserve/restore)
+    market_subset = df[
+        (df['prc'].abs() > 5) & 
+        (df['prc'].abs() < 1000) & 
+        ((df['exchcd'] == 1) | (df['exchcd'] == 2)) &
+        df['prc'].notna() & 
+        df['exchcd'].notna()
+    ].copy()
+    
+    print(f"Market aggregation: {len(df)} -> {len(market_subset)} observations after filtering")
+    
+    # Market cap of stock i
+    market_subset['temp'] = market_subset['shrout'] * market_subset['prc'].abs()
+    
+    # Unnormalized liquidity with proper missing handling  
+    # Convert Float64 to float64 to avoid aggregation issues
+    market_subset['ill_float64'] = market_subset['ill'].astype('float64')
+    market_subset['temp2'] = np.minimum(
+        market_subset['ill_float64'], 
+        (30 - 0.25) / (0.3 * market_subset['MarketCapitalization'])
+    )
+    market_subset.loc[market_subset['ill_float64'].isna(), 'temp2'] = np.nan
+    
+    # Calculate weighted averages by time_avail_m
+    market_agg = market_subset.groupby('time_avail_m').apply(
+        lambda x: pd.Series({
+            'MarketIlliquidity': (x['temp2'] * x['temp']).sum() / x['temp'].sum() if x['temp'].sum() > 0 else np.nan,
+            'rM': (x['vwretd'] * x['temp']).sum() / x['temp'].sum() if x['temp'].sum() > 0 else np.nan,
+            'MarketCapitalization': (x['MarketCapitalization'] * x['temp']).sum() / x['temp'].sum() if x['temp'].sum() > 0 else np.nan
+        })
+    ).reset_index()
+    
+    # Sort market data and create proper calendar-based lags
+    market_agg = market_agg.sort_values('time_avail_m')
+    
+    # Create a dummy group column for market aggregation (single time series)
+    market_agg['market_group'] = 'market'
+    
+    # Create proper calendar-based lags using stata_multi_lag
+    market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'MarketCapitalization', [1, 2], prefix='l')
+    market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'MarketIlliquidity', [1, 2], prefix='l')
+    market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'rM', [1, 2], prefix='l')
+    
+    # Drop the dummy group column
+    market_agg = market_agg.drop('market_group', axis=1)
+    
+    # Compute temp variables for illiquidity regression
+    market_agg['temp'] = 0.25 + market_agg['MarketIlliquidity'] * market_agg['l1_MarketCapitalization']
+    market_agg['templ1'] = 0.25 + market_agg['l1_MarketIlliquidity'] * market_agg['l1_MarketCapitalization']
+    market_agg['templ2'] = 0.25 + market_agg['l2_MarketIlliquidity'] * market_agg['l1_MarketCapitalization']
+    
+    # Rolling regression for market illiquidity (asreg temp templ1 templ2)
+    print("Running rolling regressions for market model...")
+    
+    # Use proper asreg function for illiquidity regression
+    illiquidity_results = asreg(
+        market_agg,
+        y='temp',
+        X=['templ1', 'templ2'],
+        time='time_avail_m',
         window=60,
         min_obs=48,
-        add_constant=True
+        add_constant=True,
+        compute_se=False
     )
     
-    # Merge coefficients back to market data
-    market_agg = market_agg.merge(
-        illiq_reg[['_b_cons', '_b_templ1', '_b_templ2']],
-        left_index=True, right_index=True, how='left'
-    )
+    # Extract coefficients and calculate residuals manually (matching Stata asreg behavior)
+    market_agg['APa0'] = illiquidity_results['_b_cons']
+    market_agg['APa1'] = illiquidity_results['_b_templ1']
+    market_agg['APa2'] = illiquidity_results['_b_templ2']
     
-    # Calculate market illiquidity innovation (eps_c_M)
-    market_agg['eps_c_M'] = market_agg['temp'] - (
-        market_agg['_b_cons'] + 
-        market_agg['_b_templ1'] * market_agg['templ1'] + 
-        market_agg['_b_templ2'] * market_agg['templ2']
-    )
+    # Calculate residuals manually for illiquidity regression
+    fitted_temp = (market_agg['APa0'] + 
+                   market_agg['APa1'] * market_agg['templ1'] + 
+                   market_agg['APa2'] * market_agg['templ2'])
+    market_agg['eps_c_M'] = market_agg['temp'] - fitted_temp
     
-    valid_illiq_innovations = market_agg['eps_c_M'].count()
-    print(f"Market illiquidity innovations computed: {valid_illiq_innovations} observations")
-    
-    # Check date range of valid innovations
-    valid_illiq_dates = market_agg.dropna(subset=['eps_c_M'])
-    if len(valid_illiq_dates) > 0:
-        print(f"  Valid illiquidity innovations from {valid_illiq_dates['time_avail_m'].min().strftime('%Y-%m')} to {valid_illiq_dates['time_avail_m'].max().strftime('%Y-%m')}")
-else:
-    print("Insufficient data for market illiquidity regression")
-    market_agg['eps_c_M'] = np.nan
-    market_agg[['_b_cons', '_b_templ1', '_b_templ2']] = np.nan
-
-# Market return innovation regression
-print("Running market return innovation regression...")
-market_agg['rM_lag1'] = market_agg['rM'].shift(1)
-market_agg['rM_lag2'] = market_agg['rM'].shift(2)
-
-market_ret_clean = market_agg.dropna(subset=['rM', 'rM_lag1', 'rM_lag2']).copy()
-
-if len(market_ret_clean) > 60:
-    ret_reg = asreg(
-        market_ret_clean,
-        y="rM",
-        X=["rM_lag1", "rM_lag2"],
-        time="time_avail_m",
+    # Use proper asreg function for return regression
+    return_results = asreg(
+        market_agg,
+        y='rM',
+        X=['l1_rM', 'l2_rM'],
+        time='time_avail_m',
         window=60,
         min_obs=48,
-        add_constant=True
+        add_constant=True,
+        compute_se=False
     )
     
-    # Merge return regression coefficients
-    market_agg = market_agg.merge(
-        ret_reg[['_b_cons', '_b_rM_lag1', '_b_rM_lag2']],
-        left_index=True, right_index=True, how='left',
-        suffixes=('', '_ret')
-    )
+    # Calculate residuals manually for return regression
+    fitted_rM = (return_results['_b_cons'] + 
+                 return_results['_b_l1_rM'] * market_agg['l1_rM'] + 
+                 return_results['_b_l2_rM'] * market_agg['l2_rM'])
+    market_agg['eps_r_M'] = market_agg['rM'] - fitted_rM
     
-    # Calculate market return innovation (eps_r_M)
-    market_agg['eps_r_M'] = market_agg['rM'] - (
-        market_agg['_b_cons_ret'] + 
-        market_agg['_b_rM_lag1'] * market_agg['rM_lag1'] + 
-        market_agg['_b_rM_lag2'] * market_agg['rM_lag2']
-    )
+    # Keep only needed columns for merge
+    temp_placebo = market_agg[['time_avail_m', 'eps_c_M', 'eps_r_M', 'APa0', 'APa1', 'APa2']].copy()
     
-    print(f"Market return innovations computed: {market_agg['eps_r_M'].count()} observations")
+    # Merge with proper coefficient preservation
+    print("Merging market innovations back to stock data...")
+    df = df.merge(temp_placebo, on='time_avail_m', how='left')
     
-    # Check date range of valid return innovations  
-    valid_ret_dates = market_agg.dropna(subset=['eps_r_M'])
-    if len(valid_ret_dates) > 0:
-        print(f"  Valid return innovations from {valid_ret_dates['time_avail_m'].min().strftime('%Y-%m')} to {valid_ret_dates['time_avail_m'].max().strftime('%Y-%m')}")
+    # Compute stock-level innovation in illiquidity
+    print("Computing stock-level illiquidity innovations...")
+    
+    # Unnormalized liquidity for each stock (exactly as in Stata)
+    df['tempIll'] = np.minimum(df['ill'], (30 - 0.25) / (0.3 * df['MarketCapitalization']))
+    df.loc[df['ill'].isna(), 'tempIll'] = np.nan  # Handle missing values correctly
+    
+    # Create lags for tempIll using calendar-based lags  
+    df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempIll', [1, 2], prefix='l')
+    
+    # Stock-specific temp variables (not using market values!)
+    df['temp'] = 0.25 + df['tempIll'] * df['l1_MarketCapitalization']
+    df['templ1'] = 0.25 + df['l1_tempIll'] * df['l1_MarketCapitalization'] 
+    df['templ2'] = 0.25 + df['l2_tempIll'] * df['l1_MarketCapitalization']
+    
+    # Stock illiquidity innovation using STOCK-SPECIFIC temp variables with MARKET coefficients
+    # This is the exact Stata formula: eps_c_i = temp - (APa0 + APa1*templ1 + APa2*templ2)
+    df['eps_c_i'] = df['temp'] - (df['APa0'] + df['APa1'] * df['templ1'] + df['APa2'] * df['templ2'])
+    
+    # Compute betas using rolling statistics (asrol equivalents)
+    print("Computing rolling statistics for beta calculations...")
+    
+    def asrol_calendar_efficient(group, column, stat='mean', window_months=60, min_periods=24):
+        """Efficient calendar-based rolling using pandas reindexing"""
+        group = group.sort_values('time_avail_m')
         
-    # DEBUG: Check market innovation magnitudes around problematic period
-    print(f"\n=== MARKET INNOVATION DIAGNOSTICS ===")
-    target_period = market_agg[
-        (market_agg['time_avail_m'] >= pd.to_datetime('2017-01-01')) &
-        (market_agg['time_avail_m'] <= pd.to_datetime('2017-05-01'))
-    ]
-    
-    if len(target_period) > 0:
-        print(f"Market innovations around target period (2017-01 to 2017-05):")
-        for _, row in target_period.iterrows():
-            date_str = row['time_avail_m'].strftime('%Y-%m')
-            eps_c_M = row.get('eps_c_M', np.nan)
-            eps_r_M = row.get('eps_r_M', np.nan)
-            print(f"  {date_str}: eps_c_M = {eps_c_M:.8f}, eps_r_M = {eps_r_M:.8f}")
+        # Create complete monthly index for this group's date range
+        if len(group) == 0:
+            return pd.Series(np.nan, index=group.index)
             
-    # Check overall market innovation statistics
-    eps_c_M_stats = market_agg['eps_c_M'].describe()
-    eps_r_M_stats = market_agg['eps_r_M'].describe()
-    print(f"\nOverall market innovation statistics:")
-    print(f"eps_c_M: mean = {eps_c_M_stats['mean']:.6f}, std = {eps_c_M_stats['std']:.6f}")
-    print(f"eps_r_M: mean = {eps_r_M_stats['mean']:.6f}, std = {eps_r_M_stats['std']:.6f}")
+        start_date = group['time_avail_m'].min()
+        end_date = group['time_avail_m'].max()
         
-else:
-    print("Insufficient data for market return regression") 
-    market_agg['eps_r_M'] = np.nan
-
-# Keep essential columns for merging back
-market_results = market_agg[['time_avail_m', 'eps_c_M', 'eps_r_M', '_b_cons', '_b_templ1', '_b_templ2']].copy()
-
-# RESTORE equivalent - merge market results back to main dataset
-print("Step 5: Merging market innovations back to main dataset...")
-df = df.merge(market_results, on='time_avail_m', how='left')
-
-# Step 6: Stock-level illiquidity innovation 
-print("Step 6: Computing stock-level illiquidity innovations...")
-
-# Individual stock illiquidity measure (matching Stata exactly)
-df['tempIll'] = np.minimum(
-    df['ill'], 
-    (30.0 - 0.25) / (0.3 * df['MarketCapitalization'])
-)
-
-# Create lagged market cap by stock
-df['MarketCapitalization_lag1'] = df.groupby('permno')['MarketCapitalization'].shift(1)
-
-# Stock illiquidity terms using market coefficients  
-df['temp_stock'] = 0.25 + df['tempIll'] * df['MarketCapitalization_lag1']
-df['templ1_stock'] = 0.25 + df.groupby('permno')['tempIll'].shift(1) * df['MarketCapitalization_lag1']
-df['templ2_stock'] = 0.25 + df.groupby('permno')['tempIll'].shift(2) * df['MarketCapitalization_lag1']
-
-# Stock illiquidity innovation using market model coefficients
-df['eps_c_i'] = df['temp_stock'] - (
-    df['_b_cons'] + 
-    df['_b_templ1'] * df['templ1_stock'] + 
-    df['_b_templ2'] * df['templ2_stock']
-)
-
-# Step 7: Rolling statistics for beta computation
-print("Step 7: Computing rolling statistics...")
-
-# Filter to valid observations for rolling calculations
-df_work = df.dropna(subset=['ret', 'eps_r_M', 'eps_c_i', 'eps_c_M']).copy()
-
-if len(df_work) > 0:
-    print(f"Valid observations for rolling calculations: {len(df_work):,}")
-    
-    # Rolling means (60-month windows, minimum 24 observations)
-    print("Computing rolling means...")
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'ret', 'mean', 'mean60_ret', min_samples=24)
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'eps_r_M', 'mean', 'mean60_eps_r_M', min_samples=24)
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'eps_c_i', 'mean', 'mean60_eps_c_i', min_samples=24)
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'eps_c_M', 'mean', 'mean60_eps_c_M', min_samples=24)
-    
-    # Variance of difference (eps_r_M - eps_c_M) - BY STOCK over time
-    # NOTE: Stata line 83 DOES use "by(permno)" - variance calculated per stock over time
-    df_work['tempEpsDiff'] = df_work['eps_r_M'] - df_work['eps_c_M']
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'tempEpsDiff', 'std', 'sd60_tempEpsDiff', min_samples=24)
-    df_work['sd60_tempEpsDiff'] = df_work['sd60_tempEpsDiff'] ** 2
-    
-    # Covariance components
-    print("Computing covariance components...")
-    df_work['tempRR'] = (df_work['ret'] - df_work['mean60_ret']) * (df_work['eps_r_M'] - df_work['mean60_eps_r_M'])
-    df_work['tempCC'] = (df_work['eps_c_i'] - df_work['mean60_eps_c_i']) * (df_work['eps_c_M'] - df_work['mean60_eps_c_M'])
-    df_work['tempRC'] = (df_work['ret'] - df_work['mean60_ret']) * (df_work['eps_c_M'] - df_work['mean60_eps_c_M'])
-    df_work['tempCR'] = (df_work['eps_c_i'] - df_work['mean60_eps_c_i']) * (df_work['eps_r_M'] - df_work['mean60_eps_r_M'])
-    
-    # Rolling covariances (means of cross-products)
-    print("Computing rolling covariances...")
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'tempRR', 'mean', 'mean60_tempRR', min_samples=24)
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'tempCC', 'mean', 'mean60_tempCC', min_samples=24)
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'tempRC', 'mean', 'mean60_tempRC', min_samples=24)
-    df_work = asrol(df_work, 'permno', 'time_avail_m', '1mo', 60, 'tempCR', 'mean', 'mean60_tempCR', min_samples=24)
-    
-    # Step 8: Compute final betas
-    print("Step 8: Computing final betas...")
-    df_work['betaRR'] = df_work['mean60_tempRR'] / df_work['sd60_tempEpsDiff']
-    df_work['betaCC'] = df_work['mean60_tempCC'] / df_work['sd60_tempEpsDiff']
-    df_work['betaRC'] = df_work['mean60_tempRC'] / df_work['sd60_tempEpsDiff']
-    df_work['betaCR'] = df_work['mean60_tempCR'] / df_work['sd60_tempEpsDiff']
-    
-    # Debug specific problematic observation through full calculation
-    target_permno = 13030
-    target_date = pd.to_datetime('2017-05-01')
-    debug_obs = df_work[(df_work['permno'] == target_permno) & (df_work['time_avail_m'] == target_date)]
-    
-    if len(debug_obs) > 0:
-        obs = debug_obs.iloc[0]
-        print(f"\n=== COMPREHENSIVE DEBUG: permno {target_permno}, date {target_date.strftime('%Y-%m')} ===")
-        print(f"Target: Stata betaCC = 0.33517909, Python betaCC = {obs['betaCC']:.8f}")
+        # Create complete monthly range
+        complete_range = pd.date_range(start_date, end_date, freq='MS')
         
-        print(f"\nStep 6: Rolling covariance and final beta")
-        print(f"  mean60_tempCC: {obs['mean60_tempCC']:.8f}")
-        print(f"  sd60_tempEpsDiff: {obs['sd60_tempEpsDiff']:.8f}")
-        print(f"  betaCC = {obs['mean60_tempCC']:.8f} / {obs['sd60_tempEpsDiff']:.8f} = {obs['betaCC']:.8f}")
+        # Reindex to complete monthly grid (fills gaps with NaN)
+        temp_series = group.set_index('time_avail_m')[column].reindex(complete_range)
         
-        expected_mean60_tempCC = 0.33517909 * obs['sd60_tempEpsDiff']
-        print(f"  Expected mean60_tempCC for Stata result: {expected_mean60_tempCC:.8f}")
-        print(f"  Actual mean60_tempCC: {obs['mean60_tempCC']:.8f}")
-        print(f"  Ratio (expected/actual): {expected_mean60_tempCC/obs['mean60_tempCC']:.2f}")
-        
-        # INVESTIGATE: Check historical tempCC values for this stock
-        print(f"\n=== HISTORICAL tempCC ANALYSIS ===")
-        target_stock_history = df_work[
-            (df_work['permno'] == target_permno) & 
-            (df_work['time_avail_m'] >= target_date - pd.DateOffset(months=60)) &
-            (df_work['time_avail_m'] <= target_date)
-        ].copy()
-        
-        target_stock_history = target_stock_history.sort_values('time_avail_m')
-        
-        print(f"Historical data available: {len(target_stock_history)} months")
-        
-        if len(target_stock_history) >= 10:
-            # Show recent tempCC values
-            print(f"Last 10 months of tempCC values:")
-            recent_10 = target_stock_history.tail(10)
-            for _, row in recent_10.iterrows():
-                date_str = row['time_avail_m'].strftime('%Y-%m')
-                tempCC = row.get('tempCC', np.nan)
-                print(f"  {date_str}: tempCC = {tempCC:.8f}")
-            
-            # Manual calculation of rolling mean for verification
-            tempCC_values = target_stock_history['tempCC'].dropna()
-            if len(tempCC_values) >= 24:  # min_samples requirement
-                manual_mean = tempCC_values.tail(60).mean()  # Last 60 values (or fewer if not available)
-                print(f"\nManual verification:")
-                print(f"  Available tempCC observations: {len(tempCC_values)}")
-                print(f"  Used for rolling mean: {min(60, len(tempCC_values))} observations")
-                print(f"  Manual mean60_tempCC: {manual_mean:.8f}")
-                print(f"  asrol mean60_tempCC: {obs['mean60_tempCC']:.8f}")
-                print(f"  Match: {'✅' if abs(manual_mean - obs['mean60_tempCC']) < 1e-8 else '❌'}")
-                
-                # Check if tempCC values are reasonable
-                tempCC_mean = tempCC_values.mean()
-                tempCC_std = tempCC_values.std()
-                print(f"\nHistorical tempCC statistics:")
-                print(f"  Overall mean: {tempCC_mean:.8f}")
-                print(f"  Overall std: {tempCC_std:.8f}")
-                print(f"  Min: {tempCC_values.min():.8f}")
-                print(f"  Max: {tempCC_values.max():.8f}")
-            else:
-                print(f"Insufficient tempCC observations for analysis: {len(tempCC_values)}")
-        
-    else:
-        print(f"\nDEBUG: Target observation not found")
-    
-    # Check for inf/nan in component betas before computing betaNet
-    for beta in ['betaRR', 'betaCC', 'betaRC', 'betaCR']:
-        inf_count = np.isinf(df_work[beta]).sum()
-        if inf_count > 0:
-            print(f"  {beta}: {inf_count:,} inf values")
-            df_work[beta] = df_work[beta].replace([np.inf, -np.inf], np.nan)
-    
-    df_work['betaNet'] = df_work['betaRR'] + df_work['betaCC'] - df_work['betaRC'] - df_work['betaCR']
-    
-    # Check betaNet for inf values
-    betanet_inf = np.isinf(df_work['betaNet']).sum()
-    if betanet_inf > 0:
-        print(f"  betaNet: {betanet_inf:,} inf values - replacing with nan")
-        df_work['betaNet'] = df_work['betaNet'].replace([np.inf, -np.inf], np.nan)
-    
-    # Apply price filter (exact Stata condition) - filter applied to all observations
-    print("Applying price filter...")
-    for beta_name in ['betaRR', 'betaCC', 'betaRC', 'betaCR', 'betaNet']:
-        df_work.loc[df_work['prc'].abs() > 1000, beta_name] = np.nan
-    
-    print(f"Final dataset: {len(df_work):,} observations")
-    
-    # Step 9: Save results (matching standardized format)
-    print("Step 9: Saving results...")
-    for beta_name in ['betaRR', 'betaCC', 'betaRC', 'betaCR', 'betaNet']:
-        # Filter to non-missing observations
-        beta_subset = df_work.dropna(subset=[beta_name])[['permno', 'time_avail_m', beta_name]].copy()
-        
-        if len(beta_subset) > 0:
-            # Convert to yyyymm format for consistency
-            beta_subset['yyyymm'] = beta_subset['time_avail_m'].dt.year * 100 + beta_subset['time_avail_m'].dt.month
-            final_subset = beta_subset[['permno', 'yyyymm', beta_name]].copy()
-            
-            # Save using pandas to_csv for exact format control
-            output_path = f"../pyData/Placebos/{beta_name}.csv"
-            final_subset.to_csv(output_path, index=False)
-            print(f"✅ Saved {len(final_subset):,} {beta_name} observations to {beta_name}.csv")
+        # Apply rolling operation on complete grid
+        if stat == 'mean':
+            rolled = temp_series.rolling(window=window_months, min_periods=min_periods).mean()
+        elif stat == 'std':
+            rolled = temp_series.rolling(window=window_months, min_periods=min_periods).std()
         else:
-            # Save empty file with correct structure
-            empty_df = pd.DataFrame({'permno': [], 'yyyymm': [], beta_name: []})
-            output_path = f"../pyData/Placebos/{beta_name}.csv"
-            empty_df.to_csv(output_path, index=False)
-            print(f"❌ Saved 0 {beta_name} observations to {beta_name}.csv")
-            
-else:
-    print("❌ No valid data after filtering - saving empty files")
-    for beta_name in ['betaRR', 'betaCC', 'betaRC', 'betaCR', 'betaNet']:
-        empty_df = pd.DataFrame({'permno': [], 'yyyymm': [], beta_name: []})
-        output_path = f"../pyData/Placebos/{beta_name}.csv"
-        empty_df.to_csv(output_path, index=False)
-        print(f"❌ Saved 0 {beta_name} observations to {beta_name}.csv")
+            raise ValueError(f"Unsupported stat: {stat}")
+        
+        # Map back to original index
+        result_dict = rolled.to_dict()
+        result = group['time_avail_m'].map(result_dict).fillna(np.nan)
+        
+        return result
+    
+    # Sort for rolling operations
+    df = df.sort_values(['permno', 'time_avail_m'])
+    
+    # Use efficient calendar-based rolling (matching Stata asrol window(time_avail_m 60))
+    print("Computing efficient calendar-based rolling statistics...")
+    df['mean60_ret'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'ret', 'mean')).values
+    df['mean60_eps_r_M'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'eps_r_M', 'mean')).values
+    df['mean60_eps_c_i'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'eps_c_i', 'mean')).values
+    df['mean60_eps_c_M'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'eps_c_M', 'mean')).values
+    
+    # Use efficient calendar-based rolling std for variance (matching Stata)
+    df['tempEpsDiff'] = df['eps_r_M'] - df['eps_c_M']
+    df['sd60_tempEpsDiff'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'tempEpsDiff', 'std')).values
+    df['sd60_tempEpsDiff'] = df['sd60_tempEpsDiff'] ** 2  # Square for variance
+    
+    ########################CHECKPOINT 5##################################
+    #%%
+    #stata_df = pd.read_stata("../../pyData/Debug/checkpoint5.dta")
+    stata_df.head()
+    #%%
+    stata_df = stata_df[['permno', 'time_avail_m', 'ret', 'mean60_ret', 'eps_r_M', 'mean60_eps_r_M', 'eps_c_i', 'mean60_eps_c_i', 'eps_c_M', 'mean60_eps_c_M', 'sd60_tempEpsDiff']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
+    stata_df_long = (
+        stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    stata_df_long.head()
 
-print("✅ Beta Placebo v3 completed")
+    stata_df_long = stata_df_long = stata_df_long[(stata_df_long["permno"] == 93436) &
+                    (stata_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
+    stata_df_long
+    #%%
+    #%%
+
+    #%%
+    python_df = df[['permno', 'time_avail_m', 'ret', 'mean60_ret', 'eps_r_M', 'mean60_eps_r_M', 'eps_c_i', 'mean60_eps_c_i', 'eps_c_M', 'mean60_eps_c_M', 'sd60_tempEpsDiff']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
+    python_df_long = (
+        python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    python_df_long = python_df_long = python_df_long[(python_df_long["permno"] == 93436) &
+                    (python_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    python_df_long.rename(columns={'value': 'python'}, inplace=True)
+    python_df_long
+    #%%
+    both = stata_df_long.merge(python_df_long, on=['permno', 'time_avail_m', 'variable'], how='outer')
+    both['diff'] = both['stata'] - both['python']
+    both
+    #%%
+    ####################################################################
+
+    # Compute covariance terms
+    df['tempRR'] = (df['ret'] - df['mean60_ret']) * (df['eps_r_M'] - df['mean60_eps_r_M'])
+    df['tempCC'] = (df['eps_c_i'] - df['mean60_eps_c_i']) * (df['eps_c_M'] - df['mean60_eps_c_M'])
+    df['tempRC'] = (df['ret'] - df['mean60_ret']) * (df['eps_c_M'] - df['mean60_eps_c_M'])
+    df['tempCR'] = (df['eps_c_i'] - df['mean60_eps_c_i']) * (df['eps_r_M'] - df['mean60_eps_r_M'])
+    
+    # Efficient calendar-based rolling means of covariance terms
+    df['mean60_tempRR'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'tempRR', 'mean')).values
+    df['mean60_tempCC'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'tempCC', 'mean')).values
+    df['mean60_tempRC'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'tempRC', 'mean')).values
+    df['mean60_tempCR'] = df.groupby('permno').apply(lambda group: asrol_calendar_efficient(group, 'tempCR', 'mean')).values
+    
+    # Calculate final betas
+    print("Computing final beta measures...")
+    df['betaRR'] = df['mean60_tempRR'] / df['sd60_tempEpsDiff']
+    df['betaCC'] = df['mean60_tempCC'] / df['sd60_tempEpsDiff']
+    df['betaRC'] = df['mean60_tempRC'] / df['sd60_tempEpsDiff']
+    df['betaCR'] = df['mean60_tempCR'] / df['sd60_tempEpsDiff']
+    df['betaNet'] = df['betaRR'] + df['betaCC'] - df['betaRC'] - df['betaCR']
+    
+    # Apply price filter as in Stata
+    for var in ['betaRR', 'betaCC', 'betaRC', 'betaCR', 'betaNet']:
+        df.loc[df['prc'].abs() > 1000, var] = np.nan
+    
+    ########################CHECKPOINT 7##################################
+    #%%
+    stata_df = pd.read_stata("../../pyData/Debug/checkpoint7.dta")
+    stata_df = stata_df[['permno', 'time_avail_m', 'betaRR']]
+    stata_df = stata_df = stata_df[(stata_df["permno"] == 93436) &
+                    (stata_df["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    stata_df.rename(columns={'betaRR': 'stata'}, inplace=True)
+    #%%
+    python_df = df[['permno', 'time_avail_m', 'betaRR']]
+    python_df = python_df[['permno', 'time_avail_m', 'betaRR']]
+    python_df = python_df = python_df[(python_df["permno"] == 93436) &
+                    (python_df["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    python_df.rename(columns={'betaRR': 'python'}, inplace=True)
+    #%%
+    both = stata_df.merge(python_df, on=['permno', 'time_avail_m'], how='outer')
+    both['diff'] = both['stata'] - both['python']
+    both
+    #%%
+    ####################################################################
+
+    # SAVE
+    print("Saving placebo signals...")
+    save_placebo(df, 'betaRR')
+    save_placebo(df, 'betaCC') 
+    save_placebo(df, 'betaRC')
+    save_placebo(df, 'betaCR')
+    save_placebo(df, 'betaNet')
+    
+    print("ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py completed successfully")
+
+if __name__ == "__main__":
+    main()
+# %%
