@@ -28,47 +28,6 @@ def main():
     
     # Collapse by permno and time_avail_m to get mean illiquidity
     temp_ill = daily_crsp.groupby(['permno', 'time_avail_m'])['ill'].mean().reset_index()
-
-    ########################CHECKPOINT 2##################################
-    #%%
-    stata_df = pd.read_stata("../../pyData/Debug/checkpoint2.dta")
-    stata_df.head()
-    #%%
-    stata_df = stata_df[['permno', 'time_avail_m', 'ret', 'prc', 'vwretd', 'MarketCapitalization', 'ill', 'c_i']]
-    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
-    stata_df_long = (
-        stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
-                .sort_values(id_cols + ['variable'])
-                .reset_index(drop=True)
-    )
-    stata_df_long.head()
-
-    stata_df_long = stata_df_long = stata_df_long[(stata_df_long["permno"] == 93436) &
-                    (stata_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
-    stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
-    stata_df_long
-    #%%
-
-    #%%
-    python_df = df[['permno', 'time_avail_m', 'ret', 'prc', 'vwretd', 'MarketCapitalization', 'ill', 'c_i']]
-    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
-    python_df_long = (
-        python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
-                .sort_values(id_cols + ['variable'])
-                .reset_index(drop=True)
-    )
-    python_df_long = python_df_long = python_df_long[(python_df_long["permno"] == 93436) &
-                    (python_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
-    python_df_long.rename(columns={'value': 'python'}, inplace=True)
-    python_df_long
-    #%%
-    both = stata_df_long.merge(python_df_long, on=['permno', 'time_avail_m', 'variable'], how='outer')
-    both['diff'] = abs(both['stata'] - both['python'])
-    both = both.sort_values(by="diff", ascending=False, na_position="first")
-    both
-    both.to_csv("../../pyData/Debug/both_checkpoint2.csv", index=False)
-    #%%
-    ####################################################################
     
     print("Loading monthly CRSP data...")
     # Load monthly data
@@ -113,7 +72,7 @@ def main():
     stata_df = pd.read_stata("../../pyData/Debug/checkpoint2.dta")
     stata_df.head()
     #%%
-    stata_df = stata_df[['permno', 'time_avail_m', 'MarketCapitalization', 'ill', 'c_i']]
+    stata_df = stata_df[['permno', 'time_avail_m', 'ret', 'prc', 'vwretd', 'MarketCapitalization', 'ill', 'c_i']]
     id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
     stata_df_long = (
         stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
@@ -129,7 +88,7 @@ def main():
     #%%
 
     #%%
-    python_df = df[['permno', 'time_avail_m', 'MarketCapitalization', 'ill', 'c_i']]
+    python_df = df[['permno', 'time_avail_m', 'ret', 'prc', 'vwretd', 'MarketCapitalization', 'ill', 'c_i']]
     id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
     python_df_long = (
         python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
