@@ -50,11 +50,10 @@ engine.dispose()
 
 print(f"Downloaded {len(dist_data)} distribution records")
 
-# Convert date columns to standardized format before processing
+# Convert date columns to standardized format
 datecols = ['rcrddt', 'exdt', 'paydt']
 for col in datecols:
     dist_data[col] = pd.to_datetime(dist_data[col])
-    dist_data[col] = dist_data[col].dt.strftime('%Y-%m-%d')
 
 # Remove duplicate records based on permno, dates, and distribution code
 id_cols_plus = ['permno'] + datecols + ['distcd']
