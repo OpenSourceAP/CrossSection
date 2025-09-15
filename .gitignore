@@ -41,6 +41,8 @@ Signals/pyCode/dev/*
 
 # Testing exceptions
 !Logs/testout_predictors.md
+!Logs/02_CreatePredictors_console.txt
+!Logs/02_CreatePredictorsFlags.csv
 
 # Other
 Portfolios/Code/Rplots.pdf
