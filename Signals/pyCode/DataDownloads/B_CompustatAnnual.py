@@ -127,10 +127,10 @@ mask_dc3 = compustat_data['dc'].isna()
 compustat_data.loc[mask_dc3, 'dc'] = compustat_data.loc[mask_dc3, 'dcvt']
 
 # Create zero-filled versions of expense variables
-compustat_data['xint0'] = 0
+compustat_data['xint0'] = 0.0 # 0.0 ensures float64
 compustat_data.loc[compustat_data['xint'].notna(), 'xint0'] = compustat_data['xint']
 
-compustat_data['xsga0'] = 0
+compustat_data['xsga0'] = 0.0
 compustat_data.loc[compustat_data['xsga'].notna(), 'xsga0'] = compustat_data['xsga']
 
 compustat_data['xad0'] = compustat_data['xad'].fillna(0)
