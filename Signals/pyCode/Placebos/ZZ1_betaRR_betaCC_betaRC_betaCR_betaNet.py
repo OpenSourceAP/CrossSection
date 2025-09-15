@@ -28,6 +28,47 @@ def main():
     
     # Collapse by permno and time_avail_m to get mean illiquidity
     temp_ill = daily_crsp.groupby(['permno', 'time_avail_m'])['ill'].mean().reset_index()
+
+    ########################CHECKPOINT 2##################################
+    #%%
+    stata_df = pd.read_stata("../../pyData/Debug/checkpoint2.dta")
+    stata_df.head()
+    #%%
+    stata_df = stata_df[['permno', 'time_avail_m', 'ret', 'prc', 'vwretd', 'MarketCapitalization', 'ill', 'c_i']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
+    stata_df_long = (
+        stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    stata_df_long.head()
+
+    stata_df_long = stata_df_long = stata_df_long[(stata_df_long["permno"] == 93436) &
+                    (stata_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
+    stata_df_long
+    #%%
+
+    #%%
+    python_df = df[['permno', 'time_avail_m', 'ret', 'prc', 'vwretd', 'MarketCapitalization', 'ill', 'c_i']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
+    python_df_long = (
+        python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    python_df_long = python_df_long = python_df_long[(python_df_long["permno"] == 93436) &
+                    (python_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    python_df_long.rename(columns={'value': 'python'}, inplace=True)
+    python_df_long
+    #%%
+    both = stata_df_long.merge(python_df_long, on=['permno', 'time_avail_m', 'variable'], how='outer')
+    both['diff'] = abs(both['stata'] - both['python'])
+    both = both.sort_values(by="diff", ascending=False, na_position="first")
+    both
+    both.to_csv("../../pyData/Debug/both_checkpoint2.csv", index=False)
+    #%%
+    ####################################################################
     
     print("Loading monthly CRSP data...")
     # Load monthly data
@@ -66,6 +107,47 @@ def main():
     
     # Compute c_i with proper bounds
     df['c_i'] = np.minimum(0.25 + 0.3 * df['ill'] * df['MarketCapitalization'], 30)
+
+    ########################CHECKPOINT 2##################################
+    #%%
+    stata_df = pd.read_stata("../../pyData/Debug/checkpoint2.dta")
+    stata_df.head()
+    #%%
+    stata_df = stata_df[['permno', 'time_avail_m', 'MarketCapitalization', 'ill', 'c_i']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
+    stata_df_long = (
+        stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    stata_df_long.head()
+
+    stata_df_long = stata_df_long = stata_df_long[(stata_df_long["permno"] == 93436) &
+                    (stata_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
+    stata_df_long
+    #%%
+
+    #%%
+    python_df = df[['permno', 'time_avail_m', 'MarketCapitalization', 'ill', 'c_i']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
+    python_df_long = (
+        python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    python_df_long = python_df_long = python_df_long[(python_df_long["permno"] == 93436) &
+                    (python_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    python_df_long.rename(columns={'value': 'python'}, inplace=True)
+    python_df_long
+    #%%
+    both = stata_df_long.merge(python_df_long, on=['permno', 'time_avail_m', 'variable'], how='outer')
+    both['diff'] = abs(both['stata'] - both['python'])
+    both = both.sort_values(by="diff", ascending=False, na_position="first")
+    both
+    both.to_csv("../../pyData/Debug/both_checkpoint2.csv", index=False)
+    #%%
+    ####################################################################
     
     # Compute market illiquidity innovation and market return innovation
     print("Computing market innovations...")
@@ -168,10 +250,90 @@ def main():
     # Keep only needed columns for merge
     temp_placebo = market_agg[['time_avail_m', 'eps_c_M', 'eps_r_M', 'APa0', 'APa1', 'APa2']].copy()
     
+    ########################CHECKPOINT 3##################################
+    #%%
+    stata_df = pd.read_stata("../../pyData/Debug/checkpoint3.dta")
+    stata_df.head()
+    #%%
+    stata_df = stata_df[['time_avail_m', 'APa0', 'APa1', 'APa2', 'eps_c_M', 'eps_r_M']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
+    stata_df_long = (
+        stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    stata_df_long.head()
+
+    stata_df_long = stata_df_long = stata_df_long[(stata_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
+    stata_df_long
+    #%%
+
+    #%%
+    python_df = temp_placebo[['time_avail_m', 'APa0', 'APa1', 'APa2', 'eps_c_M', 'eps_r_M']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
+    python_df_long = (
+        python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    python_df_long = python_df_long = python_df_long[(python_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    python_df_long.rename(columns={'value': 'python'}, inplace=True)
+    python_df_long
+    #%%
+    both = stata_df_long.merge(python_df_long, on=['time_avail_m', 'variable'], how='outer')
+    both['diff'] = abs(both['stata'] - both['python'])
+    both = both.sort_values(by="diff", ascending=False)
+    both
+    both.to_csv("../../pyData/Debug/both_checkpoint3.csv", index=False)
+    #%%
+    ####################################################################
+
     # Merge with proper coefficient preservation
     print("Merging market innovations back to stock data...")
     df = df.merge(temp_placebo, on='time_avail_m', how='left')
     
+    ########################CHECKPOINT 4##################################
+    #%%
+    stata_df = pd.read_stata("../../pyData/Debug/checkpoint4.dta")
+    stata_df.head()
+    #%%
+    stata_df = stata_df[['permno', 'time_avail_m', 'ret', 'ill', 'MarketCapitalization', 'APa0', 'APa1', 'APa2', 'eps_c_M', 'eps_r_M']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in stata_df.columns]
+    stata_df_long = (
+        stata_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    stata_df_long.head()
+
+    stata_df_long = stata_df_long = stata_df_long[(stata_df_long["permno"] == 93436) &
+                    (stata_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
+    stata_df_long
+    #%%
+
+    #%%
+    python_df = df[['permno', 'time_avail_m', 'ret', 'ill', 'MarketCapitalization', 'APa0', 'APa1', 'APa2', 'eps_c_M', 'eps_r_M']]
+    id_cols = [c for c in ['permno', 'date', 'time_avail_m'] if c in python_df.columns]
+    python_df_long = (
+        python_df.melt(id_vars=id_cols, var_name='variable', value_name='value')
+                .sort_values(id_cols + ['variable'])
+                .reset_index(drop=True)
+    )
+    python_df_long = python_df_long = python_df_long[(python_df_long["permno"] == 93436) &
+                    (python_df_long["time_avail_m"] > pd.Timestamp("2015-01-01"))].copy()
+    python_df_long.rename(columns={'value': 'python'}, inplace=True)
+    python_df_long
+    #%%
+    both = stata_df_long.merge(python_df_long, on=['permno', 'time_avail_m', 'variable'], how='outer')
+    both['diff'] = abs(both['stata'] - both['python'])
+    both = both.sort_values(by="diff", ascending=False)
+    both
+    both.to_csv("../../pyData/Debug/both_checkpoint4.csv", index=False)
+    #%%
+    ####################################################################
+
     # Compute stock-level innovation in illiquidity
     print("Computing stock-level illiquidity innovations...")
     
@@ -242,7 +404,7 @@ def main():
     
     ########################CHECKPOINT 5##################################
     #%%
-    #stata_df = pd.read_stata("../../pyData/Debug/checkpoint5.dta")
+    stata_df = pd.read_stata("../../pyData/Debug/checkpoint5.dta")
     stata_df.head()
     #%%
     stata_df = stata_df[['permno', 'time_avail_m', 'ret', 'mean60_ret', 'eps_r_M', 'mean60_eps_r_M', 'eps_c_i', 'mean60_eps_c_i', 'eps_c_M', 'mean60_eps_c_M', 'sd60_tempEpsDiff']]
@@ -259,7 +421,6 @@ def main():
     stata_df_long.rename(columns={'value': 'stata'}, inplace=True)
     stata_df_long
     #%%
-    #%%
 
     #%%
     python_df = df[['permno', 'time_avail_m', 'ret', 'mean60_ret', 'eps_r_M', 'mean60_eps_r_M', 'eps_c_i', 'mean60_eps_c_i', 'eps_c_M', 'mean60_eps_c_M', 'sd60_tempEpsDiff']]
@@ -275,8 +436,10 @@ def main():
     python_df_long
     #%%
     both = stata_df_long.merge(python_df_long, on=['permno', 'time_avail_m', 'variable'], how='outer')
-    both['diff'] = both['stata'] - both['python']
+    both['diff'] = abs(both['stata'] - both['python'])
+    both = both.sort_values(by="diff", ascending=False)
     both
+    both.to_csv("../../pyData/Debug/both_checkpoint5.csv", index=False)
     #%%
     ####################################################################
 
@@ -319,8 +482,10 @@ def main():
     python_df.rename(columns={'betaRR': 'python'}, inplace=True)
     #%%
     both = stata_df.merge(python_df, on=['permno', 'time_avail_m'], how='outer')
-    both['diff'] = both['stata'] - both['python']
+    both['diff'] = abs(both['stata'] - both['python'])
+    both = both.sort_values(by="diff", ascending=False)
     both
+    both.to_csv("../../pyData/Debug/both_checkpoint7.csv", index=False)
     #%%
     ####################################################################
 
