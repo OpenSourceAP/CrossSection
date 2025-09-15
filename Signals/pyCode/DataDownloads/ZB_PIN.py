@@ -178,11 +178,7 @@ def main():
         pin_monthly = pin_monthly.head(MAX_ROWS_DL)
         print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
-    # Standardize column formats
-    pin_monthly = standardize_columns(pin_monthly, "pin_monthly")
-
-
-    # Save monthly PIN data to parquet
+    # Save to parquet
     pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet", index=False)
 
     print(f"PIN monthly data saved with {len(pin_monthly)} records")
