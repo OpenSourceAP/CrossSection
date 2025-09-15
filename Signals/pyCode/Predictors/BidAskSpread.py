@@ -70,9 +70,6 @@ if MAX_ROWS_DL > 0:
     df = df.head(MAX_ROWS_DL)
     print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
-# Standardize columns
-df = standardize_columns(df, 'BAspreadsCorwin')
-
 print(f"Processed data: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # SIGNAL CONSTRUCTION

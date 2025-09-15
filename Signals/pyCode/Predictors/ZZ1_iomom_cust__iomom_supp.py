@@ -124,9 +124,8 @@ final_iomom = iomom_wide[expected_cols].copy()
 # Convert gvkey to Int64 for consistency
 final_iomom['gvkey'] = final_iomom['gvkey'].astype('Int64')
 
-# Apply column standardization and save to parquet
+# Save to parquet
 output_path = "../pyData/Intermediate/InputOutputMomentumProcessed.parquet"
-final_iomom = standardize_columns(final_iomom, 'InputOutputMomentumProcessed')
 final_iomom.to_parquet(output_path, index=False)
 
 logger.info(f"Successfully saved {len(final_iomom):,} rows to {output_path}")
