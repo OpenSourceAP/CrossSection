@@ -54,6 +54,10 @@ if MAX_ROWS_DL > 0:
 crsp_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
+# enforce formats
+crsp_data[['permno','permco']] = crsp_data[['permno','permco']].astype('Int64')
+crsp_data['date'] = pd.to_datetime(crsp_data['date'])
+
 
 # Handle missing string values to match Stata behavior (empty strings instead of NaN)
 string_columns = ['ticker', 'shrcls']
@@ -68,7 +72,6 @@ crsp_data['sicCRSP'] = pd.to_numeric(crsp_data['sicCRSP'], errors='coerce')
 crsp_data = crsp_data.drop('siccd', axis=1)
 
 # Convert date to monthly timestamp (equivalent to Stata's mofd function)
-crsp_data['date'] = pd.to_datetime(crsp_data['date'])
 crsp_data['time_avail_m'] = crsp_data['date'].dt.to_period('M').dt.to_timestamp()
 crsp_data = crsp_data.drop('date', axis=1)
 

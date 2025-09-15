@@ -27,8 +27,6 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
 from config import MAX_ROWS_DL
-from utils.column_standardizer_yaml import standardize_columns
-
 
 print("Starting BidAskSpread.py...")
 

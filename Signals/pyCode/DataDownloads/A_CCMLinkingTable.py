@@ -43,30 +43,28 @@ ORDER BY a.gvkey
 """
 
 # Execute query to download linking table data
-ccm_data = pd.read_sql_query(QUERY, engine)
+df = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
-# Convert date columns to datetime format
-ccm_data['linkdt'] = pd.to_datetime(ccm_data['linkdt'])
-ccm_data['linkenddt'] = pd.to_datetime(ccm_data['linkenddt'])
+# Enforce formats
+df[['lpermno','lpermco']] = df[['lpermno','lpermco']].astype('Int64')
+df[['linkdt','linkenddt']] = df[['linkdt','linkenddt']].astype('datetime64[ns]')
 
-
-# Prepare and save Parquet version with renamed columns
-ccm_parquet_data = ccm_data.copy()
-ccm_parquet_data = ccm_parquet_data.rename(columns={
+# rename columns
+df = df.rename(columns={
     'linkdt': 'timeLinkStart_d',
     'linkenddt': 'timeLinkEnd_d',
-    'lpermno': 'permno'
+    'lpermno': 'permno',
+    'lpermco': 'permco'
 })
-ccm_parquet_data['naics'] = ccm_parquet_data['naics'].fillna('')
-ccm_parquet_data['cik'] = ccm_parquet_data['cik'].fillna('')
-ccm_parquet_data.to_parquet("../pyData/Intermediate/CCMLinkingTable.parquet", index=False)
+df['naics'] = df['naics'].fillna('')
+df['cik'] = df['cik'].fillna('')
+df.to_parquet("../pyData/Intermediate/CCMLinkingTable.parquet", index=False)
 
 # Display summary statistics
-
-print(f"CCM Linking Table downloaded with {len(ccm_data)} records", flush=True)
-print(f"Unique companies (gvkey): {ccm_data['gvkey'].nunique()}", flush=True)
-print(f"Unique stocks (lpermno): {ccm_data['lpermno'].nunique()}", flush=True)
+print(f"CCM Linking Table downloaded with {len(df)} records", flush=True)
+print(f"Unique companies (gvkey): {df['gvkey'].nunique()}", flush=True)
+print(f"Unique stocks (permno): {df['permno'].nunique()}", flush=True)
 print("=" * 60, flush=True)
 print("✅ A_CCMLinkingTable.py completed successfully", flush=True)
 print("=" * 60, flush=True)
