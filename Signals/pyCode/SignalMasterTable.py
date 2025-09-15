@@ -104,11 +104,40 @@ OptionMetricsLink_path = Path(
 if OptionMetricsLink_path.exists():
     print("Adding OptionMetrics-CRSP link...")
 
-    om_link = pd.read_parquet(
-        OptionMetricsLink_path, columns=["permno", "time_avail_m", "secid"]
+    # Load raw linking data
+    om_link = pd.read_parquet(OptionMetricsLink_path)
+
+    # Convert daily link dates to monthly periods
+    # Convert start date to first day of same month
+    om_link['sdate_m'] = pd.to_datetime(om_link['sdate']).dt.to_period('M').dt.to_timestamp()
+
+    # Convert end date to previous month (since monthly dates assume end of month)
+    om_link["edate_m"] = (
+        pd.to_datetime(om_link["edate"]).dt.to_period("M") - 1
+    ).dt.to_timestamp()
+
+    # Create temporary df with time_avail_m for merging
+    temp_om = om_link.merge(
+        df[['permno', 'time_avail_m']].drop_duplicates(),
+        on=['permno'],
+        how='inner'
     )
 
-    df = df.merge(om_link, on=["permno", "time_avail_m"], how="left")
+    # Filter for valid date ranges
+    temp_om = temp_om[
+        (temp_om['time_avail_m'] >= temp_om['sdate_m']) &
+        (temp_om['time_avail_m'] <= temp_om['edate_m'])
+    ]
+
+    # Remove duplicates by keeping best score for each permno-month
+    # Lower score indicates better match quality
+    temp_om = temp_om.sort_values(['permno','time_avail_m','score']).groupby(['permno','time_avail_m']).first().reset_index()
+
+    # Keep only needed columns and rename score to om_score
+    temp_om = temp_om[['permno', 'time_avail_m', 'secid', 'score']].rename(columns={'score': 'om_score'})
+
+    # Merge with main dataframe
+    df = df.merge(temp_om[['permno', 'time_avail_m', 'secid']], on=["permno", "time_avail_m"], how="left")
 
     print(f"After OptionMetrics link merge: {df.shape[0]} rows, {df.shape[1]} columns")
 else:
