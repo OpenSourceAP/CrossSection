@@ -37,11 +37,12 @@ Signals/Debug/*
 Signals/pyCode/Debug/*
 Signals/zzz-archive/*
 Signals/Human/*
-dev*.sh
-dev_batch_predictors.py
+Signals/pyCode/dev/*
 
 # Testing exceptions
-!Logs/testout_predictors.md
+!Signals/Logs/testout_predictors.md
+!Signals/Logs/02_CreatePredictors_console.txt
+!Signals/Logs/02_CreatePredictorsFlags.csv
 
 # Other
 Portfolios/Code/Rplots.pdf

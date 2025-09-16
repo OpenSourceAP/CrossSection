@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
 """
-Master file for pyCode - Python equivalent of master.do
-
-This script mimics the functionality of ../Code/master.do
+ABOUTME: Master orchestrator that runs the complete data processing pipeline
+ABOUTME: Executes data downloads (01_DownloadData.py) then predictor creation (02_CreatePredictors.py)
+Inputs: WRDS credentials from .env file, existing folder structure
+Outputs: Complete pipeline execution with data in pyData/ folders
+How to run: python master.py (from pyCode/ directory)
 """
 
 import os
@@ -13,7 +14,7 @@ from dotenv import load_dotenv
 
 
 def check_environment():
-    """Check that required environment variables are set"""
+    """Verify WRDS credentials are available in environment"""
     print("Checking environment setup...")
 
     # Load environment variables
@@ -33,7 +34,7 @@ def check_environment():
 
 
 def check_folder_structure():
-    """Check that required folders exist"""
+    """Verify required data and log folders exist"""
     print("Checking folder structure...")
 
     required_folders = [
@@ -61,8 +62,8 @@ def check_folder_structure():
 
 
 def run_settings():
-    """Run setup equivalent to settings.do - folder creation and checks"""
-    print("Running setup (equivalent to settings.do)...")
+    """Create missing folders and verify directory structure"""
+    print("Running folder setup and verification...")
 
     if not check_folder_structure():
         print("Creating missing folders...")
@@ -74,9 +75,9 @@ def run_settings():
 
 
 def main():
-    """Main execution function mimicking master.do"""
+    """Execute complete data processing pipeline"""
     print("=" * 60)
-    print("Python Master Script - pyCode equivalent of master.do")
+    print("Python Data Processing Pipeline - Master Orchestrator")
     print("=" * 60)
 
     # Check if we're in the right directory (should end with pyCode)
@@ -86,19 +87,19 @@ def main():
         print(f"Current directory: {current_dir}")
         sys.exit(1)
 
-    # Check environment setup (equivalent to checking globals in master.do)
+    # Verify WRDS credentials and environment setup
     if not check_environment():
         sys.exit(1)
 
-    # Run settings equivalent
+    # Create required folders and verify structure
     run_settings()
 
-    # Set CSV output option (equivalent to global save_csv 1)
+    # Enable CSV output for data files
     os.environ["SAVE_CSV"] = "1"
 
     print("\nRunning main processing steps...")
 
-    # Download data (equivalent to do "$pathCode/01_DownloadData.do")
+    # Execute all data download scripts sequentially
     print("\n1. Running data downloads...")
     try:
         # Use subprocess.run without capture_output for real-time streaming
@@ -109,7 +110,7 @@ def main():
         print(f"ERROR in data downloads: {e}")
         sys.exit(1)
 
-    # Create predictors (equivalent to do "$pathCode/02_CreatePredictors.do")
+    # Generate predictor signals from downloaded data
     print("\n2. Creating predictors...")
     try:
         # Use subprocess.run without capture_output for real-time streaming
@@ -120,7 +121,7 @@ def main():
         print(f"ERROR in predictor creation: {e}")
         sys.exit(1)
 
-    # TODO: Create placebos (equivalent to do "$pathCode/03_CreatePlacebos.do")
+    # TODO: Generate placebo signals for validation
     # print("\n3. Creating placebos...")
 
     print("\n" + "=" * 60)

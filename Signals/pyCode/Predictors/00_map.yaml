@@ -197,6 +197,10 @@ CredRatDG.py:
   - CredRatDG.csv
   placebos: []
 CustomerMomentum.py:
+  inputs:
+  - CompustatSegmentDataCustomers.csv
+  - CCMLinkingTable.csv
+  - mCRSP.csv
   predictors:
   - CustomerMomentum.csv
   placebos: []
@@ -419,14 +423,6 @@ InvGrowth.py:
 IO_ShortInterest.py:
   predictors:
   - IO_ShortInterest.csv
-  placebos: []
-iomom_cust.py:
-  predictors:
-  - iomom_cust.csv
-  placebos: []
-iomom_supp.py:
-  predictors:
-  - iomom_supp.csv
   placebos: []
 Leverage.py:
   predictors:
@@ -807,6 +803,11 @@ ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py:
 ZZ1_RIVolSpread.py:
   predictors:
   - RIVolSpread.csv
+  placebos: []
+ZZ1_iomom_cust__iomom_supp.py:
+  predictors:
+  - iomom_cust.csv
+  - iomom_supp.csv
   placebos: []
 ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py:
   predictors:

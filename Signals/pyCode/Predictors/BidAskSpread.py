@@ -10,7 +10,7 @@ Usage:
     python3 Predictors/BidAskSpread.py
 
 Inputs:
-    - BAspreadsCorwin.parquet: Pre-computed bid-ask spreads from Corwin-Schultz methodology
+    - corwin_schultz_spread.csv: Pre-computed bid-ask spreads from Corwin-Schultz methodology
 
 Outputs:
     - BidAskSpread.csv: CSV file with columns [permno, yyyymm, BidAskSpread]
@@ -26,21 +26,51 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_predictor
-
+from config import MAX_ROWS_DL
 
 print("Starting BidAskSpread.py...")
 
 # DATA LOAD
-print("Loading BAspreadsCorwin data...")
+print("Loading corwin_schultz_spread data...")
 
-# Load pre-computed bid-ask spreads data
-ba_spreads_path = Path("../pyData/Intermediate/BAspreadsCorwin.parquet")
-if not ba_spreads_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {ba_spreads_path}")
+# Load preprocessed Corwin-Schultz spread data from CSV
+input_file = "../pyData/Prep/corwin_schultz_spread.csv"
 
-df = pd.read_parquet(ba_spreads_path)
+if not os.path.exists(input_file):
+    raise FileNotFoundError(f"Input file not found: {input_file}")
 
-print(f"Loaded BAspreadsCorwin: {df.shape[0]} rows, {df.shape[1]} columns")
+df = pd.read_csv(input_file)
+print(f"Loaded {len(df)} records from {input_file}")
+
+# DATA TRANSFORMATION
+# Convert month string (YYYYMM format) to time_avail_m period
+df['month'] = df['month'].astype(str)
+df['y'] = df['month'].str[:4].astype(int)
+df['m'] = df['month'].str[4:6].astype(int)
+df['time_avail_m'] = pd.PeriodIndex.from_fields(
+    year=df['y'], month=df['m'], freq='M'
+)
+df = df.drop(['y', 'm', 'month'], axis=1)
+
+# Clean and standardize data
+df = df.dropna(subset=['PERMNO'])
+print(f"After dropping missing PERMNO: {len(df)} records")
+
+df = df.rename(columns={
+    'PERMNO': 'permno',
+    'hlspread': 'BidAskSpread'
+})
+df['permno'] = df['permno'].astype('int64')
+
+# Convert period to timestamp for parquet compatibility
+df['time_avail_m'] = df['time_avail_m'].dt.to_timestamp()
+
+# Apply debugging row limit if configured
+if MAX_ROWS_DL > 0:
+    df = df.head(MAX_ROWS_DL)
+    print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+print(f"Processed data: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # SIGNAL CONSTRUCTION
 

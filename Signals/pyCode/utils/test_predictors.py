@@ -96,20 +96,26 @@ def load_csv_robust_polars(file_path):
     try:
         # Get the predictor name from the file path
         predictor_name = Path(file_path).stem
-        
-        # Always use schema overrides for predictor files
-        schema_overrides = {
-            'permno': pl.Int64,
-            'yyyymm': pl.Int64,
-            predictor_name: pl.Float64
-        }
-        
-        df = pl.read_csv(file_path, schema_overrides=schema_overrides)
-        
+
+        # First read with automatic types, but increase infer_schema_length
+        # to catch decimal values that may appear after many integer rows
+        df = pl.read_csv(file_path, infer_schema_length=10000)
+
+        # Cast permno and yyyymm to int64 (they may be read as float due to CSV format)
+        if 'permno' in df.columns:
+            df = df.with_columns(pl.col('permno').cast(pl.Int64))
+        if 'yyyymm' in df.columns:
+            df = df.with_columns(pl.col('yyyymm').cast(pl.Int64))
+
+        # Ensure predictor columns are float64
+        for col in df.columns:
+            if col not in ['permno', 'yyyymm']:
+                df = df.with_columns(pl.col(col).cast(pl.Float64))
+
         # Filter out rows where the predictor value is null or NaN
         if predictor_name in df.columns:
             df = df.filter(pl.col(predictor_name).is_finite())
-        
+
         return df
     except Exception as e:
         print(f"Failed to load {file_path}: {e}")
