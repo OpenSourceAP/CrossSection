@@ -69,8 +69,8 @@ MAX_WORST_ROWS_FOR_SAMPLE = 20  # Maximum rows in CSV samples
 # ================================
 
 def load_overrides():
-    """Load validation overrides from DataDownloads/overrides.yaml"""
-    overrides_path = Path("DataDownloads/overrides.yaml")
+    """Load validation overrides"""
+    overrides_path = Path("DataDownloads/01_overrides.yaml")
     if not overrides_path.exists():
         return {}
     
@@ -1068,7 +1068,7 @@ def format_results_to_markdown(results_list: list, max_rows: int, tolerance: flo
     lines.append(f"**Imperfect ratio threshold**: {imperfect_ratio_threshold * 100:.1f}%")
     lines.append(f"**Execution time**: {execution_time:.2f} minutes")
     lines.append("")
-    lines.append("**Validation Overrides**: [DataDownloads/overrides.yaml](DataDownloads/overrides.yaml)")
+    lines.append("**Validation Overrides**: [DataDownloads/01_overrides.yaml](DataDownloads/01_overrides.yaml)")
     lines.append("")
     lines.append("**Cell Matching Logic**:")
     lines.append(f"- Perfect cell: |stata_value - python_value| ≤ {tolerance}")
