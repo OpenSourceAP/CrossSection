@@ -1,9 +1,10 @@
 # ABOUTME: Downloads Compustat annual fundamental data from WRDS and processes into annual/monthly versions
-# ABOUTME: Creates zero-filled variables, merges with CCM linking table, and applies 6-month reporting lag
+# ABOUTME: Creates zero-filled variables, includes CCM linking, and applies 6-month reporting lag
 """
 Inputs:
 - WRDS comp.funda database (annual fundamentals)
-- ../pyData/Intermediate/CCMLinkingTable.parquet
+- comp.names (company master file)
+- crsp.ccmxpf_lnkhist (CRSP-Compustat link history)
 
 Outputs:
 - ../pyData/Intermediate/CompustatAnnual.csv
@@ -63,7 +64,6 @@ if MAX_ROWS_DL > 0:
 
 # Execute query and download data from WRDS
 compustat_data_raw = pd.read_sql_query(QUERY, engine)
-engine.dispose()
 print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
 
 # Fix column types: convert object columns with all None values to float64
@@ -144,8 +144,40 @@ zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
 for var in zero_fill_vars:
     compustat_data[var] = compustat_data[var].fillna(0)
 
-# Load CCM linking table and merge with Compustat data
-ccm_data = pd.read_parquet("../pyData/Intermediate/CCMLinkingTable.parquet")
+# Download CCM linking table data directly (removing dependency on A_CCMLinkingTable.py)
+print("Downloading CCM linking table data...", flush=True)
+CCM_QUERY = """
+SELECT a.gvkey, a.conm, a.tic, a.cusip, a.cik, a.sic, a.naics,
+       b.linkprim, b.linktype, b.liid, b.lpermno, b.lpermco,
+       b.linkdt, b.linkenddt
+FROM comp.names as a
+INNER JOIN crsp.ccmxpf_lnkhist as b
+ON a.gvkey = b.gvkey
+WHERE b.linktype in ('LC', 'LU')
+AND b.linkprim in ('P', 'C')
+ORDER BY a.gvkey
+"""
+
+# Execute CCM linking query using same engine
+ccm_data = pd.read_sql_query(CCM_QUERY, engine)
+
+# Process CCM data with same logic as A_CCMLinkingTable.py
+ccm_data[['lpermno','lpermco']] = ccm_data[['lpermno','lpermco']].astype('Int64')
+ccm_data[['linkdt','linkenddt']] = ccm_data[['linkdt','linkenddt']].astype('datetime64[ns]')
+
+# Rename columns to match expected format
+ccm_data = ccm_data.rename(columns={
+    'linkdt': 'timeLinkStart_d',
+    'linkenddt': 'timeLinkEnd_d',
+    'lpermno': 'permno',
+    'lpermco': 'permco'
+})
+ccm_data['naics'] = ccm_data['naics'].fillna('')
+ccm_data['cik'] = ccm_data['cik'].fillna('')
+print(f"CCM linking table loaded with {len(ccm_data)} records", flush=True)
+
+# Close database connection after both queries are complete
+engine.dispose()
 
 # Remove duplicate columns from CCM data to replicate Stata's joinby update behavior
 ccm_columns_to_drop = ['conm', 'cusip', 'tic']  # Keep these from compustat_data
