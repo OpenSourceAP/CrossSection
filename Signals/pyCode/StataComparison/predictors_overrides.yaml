@@ -138,3 +138,17 @@ OptionVolume2:
   reviewed_by: ac
   details: |
     Large changes compared to the Stata data are expected. We updated to fix https://github.com/OpenSourceAP/CrossSection/issues/166. t-stat increased 0.50.
+
+ReturnSkew3F:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    2.3% of obs differ by more than 0.01 standard deviations. But regressing python signals on stata signals has a coefficient of 0.9941 and Rsq of 0.9825. Given that this predictor involves rolling regressions and then higher order moments on the residuals, we might expect these deviations. The t-stat is slightly improved. Most importantly, the code looks correct.
+
+CitationsRD:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    CitationsRD involves the ratio of rolling means of variables with lots of missing values (R&D and patent citations), as well as an FF1993-style double sort. So deviations are acceptable. T-stat is unchanged. The code looks correct.
