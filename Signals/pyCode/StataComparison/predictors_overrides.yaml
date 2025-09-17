@@ -124,4 +124,17 @@ ChNAnalyst:
   reviewed_by: ac
   details: |
     Large changes compared to the stata data are expected. ChAnalyst.do had an error it: the size grouping were formed using all data instead of by month. Commit 842dafc fixes this in ChAnalyst.py. The t-stat is unchanged (raw t-stat still much smaller than OP's FF3 t-stat). 
-    
+
+OptionVolume1:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    Large changes compared to the Stata data are expected. We updated to fix https://github.com/OpenSourceAP/CrossSection/issues/166. t-stat is little changed.
+
+OptionVolume2:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    Large changes compared to the Stata data are expected. We updated to fix https://github.com/OpenSourceAP/CrossSection/issues/166. t-stat increased 0.50.
