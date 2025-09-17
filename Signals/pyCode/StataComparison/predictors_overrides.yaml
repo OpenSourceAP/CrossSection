@@ -187,3 +187,110 @@ MomOffSeason16YrPlus:
   reviewed_by: ac
   details: |
     This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 2.88, which is +0.30 higher than the previous t-stat. It's still not quite as high as the original paper's 3.35, but it's closer. 
+
+iomom_supp:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This is a very complicated predictor and I streamlined the code greatly, cutting out the csv versions of CRSP and CCMLinkingTable. The t-stat is unchanged.
+
+iomom_cust:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This is a very complicated predictor and I streamlined the code greatly, cutting out the csv versions of CRSP and CCMLinkingTable. The t-stat is unchanged.    
+
+PriceDelayRsq:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small. Only 1.2% of obs differ by more than 0.01 standard deviations. The t-stat is unchanged.
+
+retConglomerate:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small. 
+
+CustomerMomentum:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small.     
+
+MomVol:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A relatively complicated predictor (asrol, intersecting variables) and the deviations are small.
+
+EarnSupBig:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A complicated predictor (asrol, intersecting variables) and the deviations are small.    
+
+CPVolSpread:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+dCPVolSpread:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+dVolCall:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+dVolPut:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+skew1:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+SmileSlope:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+ZZ1_RIVolSpread:
+  status: override
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+    
