@@ -21,16 +21,15 @@ df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
 
 # SIGNAL CONSTRUCTION
-# Replace missing returns with 0
-df['ret'] = df['ret'].fillna(0)
 
-# Years 6-10 before predicted month = months 61-120 before time_predict_m
-# time_predict_m = time_avail_m + 1 month (the month we're predicting)
-# So we need lags 60-119 from time_avail_m
+# Define Years 6-10 before predicted month (we're predicting 1 month after time_avail_m)
+years_range = [6, 10]
+lag_start = (years_range[0] - 1) * 12
+lag_end = years_range[1] * 12
 
-# Exclude same calendar month as predicted month (lags 71, 83, 95, 107, 119)
-same_month_lags = [71, 83, 95, 107, 119]
-off_season_lags = [lag for lag in range(60, 120) if lag not in same_month_lags]
+# Exclude same calendar month as predicted month
+# A lag represents same month when (lag + 1) % 12 == 0
+off_season_lags = [lag for lag in range(lag_start, lag_end) if (lag + 1) % 12 != 0]
 
 print(f"Creating {len(off_season_lags)} off-season lag variables...")
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', off_season_lags)
@@ -39,12 +38,9 @@ df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', off_season_lags)
 lag_cols = [f'ret_lag{n}' for n in off_season_lags]
 df['MomOffSeason06YrPlus'] = df[lag_cols].mean(axis=1)
 
-# Force to NA if all lag values are missing
-all_missing = df[lag_cols].isna().all(axis=1)
-df.loc[all_missing, 'MomOffSeason06YrPlus'] = np.nan
-
 # SAVE
-print(f"Calculated MomOffSeason06YrPlus for {df['MomOffSeason06YrPlus'].notna().sum()} observations")
+num_obs = df['MomOffSeason06YrPlus'].notna().sum()
+print(f"Calculated MomOffSeason06YrPlus for {num_obs} observations")
 
 save_predictor(df, 'MomOffSeason06YrPlus')
 print("MomOffSeason06YrPlus.py completed successfully")
