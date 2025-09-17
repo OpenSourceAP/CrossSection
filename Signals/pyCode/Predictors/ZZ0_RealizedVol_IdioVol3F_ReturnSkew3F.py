@@ -10,8 +10,6 @@ Generates three volatility and skewness predictors from daily CRSP returns and F
 - ReturnSkew3F: Skewness of daily idiosyncratic returns (residuals from FF3 model)
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
     python3 Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
 
 Inputs:
@@ -43,33 +41,33 @@ print("🏗️  ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py")
 print("Generating RealizedVol, IdioVol3F, and ReturnSkew3F predictors")
 print("=" * 80)
 
-# DATA LOAD
+# Load daily stock returns data and Fama-French 3-factor model data
+# These will be merged to calculate idiosyncratic returns via regression
 print("📊 Loading daily CRSP and Fama-French data...")
 
-# Load daily CRSP data (permno, time_d, ret)
 print("Loading dailyCRSP.parquet...")
 crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet").select(["permno", "time_d", "ret"])
 print(f"Loaded CRSP: {len(crsp):,} daily observations")
 
-# Load daily FF factors and merge
 print("Loading dailyFF.parquet...")
 ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet").select(["time_d", "rf", "mktrf", "smb", "hml"])
 print(f"Loaded FF factors: {len(ff):,} daily observations")
 
-# Merge CRSP and FF data
 print("Merging CRSP and FF data...")
 df = crsp.join(ff, on="time_d", how="inner")
 print(f"Merged dataset: {len(df):,} observations")
 
-# Adjust returns: ret = ret - rf (equivalent to the's "Update ret - rf")
+# Convert raw returns to excess returns by subtracting risk-free rate
+# This is required for the Fama-French 3-factor regression
 print("Adjusting returns by risk-free rate...")
 df = df.with_columns((pl.col("ret") - pl.col("rf")).alias("ret")).drop("rf")
 
 
-# SIGNAL CONSTRUCTION
+# Begin calculating the three volatility/skewness predictors
 print("\n🔧 Starting signal construction...")
 
-# Create time_avail_m (year-month) equivalent to the's "Generate mofd(time_d)"
+# Create month identifier for grouping daily observations
+# All daily returns within a month will be used to calculate that month's predictors
 print("Creating time_avail_m (year-month identifier)...")
 df = df.with_columns(
     pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
@@ -78,14 +76,14 @@ df = df.with_columns(
 
 print(f"Date range: {df['time_d'].min()} to {df['time_d'].max()}")
 
-# Run FF3 regressions by permno-month using direct polars-ols helper to get residuals
-# equivalent to the's "bys permno time_avail_m: asreg ret mktrf smb hml, fit"
+# Run Fama-French 3-factor regression for each permno-month
+# Regression: excess_return = alpha + beta1*mktrf + beta2*smb + beta3*hml + residual
+# The residuals represent idiosyncratic returns after removing market, size, and value factors
+# Minimum 15 daily observations required per month (Bali-Hovakimian 2009)
 print("Running FF3 regressions by permno-month to extract residuals...")
 
-# Sort data first (required for asreg)
 df = df.sort(["permno", "time_avail_m", "time_d"])
 
-# Use direct polars-ols with group mode for per-group regressions
 df_with_residuals = df.with_columns(
     pl.col("ret").least_squares.ols(
         pl.col("mktrf"), pl.col("smb"), pl.col("hml"),
@@ -97,73 +95,65 @@ df_with_residuals = df.with_columns(
     pl.col("ret").count().over(['permno', 'time_avail_m']) >= 15
 )
 
-# Rename residual column to match original naming
 df_with_residuals = df_with_residuals.rename({"resid": "_residuals"})
 
 
-# Add _Nobs for each observation (replicates Stata's asreg behavior)
-# In Stata, asreg adds _Nobs to every observation in the group
+# Track the number of observations used in each regression
+# This replicates Stata's asreg behavior which adds _Nobs to every observation
 print("Adding _Nobs to track observations used in regression...")
 df_with_nobs = df_with_residuals.with_columns(
-    # Count non-null residuals per group - this is what asreg's _Nobs represents
     pl.col("_residuals").filter(pl.col("_residuals").is_not_null()).count()
     .over(["permno", "time_avail_m"]).alias("_Nobs")
 )
 
-# Check for any missing residuals
 missing_residuals = df_with_nobs.filter(pl.col("_residuals").is_null()).height
 if missing_residuals > 0:
     print(f"⚠️  Warning: {missing_residuals} observations with missing residuals (likely singular matrices)")
 
 print(f"Completed regressions: {len(df_with_nobs):,} observations")
 
-# Apply Stata-equivalent filtering: keep observations where regression succeeded  
-# The original Stata code "keep if _Nobs >= 15" is effectively handled by our regression
-# since failed regressions (insufficient data) produce null residuals
+# Remove observations where regression failed (e.g., singular matrix, insufficient variation)
+# These would have null residuals and cannot be used for predictor calculation
 print("Filtering out observations where FF3 regression failed (null residuals)...")
 df_filtered = df_with_nobs.filter(pl.col("_residuals").is_not_null())
 print(f"After removing null residuals: {len(df_filtered):,} observations")
 
 
-# Check how many permno-month groups this represents  
 groups_after_filter = df_filtered.select(["permno", "time_avail_m"]).unique().height
 print(f"Permno-month groups after filtering: {groups_after_filter:,}")
 
-
-# Calculate the three predictors with targeted fix for extreme cases
+# Calculate the three predictors for each permno-month:
+# 1. RealizedVol: Standard deviation of daily excess returns (total volatility)
+# 2. IdioVol3F: Standard deviation of FF3 residuals (idiosyncratic volatility)
+# 3. ReturnSkew3F: Skewness of FF3 residuals (idiosyncratic skewness)
 print("Calculating predictors using group aggregations...")
 predictors = df_filtered.group_by(["permno", "time_avail_m"]).agg([
-    pl.col("ret").std().alias("RealizedVol"),              # (sd) RealizedVol = ret
-    pl.col("_residuals").std().alias("IdioVol3F"),         # (sd) IdioVol3F = _residuals  
-    pl.col("_residuals").skew().alias("ReturnSkew3F")      # (skewness) ReturnSkew3F = _residuals
+    pl.col("ret").std().alias("RealizedVol"),
+    pl.col("_residuals").std().alias("IdioVol3F"),
+    pl.col("_residuals").skew().alias("ReturnSkew3F")
 ])
-
-
-# NO POST-PROCESSING: Stata code does not modify ReturnSkew3F values
 
 print(f"Generated predictors: {len(predictors):,} permno-month observations")
 
-# Show sample statistics
 print("\n📈 Predictor summary statistics:")
 summary = predictors.select([
     pl.col("RealizedVol").mean().alias("RealizedVol_mean"),
     pl.col("RealizedVol").std().alias("RealizedVol_std"),
-    pl.col("IdioVol3F").mean().alias("IdioVol3F_mean"), 
+    pl.col("IdioVol3F").mean().alias("IdioVol3F_mean"),
     pl.col("IdioVol3F").std().alias("IdioVol3F_std"),
     pl.col("ReturnSkew3F").mean().alias("ReturnSkew3F_mean"),
     pl.col("ReturnSkew3F").std().alias("ReturnSkew3F_std")
 ])
 print(summary)
 
-# SAVE
+# Save the three predictors to separate CSV files
+# Each file contains permno, time_avail_m, and the predictor value
 print("\n💾 Saving predictors...")
 
-# Convert to pandas for compatibility with existing save_predictor utility
 predictors_pd = predictors.to_pandas()
 
-# Save each predictor using existing utility (equivalent to savepredictor.do calls)
 save_predictor(predictors_pd, 'RealizedVol')
-save_predictor(predictors_pd, 'IdioVol3F') 
+save_predictor(predictors_pd, 'IdioVol3F')
 save_predictor(predictors_pd, 'ReturnSkew3F')
 
 print("\n" + "=" * 80)
