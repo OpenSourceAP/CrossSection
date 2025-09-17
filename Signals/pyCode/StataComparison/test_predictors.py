@@ -72,7 +72,7 @@ INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
 def load_overrides():
     """Load predictor validation overrides from YAML file"""
-    override_path = Path("Predictors/overrides.yaml")
+    override_path = Path("StataComparison/predictors_overrides.yaml")
     if not override_path.exists():
         return {}
     
@@ -1069,7 +1069,7 @@ def main():
         import os
         
         # Get the path to TestPortFocused.R
-        script_path = os.path.join('utils', 'TestPortFocused.R')
+        script_path = os.path.join('StataComparison', 'TestPortFocused.R')
         
         # Prepare command with predictor list
         cmd = ['Rscript', script_path] + test_predictors
