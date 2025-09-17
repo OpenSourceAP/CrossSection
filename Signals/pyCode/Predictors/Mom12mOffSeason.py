@@ -1,115 +1,47 @@
 # ABOUTME: Momentum without the seasonal part following Heston and Sadka 2008 Table 2 Year 1 Nonannual
-# ABOUTME: Average return in other months over the previous year
+# ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom12mOffSeason.py
 
-"""
-Mom12mOffSeason Predictor
-
-Momentum without the seasonal part (Heston and Sadka 2008 JFE)
-Average return in other months over the previous year.
-
-Evidence: t=4 in portfolio sort, Return=1.17%, T-Stat=4.2
-This predictor behaves distinctly from other off-season signals.
-
-Usage:
-    python3 Predictors/Mom12mOffSeason.py
-    
-Input:
-    - pyData/Intermediate/SignalMasterTable.parquet (columns: permno, time_avail_m, ret)
-    
-Output:
-    - pyData/Predictors/Mom12mOffSeason.csv (columns: permno, yyyymm, Mom12mOffSeason)
-"""
+# Run from pyCode/ directory
+# Inputs: SignalMasterTable.parquet
+# Output: ../pyData/Predictors/Mom12mOffSeason.csv
 
 import pandas as pd
 import numpy as np
-import os
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.save_standardized import save_predictor
 
-print("Starting Mom12mOffSeason predictor translation...")
+print("Starting Mom12mOffSeason.py...")
 
 # DATA LOAD
-print("Loading SignalMasterTable...")
+print("Loading data...")
 df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
-
-# Keep only required columns: permno, time_avail_m, ret
 df = df[['permno', 'time_avail_m', 'ret']].copy()
-print(f"Loaded {len(df)} observations")
-
-# Sort data by permno and time_avail_m (equivalent to xtset)
-df = df.sort_values(['permno', 'time_avail_m'])
-print("Data sorted by permno and time_avail_m")
-
 
 # SIGNAL CONSTRUCTION
-print("Starting signal construction...")
 
-# Update missing returns with 0 (equivalent to: Replace 0 if mi(ret))
+# Replace missing returns with 0
+df = fill_date_gaps(df, 'permno', 'time_avail_m','1mo')
 df['ret'] = df['ret'].fillna(0)
-print("Replaced missing returns with 0")
 
+# We're predicting 1 month after time_avail_m
+# Construct lags for the 1 year before the predicted month
+# Excluding the same calendar month as the predicted month
+# But also excluding the current month (due to STreversal effects)
+off_season_lags = [lag for lag in range(1, 11) if (lag + 1) % 12 != 0]
 
-# Calculate 10-month calendar-based rolling statistics
-# Need to exclude focal (current) observation from the rolling calculation
-print("Computing 10-month calendar-based rolling statistics excluding focal return...")
+print(f"Creating {len(off_season_lags)} off-season lag variables...")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ret', off_season_lags)
 
-# Import relativedelta for calendar-based calculations
-from dateutil.relativedelta import relativedelta
-
-# Implement true calendar-based rolling to exactly match Stata asrol
-# This will be slow but is necessary for correct results
-print("Computing true calendar-based rolling statistics (this may take several minutes)...")
-
-# Convert to yyyymm integer for efficient calendar arithmetic
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
-
-def calculate_calendar_rolling_fast(group):
-    group = group.sort_values('yyyymm').reset_index(drop=True)
-    n_obs = len(group)
-    mom_values = np.full(n_obs, np.nan)
-    
-    # Pre-compute all yyyymm values for efficient comparison
-    yyyymm_values = group['yyyymm'].values
-    ret_values = group['ret'].values
-    
-    for i in range(n_obs):
-        current_yyyymm = yyyymm_values[i]
-        
-        # Calculate 10-month calendar window start (9 months back)
-        current_year = current_yyyymm // 100
-        current_month = current_yyyymm % 100
-        
-        start_month = current_month - 9
-        start_year = current_year
-        while start_month <= 0:
-            start_month += 12
-            start_year -= 1
-        
-        window_start_yyyymm = start_year * 100 + start_month
-        
-        # Find observations in calendar window, excluding focal
-        window_mask = (
-            (yyyymm_values >= window_start_yyyymm) & 
-            (yyyymm_values <= current_yyyymm) &
-            (yyyymm_values != current_yyyymm)
-        )
-        
-        # Calculate mean if minimum 6 observations
-        window_returns = ret_values[window_mask]
-        if len(window_returns) >= 6:
-            mom_values[i] = np.mean(window_returns)
-    
-    group['Mom12mOffSeason'] = mom_values
-    return group[['permno', 'time_avail_m', 'ret', 'Mom12mOffSeason']]
-
-print("Processing groups (this will take time for large dataset)...")
-df = df.groupby('permno', group_keys=False).apply(calculate_calendar_rolling_fast)
-
-
-# Keep only observations with valid Mom12mOffSeason values
-df_final = df.dropna(subset=['Mom12mOffSeason']).copy()
-print(f"Generated {len(df_final)} valid Mom12mOffSeason observations")
+# Average returns from lags 1-10, excluding same calendar month
+lag_cols = [f'ret_lag{n}' for n in off_season_lags]
+df['Mom12mOffSeason'] = df[lag_cols].mean(axis=1)
 
 # SAVE
+num_obs = df['Mom12mOffSeason'].notna().sum()
+print(f"Calculated Mom12mOffSeason for {num_obs} observations")
+
 save_predictor(df, 'Mom12mOffSeason')
+print("Mom12mOffSeason.py completed successfully")

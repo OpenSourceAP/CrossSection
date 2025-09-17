@@ -152,3 +152,38 @@ CitationsRD:
   reviewed_by: ac
   details: |
     CitationsRD involves the ratio of rolling means of variables with lots of missing values (R&D and patent citations), as well as an FF1993-style double sort. So deviations are acceptable. T-stat is unchanged. The code looks correct.
+
+Mom12mOffSeason:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 4.49 which is close to the original paper's 4.20. 
+
+MomOffSeason:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 4.88, which is very close to the previous t-stat.
+
+MomOffSeason06YrPlus:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 4.71, which is +0.40 higher than the previous t-stat, but it's very close to the original paper's 4.62.
+
+MomOffSeason11YrPlus:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 1.56, which is -0.48 lower than the previous t-stat, but it's close to the original paper's 1.77. Note this was a likely predictor, not a clear predictor (obviously). 
+
+MomOffSeason16YrPlus:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 2.88, which is +0.30 higher than the previous t-stat. It's still not quite as high as the original paper's 3.35, but it's closer. 

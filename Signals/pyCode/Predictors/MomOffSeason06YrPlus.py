@@ -10,7 +10,7 @@ import numpy as np
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.save_standardized import save_predictor
 
 print("Starting MomOffSeason06YrPlus.py...")
@@ -21,6 +21,10 @@ df = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet')
 df = df[['permno', 'time_avail_m', 'ret']].copy()
 
 # SIGNAL CONSTRUCTION
+
+# Replace missing returns with 0
+df = fill_date_gaps(df, 'permno', 'time_avail_m','1mo')
+df['ret'] = df['ret'].fillna(0)
 
 # Define Years 6-10 before predicted month (we're predicting 1 month after time_avail_m)
 years_range = [6, 10]
