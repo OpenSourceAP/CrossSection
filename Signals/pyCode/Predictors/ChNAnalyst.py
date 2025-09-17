@@ -75,7 +75,7 @@ df.loc[mask_decline, 'ChNAnalyst'] = 1
 mask_no_decline = (df['numest'] >= df['numest_l3']) & df['numest'].notna()
 df.loc[mask_no_decline, 'ChNAnalyst'] = 0
 
-# Exclude data from July-September 1987 due to data quality issues
+# Exclude data from July-September 1987 due to data quality issues (OP tab 2)
 mask_1987 = (df['time_avail_m'] >= pd.Timestamp('1987-07-01')) & (df['time_avail_m'] <= pd.Timestamp('1987-09-01'))
 df.loc[mask_1987, 'ChNAnalyst'] = np.nan
 
@@ -94,6 +94,6 @@ df['tempqsize'] = (
 # Keep only smallest two quintiles (small firms)
 df = df[df['tempqsize'] <= 2].copy()
 
-# Keep only needed columns and save using standardized utility
+# Keep only needed columns and save 
 result = df[['permno', 'time_avail_m', 'ChNAnalyst']].copy()
 save_predictor(result, 'ChNAnalyst')

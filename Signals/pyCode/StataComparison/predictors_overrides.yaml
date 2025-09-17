@@ -117,3 +117,11 @@ AbnormalAccruals:
   reviewed_by: ac
   details: |
     Precision1 is failing at 9.0%. But this is a complicated predictor with custom accounting variables (including ones with missing values), many lags, regressions by sic code and window. One can only expect that there will be deviations of more than 0.01 standard deviations. The long-short t-stat is nearly identical to the 2024 10 release.
+
+ChNAnalyst:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    Large changes compared to the stata data are expected. ChAnalyst.do had an error it: the size grouping were formed using all data instead of by month. Commit 842dafc fixes this in ChAnalyst.py. The t-stat is unchanged (raw t-stat still much smaller than OP's FF3 t-stat). 
+    
