@@ -5,8 +5,8 @@
 BookLeverage.py
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
+
     python3 Predictors/BookLeverage.py
 
 Inputs:
@@ -24,7 +24,7 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -41,7 +41,18 @@ if not m_aCompustat_path.exists():
 df = pd.read_parquet(m_aCompustat_path)
 
 # Keep only the columns we need
-required_cols = ['permno', 'time_avail_m', 'at', 'lt', 'txditc', 'pstk', 'pstkrv', 'pstkl', 'seq', 'ceq']
+required_cols = [
+    "permno",
+    "time_avail_m",
+    "at",
+    "lt",
+    "txditc",
+    "pstk",
+    "pstkrv",
+    "pstkl",
+    "seq",
+    "ceq",
+]
 missing_cols = [col for col in required_cols if col not in df.columns]
 if missing_cols:
     raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
@@ -52,47 +63,47 @@ print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # Remove duplicate observations by keeping first occurrence for each firm-month
 print("Deduplicating by permno time_avail_m...")
-df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
+df = df.drop_duplicates(subset=["permno", "time_avail_m"], keep="first")
 print(f"After deduplication: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
 # Set deferred tax credits to zero when missing
-df['txditc'] = df['txditc'].fillna(0)
+df["txditc"] = df["txditc"].fillna(0)
 
 # Calculate preferred stock using hierarchical fallback: pstk, then pstkrv, then pstkl
 print("Calculating tempPS with fallback logic...")
-df['tempPS'] = df['pstk'].copy()
-df['tempPS'] = df['tempPS'].fillna(df['pstkrv'])
-df['tempPS'] = df['tempPS'].fillna(df['pstkl'])
+df["tempPS"] = df["pstk"].copy()
+df["tempPS"] = df["tempPS"].fillna(df["pstkrv"])
+df["tempPS"] = df["tempPS"].fillna(df["pstkl"])
 
 # Calculate stockholders equity using hierarchical fallback: seq, then ceq+preferred stock, then assets minus liabilities
 print("Calculating tempSE with fallback logic...")
-df['tempSE'] = df['seq'].copy()
-df['tempSE'] = df['tempSE'].fillna(df['ceq'] + df['tempPS'])
-df['tempSE'] = df['tempSE'].fillna(df['at'] - df['lt'])
+df["tempSE"] = df["seq"].copy()
+df["tempSE"] = df["tempSE"].fillna(df["ceq"] + df["tempPS"])
+df["tempSE"] = df["tempSE"].fillna(df["at"] - df["lt"])
 
 # Calculate book leverage as total assets divided by book equity (stockholders equity plus deferred taxes minus preferred stock)
 print("Calculating BookLeverage...")
 
 # Calculate book equity (denominator)
-df['book_equity'] = df['tempSE'] + df['txditc'] - df['tempPS']
+df["book_equity"] = df["tempSE"] + df["txditc"] - df["tempPS"]
 
 # Handle division by zero and missing value cases appropriately
-df['BookLeverage'] = np.where(
-    df['book_equity'] == 0,
+df["BookLeverage"] = np.where(
+    df["book_equity"] == 0,
     np.nan,  # Division by zero = missing
     np.where(
-        df['at'].isna() & df['book_equity'].isna(),
+        df["at"].isna() & df["book_equity"].isna(),
         1.0,  # missing/missing = 1.0 (no change)
-        df['at'] / df['book_equity']
-    )
+        df["at"] / df["book_equity"],
+    ),
 )
 
 print(f"Calculated BookLeverage for {df['BookLeverage'].notna().sum()} observations")
 
 # SAVE
 # Save the predictor using standardized format
-save_predictor(df, 'BookLeverage')
+save_predictor(df, "BookLeverage")
 
 print("BookLeverage.py completed successfully")

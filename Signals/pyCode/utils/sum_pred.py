@@ -370,7 +370,7 @@ Examples:
     # Check that script is being run from the correct directory (pyCode/)
     if not Path("02_CreatePredictors.py").exists():
         print("ERROR: This script must be run from the pyCode/ directory.")
-        print("Usage: cd pyCode/ && python3 utils/sum_pred.py <script_name>")
+        print("Usage: python3 utils/sum_pred.py <script_name>")
         sys.exit(1)
 
     # Load dataset mapping

@@ -1,4 +1,4 @@
-#%%
+# %%
 # ABOUTME: Residual Institutional Ownership (RIO) predictors following Nagel 2005, Table 2B, 2, 2, 2E
 # ABOUTME: RIO_MB, RIO_Disp, RIO_Turnover, RIO_Volatility combining institutional ownership with market-to-book, forecast dispersion, turnover, and volatility
 """
@@ -14,10 +14,10 @@ Inputs:
 
 Outputs:
     - RIO_MB.csv: RIO quintile for stocks in highest MB quintile
-    - RIO_Disp.csv: RIO quintile for stocks in high forecast dispersion quintiles  
+    - RIO_Disp.csv: RIO quintile for stocks in high forecast dispersion quintiles
     - RIO_Turnover.csv: RIO quintile for stocks in highest turnover quintile
     - RIO_Volatility.csv: RIO quintile for stocks in highest volatility quintile
-    
+
 All predictors use residual institutional ownership (RIO) which controls for size effects in institutional holdings
 """
 
@@ -25,7 +25,8 @@ import polars as pl
 import pandas as pd
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.asrol import asrol
@@ -40,7 +41,7 @@ print("📊 Preparing IBES data...")
 
 # Prep IBES data
 # use "$pathDataIntermediate/IBES_EPS_Unadj", replace
-# keep if fpi == "1" 
+# keep if fpi == "1"
 ibes_eps = pl.read_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet")
 temp_ibes = ibes_eps.filter(pl.col("fpi") == "1")
 temp_ibes = temp_ibes.select(["tickerIBES", "time_avail_m", "stdev"])
@@ -56,15 +57,27 @@ print(f"SignalMasterTable: {len(df):,} observations")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/TR_13F", keep(master match) nogenerate keepusing(instown_perc)
 tr_13f = pl.read_parquet("../pyData/Intermediate/TR_13F.parquet")
-df = df.join(tr_13f.select(["permno", "time_avail_m", "instown_perc"]), on=["permno", "time_avail_m"], how="left")
+df = df.join(
+    tr_13f.select(["permno", "time_avail_m", "instown_perc"]),
+    on=["permno", "time_avail_m"],
+    how="left",
+)
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/m_aCompustat", keep(master match) nogenerate keepusing(at ceq txditc)
 m_compustat = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
-df = df.join(m_compustat.select(["permno", "time_avail_m", "at", "ceq", "txditc"]), on=["permno", "time_avail_m"], how="left")
+df = df.join(
+    m_compustat.select(["permno", "time_avail_m", "at", "ceq", "txditc"]),
+    on=["permno", "time_avail_m"],
+    how="left",
+)
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(master match) nogenerate keepusing(vol shrout ret)
 crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
-df = df.join(crsp.select(["permno", "time_avail_m", "vol", "shrout", "ret"]), on=["permno", "time_avail_m"], how="left")
+df = df.join(
+    crsp.select(["permno", "time_avail_m", "vol", "shrout", "ret"]),
+    on=["permno", "time_avail_m"],
+    how="left",
+)
 
 # merge m:1 tickerIBES time_avail_m using tempIBES, keep(master match) nogenerate keepusing (stdev)
 df = df.join(temp_ibes, on=["tickerIBES", "time_avail_m"], how="left")
@@ -74,7 +87,7 @@ print(f"After merging all data sources: {len(df):,} observations")
 
 print("🔍 Applying size filters...")
 
-# filter below 20th pct NYSE me 
+# filter below 20th pct NYSE me
 # do before indep sort
 # bys time_avail_m: astile sizecat = mve_c, qc(exchcd==1 | exchcd == 2) nq(5)
 # This creates NYSE/AMEX-based size quintiles but assigns them to ALL observations
@@ -91,15 +104,19 @@ df = df.with_columns(
     pl.col("nyse_amex_mve").quantile(0.2).over("time_avail_m").alias("p20"),
     pl.col("nyse_amex_mve").quantile(0.4).over("time_avail_m").alias("p40"),
     pl.col("nyse_amex_mve").quantile(0.6).over("time_avail_m").alias("p60"),
-    pl.col("nyse_amex_mve").quantile(0.8).over("time_avail_m").alias("p80")
+    pl.col("nyse_amex_mve").quantile(0.8).over("time_avail_m").alias("p80"),
 )
 
 # Assign ALL observations to quintiles based on NYSE/AMEX breakpoints
 df = df.with_columns(
-    pl.when(pl.col("mve_c") <= pl.col("p20")).then(1)
-    .when(pl.col("mve_c") <= pl.col("p40")).then(2)
-    .when(pl.col("mve_c") <= pl.col("p60")).then(3)  
-    .when(pl.col("mve_c") <= pl.col("p80")).then(4)
+    pl.when(pl.col("mve_c") <= pl.col("p20"))
+    .then(1)
+    .when(pl.col("mve_c") <= pl.col("p40"))
+    .then(2)
+    .when(pl.col("mve_c") <= pl.col("p60"))
+    .then(3)
+    .when(pl.col("mve_c") <= pl.col("p80"))
+    .then(4)
     .otherwise(5)
     .alias("sizecat")
 )
@@ -126,10 +143,7 @@ df = df.with_columns(
 
 # replace temp = 0 if mi(temp)
 df = df.with_columns(
-    pl.when(pl.col("temp").is_null())
-    .then(0.0)
-    .otherwise(pl.col("temp"))
-    .alias("temp")
+    pl.when(pl.col("temp").is_null()).then(0.0).otherwise(pl.col("temp")).alias("temp")
 )
 
 # replace temp = .9999 if temp > .9999
@@ -151,10 +165,10 @@ df = df.with_columns(
 # gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
 df = df.with_columns(
     (
-        (pl.col("temp") / (1 - pl.col("temp"))).log() + 
-        23.66 - 
-        2.89 * pl.col("mve_c").log() + 
-        0.08 * (pl.col("mve_c").log()).pow(2)
+        (pl.col("temp") / (1 - pl.col("temp"))).log()
+        + 23.66
+        - 2.89 * pl.col("mve_c").log()
+        + 0.08 * (pl.col("mve_c").log()).pow(2)
     ).alias("RIO")
 )
 
@@ -169,15 +183,14 @@ df = df.sort(["permno", "time_avail_m"])
 df_pandas = df.to_pandas()
 
 # Calculate the exact 6-month lag date for each observation
-df_pandas['lag_date'] = df_pandas['time_avail_m'] - pd.DateOffset(months=6)
+df_pandas["lag_date"] = df_pandas["time_avail_m"] - pd.DateOffset(months=6)
 
 # Create lookup for RIO values by permno and date
-rio_lookup = df_pandas.set_index(['permno', 'time_avail_m'])['RIO']
+rio_lookup = df_pandas.set_index(["permno", "time_avail_m"])["RIO"]
 
 # Get RIOlag by looking up RIO at lag_date
-df_pandas['RIOlag'] = df_pandas.apply(
-    lambda row: rio_lookup.get((row['permno'], row['lag_date']), None), 
-    axis=1
+df_pandas["RIOlag"] = df_pandas.apply(
+    lambda row: rio_lookup.get((row["permno"], row["lag_date"]), None), axis=1
 )
 
 # Convert back to polars (lag_date was already used and not in dataframe)
@@ -186,7 +199,7 @@ df = pl.from_pandas(df_pandas)
 # egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
 # Convert to pandas for fastxtile operation
 df_pandas = df.to_pandas()
-df_pandas['cat_RIO'] = fastxtile(df_pandas, 'RIOlag', by='time_avail_m', n=5)
+df_pandas["cat_RIO"] = fastxtile(df_pandas, "RIOlag", by="time_avail_m", n=5)
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
@@ -196,7 +209,10 @@ print("📊 Computing characteristic variables...")
 # Forecast dispersion, market-to-book, turnover, volatiltity sorts
 # replace txditc = 0 if mi(txditc)
 df = df.with_columns(
-    pl.when(pl.col("txditc").is_null()).then(0.0).otherwise(pl.col("txditc")).alias("txditc")
+    pl.when(pl.col("txditc").is_null())
+    .then(0.0)
+    .otherwise(pl.col("txditc"))
+    .alias("txditc")
 )
 
 # gen MB = mve_c/(ceq + txditc)
@@ -217,9 +233,7 @@ df = df.with_columns(
 )
 
 # gen Turnover = vol/shrout
-df = df.with_columns(
-    (pl.col("vol") / pl.col("shrout")).alias("Turnover")
-)
+df = df.with_columns((pl.col("vol") / pl.col("shrout")).alias("Turnover"))
 
 # bys permno: asrol ret, gen(Volatility) stat(sd) window(time_avail_m 12) min(6)
 # Use asrol_legacy for rolling standard deviation
@@ -227,14 +241,14 @@ df_pandas_vol = df.to_pandas()
 
 df_pandas_vol = asrol(
     df_pandas_vol,
-    group_col='permno',
-    time_col='time_avail_m',
-    freq='1mo',
+    group_col="permno",
+    time_col="time_avail_m",
+    freq="1mo",
     window=12,
-    value_col='ret',
-    stat='std',
-    new_col_name='Volatility',
-    min_samples=6
+    value_col="ret",
+    stat="std",
+    new_col_name="Volatility",
+    min_samples=6,
 )
 
 df = pl.from_pandas(df_pandas_vol)
@@ -253,10 +267,10 @@ df_pandas = df.to_pandas()
 
 for var in variables:
     # egen cat_`v' = fastxtile(`v'), n(5) by(time_avail_m)
-    df_pandas[f'cat_{var}'] = fastxtile(df_pandas, var, by='time_avail_m', n=5)
-    
+    df_pandas[f"cat_{var}"] = fastxtile(df_pandas, var, by="time_avail_m", n=5)
+
     # gen RIO_`v' = cat_RIO if cat_`v' == 5
-    df_pandas[f'RIO_{var}'] = df_pandas['cat_RIO'].where(df_pandas[f'cat_{var}'] == 5)
+    df_pandas[f"RIO_{var}"] = df_pandas["cat_RIO"].where(df_pandas[f"cat_{var}"] == 5)
 
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
@@ -280,12 +294,16 @@ rio_predictors = ["RIO_MB", "RIO_Disp", "RIO_Turnover", "RIO_Volatility"]
 for predictor in rio_predictors:
     result = df.select(["permno", "time_avail_m", predictor])
     valid_result = result.filter(pl.col(predictor).is_not_null())
-    
+
     print(f"Generated {predictor}: {len(valid_result):,} observations")
     if len(valid_result) > 0:
         print(f"  Value distribution:")
-        print(valid_result.group_by(predictor).agg(pl.len().alias("count")).sort(predictor))
-    
+        print(
+            valid_result.group_by(predictor)
+            .agg(pl.len().alias("count"))
+            .sort(predictor)
+        )
+
     save_predictor(result, predictor)
     print(f"✅ {predictor}.csv saved successfully")
 

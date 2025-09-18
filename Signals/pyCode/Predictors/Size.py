@@ -16,20 +16,22 @@ import pandas as pd
 import numpy as np
 
 # DATA LOAD
-df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                     columns=['permno', 'time_avail_m', 'mve_c'])
+df = pd.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet",
+    columns=["permno", "time_avail_m", "mve_c"],
+)
 
 # SIGNAL CONSTRUCTION
-df['Size'] = np.log(df['mve_c'])
+df["Size"] = np.log(df["mve_c"])
 
 # Drop missing values
-df = df.dropna(subset=['Size'])
+df = df.dropna(subset=["Size"])
 
 # Convert time_avail_m to yyyymm
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+df["yyyymm"] = df["time_avail_m"].dt.year * 100 + df["time_avail_m"].dt.month
 
 # Keep required columns and order
-df = df[['permno', 'yyyymm', 'Size']].copy()
+df = df[["permno", "yyyymm", "Size"]].copy()
 
 # SAVE
 df.to_csv("../pyData/Predictors/Size.csv", index=False)

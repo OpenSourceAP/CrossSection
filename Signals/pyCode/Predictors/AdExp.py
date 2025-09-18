@@ -20,7 +20,7 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -37,7 +37,7 @@ if not m_aCompustat_path.exists():
 df = pd.read_parquet(m_aCompustat_path)
 
 # Keep only the columns we need
-required_cols = ['permno', 'time_avail_m', 'xad']
+required_cols = ["permno", "time_avail_m", "xad"]
 missing_cols = [col for col in required_cols if col not in df.columns]
 if missing_cols:
     raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
@@ -54,14 +54,14 @@ if not signal_master_path.exists():
     raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
 
 signal_master = pd.read_parquet(signal_master_path)
-if 'mve_c' not in signal_master.columns:
+if "mve_c" not in signal_master.columns:
     raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
+signal_master = signal_master[["permno", "time_avail_m", "mve_c"]].copy()
 
 # Use right join to keep only observations present in SignalMasterTable
-df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='right')
+df = pd.merge(df, signal_master, on=["permno", "time_avail_m"], how="right")
 
 print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
@@ -69,15 +69,15 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # Calculate advertising expense scaled by market value of equity
 print("Calculating AdExp...")
-df['AdExp'] = df['xad'] / df['mve_c']
+df["AdExp"] = df["xad"] / df["mve_c"]
 
 # Set to missing for non-positive advertising expense values
-df.loc[df['xad'] <= 0, 'AdExp'] = np.nan
+df.loc[df["xad"] <= 0, "AdExp"] = np.nan
 
 print(f"Calculated AdExp for {df['AdExp'].notna().sum()} observations")
 
 # SAVE
 # Save the AdExp predictor to CSV file
-save_predictor(df, 'AdExp')
+save_predictor(df, "AdExp")
 
 print("AdExp.py completed successfully")

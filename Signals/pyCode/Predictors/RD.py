@@ -6,8 +6,8 @@
 RD predictor calculation
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
+
     python3 Predictors/RD.py
 
 Inputs:
@@ -21,29 +21,33 @@ Outputs:
 import pandas as pd
 
 # DATA LOAD
-signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                               columns=['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+signal_master = pd.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet",
+    columns=["permno", "gvkey", "time_avail_m", "mve_c"],
+)
 
 # Drop observations with missing gvkey
-df = signal_master.dropna(subset=['gvkey']).copy()
+df = signal_master.dropna(subset=["gvkey"]).copy()
 
 # Merge with Compustat data
-compustat = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet", 
-                           columns=['gvkey', 'time_avail_m', 'xrd'])
+compustat = pd.read_parquet(
+    "../pyData/Intermediate/m_aCompustat.parquet",
+    columns=["gvkey", "time_avail_m", "xrd"],
+)
 
-df = pd.merge(df, compustat, on=['gvkey', 'time_avail_m'], how='inner')
+df = pd.merge(df, compustat, on=["gvkey", "time_avail_m"], how="inner")
 
 # SIGNAL CONSTRUCTION
-df['RD'] = df['xrd'] / df['mve_c']
+df["RD"] = df["xrd"] / df["mve_c"]
 
 # Drop missing values
-df = df.dropna(subset=['RD'])
+df = df.dropna(subset=["RD"])
 
 # Convert time_avail_m to yyyymm
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+df["yyyymm"] = df["time_avail_m"].dt.year * 100 + df["time_avail_m"].dt.month
 
 # Keep required columns and order
-df = df[['permno', 'yyyymm', 'RD']].copy()
+df = df[["permno", "yyyymm", "RD"]].copy()
 
 # SAVE
 df.to_csv("../pyData/Predictors/RD.csv", index=False)

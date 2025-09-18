@@ -5,8 +5,8 @@
 DelCOA.py
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
+
     python3 Predictors/DelCOA.py
 
 Inputs:
@@ -24,7 +24,7 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -41,7 +41,7 @@ if not m_aCompustat_path.exists():
 df = pd.read_parquet(m_aCompustat_path)
 ##Print query of df == 23033 (bad permno), tell claude to add similiar feedback for debugging
 # Keep only the columns we need for the calculation
-required_cols = ['gvkey', 'permno', 'time_avail_m', 'at', 'act', 'che']
+required_cols = ["gvkey", "permno", "time_avail_m", "at", "act", "che"]
 missing_cols = [col for col in required_cols if col not in df.columns]
 if missing_cols:
     raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
@@ -54,37 +54,37 @@ print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # Remove duplicate observations by permno and time_avail_m
 print("Deduplicating by permno time_avail_m...")
-df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
+df = df.drop_duplicates(subset=["permno", "time_avail_m"], keep="first")
 print(f"After deduplication: {df.shape[0]} rows")
 
 # Sort data for panel lag operations
 print("Setting up panel data structure...")
-df = df.sort_values(['permno', 'time_avail_m'])
+df = df.sort_values(["permno", "time_avail_m"])
 
 # Create 12-month lagged variables for year-over-year changes
 print("Creating lag variables...")
-df['lag_at'] = df.groupby('permno')['at'].shift(12)
-df['lag_act'] = df.groupby('permno')['act'].shift(12)
-df['lag_che'] = df.groupby('permno')['che'].shift(12)
+df["lag_at"] = df.groupby("permno")["at"].shift(12)
+df["lag_act"] = df.groupby("permno")["act"].shift(12)
+df["lag_che"] = df.groupby("permno")["che"].shift(12)
 
 # Calculate average assets over current and lagged periods
 print("Creating tempAvAT...")
-df['tempAvAT'] = 0.5 * (df['at'] + df['lag_at'])
+df["tempAvAT"] = 0.5 * (df["at"] + df["lag_at"])
 
 # Calculate change in current operating assets (current assets minus cash)
 print("Calculating DelCOA...")
-df['DelCOA'] = (df['act'] - df['che']) - (df['lag_act'] - df['lag_che'])
+df["DelCOA"] = (df["act"] - df["che"]) - (df["lag_act"] - df["lag_che"])
 
 # Scale by average assets
-df['DelCOA'] = df['DelCOA'] / df['tempAvAT']
+df["DelCOA"] = df["DelCOA"] / df["tempAvAT"]
 
 # Clean up temporary variables
-df = df.drop(columns=['lag_at', 'lag_act', 'lag_che', 'tempAvAT'])
+df = df.drop(columns=["lag_at", "lag_act", "lag_che", "tempAvAT"])
 
 print(f"Calculated DelCOA for {df['DelCOA'].notna().sum()} observations")
 
 # SAVE
 # Save the standardized predictor output
-save_predictor(df, 'DelCOA')
+save_predictor(df, "DelCOA")
 
 print("DelCOA.py completed successfully")

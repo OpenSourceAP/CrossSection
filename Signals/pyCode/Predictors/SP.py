@@ -5,8 +5,8 @@
 SP predictor calculation
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
+
     python3 Predictors/SP.py
 
 Inputs:
@@ -21,29 +21,33 @@ import pandas as pd
 
 # DATA LOAD
 # Load Compustat data
-compustat = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet", 
-                           columns=['permno', 'time_avail_m', 'sale'])
+compustat = pd.read_parquet(
+    "../pyData/Intermediate/m_aCompustat.parquet",
+    columns=["permno", "time_avail_m", "sale"],
+)
 
 # Remove duplicates by permno and time_avail_m (keep first)
-compustat = compustat.groupby(['permno', 'time_avail_m']).first().reset_index()
+compustat = compustat.groupby(["permno", "time_avail_m"]).first().reset_index()
 
 # Merge with SignalMasterTable
-signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet", 
-                               columns=['permno', 'time_avail_m', 'mve_c'])
+signal_master = pd.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet",
+    columns=["permno", "time_avail_m", "mve_c"],
+)
 
-df = pd.merge(compustat, signal_master, on=['permno', 'time_avail_m'], how='inner')
+df = pd.merge(compustat, signal_master, on=["permno", "time_avail_m"], how="inner")
 
 # SIGNAL CONSTRUCTION
-df['SP'] = df['sale'] / df['mve_c']
+df["SP"] = df["sale"] / df["mve_c"]
 
 # Drop missing values
-df = df.dropna(subset=['SP'])
+df = df.dropna(subset=["SP"])
 
 # Convert time_avail_m to yyyymm
-df['yyyymm'] = df['time_avail_m'].dt.year * 100 + df['time_avail_m'].dt.month
+df["yyyymm"] = df["time_avail_m"].dt.year * 100 + df["time_avail_m"].dt.month
 
 # Keep required columns and order
-df = df[['permno', 'yyyymm', 'SP']].copy()
+df = df[["permno", "yyyymm", "SP"]].copy()
 
 # SAVE
 df.to_csv("../pyData/Predictors/SP.csv", index=False)

@@ -11,7 +11,7 @@ Inputs:
 
 Outputs:
     - PriceDelaySlope.csv: D2 measure from Table 2A adjusted - weighted slope ratio
-    - PriceDelayRsq.csv: D1 measure from Table 2B one year daily - R-squared ratio (1 - R²restricted/R²unrestricted)  
+    - PriceDelayRsq.csv: D1 measure from Table 2B one year daily - R-squared ratio (1 - R²restricted/R²unrestricted)
     - PriceDelayTstat.csv: D3 measure from Table 2A adjusted - weighted t-statistic ratio
 
 Key Table      : 2A D2 adjusted (PriceDelaySlope), 2B one year daily (PriceDelayRsq), 2A D3 adjusted (PriceDelayTstat)

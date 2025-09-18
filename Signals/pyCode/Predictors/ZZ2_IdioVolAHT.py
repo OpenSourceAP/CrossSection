@@ -5,17 +5,19 @@ import polars as pl
 import sys
 import os
 from typing import List, Dict, Tuple, Optional, Sequence, Iterable, Literal, Union
-import polars_ols as pls # Registers .least_squares namespace
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+import polars_ols as pls  # Registers .least_squares namespace
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # from utils.asreg import asreg_polars
 from utils.save_standardized import save_predictor
 
-#%% custom asreg function
+# %% custom asreg function
 # the standard polars-ols rolling regression works fine
 # but to match Stata exactly, for now, we'll use this custom function
 
 
 Mode = Literal["rolling", "expanding", "group"]
+
 
 def asreg_polars(
     df: pl.DataFrame | pl.LazyFrame,
@@ -32,7 +34,7 @@ def asreg_polars(
     coef_prefix: str = "b_",
     collect: bool = True,
     null_policy: str = "drop",
-    solve_method: str = "svd"
+    solve_method: str = "svd",
 ) -> pl.DataFrame | pl.LazyFrame:
     """Multi-purpose OLS over groups/windows using polars (fast, no collinearity handling).
 
@@ -56,8 +58,10 @@ def asreg_polars(
         DataFrame/LazyFrame with requested regression outputs
     """
     if pls is None:
-        raise ImportError("polars-ols is required for asreg_polars. Install with: pip install polars-ols")
-    
+        raise ImportError(
+            "polars-ols is required for asreg_polars. Install with: pip install polars-ols"
+        )
+
     lf = df.lazy() if isinstance(df, pl.DataFrame) else df
     over = list(by or [])
 
@@ -91,7 +95,9 @@ def asreg_polars(
             # enforce min_samples at group level
             if over and min_samples > 1:
                 n_eff_grp = _valid_mask_polars(y, X).cast(pl.Int64).sum().over(over)
-                residuals = pl.when(n_eff_grp >= min_samples).then(residuals).otherwise(None)
+                residuals = (
+                    pl.when(n_eff_grp >= min_samples).then(residuals).otherwise(None)
+                )
             lf = lf.with_columns(resid=residuals)
             return lf.collect() if collect else lf
         # standard coefficients
@@ -130,13 +136,17 @@ def asreg_polars(
     if need_coef_cols:
         coef_cols: list[pl.Expr] = []
         if add_intercept:
-            coef_cols.append(pl.col("coef").struct.field("const").alias(f"{coef_prefix}const"))
-        coef_cols += [pl.col("coef").struct.field(x).alias(f"{coef_prefix}{x}") for x in X]
+            coef_cols.append(
+                pl.col("coef").struct.field("const").alias(f"{coef_prefix}const")
+            )
+        coef_cols += [
+            pl.col("coef").struct.field(x).alias(f"{coef_prefix}{x}") for x in X
+        ]
         lf = lf.with_columns(coef_cols)
 
     # yhat / resid via manual calculation to avoid polars-ols predict issues
     if any(o in {"yhat", "resid", "rmse"} for o in outputs):
-        yhat = (pl.col(f"{coef_prefix}const") if add_intercept else pl.lit(0.0))
+        yhat = pl.col(f"{coef_prefix}const") if add_intercept else pl.lit(0.0)
         for x in X:
             yhat = yhat + pl.col(f"{coef_prefix}{x}") * pl.col(x)
         lf = lf.with_columns(yhat.alias("yhat"))
@@ -159,7 +169,13 @@ def asreg_polars(
             return pl.when(valid).then(expr).otherwise(None)
 
         # Aggregate builders (per mode)
-        agg = lambda e: _agg_sum_polars(mask(e), mode=mode, over=over, window_size=window_size, min_samples=min_samples)
+        agg = lambda e: _agg_sum_polars(
+            mask(e),
+            mode=mode,
+            over=over,
+            window_size=window_size,
+            min_samples=min_samples,
+        )
 
         # Moment sums
         yy = agg(pl.col(y) * pl.col(y)).cast(pl.Float64)
@@ -169,7 +185,9 @@ def asreg_polars(
         zz = {}
         for i, zi in enumerate(Z_names):
             for j, zj in enumerate(Z_names[i:]):
-                zz[(zi, Z_names[i + j])] = agg(z_expr(zi) * z_expr(Z_names[i + j])).cast(pl.Float64)
+                zz[(zi, Z_names[i + j])] = agg(
+                    z_expr(zi) * z_expr(Z_names[i + j])
+                ).cast(pl.Float64)
 
         # Access coefficient fields from the struct (uses "const" for intercept)
         def b_field(zi: str) -> pl.Expr:
@@ -198,8 +216,14 @@ def asreg_polars(
         SSE = yy - term2 + t3
 
         # Effective sample size & DOF
-        n_eff = _agg_sum_polars(valid.cast(pl.Int64), mode=mode, over=over, window_size=window_size, min_samples=min_samples)
-        dof = (n_eff - k)
+        n_eff = _agg_sum_polars(
+            valid.cast(pl.Int64),
+            mode=mode,
+            over=over,
+            window_size=window_size,
+            min_samples=min_samples,
+        )
+        dof = n_eff - k
 
         rmse_expr = pl.when((dof > 0) & SSE.is_not_null())
         rmse_expr = rmse_expr.then((SSE / dof.cast(pl.Float64)).sqrt()).otherwise(None)
@@ -211,6 +235,7 @@ def asreg_polars(
 
     return lf.collect() if collect else lf
 
+
 def _valid_mask_polars(y: str, X: Sequence[str]) -> pl.Expr:
     """Row-wise validity mask: True where y and all X are non-null."""
     m = pl.col(y).is_not_null()
@@ -219,7 +244,14 @@ def _valid_mask_polars(y: str, X: Sequence[str]) -> pl.Expr:
     return m
 
 
-def _agg_sum_polars(expr: pl.Expr, *, mode: Mode, over: Sequence[str], window_size: Optional[int], min_samples: int) -> pl.Expr:
+def _agg_sum_polars(
+    expr: pl.Expr,
+    *,
+    mode: Mode,
+    over: Sequence[str],
+    window_size: Optional[int],
+    min_samples: int,
+) -> pl.Expr:
     """Aggregate `expr` according to mode (rolling/expanding/group) and groups `over`."""
     if mode == "rolling":
         return expr.rolling_sum(window_size, min_periods=min_samples).over(over)
@@ -230,7 +262,7 @@ def _agg_sum_polars(expr: pl.Expr, *, mode: Mode, over: Sequence[str], window_si
         return expr.sum().over(over)
 
 
-#%% main
+# %% main
 print("Starting ZZ2_IdioVolAHT.py...")
 
 # Data load
@@ -245,17 +277,11 @@ print(f"Daily CRSP data: {df.shape[0]} rows")
 
 # Merge with FF data
 print("Merging with Fama-French factors...")
-df = df.join(
-    daily_ff.select(["time_d", "rf", "mktrf"]),
-    on="time_d",
-    how="inner"
-)
+df = df.join(daily_ff.select(["time_d", "rf", "mktrf"]), on="time_d", how="inner")
 print(f"After merge: {df.shape[0]} rows")
 
 # Calculate excess return (Stata: replace ret = ret - rf)
-df = df.with_columns([
-    (pl.col("ret") - pl.col("rf")).alias("ret")
-])
+df = df.with_columns([(pl.col("ret") - pl.col("rf")).alias("ret")])
 
 
 # Critical: Filter out missing returns before creating time index
@@ -266,9 +292,7 @@ df = df.filter(pl.col("ret").is_not_null() & pl.col("mktrf").is_not_null())
 df = df.sort(["permno", "time_d"])
 
 # Set up time index for rolling window (Stata: time_temp = _n)
-df = df.with_columns([
-    pl.int_range(pl.len()).over("permno").alias("time_temp")
-])
+df = df.with_columns([pl.int_range(pl.len()).over("permno").alias("time_temp")])
 
 
 # Use utils/asreg.py helper for rolling regression with RMSE
@@ -279,32 +303,28 @@ df = asreg_polars(
     y="ret",  # Excess return (already calculated above)
     X=["mktrf"],
     by=["permno"],
-    t="time_temp", 
+    t="time_temp",
     mode="rolling",
     window_size=252,
     min_samples=100,
     add_intercept=True,  # Stata's asreg includes intercept by default
     outputs=("rmse",),  # Only need RMSE output (equivalent to Stata's _rmse)
-    coef_prefix="b_"
+    coef_prefix="b_",
 )
 
 
 print("Calculating idiosyncratic volatility...")
 # Extract IdioVolAHT from RMSE (rename _rmse IdioVolAHT in Stata)
-df = df.with_columns([
-    pl.col("rmse").alias("IdioVolAHT")
-])
+df = df.with_columns([pl.col("rmse").alias("IdioVolAHT")])
 
 # Convert to monthly and keep last observation per month
-df = df.with_columns([
-    pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
-])
+df = df.with_columns([pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")])
 
 # Keep last non-missing IdioVolAHT per permno-month (Stata: gcollapse (lastnm))
 df = df.sort(["permno", "time_avail_m", "time_d"])
-df = df.group_by(["permno", "time_avail_m"]).agg([
-    pl.col("IdioVolAHT").drop_nulls().last().alias("IdioVolAHT")
-])
+df = df.group_by(["permno", "time_avail_m"]).agg(
+    [pl.col("IdioVolAHT").drop_nulls().last().alias("IdioVolAHT")]
+)
 
 
 # Select final data

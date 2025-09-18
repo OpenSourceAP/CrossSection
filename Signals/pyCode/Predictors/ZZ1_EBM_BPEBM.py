@@ -18,7 +18,8 @@ Outputs:
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 print("Starting ZZ1_EBM_BPEBM.py...")
@@ -26,17 +27,28 @@ print("Starting ZZ1_EBM_BPEBM.py...")
 # DATA LOAD
 print("Loading data...")
 # Load required columns from annual Compustat data
-df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet").select([
-    "gvkey", "permno", "time_avail_m", "che", "dltt", "dlc", "dc", "dvpa", "tstkp", "ceq"
-])
+df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet").select(
+    [
+        "gvkey",
+        "permno",
+        "time_avail_m",
+        "che",
+        "dltt",
+        "dlc",
+        "dc",
+        "dvpa",
+        "tstkp",
+        "ceq",
+    ]
+)
 
 # Keep only first observation per permno-time to remove duplicates
 df = df.group_by(["permno", "time_avail_m"]).first()
 
 # Merge with SignalMasterTable to get market value (mve_c)
-signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select([
-    "permno", "time_avail_m", "mve_c"
-])
+signal_master = pl.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet"
+).select(["permno", "time_avail_m", "mve_c"])
 df = df.join(signal_master, on=["permno", "time_avail_m"], how="inner")
 
 # Sort data by permno and time
@@ -44,24 +56,35 @@ df = df.sort(["permno", "time_avail_m"])
 
 # SIGNAL CONSTRUCTION
 # Calculate temporary variable: cash minus total debt minus preferred dividends plus preferred stock
-df = df.with_columns([
-    (pl.col("che") - pl.col("dltt") - pl.col("dlc") - pl.col("dc") - pl.col("dvpa") + pl.col("tstkp")).alias("temp")
-])
+df = df.with_columns(
+    [
+        (
+            pl.col("che")
+            - pl.col("dltt")
+            - pl.col("dlc")
+            - pl.col("dc")
+            - pl.col("dvpa")
+            + pl.col("tstkp")
+        ).alias("temp")
+    ]
+)
 
 # Calculate enterprise book-to-market ratio
-df = df.with_columns([
-    ((pl.col("ceq") + pl.col("temp")) / (pl.col("mve_c") + pl.col("temp"))).alias("EBM")
-])
+df = df.with_columns(
+    [
+        ((pl.col("ceq") + pl.col("temp")) / (pl.col("mve_c") + pl.col("temp"))).alias(
+            "EBM"
+        )
+    ]
+)
 
 # Calculate book-to-price ratio
-df = df.with_columns([
-    ((pl.col("ceq") + pl.col("tstkp") - pl.col("dvpa")) / pl.col("mve_c")).alias("BP")
-])
+df = df.with_columns(
+    [((pl.col("ceq") + pl.col("tstkp") - pl.col("dvpa")) / pl.col("mve_c")).alias("BP")]
+)
 
 # Calculate difference between book-to-price and enterprise book-to-market
-df = df.with_columns([
-    (pl.col("BP") - pl.col("EBM")).alias("BPEBM")
-])
+df = df.with_columns([(pl.col("BP") - pl.col("EBM")).alias("BPEBM")])
 
 # SAVE
 # Save EBM predictor

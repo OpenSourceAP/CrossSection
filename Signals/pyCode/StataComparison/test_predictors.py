@@ -5,7 +5,7 @@
 test_predictors.py
 
 Usage:
-    cd pyCode/
+    Run from [Repo-Root]/Signals/pyCode/
     source .venv/bin/activate
     python3 StataComparison/test_predictors.py --all             # Test all predictors
     python3 StataComparison/test_predictors.py --predictors Accruals  # Test specific predictor

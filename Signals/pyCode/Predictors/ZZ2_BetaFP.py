@@ -16,7 +16,8 @@ Outputs:
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -27,8 +28,9 @@ print("=" * 80)
 
 # Data load
 print("📊 Loading daily CRSP and Fama-French data...")
-df = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet",
-    columns=["permno", "time_d", "ret"])
+df = pl.read_parquet(
+    "../pyData/Intermediate/dailyCRSP.parquet", columns=["permno", "time_d", "ret"]
+)
 print(f"Loaded CRSP: {len(df):,} daily observations")
 
 ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
@@ -40,11 +42,13 @@ print(f"Merged dataset: {len(df):,} observations")
 
 print("\n🔧 Starting signal construction...")
 print("Calculating excess log returns...")
-df = df.with_columns([
-    (pl.col("ret") - pl.col("rf")).alias("ret"),
-    pl.col("ret").log1p().alias("LogRet"),
-    pl.col("mktrf").log1p().alias("LogMkt")
-])
+df = df.with_columns(
+    [
+        (pl.col("ret") - pl.col("rf")).alias("ret"),
+        pl.col("ret").log1p().alias("LogRet"),
+        pl.col("mktrf").log1p().alias("LogMkt"),
+    ]
+)
 
 # sort
 df = df.sort(["permno", "time_d"])
@@ -53,72 +57,102 @@ df = df.sort(["permno", "time_d"])
 print("Computing 252-day rolling volatilities...")
 
 # Standard deviations of log returns
-df = df.with_columns([
-    pl.col("LogRet")
-    .rolling_std(window_size=252, min_samples=120)
-    .over("permno")
-    .alias("sd252_LogRet"),
-    pl.col("LogMkt")
-    .rolling_std(window_size=252, min_samples=120)
-    .over("permno")
-    .alias("sd252_LogMkt")
-])
+df = df.with_columns(
+    [
+        pl.col("LogRet")
+        .rolling_std(window_size=252, min_samples=120)
+        .over("permno")
+        .alias("sd252_LogRet"),
+        pl.col("LogMkt")
+        .rolling_std(window_size=252, min_samples=120)
+        .over("permno")
+        .alias("sd252_LogMkt"),
+    ]
+)
 
 # == Calculate R-sq from regressing 3-day stock returns on 3-day market returns ==
 print("Creating 3-day overlapping returns...")
 
 # Create 3-day returns
-df = df.with_columns([
-    (pl.col("LogRet").shift(2).over("permno") + 
-     pl.col("LogRet").shift(1).over("permno") + 
-     pl.col("LogRet")).alias("tempRi"),
-    (pl.col("LogMkt").shift(2).over("permno") + 
-     pl.col("LogMkt").shift(1).over("permno") + 
-     pl.col("LogMkt")).alias("tempRm")
-])
+df = df.with_columns(
+    [
+        (
+            pl.col("LogRet").shift(2).over("permno")
+            + pl.col("LogRet").shift(1).over("permno")
+            + pl.col("LogRet")
+        ).alias("tempRi"),
+        (
+            pl.col("LogMkt").shift(2).over("permno")
+            + pl.col("LogMkt").shift(1).over("permno")
+            + pl.col("LogMkt")
+        ).alias("tempRm"),
+    ]
+)
 
 print("Calculating rolling R-squared (1260-day window, min 500 obs)...")
 # Calculate R-squared using simple correlation approach: R² = corr²
 # This is mathematically equivalent to the regression R² and avoids numerical issues
-df = df.with_columns([
-    # Rolling correlation between tempRi and tempRm using covariance formula
-    # corr = cov(x,y) / (std(x) * std(y))
-    ((pl.col("tempRi") * pl.col("tempRm")).rolling_mean(window_size=1260, min_samples=500).over("permno") -
-     pl.col("tempRi").rolling_mean(window_size=1260, min_samples=500).over("permno") *
-     pl.col("tempRm").rolling_mean(window_size=1260, min_samples=500).over("permno")).alias("cov_temp"),
-    
-    pl.col("tempRi").rolling_std(window_size=1260, min_samples=500).over("permno").alias("std_tempRi"),
-    pl.col("tempRm").rolling_std(window_size=1260, min_samples=500).over("permno").alias("std_tempRm")
-])
+df = df.with_columns(
+    [
+        # Rolling correlation between tempRi and tempRm using covariance formula
+        # corr = cov(x,y) / (std(x) * std(y))
+        (
+            (pl.col("tempRi") * pl.col("tempRm"))
+            .rolling_mean(window_size=1260, min_samples=500)
+            .over("permno")
+            - pl.col("tempRi")
+            .rolling_mean(window_size=1260, min_samples=500)
+            .over("permno")
+            * pl.col("tempRm")
+            .rolling_mean(window_size=1260, min_samples=500)
+            .over("permno")
+        ).alias("cov_temp"),
+        pl.col("tempRi")
+        .rolling_std(window_size=1260, min_samples=500)
+        .over("permno")
+        .alias("std_tempRi"),
+        pl.col("tempRm")
+        .rolling_std(window_size=1260, min_samples=500)
+        .over("permno")
+        .alias("std_tempRm"),
+    ]
+)
 
-df = df.with_columns([
-    # R² = corr² = (cov / (std_x * std_y))²
-    (pl.col("cov_temp") / (pl.col("std_tempRi") * pl.col("std_tempRm"))).pow(2).alias("_R2")
-])
+df = df.with_columns(
+    [
+        # R² = corr² = (cov / (std_x * std_y))²
+        (pl.col("cov_temp") / (pl.col("std_tempRi") * pl.col("std_tempRm")))
+        .pow(2)
+        .alias("_R2")
+    ]
+)
 
 # == Calculate Frazzini-Pedersen beta ==
 print("Computing Frazzini-Pedersen beta...")
 
-df = df.with_columns([
-    (pl.col("_R2").abs().sqrt() * (pl.col("sd252_LogRet") / pl.col("sd252_LogMkt"))).alias("BetaFP")
-])
+df = df.with_columns(
+    [
+        (
+            pl.col("_R2").abs().sqrt()
+            * (pl.col("sd252_LogRet") / pl.col("sd252_LogMkt"))
+        ).alias("BetaFP")
+    ]
+)
 
 
 print("\n📅 Converting to monthly frequency...")
 # Convert to monthly and keep last observation per month
-df = df.with_columns([
-    pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
-])
+df = df.with_columns([pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")])
 
 print("Aggregating to permno-month level...")
 
 # save last non-missing BetaFP per permno-month
-df_monthly = df.select(['permno', 'time_avail_m', 'time_d', 'BetaFP']).filter(
-    pl.col("BetaFP").is_finite()
-).sort(["permno", "time_avail_m", "time_d"]).group_by(
-    ["permno", "time_avail_m"]
-).agg(
-    pl.col("BetaFP").last().alias("BetaFP")
+df_monthly = (
+    df.select(["permno", "time_avail_m", "time_d", "BetaFP"])
+    .filter(pl.col("BetaFP").is_finite())
+    .sort(["permno", "time_avail_m", "time_d"])
+    .group_by(["permno", "time_avail_m"])
+    .agg(pl.col("BetaFP").last().alias("BetaFP"))
 )
 
 print(f"Generated predictors: {len(df_monthly):,} permno-month observations")

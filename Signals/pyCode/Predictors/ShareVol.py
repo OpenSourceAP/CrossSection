@@ -16,7 +16,8 @@ Outputs:
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 from utils.stata_replication import stata_ineq_pl
 
@@ -35,7 +36,7 @@ monthly_crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
 df = df.join(
     monthly_crsp.select(["permno", "time_avail_m", "shrout", "vol"]),
     on=["permno", "time_avail_m"],
-    how="inner"
+    how="inner",
 )
 print(f"After merge: {df.shape[0]} rows")
 
@@ -46,73 +47,87 @@ df = df.sort(["permno", "time_avail_m"])
 
 print("Creating lag variables for volume calculation...")
 # Calculate 3-month rolling share volume using current and previous 2 months
-df = df.with_columns([
-    pl.col("vol").shift(1).over("permno").alias("l1_vol"),
-    pl.col("vol").shift(2).over("permno").alias("l2_vol"),
-    pl.col("shrout").shift(1).over("permno").alias("l1_shrout")
-])
+df = df.with_columns(
+    [
+        pl.col("vol").shift(1).over("permno").alias("l1_vol"),
+        pl.col("vol").shift(2).over("permno").alias("l2_vol"),
+        pl.col("shrout").shift(1).over("permno").alias("l1_shrout"),
+    ]
+)
 
-df = df.with_columns([
-    ((pl.col("vol") + pl.col("l1_vol") + pl.col("l2_vol")) / 
-     (3 * pl.col("shrout")) * 100).alias("tempShareVol")
-])
+df = df.with_columns(
+    [
+        (
+            (pl.col("vol") + pl.col("l1_vol") + pl.col("l2_vol"))
+            / (3 * pl.col("shrout"))
+            * 100
+        ).alias("tempShareVol")
+    ]
+)
 
 # Exclude observations where shares outstanding changed in the past 3 months
 # Identify changes in shares outstanding
-df = df.with_columns([
-    (pl.col("shrout") != pl.col("l1_shrout")).alias("dshrout")
-])
+df = df.with_columns([(pl.col("shrout") != pl.col("l1_shrout")).alias("dshrout")])
 
 # Set up observation numbering for each stock
-df = df.with_columns([
-    pl.int_range(pl.len()).over("permno").alias("_n")
-])
+df = df.with_columns([pl.int_range(pl.len()).over("permno").alias("_n")])
 
 # Set no change for first observation (no prior period to compare)
-df = df.with_columns([
-    pl.when(pl.col("_n") == 0)
-    .then(False)
-    .otherwise(pl.col("dshrout"))
-    .alias("dshrout")
-])
+df = df.with_columns(
+    [
+        pl.when(pl.col("_n") == 0)
+        .then(False)
+        .otherwise(pl.col("dshrout"))
+        .alias("dshrout")
+    ]
+)
 
 # Create lagged indicators of shares outstanding changes
-df = df.with_columns([
-    pl.col("dshrout").shift(1).over("permno").alias("l1_dshrout"),
-    pl.col("dshrout").shift(2).over("permno").alias("l2_dshrout")
-])
+df = df.with_columns(
+    [
+        pl.col("dshrout").shift(1).over("permno").alias("l1_dshrout"),
+        pl.col("dshrout").shift(2).over("permno").alias("l2_dshrout"),
+    ]
+)
 
 # Flag observations for dropping if any change occurred in current or prior 2 months
-df = df.with_columns([
-    (pl.col("dshrout").cast(pl.Int32) + 
-     pl.col("l1_dshrout").fill_null(False).cast(pl.Int32) + 
-     pl.col("l2_dshrout").fill_null(False).cast(pl.Int32) > 0).alias("dropObs")
-])
+df = df.with_columns(
+    [
+        (
+            pl.col("dshrout").cast(pl.Int32)
+            + pl.col("l1_dshrout").fill_null(False).cast(pl.Int32)
+            + pl.col("l2_dshrout").fill_null(False).cast(pl.Int32)
+            > 0
+        ).alias("dropObs")
+    ]
+)
 
 # Don't drop first two observations as they lack full history
-df = df.with_columns([
-    pl.when((pl.col("_n") == 0) | (pl.col("_n") == 1))
-    .then(None)
-    .otherwise(pl.col("dropObs"))
-    .alias("dropObs")
-])
+df = df.with_columns(
+    [
+        pl.when((pl.col("_n") == 0) | (pl.col("_n") == 1))
+        .then(None)
+        .otherwise(pl.col("dropObs"))
+        .alias("dropObs")
+    ]
+)
 
 # Filter out flagged observations
-df = df.filter(
-    (pl.col("dropObs") != True) | (pl.col("dropObs").is_null())
-)
+df = df.filter((pl.col("dropObs") != True) | (pl.col("dropObs").is_null()))
 
 # Create binary signal based on share volume thresholds
 # Low volume (< 5) = 0, high volume (> 10) = 1, middle range remains missing
 # Missing share volume values are treated as high and assigned 1
-df = df.with_columns([
-    pl.when(stata_ineq_pl(pl.col("tempShareVol"), "<", pl.lit(5)))
-    .then(0)
-    .when(stata_ineq_pl(pl.col("tempShareVol"), ">", pl.lit(10)))
-    .then(1)
-    .otherwise(None)
-    .alias("ShareVol")
-])
+df = df.with_columns(
+    [
+        pl.when(stata_ineq_pl(pl.col("tempShareVol"), "<", pl.lit(5)))
+        .then(0)
+        .when(stata_ineq_pl(pl.col("tempShareVol"), ">", pl.lit(10)))
+        .then(1)
+        .otherwise(None)
+        .alias("ShareVol")
+    ]
+)
 
 print("Calculating ShareVol signal...")
 # Select final result columns

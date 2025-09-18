@@ -16,7 +16,8 @@ import polars as pl
 import pandas as pd
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 print("Starting std_turn.py...")
@@ -30,12 +31,14 @@ df = monthly_crsp.select(["permno", "time_avail_m", "vol", "shrout", "prc"])
 df = df.sort(["permno", "time_avail_m"])
 
 # Signal construction
-df = df.with_columns([
-    # Generate turnover
-    (pl.col("vol") / pl.col("shrout")).alias("tempturn"),
-    # Market value
-    (pl.col("shrout") * pl.col("prc").abs()).alias("mve_c")
-])
+df = df.with_columns(
+    [
+        # Generate turnover
+        (pl.col("vol") / pl.col("shrout")).alias("tempturn"),
+        # Market value
+        (pl.col("shrout") * pl.col("prc").abs()).alias("mve_c"),
+    ]
+)
 
 # Rolling standard deviation of turnover using 36-month window, min 24 observations
 df = df.with_columns(
@@ -47,9 +50,8 @@ df = df.with_columns(
 
 # Size quintiles by time_avail_m using groupby+qcut pattern
 df_pandas = df.to_pandas()
-df_pandas['tempqsize'] = (
-    df_pandas.groupby('time_avail_m')['mve_c']
-    .transform(lambda x: pd.qcut(x, q=5, labels=False, duplicates='drop') + 1)
+df_pandas["tempqsize"] = df_pandas.groupby("time_avail_m")["mve_c"].transform(
+    lambda x: pd.qcut(x, q=5, labels=False, duplicates="drop") + 1
 )
 df = pl.from_pandas(df_pandas)
 

@@ -27,35 +27,66 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 print("Starting cfp predictor...")
 
 # DATA LOAD
 print("Loading m_aCompustat data...")
-compustat_df = pd.read_parquet('../pyData/Intermediate/m_aCompustat.parquet', 
-                             columns=['gvkey', 'permno', 'time_avail_m', 'act', 'che', 
-                                     'lct', 'dlc', 'txp', 'dp', 'ib', 'oancf'])
+compustat_df = pd.read_parquet(
+    "../pyData/Intermediate/m_aCompustat.parquet",
+    columns=[
+        "gvkey",
+        "permno",
+        "time_avail_m",
+        "act",
+        "che",
+        "lct",
+        "dlc",
+        "txp",
+        "dp",
+        "ib",
+        "oancf",
+    ],
+)
 
 print(f"Loaded {len(compustat_df):,} Compustat observations")
 
 # Deduplicate by permno time_avail_m (equivalent to bysort permno time_avail_m: keep if _n == 1)
-compustat_df = compustat_df.drop_duplicates(['permno', 'time_avail_m'], keep='first')
+compustat_df = compustat_df.drop_duplicates(["permno", "time_avail_m"], keep="first")
 print(f"After deduplication: {len(compustat_df):,} observations")
 
 # Load SignalMasterTable
 print("Loading SignalMasterTable...")
-signal_master = pd.read_parquet('../pyData/Intermediate/SignalMasterTable.parquet', 
-                               columns=['permno', 'time_avail_m', 'mve_c'])
+signal_master = pd.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet",
+    columns=["permno", "time_avail_m", "mve_c"],
+)
 
 print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
 
 # Merge with SignalMasterTable (equivalent to merge 1:1 permno time_avail_m using SignalMasterTable, keep(using match))
 print("Merging with SignalMasterTable...")
-df = pd.merge(signal_master, compustat_df[['permno', 'time_avail_m', 'act', 'che', 
-                                          'lct', 'dlc', 'txp', 'dp', 'ib', 'oancf']], 
-              on=['permno', 'time_avail_m'], how='inner')
+df = pd.merge(
+    signal_master,
+    compustat_df[
+        [
+            "permno",
+            "time_avail_m",
+            "act",
+            "che",
+            "lct",
+            "dlc",
+            "txp",
+            "dp",
+            "ib",
+            "oancf",
+        ]
+    ],
+    on=["permno", "time_avail_m"],
+    how="inner",
+)
 
 print(f"After merge: {len(df):,} observations")
 
@@ -63,62 +94,64 @@ print(f"After merge: {len(df):,} observations")
 print("Constructing cfp signal...")
 
 # Sort by permno and time_avail_m (equivalent to xtset permno time_avail_m)
-df = df.sort_values(['permno', 'time_avail_m'])
+df = df.sort_values(["permno", "time_avail_m"])
 
 # Create 12-month lags for accrual calculation (calendar-based, not position-based)
-lag_cols = ['act', 'che', 'lct', 'dlc', 'txp']
+lag_cols = ["act", "che", "lct", "dlc", "txp"]
 for col in lag_cols:
     # Create 12-month lag using calendar months, not position-based shift
-    df[f'lag_time'] = df['time_avail_m'] - pd.DateOffset(months=12)
-    lag_data = df[['permno', 'time_avail_m', col]].copy()
-    lag_data = lag_data.rename(columns={'time_avail_m': 'lag_time', col: f'l12_{col}'})
-    df = pd.merge(df, lag_data, on=['permno', 'lag_time'], how='left')
-    df = df.drop('lag_time', axis=1)
+    df[f"lag_time"] = df["time_avail_m"] - pd.DateOffset(months=12)
+    lag_data = df[["permno", "time_avail_m", col]].copy()
+    lag_data = lag_data.rename(columns={"time_avail_m": "lag_time", col: f"l12_{col}"})
+    df = pd.merge(df, lag_data, on=["permno", "lag_time"], how="left")
+    df = df.drop("lag_time", axis=1)
 
 # Calculate accrual_level
 # accrual_level = (act-l12.act - (che-l12.che)) - ((lct-l12.lct)-(dlc-l12.dlc)-(txp-l12.txp)-dp)
-df['accrual_level'] = (
-    (df['act'] - df['l12_act']) - (df['che'] - df['l12_che'])
-) - (
-    (df['lct'] - df['l12_lct']) - (df['dlc'] - df['l12_dlc']) - (df['txp'] - df['l12_txp']) - df['dp']
+df["accrual_level"] = ((df["act"] - df["l12_act"]) - (df["che"] - df["l12_che"])) - (
+    (df["lct"] - df["l12_lct"])
+    - (df["dlc"] - df["l12_dlc"])
+    - (df["txp"] - df["l12_txp"])
+    - df["dp"]
 )
 
 # Calculate initial cfp = (ib - accrual_level) / mve_c
-df['calculated_cf'] = df['ib'] - df['accrual_level']
+df["calculated_cf"] = df["ib"] - df["accrual_level"]
 
 # Calculate cfp with domain-aware missing value handling
 # Following missing/missing = 1.0 pattern for division operations
-df['cfp'] = np.where(
-    df['mve_c'] == 0,
+df["cfp"] = np.where(
+    df["mve_c"] == 0,
     np.nan,  # Division by zero = missing
     np.where(
-        df['calculated_cf'].isna() & df['mve_c'].isna(),
+        df["calculated_cf"].isna() & df["mve_c"].isna(),
         1.0,  # missing/missing = 1.0 (no change)
-        df['calculated_cf'] / df['mve_c']
-    )
+        df["calculated_cf"] / df["mve_c"],
+    ),
 )
 
 # Update with oancf/mve_c if oancf is available (equivalent to Replace oancf/mve_c if oancf ! to.)
-mask_oancf_available = df['oancf'].notna()
-df.loc[mask_oancf_available, 'cfp'] = np.where(
-    df.loc[mask_oancf_available, 'mve_c'] == 0,
+mask_oancf_available = df["oancf"].notna()
+df.loc[mask_oancf_available, "cfp"] = np.where(
+    df.loc[mask_oancf_available, "mve_c"] == 0,
     np.nan,
     np.where(
-        df.loc[mask_oancf_available, 'oancf'].isna() & df.loc[mask_oancf_available, 'mve_c'].isna(),
+        df.loc[mask_oancf_available, "oancf"].isna()
+        & df.loc[mask_oancf_available, "mve_c"].isna(),
         1.0,
-        df.loc[mask_oancf_available, 'oancf'] / df.loc[mask_oancf_available, 'mve_c']
-    )
+        df.loc[mask_oancf_available, "oancf"] / df.loc[mask_oancf_available, "mve_c"],
+    ),
 )
 
 print(f"Generated cfp values for {df['cfp'].notna().sum():,} observations")
 print(f"Used oancf for {mask_oancf_available.sum():,} observations")
 
 # Clean up temporary columns
-lag_cols_to_drop = [f'l12_{col}' for col in lag_cols]
-df = df.drop(columns=lag_cols_to_drop + ['accrual_level', 'calculated_cf'])
+lag_cols_to_drop = [f"l12_{col}" for col in lag_cols]
+df = df.drop(columns=lag_cols_to_drop + ["accrual_level", "calculated_cf"])
 
 # SAVE
 print("Saving predictor...")
-save_predictor(df, 'cfp')
+save_predictor(df, "cfp")
 
 print("cfp predictor completed successfully!")
