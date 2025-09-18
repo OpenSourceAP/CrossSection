@@ -1,4 +1,4 @@
-# Predictor Validation Overrides
+# Predictor Validation accepteds
 # 
 # This file allows manual approval of validation failures at the predictor level.
 # If a predictor is listed here with status: accepted, all its validation 
@@ -238,7 +238,7 @@ EarnSupBig:
     A complicated predictor (asrol, intersecting variables) and the deviations are small.    
 
 CPVolSpread:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
@@ -246,7 +246,7 @@ CPVolSpread:
     See https://github.com/OpenSourceAP/CrossSection/issues/156.
 
 dCPVolSpread:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
@@ -254,7 +254,7 @@ dCPVolSpread:
     See https://github.com/OpenSourceAP/CrossSection/issues/156.
 
 dVolCall:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
@@ -262,7 +262,7 @@ dVolCall:
     See https://github.com/OpenSourceAP/CrossSection/issues/156.
 
 dVolPut:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
@@ -270,7 +270,7 @@ dVolPut:
     See https://github.com/OpenSourceAP/CrossSection/issues/156.
 
 skew1:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
@@ -278,7 +278,7 @@ skew1:
     See https://github.com/OpenSourceAP/CrossSection/issues/156.
 
 SmileSlope:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
@@ -286,7 +286,7 @@ SmileSlope:
     See https://github.com/OpenSourceAP/CrossSection/issues/156.
 
 ZZ1_RIVolSpread:
-  status: override
+  status: accepted
   reviewed_on: 2025-09-17
   reviewed_by: ac
   details: |
