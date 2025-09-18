@@ -7,10 +7,10 @@ test_predictors.py
 Usage:
     cd pyCode/
     source .venv/bin/activate
-    python3 utils/test_predictors.py --all             # Test all predictors
-    python3 utils/test_predictors.py --predictors Accruals  # Test specific predictor
-    python3 utils/test_predictors.py --all --tstat     # With t-stat check enabled
-    python3 utils/test_predictors.py --predictors BM Size --tstat  # With t-stat check for specific predictors
+    python3 StataComparison/test_predictors.py --all             # Test all predictors
+    python3 StataComparison/test_predictors.py --predictors Accruals  # Test specific predictor
+    python3 StataComparison/test_predictors.py --all --tstat     # With t-stat check enabled
+    python3 StataComparison/test_predictors.py --predictors BM Size --tstat  # With t-stat check for specific predictors
 
 Precision Validation (per CLAUDE.md updated requirements):
 1. Superset: Python observations are a superset of Stata observations
