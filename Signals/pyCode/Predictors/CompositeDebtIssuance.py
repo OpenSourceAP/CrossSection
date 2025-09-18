@@ -1,7 +1,11 @@
 # ABOUTME: Composite debt issuance following Lyandres, Sun and Zhang 2008, Table 5B
 # ABOUTME: calculates log of total debt minus log of total debt 5 years ago
+
 """
+CompositeDebtIssuance.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/CompositeDebtIssuance.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - CompositeDebtIssuance.csv: CSV file with columns [permno, yyyymm, CompositeDebtIssuance]
-    - CompositeDebtIssuance = log(total_debt) - log(total_debt_5_years_ago), where total_debt = dltt + dlc
 """
 
 import pandas as pd

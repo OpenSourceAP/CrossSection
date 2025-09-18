@@ -1,7 +1,11 @@
 # ABOUTME: Consensus Recommendation following Barber et al. 2001, Table 3A
 # ABOUTME: Binary variable if monthly mean of recommendations over analysts is greater than 3, and 0 if less or equal to 1.5
+
 """
+ConsRecomm.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ConsRecomm.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - ConsRecomm.csv: CSV file with columns [permno, yyyymm, ConsRecomm]
-    - ConsRecomm = 1 if mean ireccd > 3, ConsRecomm = 0 if mean ireccd <= 1.5 (following Table 3A)
 """
 
 import pandas as pd

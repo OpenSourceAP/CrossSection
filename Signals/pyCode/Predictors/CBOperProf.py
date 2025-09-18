@@ -2,19 +2,18 @@
 # ABOUTME: calculates operating profitability with working capital and R&D adjustments
 
 """
-CBOperProf Predictor
+CBOperProf.py
 
-Cash-based Operating Profitability calculation with working capital adjustments.
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/CBOperProf.py
 
 Inputs:
-- SignalMasterTable.parquet (permno, gvkey, time_avail_m, exchcd, sicCRSP, shrcd, mve_c)
-- m_aCompustat.parquet (permno, time_avail_m, revt, cogs, xsga, xrd, rect, invt, xpp, drc, drlt, ap, xacc, at, ceq)
+    - SignalMasterTable.parquet: Master signal data with columns [permno, gvkey, time_avail_m, exchcd, sicCRSP, shrcd, mve_c]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, revt, cogs, xsga, xrd, rect, invt, xpp, drc, drlt, ap, xacc, at, ceq]
 
 Outputs:
-- CBOperProf.csv (permno, yyyymm, CBOperProf)
-
-This predictor calculates cash-based operating profitability by adjusting operating income
-for changes in working capital components over 12 months, then scaling by total assets.
+    - CBOperProf.csv: CSV file with columns [permno, yyyymm, CBOperProf]
 """
 
 import pandas as pd

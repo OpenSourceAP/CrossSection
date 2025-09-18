@@ -2,15 +2,18 @@
 # ABOUTME: Put volatility minus call volatility for 30-day 50-delta options
 
 """
+SmileSlope.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/SmileSlope.py
 
 Inputs:
-    - pyData/Prep/OptionMetricsVolSurf.csv
-    - pyData/Intermediate/SignalMasterTable.parquet
+    - OptionMetricsVolSurf.csv: Option volatility surface data with columns [secid, time_avail_m, days, delta, cp_flag, impl_vol]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, secid]
 
 Outputs:
-    - pyData/Predictors/SmileSlope.csv - Put IV minus Call IV for 30-day 50-delta options
+    - SmileSlope.csv: CSV file with columns [permno, yyyymm, SmileSlope]
 """
 
 # --------------

@@ -1,9 +1,20 @@
 # ABOUTME: Initial Public Offerings following Ritter 1991, Table 2, month 12
 # ABOUTME: calculates IPO indicator for stocks 3-36 months after IPO, with non-IPO stocks = 0
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, IPODates.parquet
-# Output: ../pyData/Predictors/IndIPO.csv
+"""
+IndIPO.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/IndIPO.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m]
+    - IPODates.parquet: IPO dates data with columns [permno, IPOdate]
+
+Outputs:
+    - IndIPO.csv: CSV file with columns [permno, yyyymm, IndIPO]
+"""
 
 import pandas as pd
 import numpy as np

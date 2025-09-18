@@ -1,14 +1,11 @@
-# %%
-# debug
-import os
-
-os.chdir(os.path.join(os.path.dirname(__file__), ".."))
-
 # ABOUTME: Operating profitability following Fama and French 2006, Table 3 Y_t/B_t
 # ABOUTME: calculates operating profits scaled by book equity, excluding smallest size tercile
 
 """
+OperProf.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/OperProf.py
 
 Inputs:
@@ -17,8 +14,13 @@ Inputs:
 
 Outputs:
     - OperProf.csv: CSV file with columns [permno, yyyymm, OperProf]
-    - OperProf = (revt - cogs - xsga - xint) / ceq, excluding smallest size tercile
 """
+
+import pandas as pd
+import numpy as np
+import sys
+
+sys.path.insert(0, ".")
 
 # Notes:
 # Excludes smallest size tercile to simulate NYSE size breakpoints

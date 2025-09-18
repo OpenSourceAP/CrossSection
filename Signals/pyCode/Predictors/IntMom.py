@@ -1,9 +1,19 @@
-# ABOUTME: Calculates intermediate momentum following Novy-Marx 2012 Table 2
+# ABOUTME: Intermediate momentum following Novy-Marx 2012 Table 2
 # ABOUTME: Stock returns between months t-12 and t-6 (intermediate horizon)
 
-# Run from pyCode/ directory: python3 Predictors/IntMom.py
-# Inputs: ../pyData/Intermediate/SignalMasterTable.parquet (columns: permno, time_avail_m, ret)
-# Outputs: ../pyData/Predictors/IntMom.csv (columns: permno, yyyymm, IntMom)
+"""
+IntMom.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/IntMom.py
+
+Inputs:
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - IntMom.csv: CSV file with columns [permno, yyyymm, IntMom]
+"""
 
 import pandas as pd
 import sys

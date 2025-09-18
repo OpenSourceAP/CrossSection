@@ -2,19 +2,17 @@
 # ABOUTME: Binary variable equal to 1 if deferred charges (dc) > 0 or common shares reserved for convertible debt (cshrc) > 0
 
 """
-ConvDebt Predictor
+ConvDebt.py
 
-Convertible debt indicator calculation.
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ConvDebt.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, dc, cshrc)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, dc, cshrc]
 
 Outputs:
-- ConvDebt.csv (permno, yyyymm, ConvDebt)
-
-This predictor calculates:
-1. ConvDebt = 0 by default
-2. ConvDebt = 1 if (dc != . & dc != 0) | (cshrc != . & cshrc != 0)
+    - ConvDebt.csv: CSV file with columns [permno, yyyymm, ConvDebt]
 """
 
 import pandas as pd

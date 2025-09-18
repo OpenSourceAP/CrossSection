@@ -1,9 +1,20 @@
 # ABOUTME: Dividend omission following Michaely, Thaler and Womack 1995, Table 3, omit to Day 254
 # ABOUTME: identifies companies that stop paying regular dividends with signal held for 2 months
 
-# Run from pyCode/ directory
-# Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/DivOmit.csv
+"""
+DivOmit.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/DivOmit.py
+
+Inputs:
+    - CRSPdistributions.parquet: CRSP distributions data with columns [permno, exdt, divamt, cd2]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, exchcd, shrcd]
+
+Outputs:
+    - DivOmit.csv: CSV file with columns [permno, yyyymm, DivOmit]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,7 +1,11 @@
 # ABOUTME: Institutional ownership among high short interest stocks following Asquith, Pathak and Ritter 2005, Table 5, EW 99th
 # ABOUTME: Excludes stocks below 99th percentile of short interest, calculates institutional ownership for remaining stocks
+
 """
+IO_ShortInterest.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/IO_ShortInterest.py
 
 Inputs:
@@ -12,7 +16,6 @@ Inputs:
 
 Outputs:
     - IO_ShortInterest.csv: CSV file with columns [permno, yyyymm, IO_ShortInterest]
-    - IO_ShortInterest = institutional ownership for stocks with short interest above 99th percentile, missing otherwise
 """
 
 import pandas as pd

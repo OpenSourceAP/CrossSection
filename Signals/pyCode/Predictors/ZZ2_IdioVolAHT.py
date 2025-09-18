@@ -1,5 +1,20 @@
-# ABOUTME: Idiosyncratic risk predictor using RMSE from 252-day rolling CAPM regression
-# ABOUTME: Usage: python3 ZZ2_IdioVolAHT.py (run from pyCode/ directory)
+# ABOUTME: Idiosyncratic volatility following Ang, Hodrick, Xing, Zhang 2006, The Journal of Finance
+# ABOUTME: calculates idiosyncratic volatility from 252-day rolling CAPM regression residuals
+
+"""
+ZZ2_IdioVolAHT.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ2_IdioVolAHT.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, rf, mktrf]
+
+Outputs:
+    - IdioVolAHT.csv: CSV file with columns [permno, yyyymm, IdioVolAHT]
+"""
 
 import polars as pl
 import sys

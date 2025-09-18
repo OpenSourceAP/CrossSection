@@ -1,9 +1,20 @@
-# ABOUTME: DownRecomm.py - computes earnings forecast downgrade indicator (Barber et al. 2001 JF Table 3C)
-# ABOUTME: Binary indicator for decreased mean analyst earnings forecasts using IBES data
+# ABOUTME: DownRecomm following Barber et al. 2001 JF Table 3C, analyst recommendation downgrades
+# ABOUTME: calculates binary indicator for month-over-month recommendation improvements
 
-# Computes binary indicator for analyst recommendation downgrades
-# Input: IBES recommendation data and master security table
-# Output: Binary signal for recommendation improvements
+"""
+DownRecomm.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/DownRecomm.py
+
+Inputs:
+    - IBES_Recommendations.parquet: IBES recommendation data with columns [tickerIBES, amaskcd, anndats, time_avail_m, ireccd]
+    - SignalMasterTable.parquet: Security master table with columns [permno, tickerIBES, time_avail_m]
+
+Outputs:
+    - DownRecomm.csv: CSV file with columns [permno, yyyymm, DownRecomm]
+"""
 
 import pandas as pd
 import numpy as np

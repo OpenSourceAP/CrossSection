@@ -1,7 +1,11 @@
 # ABOUTME: Short Interest following Dechow et al. 2001, Table 1A
 # ABOUTME: calculates short interest predictor scaled by shares outstanding
+
 """
+ShortInterest.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ShortInterest.py
 
 Inputs:
@@ -11,7 +15,6 @@ Inputs:
 
 Outputs:
     - ShortInterest.csv: CSV file with columns [permno, yyyymm, ShortInterest]
-    - ShortInterest = shortint/shrout, short interest scaled by shares outstanding
 """
 
 import pandas as pd

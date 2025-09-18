@@ -1,9 +1,20 @@
 # ABOUTME: Revenue Surprise following Jegadeesh and Livnat 2006, Journal of Accounting and Economics, Table 7 Model 1 SURGE
 # ABOUTME: calculates standardized revenue surprise scaled by revenue per share standard deviation
 
-# Calculates revenue surprise using Compustat quarterly data
-# Input: ../pyData/Intermediate/SignalMasterTable.parquet, ../pyData/Intermediate/m_QCompustat.parquet
-# Output: ../pyData/Predictors/RevenueSurprise.csv
+"""
+RevenueSurprise.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/RevenueSurprise.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, mve_c]
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, revtq, cshprq]
+
+Outputs:
+    - RevenueSurprise.csv: CSV file with columns [permno, yyyymm, RevenueSurprise]
+"""
 
 import pandas as pd
 import numpy as np

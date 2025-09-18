@@ -1,7 +1,11 @@
 # ABOUTME: Dollar volume predictor following Brennan, Chordia, Subra 1998, Table 6A
 # ABOUTME: calculates log of two-month lagged trading volume times two-month lagged price
+
 """
+DolVol.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/DolVol.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - DolVol.csv: CSV file with columns [permno, yyyymm, DolVol]
-    - DolVol = log(vol_lag2 * |prc_lag2|), where lag2 means 2-month lag
 """
 
 import pandas as pd

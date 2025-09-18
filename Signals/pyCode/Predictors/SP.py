@@ -2,19 +2,18 @@
 # ABOUTME: calculates sales-to-price ratio as sales (sale) divided by market value of equity (mve_c)
 
 """
-SP predictor calculation
+SP.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/SP.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, sale)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, sale]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
 
 Outputs:
-    - ../pyData/Predictors/SP.csv (permno, yyyymm, SP)
+    - SP.csv: CSV file with columns [permno, yyyymm, SP]
 """
 
 import pandas as pd

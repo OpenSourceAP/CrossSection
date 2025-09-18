@@ -6,7 +6,6 @@ AnalystRevision.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/AnalystRevision.py
 
 Inputs:
@@ -15,7 +14,6 @@ Inputs:
 
 Outputs:
     - AnalystRevision.csv: CSV file with columns [permno, yyyymm, AnalystRevision]
-    - AnalystRevision = ratio of current to previous month's mean earnings estimate
 """
 
 import pandas as pd

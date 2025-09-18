@@ -1,8 +1,20 @@
-# ABOUTME: Calculates R&D capital-to-assets following Li 2011 Table 7 (small firms only)
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/RDcap.py
+# ABOUTME: R&D capital-to-assets following Li 2011 Table 7 (small firms only)
+# ABOUTME: calculates weighted sum of current and lagged R&D expenditures scaled by total assets
 
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/RDcap.csv
+"""
+RDcap.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/RDcap.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, xrd]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_c]
+
+Outputs:
+    - RDcap.csv: CSV file with columns [permno, yyyymm, RDcap]
+"""
 
 import pandas as pd
 import numpy as np

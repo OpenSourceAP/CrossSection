@@ -1,8 +1,20 @@
-# ABOUTME: Calculates industry-adjusted real estate holdings following Tuzel 2010 Table 5
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/realestate.py
+# ABOUTME: Real estate holdings following Tuzel 2010, Table 5
+# ABOUTME: calculates industry-adjusted real estate holdings predictor
 
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/realestate.csv
+"""
+realestate.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/realestate.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ppenb, ppenls, fatb, fatl, ppegt, ppent, at]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, sicCRSP]
+
+Outputs:
+    - realestate.csv: CSV file with columns [permno, yyyymm, realestate]
+"""
 
 import pandas as pd
 import numpy as np

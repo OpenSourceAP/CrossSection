@@ -1,7 +1,11 @@
 # ABOUTME: Net debt financing following Bradshaw, Richardson, Sloan 2006, Table 3
 # ABOUTME: calculates net debt financing activity scaled by average total assets
+
 """
+NetDebtFinance.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/NetDebtFinance.py
 
 Inputs:
@@ -9,8 +13,6 @@ Inputs:
 
 Outputs:
     - NetDebtFinance.csv: CSV file with columns [permno, yyyymm, NetDebtFinance]
-    - NetDebtFinance = (dltis - dltr + dlcch) / (0.5 * (at + l12.at))
-    - Missing dlcch values replaced with 0, excluded if abs(ratio) > 1
 """
 
 import pandas as pd

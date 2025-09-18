@@ -2,18 +2,17 @@
 # ABOUTME: Change in net financial assets (financial assets minus liabilities) from prior 12 months divided by average total assets
 
 """
-DelNetFin predictor calculation
+DelNetFin.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DelNetFin.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (gvkey, permno, time_avail_m, at, pstk, dltt, dlc, ivst, ivao)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, at, pstk, dltt, dlc, ivst, ivao]
 
 Outputs:
-    - ../pyData/Predictors/DelNetFin.csv (permno, yyyymm, DelNetFin)
+    - DelNetFin.csv: CSV file with columns [permno, yyyymm, DelNetFin]
 """
 
 import pandas as pd

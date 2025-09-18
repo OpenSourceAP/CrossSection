@@ -1,7 +1,11 @@
 # ABOUTME: Advertising Expense following Chan, Lakonishok and Sougiannis 2001, Table 7, first year
 # ABOUTME: calculates advertising expense predictor scaled by market value of equity
+
 """
+AdExp.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/AdExp.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - AdExp.csv: CSV file with columns [permno, yyyymm, AdExp]
-    - AdExp = xad/mve_c, set to missing if xad <= 0 (following Table VII)
 """
 
 import pandas as pd

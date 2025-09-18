@@ -1,9 +1,21 @@
 # ABOUTME: Earnings Forecast to price following Elgers, Lo and Pfeiffer 2001, Table 4A, FAF_t+1 lower coverage
 # ABOUTME: calculates median EPS forecast divided by stock price for December fiscal year ends with low analyst coverage
 
-# Run from pyCode/ directory
-# Inputs: IBES_EPS_Unadj.parquet, SignalMasterTable.parquet, m_aCompustat.parquet
-# Output: ../pyData/Predictors/sfe.csv
+"""
+sfe.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/sfe.py
+
+Inputs:
+    - IBES_EPS_Unadj.parquet: IBES data with columns [fpi, statpers, fpedats, time_avail_m, tickerIBES, medest, numest]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, tickerIBES, prc, mve_c]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, datadate]
+
+Outputs:
+    - sfe.csv: CSV file with columns [permno, yyyymm, sfe]
+"""
 
 import pandas as pd
 import numpy as np

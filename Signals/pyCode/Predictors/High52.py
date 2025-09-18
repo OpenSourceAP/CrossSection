@@ -1,10 +1,19 @@
 # ABOUTME: Calculates 52-week high ratio following George and Hwang 2004 Table 1
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/High52.py
+# ABOUTME: calculates current price divided by maximum price over previous 12 months
 
-# Inputs:
-#   - ../pyData/Intermediate/dailyCRSP.parquet
-# Outputs:
-#   - ../pyData/Predictors/High52.csv
+"""
+High52.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/High52.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, prc]
+
+Outputs:
+    - High52.csv: CSV file with columns [permno, yyyymm, High52]
+"""
 
 import pandas as pd
 import sys

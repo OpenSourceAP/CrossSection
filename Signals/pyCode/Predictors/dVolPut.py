@@ -1,22 +1,19 @@
-# ABOUTME: dVolPut.py - calculates change in put option implied volatility
-# ABOUTME: Change in 30-day, 50-delta put option implied volatility from previous month
-
-# An Ang Bali Cakici 2014 Table II B
+# ABOUTME: Change in put option implied volatility following Ang, Bali, Cakici 2014 Table II B
+# ABOUTME: calculates change in 30-day, 50-delta put option implied volatility from previous month
 
 """
-dVolPut predictor calculation
+dVolPut.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/dVolPut.py
 
 Inputs:
-    - ../pyData/Prep/OptionMetricsVolSurf.csv (secid, time_avail_m, days, delta, cp_flag, impl_vol)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, secid)
+    - OptionMetricsVolSurf.csv: Option metrics volatility surface data with columns [secid, time_avail_m, days, delta, cp_flag, impl_vol]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, secid]
 
 Outputs:
-    - ../pyData/Predictors/dVolPut.csv (permno, yyyymm, dVolPut)
+    - dVolPut.csv: CSV file with columns [permno, yyyymm, dVolPut]
 """
 
 import pandas as pd

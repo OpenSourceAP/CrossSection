@@ -1,10 +1,11 @@
-# %%
-
 # ABOUTME: Credit Rating Downgrade following Dichev and Piotroski 2001, Table 4, Downgrade BHAR 3-month
 # ABOUTME: calculates credit rating downgrade signal - 1 if downgrade in past 6 months
 
 """
+CredRatDG.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/CredRatDG.py
 
 Inputs:

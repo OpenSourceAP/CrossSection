@@ -1,12 +1,11 @@
 # ABOUTME: Bid-ask spread following Amihud and Mendelson 1986 JFE, Table 2 Spread Mean
-# ABOUTME: Effective bid ask spread based on Corwin-Schulz scaled by stock price
+# ABOUTME: Follwing McLean-Pontiff 2016 JF, we use Corwin-Schulz to measure bid-ask spreads
 
 """
 BidAskSpread.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/BidAskSpread.py
 
 Inputs:
@@ -26,7 +25,6 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
-from config import MAX_ROWS_DL
 
 print("Starting BidAskSpread.py...")
 
@@ -59,11 +57,6 @@ df["permno"] = df["permno"].astype("int64")
 
 # Convert period to timestamp for parquet compatibility
 df["time_avail_m"] = df["time_avail_m"].dt.to_timestamp()
-
-# Apply debugging row limit if configured
-if MAX_ROWS_DL > 0:
-    df = df.head(MAX_ROWS_DL)
-    print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
 print(f"Processed data: {df.shape[0]} rows, {df.shape[1]} columns")
 

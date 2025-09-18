@@ -6,7 +6,6 @@ GrSaleToGrOverhead.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/GrSaleToGrOverhead.py
 
 Inputs:
@@ -14,7 +13,6 @@ Inputs:
 
 Outputs:
     - GrSaleToGrOverhead.csv: CSV file with columns [permno, yyyymm, GrSaleToGrOverhead]
-    - GrSaleToGrOverhead = Sales growth minus overhead growth (using 12 and 24-month lags)
 """
 
 import pandas as pd

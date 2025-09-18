@@ -1,9 +1,19 @@
 # ABOUTME: Momentum without the seasonal part following Heston and Sadka 2008 Table 2 Year 1 Nonannual
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom12mOffSeason.py
+# ABOUTME: calculates 12-month momentum excluding same calendar month predictor
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/Mom12mOffSeason.csv
+"""
+Mom12mOffSeason.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Mom12mOffSeason.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly return data with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - Mom12mOffSeason.csv: CSV file with columns [permno, yyyymm, Mom12mOffSeason]
+"""
 
 import pandas as pd
 import numpy as np

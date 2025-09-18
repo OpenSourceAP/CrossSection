@@ -2,19 +2,18 @@
 # ABOUTME: Quarterly return on assets as quarterly income (ibq) divided by 3-month lagged quarterly assets (atq)
 
 """
-roaq predictor calculation
+roaq.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/roaq.py
 
 Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c, gvkey)
-    - ../pyData/Intermediate/m_QCompustat.parquet (gvkey, time_avail_m, atq, ibq)
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_c, gvkey]
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, atq, ibq]
 
 Outputs:
-    - ../pyData/Predictors/roaq.csv (permno, yyyymm, roaq)
+    - roaq.csv: CSV file with columns [permno, yyyymm, roaq]
 """
 
 import pandas as pd

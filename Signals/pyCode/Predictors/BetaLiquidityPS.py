@@ -1,30 +1,20 @@
 # ABOUTME: Pastor-Stambaugh liquidity beta following Pastor and Stambaugh 2003, Table 4A CAPM 10-1
-# ABOUTME: calculates liquidity risk exposure coefficient from rolling window regressions
+# ABOUTME: calculates liquidity risk exposure coefficient from rolling 4-factor regressions
 
 """
 BetaLiquidityPS.py
 
-Generates Pastor-Stambaugh liquidity beta predictor from 4-factor rolling regressions:
-- BetaLiquidityPS: Coefficient of liquidity innovation from 4-factor model regression
-- Rolling 60-observation windows with minimum 36 observations, computed separately for each stock
-
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/BetaLiquidityPS.py
 
 Inputs:
-    - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, ret)
-    - ../pyData/Intermediate/monthlyFF.parquet (time_avail_m, rf, mktrf, hml, smb)
-    - ../pyData/Intermediate/monthlyLiquidity.parquet (time_avail_m, ps_innov)
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret]
+    - monthlyFF.parquet: Monthly Fama-French data with columns [time_avail_m, rf, mktrf, hml, smb]
+    - monthlyLiquidity.parquet: Monthly liquidity data with columns [time_avail_m, ps_innov]
 
 Outputs:
-    - ../pyData/Predictors/BetaLiquidityPS.csv
-
-Requirements:
-    - Rolling 60-observation windows (not 60 months) with minimum 36 observations per window
-    - 4-factor regression: retrf = alpha + beta_ps*ps_innov + beta_mkt*mktrf + beta_hml*hml + beta_smb*smb + residual
-    - Sequential window-based regression estimation for each stock
+    - BetaLiquidityPS.csv: CSV file with columns [permno, yyyymm, BetaLiquidityPS]
 """
 
 import polars as pl

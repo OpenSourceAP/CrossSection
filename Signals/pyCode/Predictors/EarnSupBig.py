@@ -1,7 +1,11 @@
 # ABOUTME: Earnings surprise of big firms following Hou 2007, Key Table AR_i,3
 # ABOUTME: Average monthly value of EarningsSurprise of the 30% largest companies by market value in same FF48 industry
+
 """
+EarnSupBig.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/EarnSupBig.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - EarnSupBig.csv: CSV file with columns [permno, yyyymm, EarnSupBig]
-    - EarnSupBig = Average EarningsSurprise of 30% largest companies in FF48 industry, excluding largest 30% companies
 """
 
 import pandas as pd

@@ -1,7 +1,11 @@
 # ABOUTME: Industry concentration (equity) following Hou and Robinson 2006, Table 2, H(Equity)
 # ABOUTME: calculates three-year rolling average of Herfindahl index based on firm book equity
+
 """
+HerfBE.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/HerfBE.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - HerfBE.csv: CSV file with columns [permno, yyyymm, HerfBE]
-    - HerfBE = 3-year rolling average of industry Herfindahl index based on book equity, excludes regulated industries
 """
 
 import pandas as pd

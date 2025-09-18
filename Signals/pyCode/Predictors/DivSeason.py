@@ -1,11 +1,20 @@
-# %%
-
 # ABOUTME: Dividend seasonality following Hartzmark and Salomon 2013, Table 2B
 # ABOUTME: Creates seasonal dividend predictor based on expected dividend timing patterns
 
-# Run from pyCode/ directory
-# Inputs: CRSPdistributions.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/DivSeason.csv
+"""
+DivSeason.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/DivSeason.py
+
+Inputs:
+    - CRSPdistributions.parquet: CRSP distributions data with columns [permno, cd1, cd2, cd3, divamt, exdt]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m]
+
+Outputs:
+    - DivSeason.csv: CSV file with columns [permno, yyyymm, DivSeason]
+"""
 
 import pandas as pd
 import numpy as np

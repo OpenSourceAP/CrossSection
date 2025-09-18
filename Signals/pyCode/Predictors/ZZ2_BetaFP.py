@@ -1,7 +1,10 @@
 # ABOUTME: Frazzini-Pedersen Beta following Frazzini and Pedersen 2014, Table 3 BAB
 # ABOUTME: calculates beta using R-squared from 3-day overlapping returns regressed on market, times ratio of stock to market volatility
 """
+ZZ2_BetaFP.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ2_BetaFP.py
 
 Inputs:
@@ -10,7 +13,6 @@ Inputs:
 
 Outputs:
     - BetaFP.csv: CSV file with columns [permno, yyyymm, BetaFP]
-    - BetaFP = sqrt(R²) × (σ_stock/σ_market) where R² from 3-day overlapping returns regression
 """
 
 import polars as pl

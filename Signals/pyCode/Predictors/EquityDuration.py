@@ -1,11 +1,19 @@
 # ABOUTME: Equity Duration following Dechow, Sloan and Soliman 2004, Table 6A HDMLD
 # ABOUTME: creates equity duration measure using cash flow projections and discount rates
 
-# OP uses FF style: HDMLD is (S/HD + B/HD)/2 - (S/LD + B/LD)/2
+"""
+EquityDuration.py
 
-# Run from pyCode/ directory
-# Inputs: a_aCompustat.parquet
-# Output: ../pyData/Predictors/EquityDuration.csv
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/EquityDuration.py
+
+Inputs:
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, time_avail_m, fyear, datadate, ceq, ib, sale, prcc_f, csho]
+
+Outputs:
+    - EquityDuration.csv: CSV file with columns [permno, yyyymm, EquityDuration]
+"""
 
 import pandas as pd
 import numpy as np

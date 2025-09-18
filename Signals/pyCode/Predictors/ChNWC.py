@@ -2,15 +2,17 @@
 # ABOUTME: calculates twelve-month change in net working capital scaled by total assets
 
 """
+ChNWC.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ChNWC.py
 
 Inputs:
-    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, act, che, lct, dlc, at]
+    - ../pyData/Intermediate/m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, act, che, lct, dlc, at]
 
 Outputs:
-    - ChNWC.csv: CSV file with columns [permno, yyyymm, ChNWC]
-    - ChNWC = twelve-month change in ((act - che) - (lct - dlc))/at
+    - ../pyData/Predictors/ChNWC.csv: CSV file with columns [permno, yyyymm, ChNWC]
 """
 
 import pandas as pd

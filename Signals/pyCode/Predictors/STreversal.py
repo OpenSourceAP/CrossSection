@@ -1,6 +1,20 @@
 # ABOUTME: Short-term reversal following Jegadeesh 1990, Table 2, Jan-Dec
 # ABOUTME: calculates stock return over the previous month (1-month momentum/reversal)
 
+"""
+STreversal.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/STreversal.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master signal table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - STreversal.csv: CSV file with columns [permno, yyyymm, STreversal]
+"""
+
 import polars as pl
 import sys
 import os

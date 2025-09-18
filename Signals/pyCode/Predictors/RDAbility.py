@@ -1,6 +1,20 @@
 # ABOUTME: R&D ability predictor following Cohen, Diether and Malloy (2013), Table 2A Spread
 # ABOUTME: calculates R&D ability by regressing sales growth on lagged R&D intensity
 
+"""
+RDAbility.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/RDAbility.py
+
+Inputs:
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, time_avail_m, fyear, datadate, xrd, sale]
+
+Outputs:
+    - RDAbility.csv: CSV file with columns [permno, yyyymm, RDAbility]
+"""
+
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd
@@ -406,8 +420,6 @@ print("Expanding to monthly observations...")
 
 # Expand annual observations to monthly frequency
 # Create 12 copies of each observation for monthly data
-
-# First, debug the pre-expansion count
 pre_expand_count = len(df)
 print(f"Before expansion: {pre_expand_count:,} observations")
 

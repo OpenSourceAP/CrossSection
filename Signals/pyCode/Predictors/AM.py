@@ -1,7 +1,11 @@
 # ABOUTME: Assets-to-market ratio following Fama and French 1992, Table 3 Ln(A/ME)
 # ABOUTME: calculates total assets divided by market value of equity
+
 """
+AM.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/AM.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - AM.csv: CSV file with columns [permno, yyyymm, AM]
-    - AM = at/mve_c (total assets divided by market value of equity)
 """
 
 import pandas as pd

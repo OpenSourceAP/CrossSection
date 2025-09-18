@@ -1,16 +1,19 @@
 # ABOUTME: Enterprise Multiple following Loughran and Wellman 2011, Table 3B
 # ABOUTME: calculates enterprise value divided by operating income before depreciation
+
 """
+EntMult.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/EntMult.py
 
 Inputs:
-    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, dltt, dlc, dc, che, oibdp, ceq]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, dltt, dlc, dc, che, oibdp, ceq]
     - SignalMasterTable.parquet: Monthly master table with mve_c
 
 Outputs:
     - EntMult.csv: CSV file with columns [permno, yyyymm, EntMult]
-    - EntMult = (mve_c + dltt + dlc + dc - che) / oibdp, exclude if ceq < 0 or oibdp < 0
 """
 
 import pandas as pd

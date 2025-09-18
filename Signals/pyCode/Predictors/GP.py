@@ -2,18 +2,17 @@
 # ABOUTME: calculates gross profits / total assets, excluding financial firms
 
 """
-GP predictor calculation
+GP.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/GP.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, revt, cogs, at, sic)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, revt, cogs, at, sic, datadate]
 
 Outputs:
-    - ../pyData/Predictors/GP.csv (permno, yyyymm, GP)
+    - GP.csv: CSV file with columns [permno, yyyymm, GP]
 """
 
 import pandas as pd

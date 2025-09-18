@@ -1,16 +1,22 @@
 # ABOUTME: Calculates earnings announcement returns from CRSP daily returns minus market returns
 # ABOUTME: Uses 3-day window around announcement dates from Compustat quarterly data
-#
-# Run from pyCode/ directory: python3 Predictors/ZZ2_AnnouncementReturn.py
-#
-# Inputs:
-#   - pyData/Intermediate/CCMLinkingTable.parquet (CRSP-Compustat crosswalk)
-#   - pyData/Intermediate/m_QCompustat.parquet (quarterly earnings announcement dates)
-#   - pyData/Intermediate/dailyCRSP.parquet (daily stock returns)
-#   - pyData/Intermediate/dailyFF.parquet (daily Fama-French factors)
-#
-# Outputs:
-#   - pyData/Predictors/AnnouncementReturn.csv (permno, yyyymm, AnnouncementReturn)
+
+"""
+ZZ2_AnnouncementReturn.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ2_AnnouncementReturn.py
+
+Inputs:
+    - CCMLinkingTable.parquet: CRSP-Compustat crosswalk with columns [gvkey, permno, timeLinkStart_d, timeLinkEnd_d]
+    - m_QCompustat.parquet: Quarterly earnings announcement dates with columns [gvkey, rdq]
+    - dailyCRSP.parquet: Daily stock returns with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French factors with columns [time_d, mktrf, rf]
+
+Outputs:
+    - AnnouncementReturn.csv: CSV file with columns [permno, yyyymm, AnnouncementReturn]
+"""
 
 import pandas as pd
 import numpy as np

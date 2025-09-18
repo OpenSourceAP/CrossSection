@@ -2,20 +2,18 @@
 # ABOUTME: calculates book-to-market ratio using most recent December value of market equity
 
 """
-BMdec Predictor
+BMdec.py
 
-Book-to-market ratio using December market equity from prior year.
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/BMdec.py
 
 Inputs:
-- m_aCompustat.parquet (permno, time_avail_m, txditc, seq, ceq, at, lt, pstk, pstkrv, pstkl)
-- monthlyCRSP.parquet (permno, time_avail_m, prc, shrout)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, txditc, seq, ceq, at, lt, pstk, pstkrv, pstkl]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, prc, shrout]
 
 Outputs:
-- BMdec.csv (permno, yyyymm, BMdec)
-
-This predictor calculates book-to-market ratio using book equity divided by
-December market equity from the appropriate prior period (12 or 17 months ago
-depending on the current month).
+    - BMdec.csv: CSV file with columns [permno, yyyymm, BMdec]
 """
 
 import pandas as pd

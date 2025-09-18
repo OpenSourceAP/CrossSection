@@ -6,7 +6,6 @@ ChInvIA.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/ChInvIA.py
 
 Inputs:

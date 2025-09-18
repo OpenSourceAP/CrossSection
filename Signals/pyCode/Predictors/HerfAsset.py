@@ -1,7 +1,11 @@
 # ABOUTME: Industry concentration (assets) following Hou and Robinson 2006, Table 2 H(Assets)
 # ABOUTME: calculates three-year rolling average of three-digit industry Herfindahl index based on firm assets
+
 """
+HerfAsset.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/HerfAsset.py
 
 Inputs:
@@ -10,8 +14,6 @@ Inputs:
 
 Outputs:
     - HerfAsset.csv: CSV file with columns [permno, yyyymm, HerfAsset]
-    - HerfAsset = Three-year rolling average of industry Herfindahl index based on assets
-    - Excludes regulated industries per Barclay and Smith 1995 definition
 """
 
 import pandas as pd

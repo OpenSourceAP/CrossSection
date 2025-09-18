@@ -1,9 +1,19 @@
 # ABOUTME: Percent Operating Accruals predictor from Hafzalla, Lundholm, Van Winkle 2011 (AR), Table 4A
 # ABOUTME: Calculates income before extraordinary items minus net cash flow, scaled by absolute income
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/PctAcc.csv
+"""
+PctAcc.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/PctAcc.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ib, oancf, dp, act, che, lct, txp, dlc]
+
+Outputs:
+    - PctAcc.csv: CSV file with columns [permno, yyyymm, PctAcc]
+"""
 
 import pandas as pd
 import numpy as np

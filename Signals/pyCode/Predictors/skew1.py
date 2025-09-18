@@ -1,7 +1,11 @@
 # ABOUTME: Volatility smirk near the money following Xing, Zhang, and Zhao 2010, Table 3A
 # ABOUTME: calculates volatility smirk predictor using OptionMetrics implied volatility differences
+
 """
+skew1.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/skew1.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - skew1.csv: CSV file with columns [permno, yyyymm, skew1]
-    - skew1 = IV of put (moneyness closest to but above 1) minus IV of call (moneyness closest to but below 1)
 """
 
 import pandas as pd

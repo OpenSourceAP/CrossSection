@@ -1,7 +1,11 @@
 # ABOUTME: Volume variance following Chordia, Subra, Anshuman 2001, Table 5B DVOL
 # ABOUTME: calculates rolling standard deviation of monthly trading volume over past 36 months
+
 """
+VolSD.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/VolSD.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - VolSD.csv: CSV file with columns [permno, yyyymm, VolSD]
-    - VolSD = 36-month rolling standard deviation of vol, min 24 observations required
 """
 
 import polars as pl

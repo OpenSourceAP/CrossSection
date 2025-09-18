@@ -1,9 +1,20 @@
 # ABOUTME: Industry concentration following Hou and Robinson 2006, Table 2, firm-level raw
 # ABOUTME: calculates three-year rolling average of industry Herfindahl index based on firm sales
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/Herf.csv
+"""
+Herf.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Herf.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, sale]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, sicCRSP, shrcd]
+
+Outputs:
+    - Herf.csv: CSV file with columns [permno, yyyymm, Herf]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,12 +1,20 @@
 # ABOUTME: Operating profitability R&D adjusted following Ball et al. 2016, Table 4A Oper PRof
 # ABOUTME: calculates R&D-adjusted operating profitability predictor scaled by total assets
 
-# Note: Uses current period assets in denominator (not lagged)
-# This approach produces results closer to original Ohlson-Penman specification
+"""
+OperProfRD.py
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, m_aCompustat.parquet
-# Output: ../pyData/Predictors/OperProfRD.csv
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/OperProfRD.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, exchcd, sicCRSP, mve_c, shrcd]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, xrd, revt, cogs, xsga, at, ceq]
+
+Outputs:
+    - OperProfRD.csv: CSV file with columns [permno, yyyymm, OperProfRD]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,7 +1,11 @@
 # ABOUTME: Industry Return Big Companies following Hou 2007, Table 6, R_i,3(-1)
 # ABOUTME: calculates average monthly return of 30% largest companies in same FF48 industry
+
 """
+IndRetBig.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/IndRetBig.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - IndRetBig.csv: CSV file with columns [permno, yyyymm, IndRetBig]
-    - IndRetBig = average return of large firms (>70th percentile) in same FF48 industry, set to missing for large firms themselves
 """
 
 # IndRetBig predictor translation from Code/Predictors/IndRetBig.do

@@ -1,7 +1,10 @@
 # ABOUTME: Payout Yield following Boudoukh et al. 2007, Table 6B
 # ABOUTME: calculates payout yield predictor scaled by market value of equity
 """
+PayoutYield.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/PayoutYield.py
 
 Inputs:
@@ -10,8 +13,6 @@ Inputs:
 
 Outputs:
     - PayoutYield.csv: CSV file with columns [permno, yyyymm, PayoutYield]
-    - PayoutYield = (dvc + prstkc + max(pstkrv, 0))/mve_c, lagged 6 months
-    - Excludes financial firms (SIC 6000-6999), ceq <= 0, PayoutYield <= 0, or < 2 years in CRSP
 """
 
 import pandas as pd

@@ -2,18 +2,17 @@
 # ABOUTME: calculates taxable income to income ratio predictor with correct missing value handling
 
 """
-Tax predictor calculation
+Tax.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
-    python3 Predictors/Tax_fixed.py
+    python3 Predictors/Tax.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, txfo, txfed, ib, txt, txdi)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, txfo, txfed, ib, txt, txdi]
 
 Outputs:
-    - ../pyData/Predictors/Tax.csv (permno, yyyymm, Tax)
+    - Tax.csv: CSV file with columns [permno, yyyymm, Tax]
 """
 
 import pandas as pd

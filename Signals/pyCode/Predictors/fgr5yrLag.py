@@ -1,7 +1,11 @@
 # ABOUTME: Long-term EPS forecast following La Porta 1996, Table 3 E{g}
 # ABOUTME: calculates 6-month lagged long-term earnings growth forecasts from IBES with June-only observations
+
 """
+fgr5yrLag.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/fgr5yrLag.py
 
 Inputs:

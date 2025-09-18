@@ -2,21 +2,20 @@
 # ABOUTME: calculates conglomerate returns based on segment-weighted industry returns
 
 """
-retConglomerate Predictor - Conglomerate Return Calculation
+retConglomerate.py
 
-This predictor calculates returns for conglomerate firms by:
-1. Identifying conglomerates vs stand-alone companies using segment data
-2. Calculating industry returns from stand-alone companies
-3. Matching weighted industry returns to conglomerate companies based on their segment sales
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/retConglomerate.py
 
 Inputs:
-- CCMLinkingTable.parquet (gvkey, permno, timeLink*)
-- monthlyCRSP.parquet (permno, time_avail_m, ret)
-- a_aCompustat.parquet (gvkey, permno, sale, fyear)
-- CompustatSegments.parquet (gvkey, datadate, stype, sics1, sales)
+    - CCMLinkingTable.parquet: Linking table with columns [gvkey, permno, timeLinkStart_d, timeLinkEnd_d]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret]
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, sale, fyear]
+    - CompustatSegments.parquet: Segment data with columns [gvkey, datadate, stype, sics1, sales]
 
 Outputs:
-- retConglomerate.csv (permno, yyyymm, retConglomerate)
+    - retConglomerate.csv: CSV file with columns [permno, yyyymm, retConglomerate]
 """
 
 import pandas as pd
@@ -312,7 +311,6 @@ conglomerates["tempTotal"] = conglomerates.groupby(["permno", "time_avail_m"])[
 # Generate sales/tempTotal
 conglomerates["tempweight"] = conglomerates["sales"] / conglomerates["tempTotal"]
 
-# DEBUG: Check weights like original code comment
 print(f"Weight distribution:\\n{conglomerates['tempweight'].describe()}")
 print(
     f"Number of observations with weight < 1: {(conglomerates['tempweight'] < 1.0).sum()}"

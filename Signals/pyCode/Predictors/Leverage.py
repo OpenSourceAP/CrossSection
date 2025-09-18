@@ -2,19 +2,18 @@
 # ABOUTME: calculates market leverage as total liabilities divided by market value of equity
 
 """
-Leverage predictor calculation
+Leverage.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/Leverage.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, lt)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, lt]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
 
 Outputs:
-    - ../pyData/Predictors/Leverage.csv (permno, yyyymm, Leverage)
+    - Leverage.csv: CSV file with columns [permno, yyyymm, Leverage]
 """
 
 import pandas as pd

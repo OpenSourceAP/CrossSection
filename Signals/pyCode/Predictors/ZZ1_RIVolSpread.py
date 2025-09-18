@@ -2,16 +2,19 @@
 # ABOUTME: Calculates difference between realized volatility (past 30 days) and ATM implied volatility
 
 """
+ZZ1_RIVolSpread.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ1_RIVolSpread.py
 
 Inputs:
-    - pyData/Prep/bali_hovak_imp_vol.csv
-    - pyData/Predictors/RealizedVol.csv
-    - pyData/Intermediate/SignalMasterTable.parquet
+    - bali_hovak_imp_vol.csv: OptionMetrics implied volatility data with columns [secid, date, cp_flag, mean_imp_vol]
+    - RealizedVol.csv: Realized volatility data with columns [permno, yyyymm, RealizedVol]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, secid, sicCRSP]
 
 Outputs:
-    - pyData/Predictors/RIVolSpread.csv - Realized volatility minus implied volatility spread
+    - RIVolSpread.csv: CSV file with columns [permno, yyyymm, RIVolSpread]
 """
 
 # needs to be run after RealizedVol

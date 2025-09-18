@@ -4,29 +4,16 @@
 """
 BetaTailRisk.py
 
-Generates tail risk beta predictor from daily and monthly return data:
-- Creates monthly tail risk factor from daily returns (5th percentile tail excess returns)
-- BetaTailRisk: Coefficient from regression ret ~ tailex over 120-month rolling windows
-- Rolling 120-month regression of returns on tail risk factor with minimum 72 observations per window
-
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/BetaTailRisk.py
 
 Inputs:
-    - ../pyData/Intermediate/dailyCRSP.parquet (permno, time_d, ret)
-    - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, ret, shrcd)
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret, shrcd]
 
 Outputs:
-    - ../pyData/Predictors/BetaTailRisk.csv
-    - ../pyData/Intermediate/TailRisk.parquet (monthly tail risk factor)
-
-Requirements:
-    - Tail risk factor: log(ret/retp5) for returns in bottom 5% each month
-    - Rolling 120-month windows with minimum 72 observations per window
-    - Filter out non-common stocks (shrcd > 11)
-    - Rolling window regression behavior with proper minimum observation constraints
+    - BetaTailRisk.csv: CSV file with columns [permno, yyyymm, BetaTailRisk]
 """
 
 import polars as pl

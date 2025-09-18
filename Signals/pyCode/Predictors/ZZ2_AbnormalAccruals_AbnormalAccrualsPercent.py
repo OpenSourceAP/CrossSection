@@ -1,6 +1,22 @@
 # ABOUTME: Abnormal Accruals predictor from Xie 2001 (AR), Table 3
 # ABOUTME: Uses cross-sectional regressions by year and industry to calculate residual accruals after controlling for firm characteristics
 
+"""
+ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+
+Inputs:
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, time_avail_m, fyear, datadate, at, oancf, fopt, act, che, lct, dlc, ib, sale, ppegt, ni, sic]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, exchcd]
+
+Outputs:
+    - AbnormalAccruals.csv: CSV file with columns [permno, yyyymm, AbnormalAccruals]
+    - AbnormalAccrualsPercent.csv: CSV file with columns [permno, yyyymm, AbnormalAccrualsPercent]
+"""
+
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd

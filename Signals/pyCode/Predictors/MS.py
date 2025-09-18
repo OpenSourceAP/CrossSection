@@ -1,29 +1,20 @@
-# %%
-
-import os
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir("..")
-
 # ABOUTME: Mohanram G-score following Mohanram 2005, Table 4A, for low book-to-market firms
 # ABOUTME: calculates composite accounting score using 8 financial strength indicators vs industry medians
 
 """
 MS.py
 
-Generates Mohanram G-score predictor from financial statement data:
-- MS: Binary score (1-8) based on 8 financial strength indicators
-- Sample: Lowest BM quintile only, minimum 3 firms per SIC2D-time
-- Indicators: ROA, CF-ROA, cash flow quality, earnings volatility, revenue volatility, R&D intensity, capex intensity, advertising intensity
-- All comparisons vs industry medians by (sic2D, time_avail_m)
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MS.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (accounting data)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (mve_c, sicCRSP)
-    - ../pyData/Intermediate/m_QCompustat.parquet (quarterly data)
+    - m_aCompustat.parquet: Annual Compustat data with columns [permno, gvkey, time_avail_m, datadate, at, ceq, ni, oancf, fopt, wcapch, ib, dp, xrd, capx, xad, revt]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_c, sicCRSP]
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, niq, atq, saleq, oancfy, capxy, xrdq, fyearq, fqtr, datafqtr, datadateq]
 
 Outputs:
-    - ../pyData/Predictors/MS.csv
+    - MS.csv: CSV file with columns [permno, yyyymm, MS]
 """
 
 import polars as pl

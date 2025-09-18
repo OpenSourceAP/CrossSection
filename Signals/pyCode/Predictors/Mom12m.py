@@ -1,9 +1,19 @@
 # ABOUTME: Calculates 12-month momentum following Jegadeesh and Titman 1993 Table 1A K=3 row 12
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom12m.py
+# ABOUTME: compounds monthly returns over months t-11 to t-1 (skipping current month t)
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/Mom12m.csv
+"""
+Mom12m.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Mom12m.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - Mom12m.csv: CSV file with columns [permno, yyyymm, Mom12m]
+"""
 
 import pandas as pd
 import numpy as np

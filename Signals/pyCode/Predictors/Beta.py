@@ -1,31 +1,20 @@
 # ABOUTME: CAPM beta following Fama and MacBeth 1973, Table 3A
 # ABOUTME: calculates coefficient from 60-month rolling regression of stock excess returns on market excess returns
-# BetaSquared was weak in OP
 
 """
 Beta.py
 
-Generates CAPM Beta predictor from monthly returns and market returns using rolling 60-observation regressions:
-- Beta: Coefficient from CAPM regression retrf ~ ewmktrf over 60-observation rolling windows
-- Rolling regression of excess returns on market excess returns using 60-observation windows with minimum 20 observations
-
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/Beta.py
 
 Inputs:
-    - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, ret)
-    - ../pyData/Intermediate/monthlyFF.parquet (time_avail_m, rf)
-    - ../pyData/Intermediate/monthlyMarket.parquet (time_avail_m, ewretd)
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret]
+    - monthlyFF.parquet: Monthly Fama-French data with columns [time_avail_m, rf]
+    - monthlyMarket.parquet: Monthly market data with columns [time_avail_m, ewretd]
 
 Outputs:
-    - ../pyData/Predictors/Beta.csv
-
-Requirements:
-    - Rolling 60-observation windows (not 60 months) with minimum 20 observations per window
-    - CAPM regression: retrf = alpha + beta * ewmktrf + residual
-    - Rolling window regression analysis with observation-based (not time-based) windows
+    - Beta.csv: CSV file with columns [permno, yyyymm, Beta]
 """
 
 import polars as pl

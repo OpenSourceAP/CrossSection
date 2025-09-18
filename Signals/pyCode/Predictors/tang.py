@@ -1,8 +1,19 @@
 # ABOUTME: Calculates tangibility for manufacturing firms following Hahn and Lee 2009 Table 4A
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/tang.py
+# ABOUTME: Calculates asset tangibility predictor using Almeida and Campello formula
 
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/tang.csv
+"""
+tang.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/tang.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, che, rect, invt, ppegt, at, sic]
+
+Outputs:
+    - tang.csv: CSV file with columns [permno, yyyymm, tang]
+"""
 
 import pandas as pd
 import numpy as np

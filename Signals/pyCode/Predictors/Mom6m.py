@@ -1,9 +1,19 @@
-# ABOUTME: Calculates 6-month momentum following Jegadeesh and Titman 1993 Table 1A K=3 row 6
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Mom6m.py
+# ABOUTME: 6-month momentum following Jegadeesh and Titman 1993 Table 1A K=3 row 6
+# ABOUTME: compounds monthly returns from t-5 to t-1 (excludes current month t)
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/Mom6m.csv
+"""
+Mom6m.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Mom6m.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master signal table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - Mom6m.csv: CSV file with columns [permno, yyyymm, Mom6m]
+"""
 
 import pandas as pd
 import numpy as np

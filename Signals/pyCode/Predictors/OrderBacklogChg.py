@@ -1,9 +1,19 @@
 # ABOUTME: Change in Order Backlog predictor from Baik and Ahn 2007, Table 2 High-Low
 # ABOUTME: Calculates change in normalized order backlog (order backlog divided by average total assets)
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/OrderBacklogChg.csv
+"""
+OrderBacklogChg.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/OrderBacklogChg.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ob, at]
+
+Outputs:
+    - OrderBacklogChg.csv: CSV file with columns [permno, yyyymm, OrderBacklogChg]
+"""
 
 import pandas as pd
 import numpy as np

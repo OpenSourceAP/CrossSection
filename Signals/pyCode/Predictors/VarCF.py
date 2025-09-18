@@ -1,7 +1,11 @@
 # ABOUTME: Cash-flow to price variance following Haugen and Baker 1996, Table 1 variability in cf to price
 # ABOUTME: Rolling variance of (ib+dp)/mve_c over the past 60 months (minimum 24 months data required)
+
 """
+VarCF.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/VarCF.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - VarCF.csv: CSV file with columns [permno, yyyymm, VarCF]
-    - VarCF = Rolling variance of (ib+dp)/mve_c over past 60 months with minimum 24 months required
 """
 
 import pandas as pd

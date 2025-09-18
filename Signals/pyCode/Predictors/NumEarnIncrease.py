@@ -1,7 +1,11 @@
 # ABOUTME: Earnings streak length following Loh and Warachka 2012, Table 4
 # ABOUTME: Counts consecutive quarters with positive earnings growth, up to 8 quarters
+
 """
+NumEarnIncrease.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/NumEarnIncrease.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - NumEarnIncrease.csv: CSV file with columns [permno, yyyymm, NumEarnIncrease]
-    - NumEarnIncrease = Number of consecutive 4-quarter increases in ibq, up to 8 quarters
 """
 
 import pandas as pd

@@ -1,7 +1,11 @@
 # ABOUTME: Share Volume following Datar, Naik and Radcliffe 1998, Table 2A Turnover
 # ABOUTME: calculates binary signal based on share volume thresholds (0 if <5%, 1 if >10%)
+
 """
+ShareVol.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ShareVol.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - ShareVol.csv: CSV file with columns [permno, yyyymm, ShareVol]
-    - ShareVol = 0 if 3-month average share volume < 5%, 1 if > 10%, missing otherwise
 """
 
 import polars as pl

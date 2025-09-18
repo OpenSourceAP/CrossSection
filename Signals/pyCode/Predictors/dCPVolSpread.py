@@ -1,10 +1,20 @@
 # ABOUTME: Change in put vol minus change in call vol following An, Ang, Bali, Cakici 2014, Table IIC
 # ABOUTME: calculates change in call-put volume spread predictor for informed trading
 
-# An Ang Bali Cakici 2014 Table II C
-# Run from pyCode/ directory
-# Inputs: OptionMetricsVolSurf.csv, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/dCPVolSpread.csv
+"""
+dCPVolSpread.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/dCPVolSpread.py
+
+Inputs:
+    - OptionMetricsVolSurf.csv: Option metrics volatility surface data with columns [secid, time_avail_m, days, delta, cp_flag, impl_vol]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, secid]
+
+Outputs:
+    - dCPVolSpread.csv: CSV file with columns [permno, yyyymm, dCPVolSpread]
+"""
 
 import pandas as pd
 import numpy as np

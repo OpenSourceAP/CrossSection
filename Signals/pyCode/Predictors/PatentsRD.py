@@ -1,9 +1,21 @@
 # ABOUTME: Patents to RD expenses following Hirschleifer, Hsu and Li 2013, Table 9A EMI1
 # ABOUTME: Calculates patent efficiency scaled by R&D capital with double-sorted portfolio approach
 
-# Run: python3 Predictors/PatentsRD.py
-# Inputs: SignalMasterTable.parquet, m_aCompustat.parquet, PatentDataProcessed.parquet
-# Outputs: pyData/Predictors/PatentsRD.csv
+"""
+PatentsRD.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/PatentsRD.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, mve_c, sicCRSP, exchcd]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, xrd, sich, datadate, ceq]
+    - PatentDataProcessed.parquet: Patent data with columns [gvkey, year, npat]
+
+Outputs:
+    - PatentsRD.csv: CSV file with columns [permno, yyyymm, PatentsRD]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,7 +1,11 @@
 # ABOUTME: Size following Banz 1981, Table 3, alpha_1 n=50
 # ABOUTME: calculates log of market value of equity as size predictor
+
 """
+Size.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/Size.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - Size.csv: CSV file with columns [permno, yyyymm, Size]
-    - Size = log(mve_c), log transformation of market value of equity
 """
 
 import pandas as pd

@@ -4,18 +4,15 @@
 """
 OPLeverage.py
 
-Operating Leverage predictor calculation
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/OPLeverage.py
 
-Usage: python3 OPLeverage.py
-Inputs: ../pyData/Intermediate/m_aCompustat.parquet
-Outputs: ../pyData/Predictors/OPLeverage.csv
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, xsga, cogs, at]
 
-Operating Leverage = (tempxsga + cogs) / at
-where tempxsga = 0 if xsga is missing, else xsga
-
-Calculation:
-- Sets missing SGA expenses to zero
-- Operating Leverage = (SGA expenses + COGS) / Total Assets
+Outputs:
+    - OPLeverage.csv: CSV file with columns [permno, yyyymm, OPLeverage]
 """
 
 import polars as pl

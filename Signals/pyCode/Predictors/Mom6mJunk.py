@@ -1,5 +1,3 @@
-# %%
-
 # ABOUTME: Calculates junk stock momentum following Avramov et al 2007 Table 3 NIG
 # ABOUTME: Creates junk stock momentum signal using CIQ and SP credit ratings with forward fill
 
@@ -8,7 +6,6 @@ This script calculates 6-month momentum for junk-rated stocks (credit rating <= 
 
 How to run:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/Mom6mJunk.py
 
 Inputs:

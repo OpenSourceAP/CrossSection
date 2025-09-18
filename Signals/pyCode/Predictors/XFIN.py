@@ -1,9 +1,19 @@
 # ABOUTME: Net external financing following Bradshaw, Richardson, Sloan 2006, Table 3
 # ABOUTME: calculates net external financing predictor scaled by total assets
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/XFIN.csv
+"""
+XFIN.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/XFIN.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, sstk, dv, prstkc, dltis, dltr, dlcch, at]
+
+Outputs:
+    - XFIN.csv: CSV file with columns [permno, yyyymm, XFIN]
+"""
 
 import pandas as pd
 import numpy as np

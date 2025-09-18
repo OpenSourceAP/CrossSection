@@ -6,7 +6,6 @@ AccrualsBM.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/AccrualsBM.py
 
 Inputs:

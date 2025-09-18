@@ -1,7 +1,11 @@
 # ABOUTME: Predicted dividend yield following Litzenberger and Ramaswamy 1979, Table 1
 # ABOUTME: calculates predicted dividend yield based on frequency-specific lag structure
+
 """
+DivYieldST.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/DivYieldST.py
 
 Inputs:
@@ -11,8 +15,6 @@ Inputs:
 
 Outputs:
     - DivYieldST.csv: CSV file with columns [permno, yyyymm, DivYieldST]
-    - DivYieldST = discretized predicted dividend yield (0-3) based on Ediv1/abs(prc)
-    - Only includes firms that paid dividends in past 12 months
 """
 
 import pandas as pd

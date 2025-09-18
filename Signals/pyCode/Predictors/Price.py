@@ -2,18 +2,17 @@
 # ABOUTME: Log of absolute value of stock price (prc) from SignalMasterTable
 
 """
-Price predictor calculation
+Price.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/Price.py
 
 Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, prc)
+    - SignalMasterTable.parquet: SignalMasterTable data with columns [permno, time_avail_m, prc]
 
 Outputs:
-    - ../pyData/Predictors/Price.csv (permno, yyyymm, Price)
+    - Price.csv: CSV file with columns [permno, yyyymm, Price]
 """
 
 import pandas as pd

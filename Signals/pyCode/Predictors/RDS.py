@@ -2,19 +2,18 @@
 # ABOUTME: calculates real dirty surplus as change in book equity minus dirty surplus minus earnings plus dividends
 
 """
-RDS predictor calculation
+RDS.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/RDS.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, gvkey, time_avail_m, recta, ceq, ni, dvp, dvc, prcc_f, csho, msa)
-    - ../pyData/Intermediate/CompustatPensions.parquet (gvkey, year, pcupsu, paddml)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, gvkey, time_avail_m, recta, ceq, ni, dvp, dvc, prcc_f, csho, msa]
+    - CompustatPensions.parquet: Pension data with columns [gvkey, year, pcupsu, paddml]
 
 Outputs:
-    - ../pyData/Predictors/RDS.csv (permno, yyyymm, RDS)
+    - RDS.csv: CSV file with columns [permno, yyyymm, RDS]
 """
 
 import pandas as pd

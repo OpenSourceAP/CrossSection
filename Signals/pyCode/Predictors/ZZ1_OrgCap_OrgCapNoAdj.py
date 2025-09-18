@@ -2,21 +2,20 @@
 # ABOUTME: Calculates OrgCap (industry-adjusted) and OrgCapNoAdj (raw) based on SG&A with depreciation
 
 """
-OrgCap predictor calculation
+ZZ1_OrgCap_OrgCapNoAdj.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/ZZ1_OrgCap_OrgCapNoAdj.py
 
 Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, sicCRSP, shrcd, exchcd)
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, xsga, at, datadate, sic)
-    - ../pyData/Intermediate/GNPdefl.parquet (time_avail_m, gnpdefl)
+    - SignalMasterTable.parquet: Permno, time_avail_m, sicCRSP, shrcd, exchcd
+    - m_aCompustat.parquet: Permno, time_avail_m, xsga, at, datadate, sic
+    - GNPdefl.parquet: Time_avail_m, gnpdefl
 
 Outputs:
-    - ../pyData/Predictors/OrgCap.csv (permno, yyyymm, OrgCap)
-    - ../pyData/Placebos/OrgCapNoAdj.csv (permno, yyyymm, OrgCapNoAdj)
+    - OrgCap.csv: CSV file with columns [permno, yyyymm, OrgCap]
+    - OrgCapNoAdj.csv: CSV file with columns [permno, yyyymm, OrgCapNoAdj]
 """
 
 import sys

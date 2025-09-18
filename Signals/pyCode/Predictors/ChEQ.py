@@ -2,7 +2,10 @@
 # ABOUTME: calculates ratio of book equity to book equity in the previous year
 
 """
+ChEQ.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ChEQ.py
 
 Inputs:
@@ -10,7 +13,6 @@ Inputs:
 
 Outputs:
     - ChEQ.csv: CSV file with columns [permno, yyyymm, ChEQ]
-    - ChEQ = ceq/l12.ceq, included only if book equity is positive this year and last year
 """
 
 import pandas as pd

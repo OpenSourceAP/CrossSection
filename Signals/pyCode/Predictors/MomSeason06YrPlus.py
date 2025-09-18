@@ -1,9 +1,19 @@
 # ABOUTME: Calculates seasonal momentum (years 6-10) following Heston and Sadka 2008 Table 2 Years 6-10 Annual
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeason06YrPlus.py
+# ABOUTME: measures average returns from 71, 83, 95, 107, 119 months ago
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/MomSeason06YrPlus.csv
+"""
+MomSeason06YrPlus.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MomSeason06YrPlus.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - MomSeason06YrPlus.csv: CSV file with columns [permno, yyyymm, MomSeason06YrPlus]
+"""
 
 import pandas as pd
 import numpy as np

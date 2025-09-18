@@ -2,7 +2,10 @@
 # ABOUTME: calculates net payout yield scaled by lagged market value of equity
 
 """
+NetPayoutYield.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/NetPayoutYield.py
 
 Inputs:
@@ -11,7 +14,6 @@ Inputs:
 
 Outputs:
     - NetPayoutYield.csv: CSV file with columns [permno, yyyymm, NetPayoutYield]
-    - NetPayoutYield = (dvc + prstkc - sstk) / mve_c_l6, excludes zeros and financials (following Table 6D)
 """
 
 import pandas as pd

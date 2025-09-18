@@ -1,9 +1,22 @@
 # ABOUTME: Pension Funding Status following Franzoni and Marin 2006, Table 3B
 # ABOUTME: Computes funding status metrics using pension plan asset/obligation data from Compustat
 
-# Run: python3 Predictors/ZZ1_FR_FRbook.py
-# Inputs: SignalMasterTable.parquet, CompustatPensions.parquet, m_aCompustat.parquet
-# Outputs: pyData/Predictors/FR.csv, pyData/Predictors/FRbook.csv
+"""
+ZZ1_FR_FRbook.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ1_FR_FRbook.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, shrcd, mve_c]
+    - CompustatPensions.parquet: Pension data with columns [gvkey, year, pbnaa, pplao, pplau, pbnvv, pbpro, pbpru]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, time_avail_m, at]
+
+Outputs:
+    - FR.csv: CSV file with columns [permno, yyyymm, FR]
+    - FRbook.csv: CSV file with columns [permno, yyyymm, FRbook] (saved to Placebos folder)
+"""
 
 import pandas as pd
 import numpy as np

@@ -2,7 +2,10 @@
 # ABOUTME: Calculates log of tangible book equity (ceqt) over market equity matched at FYE
 
 """
+BM.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/BM.py
 
 Inputs:
@@ -11,7 +14,6 @@ Inputs:
 
 Outputs:
     - BM.csv: CSV file with columns [permno, yyyymm, BM]
-    - BM = log(ceqt/market_equity), where market equity is matched at FYE with 6-month lag
 """
 
 import pandas as pd

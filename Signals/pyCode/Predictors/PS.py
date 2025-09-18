@@ -1,28 +1,20 @@
-# %%
-
-import os
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir("..")
-
 # ABOUTME: Piotroski F-score following Piotroski 2000, Table 3A
-# ABOUTME: Nine-factor profitability, efficiency, and leverage score restricted to highest book-to-market quintile
+# ABOUTME: calculates nine-factor profitability, efficiency, and leverage score restricted to highest book-to-market quintile
 
 """
-PS predictor calculation (Piotroski F-score)
+PS.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-    
     python3 Predictors/PS.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, fopt, oancf, ib, at, dltt, act, lct, txt, xint, sale, ceq)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
-    - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, shrout)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, fopt, oancf, ib, at, dltt, act, lct, txt, xint, sale, ceq]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, shrout]
 
 Outputs:
-    - ../pyData/Predictors/PS.csv (permno, yyyymm, PS)
+    - PS.csv: CSV file with columns [permno, yyyymm, PS]
 """
 
 import pandas as pd

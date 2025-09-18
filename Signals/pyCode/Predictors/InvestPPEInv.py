@@ -6,7 +6,6 @@ InvestPPEInv.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/InvestPPEInv.py
 
 Inputs:

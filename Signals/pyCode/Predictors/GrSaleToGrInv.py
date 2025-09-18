@@ -6,7 +6,6 @@ GrSaleToGrInv.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/GrSaleToGrInv.py
 
 Inputs:
@@ -14,8 +13,6 @@ Inputs:
 
 Outputs:
     - GrSaleToGrInv.csv: CSV file with columns [permno, yyyymm, GrSaleToGrInv]
-    - Primary: ((sale- (.5*(l12.sale + l24.sale)))/(.5*(l12.sale + l24.sale))) - ((invt- (.5*(l12.invt + l24.invt)))/(.5*(l12.invt + l24.invt)))
-    - Fallback: ((sale-l12.sale)/l12.sale)-((invt-l12.invt)/l12.invt) if primary is missing
 """
 
 import pandas as pd

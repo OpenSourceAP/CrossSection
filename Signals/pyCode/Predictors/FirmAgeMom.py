@@ -1,8 +1,19 @@
 # ABOUTME: Firm Age-Momentum following Zhang 2006, Table 4, middle U5
 # ABOUTME: calculates 6-month momentum for bottom quintile (youngest 20%) firms by age
 
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/FirmAgeMom.csv
+"""
+FirmAgeMom.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/FirmAgeMom.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret, prc]
+
+Outputs:
+    - FirmAgeMom.csv: CSV file with columns [permno, yyyymm, FirmAgeMom]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,4 +1,4 @@
-# ABOUTME: ChForecastAccrual.py - computes change in forecast and accrual predictor (Barth and Hutton 2004 RAS Table 3B)
+# ABOUTME: Change in forecast and accrual predictor following Barth and Hutton 2004 RAS Table 3B
 # ABOUTME: Binary indicator for earnings estimate increases within upper half of accruals distribution
 
 """
@@ -6,16 +6,15 @@ ChForecastAccrual.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/ChForecastAccrual.py
 
 Inputs:
-    - ../pyData/Intermediate/IBES_EPS_Unadj.parquet
-    - ../pyData/Intermediate/m_aCompustat.parquet
-    - ../pyData/Intermediate/SignalMasterTable.parquet
+    - IBES_EPS_Unadj.parquet: IBES earnings forecast data with columns [tickerIBES, fpi, time_avail_m, meanest]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, act, che, lct, dlc, txp, at]
+    - SignalMasterTable.parquet: Master table with IBES ticker mapping [permno, time_avail_m, tickerIBES]
 
 Outputs:
-    - ../pyData/Predictors/ChForecastAccrual.csv (columns: permno, yyyymm, ChForecastAccrual)
+    - ChForecastAccrual.csv: CSV file with columns [permno, yyyymm, ChForecastAccrual]
 """
 
 import pandas as pd

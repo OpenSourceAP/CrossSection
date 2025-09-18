@@ -2,16 +2,18 @@
 # ABOUTME: calculates growth in number of shares between t-18 and t-6 months
 
 """
+ShareIss1Y.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ShareIss1Y.py
 
 Inputs:
-    - ../pyData/Intermediate/SignalMasterTable.parquet: Monthly master table
-    - ../pyData/Intermediate/monthlyCRSP.parquet: Monthly CRSP data with shrout, cfacshr
+    - SignalMasterTable.parquet: Monthly master table
+    - monthlyCRSP.parquet: Monthly CRSP data with shrout, cfacshr
 
 Outputs:
-    - ../pyData/Predictors/ShareIss1Y.csv: CSV file with columns [permno, yyyymm, ShareIss1Y]
-    - ShareIss1Y = (shares_t-6 - shares_t-18) / shares_t-18, where shares = shrout * cfacshr
+    - ShareIss1Y.csv: CSV file with columns [permno, yyyymm, ShareIss1Y]
 """
 
 # Note: We tried constructing the share adjustment from facshr as described in Pontiff and Woodgate (2008). Results are almost identical. So we stick with the simpler implementation

@@ -1,8 +1,20 @@
-# %%
-# ABOUTME: Calculates TrendFactor following Han, Zhou, Zhu 2016 Table 1
-# ABOUTME: Usage: python3 TrendFactor.py (run from pyCode/ directory)
-# inputs: dailyCRSP.parquet, SignalMasterTable.parquet
-# outputs: TrendFactor.csv
+# ABOUTME: TrendFactor following Han, Zhou, Zhu 2016 Table 1
+# ABOUTME: calculates price trend factor using past 20-day returns and volumes
+
+"""
+TrendFactor.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/TrendFactor.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, date, ret, vol]
+    - SignalMasterTable.parquet: Master table with columns [permno, yyyymm]
+
+Outputs:
+    - TrendFactor.csv: CSV file with columns [permno, yyyymm, TrendFactor]
+"""
 
 import pandas as pd
 import polars as pl

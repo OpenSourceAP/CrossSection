@@ -1,20 +1,19 @@
 # ABOUTME: Investment following Titman, Wei and Xie 2004, Table 1B Average
 # ABOUTME: Ratio of capital investment to revenue divided by firm-specific 36-month rolling mean
+
 """
+Investment.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/Investment.py
 
 Inputs:
-    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, capx, revt]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, capx, revt]
 
 Outputs:
     - Investment.csv: CSV file with columns [permno, yyyymm, Investment]
-    - Investment = (capx/revt) / 36-month rolling mean, exclude if revt < $10m
 """
-
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/Investment.csv
 
 import pandas as pd
 import numpy as np

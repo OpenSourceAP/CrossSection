@@ -1,7 +1,11 @@
 # ABOUTME: Long-run reversal following De Bondt and Thaler 1985, Table 1, three-year
 # ABOUTME: calculates stock return between months t-36 and t-13 for long-term reversal signal
+
 """
+LRreversal.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/LRreversal.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - LRreversal.csv: CSV file with columns [permno, yyyymm, LRreversal]
-    - LRreversal = compound return from months t-36 to t-13 (expecting reversal)
 """
 
 import pandas as pd

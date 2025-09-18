@@ -1,7 +1,11 @@
 # ABOUTME: Coskewness following Harvey and Siddique 2000, in text p 1276
 # ABOUTME: calculates systematic coskewness using sample moments of demeaned returns over 60 months
+
 """
+Coskewness.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/Coskewness.py
 
 Inputs:
@@ -10,7 +14,6 @@ Inputs:
 
 Outputs:
     - Coskewness.csv: CSV file with columns [permno, yyyymm, Coskewness]
-    - Coskewness = E[r*m^2] / (sqrt(E[r^2]) * E[m^2]) using demeaned returns over 60 months
 """
 
 import polars as pl

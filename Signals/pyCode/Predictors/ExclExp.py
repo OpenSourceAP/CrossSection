@@ -2,7 +2,10 @@
 # ABOUTME: calculates difference between IBES unadjusted earnings and Compustat quarterly EPS
 
 """
+ExclExp.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ExclExp.py
 
 Inputs:
@@ -12,7 +15,6 @@ Inputs:
 
 Outputs:
     - ExclExp.csv: CSV file with columns [permno, yyyymm, ExclExp]
-    - ExclExp = int0a - epspiq, winsorized at 1% and 99% levels
 """
 
 import pandas as pd

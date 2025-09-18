@@ -1,5 +1,20 @@
-# ABOUTME: Calculates momentum in high volume stocks following Lee and Swaminathan 2000 Table 2 J=6 K=3 V3 R10-R1
-# ABOUTME: Usage: python3 MomVol.py (run from pyCode/ directory)
+# ABOUTME: Momentum in high volume stocks following Lee and Swaminathan 2000, Table 2, J=6 K=3 V3 R10-R1
+# ABOUTME: calculates momentum decile rank for high volume (tercile 3) stocks only
+
+"""
+MomVol.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MomVol.py
+
+Inputs:
+    - SignalMasterTable.parquet: Table with columns [permno, time_avail_m, ret]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol]
+
+Outputs:
+    - MomVol.csv: CSV file with columns [permno, yyyymm, MomVol]
+"""
 
 import polars as pl
 import sys

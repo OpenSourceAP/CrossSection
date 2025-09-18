@@ -1,28 +1,25 @@
-# %%
-
-# debug
-import os
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir("..")
-from polars import col as cc
-import pandas as pd
-
 # ABOUTME: Analyst Recommendations and Short Interest following Drake, Rees and Swanson 2011, Table 7b
 # ABOUTME: Binary signal: 1 for lowest quintile short interest & recommendations, 0 for highest quintiles
+
 """
+Recomm_ShortInterest.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/Recomm_ShortInterest.py
 
 Inputs:
-    - IBES_Recommendations.parquet: IBES analyst recommendations data
-    - SignalMasterTable.parquet: Master table with gvkey, tickerIBES mappings
-    - monthlyCRSP.parquet: CRSP data for shares outstanding (shrout)
-    - monthlyShortInterest.parquet: Short interest data (shortint)
+    - IBES_Recommendations.parquet: IBES analyst recommendations data with columns [tickerIBES, amaskcd, anndats, time_avail_m, ireccd]
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, tickerIBES, time_avail_m]
+    - monthlyCRSP.parquet: CRSP data with columns [permno, time_avail_m, shrout]
+    - monthlyShortInterest.parquet: Short interest data with columns [gvkey, time_avail_m, shortint]
 
 Outputs:
-    - Recomm_ShortInterest.csv: Binary signal (0/1) for extreme recommendation-short interest combinations
+    - Recomm_ShortInterest.csv: CSV file with columns [permno, yyyymm, Recomm_ShortInterest]
 """
+
+from polars import col as cc
+import pandas as pd
 
 import polars as pl
 import sys

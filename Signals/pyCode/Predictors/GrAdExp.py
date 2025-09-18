@@ -1,12 +1,11 @@
 # ABOUTME: Growth in advertising expenses following Lou 2014 RFS, Table 2A Year 1 Excess
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/GrAdExp.py
+# ABOUTME: calculates log growth in advertising expenses with size and threshold filters
 
 """
 GrAdExp.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/GrAdExp.py
 
 Inputs:
@@ -15,7 +14,6 @@ Inputs:
 
 Outputs:
     - GrAdExp.csv: CSV file with columns [permno, yyyymm, GrAdExp]
-    - GrAdExp = log(xad) - log(l12.xad), set to missing if xad < 0.1 or in smallest size decile
 """
 
 import pandas as pd

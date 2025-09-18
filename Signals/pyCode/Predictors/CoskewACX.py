@@ -1,23 +1,20 @@
 # ABOUTME: Coskewness using daily returns following Ang, Chen and Xing 2006, Table 8B
 # ABOUTME: Calculates sample counterpart of E[r*m²]/(SD[r]*SD[m]²) using de-meaned returns
-#
-# This script translates Code/Predictors/CoskewACX.do to Python
-# Following Appendix and Table 8 caption from Ang, Chen, Xing 2006
-#
-# Algorithm overview:
-# 1. Load daily CRSP and Fama-French data from 1962-07-02 onwards
-# 2. Convert returns to continuous-time compounded excess returns
-# 3. Process data in 12 monthly batches (m=1 to 12 for Jan to Dec)
-# 4. For each batch m: create overlapping 12-month periods ending in month m
-# 5. Demean returns within each 12-month period
-# 6. Calculate coskewness using sample moments: E[r*m^2] / (sqrt(E[r^2]) * E[m^2])
-# 7. Filter observations with too many missing values (>5 missing vs max in period)
-# 8. Combine all 12 batches into final output
-#
-# Input: ../pyData/Intermediate/dailyCRSP.parquet, ../pyData/Intermediate/dailyFF.parquet
-# Output: ../pyData/Predictors/CoskewACX.csv
-#
-# Run: python3 CoskewACX.py (from pyCode/ directory with .venv activated)
+
+"""
+CoskewACX.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/CoskewACX.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French data with columns [time_d, mktrf, rf]
+
+Outputs:
+    - CoskewACX.csv: CSV file with columns [permno, yyyymm, CoskewACX]
+"""
 
 import polars as pl
 import numpy as np

@@ -1,10 +1,20 @@
-# ABOUTME: Calculates earnings surprise streak following Loh and Warachka 2012 Table 3B Spread FF3 Streaks
-# ABOUTME: Input: IBES_EPS_Adj.parquet, SignalMasterTable.parquet | Output: EarningsStreak.csv | Run: python3 Predictors/EarningsStreak.py
+# ABOUTME: Earnings surprise streak following Loh and Warachka 2012, Table 3B Spread FF3 Streaks
+# ABOUTME: calculates earnings streak predictor based on consecutive earnings surprises with same sign
 
-# Computes earnings streak indicator by identifying consecutive earnings surprises with the same sign
-# Uses quarterly earnings announcements with 6-month forecast horizon from IBES data
-# Input: ../pyData/Intermediate/IBES_EPS_Adj.parquet, ../pyData/Intermediate/SignalMasterTable.parquet
-# Output: ../pyData/Predictors/EarningsStreak.csv
+"""
+EarningsStreak.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/EarningsStreak.py
+
+Inputs:
+    - IBES_EPS_Adj.parquet: IBES earnings data with columns [tickerIBES, anndats_act, time_avail_m, fpi, actual, meanest, price, statpers]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, tickerIBES]
+
+Outputs:
+    - EarningsStreak.csv: CSV file with columns [permno, yyyymm, EarningsStreak]
+"""
 
 import pandas as pd
 import numpy as np

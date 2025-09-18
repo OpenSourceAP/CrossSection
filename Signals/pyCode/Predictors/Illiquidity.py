@@ -1,7 +1,11 @@
 # ABOUTME: Amihud's illiquidity following Amihud 2002, Table 2
 # ABOUTME: calculates past twelve month average of daily return divided by turnover
+
 """
+Illiquidity.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/Illiquidity.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - Illiquidity.csv: CSV file with columns [permno, yyyymm, Illiquidity]
-    - Illiquidity = past twelve month average of: daily |ret| / (|prc| * vol)
 """
 
 import pandas as pd

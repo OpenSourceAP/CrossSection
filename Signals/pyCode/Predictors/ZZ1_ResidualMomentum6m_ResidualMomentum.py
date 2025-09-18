@@ -1,29 +1,20 @@
 # ABOUTME: Generates ResidualMomentum following Blitz, Huij and Martens 2011, Table 2B 1M
-# ABOUTME: Python implementation using polars for rolling FF3 regressions
+# ABOUTME: calculates momentum predictor based on FF3 residuals with 36-month rolling regressions
 
 """
 ZZ1_ResidualMomentum6m_ResidualMomentum.py
 
-Generates ResidualMomentum predictor based on Fama-French 3-factor model residuals:
-- ResidualMomentum: momentum based on FF3 residuals following Blitz, Huij and Martens 2011
-
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/ZZ1_ResidualMomentum6m_ResidualMomentum.py
 
 Inputs:
-    - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, ret)
-    - ../pyData/Intermediate/monthlyFF.parquet (time_avail_m, rf, mktrf, smb, hml)
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret]
+    - monthlyFF.parquet: Fama-French factors with columns [time_avail_m, rf, mktrf, smb, hml]
 
 Outputs:
-    - ../pyData/Placebos/ResidualMomentum6m.csv
-    - ../pyData/Predictors/ResidualMomentum.csv
-
-Requirements:
-    - Rolling 36-month FF3 regressions with minimum 36 observations
-    - Residuals are lagged by 1 month before momentum calculation
-    - 6-month and 11-month rolling windows for momentum signals
+    - ResidualMomentum6m.csv: CSV file with columns [permno, yyyymm, ResidualMomentum6m]
+    - ResidualMomentum.csv: CSV file with columns [permno, yyyymm, ResidualMomentum]
 """
 
 import polars as pl

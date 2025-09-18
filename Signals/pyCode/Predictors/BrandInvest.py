@@ -2,7 +2,10 @@
 # ABOUTME: calculates brand investment rate as advertising expense divided by brand capital
 
 """
+BrandInvest.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/BrandInvest.py
 
 Inputs:
@@ -10,7 +13,6 @@ Inputs:
 
 Outputs:
     - BrandInvest.csv: CSV file with columns [permno, yyyymm, BrandInvest]
-    - BrandInvest = xad0/l.BrandCapital, where brand capital uses perpetual inventory method with 50% depreciation
 """
 
 import pandas as pd

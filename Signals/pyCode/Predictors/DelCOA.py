@@ -6,7 +6,6 @@ DelCOA.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DelCOA.py
 
 Inputs:
@@ -14,7 +13,6 @@ Inputs:
 
 Outputs:
     - DelCOA.csv: CSV file with columns [permno, yyyymm, DelCOA]
-    - Change in current operating assets normalized by average assets
 """
 
 import pandas as pd
@@ -32,22 +30,9 @@ print("Starting DelCOA.py...")
 
 # DATA LOAD
 print("Loading m_aCompustat data...")
-
-# Load m_aCompustat with required fields for current operating assets calculation
-m_aCompustat_path = Path("../pyData/Intermediate/m_aCompustat.parquet")
-if not m_aCompustat_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {m_aCompustat_path}")
-
-df = pd.read_parquet(m_aCompustat_path)
-##Print query of df == 23033 (bad permno), tell claude to add similiar feedback for debugging
-# Keep only the columns we need for the calculation
-required_cols = ["gvkey", "permno", "time_avail_m", "at", "act", "che"]
-missing_cols = [col for col in required_cols if col not in df.columns]
-if missing_cols:
-    raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
-
-df = df[required_cols].copy()
-
+df = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet",
+    columns=["gvkey", "permno", "time_avail_m", "at", "act", "che"],
+)
 print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # SIGNAL CONSTRUCTION

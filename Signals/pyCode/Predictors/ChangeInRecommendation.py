@@ -2,7 +2,10 @@
 # ABOUTME: calculates change in analyst recommendation score from previous month
 
 """
+ChangeInRecommendation.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ChangeInRecommendation.py
 
 Inputs:
@@ -11,7 +14,6 @@ Inputs:
 
 Outputs:
     - ChangeInRecommendation.csv: CSV file with columns [permno, yyyymm, ChangeInRecommendation]
-    - ChangeInRecommendation = current month opscore - last month opscore, where opscore = 6 - ireccd (following Table 3C)
 """
 
 import pandas as pd

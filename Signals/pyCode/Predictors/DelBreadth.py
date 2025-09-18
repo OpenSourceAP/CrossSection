@@ -1,7 +1,11 @@
 # ABOUTME: Change in breadth of ownership following Chen, Hong and Stein 2002, Table 4A
 # ABOUTME: calculates quarterly change in number of institutional owners from 13F data
+
 """
+DelBreadth.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/DelBreadth.py
 
 Inputs:
@@ -10,8 +14,6 @@ Inputs:
 
 Outputs:
     - DelBreadth.csv: CSV file with columns [permno, yyyymm, DelBreadth]
-    - DelBreadth = quarterly change in number of institutional owners (dbreadth)
-    - Excludes stocks in lowest quintile by market value of equity (based on NYSE stocks only)
 """
 
 import pandas as pd

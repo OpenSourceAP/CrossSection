@@ -1,24 +1,25 @@
-# %%
 # ABOUTME: Residual Institutional Ownership (RIO) predictors following Nagel 2005, Table 2B, 2, 2, 2E
 # ABOUTME: RIO_MB, RIO_Disp, RIO_Turnover, RIO_Volatility combining institutional ownership with market-to-book, forecast dispersion, turnover, and volatility
+
 """
+ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
 
 Inputs:
     - IBES_EPS_Unadj.parquet: IBES forecast data with columns [tickerIBES, time_avail_m, stdev]
-    - MSigma_InstitutionalOwnership.parquet: Institutional ownership data
-    - SignalMasterTable.parquet: Monthly master table with market cap and other variables
-    - MSigma_Vol_m.parquet: Monthly volume data
-    - m_crsp.parquet: CRSP monthly returns
+    - TR_13F.parquet: Institutional ownership data with columns [permno, time_avail_m, instown_perc]
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, tickerIBES, time_avail_m, exchcd, mve_c]
+    - m_aCompustat.parquet: Compustat data with columns [permno, time_avail_m, at, ceq, txditc]
+    - monthlyCRSP.parquet: CRSP monthly data with columns [permno, time_avail_m, vol, shrout, ret]
 
 Outputs:
-    - RIO_MB.csv: RIO quintile for stocks in highest MB quintile
-    - RIO_Disp.csv: RIO quintile for stocks in high forecast dispersion quintiles
-    - RIO_Turnover.csv: RIO quintile for stocks in highest turnover quintile
-    - RIO_Volatility.csv: RIO quintile for stocks in highest volatility quintile
-
-All predictors use residual institutional ownership (RIO) which controls for size effects in institutional holdings
+    - RIO_MB.csv: CSV file with columns [permno, yyyymm, RIO_MB]
+    - RIO_Disp.csv: CSV file with columns [permno, yyyymm, RIO_Disp]
+    - RIO_Turnover.csv: CSV file with columns [permno, yyyymm, RIO_Turnover]
+    - RIO_Volatility.csv: CSV file with columns [permno, yyyymm, RIO_Volatility]
 """
 
 import polars as pl

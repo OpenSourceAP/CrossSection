@@ -2,23 +2,18 @@
 # ABOUTME: calculates operating cash flow to market value of equity ratio
 
 """
-cfp Predictor
+cfp.py
 
-Cash flow to price ratio calculation with accrual adjustment.
-Uses either calculated cash flow (ib - accrual_level) or direct operating cash flow (oancf).
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/cfp.py
 
 Inputs:
-- m_aCompustat.parquet (gvkey, permno, time_avail_m, act, che, lct, dlc, txp, dp, ib, oancf)
-- SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, act, che, lct, dlc, txp, dp, ib, oancf]
+    - SignalMasterTable.parquet: Monthly master table with mve_c
 
 Outputs:
-- cfp.csv (permno, yyyymm, cfp)
-
-This predictor calculates cash flow to price ratio using either:
-1. Calculated cash flow: (ib - accrual_level) / mve_c
-2. Direct operating cash flow: oancf / mve_c (if oancf is available)
-
-Where accrual_level is calculated using 12-month changes in working capital components.
+    - cfp.csv: CSV file with columns [permno, yyyymm, cfp]
 """
 
 import pandas as pd

@@ -1,15 +1,18 @@
 # ABOUTME: Firm age since CRSP coverage start following Barry and Brown 1984 Table 3
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/FirmAge.py
+# ABOUTME: calculates months since start of CRSP coverage, excluding original CRSP firms
+
 """
+FirmAge.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/FirmAge.py
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with time_avail_m and permno
+    - SignalMasterTable.parquet: Monthly master table with columns [gvkey, permno, time_avail_m, exchcd]
 
 Outputs:
     - FirmAge.csv: CSV file with columns [permno, yyyymm, FirmAge]
-    - FirmAge = months since start of CRSP coverage (excludes firms that started with CRSP)
 """
 
 import pandas as pd

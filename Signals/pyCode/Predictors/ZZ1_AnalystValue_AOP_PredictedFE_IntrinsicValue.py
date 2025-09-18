@@ -1,6 +1,26 @@
 # ABOUTME: AnalystValue, AOP, PredictedFE following Frankel and Lee 1998 JAE, Tables 3D, 5C, 8A; IntrinsicValue placebo
 # ABOUTME: Multi-stage equity valuation using analyst forecasts and cross-sectional forecast error prediction
 
+"""
+ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py
+
+Inputs:
+    - ../pyData/Intermediate/SignalMasterTable.parquet: Security identifiers and prices
+    - ../pyData/Intermediate/IBES_EPS_Unadj.parquet: IBES analyst forecasts for EPS
+    - ../pyData/Intermediate/monthlyCRSP.parquet: CRSP shares outstanding data
+    - ../pyData/Intermediate/m_aCompustat.parquet: Compustat accounting fundamentals
+
+Outputs:
+    - ../pyData/Predictors/AnalystValue.csv: Multi-stage equity valuation using analyst forecasts
+    - ../pyData/Predictors/AOP.csv: Analyst optimism as difference between valuations
+    - ../pyData/Predictors/PredictedFE.csv: Predicted forecast error from cross-sectional regression
+    - ../pyData/Placebos/IntrinsicValue.csv: Intrinsic value using historical ROE (placebo)
+"""
+
 import polars as pl
 import polars_ols  # registers .least_squares namespace
 import sys
@@ -253,7 +273,7 @@ df = df.with_columns(pl.lit(0.12).alias("r"))
 # Higher book-to-market firms would get higher discount rates reflecting value premium
 
 # p 290: formulas p 294: 3-stage for AnalystValue and 2-stage for IntrinsicValue
-# Break down the complex calculations into steps for better debugging
+# Break down the complex calculations into steps clarity
 
 # Calculate components for AnalystValue
 df = df.with_columns(

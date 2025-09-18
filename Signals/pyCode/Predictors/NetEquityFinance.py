@@ -1,7 +1,10 @@
 # ABOUTME: Net equity financing following Bradshaw, Richardson, Sloan 2006, Table 3
 # ABOUTME: calculates net equity financing scaled by average total assets
 """
+NetEquityFinance.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/NetEquityFinance.py
 
 Inputs:
@@ -9,7 +12,6 @@ Inputs:
 
 Outputs:
     - NetEquityFinance.csv: CSV file with columns [permno, yyyymm, NetEquityFinance]
-    - NetEquityFinance = (sstk - prstkc - dv) / (0.5 * (at + l12.at)), set to missing if |ratio| > 1
 """
 
 import pandas as pd

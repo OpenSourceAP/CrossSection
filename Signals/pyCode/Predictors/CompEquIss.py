@@ -2,8 +2,17 @@
 # ABOUTME: calculates 5 year growth rate of market value minus 5 year stock return
 
 """
-Inputs: SignalMasterTable.parquet (permno, time_avail_m, ret, mve_c)
-Outputs: CompEquIss.csv (permno, yyyymm, CompEquIss)
+CompEquIss.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/CompEquIss.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly signal master table with columns [permno, time_avail_m, ret, mve_c]
+
+Outputs:
+    - CompEquIss.csv: CSV file with columns [permno, yyyymm, CompEquIss]
 """
 
 import pandas as pd

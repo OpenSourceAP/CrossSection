@@ -1,15 +1,19 @@
-# ABOUTME: Creates customer momentum signals based on Compustat customer segment data following Cohen and Frazzini 2008 Table 3A
-# ABOUTME: Matches customer names from segment data with CCM linking table and calculates average customer returns
+# ABOUTME: Customer momentum following Cohen and Frazzini 2008, Table 3A
+# ABOUTME: calculates average customer returns predictor by matching customer names from segment data
 """
+CustomerMomentum.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/CustomerMomentum.py
+
 Inputs:
-- ../pyData/Intermediate/CompustatSegmentDataCustomers.csv
-- ../pyData/Intermediate/CCMLinkingTable.parquet
-- ../pyData/Intermediate/monthlyCRSP.parquet
+    - CompustatSegmentDataCustomers.csv: Customer segment data with columns [gvkey, datadate, ctype, cnms]
+    - CCMLinkingTable.parquet: CRSP-Compustat link table with columns [gvkey, timeLinkStart_d, timeLinkEnd_d, permno, conm]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, ret_b4_dl]
 
 Outputs:
-- ../pyData/Predictors/CustomerMomentum.parquet
-
-How to run: python CustomerMomentum.py
+    - CustomerMomentum.csv: CSV file with columns [permno, yyyymm, CustomerMomentum]
 """
 
 import pandas as pd

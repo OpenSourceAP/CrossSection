@@ -1,9 +1,19 @@
 # ABOUTME: Percent Total Accruals predictor from Hafzalla, Lundholm, Van Winkle 2011 (AR), Table 5A
 # ABOUTME: Calculates net income minus cash flows from operations, financing and investment, scaled by absolute net income
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/PctTotAcc.csv
+"""
+PctTotAcc.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/PctTotAcc.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ni, prstkcc, sstk, dvt, oancf, fincf, ivncf]
+
+Outputs:
+    - PctTotAcc.csv: CSV file with columns [permno, yyyymm, PctTotAcc]
+"""
 
 import pandas as pd
 import numpy as np

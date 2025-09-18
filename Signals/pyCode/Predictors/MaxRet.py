@@ -1,9 +1,19 @@
 # ABOUTME: Maximum return following Bali, Cakici, and Whitelaw 2011, Table 1 VW 10-1
 # ABOUTME: calculates maximum of daily returns over the previous month
 
-# Run from pyCode/ directory
-# Inputs: dailyCRSP.parquet
-# Output: ../pyData/Predictors/MaxRet.csv
+"""
+MaxRet.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MaxRet.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+
+Outputs:
+    - MaxRet.csv: CSV file with columns [permno, yyyymm, MaxRet]
+"""
 
 import pandas as pd
 import numpy as np

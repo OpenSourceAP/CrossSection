@@ -2,29 +2,21 @@
 # ABOUTME: Creates 4 intangible return predictors (IntanBM, IntanSP, IntanCFP, IntanEP) using cross-sectional regressions
 
 """
-How to run:
+ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
 
 Inputs:
-    - pyData/Intermediate/m_aCompustat.parquet
-    - pyData/Intermediate/SignalMasterTable.parquet
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, gvkey, time_avail_m, sale, ib, dp, ni, ceq]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret, mve_c]
 
 Outputs:
-    - pyData/Predictors/IntanBM.csv
-    - pyData/Predictors/IntanSP.csv
-    - pyData/Predictors/IntanCFP.csv
-    - pyData/Predictors/IntanEP.csv
-
-The script creates 4 predictors based on intangible returns:
-1. IntanBM: Intangible return (BM) - Book-to-market based
-2. IntanSP: Intangible return (SP) - Sales-to-price based
-3. IntanCFP: Intangible return (CFP) - Cash flow-to-price based
-4. IntanEP: Intangible return (EP) - Earnings-to-price based
-
-For each predictor, it:
-- Calculates 60-month cumulative returns
-- Runs cross-sectional regressions for each time period
-- Saves residuals as the intangible return measure
+    - IntanBM.csv: CSV file with columns [permno, yyyymm, IntanBM]
+    - IntanSP.csv: CSV file with columns [permno, yyyymm, IntanSP]
+    - IntanCFP.csv: CSV file with columns [permno, yyyymm, IntanCFP]
+    - IntanEP.csv: CSV file with columns [permno, yyyymm, IntanEP]
 """
 
 import pandas as pd

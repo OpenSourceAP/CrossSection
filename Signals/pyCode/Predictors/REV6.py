@@ -1,9 +1,20 @@
-# ABOUTME: REV6.py - computes earnings forecast revisions (Chan, Jegadeesh and Lakonishok 1996 JF Table 7)
-# ABOUTME: 6-month sum of monthly changes in mean earnings estimates scaled by prior month stock price
+# ABOUTME: REV6 following Chan, Jegadeesh and Lakonishok 1996 JF Table 7
+# ABOUTME: calculates 6-month sum of monthly changes in mean earnings estimates scaled by prior month stock price
 
-# Usage: python3 Predictors/REV6.py (from pyCode/ directory)
-# Inputs: IBES earnings forecasts and master security table
-# Output: 6-month cumulative forecast revision measure
+"""
+REV6.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/REV6.py
+
+Inputs:
+    - IBES_EPS_Unadj.parquet: IBES earnings forecast data with columns [tickerIBES, time_avail_m, fpi, fpedats, statpers, meanest]
+    - SignalMasterTable.parquet: Master security data with columns [permno, tickerIBES, time_avail_m, prc]
+
+Outputs:
+    - REV6.csv: CSV file with columns [permno, yyyymm, REV6]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,9 +1,19 @@
-# ABOUTME: Calculates short-term seasonal momentum following Heston and Sadka 2008 Table 2 Year 1 Annual
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MomSeasonShort.py
+# ABOUTME: Short-term seasonal momentum following Heston and Sadka 2008 Table 2 Year 1
+# ABOUTME: calculates 11-month lagged returns as seasonal momentum predictor
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/MomSeasonShort.csv
+"""
+MomSeasonShort.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MomSeasonShort.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - MomSeasonShort.csv: CSV file with columns [permno, yyyymm, MomSeasonShort]
+"""
 
 import pandas as pd
 import numpy as np

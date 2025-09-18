@@ -6,7 +6,6 @@ FEPS.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/FEPS.py
 
 Inputs:
@@ -15,7 +14,6 @@ Inputs:
 
 Outputs:
     - FEPS.csv: CSV file with columns [permno, yyyymm, FEPS]
-    - FEPS = meanest (forecasted earnings per share)
 """
 
 import pandas as pd

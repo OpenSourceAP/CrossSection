@@ -1,8 +1,20 @@
-# ABOUTME: Calculates cash to assets ratio following Palazzo 2012 Table 4
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/Cash.py
+# ABOUTME: Cash following Palazzo 2012, Table 4
+# ABOUTME: calculates cash to total assets ratio predictor
 
-# Inputs: m_QCompustat.parquet, SignalMasterTable.parquet
-# Output: ../pyData/Predictors/Cash.csv
+"""
+Cash.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Cash.py
+
+Inputs:
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, rdq, cheq, atq]
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m]
+
+Outputs:
+    - Cash.csv: CSV file with columns [permno, yyyymm, Cash]
+"""
 
 import pandas as pd
 import numpy as np

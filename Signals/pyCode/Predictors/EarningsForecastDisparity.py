@@ -1,9 +1,21 @@
-# ABOUTME: EarningsForecastDisparity.py - computes long-vs-short EPS forecasts (Da and Warachka 2011 JFE Table 2B)
-# ABOUTME: Calculates disparity between long-term growth forecasts and scaled short-term earnings expectations
+# ABOUTME: EarningsForecastDisparity following Da and Warachka 2011 JFE Table 2B
+# ABOUTME: calculates disparity between long-term growth forecasts and scaled short-term earnings expectations
 
-# Usage: python3 EarningsForecastDisparity.py
-# Inputs: IBES EPS forecasts, master table, and actual earnings data
-# Output: Long-term vs short-term forecast disparity measure
+"""
+EarningsForecastDisparity.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/EarningsForecastDisparity.py
+
+Inputs:
+    - IBES_EPS_Unadj.parquet: IBES EPS forecasts with columns [tickerIBES, fpi, fpedats, statpers, meanest]
+    - IBES_UnadjustedActuals.parquet: IBES actual earnings with columns [tickerIBES, time_avail_m, fy0a]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, tickerIBES]
+
+Outputs:
+    - EarningsForecastDisparity.csv: CSV file with columns [permno, yyyymm, EarningsForecastDisparity]
+"""
 
 import pandas as pd
 import numpy as np

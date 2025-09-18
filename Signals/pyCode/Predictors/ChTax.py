@@ -2,18 +2,18 @@
 # ABOUTME: calculates 4-quarter change in quarterly total taxes scaled by lagged total assets
 
 """
-ChTax Predictor
+ChTax.py
 
-Change in taxes calculation: (txtq - l12.txtq)/l12.at
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ChTax.py
 
 Inputs:
-- m_aCompustat.parquet (permno, gvkey, time_avail_m, at)
-- m_QCompustat.parquet (gvkey, time_avail_m, txtq)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, gvkey, time_avail_m, at]
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, txtq]
 
 Outputs:
-- ChTax.csv (permno, yyyymm, ChTax)
-
-This predictor calculates the change in quarterly taxes scaled by lagged assets.
+    - ChTax.csv: CSV file with columns [permno, yyyymm, ChTax]
 """
 
 import pandas as pd

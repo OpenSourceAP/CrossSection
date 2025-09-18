@@ -1,7 +1,11 @@
 # ABOUTME: Medium-run reversal following De Bondt and Thaler 1985, Fig2 two-year line
 # ABOUTME: calculates stock return between months t-18 and t-13
+
 """
+MRreversal.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/MRreversal.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - MRreversal.csv: CSV file with columns [permno, yyyymm, MRreversal]
-    - MRreversal = geometric return over months t-18 to t-13 (medium-run reversal)
 """
 
 import pandas as pd

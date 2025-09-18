@@ -2,19 +2,18 @@
 # ABOUTME: Identifies firms that paid dividends after 24 months of no dividends, held for 6 months
 
 """
-DivInit predictor calculation
+DivInit.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DivInit.py
 
 Inputs:
-    - ../pyData/Intermediate/CRSPdistributions.parquet (permno, exdt, cd2, divamt)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, exchcd, shrcd)
+    - CRSPdistributions.parquet: CRSP distributions data with columns [permno, exdt, cd2, divamt]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, exchcd, shrcd]
 
 Outputs:
-    - ../pyData/Predictors/DivInit.csv (permno, yyyymm, DivInit)
+    - DivInit.csv: CSV file with columns [permno, yyyymm, DivInit]
 """
 
 import pandas as pd

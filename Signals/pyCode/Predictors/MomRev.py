@@ -1,8 +1,19 @@
-# ABOUTME: Calculates momentum and long-term reversal signal following Chan and Ko 2006 Table 5
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MomRev.py
-# Run from pyCode/ directory: python3 Predictors/MomRev.py
-# Inputs: pyData/Intermediate/SignalMasterTable.parquet
-# Outputs: pyData/Predictors/MomRev.csv
+# ABOUTME: Momentum and long-term reversal signal following Chan and Ko 2006 Table 5
+# ABOUTME: combines 6-month momentum with 36-month reversal patterns
+
+"""
+MomRev.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MomRev.py
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly return data with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - MomRev.csv: CSV file with columns [permno, yyyymm, MomRev]
+"""
 
 import pandas as pd
 import numpy as np

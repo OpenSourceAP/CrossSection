@@ -2,18 +2,17 @@
 # ABOUTME: Change in number of employees scaled by average employment, set to 0 if emp data missing
 
 """
-hire predictor calculation
+hire.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/hire.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, emp)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, emp]
 
 Outputs:
-    - ../pyData/Predictors/hire.csv (permno, yyyymm, hire)
+    - hire.csv: CSV file with columns [permno, yyyymm, hire]
 """
 
 import pandas as pd

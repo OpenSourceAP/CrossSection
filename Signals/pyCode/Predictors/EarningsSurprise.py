@@ -1,9 +1,20 @@
 # ABOUTME: Earnings Surprise following Foster, Olsen and Shevlin 1984 AR, Table 4, Days +1 to +60
 # ABOUTME: Calculates standardized unexpected earnings scaled by standard deviation
 
-# Calculates earnings surprise using Compustat quarterly data
-# Input: ../pyData/Intermediate/SignalMasterTable.parquet, ../pyData/Intermediate/m_QCompustat.parquet
-# Output: ../pyData/Predictors/EarningsSurprise.csv
+"""
+EarningsSurprise.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/EarningsSurprise.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m]
+    - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, epspxq]
+
+Outputs:
+    - EarningsSurprise.csv: CSV file with columns [permno, yyyymm, EarningsSurprise]
+"""
 
 import pandas as pd
 import numpy as np

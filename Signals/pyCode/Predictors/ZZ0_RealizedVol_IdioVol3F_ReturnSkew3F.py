@@ -4,26 +4,18 @@
 """
 ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
 
-Generates three volatility and skewness predictors from daily CRSP returns and Fama-French 3-factor model:
-- RealizedVol: Standard deviation of daily returns within each month
-- IdioVol3F: Standard deviation of daily idiosyncratic returns (residuals from FF3 model)
-- ReturnSkew3F: Skewness of daily idiosyncratic returns (residuals from FF3 model)
-
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py
 
 Inputs:
-    - ../pyData/Intermediate/dailyCRSP.parquet (permno, time_d, ret)
-    - ../pyData/Intermediate/dailyFF.parquet (time_d, rf, mktrf, smb, hml)
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, ret]
+    - dailyFF.parquet: Daily Fama-French data with columns [time_d, rf, mktrf, smb, hml]
 
 Outputs:
-    - ../pyData/Predictors/RealizedVol.csv
-    - ../pyData/Predictors/IdioVol3F.csv
-    - ../pyData/Predictors/ReturnSkew3F.csv
-
-Requirements:
-    - Minimum 15 daily observations per permno-month (Bali-Hovak 2009 footnote 9)
-    - FF3 regression: ret = alpha + beta1*mktrf + beta2*smb + beta3*hml + residual
+    - RealizedVol.csv: CSV file with columns [permno, yyyymm, RealizedVol]
+    - IdioVol3F.csv: CSV file with columns [permno, yyyymm, IdioVol3F]
+    - ReturnSkew3F.csv: CSV file with columns [permno, yyyymm, ReturnSkew3F]
 """
 
 import polars as pl

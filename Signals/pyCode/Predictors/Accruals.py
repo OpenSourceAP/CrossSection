@@ -6,7 +6,6 @@ Accruals.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/Accruals.py
 
 Inputs:
@@ -14,7 +13,6 @@ Inputs:
 
 Outputs:
     - Accruals.csv: CSV file with columns [permno, yyyymm, Accruals]
-    - Implements Sloan 1996 equation 1 (page 6)
 """
 
 import pandas as pd

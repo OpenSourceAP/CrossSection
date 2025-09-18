@@ -1,9 +1,20 @@
-# ABOUTME: UpRecomm.py - computes earnings forecast upgrade indicator (Barber et al. 2001 JF Table 3C)
-# ABOUTME: Binary indicator for increased mean analyst earnings forecasts using IBES data
+# ABOUTME: UpRecomm following Barber et al. 2001 JF Table 3C, year t+1
+# ABOUTME: Binary indicator for analyst recommendation upgrades using IBES data
 
-# Computes binary indicator for analyst recommendation upgrades
-# Input: IBES recommendation data and master security table
-# Output: Binary signal for recommendation improvements
+"""
+UpRecomm.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/UpRecomm.py
+
+Inputs:
+    - IBES_Recommendations.parquet: IBES recommendation data with columns [tickerIBES, amaskcd, anndats, time_avail_m, ireccd]
+    - SignalMasterTable.parquet: Master security table with columns [permno, tickerIBES, time_avail_m]
+
+Outputs:
+    - UpRecomm.csv: CSV file with columns [permno, yyyymm, UpRecomm]
+"""
 
 import pandas as pd
 import numpy as np

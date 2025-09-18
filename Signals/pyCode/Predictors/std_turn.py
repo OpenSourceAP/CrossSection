@@ -1,7 +1,10 @@
 # ABOUTME: Share turnover volatility following Chordia, Subrahmanyam and Anshuman 2001, Table 5B
 # ABOUTME: calculates standard deviation of turnover (vol/shrout) over the past 36 months
 """
+std_turn.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/std_turn.py
 
 Inputs:

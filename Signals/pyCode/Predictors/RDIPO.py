@@ -1,10 +1,20 @@
-# ABOUTME: RDIPO.py - calculates IPO firms with no R&D spending predictor
-# ABOUTME: IPO and no R&D spending - binary indicator for IPO firms that have zero R&D expenditures
-# ABOUTME: Reference: Gou, Lev and Shi 2006, Table 8 row 2
+# ABOUTME: IPO firms with no R&D spending following Gou, Lev and Shi 2006, Table 8 row 2
+# ABOUTME: binary indicator for IPO firms that have zero R&D expenditures
 
-# Run from pyCode/ directory
-# Inputs: m_aCompustat.parquet, IPODates.parquet
-# Output: ../pyData/Predictors/RDIPO.csv
+"""
+RDIPO.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/RDIPO.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, xrd]
+    - IPODates.parquet: IPO dates data with columns [permno, IPOdate]
+
+Outputs:
+    - RDIPO.csv: CSV file with columns [permno, yyyymm, RDIPO]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,8 +1,19 @@
-# ABOUTME: Calculates Net Operating Assets following Hirshleifer et al. 2004 Table 4
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/NOA.py
+# ABOUTME: Net Operating Assets following Hirshleifer et al. 2004 Table 4
+# ABOUTME: calculates NOA = (OA - OL) / lagged total assets where OA = at - che and OL = at - dltt - mib - dc - ceq
 
-# Inputs: m_aCompustat.parquet
-# Output: ../pyData/Predictors/NOA.csv
+"""
+NOA.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/NOA.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, at, che, dltt, mib, dc, ceq]
+
+Outputs:
+    - NOA.csv: CSV file with columns [permno, yyyymm, NOA]
+"""
 
 import pandas as pd
 import numpy as np

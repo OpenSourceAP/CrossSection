@@ -1,9 +1,19 @@
-# ABOUTME: Calculates off-season momentum (years 16-20) following Heston and Sadka 2008 Table 2 Years 16-20 Nonannual
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/MomOffSeason16YrPlus.py
+# ABOUTME: Off-season momentum (years 16-20) following Heston and Sadka 2008 Table 2 Years 16-20 Nonannual
+# ABOUTME: calculates momentum excluding same calendar month as predicted month
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet
-# Output: ../pyData/Predictors/MomOffSeason16YrPlus.csv
+"""
+MomOffSeason16YrPlus.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MomOffSeason16YrPlus.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret]
+
+Outputs:
+    - MomOffSeason16YrPlus.csv: CSV file with columns [permno, yyyymm, MomOffSeason16YrPlus]
+"""
 
 import pandas as pd
 import numpy as np

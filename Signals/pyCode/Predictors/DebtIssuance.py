@@ -6,7 +6,6 @@ DebtIssuance.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DebtIssuance.py
 
 Inputs:

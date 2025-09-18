@@ -2,18 +2,17 @@
 # ABOUTME: calculates change in common equity scaled by average total assets
 
 """
-DelEqu predictor calculation
+DelEqu.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DelEqu.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (gvkey, permno, time_avail_m, at, ceq)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, at, ceq]
 
 Outputs:
-    - ../pyData/Predictors/DelEqu.csv (permno, yyyymm, DelEqu)
+    - DelEqu.csv: CSV file with columns [permno, yyyymm, DelEqu]
 """
 
 import pandas as pd

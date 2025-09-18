@@ -6,7 +6,6 @@ DelCOL.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DelCOL.py
 
 Inputs:
@@ -14,7 +13,6 @@ Inputs:
 
 Outputs:
     - DelCOL.csv: CSV file with columns [permno, yyyymm, DelCOL]
-    - Change in current operating liabilities normalized by average assets
 """
 
 import pandas as pd

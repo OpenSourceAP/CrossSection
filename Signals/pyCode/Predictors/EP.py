@@ -1,26 +1,19 @@
 # ABOUTME: Earnings-to-Price Ratio following Basu 1977, Table 1 average annual rate
 # ABOUTME: calculates earnings-to-price ratio as income before extraordinary items divided by 6-month lagged market value
 
-# original paper uses Dec 31 obs for ib and mve_c, while our
-# mve_c gets updated monthly.  Thus, we lag mve_c 6 months
-# to try to get at the spirit of the original paper.
-# this lag helps a lot, as it seems to remove momentum effects.
-# excluding EP < 0 and using the original sample (not MP's) helps too
-
 """
-EP predictor calculation
+EP.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/EP.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, ib)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ib]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
 
 Outputs:
-    - ../pyData/Predictors/EP.csv (permno, yyyymm, EP)
+    - EP.csv: CSV file with columns [permno, yyyymm, EP]
 """
 
 import pandas as pd

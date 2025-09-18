@@ -1,11 +1,21 @@
 # ABOUTME: Efficient frontier index following Nguyen and Swanson 2009, Table 4A Spread
 # ABOUTME: calculates residual from regression of log(BM) on accounting variables with 60-month rolling window
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, m_aCompustat.parquet
-# Output: ../pyData/Predictors/Frontier.csv
-# Usage: python3 Predictors/Frontier.py --max-year 1985 (for testing)
+"""
+Frontier.py
 
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Frontier.py
+    python3 Predictors/Frontier.py --max-year 1985 (for testing)
+
+Inputs:
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c, sicCRSP]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, ceq, dltt, capx, sale, xrd, xad, ppent, ebitda]
+
+Outputs:
+    - Frontier.csv: CSV file with columns [permno, yyyymm, Frontier]
+"""
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression

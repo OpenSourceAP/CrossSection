@@ -1,8 +1,21 @@
-# ABOUTME: Calculates O-Score bankruptcy predictor following Dichev 1998 Table 5
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/OScore.py
+# ABOUTME: O-Score bankruptcy predictor following Dichev 1998, Table 5
+# ABOUTME: calculates binary signal based on decile rankings of O-Score
 
-# Inputs: m_aCompustat.parquet, SignalMasterTable.parquet, GNPdefl.parquet
-# Output: ../pyData/Predictors/OScore.csv
+"""
+OScore.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/OScore.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, fopt, at, lt, act, lct, ib, oancf, sic]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, prc]
+    - GNPdefl.parquet: GNP deflator data with columns [time_avail_m, gnpdefl]
+
+Outputs:
+    - OScore.csv: CSV file with columns [permno, yyyymm, OScore]
+"""
 
 import pandas as pd
 import numpy as np

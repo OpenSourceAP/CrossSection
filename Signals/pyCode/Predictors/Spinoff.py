@@ -1,9 +1,20 @@
 # ABOUTME: Spinoff following Cusatis, Miles and Woolridge 1993, Table 3B I-24
 # ABOUTME: Creates spinoff indicator predictor for firms identified in CRSP acquisition data
 
-# Run from pyCode/ directory
-# Inputs: SignalMasterTable.parquet, m_CRSPAcquisitions.parquet
-# Output: ../pyData/Predictors/Spinoff.csv
+"""
+Spinoff.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/Spinoff.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m]
+    - m_CRSPAcquisitions.parquet: CRSP acquisitions data with columns [permno, SpinoffCo]
+
+Outputs:
+    - Spinoff.csv: CSV file with columns [permno, yyyymm, Spinoff]
+"""
 
 import pandas as pd
 import numpy as np

@@ -1,5 +1,19 @@
-# ABOUTME: Calculates industry momentum following Grinblatt and Moskowitz 1999 Table 2A
-# ABOUTME: Run from pyCode/ directory: python3 Predictors/IndMom.py
+# ABOUTME: Industry momentum following Grinblatt and Moskowitz 1999, Table 2A
+# ABOUTME: calculates industry momentum as market-cap weighted average within 2-digit SIC groups
+
+"""
+IndMom.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/IndMom.py
+
+Inputs:
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret, sicCRSP, mve_c]
+
+Outputs:
+    - IndMom.csv: CSV file with columns [permno, yyyymm, IndMom]
+"""
 
 import pandas as pd
 import numpy as np

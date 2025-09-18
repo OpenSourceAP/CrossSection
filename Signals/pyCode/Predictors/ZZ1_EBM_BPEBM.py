@@ -1,7 +1,11 @@
 # ABOUTME: Enterprise book-to-market (EBM) following Penman, Richardson and Tuna 2007, Table 4A
 # ABOUTME: BP minus EBM (BPEBM) following Penman, Richardson and Tuna 2007, Table 1D
+
 """
+ZZ1_EBM_BPEBM.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ1_EBM_BPEBM.py
 
 Inputs:
@@ -11,8 +15,6 @@ Inputs:
 Outputs:
     - EBM.csv: CSV file with columns [permno, yyyymm, EBM]
     - BPEBM.csv: CSV file with columns [permno, yyyymm, BPEBM]
-    - EBM = (ceq + che - dltt - dlc - dc - dvpa + tstkp) / (mve_c + che - dltt - dlc - dc - dvpa + tstkp)
-    - BPEBM = BP - EBM, where BP = (ceq + tstkp - dvpa) / mve_c
 """
 
 import polars as pl

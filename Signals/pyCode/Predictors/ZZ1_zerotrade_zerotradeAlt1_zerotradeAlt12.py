@@ -1,9 +1,21 @@
 # ABOUTME: Liquidity measures (LM1, LM6, LM12) following Liu 2006, Journal of Financial Economics 82, 631-671
 # ABOUTME: Calculates turnover-adjusted number of zero daily trading volumes over 1M, 6M, and 12M periods
 
-# How to run: python3 ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
-# Inputs: ../pyData/Intermediate/dailyCRSP.parquet
-# Outputs: ../pyData/Predictors/zerotrade1M.csv, zerotrade6M.csv, zerotrade12M.csv
+"""
+ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, time_d, vol, shrout]
+
+Outputs:
+    - zerotrade1M.csv: CSV file with columns [permno, yyyymm, zerotrade1M]
+    - zerotrade6M.csv: CSV file with columns [permno, yyyymm, zerotrade6M]
+    - zerotrade12M.csv: CSV file with columns [permno, yyyymm, zerotrade12M]
+"""
 
 import pandas as pd
 import numpy as np

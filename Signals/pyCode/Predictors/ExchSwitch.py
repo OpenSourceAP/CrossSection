@@ -1,7 +1,11 @@
 # ABOUTME: Exchange Switch following Dharan and Ikenberry 1995, Table 2 Months -1-6
 # ABOUTME: Binary indicator for firms switching from AMEX/NASDAQ to NYSE or NASDAQ to AMEX within past year
+
 """
+ExchSwitch.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ExchSwitch.py
 
 Inputs:
@@ -9,7 +13,6 @@ Inputs:
 
 Outputs:
     - ExchSwitch.csv: CSV file with columns [permno, yyyymm, ExchSwitch]
-    - ExchSwitch = 1 if firm switched exchanges within past year, 0 otherwise
 """
 
 import pandas as pd

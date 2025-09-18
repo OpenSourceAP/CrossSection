@@ -2,21 +2,17 @@
 # ABOUTME: calculates 12-month growth in Net Operating Assets scaled by lagged total assets
 
 """
-dNoa Predictor - Change in Net Operating Assets
+dNoa.py
 
-This predictor calculates the change in net operating assets scaled by lagged assets:
-dNoa = (tempNOA - l12.tempNOA)/l12.at
-
-Where:
-- tempOA = at - che (Operating Assets = Total Assets - Cash)
-- tempOL = at - tempdltt - tempmib - tempdlc - temppstk - ceq (Operating Liabilities)
-- tempNOA = tempOA - tempOL (Net Operating Assets)
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/dNoa.py
 
 Inputs:
-- m_aCompustat.parquet (permno, time_avail_m, at, che, dltt, dlc, mib, pstk, ceq)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, che, dltt, dlc, mib, pstk, ceq]
 
 Outputs:
-- dNoa.csv (permno, yyyymm, dNoa)
+    - dNoa.csv: CSV file with columns [permno, yyyymm, dNoa]
 """
 
 import pandas as pd

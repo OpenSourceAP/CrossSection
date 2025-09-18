@@ -2,18 +2,17 @@
 # ABOUTME: calculates difference in investment and advances (ivao) scaled by average total assets
 
 """
-DelLTI predictor calculation
+DelLTI.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DelLTI.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (gvkey, permno, time_avail_m, at, ivao)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, at, ivao]
 
 Outputs:
-    - ../pyData/Predictors/DelLTI.csv (permno, yyyymm, DelLTI)
+    - DelLTI.csv: CSV file with columns [permno, yyyymm, DelLTI]
 """
 
 import pandas as pd

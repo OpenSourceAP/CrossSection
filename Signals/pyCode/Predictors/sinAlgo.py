@@ -1,7 +1,11 @@
 # ABOUTME: Sin Stock predictor following Hong and Kacperczyk 2009, Table 4A 1965-2006 first row, Table 4B 1926-2006 first row
 # ABOUTME: Binary variable = 1 for firms with segments in sin industries (alcohol, tobacco, gaming), 0 for comparable stocks
+
 """
+sinAlgo.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/sinAlgo.py
 
 Inputs:
@@ -11,7 +15,6 @@ Inputs:
 
 Outputs:
     - sinAlgo.csv: CSV file with columns [permno, yyyymm, sinAlgo]
-    - sinAlgo = 1 for sin stocks, 0 for comparable stocks, missing otherwise
 """
 
 import pandas as pd

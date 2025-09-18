@@ -1,22 +1,19 @@
-# ABOUTME: dVolCall.py - calculates change in call option implied volatility
-# ABOUTME: Change in 30-day, 50-delta call option implied volatility from previous month
-
-# An Ang Bali Cakici 2014 Table II A
+# ABOUTME: Change in call option implied volatility following An, Ang, Bali, Cakici 2014, Table II A
+# ABOUTME: calculates change in 30-day, 50-delta call option implied volatility from previous month
 
 """
-dVolCall predictor calculation
+dVolCall.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/dVolCall.py
 
 Inputs:
-    - ../pyData/Prep/OptionMetricsVolSurf.csv (secid, time_avail_m, days, delta, cp_flag, impl_vol)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, secid)
+    - OptionMetricsVolSurf.csv: Option metrics volatility surface data with columns [secid, time_avail_m, days, delta, cp_flag, impl_vol]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, secid]
 
 Outputs:
-    - ../pyData/Predictors/dVolCall.csv (permno, yyyymm, dVolCall)
+    - dVolCall.csv: CSV file with columns [permno, yyyymm, dVolCall]
 """
 
 import pandas as pd

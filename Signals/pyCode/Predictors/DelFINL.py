@@ -2,18 +2,17 @@
 # ABOUTME: calculates change in financial liabilities scaled by average total assets
 
 """
-DelFINL predictor calculation
+DelFINL.py
 
 Usage:
     Run from [Repo-Root]/Signals/pyCode/
-
     python3 Predictors/DelFINL.py
 
 Inputs:
-    - ../pyData/Intermediate/m_aCompustat.parquet (gvkey, permno, time_avail_m, at, pstk, dltt, dlc)
+    - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, at, pstk, dltt, dlc]
 
 Outputs:
-    - ../pyData/Predictors/DelFINL.csv (permno, yyyymm, DelFINL)
+    - DelFINL.csv: CSV file with columns [permno, yyyymm, DelFINL]
 """
 
 import pandas as pd

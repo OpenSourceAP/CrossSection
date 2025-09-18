@@ -1,9 +1,19 @@
 # ABOUTME: Calculates earnings consistency following Alwathainani 2009 Table 11A CLG-CHG
 # ABOUTME: Average earnings growth over previous 48 months with sign consistency filters
-#
-# Inputs: ../pyData/Intermediate/m_aCompustat.parquet
-# Outputs: ../pyData/Predictors/EarningsConsistency.csv
-# How to run: python3 EarningsConsistency.py
+
+"""
+EarningsConsistency.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/EarningsConsistency.py
+
+Inputs:
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, epspx]
+
+Outputs:
+    - EarningsConsistency.csv: CSV file with columns [permno, yyyymm, EarningsConsistency]
+"""
 
 import pandas as pd
 import numpy as np

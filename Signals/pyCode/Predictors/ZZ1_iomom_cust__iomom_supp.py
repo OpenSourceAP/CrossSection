@@ -1,19 +1,20 @@
-# ABOUTME: Calculates customer and supplier momentum following Menzly and Ozbas 2010 Table 2 (1) r_customer,t-1 and r_supplier,t-1
-# ABOUTME: Run: python3 pyCode/Predictors/ZZ1_iomom_cust__iomom_supp.py
+# ABOUTME: Customer and supplier momentum following Menzly and Ozbas 2010 Table 2 (1) r_customer,t-1 and r_supplier,t-1
+# ABOUTME: calculates input-output linked customer and supplier momentum predictors
 
 """
-ZZ1_iomom_cust__iomom_supp Predictor - Input-Output Customer and Supplier Momentum
+ZZ1_iomom_cust__iomom_supp.py
 
-This predictor runs the R script for Input-Output momentum calculations, processes the results,
-and extracts both customer and supplier momentum signals.
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ1_iomom_cust__iomom_supp.py
 
 Inputs:
-- Predictors/ZZ1_iomom_cust__iomom_supp.R (R script)
-- SignalMasterTable.parquet (permno, gvkey, time_avail_m)
+    - Predictors/ZZ1_iomom_cust__iomom_supp.R: R script for input-output momentum calculations
+    - SignalMasterTable.parquet: Monthly signal master table with columns [permno, gvkey, time_avail_m]
 
 Outputs:
-- iomom_cust.csv (permno, yyyymm, iomom_cust)
-- iomom_supp.csv (permno, yyyymm, iomom_supp)
+    - iomom_cust.csv: CSV file with columns [permno, yyyymm, iomom_cust]
+    - iomom_supp.csv: CSV file with columns [permno, yyyymm, iomom_supp]
 """
 
 import subprocess

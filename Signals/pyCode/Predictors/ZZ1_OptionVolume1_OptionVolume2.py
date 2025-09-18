@@ -2,20 +2,20 @@
 # ABOUTME: OptionVolume1 = option to stock volume ratio, OptionVolume2 = abnormal option volume (current/6-month average)
 
 """
+ZZ1_OptionVolume1_OptionVolume2.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ZZ1_OptionVolume1_OptionVolume2.py
 
 Inputs:
-    - pyData/Intermediate/SignalMasterTable.parquet
-    - pyData/Intermediate/monthlyCRSP.parquet
-    - pyData/Prep/OptionMetricsVolume.csv
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, secid, prc, shrcd]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol]
+    - OptionMetricsVolume.csv: Option volume data with columns [secid, date, optvolume_js12]
 
 Outputs:
-    - pyData/Predictors/OptionVolume1.csv - Option to stock volume ratio
-    - pyData/Predictors/OptionVolume2.csv - Abnormal option volume (current/6-month average)
-
-Note:
-    - ac 2025-09: updated to exclude mechanical trading volume associated with traders rolling forward to the next expiration date. we still use monthly signals, so we don't have t-stats as large as in Table 2A. But mean returns are mostly monotonic in the signals.
+    - OptionVolume1.csv: CSV file with columns [permno, yyyymm, OptionVolume1]
+    - OptionVolume2.csv: CSV file with columns [permno, yyyymm, OptionVolume2]
 """
 
 # --------------
