@@ -28,14 +28,9 @@ df = pd.read_parquet(
 
 # Aggregate recommendations to firm-month level
 # First: get the last non-missing recommendation for each analyst-firm-month
-def last_non_missing(series):
-    non_missing = series.dropna()
-    return non_missing.iloc[-1] if len(non_missing) > 0 else np.nan
-
-
 df = (
     df.groupby(["tickerIBES", "amaskcd", "time_avail_m"])["ireccd"]
-    .apply(last_non_missing)
+    .last()
     .reset_index()
 )
 
