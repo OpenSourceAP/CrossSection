@@ -1,9 +1,3 @@
-#%%
-
-import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-os.chdir("..")
-
 # ABOUTME: Organizational capital following Eisfeldt and Papanikolaou 2013, Table 4A.1
 # ABOUTME: Calculates OrgCap (industry-adjusted) and OrgCapNoAdj (raw) based on SG&A with depreciation
 
@@ -57,18 +51,8 @@ df = pd.merge(df, gnpdefl, on="time_avail_m", how="inner")
 # Convert sic to numeric
 df["sic"] = pd.to_numeric(df["sic"], errors="coerce")
 
-# Filter conditions: December fiscal year end and SIC industry restrictions
-df = df[
-    (df["datadate"].dt.month == 12)
-    & ((df["sic"] < 6000) | (df["sic"] >= 7000))
-    & df["sic"].notna()
-]
-
-print(f"After filtering: {len(df):,} observations")
-
-# Fill date gaps and sort before calculations
-df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
-df = df.sort_values(["permno", "time_avail_m"]).reset_index(drop=True)
+# Keep December fiscal year end only, and then fill the date gaps
+df = df[df["datadate"].dt.month == 12]
 
 # Fill NA for sicCRSP with last non-missing value by permno
 # This was not in Stata, but it makes sense.
@@ -80,7 +64,7 @@ df["age"] = df.groupby("permno").cumcount() + 1
 df["xsga"] = df["xsga"].fillna(0)
 df["xsga"] = df["xsga"] / df["gnpdefl"]
 
-# Apply recursive definition
+# Define the orgcap recursive function
 def build_orgcap(group, a=0.85):
     xsga = group['xsga'].to_numpy(dtype=float)
     n = xsga.size
@@ -100,6 +84,8 @@ def build_orgcap(group, a=0.85):
     return group
 
 
+# Apply the orgcap recursive function
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
 df = df.groupby('permno', group_keys=False)[
     ['permno', 'time_avail_m', 'xsga', 'at', 'sicCRSP']
 ].apply(build_orgcap)
@@ -155,6 +141,9 @@ df = pd.merge(df, industry_stats, on=["FF17ind", "time_avail_m"], how="left")
 # Create industry-adjusted organizational capital
 df.loc[df["std"].isna(), "OrgCap"] = np.nan
 df["OrgCap"] = (df["OrgCapNoAdjtemp"] - df["mean"]) / df["std"]
+
+# filter out financial firms
+df = df[((df["sic"] < 6000) | (df["sic"] >= 7000)) & df["sic"].notna()]
 
 print(f"Final OrgCap values: {df['OrgCap'].notna().sum():,} non-missing")
 
