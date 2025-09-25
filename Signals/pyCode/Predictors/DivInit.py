@@ -1,3 +1,7 @@
+#%% debug
+import os
+os.chdir(os.path.join(os.path.dirname(__file__), ".."))
+
 # ABOUTME: Dividend initiation following Michaely, Thaler and Womack 1995, Table 3 init
 # ABOUTME: Identifies firms that paid dividends after 24 months of no dividends, held for 6 months
 
@@ -63,15 +67,7 @@ df["divamt"] = df["divamt"].fillna(0)
 
 # Rolling 24-month sum of dividends using asrol
 df = asrol(
-    df,
-    "permno",
-    "time_avail_m",
-    "1mo",
-    24,
-    "divamt",
-    "sum",
-    "divamt_sum",
-    min_samples=1,
+    df, "permno", "time_avail_m", "1mo", 24, "divamt", "sum", "divamt_sum", min_samples=1
 )
 
 # Sort by permno and time_avail_m for lag calculation
@@ -79,24 +75,21 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Create dividend initiation indicator
 # Flag firms paying dividends after 24 months of no dividends
+# for some reason, asrol(stat="sum") can return 1e-17 instead of 0. This seems to be due to how polars handles rolling_sum. So I'm patching with this 1e-10 cutoff
 df["divsum_lag1"] = df.groupby("permno")["divamt_sum"].shift(1)
-df["temp"] = (df["divamt"] > 0) & (df["divsum_lag1"] == 0)
-df["temp"] = df["temp"].fillna(False).astype(int)  # Convert boolean to numeric
+df["divinit_firstmonth"] = ((df["divamt"] > 0) & (df["divsum_lag1"] < 1e-10)).astype(int)
 
-# Keep for 6 months using asrol
+# Signal is valid for 6 months
 df = asrol(
-    df, "permno", "time_avail_m", "1mo", 6, "temp", "sum", "temp_sum", min_samples=1
+    df, "permno", "time_avail_m", "1mo", 6, "divinit_firstmonth", 
+    "max", "DivInit", min_samples=1
 )
-
-# Create final DivInit signal - indicator equals 1 if dividend initiation occurred in past 6 months
-df["DivInit"] = (df["temp_sum"] == 1).astype(int)
 
 # save
 print("💾 Saving DivInit predictor...")
 save_predictor(df, "DivInit")
 print("✅ DivInit.csv saved successfully")
 
-print("=" * 80)
-print("✅ DivInit.py Complete")
-print("Dividend initiation predictor generated successfully")
-print("=" * 80)
+#%% debug
+
+small = df.query("permno == 10372 & time_avail_m <= '1936-12-31'")
