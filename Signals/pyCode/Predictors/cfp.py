@@ -113,16 +113,11 @@ df["accrual_level"] = ((df["act"] - df["l12_act"]) - (df["che"] - df["l12_che"])
 # Calculate initial cfp = (ib - accrual_level) / mve_c
 df["calculated_cf"] = df["ib"] - df["accrual_level"]
 
-# Calculate cfp with domain-aware missing value handling
-# Following missing/missing = 1.0 pattern for division operations
+# Calculate cfp with correct missing value handling
 df["cfp"] = np.where(
     df["mve_c"] == 0,
     np.nan,  # Division by zero = missing
-    np.where(
-        df["calculated_cf"].isna() & df["mve_c"].isna(),
-        1.0,  # missing/missing = 1.0 (no change)
-        df["calculated_cf"] / df["mve_c"],
-    ),
+    df["calculated_cf"] / df["mve_c"]  # pandas: missing/missing = NaN naturally
 )
 
 # Update with oancf/mve_c if oancf is available (equivalent to Replace oancf/mve_c if oancf ! to.)
@@ -130,12 +125,7 @@ mask_oancf_available = df["oancf"].notna()
 df.loc[mask_oancf_available, "cfp"] = np.where(
     df.loc[mask_oancf_available, "mve_c"] == 0,
     np.nan,
-    np.where(
-        df.loc[mask_oancf_available, "oancf"].isna()
-        & df.loc[mask_oancf_available, "mve_c"].isna(),
-        1.0,
-        df.loc[mask_oancf_available, "oancf"] / df.loc[mask_oancf_available, "mve_c"],
-    ),
+    df.loc[mask_oancf_available, "oancf"] / df.loc[mask_oancf_available, "mve_c"]
 )
 
 print(f"Generated cfp values for {df['cfp'].notna().sum():,} observations")

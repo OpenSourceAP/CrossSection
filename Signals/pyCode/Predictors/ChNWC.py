@@ -48,15 +48,11 @@ df = df.sort_values(["permno", "time_avail_m"])
 # Calculate net working capital ratio as proportion of total assets
 df["nwc_numerator"] = (df["act"] - df["che"]) - (df["lct"] - df["dlc"])
 
-# Calculate temp with domain-aware missing handling
+# Calculate temp with correct missing value handling
 df["temp"] = np.where(
     df["at"] == 0,
     np.nan,  # Division by zero = missing
-    np.where(
-        df["nwc_numerator"].isna() & df["at"].isna(),
-        1.0,  # missing/missing = 1.0 (no change)
-        df["nwc_numerator"] / df["at"],
-    ),
+    df["nwc_numerator"] / df["at"]  # pandas: missing/missing = NaN naturally
 )
 
 # Create 12-month lag of working capital ratio

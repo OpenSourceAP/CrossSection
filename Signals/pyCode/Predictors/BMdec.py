@@ -145,25 +145,17 @@ df = df.drop(columns=["lag12_date", "lag17_date"])
 # For months >= 6: use l12.tempDecME
 # For months < 6: use l17.tempDecME
 
-# First calculate both potential ratios with missing/missing = 1.0 pattern
+# First calculate both potential ratios with correct missing value handling
 df["bm_with_l12"] = np.where(
     df["l12_tempDecME"] == 0,
     np.nan,  # Division by zero = missing
-    np.where(
-        df["tempBE"].isna() & df["l12_tempDecME"].isna(),
-        1.0,  # Both numerator and denominator missing results in ratio of 1.0
-        df["tempBE"] / df["l12_tempDecME"],
-    ),
+    df["tempBE"] / df["l12_tempDecME"]  # pandas: missing/missing = NaN naturally
 )
 
 df["bm_with_l17"] = np.where(
     df["l17_tempDecME"] == 0,
     np.nan,  # Division by zero = missing
-    np.where(
-        df["tempBE"].isna() & df["l17_tempDecME"].isna(),
-        1.0,  # Both numerator and denominator missing results in ratio of 1.0
-        df["tempBE"] / df["l17_tempDecME"],
-    ),
+    df["tempBE"] / df["l17_tempDecME"]  # pandas: missing/missing = NaN naturally
 )
 
 # Now assign based on month

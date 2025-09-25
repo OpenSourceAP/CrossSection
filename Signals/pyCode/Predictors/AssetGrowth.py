@@ -62,15 +62,11 @@ print("Calculating 12-month lag and AssetGrowth...")
 # Create 12-month lag of total assets for growth calculation
 df["l12_at"] = df.groupby("permno")["at"].shift(12)
 
-# Calculate asset growth with proper handling of missing values and zero denominators
+# Calculate asset growth with correct missing value handling
 df["AssetGrowth"] = np.where(
     df["l12_at"] == 0,
     np.nan,  # Division by zero = missing
-    np.where(
-        df["at"].isna() & df["l12_at"].isna(),
-        1.0,  # missing/missing = 1.0 (no change)
-        (df["at"] - df["l12_at"]) / df["l12_at"],
-    ),
+    (df["at"] - df["l12_at"]) / df["l12_at"]  # pandas: missing/missing = NaN naturally
 )
 
 print(f"Calculated AssetGrowth for {df['AssetGrowth'].notna().sum()} observations")

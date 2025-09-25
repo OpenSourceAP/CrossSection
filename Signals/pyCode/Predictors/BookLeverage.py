@@ -89,15 +89,11 @@ print("Calculating BookLeverage...")
 # Calculate book equity (denominator)
 df["book_equity"] = df["tempSE"] + df["txditc"] - df["tempPS"]
 
-# Handle division by zero and missing value cases appropriately
+# Handle division by zero with correct missing value handling
 df["BookLeverage"] = np.where(
     df["book_equity"] == 0,
     np.nan,  # Division by zero = missing
-    np.where(
-        df["at"].isna() & df["book_equity"].isna(),
-        1.0,  # missing/missing = 1.0 (no change)
-        df["at"] / df["book_equity"],
-    ),
+    df["at"] / df["book_equity"]  # pandas: missing/missing = NaN naturally
 )
 
 print(f"Calculated BookLeverage for {df['BookLeverage'].notna().sum()} observations")
