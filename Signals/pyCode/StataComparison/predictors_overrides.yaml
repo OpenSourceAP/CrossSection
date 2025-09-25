@@ -298,4 +298,4 @@ OrgCap:
   reviewed_on: 2025-09-24
   reviewed_by: ac
   details: |
-  The precision1 failure rate is quite high. But regressing python on stata yields a slope of 0.9858 and Rsq of 0.9968. I examined the code line by line and it looks correct. t-stat is unchanged.
+    The precision1 failure rate is quite high. But regressing python on stata yields a slope of 0.9858 and Rsq of 0.9968. I examined the code line by line and it looks correct. t-stat is unchanged.
