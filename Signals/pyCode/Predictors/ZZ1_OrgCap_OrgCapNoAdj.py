@@ -143,7 +143,7 @@ df.loc[df["std"].isna(), "OrgCap"] = np.nan
 df["OrgCap"] = (df["OrgCapNoAdjtemp"] - df["mean"]) / df["std"]
 
 # filter out financial firms
-df = df[((df["sic"] < 6000) | (df["sic"] >= 7000)) & df["sic"].notna()]
+df = df[((df["sicCRSP"] < 6000) | (df["sicCRSP"] >= 7000)) & df["sicCRSP"].notna()]
 
 print(f"Final OrgCap values: {df['OrgCap'].notna().sum():,} non-missing")
 
