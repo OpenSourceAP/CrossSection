@@ -299,3 +299,31 @@ OrgCap:
   reviewed_by: ac
   details: |
     The precision1 failure rate is quite high. But regressing python on stata yields a slope of 0.9858 and Rsq of 0.9968. I examined the code line by line and it looks correct. t-stat is unchanged.
+
+RIO_Volatility:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.
+
+RIO_Turnover:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.
+
+RIO_Disp:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.
+
+RIO_MB:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.        
