@@ -59,11 +59,7 @@ print(f"After deduplication: {df.shape[0]} rows")
 # Merge with SignalMasterTable to get market value data, keeping only matched observations
 print("Merging with SignalMasterTable...")
 
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 if "mve_c" not in signal_master.columns:
     raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
 

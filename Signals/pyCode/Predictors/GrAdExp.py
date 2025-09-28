@@ -60,11 +60,7 @@ if duplicates_removed > 0:
 # Merge with SignalMasterTable to get market value data
 print("Merging with SignalMasterTable...")
 
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 if "mve_c" not in signal_master.columns:
     raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
 

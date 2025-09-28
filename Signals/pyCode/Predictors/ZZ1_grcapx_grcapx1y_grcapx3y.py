@@ -66,11 +66,7 @@ print(f"Removed {initial_rows - len(df)} duplicate observations")
 # Merge with SignalMasterTable to get exchange codes
 print("Merging with SignalMasterTable...")
 
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 signal_master = signal_master[["permno", "time_avail_m", "exchcd"]].copy()
 
 # Inner merge to keep only observations that match in both datasets

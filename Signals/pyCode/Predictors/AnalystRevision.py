@@ -55,11 +55,7 @@ print(f"Prepared IBES data: {ibes_df.shape[0]} rows, {ibes_df.shape[1]} columns"
 print("Loading SignalMasterTable...")
 
 # Load master table with security identifiers and timing
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 
 # Keep only the columns we need
 smt_required_cols = ["permno", "tickerIBES", "time_avail_m"]

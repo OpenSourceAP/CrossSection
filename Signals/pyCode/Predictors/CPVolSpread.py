@@ -93,11 +93,7 @@ print(
 print("Loading SignalMasterTable...")
 
 # Load SignalMasterTable with required columns
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 
 # Keep only the columns we need
 required_cols = ["permno", "time_avail_m", "secid", "sicCRSP"]

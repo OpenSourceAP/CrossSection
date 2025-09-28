@@ -36,11 +36,7 @@ print("Starting AgeIPO.py...")
 print("Loading SignalMasterTable data...")
 
 # Load SignalMasterTable with firm identifiers and time availability dates
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-df = pd.read_parquet(signal_master_path)
+df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 
 # Keep only the columns we need
 required_cols = ["permno", "time_avail_m"]
