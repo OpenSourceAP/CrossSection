@@ -327,3 +327,101 @@ RIO_MB:
   reviewed_by: ac
   details: |
     This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.        
+
+AgeIPO:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+IndIPO:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+RDIPO:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivInit:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+ChNWC:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+CashProd:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+ChInv:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+InvGrowth:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+EquityDuration:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+CompositeDebtIssuance:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivOmit:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivYieldST:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivSeason:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+PatentsRD:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: codex
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
