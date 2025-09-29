@@ -209,6 +209,13 @@ PriceDelayRsq:
   details: |
     A very complicated predictor and the deviations are small. Only 1.2% of obs differ by more than 0.01 standard deviations. The t-stat is unchanged.
 
+PriceDelaySlope:
+  status: accepted
+  reviewed_on: 2025-09-29
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small. Only 1.2% of obs differ by more than 0.01 standard deviations. The t-stat is almost unchanged.
+
 retConglomerate:
   status: accepted
   reviewed_on: 2025-09-17
