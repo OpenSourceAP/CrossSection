@@ -5,8 +5,8 @@
 CashProd.py
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
+
     python3 Predictors/CashProd.py
 
 Inputs:
@@ -25,7 +25,7 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -42,7 +42,7 @@ if not m_aCompustat_path.exists():
 df = pd.read_parquet(m_aCompustat_path)
 
 # Keep only the columns we need
-required_cols = ['permno', 'time_avail_m', 'at', 'che']
+required_cols = ["permno", "time_avail_m", "at", "che"]
 missing_cols = [col for col in required_cols if col not in df.columns]
 if missing_cols:
     raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
@@ -53,25 +53,21 @@ print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # Remove duplicate observations for the same firm-month combination
 print("Deduplicating by permno time_avail_m...")
-df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
+df = df.drop_duplicates(subset=["permno", "time_avail_m"], keep="first")
 print(f"After deduplication: {df.shape[0]} rows")
 
 # Merge with SignalMasterTable to get market value of equity data
 print("Merging with SignalMasterTable...")
 
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
-if 'mve_c' not in signal_master.columns:
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
+if "mve_c" not in signal_master.columns:
     raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[['permno', 'time_avail_m', 'mve_c']].copy()
+signal_master = signal_master[["permno", "time_avail_m", "mve_c"]].copy()
 
 # Merge (equivalent to keep(match) - inner join)
-df = pd.merge(df, signal_master, on=['permno', 'time_avail_m'], how='inner')
+df = pd.merge(df, signal_master, on=["permno", "time_avail_m"], how="inner")
 
 print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
@@ -79,12 +75,12 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # Generate (mve_c - at)/che
 print("Calculating CashProd...")
-df['CashProd'] = (df['mve_c'] - df['at']) / df['che']
+df["CashProd"] = (df["mve_c"] - df["at"]) / df["che"]
 
 print(f"Calculated CashProd for {df['CashProd'].notna().sum()} observations")
 
 # SAVE
 # Save the CashProd predictor to standardized CSV format
-save_predictor(df, 'CashProd')
+save_predictor(df, "CashProd")
 
 print("CashProd.py completed successfully")

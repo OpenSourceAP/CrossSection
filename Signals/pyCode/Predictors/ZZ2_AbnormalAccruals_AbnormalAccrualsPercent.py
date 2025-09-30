@@ -1,13 +1,30 @@
 # ABOUTME: Abnormal Accruals predictor from Xie 2001 (AR), Table 3
 # ABOUTME: Uses cross-sectional regressions by year and industry to calculate residual accruals after controlling for firm characteristics
 
+"""
+ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py
+
+Inputs:
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, time_avail_m, fyear, datadate, at, oancf, fopt, act, che, lct, dlc, ib, sale, ppegt, ni, sic]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, exchcd]
+
+Outputs:
+    - AbnormalAccruals.csv: CSV file with columns [permno, yyyymm, AbnormalAccruals]
+    - AbnormalAccrualsPercent.csv: CSV file with columns [permno, yyyymm, AbnormalAccrualsPercent]
+"""
+
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd
 import numpy as np
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor, save_placebo
 from utils.stata_replication import fill_date_gaps_pl, stata_multi_lag
 from utils.winsor2 import winsor2
@@ -21,8 +38,27 @@ print("=" * 80)
 print("📊 Loading a_aCompustat data...")
 # Load required Compustat annual data variables
 df = pl.read_parquet("../pyData/Intermediate/a_aCompustat.parquet")
-df = df.select(["gvkey", "permno", "time_avail_m", "fyear", "datadate", "at", "oancf", "fopt", 
-               "act", "che", "lct", "dlc", "ib", "sale", "ppegt", "ni", "sic"])
+df = df.select(
+    [
+        "gvkey",
+        "permno",
+        "time_avail_m",
+        "fyear",
+        "datadate",
+        "at",
+        "oancf",
+        "fopt",
+        "act",
+        "che",
+        "lct",
+        "dlc",
+        "ib",
+        "sale",
+        "ppegt",
+        "ni",
+        "sic",
+    ]
+)
 print(f"Loaded a_aCompustat: {len(df):,} observations")
 
 # Merge with exchange code data from SignalMasterTable
@@ -36,30 +72,40 @@ print(f"After merging with SignalMasterTable: {len(df):,} observations")
 print("🧮 Computing abnormal accruals following Xie (2001)...")
 
 # set up for lagging
-df = df.with_columns(fyear_date = pl.date(pl.col("fyear"), 1, 1))
+df = df.with_columns(fyear_date=pl.date(pl.col("fyear"), 1, 1))
 df = fill_date_gaps_pl(df, group_col="gvkey", time_col="fyear_date", period_str="12mo")
 df = df.with_columns(pl.col("fyear").fill_null(strategy="forward").over("gvkey"))
 
 # lag using stata_multi_lag utility
-df = stata_multi_lag(df, group_col="gvkey", time_col="fyear_date", 
-                     value_col=["act", "che", "lct", "dlc", "at"], 
-                     lag_list=[1], prefix="l", fill_gaps=False, freq="Y")
+df = stata_multi_lag(
+    df,
+    group_col="gvkey",
+    time_col="fyear_date",
+    value_col=["act", "che", "lct", "dlc", "at"],
+    lag_list=[1],
+    prefix="l",
+    fill_gaps=False,
+    freq="Y",
+)
 
 # cash flow from operations and ratios
-df = df.with_columns([
-    # cash flow from operations (depends on the mnemonic of the time)
-    pl.when(pl.col("oancf").is_not_null())
-    .then(pl.col("oancf"))
-    .otherwise(
-        pl.col("fopt") - (pl.col("act") - pl.col("l1_act")) + 
-        (pl.col("che") - pl.col("l1_che")) + (pl.col("lct") - pl.col("l1_lct")) - 
-        (pl.col("dlc") - pl.col("l1_dlc"))
-    )
-    .alias("tempCFO"),
-    
-    # Generate 1/l.at
-    (1 / pl.col("l1_at")).alias("tempInvTA")
-])
+df = df.with_columns(
+    [
+        # cash flow from operations (depends on the mnemonic of the time)
+        pl.when(pl.col("oancf").is_not_null())
+        .then(pl.col("oancf"))
+        .otherwise(
+            pl.col("fopt")
+            - (pl.col("act") - pl.col("l1_act"))
+            + (pl.col("che") - pl.col("l1_che"))
+            + (pl.col("lct") - pl.col("l1_lct"))
+            - (pl.col("dlc") - pl.col("l1_dlc"))
+        )
+        .alias("tempCFO"),
+        # Generate 1/l.at
+        (1 / pl.col("l1_at")).alias("tempInvTA"),
+    ]
+)
 
 # Generate (ib - tempCFO) / l.at
 df = df.with_columns(
@@ -67,13 +113,23 @@ df = df.with_columns(
 )
 
 # Generate (sale - l.sale)/l.at and ppegt/l.at
-df = stata_multi_lag(df, group_col="gvkey", time_col="fyear_date", 
-                     value_col=["sale"], lag_list=[1], prefix="l", fill_gaps=False, freq="Y")
+df = stata_multi_lag(
+    df,
+    group_col="gvkey",
+    time_col="fyear_date",
+    value_col=["sale"],
+    lag_list=[1],
+    prefix="l",
+    fill_gaps=False,
+    freq="Y",
+)
 
-df = df.with_columns([
-    ((pl.col("sale") - pl.col("l1_sale")) / pl.col("l1_at")).alias("tempDelRev"),
-    (pl.col("ppegt") / pl.col("l1_at")).alias("tempPPE")
-])
+df = df.with_columns(
+    [
+        ((pl.col("sale") - pl.col("l1_sale")) / pl.col("l1_at")).alias("tempDelRev"),
+        (pl.col("ppegt") / pl.col("l1_at")).alias("tempPPE"),
+    ]
+)
 
 print("📊 Applying winsorization at 0.1% and 99.9% levels...")
 
@@ -86,19 +142,24 @@ print("🏭 Running cross-sectional regressions by year and industry (SIC2)...")
 # Create 2-digit SIC code for industry grouping
 # Convert to pandas for proven SIC handling, then back to polars
 df_pandas_temp = df.to_pandas()
-df_pandas_temp['sic'] = pd.to_numeric(df_pandas_temp['sic'], errors='coerce')
-df_pandas_temp['sic2'] = np.floor(df_pandas_temp['sic'] / 100).astype('Int32')
+df_pandas_temp["sic"] = pd.to_numeric(df_pandas_temp["sic"], errors="coerce")
+df_pandas_temp["sic2"] = np.floor(df_pandas_temp["sic"] / 100).astype("Int32")
 df = pl.from_pandas(df_pandas_temp)
 
 
 # Run cross-sectional regressions by year and industry to extract residuals
 df_with_residuals = df.with_columns(
-    pl.col("tempAccruals").least_squares.ols(
-        pl.col("tempInvTA"), pl.col("tempDelRev"), pl.col("tempPPE"),
+    pl.col("tempAccruals")
+    .least_squares.ols(
+        pl.col("tempInvTA"),
+        pl.col("tempDelRev"),
+        pl.col("tempPPE"),
         mode="residuals",
         add_intercept=True,
-        null_policy="drop"
-    ).over(['fyear', 'sic2']).alias("resid")
+        null_policy="drop",
+    )
+    .over(["fyear", "sic2"])
+    .alias("resid")
 )
 
 # Add the observation count for filtering
@@ -127,30 +188,47 @@ df_with_residuals = df_with_residuals.with_columns(
 
 # Remove duplicates, keeping first observation per permno-fyear
 df_with_residuals = df_with_residuals.sort(["permno", "fyear"])
-df_with_residuals = df_with_residuals.group_by(["permno", "fyear"], maintain_order=True).first()
+df_with_residuals = df_with_residuals.group_by(
+    ["permno", "fyear"], maintain_order=True
+).first()
 
-print(f"After cross-sectional regressions and filtering: {len(df_with_residuals):,} observations")
+print(
+    f"After cross-sectional regressions and filtering: {len(df_with_residuals):,} observations"
+)
 
 # Calculate Abnormal Accruals as percentage of net income
-df_with_residuals = df_with_residuals.with_columns([
-    pl.col("at").shift(1).over("permno").alias("l_at_permno"),
-    (pl.col("AbnormalAccruals") * pl.col("at").shift(1).over("permno") / pl.col("ni").abs())
-    .alias("AbnormalAccrualsPercent")
-])
+df_with_residuals = df_with_residuals.with_columns(
+    [
+        pl.col("at").shift(1).over("permno").alias("l_at_permno"),
+        (
+            pl.col("AbnormalAccruals")
+            * pl.col("at").shift(1).over("permno")
+            / pl.col("ni").abs()
+        ).alias("AbnormalAccrualsPercent"),
+    ]
+)
 
 
-#%%
+# %%
 print("📅 Expanding to permno-monthly observations...")
 
-df_expanded = fill_date_gaps_pl(df_with_residuals, group_col="permno", time_col="time_avail_m", period_str="1mo", end_padding="12mo")
+df_expanded = fill_date_gaps_pl(
+    df_with_residuals,
+    group_col="permno",
+    time_col="time_avail_m",
+    period_str="1mo",
+    end_padding="12mo",
+)
 
 # Fill forward AbnormalAccruals and AbnormalAccrualsPercent within each permno
-df_expanded = df_expanded.sort(["permno", "time_avail_m"]).with_columns([
-    pl.col("AbnormalAccruals").fill_null(strategy="forward").over("permno"),
-    pl.col("AbnormalAccrualsPercent").fill_null(strategy="forward").over("permno")
-])
+df_expanded = df_expanded.sort(["permno", "time_avail_m"]).with_columns(
+    [
+        pl.col("AbnormalAccruals").fill_null(strategy="forward").over("permno"),
+        pl.col("AbnormalAccrualsPercent").fill_null(strategy="forward").over("permno"),
+    ]
+)
 
-#%% 
+# %%
 # save
 
 # not sure why, but we need to cast permno to int64
@@ -164,7 +242,7 @@ print("💾 Saving AbnormalAccrualsPercent predictor...")
 save_placebo(df_expanded, "AbnormalAccrualsPercent")
 print("✅ AbnormalAccrualsPercent.csv saved successfully")
 
-#%%
+# %%
 
 # sum statas
 
@@ -180,5 +258,7 @@ if len(valid_aa) > 0:
     print(f"  Max: {valid_aa['AbnormalAccruals'].max():.6f}")
 
 
-#%%
-df_expanded.select(["permno", "time_avail_m", "AbnormalAccruals", "AbnormalAccrualsPercent"]).head(30)
+# %%
+df_expanded.select(
+    ["permno", "time_avail_m", "AbnormalAccruals", "AbnormalAccrualsPercent"]
+).head(30)

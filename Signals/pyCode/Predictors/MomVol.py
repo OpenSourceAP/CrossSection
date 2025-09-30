@@ -1,10 +1,26 @@
-# ABOUTME: Calculates momentum in high volume stocks following Lee and Swaminathan 2000 Table 2 J=6 K=3 V3 R10-R1
-# ABOUTME: Usage: python3 MomVol.py (run from pyCode/ directory)
+# ABOUTME: Momentum in high volume stocks following Lee and Swaminathan 2000, Table 2, J=6 K=3 V3 R10-R1
+# ABOUTME: calculates momentum decile rank for high volume (tercile 3) stocks only
+
+"""
+MomVol.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/MomVol.py
+
+Inputs:
+    - SignalMasterTable.parquet: Table with columns [permno, time_avail_m, ret]
+    - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, vol]
+
+Outputs:
+    - MomVol.csv: CSV file with columns [permno, yyyymm, MomVol]
+"""
 
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 from utils.asrol import asrol
 from utils.stata_replication import stata_multi_lag
@@ -20,19 +36,18 @@ df = signal_master.select(["permno", "time_avail_m", "ret"])
 df = df.join(
     monthly_crsp.select(["permno", "time_avail_m", "vol"]),
     on=["permno", "time_avail_m"],
-    how="inner"
+    how="inner",
 )
 
 # Signal construction
-df = df.with_columns([
-    # Clean volume (set negative to null)
-    pl.when(pl.col("vol") < 0)
-    .then(None)
-    .otherwise(pl.col("vol"))
-    .alias("vol"),
-    # Fill missing returns with 0
-    pl.col("ret").fill_null(0)
-])
+df = df.with_columns(
+    [
+        # Clean volume (set negative to null)
+        pl.when(pl.col("vol") < 0).then(None).otherwise(pl.col("vol")).alias("vol"),
+        # Fill missing returns with 0
+        pl.col("ret").fill_null(0),
+    ]
+)
 
 # Calculate 6-month momentum using stata_multi_lag for calendar validation
 # Convert to pandas for calendar-based lag operations
@@ -40,74 +55,70 @@ import pandas as pd
 import numpy as np
 
 df_pd = df.to_pandas()
-df_pd = df_pd.sort_values(['permno', 'time_avail_m'])
+df_pd = df_pd.sort_values(["permno", "time_avail_m"])
 
 # Use stata_multi_lag for calendar-validated lag operations
-df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'ret', [1, 2, 3, 4, 5])
+df_pd = stata_multi_lag(df_pd, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5])
 
 # Calculate 6-month momentum: (1+l.ret)*(1+l2.ret)*...*(1+l5.ret) - 1
-df_pd['Mom6m'] = (
-    (1 + df_pd['ret_lag1']) *
-    (1 + df_pd['ret_lag2']) *
-    (1 + df_pd['ret_lag3']) *
-    (1 + df_pd['ret_lag4']) *
-    (1 + df_pd['ret_lag5']) - 1
-)
+df_pd["Mom6m"] = (1 + df_pd["ret_lag1"]) * (1 + df_pd["ret_lag2"]) * (
+    1 + df_pd["ret_lag3"]
+) * (1 + df_pd["ret_lag4"]) * (1 + df_pd["ret_lag5"]) - 1
 
 
 # Calculate 6-month calendar-based rolling mean volume (like Stata asrol window(time_avail_m 6))
 # Use the asrol utility but with calendar-based approach
 print("Calculating 6-month calendar-based rolling mean volume...")
 df_pd = asrol(
-    df_pd, 
-    group_col='permno', 
-    time_col='time_avail_m', 
-    freq='1mo',
-    window=6, 
-    value_col='vol', 
-    stat='mean', 
-    new_col_name='temp', 
-    min_samples=5
+    df_pd,
+    group_col="permno",
+    time_col="time_avail_m",
+    freq="1mo",
+    window=6,
+    value_col="vol",
+    stat="mean",
+    new_col_name="temp",
+    min_samples=5,
 )
 
 # time_avail_m is already a column, no need to reset index
 
 # Create momentum deciles within each time_avail_m (like fastxtile)
-df_pd['catMom'] = (
-    df_pd.groupby('time_avail_m')['Mom6m']
-    .transform(lambda x: pd.qcut(x, q=10, labels=False, duplicates='drop') + 1)
+df_pd["catMom"] = df_pd.groupby("time_avail_m")["Mom6m"].transform(
+    lambda x: pd.qcut(x, q=10, labels=False, duplicates="drop") + 1
 )
 
 
 # Volume terciles within each time_avail_m
-df_pd['catVol'] = (
-    df_pd.groupby('time_avail_m')['temp']
-    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+df_pd["catVol"] = df_pd.groupby("time_avail_m")["temp"].transform(
+    lambda x: pd.qcut(x, q=3, labels=False, duplicates="drop") + 1
 )
 
 # Convert back to polars (we're already in pandas from lag calculation)
 df = pl.from_pandas(df_pd)
 
 # MomVol = momentum decile only for high volume stocks (tercile 3)
-df = df.with_columns([
-    pl.when(pl.col("catVol") == 3)  # tercile 3 (fastxtile returns 1-based)
-    .then(pl.col("catMom"))  # catMom is already 1-based from fastxtile
-    .otherwise(None)
-    .alias("MomVol")
-])
+df = df.with_columns(
+    [
+        pl.when(pl.col("catVol") == 3)  # tercile 3 (fastxtile returns 1-based)
+        .then(pl.col("catMom"))  # catMom is already 1-based from fastxtile
+        .otherwise(None)
+        .alias("MomVol")
+    ]
+)
 
 # Filter: set to missing if observation number < 24 (like Stata _n < 24)
 # Add observation number within each permno group
-df = df.with_columns([
-    pl.int_range(pl.len()).over("permno").alias("obs_num")
-])
+df = df.with_columns([pl.int_range(pl.len()).over("permno").alias("obs_num")])
 
-df = df.with_columns([
-    pl.when(pl.col("obs_num") < 23)  # 0-indexed, so < 24 means obs_num < 23
-    .then(None)
-    .otherwise(pl.col("MomVol"))
-    .alias("MomVol")
-])
+df = df.with_columns(
+    [
+        pl.when(pl.col("obs_num") < 23)  # 0-indexed, so < 24 means obs_num < 23
+        .then(None)
+        .otherwise(pl.col("MomVol"))
+        .alias("MomVol")
+    ]
+)
 
 # Save predictor
 save_predictor(df, "MomVol")

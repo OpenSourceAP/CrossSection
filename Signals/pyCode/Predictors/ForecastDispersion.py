@@ -5,12 +5,11 @@
 ForecastDispersion.py
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/ForecastDispersion.py
 
 Inputs:
-    - IBES_EPS_Unadj.parquet: IBES earnings per share data 
+    - IBES_EPS_Unadj.parquet: IBES earnings per share data
     - SignalMasterTable.parquet: Monthly master table with permno, tickerIBES, time_avail_m
 
 Outputs:
@@ -25,7 +24,7 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -42,10 +41,10 @@ if not ibes_path.exists():
 ibes_df = pd.read_parquet(ibes_path)
 
 # Filter to fpi == "1"
-ibes_df = ibes_df[ibes_df['fpi'] == "1"].copy()
+ibes_df = ibes_df[ibes_df["fpi"] == "1"].copy()
 
 # Filter to records with valid forecast period end dates
-ibes_df = ibes_df[ibes_df['fpedats'].notna()].copy()
+ibes_df = ibes_df[ibes_df["fpedats"].notna()].copy()
 
 print(f"Prepared IBES data: {ibes_df.shape[0]} rows, {ibes_df.shape[1]} columns")
 
@@ -53,17 +52,17 @@ print(f"Prepared IBES data: {ibes_df.shape[0]} rows, {ibes_df.shape[1]} columns"
 print("Loading SignalMasterTable...")
 
 # Load SignalMasterTable
-signal_master_path = Path("../pyData/Intermediate/SignalMasterTable.parquet")
-if not signal_master_path.exists():
-    raise FileNotFoundError(f"Required input file not found: {signal_master_path}")
-
-signal_master = pd.read_parquet(signal_master_path)
+signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 
 # Keep only the columns we need
-smt_required_cols = ['permno', 'time_avail_m', 'tickerIBES']
-smt_missing_cols = [col for col in smt_required_cols if col not in signal_master.columns]
+smt_required_cols = ["permno", "time_avail_m", "tickerIBES"]
+smt_missing_cols = [
+    col for col in smt_required_cols if col not in signal_master.columns
+]
 if smt_missing_cols:
-    raise ValueError(f"Missing required columns in SignalMasterTable: {smt_missing_cols}")
+    raise ValueError(
+        f"Missing required columns in SignalMasterTable: {smt_missing_cols}"
+    )
 
 df = signal_master[smt_required_cols].copy()
 print(f"Loaded SignalMasterTable: {df.shape[0]} rows, {df.shape[1]} columns")
@@ -72,7 +71,7 @@ print(f"Loaded SignalMasterTable: {df.shape[0]} rows, {df.shape[1]} columns")
 print("Merging with IBES data...")
 
 # Check required columns for merge
-ibes_required_cols = ['tickerIBES', 'time_avail_m', 'stdev', 'meanest']
+ibes_required_cols = ["tickerIBES", "time_avail_m", "stdev", "meanest"]
 ibes_missing_cols = [col for col in ibes_required_cols if col not in ibes_df.columns]
 if ibes_missing_cols:
     raise ValueError(f"Missing required columns in IBES_EPS_Unadj: {ibes_missing_cols}")
@@ -81,7 +80,7 @@ if ibes_missing_cols:
 ibes_merge = ibes_df[ibes_required_cols].copy()
 
 # Left join to preserve all master table records
-df = pd.merge(df, ibes_merge, on=['tickerIBES', 'time_avail_m'], how='left')
+df = pd.merge(df, ibes_merge, on=["tickerIBES", "time_avail_m"], how="left")
 
 print(f"After merging with IBES data: {df.shape[0]} rows")
 
@@ -89,12 +88,14 @@ print(f"After merging with IBES data: {df.shape[0]} rows")
 print("Calculating ForecastDispersion...")
 
 # Calculate forecast dispersion as standard deviation divided by absolute mean estimate
-df['ForecastDispersion'] = df['stdev'] / np.abs(df['meanest'])
+df["ForecastDispersion"] = df["stdev"] / np.abs(df["meanest"])
 
-print(f"Calculated ForecastDispersion for {df['ForecastDispersion'].notna().sum()} observations")
+print(
+    f"Calculated ForecastDispersion for {df['ForecastDispersion'].notna().sum()} observations"
+)
 
 # SAVE
 # Save the predictor
-save_predictor(df, 'ForecastDispersion')
+save_predictor(df, "ForecastDispersion")
 
 print("ForecastDispersion.py completed successfully")

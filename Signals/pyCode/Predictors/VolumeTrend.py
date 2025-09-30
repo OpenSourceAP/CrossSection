@@ -14,11 +14,12 @@ Outputs:
 """
 
 import polars as pl
-import polars_ols as pls # Registers .least_squares namespace
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.asrol import asrol  
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.asrol import asrol
 from utils.winsor2 import winsor2
 from utils.save_standardized import save_predictor
 
@@ -26,49 +27,56 @@ from utils.save_standardized import save_predictor
 print("Loading and processing VolumeTrend...")
 
 # DATA LOAD
-df = pl.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
-                     columns=['permno', 'time_avail_m', 'vol'])
+df = pl.read_parquet(
+    "../pyData/Intermediate/monthlyCRSP.parquet",
+    columns=["permno", "time_avail_m", "vol"],
+)
 
 # SIGNAL CONSTRUCTION - Time-based rolling regression
 print("Rolling window regressions of volume on time...")
-df = df.sort(['permno', 'time_avail_m'])
-df = df.with_columns([
-    ((pl.col('time_avail_m').dt.year() - 1960) * 12 + pl.col('time_avail_m').dt.month() - 1).alias('time_numeric')
-])
+df = df.sort(["permno", "time_avail_m"])
 df = df.with_columns(
-    pl.col('vol').least_squares.rolling_ols(
-        pl.col('time_numeric'),
+    [
+        (
+            (pl.col("time_avail_m").dt.year() - 1960) * 12
+            + pl.col("time_avail_m").dt.month()
+            - 1
+        ).alias("time_numeric")
+    ]
+)
+df = df.with_columns(
+    pl.col("vol")
+    .least_squares.rolling_ols(
+        pl.col("time_numeric"),
         window_size=60,
         min_periods=30,
-        mode='coefficients',
+        mode="coefficients",
         add_intercept=True,
-        null_policy='drop'
-    ).over('permno').alias('coef')
-).with_columns([
-    pl.col('coef').struct.field('time_numeric').alias('betaVolTrend')
-])
+        null_policy="drop",
+    )
+    .over("permno")
+    .alias("coef")
+).with_columns([pl.col("coef").struct.field("time_numeric").alias("betaVolTrend")])
 
 print("Calculating 60-month rolling mean of vol...")
 df = asrol(
     df,
-    group_col='permno',
-    time_col='time_avail_m', 
-    freq='1mo',
+    group_col="permno",
+    time_col="time_avail_m",
+    freq="1mo",
     window=60,
-    value_col='vol',
-    stat='mean',
-    new_col_name='meanX',
-    min_samples=30
+    value_col="vol",
+    stat="mean",
+    new_col_name="meanX",
+    min_samples=30,
 )
 
 
 # Calculate VolumeTrend
-df = df.with_columns([
-    (pl.col('betaVolTrend') / pl.col('meanX')).alias('VolumeTrend')
-])
+df = df.with_columns([(pl.col("betaVolTrend") / pl.col("meanX")).alias("VolumeTrend")])
 
 # Stata: winsor2 VolumeTrend, cut(1 99) replace trim
-df = winsor2(df, ['VolumeTrend'], replace=True, trim=True, cuts=[1, 99])
+df = winsor2(df, ["VolumeTrend"], replace=True, trim=True, cuts=[1, 99])
 
 # SAVE
 save_predictor(df, "VolumeTrend")

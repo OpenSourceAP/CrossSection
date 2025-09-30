@@ -1,4 +1,4 @@
-# ABOUTME: Return skewness following Bali, Engle and Murray 2015, Table 14.10 
+# ABOUTME: Return skewness following Bali, Engle and Murray 2015, Table 14.10
 # ABOUTME: calculates skewness of daily returns over previous month
 
 """
@@ -7,8 +7,8 @@ ReturnSkew.py
 Generates ReturnSkew predictor: Skewness of daily stock returns within each month.
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
+
     python3 Predictors/ReturnSkew.py
 
 Inputs:
@@ -24,7 +24,8 @@ Requirements:
 import polars as pl
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 print("=" * 80)
@@ -34,7 +35,9 @@ print("=" * 80)
 
 # DATA LOAD
 print("📊 Loading daily CRSP data...")
-crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet").select(["permno", "time_d", "ret"])
+crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet").select(
+    ["permno", "time_d", "ret"]
+)
 print(f"Loaded CRSP: {len(crsp):,} daily observations")
 
 # SIGNAL CONSTRUCTION
@@ -42,19 +45,19 @@ print("\n🔧 Starting signal construction...")
 
 # Create time_avail_m (year-month identifier)
 print("Creating time_avail_m (year-month identifier)...")
-crsp = crsp.with_columns(
-    pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
-)
+crsp = crsp.with_columns(pl.col("time_d").dt.truncate("1mo").alias("time_avail_m"))
 
 print(f"Date range: {crsp['time_d'].min()} to {crsp['time_d'].max()}")
 
 # Calculate skewness and count of observations by permno-month
 # Count includes all rows (even those with missing returns) to match original logic
 print("Calculating return skewness by permno-month...")
-predictors = crsp.group_by(["permno", "time_avail_m"]).agg([
-    pl.len().alias("ndays"),                    # Count all rows
-    pl.col("ret").skew().alias("ReturnSkew")    # Skewness of returns (ignores nulls)
-])
+predictors = crsp.group_by(["permno", "time_avail_m"]).agg(
+    [
+        pl.len().alias("ndays"),  # Count all rows
+        pl.col("ret").skew().alias("ReturnSkew"),  # Skewness of returns (ignores nulls)
+    ]
+)
 
 print(f"Generated {len(predictors):,} permno-month observations before filtering")
 
@@ -67,12 +70,14 @@ print(f"After >=15 filter: {len(predictors_filtered):,} observations")
 
 # Show sample statistics
 print("\n📈 Predictor summary statistics:")
-summary = predictors_filtered.select([
-    pl.col("ReturnSkew").mean().alias("ReturnSkew_mean"),
-    pl.col("ReturnSkew").std().alias("ReturnSkew_std"),
-    pl.col("ReturnSkew").min().alias("ReturnSkew_min"),
-    pl.col("ReturnSkew").max().alias("ReturnSkew_max")
-])
+summary = predictors_filtered.select(
+    [
+        pl.col("ReturnSkew").mean().alias("ReturnSkew_mean"),
+        pl.col("ReturnSkew").std().alias("ReturnSkew_std"),
+        pl.col("ReturnSkew").min().alias("ReturnSkew_min"),
+        pl.col("ReturnSkew").max().alias("ReturnSkew_max"),
+    ]
+)
 print(summary)
 
 # SAVE
@@ -82,7 +87,7 @@ print("\n💾 Saving predictor...")
 predictors_pd = predictors_filtered.to_pandas()
 
 # Save predictor using standardized format
-save_predictor(predictors_pd, 'ReturnSkew')
+save_predictor(predictors_pd, "ReturnSkew")
 
 print("\n" + "=" * 80)
 print("✅ ReturnSkew.py completed successfully")

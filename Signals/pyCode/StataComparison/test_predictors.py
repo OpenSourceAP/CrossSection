@@ -5,12 +5,12 @@
 test_predictors.py
 
 Usage:
-    cd pyCode/
+    Run from [Repo-Root]/Signals/pyCode/
     source .venv/bin/activate
-    python3 utils/test_predictors.py --all             # Test all predictors
-    python3 utils/test_predictors.py --predictors Accruals  # Test specific predictor
-    python3 utils/test_predictors.py --all --tstat     # With t-stat check enabled
-    python3 utils/test_predictors.py --predictors BM Size --tstat  # With t-stat check for specific predictors
+    python3 StataComparison/test_predictors.py --all             # Test all predictors
+    python3 StataComparison/test_predictors.py --predictors Accruals  # Test specific predictor
+    python3 StataComparison/test_predictors.py --all --tstat     # With t-stat check enabled
+    python3 StataComparison/test_predictors.py --predictors BM Size --tstat  # With t-stat check for specific predictors
 
 Precision Validation (per CLAUDE.md updated requirements):
 1. Superset: Python observations are a superset of Stata observations
@@ -72,7 +72,7 @@ INDEX_COLS = ['permno', 'yyyymm']  # Index columns for observations
 
 def load_overrides():
     """Load predictor validation overrides from YAML file"""
-    override_path = Path("Predictors/overrides.yaml")
+    override_path = Path("StataComparison/predictors_overrides.yaml")
     if not override_path.exists():
         return {}
     
@@ -759,8 +759,18 @@ def validate_predictor(predictor_name, tstat_comparison_df=None):
         if python_path.exists():
             # Python-only case: analyze Python CSV without comparison
             results = analyze_python_only(predictor_name)
-            md_lines = output_predictor_results(predictor_name, results, False)
-            return False, results, md_lines
+
+            # Allow manual overrides to accept Python-only predictors
+            overrides = load_overrides()
+            override_applied = False
+            if predictor_name in overrides:
+                override_info = overrides[predictor_name]
+                results['override_applied'] = True
+                results['override_info'] = override_info
+                override_applied = True
+
+            md_lines = output_predictor_results(predictor_name, results, override_applied)
+            return override_applied, results, md_lines
         else:
             # Neither file exists
             results = {'error': f'Stata file not found: {stata_path}'}
@@ -824,7 +834,7 @@ def get_available_predictors():
     
     return available_predictors, missing_python_csvs, python_only_csvs
 
-def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results):
+def write_markdown_log(all_md_lines, predictor_list, passed_count, all_results):
     """Write detailed results to markdown log file"""
     log_path = Path("../Logs/testout_predictors.md")
     
@@ -903,7 +913,7 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             
             return (not python_csv_available, -superset_sort, -numrows_sort, -precision1_sort, -precision2_sort, -tstat_sort)
         
-        sorted_predictors = sorted(test_predictors, key=sort_key)
+        sorted_predictors = sorted(predictor_list, key=sort_key)
         
         for predictor in sorted_predictors:
             results = all_results.get(predictor, {})
@@ -981,13 +991,13 @@ def write_markdown_log(all_md_lines, test_predictors, passed_count, all_results)
             f.write(f"| {predictor_display:<25} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<13} | {col5:<10} |\n")
         
         # Count available predictors and overrides for summary
-        available_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('python_csv_available', False))
-        override_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('override_applied', False))
+        available_count = sum(1 for p in predictor_list if all_results.get(p, {}).get('python_csv_available', False))
+        override_count = sum(1 for p in predictor_list if all_results.get(p, {}).get('override_applied', False))
         
         f.write(f"\n**Overall**: {passed_count}/{available_count} available predictors passed validation\n")
         f.write(f"  - Natural passes: {passed_count - override_count}\n")
         f.write(f"  - Overridden passes: {override_count}\n")
-        f.write(f"**Python CSVs**: {available_count}/{len(test_predictors)} predictors have Python implementation\n")
+        f.write(f"**Python CSVs**: {available_count}/{len(predictor_list)} predictors have Python implementation\n")
         f.write(f"\\* = Manual override applied (see Predictors/overrides.yaml for details)\n\n")
         
         f.write(f"## Detailed Results\n\n")
@@ -1069,7 +1079,7 @@ def main():
         import os
         
         # Get the path to TestPortFocused.R
-        script_path = os.path.join('utils', 'TestPortFocused.R')
+        script_path = os.path.join('StataComparison', 'TestPortFocused.R')
         
         # Prepare command with predictor list
         cmd = ['Rscript', script_path] + test_predictors
@@ -1130,32 +1140,42 @@ def main():
         ]
         all_md_lines.append(md_lines)
     
+    # Track override-passed python-only predictors for aggregate counts
+    python_only_override_passes = 0
+
     # Add results for Python-only CSVs
     for predictor in include_python_only:
         passed, results, md_lines = validate_predictor(predictor, tstat_comparison_df)
         all_md_lines.append(md_lines)
         all_results[predictor] = results
         # Python-only predictors cannot "pass" validation since there's no Stata baseline
-    
+        if passed:
+            python_only_override_passes += 1
+
     # Combine all predictors for summary
     all_predictors = test_predictors + include_missing + include_python_only
-    
+
+    # Incorporate python-only overrides into overall pass tally
+    passed_count += python_only_override_passes
+
     # Write markdown log
     write_markdown_log(all_md_lines, all_predictors, passed_count, all_results)
-    
-    
+
+
     # Count overrides
-    override_count = sum(1 for p in test_predictors if all_results.get(p, {}).get('override_applied', False))
+    override_count = sum(1 for p in all_predictors if all_results.get(p, {}).get('override_applied', False))
     
     # Summary
     print(f"\n=== SUMMARY ===")
     print(f"Available predictors tested: {len(test_predictors)}")
     print(f"Missing Python CSVs included: {len(include_missing)}")
     print(f"Python-only CSVs included: {len(include_python_only)}")
+    total_available = sum(1 for p in all_predictors if all_results.get(p, {}).get('python_csv_available', False))
+
     print(f"Passed validation: {passed_count}")
     print(f"  - Natural passes: {passed_count - override_count}")
     print(f"  - Overridden passes: {override_count}")
-    print(f"Failed validation: {len(test_predictors) - passed_count}")
+    print(f"Failed validation: {total_available - passed_count}")
     
     if passed_count == len(test_predictors):
         print("🎉 ALL AVAILABLE TESTS PASSED!")
