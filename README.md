@@ -68,37 +68,7 @@ To reproduce every signal:
 * For signals that use the VIX, inflation, or broker-dealer leverage, request an [API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html) and add `FRED_API_KEY` to `.env` before running the download scripts.
 * For signals that rely on patent citations, BEA input-output tables, or Compustat customer data, ensure that `Rscript` is available on your system because some helper scripts shell out to R.
 
-### 2. Signals/LegacyStataCode/
-
-`master.do` runs the original Stata pipeline.  It calls every .do file in the following folders:
-
-* `DataDownloads/` downloads data from WRDS and elsewhere
-* `Predictors/` constructs stock-level predictors and outputs to `Signals/Data/Predictors/`
-* `Placebos/` constructs "not predictors" and "indirect evidence" signals and outputs to `Signals/Data/Placebos/`
-
-`master.do` employs exception handling so if any of these .do files errors out (due to lack of a subscription, code being out of date, etc.), it'll keep running and output as much as it can.
-
-The full run takes roughly 24 hours, but the predictors will be done much sooner, probably within 12 hours.  You can keep track of how it's going by checking out the log files in `Signals/Logs/`.
-
-#### Minimal Setup
-
-In `master.do`, set `pathProject` to the root directory of the project (where `SignalDoc.csv` is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS (a.k.a. dsn).
-
-If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for [Windows users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for [WRDS cloud users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/).  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
-
-#### Optional Setup
-
-The minimal setup will allow you to produce the vast majority of signals.  And due to the exception handling in `master.do`, the code will run even if you're not set up to produce the remainder.
-
-But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random signals, you'll want to do the following:
-
-* For IBES, 13F, OptionMetrics, and bid-ask-spread signals: Run `Signals/LegacyStataCode/PrepScripts/master.sh` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  The most important outputs from this optional setup are `iclink.csv` and `oclink.csv`, which allow for merging of IBES, OptionMetrics, and CRSP data.  The code here relies heavily on work by Luis Palacios, Rabih Moussawi, Denys Glushkov, Stacey Jacobsen, Craig Holden, Mihail Velikov, Shane Corwin, and Paul Schultz.
-
-* For signals that use the VIX, inflation, or broker-dealer leverage, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
-
-* For signals that use patent citations, BEA input-output tables, or Compustat customer data, the code uses Stata to call R scripts, and thus this may need some setup.  If you're on a Windows machine, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  If you're on Linux, you will need to just make sure that the `rscript` command is executable from the shell.
-
-### 3. Portfolios/Code/
+### 2. Portfolios/Code/
 
 `master.R` runs everything. It:
 
@@ -120,12 +90,12 @@ You probably want more than Price, Size, and STreversal portfolios, and so you p
 
 There are a couple ways to set up this signal data:
 
-* Run the code in `Signals/pyCode/` (see above) or, if you prefer the original implementation, `Signals/LegacyStataCode/`.
+* Run the code in `Signals/pyCode/` (see above).
 * Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and unzip to `Signals/Data/Predictors/` and `Signals/Data/Placebos/`.
 * Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv` and put them in `Signals/Data/Predictors/`).
 
 
-### 4. Shipping/Code/
+### 3. Shipping/Code/
 
 This code zips up the data, makes some quality checks, and copies files for uploading to Gdrive.  You shouldn't need to use this but we keep it with the rest of the code for replicability.
 
@@ -134,4 +104,3 @@ This code zips up the data, makes some quality checks, and copies files for uplo
 ## Contribute
 
 Please let us know if you find typos in the code or think that we should add additional signals. You can let us know about any suggested changes via pull requests for this repo. We will keep the code up to date for other researchers to use it.
-
