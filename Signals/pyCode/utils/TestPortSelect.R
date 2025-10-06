@@ -14,6 +14,7 @@ suppressPackageStartupMessages({
   library(readr)
   library(tidyr)
   library(stringr)
+  library(lubridate)
 })
 
 args_trailing <- commandArgs(trailingOnly = TRUE)
@@ -119,6 +120,27 @@ ls_df <- ports_df %>%
 
 if (nrow(ls_df) == 0) {
   stop("No LS portfolio rows found for the requested predictors. Ensure upstream portfolios have been generated.")
+}
+
+sample_info <- signal_doc %>%
+  select(signalname, SampleStartYear, SampleEndYear, Year)
+
+ls_df <- ls_df %>%
+  mutate(date = as.Date(date)) %>%
+  left_join(sample_info, by = "signalname") %>%
+  mutate(
+    sample_year = year(date),
+    samptype = case_when(
+      !is.na(SampleStartYear) & !is.na(SampleEndYear) &
+        sample_year >= SampleStartYear & sample_year <= SampleEndYear ~ "insamp",
+      !is.na(Year) & sample_year > Year ~ "postpub",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(samptype == "insamp")
+
+if (nrow(ls_df) == 0) {
+  stop("No in-sample LS portfolio rows matched the documentation-defined sample period for the requested predictors.")
 }
 
 summary_df <- ls_df %>%
