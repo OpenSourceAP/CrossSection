@@ -137,11 +137,7 @@ port <- loop_over_strategies(strategylist0)
 sumnew0 <- checkport(port)
 
 # Download release workbook --------------------------------------------------
-reference_dir <- file.path(pathProject, "Signals", "DocsForClaude")
-if (!dir.exists(reference_dir)) {
-  dir.create(reference_dir, recursive = TRUE, showWarnings = FALSE)
-}
-reference_path <- file.path(reference_dir, "PredictorSummary.xlsx")
+reference_path <- file.path(pathtemp, "PredictorSummary.xlsx")
 
 download_reference_from_drive <- function(dest_path) {
   tryCatch({
