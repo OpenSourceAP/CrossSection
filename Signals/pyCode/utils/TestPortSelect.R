@@ -1,21 +1,14 @@
-# Inputs: Predictor portfolio returns in `Portfolios/Data/Portfolios/PredictorPortsFull.csv`,
-#         signal metadata from `SignalDoc.csv`, and the October 2024 public
-#         release folder on Google Drive (`https://drive.google.com/drive/folders/1SSoHGbwgyhRwUCzLE0YWvUlS0DjLCd4k`).
-#         References `Signals/DocsForClaude/PredictorSummary.xlsx` (downloaded each run).
-# Outputs: Console summary plus `Signals/Logs/TestOutPortSelect.md` and
-#          `Signals/Logs/TestOutPortSelect.csv` comparing fresh t-stats with the
-#          release workbook.
+# Inputs: Signal metadata in `SignalDoc.csv`, predictor CSVs under
+#         `Signals/pyData/Predictors/`, CRSP intermediates in
+#         `Portfolios/Data/Intermediate/`, and the October 2024 public release
+#         folder on Google Drive (`https://drive.google.com/drive/folders/1SSoHGbwgyhRwUCzLE0YWvUlS0DjLCd4k`).
+# Outputs: Console comparison plus `Signals/Logs/TestOutPortSelect.md` and
+#          `Signals/Logs/TestOutPortSelect.csv` logging t-stats versus the
+#          release workbook fetched from Google Drive.
 # How to run:
 # - `Rscript utils/TestPortSelect.R --predictors ShortInterest`
-# - `Rscript utils/TestPortSelect.R --predictors ShortInterest,OptionVolume1`
-
-suppressPackageStartupMessages({
-  library(dplyr)
-  library(readr)
-  library(tidyr)
-  library(stringr)
-  library(lubridate)
-})
+# - `Rscript utils/TestPortSelect.R ShortInterest OptionVolume1`
+# - `Rscript utils/TestPortSelect.R` (defaults to OptionVolume1/OptionVolume2)
 
 args_trailing <- commandArgs(trailingOnly = TRUE)
 args_full <- commandArgs(trailingOnly = FALSE)
@@ -36,21 +29,26 @@ if (!grepl(paste0(.Platform$file.sep, "$"), project_root)) {
   project_root <- paste0(project_root, .Platform$file.sep)
 }
 
-# Argument parsing -----------------------------------------------------------
-target_signals <- character(0)
-
 parse_predictor_arg <- function(value) {
-  str_split(value, pattern = ",", simplify = FALSE) %>%
-    unlist() %>%
-    str_trim() %>%
-    {
-      .[. != ""]
-    }
+  splits <- strsplit(value, ",", fixed = TRUE)[[1]]
+  if (length(splits) == 0) {
+    return(character(0))
+  }
+  trimmed <- trimws(splits)
+  trimmed[trimmed != ""]
 }
+
+target_signals <- character(0)
 
 i <- 1
 while (i <= length(args_trailing)) {
   arg <- args_trailing[[i]]
+  if (grepl("^--(predictor|predictors|p)=", arg)) {
+    pieces <- sub("^--(predictor|predictors|p)=", "", arg)
+    target_signals <- c(target_signals, parse_predictor_arg(pieces))
+    i <- i + 1
+    next
+  }
   if (arg %in% c("--predictor", "--predictors", "-p")) {
     if (i == length(args_trailing)) {
       stop("Argument provided to ", arg, " but no predictor names supplied.")
@@ -74,98 +72,75 @@ while (i <= length(args_trailing)) {
   i <- i + 1
 }
 
-target_signals <- unique(target_signals)
+target_signals <- unique(target_signals[target_signals != ""])
 
-if (length(target_signals) == 0) {
-  stop("No predictors supplied. Use --predictors to provide one or more signal names.")
-}
+# Align with TestPortFocused logic ------------------------------------------
+pathProject <- project_root
+SignalSource <- "Python"
 
-# Load signal documentation --------------------------------------------------
-doc_path <- file.path(project_root, "SignalDoc.csv")
-signal_doc <- read_csv(doc_path, show_col_types = FALSE) %>%
-  rename(signalname = Acronym)
+setwd(file.path(pathProject, "Portfolios", "Code"))
 
-available_predictors <- signal_doc %>%
-  filter(Cat.Signal == "Predictor") %>%
-  pull(signalname)
+source("00_SettingsAndTools.R", echo = TRUE)
+source("01_PortfolioFunction.R", echo = TRUE)
 
-missing_in_doc <- setdiff(target_signals, available_predictors)
+default_quickrun <- c("OptionVolume1", "OptionVolume2")
+quickrun <- TRUE
+quickrunlist <- if (length(target_signals) == 0) default_quickrun else target_signals
+skipdaily <- TRUE
+feed.verbose <- FALSE
+
+quickrunlist <- unique(quickrunlist)
+
+missing_in_doc <- setdiff(quickrunlist, alldocumentation$signalname)
 if (length(missing_in_doc) > 0) {
   stop("Predictors not found in SignalDoc.csv: ", paste(missing_in_doc, collapse = ", "))
 }
 
-# Check predictor CSVs exist -------------------------------------------------
-path_predictors <- file.path(project_root, "Signals", "pyData", "Predictors")
+suppressPackageStartupMessages(library(fst))
+suppressPackageStartupMessages(library(data.table))
 
-missing_csv <- target_signals[!file.exists(file.path(path_predictors, paste0(target_signals, ".csv")))]
-if (length(missing_csv) > 0) {
-  warning("Predictor CSVs missing under ", path_predictors, ": ", paste(missing_csv, collapse = ", "))
-}
+crspinfo <- read.fst(paste0(pathProject, "Portfolios/Data/Intermediate/crspminfo.fst")) %>%
+  setDT()
+crspret <- read.fst(paste0(pathProject, "Portfolios/Data/Intermediate/crspmret.fst")) %>%
+  setDT()
 
-# Load long-short portfolio returns -----------------------------------------
-ports_path <- file.path(project_root, "Portfolios", "Data", "Portfolios", "PredictorPortsFull.csv")
-if (!file.exists(ports_path)) {
-  stop("Portfolio return file not found: ", ports_path)
-}
+strategylist0 <- alldocumentation %>%
+  dplyr::filter(Cat.Signal == "Predictor")
+strategylist0 <- ifquickrun()
 
-message("Reading portfolio returns from ", ports_path)
-ports_df <- read_csv(
-  ports_path,
-  show_col_types = FALSE,
-  col_select = c(signalname, port, date, ret, signallag, Nlong, Nshort)
-)
-
-ls_df <- ports_df %>%
-  filter(signalname %in% target_signals, port == "LS")
-
-if (nrow(ls_df) == 0) {
-  stop("No LS portfolio rows found for the requested predictors. Ensure upstream portfolios have been generated.")
-}
-
-sample_info <- signal_doc %>%
-  select(signalname, SampleStartYear, SampleEndYear, Year)
-
-ls_df <- ls_df %>%
-  mutate(date = as.Date(date)) %>%
-  left_join(sample_info, by = "signalname") %>%
-  mutate(
-    sample_year = year(date),
-    samptype = case_when(
-      !is.na(SampleStartYear) & !is.na(SampleEndYear) &
-        sample_year >= SampleStartYear & sample_year <= SampleEndYear ~ "insamp",
-      !is.na(Year) & sample_year > Year ~ "postpub",
-      TRUE ~ NA_character_
-    )
-  ) %>%
-  filter(samptype == "insamp")
-
-if (nrow(ls_df) == 0) {
-  stop("No in-sample LS portfolio rows matched the documentation-defined sample period for the requested predictors.")
-}
-
-summary_df <- ls_df %>%
-  mutate(
-    Ncheck = pmin(Nlong, Nshort, na.rm = TRUE)
-  ) %>%
-  filter(!is.na(ret), Ncheck >= 1) %>%
-  group_by(signalname) %>%
-  summarize(
-    tstat = round(mean(ret) / sd(ret) * sqrt(n()), 2),
-    rbar = round(mean(ret), 2),
-    vol = round(sd(ret), 2),
-    T = n(),
-    Nlong = round(mean(Nlong, na.rm = TRUE), 1),
-    Nshort = round(mean(Nshort, na.rm = TRUE), 1),
-    signallag = round(mean(signallag, na.rm = TRUE), 3),
-    .groups = "drop"
+pathPredictors <- paste0(pathProject, "Signals/", signalDataFolder, "/Predictors/")
+csvlist <- list.files(pathPredictors) %>%
+  tibble::as_tibble() %>%
+  dplyr::rename(signalname = value) %>%
+  dplyr::mutate(
+    signalname = substr(signalname, 1, nchar(signalname) - 4),
+    in_csv = 1
   )
 
-# Prepare comparison with reference workbook --------------------------------
-reference_dir <- file.path(project_root, "Signals", "DocsForClaude")
+missing <- strategylist0 %>%
+  dplyr::select(signalname) %>%
+  dplyr::left_join(csvlist, by = "signalname") %>%
+  dplyr::filter(is.na(in_csv))
+
+if (nrow(missing) > 0) {
+  print("Warning: the following predictor signal csvs are missing:")
+  print(missing$signalname)
+  temp <- readline("press enter to continue, type quit to quit: ")
+  if (temp == "quit") {
+    print("erroring out")
+    stop()
+  }
+}
+
+port <- loop_over_strategies(strategylist0)
+
+sumnew0 <- checkport(port)
+
+# Download release workbook --------------------------------------------------
+reference_dir <- file.path(pathProject, "Signals", "DocsForClaude")
 if (!dir.exists(reference_dir)) {
   dir.create(reference_dir, recursive = TRUE, showWarnings = FALSE)
 }
-
 reference_path <- file.path(reference_dir, "PredictorSummary.xlsx")
 
 download_reference_from_drive <- function(dest_path) {
@@ -192,38 +167,43 @@ download_reference_from_drive <- function(dest_path) {
   })
 }
 
-# Always attempt to refresh the workbook from the October 2024 release
 download_success <- download_reference_from_drive(reference_path)
 have_reference <- file.exists(reference_path)
 
 if (have_reference) {
   suppressPackageStartupMessages(library(readxl))
-  reference_df <- readxl::read_xlsx(reference_path) %>%
-    select(signalname, tstat, rbar, vol, T, Nlong, Nshort)
+  sumold0 <- readxl::read_xlsx(reference_path) %>%
+    dplyr::select(signalname, tstat, rbar, vol, T, Nlong, Nshort)
 } else {
-  warning("Reference workbook not available. Diff column will be NA. Confirm Google Drive access and rerun.")
-  reference_df <- tibble(signalname = character(), tstat = double(), rbar = double(), vol = double(), T = double(), Nlong = double(), Nshort = double())
+  warning("Reference workbook not available. Diff column will be NA.")
+  sumold0 <- tibble::tibble(
+    signalname = character(),
+    tstat = double(),
+    rbar = double(),
+    vol = double(),
+    T = double(),
+    Nlong = double(),
+    Nshort = double()
+  )
 }
 
-new_long <- summary_df %>%
-  select(signalname, tstat, rbar, vol, T, Nlong, Nshort) %>%
-  pivot_longer(cols = -signalname, names_to = "metric", values_to = "new")
+new_vs <- sumnew0 %>%
+  dplyr::filter(port == "LS", signalname %in% quickrunlist) %>%
+  dplyr::select(signalname, tstat, rbar, vol, T, Nlong, Nshort) %>%
+  tidyr::pivot_longer(cols = !signalname, names_to = "metric", values_to = "new") %>%
+  dplyr::left_join(
+    sumold0 %>%
+      dplyr::filter(signalname %in% quickrunlist) %>%
+      tidyr::pivot_longer(cols = !signalname, names_to = "metric", values_to = "old"),
+    by = c("signalname", "metric")
+  ) %>%
+  dplyr::mutate(diff = new - old)
 
-old_long <- reference_df %>%
-  filter(signalname %in% target_signals) %>%
-  pivot_longer(cols = -signalname, names_to = "metric", values_to = "old")
+print("===============================================")
+print("\n\n New vs old portfolios:")
+print(new_vs)
 
-comparison <- new_long %>%
-  left_join(old_long, by = c("signalname", "metric")) %>%
-  mutate(diff = ifelse(is.na(old), NA_real_, new - old)) %>%
-  arrange(signalname, match(metric, c("tstat", "rbar", "vol", "T", "Nlong", "Nshort")))
-
-message(strrep("=", 47))
-message("TestPortSelect comparison")
-print(comparison)
-
-# Persist results -----------------------------------------------------------
-logs_dir <- file.path(project_root, "Signals", "Logs")
+logs_dir <- file.path(pathProject, "Signals", "Logs")
 if (!dir.exists(logs_dir)) {
   dir.create(logs_dir, recursive = TRUE, showWarnings = FALSE)
 }
@@ -231,16 +211,16 @@ if (!dir.exists(logs_dir)) {
 md_path <- file.path(logs_dir, "TestOutPortSelect.md")
 csv_path <- file.path(logs_dir, "TestOutPortSelect.csv")
 
-tstat_table <- comparison %>% filter(metric == "tstat")
-md_lines <- capture.output(print(format(tstat_table, justify = "right"), row.names = FALSE))
-writeLines(md_lines, md_path)
+tstat <- new_vs %>% dplyr::filter(metric == "tstat")
+txt <- capture.output(print(format(tstat, justify = "right"), row.names = FALSE))
+writeLines(txt, md_path)
 
-write_csv(tstat_table, csv_path)
+write.csv(tstat, csv_path, row.names = FALSE)
 
-cat('\n\n All metrics:\n', file = md_path, append = TRUE)
-all_lines <- capture.output(print(format(comparison, justify = "right"), row.names = FALSE))
-cat(paste0(all_lines, '\n'), file = md_path, append = TRUE)
+cat("\n\n All metrics:\n", file = md_path, append = TRUE)
+txt_all <- capture.output(print(format(new_vs, justify = "right"), row.names = FALSE))
+cat(paste0(txt_all, "\n"), file = md_path, append = TRUE)
 
-message('\nOutputs written to:')
-message('  ', md_path)
-message('  ', csv_path)
+message("\nOutputs written to:")
+message("  ", md_path)
+message("  ", csv_path)
