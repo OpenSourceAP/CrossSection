@@ -69,9 +69,7 @@ sumnew0 = checkport(port)
 library(readxl)
 
 # compare with old xlsx
-list.files(paste0(pathProject, 'Signals/DocsForClaude/'))
-
-sumold0 = read_xlsx(paste0(pathProject, 'Signals/DocsForClaude/PredictorSummary2024.xlsx'))
+sumold0 = read_xlsx(paste0(pathProject, 'Signals/pyCode/StataComparison/PredictorSummary2024.xlsx'))
 
 sumold = sumold0 %>% select(signalname, tstat, rbar, vol, T, Nlong, Nshort)  %>% 
   filter(signalname %in% quickrunlist)
