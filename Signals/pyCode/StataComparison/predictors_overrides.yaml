@@ -1,0 +1,441 @@
+# Predictor Validation accepteds
+# 
+# This file allows manual approval of validation failures at the predictor level.
+# If a predictor is listed here with status: accepted, all its validation 
+# failures will be treated as acceptable.
+#
+# Structure:
+#   predictor_name:
+#     status: accepted|rejected          # Required: approval decision
+#     reviewed_on: YYYY-MM-DD          # Required: date of review  
+#     reviewed_by: [reviewer_id]       # Required: who reviewed this
+#     details: |                       # Required: justification
+#       Multi-line explanation of the decision
+
+PredictedFE:
+  status: accepted
+  reviewed_on: 2025-08-13
+  reviewed_by: ac
+  details: |
+    The standardized deviation is on average 1% with a sd of 7 pp. So it's above the threshold, but it's small. Sumstats and regressions show that the replication works very well. Regressing python on stata shows that the coefficient is 0.9959 and the Rsq is 0.995. This is a complicated file, so it makes sense that there will be some deviations later in the code, which is where PredictedFE is created.
+
+PriceDelayTstat:
+  status: accepted
+  reviewed_on: 2025-08-14
+  reviewed_by: ac
+  details: |
+    There was a bug with the Stata code's winsorization. No way to replicate this. There's also a typo in the Stata formula for this. See https://github.com/OpenSourceAP/CrossSection/issues/177
+
+Recomm_ShortInterest:
+  status: accepted
+  reviewed_on: 2025-08-20
+  reviewed_by: ac
+  details: |
+    The do file was using asrol with stat(first) to fill in missing values. This method is not used anywhere else. Also, this method does not work properly. I really don't understand what it's doing See https://github.com/OpenSourceAP/CrossSection/issues/178. 
+
+    I wrote Recomm_ShortInterest.py from scratch to fill in the missing values properly. It results in far more observations than the do file. I checked a few of the Stata observations that are missing in Python and they all should be missing. They had ConsRecomm scores of around 3.0, which should not be an extreme quintile and therefore should be dropped.
+
+CredRatDG:
+  status: accepted
+  reviewed_on: 2025-08-20
+  reviewed_by: ac
+  details: |
+    The sample deviations are all downgrades found in Python but not in Stata. I manually checked a few and found these all have CIQ downgrades. This is likely an improvement due to patching the CIQ deduplication bugs in the Stata DataDownloads code.
+
+Mom6mJunk:
+  status: accepted
+  reviewed_on: 2025-08-21
+  reviewed_by: ac
+  details: |
+    Python is missing permno 10026 (gvkey 12825) in 198907. This is because the CIQ security rating has "NR" in 1989-07, which means that it should be excluded (see Avramov et al 2007 JF Table 3). We want only not-investment-grade stocks, excluding not-rated stocks. The old CIQ data likely missed this due to the poor deduplication code. The original paper only used SP ratings, so it's unclear what to do here. But the long-short portfolio t-stat and mean return match the OP quite well, so I'm accepting this.
+
+MS:
+  status: accepted
+  reviewed_on: 2025-08-26
+  reviewed_by: ac
+  details: |
+    This is a complicated predictor with many many places for deviations to begin. Best I could do is get a Precision1 failure rate of 15.7%. The deviations seem to come from (1) tiny differences in the Compustat quarterly data that may be related to the deduplication in the DataDownloads code, and (2) bizarre edge behavior of Stata's asrol function that I could not make heads or tails of despite many hours of debugging. The first case we may want to fix: basically we may want to make sure when we deduplicate that we keep the row with more observations, or at least do something more systematic. The second case I think we should abandon. There are rare instances where Stata asrol decides to return Null despite there being enough observations in the window.
+
+    These tiny differences accumulate in the complicated algorithm, which involves using many large rolling windows. I looked at many of the largest deviations and found all of them were linked to either problem (1) or (2). Most of them seemed to be due to problem (1). 
+
+CompEquIss:
+  status: accepted
+  reviewed_on: 2025-08-26
+  reviewed_by: ac
+  details: |
+    The predictor is failing the NumRows check: it has 16.6% more rows than Stata. But it passes all other tests very nicely, including matching the 2024 long-short t-stat. Precision1 and 2 are near perfect. I eyeballed several of the obs that are missing from the Stata file and it seems like the Python code is correct. These observations have valid lagged mve_c, and that's pretty much what is required for this predictor. 
+
+TrendFactor:
+  status: accepted
+  reviewed_on: 2025-08-28
+  reviewed_by: ac
+  details: |
+    Given how complicated this predictor is, with many statistical calculations and daily data, I'm accepting the 25.1% Precision1 failure rate. This seems like reasonable numerical precision with so many calculations.
+
+    The long-short t-stat is almost identical to the 2024 10 release. 
+    
+    I also nearly went crazy trying to replicate the exact details of Stata, including the exact quantile function, and Stata's handling of collinearity regressors.
+
+RDAbility:
+  status: accepted
+  reviewed_on: 2025-08-28
+  reviewed_by: ac
+  details: |
+    Given the complicated nature of this predictor (many regressions with many missing values), the 4.3% Precision1 failure rate is amazing. I think we actually improved the replication a bit, since the long-short t-stat is higher by a bit.  
+
+BetaFP:
+  status: accepted
+  reviewed_on: 2025-08-28
+  reviewed_by: ac
+  details: |
+    This predictor is failing NumRows by 8 percent and Precision1 by 6.3%. The signal is complicated and I went through the py script line by line. The t-stat is close to zero, which is unchanged from the 2024 10 release. I don't think it's quite worth it to dig into this more.
+
+IO_ShortInterest:
+  status: accepted
+  reviewed_on: 2025-08-30
+  reviewed_by: ac
+  details: |
+    Like the other short interest predictors, the only test here that is really informative is the t-stat, and the t-stat test passes.
+
+ShortInterest:
+  status: accepted
+  reviewed_on: 2025-08-30
+  reviewed_by: ac
+  details: |
+    Like the other short interest predictors, the only test here that is really informative is the t-stat, and the t-stat test passes.    
+
+Cash:
+  status: accepted
+  reviewed_on: 2025-08-31
+  reviewed_by: ac
+  details: |
+    Cash.py is producing 7.2% more rows than Stata but is matching everything else extremely well. The additional rows seem to be due to the conversion of quarterly rdq into monthly time_avail_m. I checked several rows in the python code that were missing from stata and they all look correct. 
+
+AbnormalAccruals:
+  status: accepted
+  reviewed_on: 2025-08-31
+  reviewed_by: ac
+  details: |
+    Precision1 is failing at 9.0%. But this is a complicated predictor with custom accounting variables (including ones with missing values), many lags, regressions by sic code and window. One can only expect that there will be deviations of more than 0.01 standard deviations. The long-short t-stat is nearly identical to the 2024 10 release.
+
+ChNAnalyst:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    Large changes compared to the stata data are expected. ChAnalyst.do had an error it: the size grouping were formed using all data instead of by month. Commit 842dafc fixes this in ChAnalyst.py. The t-stat is unchanged (raw t-stat still much smaller than OP's FF3 t-stat). 
+
+OptionVolume1:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    Large changes compared to the Stata data are expected. We updated to fix https://github.com/OpenSourceAP/CrossSection/issues/166. t-stat is little changed.
+
+OptionVolume2:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    Large changes compared to the Stata data are expected. We updated to fix https://github.com/OpenSourceAP/CrossSection/issues/166. t-stat increased 0.50.
+
+ReturnSkew3F:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    2.3% of obs differ by more than 0.01 standard deviations. But regressing python signals on stata signals has a coefficient of 0.9941 and Rsq of 0.9825. Given that this predictor involves rolling regressions and then higher order moments on the residuals, we might expect these deviations. The t-stat is slightly improved. Most importantly, the code looks correct.
+
+CitationsRD:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    CitationsRD involves the ratio of rolling means of variables with lots of missing values (R&D and patent citations), as well as an FF1993-style double sort. So deviations are acceptable. T-stat is unchanged. The code looks correct.
+
+Mom12mOffSeason:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 4.49 which is close to the original paper's 4.20. 
+
+MomOffSeason:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 4.88, which is very close to the previous t-stat.
+
+MomOffSeason06YrPlus:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 4.71, which is +0.40 higher than the previous t-stat, but it's very close to the original paper's 4.62.
+
+MomOffSeason11YrPlus:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 1.56, which is -0.48 lower than the previous t-stat, but it's close to the original paper's 1.77. Note this was a likely predictor, not a clear predictor (obviously). 
+
+MomOffSeason16YrPlus:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This script was greatly streamlined relative to Stata. We no longer use asrol. The new t-stat is 2.88, which is +0.30 higher than the previous t-stat. It's still not quite as high as the original paper's 3.35, but it's closer. 
+
+iomom_supp:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This is a very complicated predictor and I streamlined the code greatly, cutting out the csv versions of CRSP and CCMLinkingTable. The t-stat is unchanged.
+
+iomom_cust:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This is a very complicated predictor and I streamlined the code greatly, cutting out the csv versions of CRSP and CCMLinkingTable. The t-stat is unchanged.    
+
+PriceDelayRsq:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small. Only 1.2% of obs differ by more than 0.01 standard deviations. The t-stat is unchanged.
+
+PriceDelaySlope:
+  status: accepted
+  reviewed_on: 2025-09-29
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small. Only 1.2% of obs differ by more than 0.01 standard deviations. The t-stat is almost unchanged.
+
+retConglomerate:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small. 
+
+CustomerMomentum:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A very complicated predictor and the deviations are small.     
+
+MomVol:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A relatively complicated predictor (asrol, intersecting variables) and the deviations are small.
+
+EarnSupBig:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    A complicated predictor (asrol, intersecting variables) and the deviations are small.    
+
+CPVolSpread:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+dCPVolSpread:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+dVolCall:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+dVolPut:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+skew1:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+SmileSlope:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+ZZ1_RIVolSpread:
+  status: accepted
+  reviewed_on: 2025-09-17
+  reviewed_by: ac
+  details: |
+    This predictor is affected by the OptionMetrics implied volatility methodology change.
+    See https://github.com/OpenSourceAP/CrossSection/issues/156.
+
+OrgCap:
+  status: accepted
+  reviewed_on: 2025-09-24
+  reviewed_by: ac
+  details: |
+    The precision1 failure rate is quite high. But regressing python on stata yields a slope of 0.9858 and Rsq of 0.9968. I examined the code line by line and it looks correct. t-stat is unchanged.
+
+RIO_Volatility:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.
+
+RIO_Turnover:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.
+
+RIO_Disp:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.
+
+RIO_MB:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    This is a relatively complicated predictor and the deviations are small. The code was examined in detail and it is correct. The t-stat is unchanged.        
+
+AgeIPO:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+IndIPO:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+RDIPO:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivInit:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+ChNWC:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+CashProd:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+ChInv:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+InvGrowth:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+EquityDuration:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+CompositeDebtIssuance:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivOmit:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivYieldST:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+DivSeason:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+PatentsRD:
+  status: accepted
+  reviewed_on: 2025-09-25
+  reviewed_by: ac
+  details: |
+    Precision1 and Precision2 scores are very close to zero. The failures are all in the t-stats, and the t-stats are based on returns. Since we're looking in the tails of the dataset we may have rare changes that we're accepting.
+
+betaVIX:
+  status: accepted
+  reviewed_on: 2025-09-29
+  reviewed_by: ac
+  details: |
+    Precision1 is failing at a 2.5% rate. But the Rsq from regressing new on old is 1.0000 and the t-stat is unchanged. I (me and Codex) cleaned up the code and it looks correct.

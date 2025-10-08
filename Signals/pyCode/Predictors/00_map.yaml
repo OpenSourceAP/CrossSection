@@ -1,0 +1,844 @@
+Accruals.py:
+  inputs:
+  - m_aCompustat.parquet
+  predictors:
+  - Accruals.csv
+  placebos: []
+AccrualsBM.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
+  predictors:
+  - AccrualsBM.csv
+  placebos: []
+AdExp.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
+  predictors:
+  - AdExp.csv
+  placebos: []
+AgeIPO.py:
+  inputs:
+  - SignalMasterTable.parquet
+  - IPODates.parquet
+  predictors:
+  - AgeIPO.csv
+  placebos: []
+AM.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
+  predictors:
+  - AM.csv
+  placebos: []
+AnalystRevision.py:
+  inputs:
+  - IBES_EPS_Unadj.parquet
+  - SignalMasterTable.parquet
+  predictors:
+  - AnalystRevision.csv
+  placebos: []
+AssetGrowth.py:
+  inputs:
+  - m_aCompustat.parquet
+  predictors:
+  - AssetGrowth.csv
+  placebos: []
+Beta.py:
+  inputs:
+  - monthlyCRSP.parquet
+  - monthlyFF.parquet
+  - monthlyMarket.parquet
+  predictors:
+  - Beta.csv
+  placebos: []
+BetaLiquidityPS.py:
+  inputs:
+  - monthlyCRSP.parquet
+  - monthlyFF.parquet
+  - monthlyLiquidity.parquet
+  predictors:
+  - BetaLiquidityPS.csv
+  placebos: []
+BetaTailRisk.py:
+  inputs:
+  - dailyCRSP.parquet
+  - monthlyCRSP.parquet
+  predictors:
+  - BetaTailRisk.csv
+  placebos: []
+BidAskSpread.py:
+  inputs:
+  - BAspreadsCorwin.parquet
+  predictors:
+  - BidAskSpread.csv
+  placebos: []
+BM.py:
+  inputs:
+  - m_aCompustat.parquet
+  - SignalMasterTable.parquet
+  predictors:
+  - BM.csv
+  placebos: []
+BMdec.py:
+  inputs:
+  - m_aCompustat.parquet
+  - monthlyCRSP.parquet
+  predictors:
+  - BMdec.csv
+  placebos: []
+BookLeverage.py:
+  inputs:
+  - m_aCompustat.parquet
+  predictors:
+  - BookLeverage.csv
+  placebos: []
+BrandInvest.py:
+  inputs:
+  - a_aCompustat.parquet
+  predictors:
+  - BrandInvest.csv
+  placebos: []
+Cash.py:
+  predictors:
+  - Cash.csv
+  placebos: []
+CashProd.py:
+  predictors:
+  - CashProd.csv
+  placebos: []
+CBOperProf.py:
+  predictors:
+  - CBOperProf.csv
+  placebos: []
+CF.py:
+  predictors:
+  - CF.csv
+  placebos: []
+cfp.py:
+  predictors:
+  - cfp.csv
+  placebos: []
+ChangeInRecommendation.py:
+  predictors:
+  - ChangeInRecommendation.csv
+  placebos: []
+ChAssetTurnover.py:
+  predictors:
+  - ChAssetTurnover.csv
+  placebos: []
+ChEQ.py:
+  predictors:
+  - ChEQ.csv
+  placebos: []
+ChForecastAccrual.py:
+  predictors:
+  - ChForecastAccrual.csv
+  placebos: []
+ChInv.py:
+  predictors:
+  - ChInv.csv
+  placebos: []
+ChInvIA.py:
+  predictors:
+  - ChInvIA.csv
+  placebos: []
+ChNAnalyst.py:
+  predictors:
+  - ChNAnalyst.csv
+  placebos: []
+ChNNCOA.py:
+  predictors:
+  - ChNNCOA.csv
+  placebos: []
+ChNWC.py:
+  predictors:
+  - ChNWC.csv
+  placebos: []
+ChTax.py:
+  predictors:
+  - ChTax.csv
+  placebos: []
+CitationsRD.py:
+  predictors:
+  - CitationsRD.csv
+  placebos: []
+CompEquIss.py:
+  predictors:
+  - CompEquIss.csv
+  placebos: []
+CompositeDebtIssuance.py:
+  predictors:
+  - CompositeDebtIssuance.csv
+  placebos: []
+ConsRecomm.py:
+  predictors:
+  - ConsRecomm.csv
+  placebos: []
+ConvDebt.py:
+  predictors:
+  - ConvDebt.csv
+  placebos: []
+CoskewACX.py:
+  predictors:
+  - CoskewACX.csv
+  placebos: []
+Coskewness.py:
+  predictors:
+  - Coskewness.csv
+  placebos: []
+CPVolSpread.py:
+  predictors:
+  - CPVolSpread.csv
+  placebos: []
+CredRatDG.py:
+  predictors:
+  - CredRatDG.csv
+  placebos: []
+CustomerMomentum.py:
+  inputs:
+  - CompustatSegmentDataCustomers.csv
+  - CCMLinkingTable.csv
+  - mCRSP.csv
+  predictors:
+  - CustomerMomentum.csv
+  placebos: []
+dCPVolSpread.py:
+  predictors:
+  - dCPVolSpread.csv
+  placebos: []
+DebtIssuance.py:
+  predictors:
+  - DebtIssuance.csv
+  placebos: []
+DelBreadth.py:
+  predictors:
+  - DelBreadth.csv
+  placebos: []
+DelCOA.py:
+  predictors:
+  - DelCOA.csv
+  placebos: []
+DelCOL.py:
+  predictors:
+  - DelCOL.csv
+  placebos: []
+DelDRC.py:
+  predictors:
+  - DelDRC.csv
+  placebos: []
+DelEqu.py:
+  predictors:
+  - DelEqu.csv
+  placebos: []
+DelFINL.py:
+  predictors:
+  - DelFINL.csv
+  placebos: []
+DelLTI.py:
+  predictors:
+  - DelLTI.csv
+  placebos: []
+DelNetFin.py:
+  predictors:
+  - DelNetFin.csv
+  placebos: []
+DivInit.py:
+  predictors:
+  - DivInit.csv
+  placebos: []
+DivOmit.py:
+  predictors:
+  - DivOmit.csv
+  placebos: []
+DivSeason.py:
+  predictors:
+  - DivSeason.csv
+  placebos: []
+DivYieldST.py:
+  predictors:
+  - DivYieldST.csv
+  placebos: []
+dNoa.py:
+  predictors:
+  - dNoa.csv
+  placebos: []
+DolVol.py:
+  predictors:
+  - DolVol.csv
+  placebos: []
+DownRecomm.py:
+  predictors:
+  - DownRecomm.csv
+  placebos: []
+dVolCall.py:
+  predictors:
+  - dVolCall.csv
+  placebos: []
+dVolPut.py:
+  predictors:
+  - dVolPut.csv
+  placebos: []
+EarningsConsistency.py:
+  predictors:
+  - EarningsConsistency.csv
+  placebos: []
+EarningsForecastDisparity.py:
+  predictors:
+  - EarningsForecastDisparity.csv
+  placebos: []
+EarningsStreak.py:
+  predictors:
+  - EarningsStreak.csv
+  placebos: []
+EarningsSurprise.py:
+  predictors:
+  - EarningsSurprise.csv
+  placebos: []
+EarnSupBig.py:
+  predictors:
+  - EarnSupBig.csv
+  placebos: []
+EntMult.py:
+  predictors:
+  - EntMult.csv
+  placebos: []
+EP.py:
+  predictors:
+  - EP.csv
+  placebos: []
+EquityDuration.py:
+  predictors:
+  - EquityDuration.csv
+  placebos: []
+ExchSwitch.py:
+  predictors:
+  - ExchSwitch.csv
+  placebos: []
+ExclExp.py:
+  predictors:
+  - ExclExp.csv
+  placebos: []
+FEPS.py:
+  predictors:
+  - FEPS.csv
+  placebos: []
+fgr5yrLag.py:
+  predictors:
+  - fgr5yrLag.csv
+  placebos: []
+FirmAge.py:
+  predictors:
+  - FirmAge.csv
+  placebos: []
+FirmAgeMom.py:
+  predictors:
+  - FirmAgeMom.csv
+  placebos: []
+ForecastDispersion.py:
+  predictors:
+  - ForecastDispersion.csv
+  placebos: []
+Frontier.py:
+  predictors:
+  - Frontier.csv
+  placebos: []
+Governance.py:
+  predictors:
+  - Governance.csv
+  placebos: []
+GP.py:
+  predictors:
+  - GP.csv
+  placebos: []
+GrAdExp.py:
+  predictors:
+  - GrAdExp.csv
+  placebos: []
+GrLTNOA.py:
+  predictors:
+  - GrLTNOA.csv
+  placebos: []
+GrSaleToGrInv.py:
+  predictors:
+  - GrSaleToGrInv.csv
+  placebos: []
+GrSaleToGrOverhead.py:
+  predictors:
+  - GrSaleToGrOverhead.csv
+  placebos: []
+Herf.py:
+  predictors:
+  - Herf.csv
+  placebos: []
+HerfAsset.py:
+  predictors:
+  - HerfAsset.csv
+  placebos: []
+HerfBE.py:
+  predictors:
+  - HerfBE.csv
+  placebos: []
+High52.py:
+  predictors:
+  - High52.csv
+  placebos: []
+hire.py:
+  predictors:
+  - hire.csv
+  placebos: []
+Illiquidity.py:
+  predictors:
+  - Illiquidity.csv
+  placebos: []
+IndIPO.py:
+  predictors:
+  - IndIPO.csv
+  placebos: []
+IndMom.py:
+  predictors:
+  - IndMom.csv
+  placebos: []
+IndRetBig.py:
+  predictors:
+  - IndRetBig.csv
+  placebos: []
+IntMom.py:
+  predictors:
+  - IntMom.csv
+  placebos: []
+Investment.py:
+  predictors:
+  - Investment.csv
+  placebos: []
+InvestPPEInv.py:
+  predictors:
+  - InvestPPEInv.csv
+  placebos: []
+InvGrowth.py:
+  predictors:
+  - InvGrowth.csv
+  placebos: []
+IO_ShortInterest.py:
+  predictors:
+  - IO_ShortInterest.csv
+  placebos: []
+Leverage.py:
+  predictors:
+  - Leverage.csv
+  placebos: []
+LRreversal.py:
+  predictors:
+  - LRreversal.csv
+  placebos: []
+MaxRet.py:
+  predictors:
+  - MaxRet.csv
+  placebos: []
+MeanRankRevGrowth.py:
+  predictors:
+  - MeanRankRevGrowth.csv
+  placebos: []
+Mom12m.py:
+  predictors:
+  - Mom12m.csv
+  placebos: []
+Mom12mOffSeason.py:
+  predictors:
+  - Mom12mOffSeason.csv
+  placebos: []
+Mom6m.py:
+  predictors:
+  - Mom6m.csv
+  placebos: []
+Mom6mJunk.py:
+  predictors:
+  - Mom6mJunk.csv
+  placebos: []
+MomOffSeason.py:
+  predictors:
+  - MomOffSeason.csv
+  placebos: []
+MomOffSeason06YrPlus.py:
+  predictors:
+  - MomOffSeason06YrPlus.csv
+  placebos: []
+MomOffSeason11YrPlus.py:
+  predictors:
+  - MomOffSeason11YrPlus.csv
+  placebos: []
+MomOffSeason16YrPlus.py:
+  predictors:
+  - MomOffSeason16YrPlus.csv
+  placebos: []
+MomRev.py:
+  predictors:
+  - MomRev.csv
+  placebos: []
+MomSeason.py:
+  predictors:
+  - MomSeason.csv
+  placebos: []
+MomSeason06YrPlus.py:
+  predictors:
+  - MomSeason06YrPlus.csv
+  placebos: []
+MomSeason11YrPlus.py:
+  predictors:
+  - MomSeason11YrPlus.csv
+  placebos: []
+MomSeason16YrPlus.py:
+  predictors:
+  - MomSeason16YrPlus.csv
+  placebos: []
+MomSeasonShort.py:
+  predictors:
+  - MomSeasonShort.csv
+  placebos: []
+MomVol.py:
+  predictors:
+  - MomVol.csv
+  placebos: []
+MRreversal.py:
+  predictors:
+  - MRreversal.csv
+  placebos: []
+MS.py:
+  predictors:
+  - MS.csv
+  placebos: []
+NetDebtFinance.py:
+  predictors:
+  - NetDebtFinance.csv
+  placebos: []
+NetDebtPrice.py:
+  predictors:
+  - NetDebtPrice.csv
+  placebos: []
+NetEquityFinance.py:
+  predictors:
+  - NetEquityFinance.csv
+  placebos: []
+NetPayoutYield.py:
+  predictors:
+  - NetPayoutYield.csv
+  placebos: []
+NOA.py:
+  predictors:
+  - NOA.csv
+  placebos: []
+NumEarnIncrease.py:
+  predictors:
+  - NumEarnIncrease.csv
+  placebos: []
+OperProf.py:
+  predictors:
+  - OperProf.csv
+  placebos: []
+OperProfRD.py:
+  predictors:
+  - OperProfRD.csv
+  placebos: []
+OPLeverage.py:
+  predictors:
+  - OPLeverage.csv
+  placebos: []
+OrderBacklog.py:
+  predictors:
+  - OrderBacklog.csv
+  placebos: []
+OrderBacklogChg.py:
+  predictors:
+  - OrderBacklogChg.csv
+  placebos: []
+OScore.py:
+  predictors:
+  - OScore.csv
+  placebos: []
+PatentsRD.py:
+  predictors:
+  - PatentsRD.csv
+  placebos: []
+PayoutYield.py:
+  predictors:
+  - PayoutYield.csv
+  placebos: []
+PctAcc.py:
+  predictors:
+  - PctAcc.csv
+  placebos: []
+PctTotAcc.py:
+  predictors:
+  - PctTotAcc.csv
+  placebos: []
+Price.py:
+  predictors:
+  - Price.csv
+  placebos: []
+ProbInformedTrading.py:
+  predictors:
+  - ProbInformedTrading.csv
+  placebos: []
+PS.py:
+  predictors:
+  - PS.csv
+  placebos: []
+RD.py:
+  predictors:
+  - RD.csv
+  placebos: []
+RDAbility.py:
+  predictors:
+  - RDAbility.csv
+  placebos: []
+RDcap.py:
+  predictors:
+  - RDcap.csv
+  placebos: []
+RDIPO.py:
+  predictors:
+  - RDIPO.csv
+  placebos: []
+RDS.py:
+  predictors:
+  - RDS.csv
+  placebos: []
+realestate.py:
+  predictors:
+  - realestate.csv
+  placebos: []
+Recomm_ShortInterest.py:
+  predictors:
+  - Recomm_ShortInterest.csv
+  placebos: []
+retConglomerate.py:
+  predictors:
+  - retConglomerate.csv
+  placebos: []
+ReturnSkew.py:
+  predictors:
+  - ReturnSkew.csv
+  placebos: []
+REV6.py:
+  predictors:
+  - REV6.csv
+  placebos: []
+RevenueSurprise.py:
+  predictors:
+  - RevenueSurprise.csv
+  placebos: []
+roaq.py:
+  predictors:
+  - roaq.csv
+  placebos: []
+RoE.py:
+  predictors:
+  - RoE.csv
+  placebos: []
+sfe.py:
+  predictors:
+  - sfe.csv
+  placebos: []
+ShareIss1Y.py:
+  predictors:
+  - ShareIss1Y.csv
+  - ShareIss1Y.csv
+  placebos: []
+ShareIss5Y.py:
+  predictors:
+  - ShareIss5Y.csv
+  placebos: []
+ShareRepurchase.py:
+  predictors:
+  - ShareRepurchase.csv
+  placebos: []
+ShareVol.py:
+  predictors:
+  - ShareVol.csv
+  placebos: []
+ShortInterest.py:
+  predictors:
+  - ShortInterest.csv
+  placebos: []
+sinAlgo.py:
+  predictors:
+  - sinAlgo.csv
+  placebos: []
+Size.py:
+  predictors:
+  - Size.csv
+  placebos: []
+skew1.py:
+  predictors:
+  - skew1.csv
+  placebos: []
+SmileSlope.py:
+  predictors:
+  - SmileSlope.csv
+  placebos: []
+SP.py:
+  predictors:
+  - SP.csv
+  placebos: []
+Spinoff.py:
+  predictors:
+  - Spinoff.csv
+  placebos: []
+std_turn.py:
+  predictors:
+  - std_turn.csv
+  placebos: []
+STreversal.py:
+  predictors:
+  - STreversal.csv
+  placebos: []
+SurpriseRD.py:
+  predictors:
+  - SurpriseRD.csv
+  placebos: []
+tang.py:
+  predictors:
+  - tang.csv
+  placebos: []
+Tax.py:
+  predictors:
+  - Tax.csv
+  placebos: []
+TotalAccruals.py:
+  predictors:
+  - TotalAccruals.csv
+  placebos: []
+TrendFactor.py:
+  predictors:
+  - TrendFactor.csv
+  placebos: []
+UpRecomm.py:
+  predictors:
+  - UpRecomm.csv
+  placebos: []
+VarCF.py:
+  predictors:
+  - VarCF.csv
+  placebos: []
+VolMkt.py:
+  predictors:
+  - VolMkt.csv
+  placebos: []
+VolSD.py:
+  predictors:
+  - VolSD.csv
+  placebos: []
+VolumeTrend.py:
+  predictors:
+  - VolumeTrend.csv
+  placebos: []
+XFIN.py:
+  predictors:
+  - XFIN.csv
+  placebos: []
+ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py:
+  predictors:
+  - RealizedVol.csv
+  - IdioVol3F.csv
+  - ReturnSkew3F.csv
+  placebos: []
+ZZ1_Activism1_Activism2.py:
+  predictors:
+  - Activism1.csv
+  - Activism2.csv
+  placebos: []
+ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py:
+  predictors:
+  - AnalystValue.csv
+  - AOP.csv
+  - PredictedFE.csv
+  placebos:
+  - IntrinsicValue.csv
+ZZ1_EBM_BPEBM.py:
+  predictors:
+  - EBM.csv
+  - BPEBM.csv
+  placebos: []
+ZZ1_FR_FRbook.py:
+  predictors:
+  - FR.csv
+  placebos:
+  - FRbook.csv
+ZZ1_grcapx_grcapx1y_grcapx3y.py:
+  predictors:
+  - grcapx.csv
+  - grcapx3y.csv
+  placebos:
+  - grcapx1y.csv
+ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py:
+  predictors:
+  - IntanBM.csv
+  - IntanSP.csv
+  - IntanCFP.csv
+  - IntanEP.csv
+  placebos: []
+ZZ1_OptionVolume1_OptionVolume2.py:
+  predictors:
+  - OptionVolume1.csv
+  - OptionVolume2.csv
+  placebos: []
+ZZ1_OrgCap_OrgCapNoAdj.py:
+  predictors:
+  - OrgCap.csv
+  placebos:
+  - OrgCapNoAdj.csv
+ZZ1_ResidualMomentum6m_ResidualMomentum.py:
+  predictors:
+  - ResidualMomentum.csv
+  placebos:
+  - ResidualMomentum6m.csv
+ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py:
+  predictors:
+  - RIO_MB.csv
+  - RIO_Disp.csv
+  - RIO_Turnover.csv
+  - RIO_Volatility.csv
+  placebos: []
+ZZ1_RIVolSpread.py:
+  predictors:
+  - RIVolSpread.csv
+  placebos: []
+ZZ1_iomom_cust__iomom_supp.py:
+  predictors:
+  - iomom_cust.csv
+  - iomom_supp.csv
+  placebos: []
+ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py:
+  predictors:
+  - zerotrade1M.csv
+  - zerotrade6M.csv
+  - zerotrade12M.csv
+  placebos: []
+ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py:
+  predictors:
+  - AbnormalAccruals.csv
+  placebos:
+  - AbnormalAccrualsPercent.csv
+ZZ2_AnnouncementReturn.py:
+  predictors:
+  - AnnouncementReturn.csv
+  placebos: []
+ZZ2_BetaFP.py:
+  predictors:
+  - BetaFP.csv
+  placebos: []
+ZZ2_betaVIX.py:
+  predictors:
+  - betaVIX.csv
+  placebos: []
+ZZ2_IdioVolAHT.py:
+  predictors:
+  - IdioVolAHT.csv
+  placebos: []
+ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py:
+  predictors:
+  - PriceDelaySlope.csv
+  - PriceDelayRsq.csv
+  - PriceDelayTstat.csv
+  placebos: []

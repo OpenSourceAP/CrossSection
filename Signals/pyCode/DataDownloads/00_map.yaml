@@ -10,7 +10,7 @@ CCMLinkingTable.csv:
   stata_file: CCMLinkingTable.csv
   python_file: CCMLinkingTable.csv
   stata_script: A_CCMLinkingTable.do
-  python_script: A_CCMLinkingTable.py
+  python_script: CCMLinkingTable.py
 
 CCMLinkingTable:
   key1: gvkey
@@ -18,7 +18,7 @@ CCMLinkingTable:
   stata_file: CCMLinkingTable.dta
   python_file: CCMLinkingTable.parquet
   stata_script: A_CCMLinkingTable.do
-  python_script: A_CCMLinkingTable.py
+  python_script: CCMLinkingTable.py
 
 # Compustat Annual/Quarterly
 CompustatAnnual:
@@ -27,7 +27,7 @@ CompustatAnnual:
   stata_file: CompustatAnnual.csv
   python_file: CompustatAnnual.csv
   stata_script: B_CompustatAnnual.do
-  python_script: B_CompustatAnnual.py
+  python_script: CompustatAnnual.py
 
 a_aCompustat:
   key1: permno
@@ -35,7 +35,7 @@ a_aCompustat:
   stata_file: a_aCompustat.dta
   python_file: a_aCompustat.parquet
   stata_script: B_CompustatAnnual.do
-  python_script: B_CompustatAnnual.py
+  python_script: CompustatAnnual.py
 
 m_aCompustat:
   key1: permno
@@ -43,7 +43,7 @@ m_aCompustat:
   stata_file: m_aCompustat.dta
   python_file: m_aCompustat.parquet
   stata_script: B_CompustatAnnual.do
-  python_script: B_CompustatAnnual.py
+  python_script: CompustatAnnual.py
 
 m_QCompustat:
   key1: gvkey
@@ -51,7 +51,7 @@ m_QCompustat:
   stata_file: m_QCompustat.dta
   python_file: m_QCompustat.parquet
   stata_script: C_CompustatQuarterly.do
-  python_script: C_CompustatQuarterly.py
+  python_script: CompustatQuarterly.py
 
 # Compustat Specialized
 CompustatPensions:
@@ -60,7 +60,7 @@ CompustatPensions:
   stata_file: CompustatPensions.dta
   python_file: CompustatPensions.parquet
   stata_script: D_CompustatPensions.do
-  python_script: D_CompustatPensions.py
+  python_script: CompustatPensions.py
 
 CompustatSegments:
   key1: gvkey
@@ -71,7 +71,7 @@ CompustatSegments:
   stata_file: CompustatSegments.dta
   python_file: CompustatSegments.parquet
   stata_script: E_CompustatBusinessSegments.do
-  python_script: E_CompustatBusinessSegments.py
+  python_script: CompustatBusinessSegments.py
 
 CompustatSegmentDataCustomers:
   key1: gvkey
@@ -80,7 +80,7 @@ CompustatSegmentDataCustomers:
   stata_file: CompustatSegmentDataCustomers.csv
   python_file: CompustatSegmentDataCustomers.csv
   stata_script: F_CompustatCustomerSegments.do
-  python_script: F_CompustatCustomerSegments.py
+  python_script: CompustatCustomerSegments.py
 
 monthlyShortInterest:
   key1: gvkey
@@ -88,7 +88,7 @@ monthlyShortInterest:
   stata_file: monthlyShortInterest.dta
   python_file: monthlyShortInterest.parquet
   stata_script: G_CompustatShortInterest.do
-  python_script: G_CompustatShortInterest.py
+  python_script: CompustatShortInterest.py
 
 # ===== CRSP Data =====
 # CRSPdistributions seems to have duplicates. 
@@ -101,7 +101,7 @@ CRSPdistributions:
   stata_file: CRSPdistributions.dta
   python_file: CRSPdistributions.parquet
   stata_script: H_CRSPDistributions.do
-  python_script: H_CRSPDistributions.py
+  python_script: CRSPDistributions.py
 
 mCRSP:
   key1: permno
@@ -109,7 +109,7 @@ mCRSP:
   stata_file: mCRSP.csv
   python_file: mCRSP.csv
   stata_script: I_CRSPmonthly.do
-  python_script: I_CRSPmonthly.py
+  python_script: CRSPMonthly.py
 
 monthlyCRSP:
   key1: permno
@@ -117,7 +117,7 @@ monthlyCRSP:
   stata_file: monthlyCRSP.dta
   python_file: monthlyCRSP.parquet
   stata_script: I_CRSPmonthly.do
-  python_script: I_CRSPmonthly.py
+  python_script: CRSPMonthly.py
 
 monthlyCRSPraw:
   key1: permno
@@ -133,7 +133,7 @@ dailyCRSP:
   stata_file: dailyCRSP.dta
   python_file: dailyCRSP.parquet
   stata_script: J_CRSPdaily.do
-  python_script: J_CRSPdaily.py
+  python_script: CRSPDaily.py
 
 dailyCRSPprc:
   key1: permno
@@ -141,14 +141,14 @@ dailyCRSPprc:
   stata_file: dailyCRSPprc.dta
   python_file: dailyCRSPprc.parquet
   stata_script: J_CRSPdaily.do
-  python_script: J_CRSPdaily.py
+  python_script: CRSPDaily.py
 
 m_CRSPAcquisitions:
   key1: permno
   stata_file: m_CRSPAcquisitions.dta
   python_file: m_CRSPAcquisitions.parquet
   stata_script: K_CRSPAcquisitions.do
-  python_script: K_CRSPAcquisitions.py
+  python_script: CRSPAcquisitions.py
 
 # IBES Data
 IBES_EPS_Unadj:
@@ -158,7 +158,7 @@ IBES_EPS_Unadj:
   stata_file: IBES_EPS_Unadj.dta
   python_file: IBES_EPS_Unadj.parquet
   stata_script: L_IBES_EPS_Unadj.do
-  python_script: L_IBES_EPS_Unadj.py
+  python_script: IBESEPSUnadjusted.py
 
 IBES_EPS_Adj:
   key1: tickerIBES
@@ -167,7 +167,7 @@ IBES_EPS_Adj:
   stata_file: IBES_EPS_Adj.dta
   python_file: IBES_EPS_Adj.parquet
   stata_script: L2_IBES_EPS_Adj.do
-  python_script: L2_IBES_EPS_Adj.py
+  python_script: IBESEPSAdjusted.py
 
 # IBES_Recommendations has exact duplicates. 
 # stata handling from ChangeInRecommendation.do:
@@ -183,7 +183,7 @@ IBES_Recommendations:
   stata_file: IBES_Recommendations.dta
   python_file: IBES_Recommendations.parquet
   stata_script: M_IBES_Recommendations.do
-  python_script: M_IBES_Recommendations.py
+  python_script: IBESRecommendations.py
   stata_dups: TRUE
 
 IBES_UnadjustedActuals:
@@ -192,7 +192,7 @@ IBES_UnadjustedActuals:
   stata_file: IBES_UnadjustedActuals.dta
   python_file: IBES_UnadjustedActuals.parquet
   stata_script: N_IBES_UnadjustedActuals.do
-  python_script: N_IBES_UnadjustedActuals.py
+  python_script: IBESUnadjustedActuals.py
 
 # Market-Level Data (no stock identifier)
 dailyFF:
@@ -200,49 +200,49 @@ dailyFF:
   stata_file: dailyFF.dta
   python_file: dailyFF.parquet
   stata_script: O_Daily_Fama-French.do
-  python_script: O_Daily_Fama-French.py
+  python_script: FamaFrenchDaily.py
 
 monthlyFF:
   key1: time_avail_m
   stata_file: monthlyFF.dta
   python_file: monthlyFF.parquet
   stata_script: P_Monthly_Fama-French.do
-  python_script: P_Monthly_Fama-French.py
+  python_script: FamaFrenchMonthly.py
 
 monthlyMarket:
   key1: time_avail_m
   stata_file: monthlyMarket.dta
   python_file: monthlyMarket.parquet
   stata_script: Q_MarketReturns.do
-  python_script: Q_MarketReturns.py
+  python_script: MarketReturns.py
 
 monthlyLiquidity:
   key1: time_avail_m
   stata_file: monthlyLiquidity.dta
   python_file: monthlyLiquidity.parquet
   stata_script: R_MonthlyLiquidityFactor.do
-  python_script: R_MonthlyLiquidityFactor.py
+  python_script: LiquidityFactor.py
 
 d_qfactor:
   key1: time_d
   stata_file: d_qfactor.dta
   python_file: d_qfactor.parquet
   stata_script: S_QFactorModel.do
-  python_script: S_QFactorModel.py
+  python_script: QFactorModel.py
 
 d_vix:
   key1: time_d
   stata_file: d_vix.dta
   python_file: d_vix.parquet
   stata_script: T_VIX.do
-  python_script: T_VIX.py
+  python_script: VIX.py
 
 GNPdefl:
   key1: time_avail_m
   stata_file: GNPdefl.dta
   python_file: GNPdefl.parquet
   stata_script: U_GNPDeflator.do
-  python_script: U_GNPDeflator.py
+  python_script: GNPDeflator.py
 
 TBill3M:
   key1: year
@@ -250,7 +250,7 @@ TBill3M:
   stata_file: TBill3M.dta
   python_file: TBill3M.parquet
   stata_script: V_TBill3M.do
-  python_script: V_TBill3M.py
+  python_script: TreasuryBill3M.py
 
 brokerLev:
   key1: year
@@ -258,7 +258,7 @@ brokerLev:
   stata_file: brokerLev.dta
   python_file: brokerLev.parquet
   stata_script: W_BrokerDealerLeverage.do
-  python_script: W_BrokerDealerLeverage.py
+  python_script: BrokerDealerLeverage.py
 
 # Credit Ratings
 m_SP_creditratings:
@@ -267,7 +267,7 @@ m_SP_creditratings:
   stata_file: m_SP_creditratings.dta
   python_file: m_SP_creditratings.parquet
   stata_script: X_SPCreditRatings.do
-  python_script: X_SPCreditRatings.py
+  python_script: SPCreditRatings.py
 
 m_CIQ_creditratings:
   key1: gvkey  
@@ -279,7 +279,7 @@ m_CIQ_creditratings:
   stata_file: m_CIQ_creditratings.dta
   python_file: m_CIQ_creditratings.parquet
   stata_script: X2_CIQCreditRatings.do
-  python_script: X2_CIQCreditRatings.py
+  python_script: CIQCreditRatings.py
 
 # Other Specialized Data
 IPODates:
@@ -287,7 +287,7 @@ IPODates:
   stata_file: IPODates.dta
   python_file: IPODates.parquet
   stata_script: ZA_IPODates.do
-  python_script: ZA_IPODates.py
+  python_script: IPODates.py
 
 pin_monthly:
   key1: permno
@@ -295,7 +295,7 @@ pin_monthly:
   stata_file: pin_monthly.dta
   python_file: pin_monthly.parquet
   stata_script: ZB_PIN.do
-  python_script: ZB_PIN.py
+  python_script: PINData.py
 
 GovIndex:
   key1: ticker
@@ -303,7 +303,7 @@ GovIndex:
   stata_file: GovIndex.dta
   python_file: GovIndex.parquet
   stata_script: ZC_GovernanceIndex.do
-  python_script: ZC_GovernanceIndex.py
+  python_script: GovernanceIndex.py
 
 BAspreadsCorwin:
   key1: permno
@@ -319,7 +319,7 @@ TR_13F:
   stata_file: TR_13F.dta
   python_file: TR_13F.parquet
   stata_script: ZE_13F.do
-  python_script: ZE_13F.py
+  python_script: InstitutionalHoldings13F.py
 
 hf_spread:
   key1: permno
@@ -327,16 +327,11 @@ hf_spread:
   stata_file: hf_spread.dta
   python_file: hf_spread.parquet
   stata_script: ZG_BidaskTAQ.do
-  python_script: ZG_BidaskTAQ.py
+  python_script: BidAskSpreads.py
 
 # OptionMetrics Data
-OptionMetricsVolume:
-  key1: secid
-  key2: time_avail_m
-  stata_file: OptionMetricsVolume.dta
-  python_file: OptionMetricsVolume.parquet
-  stata_script: ZH_OptionMetrics.do
-  python_script: ZH_OptionMetrics.py
+
+# note: OptionMetricsVolume.parquet is skipped over. The Predictors directory source the csv from PrepScripts
 
 OptionMetricsVolSurf:
   key1: secid
@@ -371,14 +366,14 @@ IBESCRSPLinkingTable:
   stata_file: IBESCRSPLinkingTable.dta
   python_file: IBESCRSPLinkingTable.parquet
   stata_script: ZF_CRSPIBESLink.do
-  python_script: ZF_CRSPIBESLink.py
+  python_script: CRSPIBESLink.py
 
 OPTIONMETRICSCRSPLinkingTable:
   key1: permno
   stata_file: OPTIONMETRICSCRSPLinkingTable.dta
   python_file: OPTIONMETRICSCRSPLinkingTable.parquet
   stata_script: ZL_CRSPOPTIONMETRICS.do
-  python_script: ZL_CRSPOPTIONMETRICS.py
+  python_script: OptionMetricsCRSPLink.py
 
 # Patent Data
 PatentDataProcessed:
@@ -387,7 +382,7 @@ PatentDataProcessed:
   stata_file: PatentDataProcessed.dta
   python_file: PatentDataProcessed.parquet
   stata_script: ZI_PatentCitations.do
-  python_script: ZI_PatentCitations.py
+  python_script: PatentCitations.py
 
 # Input-Output Momentum Data
 InputOutputMomentumProcessed:
@@ -398,11 +393,3 @@ InputOutputMomentumProcessed:
   stata_script: ZJ_InputOutputMomentum.do
   python_script: ZJ_InputOutputMomentum.py
 
-# Customer Momentum Data
-customerMom:
-  key1: permno
-  key2: time_avail_m
-  stata_file: customerMom.dta
-  python_file: customerMom.parquet
-  stata_script: ZK_CustomerMomentum.do
-  python_script: ZK_CustomerMomentum.py

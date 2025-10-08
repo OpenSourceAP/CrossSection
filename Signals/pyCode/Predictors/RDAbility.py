@@ -1,17 +1,33 @@
 # ABOUTME: R&D ability predictor following Cohen, Diether and Malloy (2013), Table 2A Spread
 # ABOUTME: calculates R&D ability by regressing sales growth on lagged R&D intensity
 
+"""
+RDAbility.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/RDAbility.py
+
+Inputs:
+    - a_aCompustat.parquet: Annual Compustat data with columns [gvkey, permno, time_avail_m, fyear, datadate, xrd, sale]
+
+Outputs:
+    - RDAbility.csv: CSV file with columns [permno, yyyymm, RDAbility]
+"""
+
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
 import pandas as pd
 import numpy as np
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 from typing import Optional, Union
 
-#%% specialized asrol function
+# %% specialized asrol function
+
 
 def asrol_custom(
     df: Union[pl.DataFrame, pd.DataFrame],
@@ -21,7 +37,7 @@ def asrol_custom(
     window: int,
     stat: str = "mean",
     new_col_name: Optional[str] = None,
-    min_periods: int = 1
+    min_periods: int = 1,
 ) -> Union[pl.DataFrame, pd.DataFrame]:
     """
     Fast Polars implementation of rolling statistics with consecutive period support
@@ -73,6 +89,7 @@ def asrol_custom(
         return result_pl.to_pandas()
     else:
         return result_pl
+
 
 def _stata_rolling(
     df_pl: pl.DataFrame,
@@ -175,14 +192,13 @@ def _stata_rolling(
     return result
 
 
-
-
-
-#%%
+# %%
 
 print("=" * 80)
 print("RDAbility.py")
-print("Generating R&D ability predictor using Cohen, Diether and Malloy (2013) methodology")
+print(
+    "Generating R&D ability predictor using Cohen, Diether and Malloy (2013) methodology"
+)
 print("=" * 80)
 
 # DATA LOAD
@@ -205,7 +221,7 @@ df = df.with_columns(
     .alias("tempXRD")
 )
 
-# Create temporary sales variable  
+# Create temporary sales variable
 df = df.with_columns(pl.col("sale").alias("tempSale"))
 
 # Set negative sales values to missing
@@ -218,17 +234,15 @@ df = df.with_columns(
 
 # Calculate sales growth rate as log(Sales_t / Sales_t-1)
 # Create lagged sales first
-df = df.with_columns(
-    pl.col("tempSale").shift(1).over("gvkey").alias("l_tempSale")
-)
+df = df.with_columns(pl.col("tempSale").shift(1).over("gvkey").alias("l_tempSale"))
 
 # Calculate log sales growth ratio with proper handling of zeros and missing values
 df = df.with_columns(
     pl.when(
-        pl.col("tempSale").is_not_null() & 
-        pl.col("l_tempSale").is_not_null() & 
-        (pl.col("l_tempSale") > 0) &
-        (pl.col("tempSale") > 0)  # Exclude zero sales
+        pl.col("tempSale").is_not_null()
+        & pl.col("l_tempSale").is_not_null()
+        & (pl.col("l_tempSale") > 0)
+        & (pl.col("tempSale") > 0)  # Exclude zero sales
     )
     .then((pl.col("tempSale") / pl.col("l_tempSale")).log())
     .otherwise(None)
@@ -238,9 +252,9 @@ df = df.with_columns(
 # Calculate R&D intensity as log(1 + R&D/Sales)
 df = df.with_columns(
     pl.when(
-        pl.col("tempXRD").is_not_null() & 
-        pl.col("tempSale").is_not_null() & 
-        (pl.col("tempSale") > 0)
+        pl.col("tempXRD").is_not_null()
+        & pl.col("tempSale").is_not_null()
+        & (pl.col("tempSale") > 0)
     )
     .then((1 + pl.col("tempXRD") / pl.col("tempSale")).log())
     .otherwise(None)
@@ -248,48 +262,55 @@ df = df.with_columns(
 )
 
 # Initialize temporary variables for R&D ability calculation
-df = df.with_columns([
-    pl.lit(None, dtype=pl.Float64).alias("tempNonZero"),
-    pl.lit(None, dtype=pl.Float64).alias("tempXLag")
-])
+df = df.with_columns(
+    [
+        pl.lit(None, dtype=pl.Float64).alias("tempNonZero"),
+        pl.lit(None, dtype=pl.Float64).alias("tempXLag"),
+    ]
+)
 
 # Calculate R&D ability for each lag (1-5 years)
 for n in range(1, 6):
-    
+
     # Create lagged R&D intensity variable
-    df = df.with_columns(
-        pl.col("tempX").shift(n).over("gvkey").alias("tempXLag")
-    )
-    
+    df = df.with_columns(pl.col("tempX").shift(n).over("gvkey").alias("tempXLag"))
+
     # Run rolling regression: Sales Growth ~ R&D Intensity with 8-year window, min 6 observations
     # Sort by gvkey and fyear for deterministic window order
     df = df.sort(["gvkey", "fyear"])
 
     df = df.with_columns(
-        pl.col("tempY").least_squares.rolling_ols(
+        pl.col("tempY")
+        .least_squares.rolling_ols(
             pl.col("tempXLag"),
             window_size=8,
             min_periods=6,
             mode="coefficients",
             add_intercept=True,
-            null_policy="drop"
-        ).over("gvkey").alias("coef")
-    ).with_columns([
-        pl.col("coef").struct.field("const").alias("b_const"),
-        pl.col("coef").struct.field("tempXLag").alias("b_tempXLag")
-    ])
-    
+            null_policy="drop",
+        )
+        .over("gvkey")
+        .alias("coef")
+    ).with_columns(
+        [
+            pl.col("coef").struct.field("const").alias("b_const"),
+            pl.col("coef").struct.field("tempXLag").alias("b_tempXLag"),
+        ]
+    )
+
     # Enforce minimum sample requirement for regression validity
     # Count valid observations in each 8-year rolling window
-    df = df.with_columns([
-        # Count non-null observations in 8-year rolling window
-        (pl.col("tempY").is_not_null() & pl.col("tempXLag").is_not_null())
-        .cast(pl.Int32)
-        .rolling_sum(window_size=8, min_samples=1)
-        .over("gvkey")
-        .alias("_valid_count")
-    ])
-    
+    df = df.with_columns(
+        [
+            # Count non-null observations in 8-year rolling window
+            (pl.col("tempY").is_not_null() & pl.col("tempXLag").is_not_null())
+            .cast(pl.Int32)
+            .rolling_sum(window_size=8, min_samples=1)
+            .over("gvkey")
+            .alias("_valid_count")
+        ]
+    )
+
     # Extract R&D ability coefficient with minimum sample enforcement
     df = df.with_columns(
         pl.when(pl.col("_valid_count") >= 6)
@@ -297,33 +318,35 @@ for n in range(1, 6):
         .otherwise(None)
         .alias(f"gammaAbility{n}")
     )
-    
+
     # Drop temporary column
     df = df.drop("_valid_count")
-        
+
     # Create indicator for positive R&D intensity observations
     df = df.with_columns(
-        ((pl.col("tempXLag") > 0) & pl.col("tempXLag").is_not_null()).alias("tempNonZero")
+        ((pl.col("tempXLag") > 0) & pl.col("tempXLag").is_not_null()).alias(
+            "tempNonZero"
+        )
     )
-    
+
     # Calculate rolling mean of R&D frequency with 8-year window, min 6 observations
     df_pandas = df.to_pandas()
-    df_pandas = df_pandas.sort_values(['gvkey', 'fyear'])
-    
+    df_pandas = df_pandas.sort_values(["gvkey", "fyear"])
+
     # Calculate rolling mean per gvkey with exactly 8-year window and min 6 observations
     df_pandas = asrol_custom(
         df_pandas,
-        group_col='gvkey',
-        time_col='fyear', 
-        value_col='tempNonZero',
+        group_col="gvkey",
+        time_col="fyear",
+        value_col="tempNonZero",
         window=8,
-        stat='mean',
-        new_col_name='tempMean',
-        min_periods=6
+        stat="mean",
+        new_col_name="tempMean",
+        min_periods=6,
     )
-    
+
     df = pl.from_pandas(df_pandas)
-    
+
     # Set R&D ability to missing if R&D frequency is below 50%
     df = df.with_columns(
         pl.when((pl.col("tempMean") < 0.5) & pl.col("tempMean").is_not_null())
@@ -331,28 +354,27 @@ for n in range(1, 6):
         .otherwise(pl.col(f"gammaAbility{n}"))
         .alias(f"gammaAbility{n}")
     )
-    
-    
+
     # Clean up temporary variables
     df = df.drop("tempMean")
 
 # Clean up temporary variables (except gamma columns)
-df = df.drop(["tempXRD", "tempSale", "tempY", "tempX", "tempNonZero", "tempXLag", "l_tempSale"])
+df = df.drop(
+    ["tempXRD", "tempSale", "tempY", "tempX", "tempNonZero", "tempXLag", "l_tempSale"]
+)
 
 # Calculate mean R&D ability across all lag periods
 gamma_cols = [f"gammaAbility{n}" for n in range(1, 6)]
 df = df.with_columns(
-    pl.concat_list([pl.col(col) for col in gamma_cols])
-    .list.mean()
-    .alias("RDAbility")
+    pl.concat_list([pl.col(col) for col in gamma_cols]).list.mean().alias("RDAbility")
 )
 
 # Calculate R&D intensity ratio
 df = df.with_columns(
     pl.when(
-        pl.col("xrd").is_not_null() & 
-        pl.col("sale").is_not_null() & 
-        (pl.col("sale") > 0)
+        pl.col("xrd").is_not_null()
+        & pl.col("sale").is_not_null()
+        & (pl.col("sale") > 0)
     )
     .then(pl.col("xrd") / pl.col("sale"))
     .otherwise(None)
@@ -370,9 +392,8 @@ df = df.with_columns(
 # Create R&D intensity terciles within each time period
 # Convert to pandas for qcut groupby
 df_pandas = df.to_pandas()
-df_pandas['tempRDQuant'] = (
-    df_pandas.groupby('time_avail_m')['tempRD']
-    .transform(lambda x: pd.qcut(x, q=3, labels=False, duplicates='drop') + 1)
+df_pandas["tempRDQuant"] = df_pandas.groupby("time_avail_m")["tempRD"].transform(
+    lambda x: pd.qcut(x, q=3, labels=False, duplicates="drop") + 1
 )
 df = pl.from_pandas(df_pandas)
 
@@ -399,8 +420,6 @@ print("Expanding to monthly observations...")
 
 # Expand annual observations to monthly frequency
 # Create 12 copies of each observation for monthly data
-
-# First, debug the pre-expansion count
 pre_expand_count = len(df)
 print(f"Before expansion: {pre_expand_count:,} observations")
 
@@ -419,9 +438,9 @@ df = df.with_columns(pl.col("time_avail_m").alias("tempTime"))
 
 # Add month offsets (0-11) to create monthly time series
 df = df.with_columns(
-    pl.col("time_avail_m").dt.offset_by(
-        pl.concat_str(pl.col("expand_n"), pl.lit("mo"))
-    ).alias("time_avail_m")
+    pl.col("time_avail_m")
+    .dt.offset_by(pl.concat_str(pl.col("expand_n"), pl.lit("mo")))
+    .alias("time_avail_m")
 )
 
 # Clean up temporary variables

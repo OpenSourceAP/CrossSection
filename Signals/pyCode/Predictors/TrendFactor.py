@@ -1,8 +1,20 @@
-# %%
-# ABOUTME: Calculates TrendFactor following Han, Zhou, Zhu 2016 Table 1
-# ABOUTME: Usage: python3 TrendFactor.py (run from pyCode/ directory)
-# inputs: dailyCRSP.parquet, SignalMasterTable.parquet
-# outputs: TrendFactor.csv
+# ABOUTME: TrendFactor following Han, Zhou, Zhu 2016 Table 1
+# ABOUTME: calculates price trend factor using past 20-day returns and volumes
+
+"""
+TrendFactor.py
+
+Usage:
+    Run from [Repo-Root]/Signals/pyCode/
+    python3 Predictors/TrendFactor.py
+
+Inputs:
+    - dailyCRSP.parquet: Daily CRSP data with columns [permno, date, ret, vol]
+    - SignalMasterTable.parquet: Master table with columns [permno, yyyymm]
+
+Outputs:
+    - TrendFactor.csv: CSV file with columns [permno, yyyymm, TrendFactor]
+"""
 
 import pandas as pd
 import polars as pl
@@ -18,7 +30,7 @@ from utils.asrol import asrol
 from utils.stata_replication import stata_quantile
 
 
-#%% specialized regression utilities
+# %% specialized regression utilities
 # =============================================================================
 # STATA REGRESSION UTILITIES (moved from utils/stata_regress.py)
 # =============================================================================
@@ -513,9 +525,7 @@ def _asreg_cross_sectional(
         single_by = False
 
     if not by_list:
-        raise ValueError(
-            "window=None requires 'by' parameter to specify groups"
-        )
+        raise ValueError("window=None requires 'by' parameter to specify groups")
 
     # Prepare column names
     stat_cols = ["_Nobs", "_R2", "_adjR2", "_sigma"]
@@ -549,7 +559,7 @@ def _asreg_cross_sectional(
 
         # Initialize result row for this group
         result_row = {}
-        
+
         # Add group identifier(s)
         if single_by:
             # For single grouping column, name is a scalar
@@ -621,13 +631,13 @@ def _asreg_cross_sectional(
 
     # Convert to DataFrame
     results_df = pd.DataFrame(results_list)
-    
+
     # If residuals are requested, compute them for all observations
     if compute_residuals:
         # Initialize residuals column with NaNs
         df_with_residuals = df.copy()
-        df_with_residuals['_residuals'] = np.nan
-        
+        df_with_residuals["_residuals"] = np.nan
+
         # For each group, compute residuals
         for name, group in df.groupby(by if single_by else by_list):
             # Get the coefficients for this group
@@ -638,51 +648,49 @@ def _asreg_cross_sectional(
                 group_mask = True
                 for i, col in enumerate(by_list):
                     group_mask = group_mask & (results_df[col] == name[i])
-            
+
             group_coeffs = results_df[group_mask]
-            if len(group_coeffs) == 0 or pd.isna(group_coeffs.iloc[0]['_Nobs']):
+            if len(group_coeffs) == 0 or pd.isna(group_coeffs.iloc[0]["_Nobs"]):
                 continue
-                
+
             # Get coefficient values
             beta_values = []
             for col in X_cols:
-                beta_values.append(group_coeffs.iloc[0][f'_b_{col}'])
+                beta_values.append(group_coeffs.iloc[0][f"_b_{col}"])
             if add_constant:
-                beta_values.append(group_coeffs.iloc[0]['_b_cons'])
+                beta_values.append(group_coeffs.iloc[0]["_b_cons"])
             beta = np.array(beta_values)
-            
+
             # Skip if any coefficient is NaN
             if np.any(np.isnan(beta)):
                 continue
-                
+
             # Compute residuals for this group
             X_group = group[X_cols].values
             y_group = group[y].values
-            
+
             # Add constant if needed
             if add_constant:
                 X_group = np.column_stack([X_group, np.ones(len(X_group))])
-            
+
             # Compute yhat and residuals
             valid_mask = np.isfinite(y_group) & np.all(np.isfinite(X_group), axis=1)
             yhat = X_group @ beta
             residuals = y_group - yhat
-            
+
             # Store residuals
-            df_with_residuals.loc[group.index[valid_mask], '_residuals'] = residuals[valid_mask]
-        
+            df_with_residuals.loc[group.index[valid_mask], "_residuals"] = residuals[
+                valid_mask
+            ]
+
         # Merge residuals into results (each group gets same coefficients but different residuals)
         # For cross-sectional, we return one row per original observation with residuals
-        result_with_residuals = df.merge(
-            results_df,
-            on=by_list,
-            how='left'
-        )
-        result_with_residuals['_residuals'] = df_with_residuals['_residuals']
-        
+        result_with_residuals = df.merge(results_df, on=by_list, how="left")
+        result_with_residuals["_residuals"] = df_with_residuals["_residuals"]
+
         # Return with group columns, regression results, and residuals
-        return result_with_residuals[by_list + all_result_cols + ['_residuals']]
-    
+        return result_with_residuals[by_list + all_result_cols + ["_residuals"]]
+
     # Return with group columns first, then regression results (no residuals)
     return results_df[by_list + all_result_cols]
 
@@ -752,9 +760,13 @@ def asreg(
 
     # Rolling window case - validate parameters
     if time is None:
-        raise ValueError("`time` column must be provided for rolling window regressions.")
+        raise ValueError(
+            "`time` column must be provided for rolling window regressions."
+        )
     if not isinstance(window, int) or window <= 0:
-        raise ValueError("`window` must be a positive integer for rolling window regressions.")
+        raise ValueError(
+            "`window` must be a positive integer for rolling window regressions."
+        )
     if isinstance(by, str):
         by = [by]
     by = list(by) if by is not None else []
@@ -959,67 +971,67 @@ def _compute_residuals_from_coeffs(
     y: str,
     X: List[str],
     coef_df: pd.DataFrame,
-    add_constant: bool = True
+    add_constant: bool = True,
 ) -> np.ndarray:
     """
     Compute residuals = y - X @ beta using pre-computed coefficients.
-    
+
     Parameters
     ----------
     df : DataFrame with original data
     y : str name of dependent variable
-    X : list of str names of independent variables  
+    X : list of str names of independent variables
     coef_df : DataFrame with coefficient columns (_b_*)
     add_constant : whether constant was included in regression
-    
+
     Returns
     -------
     np.ndarray of residuals aligned with df index
     """
     residuals = np.full(len(df), np.nan)
-    
+
     # Get y values
     y_vals = df[y].to_numpy(dtype=float)
-    
+
     # Get X matrix
     X_vals = df[X].to_numpy(dtype=float)
-    
+
     # Coefficient column names
     beta_cols = [f"_b_{x}" for x in X]
     if add_constant:
         beta_cols.append("_b_cons")
-    
+
     # Compute residuals row by row
     for i in range(len(df)):
         # Skip if no regression was run for this row (check _Nobs)
         if np.isnan(coef_df.iloc[i]["_Nobs"]):
             continue
-            
+
         # Skip if y is missing
         if np.isnan(y_vals[i]):
             continue
-            
+
         # Skip if any X is missing
         if np.any(np.isnan(X_vals[i])):
             continue
-        
+
         # Get beta coefficients for this row
         beta = coef_df.iloc[i][beta_cols].to_numpy(dtype=float)
-        
+
         # Skip if any coefficient is NaN (shouldn't happen if _Nobs exists, but be safe)
         if np.any(np.isnan(beta)):
             continue
-        
+
         # Compute yhat = X @ beta
         if add_constant:
             # Last element of beta is constant
             yhat = np.dot(X_vals[i], beta[:-1]) + beta[-1]
         else:
             yhat = np.dot(X_vals[i], beta)
-        
+
         # Compute residual
         residuals[i] = y_vals[i] - yhat
-    
+
     return residuals
 
 
@@ -1086,14 +1098,26 @@ def asreg_collinear(
     # Handle cross-sectional case (window=None)
     if window is None:
         return _asreg_cross_sectional(
-            df, y, X, by, add_constant, drop_collinear, compute_se, compute_residuals, rtol
+            df,
+            y,
+            X,
+            by,
+            add_constant,
+            drop_collinear,
+            compute_se,
+            compute_residuals,
+            rtol,
         )
 
     # Rolling window case - validate parameters
     if time is None:
-        raise ValueError("`time` column must be provided for rolling window regressions.")
+        raise ValueError(
+            "`time` column must be provided for rolling window regressions."
+        )
     if not isinstance(window, int) or window <= 0:
-        raise ValueError("`window` must be a positive integer for rolling window regressions.")
+        raise ValueError(
+            "`window` must be a positive integer for rolling window regressions."
+        )
     if isinstance(by, str):
         by = [by]
     by = list(by) if by is not None else []
@@ -1109,7 +1133,7 @@ def asreg_collinear(
     if time is not None:
         keys = (by or []) + [time]
         gdf = gdf.sort_values(keys, kind="mergesort")  # stable
-    
+
     # Coerce numeric
     X_df = gdf[rhs].copy()
     y_s = gdf[y].copy()
@@ -1124,7 +1148,7 @@ def asreg_collinear(
             f"y column {y} is not numeric; coercing with pd.to_numeric(..., errors='coerce')."
         )
         y_s = pd.to_numeric(y_s, errors="coerce")
-    
+
     idx = gdf.index.to_numpy()
 
     # Augment with constant if requested
@@ -1291,18 +1315,14 @@ def asreg_collinear(
 
     # Assemble output DataFrame (aligned to original df index order)
     out_df = pd.DataFrame(out_cols, index=gdf.index)
-    
+
     # Compute residuals if requested
     if compute_residuals:
         residuals = _compute_residuals_from_coeffs(
-            df=gdf,
-            y=y,
-            X=rhs,
-            coef_df=out_df,
-            add_constant=add_constant
+            df=gdf, y=y, X=rhs, coef_df=out_df, add_constant=add_constant
         )
         out_df["_residuals"] = residuals
-    
+
     # Reindex back to the input df's original order
     out_df = out_df.reindex(df.index)
 
@@ -1538,26 +1558,33 @@ df_final = (
 )
 
 # convert smoothed betas to long
-beta_long = betas_by_month.unpivot(
-    index="time_avail_m", variable_name="name", value_name="EBeta"
-).filter(col("name").str.starts_with("EBeta_")).with_columns(
-    col("name").str.replace("EBeta_", "").cast(pl.Int64).alias("lag")
-).select(
-    ["time_avail_m", "lag", "EBeta"]
+beta_long = (
+    betas_by_month.unpivot(
+        index="time_avail_m", variable_name="name", value_name="EBeta"
+    )
+    .filter(col("name").str.starts_with("EBeta_"))
+    .with_columns(col("name").str.replace("EBeta_", "").cast(pl.Int64).alias("lag"))
+    .select(["time_avail_m", "lag", "EBeta"])
 )
 
 # join the betas to the moving averages and compute the trend factor
 # if there are NAs, TrendFactor is null (not zero!)
-df_final = df_final.join(beta_long, on=["time_avail_m", "lag"], how="left").with_columns(
-    EBeta_MA = pl.col("EBeta") * pl.col("MA")
-).group_by(["permno", "time_avail_m"]).agg(
-    TrendFactor = col('EBeta_MA').sum(),
-    N_MA_used = col('EBeta_MA').is_not_null().sum() # required since python sum of nulls is zero
-).filter(col('N_MA_used') == 11) # 11 is the number of MA used in the regression
+df_final = (
+    df_final.join(beta_long, on=["time_avail_m", "lag"], how="left")
+    .with_columns(EBeta_MA=pl.col("EBeta") * pl.col("MA"))
+    .group_by(["permno", "time_avail_m"])
+    .agg(
+        TrendFactor=col("EBeta_MA").sum(),
+        N_MA_used=col("EBeta_MA")
+        .is_not_null()
+        .sum(),  # required since python sum of nulls is zero
+    )
+    .filter(col("N_MA_used") == 11)
+)  # 11 is the number of MA used in the regression
 
 print(f"Generated TrendFactor values: {len(df_final):,} observations")
 
-#%%
+# %%
 
 print("💾 Saving TrendFactor predictor...")
 save_predictor(df_final, "TrendFactor")

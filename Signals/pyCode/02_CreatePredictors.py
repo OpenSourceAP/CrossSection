@@ -1,26 +1,19 @@
-#!/usr/bin/env python3
 """
-ABOUTME: Create Predictors script - Python equivalent of 02_CreatePredictors.do
-ABOUTME: Executes SignalMasterTable.py then runs all predictor scripts in alphabetical order
-
-This script replicates the Stata 02_CreatePredictors.do workflow:
-1. Creates SignalMasterTable.parquet by running SignalMasterTable.py
-2. Finds all .py files in Predictors/ directory
-3. Executes each predictor script in alphabetical order with timing
-4. Tracks execution results in flags file
-
-Usage:
-  python3 02_CreatePredictors.py
+ABOUTME: Creates SignalMasterTable.parquet then executes all predictor scripts in alphabetical order
+ABOUTME: Tracks execution results, timeouts, and errors with detailed logging
 
 Inputs:
   - SignalMasterTable.py (creates SignalMasterTable.parquet)
-  - All .py files in pyCode/Predictors/ directory
+  - All .py files in Predictors/ directory
 
 Outputs:
   - ../pyData/Intermediate/SignalMasterTable.parquet
   - ../pyData/Predictors/*.csv (one per predictor script)
-  - ../Logs/02_CreatePredictorsFlags.csv
-  - ../Logs/02_CreatePredictors_console.txt
+  - ../Logs/02_CreatePredictorsFlags.csv (execution tracking)
+  - ../Logs/02_CreatePredictors_console.txt (detailed console output)
+
+Usage:
+  python 02_CreatePredictors.py
 """
 
 import os
@@ -34,11 +27,11 @@ from datetime import datetime
 from config import SCRIPT_TIMEOUT_MINUTES
 
 def setup_logging():
-    """Setup logging equivalent to Stata log files"""
+    """Initialize error tracking and console logging"""
     log_dir = Path("../Logs")
     log_dir.mkdir(exist_ok=True)
     
-    # Create error tracking DataFrame (equivalent to 02_CreatePredictorsFlags.dta)
+    # Create error tracking DataFrame for execution monitoring
     error_log = pd.DataFrame(columns=['SignalFile', 'SignalTime', 'lastRun', 'ReturnCode'])
     
     # Initialize console log list for detailed txt output
@@ -49,7 +42,7 @@ def setup_logging():
     return error_log, console_log
 
 def execute_signalmaster_table(console_log):
-    """Execute SignalMasterTable.py first (equivalent to do SignalMasterTable.do)"""
+    """Create the master signal table required by all predictor scripts"""
     script_name = "SignalMasterTable.py"
     start_msg = f"\n🔄 Creating Signal Master Table: {script_name}"
     separator = "=" * 60
@@ -134,7 +127,7 @@ def execute_signalmaster_table(console_log):
     return return_code, execution_time, console_log
 
 def find_predictor_scripts():
-    """Find all .py files in Predictors/ directory (equivalent to filelist)"""
+    """Locate all Python predictor scripts to execute"""
     predictors_dir = Path("Predictors")
     
     if not predictors_dir.exists():
@@ -147,7 +140,7 @@ def find_predictor_scripts():
         if not file.name.startswith("__"):
             py_files.append(file.name)
     
-    # Sort alphabetically (like Stata's sort filenameLower)
+    # Sort alphabetically for consistent execution order
     py_files.sort(key=str.lower)
     
     print(f"Found {len(py_files)} predictor scripts:")
@@ -157,7 +150,7 @@ def find_predictor_scripts():
     return py_files
 
 def execute_predictor_script(script_name, error_log, console_log):
-    """Execute a single predictor script and track results with configurable timeout"""
+    """Run individual predictor script with timeout and error tracking"""
     start_msg = f"\n🔄 Starting: {script_name}"
     separator = "=" * 60
     
@@ -279,7 +272,7 @@ def execute_predictor_script(script_name, error_log, console_log):
     time_msg = f"Execution time: {execution_time:.2f} seconds"
     console_log.append(time_msg)
     
-    # Log results (equivalent to Stata's error tracking)
+    # Record execution results for monitoring
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     new_row = pd.DataFrame({
@@ -294,7 +287,7 @@ def execute_predictor_script(script_name, error_log, console_log):
     return error_log, return_code, console_log
 
 def save_error_log(error_log, console_log):
-    """Save error log to files (equivalent to Stata's save and export)"""
+    """Write execution logs to CSV and text files"""
     csv_path = Path("../Logs/02_CreatePredictorsFlags.csv")
     txt_path = Path("../Logs/02_CreatePredictors_console.txt")
     
@@ -311,7 +304,7 @@ def save_error_log(error_log, console_log):
     print(f"  TXT: {txt_path}")
 
 def main():
-    """Main function mimicking 02_CreatePredictors.do logic"""
+    """Execute signal table creation then all predictor scripts"""
     print("=" * 60)
     print("Create Predictors Script - Python equivalent of 02_CreatePredictors.do")
     print("=" * 60)
@@ -319,7 +312,7 @@ def main():
     # Setup logging
     error_log, console_log = setup_logging()
     
-    # Step 1: Create Signal Master Table (equivalent to do SignalMasterTable.do)
+    # Step 1: Create the master signal table used by all predictors
     print("\nStep 1: Creating Signal Master Table...")
     signalmaster_code, signalmaster_time, console_log = execute_signalmaster_table(console_log)
     
@@ -338,7 +331,7 @@ def main():
         save_error_log(error_log, console_log)
         return
     
-    # Step 3: Execute each predictor script (equivalent to Stata's forvalues loop)
+    # Step 3: Execute each predictor script sequentially with error tracking
     print(f"\nStep 3: Executing {len(predictor_scripts)} predictor scripts...")
     
     failed_scripts = []
@@ -349,10 +342,10 @@ def main():
         if return_code != 0:
             failed_scripts.append(script)
         
-        # Save error log after each script (like Stata does)
+        # Save execution log after each script for monitoring
         save_error_log(error_log, console_log)
     
-    # Final summary (equivalent to Stata's final checks)
+    # Generate final execution summary and report
     print("\n" + "=" * 60)
     print("PREDICTOR CREATION SUMMARY")
     print("=" * 60)

@@ -24,7 +24,7 @@ If you use data or code based on our work, please cite the paper:
 
 If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at [the dedicated data page](https://www.openassetpricing.com). Please see the data page for answers to [FAQs](https://www.openassetpricing.com/faq/).
 
-However, this repo may still be useful for understanding the data.  For example, if you want to know exactly how we construct BrandInvest (Belo, Lin, and Vitorino 2014), you can just open up `BrandInvest.do` in the repo's webpage for [Signals/Code/Predictors/](https://github.com/OpenSourceAP/CrossSection/tree/master/Signals/Code/Predictors)
+However, this repo may still be useful for understanding the data.  For example, if you want to know exactly how we construct BrandInvest (Belo, Lin, and Vitorino 2014), you can just open up `BrandInvest.py` in the repo's webpage for [Signals/pyCode/Predictors/](https://github.com/OpenSourceAP/CrossSection/tree/master/Signals/pyCode/Predictors)
 
 ----
 
@@ -32,51 +32,47 @@ However, this repo may still be useful for understanding the data.  For example,
 
 The code is separated into three folders:
 
-1. `Signals/Code/` Downloads data from WRDS and elsewhere.  Constructs stock-level signals (characteristics) and ouputs to `Signals/Data/`.  Mostly written in Stata.
-2. `Portfolios/Code/` Takes in signals from `Signals/Data/` and outputs portfolios to `Portfolios/Data/`.  Entirely in R.
-3. `Shipping/Code/` You shouldn't need this.  We use this to prepare data for sharing.
+1. `Signals/pyCode/` Downloads data from WRDS and elsewhere, constructs stock-level signals in Python, and outputs to `Signals/pyData/`.
+2. `Portfolios/Code/` Takes in signals and outputs portfolios to `Portfolios/Data/`.  Entirely in R.
+3. `Shipping/Code/` Used to prepare data for sharing.
 
-We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/Code/` and then do your thing.  If you just want to create portfolios, you can skip `Signals/Code/` by directly downloading its output via the [data page](https://www.openassetpricing.com/).  The whole thing is about 15,000 lines, so you might want to pick your battles.
+We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/pyCode/` and then do your thing.  If you just want to create portfolios, you can skip the signal generation by directly downloading its output via the [data page](https://www.openassetpricing.com/).  The whole thing is about 15,000 lines, so you might want to pick your battles.
 
 More details are below.
 
-### 1. Signals/Code/
+### 1. Signals/pyCode/
 
-`master.do` runs everything.  It calls every .do file in the following folders:
+`master.py` runs the end-to-end Python pipeline. It calls the staged scripts in:
 
-* `DataDownloads/` downloads data from WRDS and elsewhere
-* `Predictors/` construct stock-level predictors and outputs to `Signals/Data/Predictors/`
-* `Placebos/` constructs "not predictors" and "indirect evidence" signals and outputs to `Signals/Data/Placebos/` 
+* `DataDownloads/` downloads data from WRDS and elsewhere and writes to `Signals/pyData/`
+* `SignalMasterTable.py` builds the join table used across predictors
+* `Predictors/` constructs stock-level predictors and outputs to `Signals/pyData/Predictors/`
+* `Placebos/` constructs "not predictors" and "indirect evidence" signals and outputs to `Signals/pyData/Placebos/`
 
-`master.do` employs exception handling so if any of these .do files errors out (due to lack of a subscription, code being out of date, etc), it'll keep running and output as much as it can.
-
-The whole thing takes roughly 24 hours, but the predictors will be done much sooner, probably within 12 hours.  You can keep track of how it's going by checking out the log files in `Signals/Logs/`.
+The orchestrator blocks are written to keep running even if a particular download fails (for example due to a missing subscription) so you get as much data as possible. You can track progress in `Signals/Logs/`.
 
 #### Minimal Setup
 
-In master.do, set `pathProject` to the root directory of the project (where `SignalDoc.csv` is located) and `wrdsConnection` to the name you selected for your ODBC connection to WRDS (a.k.a. dsn).
-
-If you don't have an ODBC connection to WRDS, you'll need to set it up.  WRDS provides instructions for [Windows users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-from-your-computer/) and for [WRDS cloud users](https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-stata/stata-wrds-cloud/).  Note that `wrdsConnection` (name of the ODBC connection) in the WRDS cloud example is `"wrds-postgres"`.  If neither of these solutions works, please see our [troubleshooting wiki](https://github.com/OpenSourceAP/CrossSection/wiki/Troubleshooting).
-
+1. From `Signals/pyCode/`, create a Python 3 virtual environment (e.g. `python3 -m venv .venv`) and install the requirements via `pip install -r requirements.txt` after activating the environment. `set_up_pyCode.py` automates these steps if you prefer.
+2. Copy `dotenv.template` to `.env` and populate credentials such as `WRDS_USERNAME`, `WRDS_PASSWORD`, and any other keys you need (e.g. `FRED_API_KEY`).
+3. Run the full pipeline with `python master.py` (from inside `Signals/pyCode/`). You can also run `01_DownloadData.py` and `02_CreatePredictors.py` individually if you just need part of the workflow.
+4. Outputs are written to `Signals/pyData/`, and detailed logs are saved under `Signals/Logs/`.
 
 #### Optional Setup
 
-The minimal setup will allow you to produce the vast majority of signals.  And due to the exception handling in `master.do`, the code will run even if you're not set up to produce the remainder.
+The minimal setup produces the vast majority of signals. Thanks to exception handling, the pipeline will keep going even if a particular source is unavailable.
 
-But if you want signals that use IBES, 13F, OptionMetrics, FRED, or a handful of other random signals, you'll want to do the following:
+To reproduce every signal:
 
-* For IBES, 13F, OptionMetrics, and bid-ask-spread signals: Run `Signals/Code/PrepScripts/master.sh` on the WRDS Cloud, and download the output to `Signals/Data/Prep/`.  See `master.sh` for more details.   <ins>The most important files from this optional setup are `iclink.csv`</ins> and `oclink.csv`</ins>, which allows for merging of IBES, OptionMetrics, and CRSP data.  The code here relies heavily on code by Luis Palacios, Rabih Moussawi, Denys Glushkov, Stacey Jacobsen, Craig Holden, Mihail Velikov, Shane Corwin, and Paul Schultz.
-
-* For signals that use the VIX, inflation, or broker-dealer leverage, you will need to [request an API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html). Before you run the download scripts, save your API key in Stata (either via the context menu or via `set fredkey`).  See [this Stata blog entry](
-https://blog.stata.com/2017/08/08/importing-data-with-import-fred/) for more details.
-
-* For signals that use patent citations, BEA input-output tables, or Compustat customer data, the code uses Stata to call R scripts, and thus this may need some setup.  If you're on a Windows machine, you will need to point `master.do` to your R installation, by setting `RSCRIPT_PATH` to the path of `Rscript.exe`.  If you're on linux, you will need to just make sure that the `rscript` command is executable from the shell.
+* For IBES, 13F, OptionMetrics, and bid-ask spread signals, run the helper scripts in `Signals/pyCode/PrepScripts/` (many are designed for WRDS Cloud) and place the resulting files in `Signals/pyData/Prep/`.
+* For signals that use the VIX, inflation, or broker-dealer leverage, request an [API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html) and add `FRED_API_KEY` to `.env` before running the download scripts.
+* For signals that rely on patent citations, BEA input-output tables, or Compustat customer data, ensure that `Rscript` is available on your system because some helper scripts shell out to R.
 
 ### 2. Portfolios/Code/
 
 `master.R` runs everything. It:
 
-1. Takes in signal data located in `Signals/Data/Predictors/` and `Signals/Data/Placebos/`
+1. Takes in signal data located in `Signals/Data/Predictors/` or `Signals/pyData/Predictors/`, and `Signals/Data/Placebos/` or `Signals/pyData/Placebos/`
 2. Outputs portfolio data to `Portfolios/Data/Portfolios/`
 3. Outputs exhibits found in the paper to `Results/`
 
@@ -94,8 +90,8 @@ You probably want more than Price, Size, and STreversal portfolios, and so you p
 
 There are a couple ways to set up this signal data:
 
-* Run the code in `Signals/Code/` (see above)
-* Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and unzip to `Signals/Data/Predictors/` and `Signals/Data/Placebos/`
+* Run the code in `Signals/pyCode/` (see above).
+* Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and unzip to `Signals/Data/Predictors/` and `Signals/Data/Placebos/`.
 * Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv` and put them in `Signals/Data/Predictors/`).
 
 
@@ -105,48 +101,6 @@ This code zips up the data, makes some quality checks, and copies files for uplo
 
 ----
 
-## Stata and R Setup
-
-Stata code was tested on both Windows and Linux.  Linux was Ubuntu 18.04.5 running Stata 16.1.
-
-R code was tested on 
-
-* Windows 10, Rstudio Version 1.4.1106, R 4.0.5, and Rtools 4.0.0
-* Ubuntu 18.04.5, EMACS 26.1, ESS 17.11, and R 4.0.2
-
-To install the Windows R setup
-
-1. Download and install R from https://cran.r-project.org/bin/windows/base/old/
-2. Download and install Rtools from https://cran.r-project.org/bin/windows/Rtools/history.html
-3. Download and install Rstudio from https://www.rstudio.com/products/rstudio/download/
-4. Add Rtools to path by running in R: `writeLines('PATH="${RTOOLS40_HOME}\\usr\\bin;${PATH}"', con = "~/.Renviron")` 
-	see	https://cran.r-project.org/bin/windows/Rtools/
-
-
-----
-
-## Git Integration
-If you use RStudio, take a look at [Hendrik Bruns' guide](https://web.archive.org/web/20220330020856/https://www.hendrikbruns.tk/post/using-rstudio-and-git-version-control/) to set up version control.
-
-As a stand-alone client for Windows, we recommend [Sourcetree](https://www.sourcetreeapp.com/).
-
-If you use Git, you should definitely add the following lines to .gitignore:
-
-```
-Signals/Data/**
-Shipping/Data/**
-Portfolios/Data/**
-```
-
-These folders contain a ton of data and will make Git slow to a crawl or crash.
-
-
-
-----
-
 ## Contribute
 
 Please let us know if you find typos in the code or think that we should add additional signals. You can let us know about any suggested changes via pull requests for this repo. We will keep the code up to date for other researchers to use it.
-
-
-

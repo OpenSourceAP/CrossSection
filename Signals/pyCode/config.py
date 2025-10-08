@@ -16,3 +16,7 @@ MAX_ROWS_DL = -1
 # 0.5 = 30 seconds (for quick testing, may cause timeouts on large downloads)
 # Used by 01_DownloadData.py orchestrator script
 SCRIPT_TIMEOUT_MINUTES = 60
+
+# Patch Option Metrics Implied Vol signals
+# https://github.com/OpenSourceAP/CrossSection/issues/156
+PATCH_OPTIONM_IV = False

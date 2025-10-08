@@ -5,8 +5,7 @@
 GrLTNOA.py
 
 Usage:
-    cd pyCode/
-    source .venv/bin/activate
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/GrLTNOA.py
 
 Inputs:
@@ -24,7 +23,7 @@ import sys
 import os
 
 # Add utils directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 
@@ -41,7 +40,22 @@ if not m_aCompustat_path.exists():
 df = pd.read_parquet(m_aCompustat_path)
 
 # Keep only the columns we need
-required_cols = ['gvkey', 'permno', 'time_avail_m', 'rect', 'invt', 'ppent', 'aco', 'intan', 'ao', 'ap', 'lco', 'lo', 'at', 'dp']
+required_cols = [
+    "gvkey",
+    "permno",
+    "time_avail_m",
+    "rect",
+    "invt",
+    "ppent",
+    "aco",
+    "intan",
+    "ao",
+    "ap",
+    "lco",
+    "lo",
+    "at",
+    "dp",
+]
 missing_cols = [col for col in required_cols if col not in df.columns]
 if missing_cols:
     raise ValueError(f"Missing required columns in m_aCompustat: {missing_cols}")
@@ -55,21 +69,21 @@ print(f"Loaded m_aCompustat: {df.shape[0]} rows, {df.shape[1]} columns")
 # Remove duplicate permno-month observations, keeping first occurrence
 print("Removing duplicate observations...")
 initial_count = len(df)
-df = df.drop_duplicates(subset=['permno', 'time_avail_m'], keep='first')
+df = df.drop_duplicates(subset=["permno", "time_avail_m"], keep="first")
 dropped_count = initial_count - len(df)
 if dropped_count > 0:
     print(f"Dropped {dropped_count} duplicate observations")
 
 # Sort data by firm and time for panel data structure
 print("Setting up panel data (sorting by permno, time_avail_m)...")
-df = df.sort_values(['permno', 'time_avail_m'])
+df = df.sort_values(["permno", "time_avail_m"])
 
 # Calculate 12-month lags for all required variables
 print("Calculating 12-month lags...")
-lag_vars = ['rect', 'invt', 'ppent', 'aco', 'intan', 'ao', 'ap', 'lco', 'lo', 'at']
+lag_vars = ["rect", "invt", "ppent", "aco", "intan", "ao", "ap", "lco", "lo", "at"]
 
 for var in lag_vars:
-    df[f'l12_{var}'] = df.groupby('permno')[var].shift(12)
+    df[f"l12_{var}"] = df.groupby("permno")[var].shift(12)
 
 # Calculate GrLTNOA as change in long-term net operating assets scaled by average total assets
 # Formula: Current LTNOA/AT - Lagged LTNOA/AT - Working Capital Adjustment
@@ -77,23 +91,46 @@ for var in lag_vars:
 print("Calculating GrLTNOA...")
 
 # Current period LTNOA/at
-current_ltnoa = (df['rect'] + df['invt'] + df['ppent'] + df['aco'] + df['intan'] + df['ao'] - 
-                 df['ap'] - df['lco'] - df['lo']) / df['at']
+current_ltnoa = (
+    df["rect"]
+    + df["invt"]
+    + df["ppent"]
+    + df["aco"]
+    + df["intan"]
+    + df["ao"]
+    - df["ap"]
+    - df["lco"]
+    - df["lo"]
+) / df["at"]
 
 # Lagged LTNOA/at
-lagged_ltnoa = (df['l12_rect'] + df['l12_invt'] + df['l12_ppent'] + df['l12_aco'] + df['l12_intan'] + df['l12_ao'] - 
-                df['l12_ap'] - df['l12_lco'] - df['l12_lo']) / df['l12_at']
+lagged_ltnoa = (
+    df["l12_rect"]
+    + df["l12_invt"]
+    + df["l12_ppent"]
+    + df["l12_aco"]
+    + df["l12_intan"]
+    + df["l12_ao"]
+    - df["l12_ap"]
+    - df["l12_lco"]
+    - df["l12_lo"]
+) / df["l12_at"]
 
 # Working capital adjustment: changes in current assets minus changes in current liabilities minus depreciation, scaled by average total assets
-wc_adjustment = ((df['rect'] - df['l12_rect']) + (df['invt'] - df['l12_invt']) + (df['aco'] - df['l12_aco']) - 
-                 ((df['ap'] - df['l12_ap']) + (df['lco'] - df['l12_lco'])) - df['dp']) / ((df['at'] + df['l12_at']) / 2)
+wc_adjustment = (
+    (df["rect"] - df["l12_rect"])
+    + (df["invt"] - df["l12_invt"])
+    + (df["aco"] - df["l12_aco"])
+    - ((df["ap"] - df["l12_ap"]) + (df["lco"] - df["l12_lco"]))
+    - df["dp"]
+) / ((df["at"] + df["l12_at"]) / 2)
 
 # Calculate GrLTNOA
-df['GrLTNOA'] = current_ltnoa - lagged_ltnoa - wc_adjustment
+df["GrLTNOA"] = current_ltnoa - lagged_ltnoa - wc_adjustment
 
 print(f"Calculated GrLTNOA for {df['GrLTNOA'].notna().sum()} observations")
 
 # Save predictor output in standardized format
-save_predictor(df, 'GrLTNOA')
+save_predictor(df, "GrLTNOA")
 
 print("GrLTNOA.py completed successfully")

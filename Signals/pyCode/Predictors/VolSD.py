@@ -1,7 +1,11 @@
 # ABOUTME: Volume variance following Chordia, Subra, Anshuman 2001, Table 5B DVOL
 # ABOUTME: calculates rolling standard deviation of monthly trading volume over past 36 months
+
 """
+VolSD.py
+
 Usage:
+    Run from [Repo-Root]/Signals/pyCode/
     python3 Predictors/VolSD.py
 
 Inputs:
@@ -9,13 +13,13 @@ Inputs:
 
 Outputs:
     - VolSD.csv: CSV file with columns [permno, yyyymm, VolSD]
-    - VolSD = 36-month rolling standard deviation of vol, min 24 observations required
 """
 
 import polars as pl
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
 print("=" * 80)
@@ -33,12 +37,14 @@ df = monthly_crsp.select(["permno", "time_avail_m", "vol"])
 
 # Signal construction - 36-month rolling standard deviation of volume
 print("🧮 Computing 36-month rolling volume standard deviation...")
-df = df.with_columns([
-    pl.col("vol")
-    .rolling_std(window_size=36, min_samples=24)
-    .over("permno")
-    .alias("VolSD")
-])
+df = df.with_columns(
+    [
+        pl.col("vol")
+        .rolling_std(window_size=36, min_samples=24)
+        .over("permno")
+        .alias("VolSD")
+    ]
+)
 
 # Select final data
 result = df.select(["permno", "time_avail_m", "VolSD"])

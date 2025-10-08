@@ -1,9 +1,18 @@
-#!/usr/bin/env python3
 """
-Download Data script - Python equivalent of 01_DownloadData.do
+ABOUTME: Executes all data download scripts in DataDownloads/ directory sequentially
+ABOUTME: Tracks execution results, timeouts, and errors with detailed logging
 
-This script finds all .py files in DataDownloads/ and executes them,
-mimicking the Stata script's filelist and loop functionality.
+Inputs:
+  - All .py files in DataDownloads/ directory
+  - Optional preprocessed files in ../pyData/Prep/
+
+Outputs:
+  - Various data files in ../pyData/ (location depends on individual scripts)
+  - ../Logs/01_DownloadDataFlags.csv (execution tracking)
+  - ../Logs/01_DownloadData_console.txt (detailed console output)
+
+Usage:
+  python 01_DownloadData.py
 """
 
 import os
@@ -17,11 +26,11 @@ from datetime import datetime
 from config import SCRIPT_TIMEOUT_MINUTES
 
 def setup_logging():
-    """Setup logging equivalent to Stata log files"""
+    """Initialize error tracking and console logging"""
     log_dir = Path("../Logs")
     log_dir.mkdir(exist_ok=True)
     
-    # Create error tracking DataFrame (equivalent to 01_DownloadDataFlags.dta)
+    # Create error tracking DataFrame for execution monitoring
     error_log = pd.DataFrame(columns=['DataFile', 'DataTime', 'ReturnCode', 'Message'])
     
     # Initialize console log list for detailed txt output
@@ -32,7 +41,7 @@ def setup_logging():
     return error_log, console_log
 
 def find_download_scripts():
-    """Find all .py files in DataDownloads/ directory"""
+    """Locate all Python download scripts to execute"""
     downloads_dir = Path("DataDownloads")
     
     if not downloads_dir.exists():
@@ -45,7 +54,7 @@ def find_download_scripts():
         if not file.name.startswith("__"):
             py_files.append(file.name)
     
-    # Sort alphabetically (like Stata's sort filename)
+    # Sort alphabetically for consistent execution order
     py_files.sort()
     
     print(f"Found {len(py_files)} download scripts:")
@@ -55,7 +64,7 @@ def find_download_scripts():
     return py_files
 
 def execute_script(script_name, error_log, console_log):
-    """Execute a single download script and track results with configurable timeout"""
+    """Run individual download script with timeout and error tracking"""
     start_msg = f"\n🔄 Starting: {script_name}"
     separator = "=" * 60
     
@@ -197,7 +206,7 @@ def execute_script(script_name, error_log, console_log):
     return error_log, return_code, console_log
 
 def save_error_log(error_log, console_log):
-    """Save error log to files (equivalent to Stata's save and export)"""
+    """Write execution logs to CSV and text files"""
     csv_path = Path("../Logs/01_DownloadDataFlags.csv")
     txt_path = Path("../Logs/01_DownloadData_console.txt")
     
@@ -214,7 +223,7 @@ def save_error_log(error_log, console_log):
     print(f"  TXT: {txt_path}")
 
 def check_optional_files():
-    """Check for optional preprocessed files (equivalent to Stata's confirm file checks)"""
+    """Verify availability of optional preprocessed data files"""
     print("Checking for optional preprocessed files...")
     
     optional_files = [
@@ -239,7 +248,7 @@ def check_optional_files():
         print("✓ All optional preprocessed files found")
 
 def main():
-    """Main function mimicking 01_DownloadData.do logic"""
+    """Execute all download scripts with comprehensive logging"""
     print("=" * 60)
     print("Data Download Script - Python equivalent of 01_DownloadData.do")
     print("=" * 60)
@@ -257,7 +266,7 @@ def main():
         print("No download scripts found in DataDownloads/")
         return
     
-    # Execute each script (equivalent to Stata's forvalues loop)
+    # Execute each script sequentially with error tracking
     print(f"\nExecuting {len(download_scripts)} download scripts...")
     
     failed_scripts = []
@@ -268,10 +277,10 @@ def main():
         if return_code != 0:
             failed_scripts.append(script)
         
-        # Save error log after each script (like Stata does)
+        # Save execution log after each script for monitoring
         save_error_log(error_log, console_log)
     
-    # Final summary (equivalent to Stata's final checks)
+    # Generate final execution summary and report
     print("\n" + "=" * 60)
     print("DOWNLOAD SUMMARY")
     print("=" * 60)

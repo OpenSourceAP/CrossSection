@@ -29,11 +29,20 @@ Signals/pyData/*
 __*__*
 
 # Testing and archive
+Journal/
+Plan/
+Logs/
 deleteme*
 Signals/Debug/*
 Signals/pyCode/Debug/*
 Signals/zzz-archive/*
 Signals/Human/*
+Signals/pyCode/dev/*
+
+# Testing exceptions
+!Signals/Logs/testout_predictors.md
+!Signals/Logs/02_CreatePredictors_console.txt
+!Signals/Logs/02_CreatePredictorsFlags.csv
 
 # Other
 Portfolios/Code/Rplots.pdf

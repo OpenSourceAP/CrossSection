@@ -14,89 +14,93 @@ Outputs:
     - betaVIX = coefficient on daily change in VIX from 1-month rolling regression (20-day window, min 15 obs)
 """
 
+import os
+import sys
+
+import pandas as pd
 import polars as pl
 import polars_ols as pls  # Registers .least_squares namespace
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 
-print("Starting ZZ2_betaVIX.py...")
 
-# Data load
-print("Loading data...")
+print("=" * 80)
+print("ZZ2_betaVIX.py")
+print("Generating betaVIX predictor from daily market and VIX data")
+print("=" * 80)
+
+# DATA LOAD
+print("Loading daily datasets...")
+print("Loading dailyCRSP.parquet...")
 daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+print(f"Loaded daily CRSP observations: {len(daily_crsp):,}")
+
+print("Loading dailyFF.parquet...")
 daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
+print(f"Loaded daily Fama-French observations: {len(daily_ff):,}")
+
+print("Loading d_vix.parquet...")
 d_vix = pl.read_parquet("../pyData/Intermediate/d_vix.parquet")
+print(f"Loaded daily VIX change observations: {len(d_vix):,}")
 
-# Select required columns
-df = daily_crsp.select(["permno", "time_d", "ret"])
-
-# Merge with FF data
-df = df.join(
-    daily_ff.select(["time_d", "rf", "mktrf"]),
-    on="time_d",
-    how="inner"
+# MERGE DATA SOURCES
+print("Merging CRSP returns with factors and VIX changes...")
+df = (
+    daily_crsp.select(["permno", "time_d", "ret"])
+    .join(daily_ff.select(["time_d", "rf", "mktrf"]), on="time_d", how="inner")
+    .with_columns((pl.col("ret") - pl.col("rf")).alias("ret_excess"))
+    .join(d_vix.select(["time_d", "dVIX"]), on="time_d", how="inner")
+    .sort(["permno", "time_d"])
 )
+print(f"Combined daily panel observations: {len(df):,}")
+print(f"Unique permnos in panel: {df['permno'].n_unique():,}")
 
-# Calculate excess return
-df = df.with_columns([
-    (pl.col("ret") - pl.col("rf")).alias("ret_excess")
-])
-
-# Merge with VIX data
-df = df.join(
-    d_vix.select(["time_d", "dVIX"]),
-    on="time_d",
-    how="inner"
-)
-
-# Critical: Sort data first (from Beta.py success pattern)
-df = df.sort(["permno", "time_d"])
-
-# Set up time index for rolling window
-df = df.with_columns([
-    pl.int_range(pl.len()).over("permno").alias("time_temp")
-])
-
-# Use direct polars-ols for rolling regression
-# Rolling regression of excess returns on market factor and VIX changes using 20-day window with minimum 15 observations
-
-# Sort is already done above
+# ROLLING REGRESSION
+print("Running rolling 20-day regressions (min 15 obs) per permno...")
 df = df.with_columns(
-    pl.col("ret_excess").least_squares.rolling_ols(
-        pl.col("mktrf"), pl.col("dVIX"),
+    pl.col("ret_excess")
+    .least_squares.rolling_ols(
+        pl.col("mktrf"),
+        pl.col("dVIX"),
         window_size=20,
         min_periods=15,
         mode="coefficients",
         add_intercept=True,
-        null_policy="drop"
-    ).over("permno").alias("coef")
-).with_columns([
-    pl.col("coef").struct.field("const").alias("b_const"),
-    pl.col("coef").struct.field("mktrf").alias("b_mktrf"),
-    pl.col("coef").struct.field("dVIX").alias("b_dVIX")
-])
+        null_policy="drop",
+    )
+    .over("permno")
+    .alias("coef")
+).with_columns(pl.col("coef").struct.field("dVIX").alias("betaVIX"))
+print("Extracted betaVIX coefficients from rolling regressions")
 
-# Extract betaVIX coefficient from dVIX regression term
-df = df.with_columns([
-    pl.col("b_dVIX").alias("betaVIX")
-])
+# MONTHLY AGGREGATION
+print("Aggregating daily coefficients to month-end values...")
+monthly = (
+    df.drop("coef")
+    .with_columns(pl.col("time_d").dt.truncate("1mo").alias("time_avail_m"))
+    .sort(["permno", "time_avail_m", "time_d"])
+    .group_by(["permno", "time_avail_m"])
+    .agg(pl.col("betaVIX").drop_nulls().last().alias("betaVIX"))
+    .select(["permno", "time_avail_m", "betaVIX"])
+)
+print(f"Monthly betaVIX rows: {len(monthly):,}")
 
-# Convert to monthly and keep last observation per month
-df = df.with_columns([
-    pl.col("time_d").dt.truncate("1mo").alias("time_avail_m")
-])
+if len(monthly) > 0:
+    monthly_pd = monthly.to_pandas()
+    print("betaVIX summary stats:")
+    print(f"  Mean: {monthly_pd['betaVIX'].mean():.6f}")
+    print(f"  Std: {monthly_pd['betaVIX'].std():.6f}")
+    print(f"  Min: {monthly_pd['betaVIX'].min():.6f}")
+    print(f"  Max: {monthly_pd['betaVIX'].max():.6f}")
 
-# Keep last non-missing betaVIX per permno-month
-df = df.sort(["permno", "time_avail_m", "time_d"])
-df = df.group_by(["permno", "time_avail_m"]).agg([
-    pl.col("betaVIX").drop_nulls().last().alias("betaVIX")
-])
+    # SAVE OUTPUT
+    print("Saving betaVIX predictor...")
+    save_predictor(monthly_pd, "betaVIX")
+    print("betaVIX predictor saved")
+else:
+    print("No betaVIX values produced; skipping save")
 
-# Select final data
-result = df.select(["permno", "time_avail_m", "betaVIX"])
-
-# Save predictor
-save_predictor(result, "betaVIX")
-print("ZZ2_betaVIX.py completed successfully")
+print("=" * 80)
+print("betaVIX pipeline complete")
+print("=" * 80)

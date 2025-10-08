@@ -1,0 +1,59 @@
+# ABOUTME: Processes high-frequency bid-ask spread data from preprocessed CSV file
+# ABOUTME: Converts yearm format to time_avail_m and creates hf_spread from espread_pct_mean
+"""
+Inputs:
+- ../pyData/Prep/hf_monthly.csv (preprocessed high-frequency data with yearm and espread_pct_mean)
+
+Outputs:
+- ../pyData/Intermediate/hf_spread.parquet
+
+How to run: python3 BidAskSpreads.py
+"""
+
+import pandas as pd
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import MAX_ROWS_DL
+
+print("Processing high-frequency bid-ask spread data...")
+
+# Load input data from preprocessed CSV
+input_file = "../pyData/Prep/hf_monthly.csv"
+
+data = pd.read_csv(input_file)
+print(f"Loaded {len(data)} records from {input_file}")
+
+# Parse yearm string format (YYYYMM) into year and month components
+data['yearm'] = data['yearm'].astype(str)
+data['y'] = data['yearm'].str[:4].astype(int)
+data['m'] = data['yearm'].str[4:6].astype(int)
+
+# Create monthly period index from year and month
+data['time_avail_m'] = pd.PeriodIndex.from_fields(
+    year=data['y'], month=data['m'], freq='M'
+)
+
+# Create hf_spread variable from espread_pct_mean
+data['hf_spread'] = data['espread_pct_mean']
+
+# Select final columns and clean data
+data = data[['permno', 'time_avail_m', 'hf_spread']].copy()
+data = data.dropna()
+print(f"After dropping missing values: {len(data)} records")
+
+# Optimize data types
+data['permno'] = data['permno'].astype('int64')
+data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
+
+# Apply debugging row limit if configured
+if MAX_ROWS_DL > 0:
+    data = data.head(MAX_ROWS_DL)
+    print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+
+# Save processed data to parquet
+output_file = "../pyData/Intermediate/hf_spread.parquet"
+data.to_parquet(output_file, index=False)
+
+print(f"Saved {len(data)} records to {output_file}")
+print("High-frequency bid-ask spread processing completed successfully.")
