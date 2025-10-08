@@ -1,4 +1,3 @@
-#%%
 # ABOUTME: Analyst Recommendations and Short Interest following Drake, Rees and Swanson 2011, Table 7b
 # ABOUTME: Binary signal: 1 for lowest quintile short interest & recommendations, 0 for highest quintiles
 """
@@ -29,8 +28,6 @@ print("🏗️  Recomm_ShortInterest.py")
 print("Generating Recommendation and Short Interest predictor")
 print("=" * 80)
 
-
-#%
 # ===================================================================
 # STEP 1: PREPARE CONSENSUS RECOMMENDATION DATA
 # ===================================================================
@@ -71,8 +68,10 @@ ibes_recs = ibes_recs.with_columns(
 #%%
 # keep last recommendation for each tickerIBES-amaskcd-time_avail_m
 # p 5 "We use only the most recent individual analyst recommendation"
-ibes_recs = ibes_recs.group_by(
-    ["tickerIBES", "time_avail_m", "amaskcd"], maintain_order=True).last()
+# NOTE: explicit sort + unique keeps the final observation deterministically
+ibes_recs = ibes_recs.sort(["tickerIBES", "amaskcd", "time_avail_m", "anndats"]).unique(
+    subset=["tickerIBES", "time_avail_m", "amaskcd"], keep="last"
+)
 
 
 # assume recommendation is valid for recc_extension months after the anndats
@@ -95,8 +94,16 @@ ibes_recs = fill_date_gaps(ibes_recs,"ticker_analyst","time_avail_m","1mo",
 ibes_recs = ibes_recs.with_columns(
     ireccd12 = pl.col('ireccd_ok') 
 ).with_columns(
-    pl.col('anndats').forward_fill().over('ticker_analyst'),
-    pl.col('ireccd12').forward_fill().over('ticker_analyst')
+    pl.col('anndats')
+    .sort_by('time_avail_m')
+    .forward_fill()
+    .over('ticker_analyst')
+    .alias('anndats'),
+    pl.col('ireccd12')
+    .sort_by('time_avail_m')
+    .forward_fill()
+    .over('ticker_analyst')
+    .alias('ireccd12')
 ).with_columns(
     pl.when(
         pl.col('time_avail_m') > pl.col('anndats').dt.offset_by(rec_extension)
@@ -107,12 +114,13 @@ ibes_recs = ibes_recs.with_columns(
     ).alias('ireccd12')
 )
 
-
-#%%
-
 # take mean across analysts for each stock-month
 stock_rec = ibes_recs.with_columns(
-    pl.col('tickerIBES').forward_fill().over('ticker_analyst')
+    pl.col('tickerIBES')
+    .sort_by('time_avail_m')
+    .forward_fill()
+    .over('ticker_analyst')
+    .alias('tickerIBES')
 ).group_by(["tickerIBES", "time_avail_m"]).agg(
     pl.col("ireccd12").mean()
 ).filter(
@@ -121,7 +129,6 @@ stock_rec = ibes_recs.with_columns(
 
 print(f"After taking mean recommendation within each stock-month: {len(stock_rec):,} observations")
 
-#%%
 
 # ===================================================================
 # STEP 2: MERGE RECOMMENDATIONS AND SHORT INTEREST ONTO SIGNALMASTER
@@ -160,7 +167,6 @@ short_interest = short_interest.with_columns(pl.col("gvkey").cast(pl.Float64))
 df = df.join(short_interest, on=["gvkey", "time_avail_m"], how="inner")
 print(f"After merging with short interest: {len(df):,} observations")
 
-
 # merge with recommendations
 df = df.join(stock_rec, on=["tickerIBES", "time_avail_m"], how="inner")
 print(f"After merging with recommendations: {len(df):,} observations")
@@ -197,8 +203,6 @@ df_pandas['QuintConsRecomm'] = fastxtile(df_pandas, "ConsRecomm", by="time_avail
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-#%%
-
 # Define binary signal: pessimistic vs optimistic cases
 # 1 if both QuintShortInterest == 1 and QuintConsRecomm == 1 (pessimistic)
 # 0 if both QuintShortInterest == 5 and QuintConsRecomm == 5 (optimistic)
@@ -211,7 +215,6 @@ df = df.with_columns(
     .alias("Recomm_ShortInterest")
 )
 
-
 # Show distribution of signal assignments
 print("--- Signal summary ---")
 signal_counts = df.group_by("Recomm_ShortInterest").agg(pl.len().alias("count"))
@@ -219,11 +222,9 @@ print(f"Signal distribution: {signal_counts}")
 print("Time period:")
 print(f"{df['time_avail_m'].dt.date().min()} to {df['time_avail_m'].dt.date().max()}")
 
-
 # ===================================================================
 # STEP 4: SAVE OUTPUT
 # ===================================================================
 print("💾 Saving Recomm_ShortInterest predictor...")
 save_predictor(df, "Recomm_ShortInterest")
 print("✅ Recomm_ShortInterest.csv saved successfully")
-
