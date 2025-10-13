@@ -5,10 +5,10 @@
 test_placebos.py
 
 Usage:
-    cd pyCode/
+    cd Signals/pyCode/
     source .venv/bin/activate
-    python3 utils/test_placebos.py                    # Test all placebos
-    python3 utils/test_placebos.py --placebos AMq     # Test specific placebo
+    python3 StataComparison/test_placebos.py                    # Test all placebos
+    python3 StataComparison/test_placebos.py --placebos AMq     # Test specific placebo
 
 Precision Validation (per CLAUDE.md and DocsForClaude/leg4-Placebos.md):
 1. Columns: Column names and order match exactly

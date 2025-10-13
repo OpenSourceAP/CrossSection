@@ -5,18 +5,20 @@
 pchsaleinv.py
 
 Inputs:
-    - m_aCompustat.parquet: gvkey, permno, time_avail_m, sale, invt columns
+    - ../pyData/Intermediate/m_aCompustat.parquet: gvkey, permno, time_avail_m, sale, invt columns.
 
 Outputs:
-    - pchsaleinv.csv: permno, yyyymm, pchsaleinv columns
+    - ../pyData/Placebos/pchsaleinv.csv: permno, yyyymm (time_avail_m), pchsaleinv columns.
 
-Usage:
-    cd pyCode
-    source .venv/bin/activate  
+How to run:
+    cd Signals/pyCode
+    source .venv/bin/activate
+    python3 Placebos/pchsaleinv.py
+
+Example:
     python3 Placebos/pchsaleinv.py
 """
 
-import pandas as pd
 import polars as pl
 import sys
 import os
@@ -49,13 +51,15 @@ df = df.sort(['permno', 'time_avail_m'])
 
 # gen pchsaleinv = ( (sale/invt)-(l12.sale/l12.invt) ) / (l12.sale/l12.invt)
 print("Computing 12-month lags using stata_multi_lag...")
-
-# Convert to pandas for stata_multi_lag
-df_pandas = df.to_pandas()
-df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', ['sale', 'invt'], [12], freq='M', prefix='l')
-
-# Convert back to polars
-df = pl.from_pandas(df_pandas)
+df = stata_multi_lag(
+    df,
+    group_col='permno',
+    time_col='time_avail_m',
+    value_col=['sale', 'invt'],
+    lag_list=[12],
+    freq='M',
+    prefix='l',
+)
 
 print("Computing pchsaleinv...")
 # Calculate the components with proper null handling

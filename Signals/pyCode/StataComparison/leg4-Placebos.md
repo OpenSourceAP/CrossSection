@@ -30,7 +30,7 @@ How to interpret various variable types found in pyData/Intermediate/
   - Validation checks the Simple and Precision requirements below
 
 ### Precision requirements:
-**IMPORTANT**: Precision requirements are checked by running `python3 utils/test_placebos.py`. This script outputs `Logs/testout_placebos.md`. Here, 'common observations' are observations that are in both Stata and Python.
+**IMPORTANT**: Precision requirements are checked by running `python3 StataComparison/test_placebos.py`. This script outputs `Logs/testout_placebos.md`. Here, 'common observations' are observations that are in both Stata and Python.
 
 1. Columns: Column names and order match exactly
   - This is trivial if the indexes match
@@ -47,4 +47,3 @@ How to interpret various variable types found in pyData/Intermediate/
           - [customerMom](#customermom) (138)      
 3. Precision1: For common observations, the percentage for which std_diff >= TOL_DIFF_1 is less than TOL_OBS_1. std_diff is the difference between the python and stata values, divided by the standard deviation of all stata values.
 4. Precision2: For common observations, Pth percentile absolute difference < TOL_DIFF_2
-

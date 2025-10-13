@@ -121,8 +121,16 @@ def main():
         print(f"ERROR in predictor creation: {e}")
         sys.exit(1)
 
-    # TODO: Generate placebo signals for validation
-    # print("\n3. Creating placebos...")
+    # Generate placebos
+    print("\n3. Creating placebos...")
+    try:
+        # Use subprocess.run without capture_output for real-time streaming
+        result = subprocess.run([sys.executable, "-u", "03_CreatePlacebos.py"],
+                              check=True)
+        print("✓ Placebo creation completed")
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR in placebo creation: {e}")
+        sys.exit(1)
 
     print("\n" + "=" * 60)
     print("Master script completed successfully!")
