@@ -18,15 +18,14 @@ Usage:
     python3 Placebos/BetaSquared.py
 """
 
-import pandas as pd
 import polars as pl
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
-from utils.asreg import asreg
 
 print("Starting BetaSquared.py")
 
@@ -70,26 +69,23 @@ df = df.with_columns([
 # Stata: bys permno (time_avail_m): gen time_temp = _n
 # xtset permno time_temp
 # asreg retrf ewmktrf, window(time_temp 60) min(20) by(permno)
-print("Computing rolling CAPM beta...")
-print("Running asreg with 60-month rolling window, minimum 20 observations...")
-
-# Use our asreg utility function
-df = asreg(
-    df,
-    y="retrf",
-    X=["ewmktrf"], 
-    by=["permno"],
-    t="time_avail_m",
-    mode="rolling",
-    window_size=60,
-    min_samples=20,
-    outputs=["coef"],
-    coef_prefix="b_"
-)
-
-# rename _b_ewmktrf Beta
-# Stata names the coefficient _b_ewmktrf, our utility names it b_ewmktrf
-df = df.rename({'b_ewmktrf': 'Beta'})
+print("Computing rolling CAPM beta with 60-month window...")
+df = df.sort(['permno', 'time_avail_m'])
+df = df.with_columns(
+    pl.col('retrf')
+    .least_squares.rolling_ols(
+        pl.col('ewmktrf'),
+        window_size=60,
+        min_periods=20,
+        mode='coefficients',
+        add_intercept=True,
+        null_policy='drop'
+    )
+    .over('permno')
+    .alias('coef')
+).with_columns([
+    pl.col('coef').struct.field('ewmktrf').alias('Beta')
+])
 
 # gen BetaSquared = Beta^2
 print("Computing BetaSquared...")

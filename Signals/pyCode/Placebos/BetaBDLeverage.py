@@ -18,16 +18,14 @@ Usage:
     python3 Placebos/BetaBDLeverage.py
 """
 
-import pandas as pd
 import polars as pl
-import numpy as np
+import polars_ols as pls  # Registers .least_squares namespace
 import sys
 import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
-from utils.asreg import asreg
 
 print("Starting BetaBDLeverage.py")
 
@@ -114,28 +112,32 @@ df_quarterly = df_quarterly.with_columns([
 
 # asreg RetQ levfac, window(tempTime 40) min(20) by(permno)
 print("Running rolling regressions with 40-quarter window...")
-df_regression = asreg(
-    df_quarterly, 
-    y="RetQ", 
-    X=["levfac"], 
-    by=["permno"], 
-    t="tempTime", 
-    mode="rolling", 
-    window_size=40, 
-    min_samples=20,
-    outputs=["coef"]
-)
+df_quarterly = df_quarterly.sort(['permno', 'tempTime'])
+df_quarterly = df_quarterly.with_columns(
+    pl.col('RetQ')
+    .least_squares.rolling_ols(
+        pl.col('levfac'),
+        window_size=40,
+        min_periods=20,
+        mode='coefficients',
+        add_intercept=True,
+        null_policy='drop'
+    )
+    .over('permno')
+    .alias('coef')
+).with_columns([
+    pl.col('coef').struct.field('levfac').alias('BetaRaw')
+])
 
 # * Lag by one quarter to make sure that beta is available
 # gen BetaBDLeverage = l._b_levfac
 print("Creating lagged beta...")
-df_regression = df_regression.sort(['permno', 'tempTime'])
-df_regression = df_regression.with_columns([
-    pl.col('coef').struct.field('levfac').shift(1).over('permno').alias('BetaBDLeverage')
+df_quarterly = df_quarterly.with_columns([
+    pl.col('BetaRaw').shift(1).over('permno').alias('BetaBDLeverage')
 ])
 
 # keep permno year qtr BetaBDLeverage
-regression_result = df_regression.select(['permno', 'year', 'qtr', 'BetaBDLeverage'])
+regression_result = df_quarterly.select(['permno', 'year', 'qtr', 'BetaBDLeverage'])
 
 print(f"After regression: {len(regression_result)} rows")
 
