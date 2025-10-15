@@ -21,7 +21,8 @@ daily_crsp = pd.read_parquet('../pyData/Intermediate/dailyCRSP.parquet',
 # Convert time_d to monthly periods (equivalent to mofd)
 daily_crsp['time_avail_m'] = daily_crsp['time_d'].dt.to_period('M').dt.start_time
 
-# Compute illiquidity with explicit null handling
+# Compute Amihud illiquidity, dropping zero volume obs
+daily_crsp = daily_crsp[daily_crsp['vol'] != 0]
 daily_crsp['ill'] = (daily_crsp['ret'].abs() / (daily_crsp['prc'].abs() * daily_crsp['vol'])) * 1e6
 
 # Collapse by permno and time_avail_m to get mean illiquidity
