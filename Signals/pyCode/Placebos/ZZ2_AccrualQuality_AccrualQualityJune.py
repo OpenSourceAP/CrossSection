@@ -14,6 +14,16 @@ Outputs:
 Usage:
     cd Signals/pyCode
     python3 Placebos/ZZ2_AccrualQuality_AccrualQualityJune.py
+
+Notes:
+    - Stata’s industry-by-year regressions rely on its `regress` machinery with
+      collinearity checks, so this script uses `statsmodels` via `utils.stata_regress.regress`
+      instead of `polars` rolling OLS to reproduce the exact sample filtering and
+      dropped-column behavior.
+    - Fiscal-year gaps must break lags/leads the way Stata’s `l.` operator does, so
+      custom lag helpers enforce the "only when years are consecutive" rule; the
+      generic `stata_multi_lag` helper is avoided because it cannot detect these
+      gaps when operating without calendar backfilling.
 """
 
 from __future__ import annotations
