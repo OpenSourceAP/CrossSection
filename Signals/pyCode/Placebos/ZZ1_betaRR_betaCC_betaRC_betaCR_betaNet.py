@@ -1,3 +1,20 @@
+"""
+Inputs:
+    - ../pyData/Intermediate/dailyCRSP.parquet (permno, time_d, ret, vol, prc)
+    - ../pyData/Intermediate/monthlyCRSP.parquet (permno, time_avail_m, ret, prc, exchcd, shrout)
+    - ../pyData/Intermediate/monthlyMarket.parquet (time_avail_m, vwretd, usdval)
+Outputs:
+    - ../pyData/Placebos/betaRR.csv
+    - ../pyData/Placebos/betaCC.csv
+    - ../pyData/Placebos/betaRC.csv
+    - ../pyData/Placebos/betaCR.csv
+    - ../pyData/Placebos/betaNet.csv
+How to run:
+    python ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py
+Example:
+    python ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py
+"""
+
 # ABOUTME: Calculates liquidity betas (betaRR, betaCC, betaRC, betaCR, betaNet) using Acharya-Pedersen methodology with polars_ols for efficient rolling regressions
 # ABOUTME: Input: dailyCRSP, monthlyCRSP, monthlyMarket parquet files; Output: 5 CSV files in pyData/Placebos/
 
@@ -193,9 +210,13 @@ df = df.merge(temp_placebo, on='time_avail_m', how='left')
 # Compute stock-level innovation in illiquidity
 print("Computing stock-level illiquidity innovations...")
 
-# Unnormalized liquidity for each stock (exactly as in Stata)
-df['tempIll'] = np.minimum(df['ill'], (30 - 0.25) / (0.3 * df['MarketCapitalization']))
-df.loc[df['ill'].isna(), 'tempIll'] = np.nan  # Handle missing values correctly
+# Unnormalized liquidity for each stock (exactly as in Stata missing-value semantics)
+liquidity_cap = (30 - 0.25) / (0.3 * df['MarketCapitalization'])
+df['tempIll'] = np.where(
+    df['ill'].isna(),
+    liquidity_cap,
+    np.minimum(df['ill'], liquidity_cap)
+)
 
 # Create lags for tempIll using calendar-based lags  
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempIll', [1, 2], prefix='l')
