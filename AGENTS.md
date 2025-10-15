@@ -18,15 +18,7 @@
 
 ## Testing Guidelines
 - Re-run the smallest pipeline slice touched by your change (e.g. `python 02_CreatePredictors.py`, selected R sources, or a Stata module) before submitting.
+- Validate the Placebos leg by `cd`-ing into `Signals/pyCode/`, activating the venv, and running `python StataComparison/test_placebos.py --placebos <Name1> <Name2>` (use `--list` to discover available placebos); review the pytest output and confirm the generated diffs under `Signals/Logs/` are clean before proceeding.
 - Review freshly generated logs under `Signals/Logs/` and spot-check key CSVs in `Signals/pyData/` or `Portfolios/Data/Portfolios/` for schema or row-count drift.
 - When comparing vintages, run `python utils/sum_pred.py <ScriptName> --vintage before|after` (or `sum_dl.py`) and diff using `python utils/compare_sum.py before after --type pred --script <ScriptName>`, then link the report in your PR.
 - Summarize validation evidence—row counts, checksum deltas, or exhibit previews—in your PR so collaborators can reproduce the check.
-
-## Commit & Pull Request Guidelines
-- Mirror the concise, imperative subject lines in Git history ("Rename Signals/...", "Clean up Signals/Logs/").
-- Reference related issues, enumerate affected pipelines, and attach relevant log snippets or diff stats.
-- When regenerating data, call out which directories changed and whether artifacts were staged via `Shipping/Code/`.
-
-## Security & Configuration Tips
-- Keep credentials in `.env` (copied from `dotenv.template`); never commit WRDS usernames, passwords, or downloaded proprietary data.
-- Confirm new cache directories are ignored by Git so large datasets remain local to your environment.
