@@ -96,6 +96,7 @@ def validate_precision_requirements(stata_df, python_df, placebo_name):
     results['stata_obs_count'] = 0
     results['python_obs_count'] = 0
     results['common_obs_count'] = 0
+    results['r_squared'] = None
     
     # Initialize test results
     cols_match = True
@@ -248,7 +249,8 @@ def validate_precision_requirements(stata_df, python_df, placebo_name):
                 reg_data = pd.DataFrame({
                     'python': python_values,
                     'stata': stata_values
-                }).dropna()
+                })
+                reg_data = reg_data.replace([np.inf, -np.inf], np.nan).dropna()
                 
                 if len(reg_data) > 1:
                     model = smf.ols('python ~ stata', data=reg_data)
@@ -267,6 +269,7 @@ def validate_precision_requirements(stata_df, python_df, placebo_name):
                         'slope_pvalue': reg_result.pvalues['stata'],
                         'n_obs': len(reg_data)
                     }
+                    results['r_squared'] = reg_result.rsquared
         except Exception as e:
             # If summary stats or regression fails, store error but don't break validation
             results['summary_stats_error'] = str(e)
@@ -686,68 +689,32 @@ def write_markdown_log(all_md_lines, test_placebos, passed_count, all_results):
         
         f.write(f"## Summary\n\n")
         
-        # Create summary table with Python CSV column
-        f.write("| Placebo                   | Python CSV | Columns  | Superset  | Precision1   | Precision2              |\n")
-        f.write("|---------------------------|------------|----------|-----------|--------------|-------------------------|\n")
+        # Create summary table sorted by regression fit
+        f.write("| Placebo                   | Superset  | Precision1   | R-squared | Precision2              |\n")
+        f.write("|---------------------------|-----------|--------------|-----------|-------------------------|\n")
         
-        # Sort placebos by test results - worst to best
+        # Sort placebos by R-squared (ascending); missing values last
         def sort_key(placebo):
             results = all_results.get(placebo, {})
+            r_squared = results.get('r_squared')
             
-            # Python CSV: False (missing) sorts before True (available)
-            python_csv_available = results.get('python_csv_available', False)
+            if r_squared is None:
+                return (float('inf'), placebo)
             
-            # Columns: False (failed) sorts before True (passed), None last
-            test1 = results.get('test_1_passed', None)
-            columns_sort = 0 if test1 == False else (1 if test1 == True else 2)
-            
-            # Superset: Higher failure percentages sort first
-            test2 = results.get('test_2_passed', None)
-            if test2 == False:
-                missing_count = results.get('missing_count', 0)
-                stata_obs_count = results.get('stata_obs_count', 0)
-                if stata_obs_count > 0:
-                    superset_sort = (missing_count / stata_obs_count) * 100
-                else:
-                    superset_sort = 100  # Treat as worst case
-            elif test2 == True:
-                superset_sort = -1  # Passed tests sort last
-            else:
-                superset_sort = 999  # NA sorts at end
-            
-            # Precision1: Higher bad observation percentages sort first
-            test3 = results.get('test_3_passed', None)
-            if test3 is not None:
-                precision1_sort = results.get('bad_obs_percentage', 0)
-            else:
-                precision1_sort = 999  # NA sorts at end
-            
-            # Precision2: Higher percentile differences sort first
-            test4 = results.get('test_4_passed', None)
-            if test4 is not None:
-                precision2_sort = results.get('pth_percentile_diff', 0)
-            else:
-                precision2_sort = 999  # NA sorts at end
-            
-            return (not python_csv_available, columns_sort, -superset_sort, -precision1_sort, -precision2_sort)
+            try:
+                return (r_squared if np.isfinite(r_squared) else float('inf'), placebo)
+            except TypeError:
+                return (float('inf'), placebo)
         
         sorted_placebos = sorted(test_placebos, key=sort_key)
         
         for placebo in sorted_placebos:
             results = all_results.get(placebo, {})
             
-            # Get Python CSV availability
-            python_csv_available = results.get('python_csv_available', False)
-            csv_status = "✅" if python_csv_available else "❌"
-            
             # Get test results with fallback
-            test1 = results.get('test_1_passed', None)
             test2 = results.get('test_2_passed', None) 
             test3 = results.get('test_3_passed', None)
             test4 = results.get('test_4_passed', None)
-            
-            # Format symbols (emojis for pass/fail, NA for None)
-            col1 = "✅" if test1 == True else ("❌" if test1 == False else "NA")
             
             # Format superset column with missing percentage for both pass/fail
             if test2 == True:
@@ -784,8 +751,17 @@ def write_markdown_log(all_md_lines, test_placebos, passed_count, all_results):
                 col4 = f"❌ ({EXTREME_Q*100:.0f}th diff {pth_diff:.1E})"
             else:
                 col4 = "NA"
-            
-            f.write(f"| {placebo:<25} | {csv_status:<9} | {col1:<7} | {col2:<11} | {col3:<12} | {col4:<23} |\n")
+
+            # Format R-squared column; show NA when regression unavailable
+            r_squared = results.get('r_squared')
+            if r_squared is None:
+                col_r2 = "NA"
+            else:
+                try:
+                    col_r2 = f"{r_squared:.4f}" if np.isfinite(r_squared) else "NA"
+                except TypeError:
+                    col_r2 = "NA"
+            f.write(f"| {placebo:<25} | {col2:<11} | {col3:<12} | {col_r2:<9} | {col4:<23} |\n")
         
         # Count available placebos for summary
         available_count = sum(1 for p in test_placebos if all_results.get(p, {}).get('python_csv_available', False))
