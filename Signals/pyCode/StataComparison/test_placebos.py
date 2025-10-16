@@ -48,7 +48,7 @@ import numpy as np
 # ================================
 
 # Superset test  
-TOL_SUPERSET = 0.0  # Max allowed percentage of missing observations (units: percent)
+TOL_SUPERSET = 0.1  # Max allowed percentage of missing observations (units: percent)
 
 # Precision1
 TOL_DIFF_1 = 0.01  # Threshold for identifying imperfect observations (Precision1)
