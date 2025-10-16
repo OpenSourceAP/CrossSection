@@ -19,7 +19,6 @@ import polars as pl
 import pandas as pd
 import sys
 import os
-from sklearn.linear_model import LinearRegression
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -107,31 +106,63 @@ df = df.with_columns([
     ((pl.col("ib") - pl.col("ib").shift(1).over("gvkey")) / pl.col("tempmktcap")).alias("tempDEarn")
 ])
 
-# Filter to observations with non-null earnings and momentum data
-df_reg = df.filter(
+# Track observations that have complete data for regression eligibility (for reporting)
+df_valid = df.filter(
     pl.col("tempEarn").is_not_null() &
     pl.col("tempDEarn").is_not_null() &
     pl.col("tempMom15m").is_not_null()
 )
 
-print(f"Data for regressions: {len(df_reg):,} observations")
+print(f"Data for regressions: {len(df_valid):,} observations")
 
 # Create additional variables for second regression
-df_reg = df_reg.with_columns([
-    (pl.col("tempMom15m") < 0).cast(pl.Float64).alias("tempNeg"),
-    ((pl.col("tempMom15m") < 0).cast(pl.Float64) * pl.col("tempMom15m")).alias("tempInter")
+df = df.with_columns([
+    pl.when(pl.col("tempMom15m").is_null())
+    .then(None)
+    .otherwise((pl.col("tempMom15m") < 0).cast(pl.Float64))
+    .alias("tempNeg")
 ])
 
-# Set tempNeg to null where tempMom15m is null
-df_reg = df_reg.with_columns([
-    pl.when(pl.col("tempMom15m").is_null()).then(None).otherwise(pl.col("tempNeg")).alias("tempNeg")
+df = df.with_columns([
+    (pl.col("tempNeg") * pl.col("tempMom15m")).alias("tempInter")
 ])
 
 print("Step 6: Converting to pandas for rolling regressions...")
 # Convert to pandas for rolling regression processing
-df_pandas = df_reg.to_pandas()
+df_pandas = df.to_pandas()
 
 print("Step 7: Running rolling regressions...")
+# Helper to fit OLS while dropping collinear regressors (mirrors Stata's behavior)
+def fit_ols_with_collinearity(X, y, min_obs=10, tol=1e-6):
+    """Fit OLS with sequential column selection to drop collinear regressors."""
+    if len(y) < min_obs:
+        return None, None, None
+    selected_columns = []
+    selected_data = []
+    for idx in range(X.shape[1]):
+        candidate = X[:, [idx]]
+        tentative = candidate if not selected_data else np.hstack(selected_data + [candidate])
+        singular_values = np.linalg.svd(tentative, compute_uv=False)
+        if singular_values.size == 0:
+            continue
+        max_sv = singular_values[0]
+        effective_rank = np.sum(singular_values > tol * max_sv) if max_sv > 0 else 0
+        if effective_rank > len(selected_data):
+            selected_data.append(candidate)
+            selected_columns.append(idx)
+    if not selected_data:
+        return None, selected_columns, None
+    X_selected = np.hstack(selected_data)
+    beta = np.linalg.lstsq(X_selected, y, rcond=None)[0]
+    full_beta = np.zeros(X.shape[1])
+    for coeff, col_idx in zip(beta, selected_columns):
+        full_beta[col_idx] = coeff
+    y_hat = X_selected @ beta
+    ss_tot = ((y - y.mean()) ** 2).sum()
+    ss_res = ((y - y_hat) ** 2).sum()
+    r_squared = 1 - ss_res / ss_tot if ss_tot != 0 else None
+    return full_beta, selected_columns, r_squared
+
 # Function to perform rolling window regressions by gvkey
 def rolling_regressions_by_gvkey(group):
     """Perform 10-year rolling window regressions for each gvkey"""
@@ -146,52 +177,47 @@ def rolling_regressions_by_gvkey(group):
         if len(window_data) >= 10:  # Minimum 10 observations to match Stata asreg min(10)
             try:
                 # Prepare data for regressions
-                y1 = window_data['tempMom15m'].dropna()
-                X1 = window_data[['tempEarn', 'tempDEarn']].dropna()
-                
-                y2 = window_data['tempEarn'].dropna()
-                X2 = window_data[['tempNeg', 'tempMom15m', 'tempInter']].dropna()
-                
-                # Regression 1: tempMom15m ~ tempEarn + tempDEarn
-                common_idx1 = y1.index.intersection(X1.index)
-                if len(common_idx1) >= 10:
-                    y1_common = y1.loc[common_idx1]
-                    X1_common = X1.loc[common_idx1]
-                    
-                    reg1 = LinearRegression().fit(X1_common.values, y1_common.values)
-                    r2_vr = reg1.score(X1_common.values, y1_common.values)
+                reg1_data = window_data[['tempMom15m', 'tempEarn', 'tempDEarn']].dropna()
+                if len(reg1_data) >= 10:
+                    X1 = np.column_stack([
+                        np.ones(len(reg1_data)),
+                        reg1_data['tempEarn'].to_numpy(),
+                        reg1_data['tempDEarn'].to_numpy()
+                    ])
+                    y1 = reg1_data['tempMom15m'].to_numpy()
+                    beta1, cols1, r2_vr = fit_ols_with_collinearity(X1, y1)
                 else:
-                    r2_vr = None
+                    beta1, cols1, r2_vr = (None, None, None)
                 
-                # Regression 2: tempEarn ~ tempNeg + tempMom15m + tempInter
-                common_idx2 = y2.index.intersection(X2.index)
-                if len(common_idx2) >= 10:
-                    y2_common = y2.loc[common_idx2]
-                    X2_common = X2.loc[common_idx2]
-                    
-                    reg2 = LinearRegression().fit(X2_common.values, y2_common.values)
-                    r2_tl = reg2.score(X2_common.values, y2_common.values)
-                    
-                    # Get coefficients for conservatism calculation
-                    coef_names = ['tempNeg', 'tempMom15m', 'tempInter']
-                    b_tempMom15m = reg2.coef_[1]  # coefficient on tempMom15m
-                    b_tempInter = reg2.coef_[2]   # coefficient on tempInter
-                    
-                    # Calculate conservatism ratio with numerical tolerance and outlier handling
-                    # Add tolerance to match Stata's handling of near-zero coefficients
-                    if abs(b_tempMom15m) > 1e-10:
-                        conservatism = (b_tempMom15m + b_tempInter) / b_tempMom15m
-                        
-                        # Cap extreme values to match Stata's behavior (likely internal winsorization)
-                        # Based on analysis: correlation is 0.997 when excluding |values| > 100
-                        if abs(conservatism) > 100:
-                            # Winsorize at +/- 100 to match Stata's outlier handling
-                            conservatism = 100 if conservatism > 0 else -100
-                    else:
+                reg2_data = window_data[['tempEarn', 'tempNeg', 'tempMom15m', 'tempInter']].dropna()
+                if len(reg2_data) >= 10:
+                    X2 = np.column_stack([
+                        np.ones(len(reg2_data)),
+                        reg2_data['tempNeg'].to_numpy(),
+                        reg2_data['tempMom15m'].to_numpy(),
+                        reg2_data['tempInter'].to_numpy()
+                    ])
+                    y2 = reg2_data['tempEarn'].to_numpy()
+                    beta2, cols2, r2_tl = fit_ols_with_collinearity(X2, y2)
+                    if beta2 is None:
+                        b_tempMom15m = None
+                        b_tempInter = None
                         conservatism = None
+                    else:
+                        b_tempMom15m = beta2[2]
+                        b_tempInter = beta2[3]
+                        if np.isnan(b_tempMom15m) or abs(b_tempMom15m) < 1e-12:
+                            conservatism = None
+                        else:
+                            conservatism = (b_tempMom15m + b_tempInter) / b_tempMom15m
                 else:
                     r2_tl = None
+                    b_tempMom15m = None
+                    b_tempInter = None
                     conservatism = None
+                
+                if beta1 is None:
+                    r2_vr = None
                 
                 # Store results for this observation using original index
                 results.append({
@@ -272,7 +298,7 @@ df_monthly = df_monthly.sort(["gvkey", "time_avail_m", "datadate"])
 df_monthly = df_monthly.unique(subset=["gvkey", "time_avail_m"], keep="last")
 
 df_monthly = df_monthly.sort(["permno", "time_avail_m", "datadate"])
-df_monthly = df_monthly.unique(subset=["permno", "time_avail_m"], keep="last")
+df_monthly = df_monthly.unique(subset=["permno", "time_avail_m"], keep="first")
 
 print(f"After monthly expansion: {len(df_monthly):,} observations")
 
