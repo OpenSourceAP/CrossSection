@@ -43,10 +43,10 @@ print(f"After filtering for non-null gvkey: {len(df)} rows")
 print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'piq', 'niq'])
-# Apply enhanced group-wise forward+backward fill for complete data coverage
-print("Applying enhanced group-wise forward+backward fill for quarterly data...")
+# Apply enhanced group-wise forward-only fill for complete data coverage
+print("Applying enhanced group-wise forward-only fill for quarterly data...")
 qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
 qcomp = qcomp.with_columns([
-    pl.col('piq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('piq'),
-    pl.col('niq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('niq')
+    pl.col('piq').fill_null(strategy="forward").over('gvkey').alias('piq'),
+    pl.col('niq').fill_null(strategy="forward").over('gvkey').alias('niq')
 ])

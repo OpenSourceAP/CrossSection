@@ -49,22 +49,22 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 comp = comp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 
-# Apply comprehensive group-wise backward fill for complete data coverage
-print("Applying comprehensive group-wise backward fill for quarterly operating data...")
+# Apply comprehensive group-wise forward fill for complete data coverage
+print("Applying comprehensive group-wise forward fill for quarterly operating data...")
 comp = comp.sort(['gvkey', 'time_avail_m'])
 
 # Fill all required variables with maximum coverage
 comp = comp.with_columns([
-    pl.col('cogsq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cogsq'),
-    pl.col('xsgaq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xsgaq'),
-    pl.col('xintq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xintq'),
-    pl.col('revtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('revtq'),
-    pl.col('seqq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('seqq'),
-    pl.col('ceqq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ceqq'),
-    pl.col('pstkq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('pstkq'),
-    pl.col('atq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('atq'),
-    pl.col('ltq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ltq'),
-    pl.col('txditcq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('txditcq')
+    pl.col('cogsq').fill_null(strategy="forward").over('gvkey').alias('cogsq'),
+    pl.col('xsgaq').fill_null(strategy="forward").over('gvkey').alias('xsgaq'),
+    pl.col('xintq').fill_null(strategy="forward").over('gvkey').alias('xintq'),
+    pl.col('revtq').fill_null(strategy="forward").over('gvkey').alias('revtq'),
+    pl.col('seqq').fill_null(strategy="forward").over('gvkey').alias('seqq'),
+    pl.col('ceqq').fill_null(strategy="forward").over('gvkey').alias('ceqq'),
+    pl.col('pstkq').fill_null(strategy="forward").over('gvkey').alias('pstkq'),
+    pl.col('atq').fill_null(strategy="forward").over('gvkey').alias('atq'),
+    pl.col('ltq').fill_null(strategy="forward").over('gvkey').alias('ltq'),
+    pl.col('txditcq').fill_null(strategy="forward").over('gvkey').alias('txditcq')
 ])
 
 

@@ -34,28 +34,28 @@ df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
 df = df.select(['gvkey', 'permno', 'time_avail_m', 'dp', 'ppent'])
 
 print(f"After loading: {len(df)} rows")
-# Apply enhanced group-wise forward+backward fill for complete data coverage
-print("Applying enhanced group-wise forward+backward fill for depreciation data...")
+# Apply enhanced group-wise forward-only fill for complete data coverage
+print("Applying enhanced group-wise forward-only fill for depreciation data...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# Apply backward fill to all relevant numeric columns for better coverage
+# Apply forward fill to all relevant numeric columns for better coverage
 numeric_cols = [col for col in df.columns if col not in ['permno', 'time_avail_m', 'gvkey'] and df[col].dtype in ['float64', 'int64']]
 print(f"Applying fill to {len(numeric_cols)} numeric columns...")
 
 for col in numeric_cols:
     if col in df.columns:
         df = df.with_columns([
-            pl.col(col).fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias(col)
+            pl.col(col).fill_null(strategy="forward").over('permno').alias(col)
         ])
 
-# Apply even more comprehensive backward/forward fill across entire time series
+# Apply even more comprehensive forward fill across entire time series
 print("Applying comprehensive temporal fill for complete coverage...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # Fill dp and ppent more aggressively across entire time range
 df = df.with_columns([
-    pl.col('dp').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('dp'),
-    pl.col('ppent').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('ppent')
+    pl.col('dp').fill_null(strategy="forward").over('permno').alias('dp'),
+    pl.col('ppent').fill_null(strategy="forward").over('permno').alias('ppent')
 ])
 
 # Handle edge case: if ppent is still null but dp is available, use last known ppent

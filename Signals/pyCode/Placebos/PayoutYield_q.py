@@ -51,18 +51,18 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 
-# Apply SUPER-AGGRESSIVE backward fill for complete temporal coverage
-print("Applying super-aggressive backward fill for complete temporal coverage...")
+# Apply SUPER-AGGRESSIVE forward fill for complete temporal coverage
+print("Applying super-aggressive forward fill for complete temporal coverage...")
 qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
 
-# Fill ALL variables with maximum coverage - forward AND backward fill repeatedly
+# Fill ALL variables with maximum coverage - forward fill repeatedly
 for iteration in range(3):  # Multiple iterations for better coverage
     qcomp = qcomp.with_columns([
-        pl.col('dvpsxq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('dvpsxq'),
-        pl.col('cshoq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cshoq'),
-        pl.col('ajexq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ajexq'),
-        pl.col('prstkcyq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('prstkcyq'),
-        pl.col('pstkq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('pstkq')
+        pl.col('dvpsxq').fill_null(strategy="forward").over('gvkey').alias('dvpsxq'),
+        pl.col('cshoq').fill_null(strategy="forward").over('gvkey').alias('cshoq'),
+        pl.col('ajexq').fill_null(strategy="forward").over('gvkey').alias('ajexq'),
+        pl.col('prstkcyq').fill_null(strategy="forward").over('gvkey').alias('prstkcyq'),
+        pl.col('pstkq').fill_null(strategy="forward").over('gvkey').alias('pstkq')
     ])
 
 # Handle remaining nulls with conservative defaults
@@ -75,18 +75,18 @@ qcomp = qcomp.with_columns([
 ])
 
 # Also apply multiple iterations to SignalMasterTable for better lag coverage
-print("Applying super-aggressive backward fill to SignalMasterTable...")
+print("Applying super-aggressive forward fill to SignalMasterTable...")
 df = df.sort(['permno', 'time_avail_m'])
 for iteration in range(3):  # Multiple iterations
     df = df.with_columns([
-        pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+        pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
     ])
 
-# Also apply backward fill to SignalMasterTable mve_c for better lag coverage
-print("Applying backward fill to SignalMasterTable mve_c...")
+# Also apply forward fill to SignalMasterTable mve_c for better lag coverage
+print("Applying forward fill to SignalMasterTable mve_c...")
 df = df.sort(['permno', 'time_avail_m'])
 df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
 ])
 
 print("Merging with m_QCompustat...")
@@ -116,8 +116,8 @@ df_pd = df.to_pandas()
 
 # Apply additional aggressive fill to lag data for complete coverage
 print("Applying additional fill to lag data...")
-df_pd['mve_c'] = df_pd.groupby('permno')['mve_c'].fillna(method='ffill').fillna(method='bfill')
-df_pd['pstkq'] = df_pd.groupby('permno')['pstkq'].fillna(method='ffill').fillna(method='bfill')
+df_pd['mve_c'] = df_pd.groupby('permno')['mve_c'].fillna(method='ffill')
+df_pd['pstkq'] = df_pd.groupby('permno')['pstkq'].fillna(method='ffill')
 
 # Fill any remaining nulls with conservative defaults
 df_pd['mve_c'] = df_pd['mve_c'].fillna(1.0)  # Avoid division by zero

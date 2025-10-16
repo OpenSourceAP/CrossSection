@@ -49,16 +49,12 @@ qcomp = qcomp.select(['gvkey', 'time_avail_m', 'cheq', 'rectq', 'invtq', 'ppegtq
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
-print("Applying forward-fill for missing quarterly values...")
-# Apply more aggressive fill including backward fill for complete coverage
-print("Applying enhanced forward+backward fill...")
-qcomp = qcomp.with_columns([
-    pl.col('cheq').forward_fill().backward_fill().alias('cheq'),
-    pl.col('rectq').forward_fill().backward_fill().alias('rectq'), 
-    pl.col('invtq').forward_fill().backward_fill().alias('invtq'),
-    pl.col('ppegtq').forward_fill().backward_fill().alias('ppegtq'),
-    pl.col('atq').forward_fill().backward_fill().alias('atq')
-])
+print("Applying forward fill for missing quarterly values...")
+qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
+qcomp = apply_quarterly_fill_to_compustat(
+    qcomp,
+    quarterly_columns=['cheq', 'rectq', 'invtq', 'ppegtq', 'atq']
+)
 
 print("Merging with m_QCompustat...")
 # Use left join to preserve SignalMasterTable observations

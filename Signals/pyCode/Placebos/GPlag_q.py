@@ -49,22 +49,22 @@ df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 
-# Apply comprehensive group-wise backward fill for complete data coverage
-print("Applying comprehensive group-wise backward fill for quarterly data...")
+# Apply comprehensive group-wise forward fill for complete data coverage
+print("Applying comprehensive group-wise forward fill for quarterly data...")
 qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
 
 # Fill revtq, cogsq, and atq with maximum coverage
 qcomp = qcomp.with_columns([
-    pl.col('revtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('revtq'),
-    pl.col('cogsq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cogsq'),
-    pl.col('atq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('atq')
+    pl.col('revtq').fill_null(strategy="forward").over('gvkey').alias('revtq'),
+    pl.col('cogsq').fill_null(strategy="forward").over('gvkey').alias('cogsq'),
+    pl.col('atq').fill_null(strategy="forward").over('gvkey').alias('atq')
 ])
 
-# Also apply backward fill to SignalMasterTable for better coverage
-print("Applying backward fill to SignalMasterTable...")
+# Also apply forward fill to SignalMasterTable for better coverage
+print("Applying forward fill to SignalMasterTable...")
 df = df.sort(['permno', 'time_avail_m'])
 df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
 ])
 
 
