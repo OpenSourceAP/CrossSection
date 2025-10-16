@@ -2,7 +2,8 @@
 
 ## Project Structure & Module Organization
 - `Signals/pyCode/` houses the modern Python pipeline; it writes intermediates to `Signals/pyData/` and detailed run logs to `Signals/Logs/`.
-- `Signals/LegacyStataCode/` maintains the original Stata implementation and expects outputs in `Signals/Data/` for backward compatibility.
+    - **IMPORTANT** The code here should never load data from `Signals/Data/`
+- `Signals/LegacyStataCode/` this is the retired Stata code. It outputs and inputs using `Signals/Data/`. Both folders are only kept for reference.
 - `Portfolios/Code/` contains R scripts that turn signals into portfolios (`Portfolios/Data/Portfolios/`) and paper exhibits (`Results/`).
 - `Shipping/Code/` bundles cleaned outputs for distribution; run it only after verifying the upstream pipelines.
 
