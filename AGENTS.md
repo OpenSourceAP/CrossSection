@@ -33,4 +33,4 @@
 - Summarize validation evidence—row counts, checksum deltas, or exhibit previews—in your PR so collaborators can reproduce the check.
 
 ## Python environment
-- Use `source ~/venvloc/openalpha/bin/activate` to activate the virtual environment.
+- Use `source ~/venvloc/openap/bin/activate` to activate the virtual environment.
