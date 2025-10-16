@@ -26,6 +26,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
 from utils.asrol import asrol
+from utils.stata_replication import stata_multi_lag
 
 print("Starting roavol.py")
 
@@ -60,10 +61,10 @@ print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # gen roaq = ibq/l3.atq
-print("Computing roaq with 3-quarter lag...")
-df = df.with_columns([
-    pl.col('atq').shift(3).over('permno').alias('l3_atq')
-])
+print("Computing roaq with 3-quarter lag using stata_multi_lag...")
+df_pandas = df.to_pandas()
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'atq', [3], freq='M', prefix='l')
+df = pl.from_pandas(df_pandas)
 
 df = df.with_columns(
     (pl.col('ibq') / pl.col('l3_atq')).alias('roaq')
@@ -71,17 +72,16 @@ df = df.with_columns(
 
 # bys permno: asrol roaq, gen(roavol) stat(sd) window(time_avail_m 48) min(24)
 print("Computing rolling standard deviation...")
-# Use time-based rolling window with 48 months and min 24 periods  
-# Note: Stata's min(24) might be more lenient than expected
-df = asrol(df, 
+# Use time-based rolling window with 48 months and min 24 periods
+df = asrol(df,
            group_col='permno',
-           time_col='time_avail_m', 
+           time_col='time_avail_m',
            freq='1mo',
            window=48,
            value_col='roaq',
            stat='sd',
            new_col_name='roavol',
-           min_samples=20)  # Try lower minimum to match Stata behavior
+           min_samples=24)  # Match Stata's min(24)
 
 print(f"Generated roavol for {len(df)} observations")
 
