@@ -15,10 +15,21 @@
 - Python code uses 4-space indentation, snake_case, pathlib, and explicit docstrings (see `Signals/pyCode/master.py`). Log progress instead of printing silent failures.
 - R scripts follow tidyverse idioms, lowercase object names, and section markers (`####`). Preserve `quickrun` pathways so reviewers can re-run subsets quickly.
 - Stata do-files employ lowercase variables and local macros; match existing temp-file patterns when extending automation.
+- Example commit message:
+    - title `Fixed ZZ2_FailureProbability_FailureProbabilityJune.py`
+    - body
+        ```
+        - Use a descending ordinal rank so the top-500 market-cap filter matches the Stata recursion.
+        - Compute NIMTA/TLMTA/CASHMTA with raw denominators instead of inserting zeros that shrank book values.
+        - Winsorize every temp* intermediate at the 5/95 clip just like winsor2, eliminating the R-squared gap.
+        ```         
 
 ## Testing Guidelines
 - Re-run the smallest pipeline slice touched by your change (e.g. `python 02_CreatePredictors.py`, selected R sources, or a Stata module) before submitting.
-- Validate the Placebos leg by `cd`-ing into `Signals/pyCode/`, activating the venv, and running `python StataComparison/test_placebos.py --placebos <Name1> <Name2>` (use `--list` to discover available placebos); review the pytest output and confirm the generated diffs under `Signals/Logs/` are clean before proceeding.
+- Validate the Placebos leg by `cd`-ing into `Signals/pyCode/`, activating the venv, and running `python StataComparison/test_placebos.py --placebos <Name1> <Name2>` (use `--list` to discover available placebos). 
 - Review freshly generated logs under `Signals/Logs/` and spot-check key CSVs in `Signals/pyData/` or `Portfolios/Data/Portfolios/` for schema or row-count drift.
 - When comparing vintages, run `python utils/sum_pred.py <ScriptName> --vintage before|after` (or `sum_dl.py`) and diff using `python utils/compare_sum.py before after --type pred --script <ScriptName>`, then link the report in your PR.
 - Summarize validation evidence—row counts, checksum deltas, or exhibit previews—in your PR so collaborators can reproduce the check.
+
+## Python environment
+- Use `source ~/venvloc/openalpha/bin/activate` to activate the virtual environment.
