@@ -11,7 +11,7 @@ Usage:
 Inputs:
     - IBES_EPS_Unadj.parquet: IBES forecast data with columns [tickerIBES, time_avail_m, stdev]
     - TR_13F.parquet: Institutional ownership data with columns [permno, time_avail_m, instown_perc]
-    - SignalMasterTable.parquet: Monthly master table with columns [permno, tickerIBES, time_avail_m, exchcd, mve_c]
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, tickerIBES, time_avail_m, exchcd, mve_permco]
     - m_aCompustat.parquet: Compustat data with columns [permno, time_avail_m, at, ceq, txditc]
     - monthlyCRSP.parquet: CRSP monthly data with columns [permno, time_avail_m, vol, shrout, ret]
 
@@ -51,9 +51,9 @@ print(f"IBES EPS data: {len(temp_ibes):,} observations")
 print("📊 Loading main data sources...")
 
 # DATA LOAD
-# use permno tickerIBES time_avail_m exchcd mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno tickerIBES time_avail_m exchcd mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = signal_master.select(["permno", "tickerIBES", "time_avail_m", "exchcd", "mve_c"])
+df = signal_master.select(["permno", "tickerIBES", "time_avail_m", "exchcd", "mve_permco"])
 print(f"SignalMasterTable: {len(df):,} observations")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/TR_13F", keep(master match) nogenerate keepusing(instown_perc)
@@ -90,12 +90,12 @@ print("🔍 Applying size filters...")
 
 # filter below 20th pct NYSE me
 # do before indep sort
-# bys time_avail_m: astile sizecat = mve_c, qc(exchcd==1 | exchcd == 2) nq(5)
+# bys time_avail_m: astile sizecat = mve_permco, qc(exchcd==1 | exchcd == 2) nq(5)
 # This creates NYSE/AMEX-based size quintiles but assigns them to ALL observations
 # First, compute percentile breakpoints based ONLY on NYSE/AMEX stocks
 df = df.with_columns(
     pl.when((pl.col("exchcd") == 1) | (pl.col("exchcd") == 2))
-    .then(pl.col("mve_c"))
+    .then(pl.col("mve_permco"))
     .otherwise(None)
     .alias("nyse_amex_mve")
 )
@@ -110,13 +110,13 @@ df = df.with_columns(
 
 # Assign ALL observations to quintiles based on NYSE/AMEX breakpoints
 df = df.with_columns(
-    pl.when(pl.col("mve_c") <= pl.col("p20"))
+    pl.when(pl.col("mve_permco") <= pl.col("p20"))
     .then(1)
-    .when(pl.col("mve_c") <= pl.col("p40"))
+    .when(pl.col("mve_permco") <= pl.col("p40"))
     .then(2)
-    .when(pl.col("mve_c") <= pl.col("p60"))
+    .when(pl.col("mve_permco") <= pl.col("p60"))
     .then(3)
-    .when(pl.col("mve_c") <= pl.col("p80"))
+    .when(pl.col("mve_permco") <= pl.col("p80"))
     .then(4)
     .otherwise(5)
     .alias("sizecat")
@@ -163,13 +163,13 @@ df = df.with_columns(
     .alias("temp")
 )
 
-# gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_c) + .08*(log(mve_c))^2
+# gen RIO = log(temp/(1-temp)) + 23.66 - 2.89*log(mve_permco) + .08*(log(mve_permco))^2
 df = df.with_columns(
     (
         (pl.col("temp") / (1 - pl.col("temp"))).log()
         + 23.66
-        - 2.89 * pl.col("mve_c").log()
-        + 0.08 * (pl.col("mve_c").log()).pow(2)
+        - 2.89 * pl.col("mve_permco").log()
+        + 0.08 * (pl.col("mve_permco").log()).pow(2)
     ).alias("RIO")
 )
 
@@ -216,12 +216,12 @@ df = df.with_columns(
     .alias("txditc")
 )
 
-# gen MB = mve_c/(ceq + txditc)
+# gen MB = mve_permco/(ceq + txditc)
 # replace MB = . if (ceq + txditc) < 0
 df = df.with_columns(
     pl.when((pl.col("ceq") + pl.col("txditc")) < 0)
     .then(None)
-    .otherwise(pl.col("mve_c") / (pl.col("ceq") + pl.col("txditc")))
+    .otherwise(pl.col("mve_permco") / (pl.col("ceq") + pl.col("txditc")))
     .alias("MB")
 )
 
@@ -254,9 +254,9 @@ df_pandas_vol = asrol(
 
 df = pl.from_pandas(df_pandas_vol)
 
-# drop rows missing mve_c
+# drop rows missing mve_permco
 # it seems our asrol fills in gaps too aggressively
-df = df.filter(pl.col("mve_c").is_not_null())
+df = df.filter(pl.col("mve_permco").is_not_null())
 
 print("🏷️ Creating characteristic quintiles and RIO interactions...")
 

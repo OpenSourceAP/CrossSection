@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/OperProfRD.py
 
 Inputs:
-    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, exchcd, sicCRSP, mve_c, shrcd]
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, exchcd, sicCRSP, mve_permco, shrcd]
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, xrd, revt, cogs, xsga, at, ceq]
 
 Outputs:
@@ -22,7 +22,7 @@ import numpy as np
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 df = df[
-    ["permno", "gvkey", "time_avail_m", "exchcd", "sicCRSP", "mve_c", "shrcd"]
+    ["permno", "gvkey", "time_avail_m", "exchcd", "sicCRSP", "mve_permco", "shrcd"]
 ].copy()
 
 # Merge with Compustat
@@ -46,7 +46,7 @@ df["OperProfRD"] = (df["revt"] - df["cogs"] - df["xsga"] + df["tempXRD"]) / df["
 # Apply filters
 df = df[
     (df["shrcd"] <= 11)
-    & (~df["mve_c"].isna())
+    & (~df["mve_permco"].isna())
     & (~df["ceq"].isna())
     & (~df["at"].isna())
     & (~((df["sicCRSP"] >= 6000) & (df["sicCRSP"] < 7000)))

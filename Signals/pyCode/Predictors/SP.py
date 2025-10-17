@@ -1,5 +1,5 @@
 # ABOUTME: Sales-to-price following Barbee, Mukherji and Raines 1996, Table 2 model 1
-# ABOUTME: calculates sales-to-price ratio as sales (sale) divided by market value of equity (mve_c)
+# ABOUTME: calculates sales-to-price ratio as sales (sale) divided by market value of equity (mve_permco)
 
 """
 SP.py
@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, sale]
-    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_permco]
 
 Outputs:
     - SP.csv: CSV file with columns [permno, yyyymm, SP]
@@ -31,13 +31,13 @@ compustat = compustat.groupby(["permno", "time_avail_m"]).first().reset_index()
 # Merge with SignalMasterTable
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    columns=["permno", "time_avail_m", "mve_permco"],
 )
 
 df = pd.merge(compustat, signal_master, on=["permno", "time_avail_m"], how="inner")
 
 # SIGNAL CONSTRUCTION
-df["SP"] = df["sale"] / df["mve_c"]
+df["SP"] = df["sale"] / df["mve_permco"]
 
 # Drop missing values
 df = df.dropna(subset=["SP"])

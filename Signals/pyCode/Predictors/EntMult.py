@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, dltt, dlc, dc, che, oibdp, ceq]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - EntMult.csv: CSV file with columns [permno, yyyymm, EntMult]
@@ -28,14 +28,14 @@ df = df[
 # Merge with SignalMasterTable
 smt = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 df = df.merge(
-    smt[["permno", "time_avail_m", "mve_c"]], on=["permno", "time_avail_m"], how="inner"
+    smt[["permno", "time_avail_m", "mve_permco"]], on=["permno", "time_avail_m"], how="inner"
 )
 
 # SIGNAL CONSTRUCTION
 # Calculate enterprise multiple as enterprise value divided by operating income
 # Enterprise value = market value + long-term debt + debt in current liabilities + debt due in one year - cash and equivalents
 # Operating income before depreciation serves as the earnings measure
-df["EntMult"] = (df["mve_c"] + df["dltt"] + df["dlc"] + df["dc"] - df["che"]) / df[
+df["EntMult"] = (df["mve_permco"] + df["dltt"] + df["dlc"] + df["dc"] - df["che"]) / df[
     "oibdp"
 ]
 

@@ -10,7 +10,7 @@ Usage:
     python3 Predictors/Frontier.py --max-year 1985 (for testing)
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c, sicCRSP]
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_permco, sicCRSP]
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, ceq, dltt, capx, sale, xrd, xad, ppent, ebitda]
 
 Outputs:
@@ -48,7 +48,7 @@ start_total = time.time()
 # DATA LOAD
 print("Loading data...")
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df[["permno", "time_avail_m", "mve_c", "sicCRSP"]].copy()
+df = df[["permno", "time_avail_m", "mve_permco", "sicCRSP"]].copy()
 
 # Merge with Compustat
 comp = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
@@ -89,7 +89,7 @@ df["time_avail"] = (df["time_avail_m"].dt.year - 1960) * 12 + (
 df["xad"] = df["xad"].fillna(0)
 
 # Create variables - handle infinite values by setting to NaN
-df["YtempBM"] = np.log(df["mve_c"])
+df["YtempBM"] = np.log(df["mve_permco"])
 df["YtempBM"] = df["YtempBM"].replace([np.inf, -np.inf], np.nan)
 
 df["tempBook"] = np.log(df["ceq"])

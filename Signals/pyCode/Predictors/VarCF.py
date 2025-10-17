@@ -1,5 +1,5 @@
 # ABOUTME: Cash-flow to price variance following Haugen and Baker 1996, Table 1 variability in cf to price
-# ABOUTME: Rolling variance of (ib+dp)/mve_c over the past 60 months (minimum 24 months data required)
+# ABOUTME: Rolling variance of (ib+dp)/mve_permco over the past 60 months (minimum 24 months data required)
 
 """
 VarCF.py
@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/VarCF.py
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_permco]
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, ib, dp]
 
 Outputs:
@@ -25,7 +25,7 @@ from utils.asrol import asrol
 
 # Read SignalMasterTable
 smt = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = smt[["permno", "time_avail_m", "mve_c"]].copy()
+df = smt[["permno", "time_avail_m", "mve_permco"]].copy()
 
 # Merge with m_aCompustat data (left join to keep all SignalMasterTable observations)
 compustat = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
@@ -37,7 +37,7 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # SIGNAL CONSTRUCTION
 # Calculate cash flow to price ratio
-df["tempCF"] = (df["ib"] + df["dp"]) / df["mve_c"]
+df["tempCF"] = (df["ib"] + df["dp"]) / df["mve_permco"]
 
 # Calculate rolling standard deviation using asrol (60-month window, min 24 periods)
 print(f"Calculating rolling statistics for {df['permno'].nunique()} firms...")

@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, xad]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - GrAdExp.csv: CSV file with columns [permno, yyyymm, GrAdExp]
@@ -61,11 +61,11 @@ if duplicates_removed > 0:
 print("Merging with SignalMasterTable...")
 
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-if "mve_c" not in signal_master.columns:
-    raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
+if "mve_permco" not in signal_master.columns:
+    raise ValueError("Missing required column 'mve_permco' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[["permno", "time_avail_m", "mve_c"]].copy()
+signal_master = signal_master[["permno", "time_avail_m", "mve_permco"]].copy()
 
 # Left join to preserve all master records
 df = pd.merge(df, signal_master, on=["permno", "time_avail_m"], how="left")
@@ -98,7 +98,7 @@ print("Calculating size deciles...")
 df["time_avail"] = df["time_avail_m"]
 
 # Calculate size deciles using groupby, transform, qcut pattern
-df["tempSize"] = df.groupby("time_avail")["mve_c"].transform(
+df["tempSize"] = df.groupby("time_avail")["mve_permco"].transform(
     lambda x: pd.qcut(x, q=10, labels=False, duplicates="drop") + 1
 )
 
@@ -116,7 +116,7 @@ print(f"Final GrAdExp calculated for {final_valid} observations")
 
 # Clean up temporary columns
 df = df.drop(
-    ["at", "xad", "log_xad", "log_xad_l12", "mve_c", "tempSize", "time_avail"], axis=1
+    ["at", "xad", "log_xad", "log_xad_l12", "mve_permco", "tempSize", "time_avail"], axis=1
 )
 
 # SAVE

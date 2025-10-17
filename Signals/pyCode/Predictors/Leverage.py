@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, lt]
-    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_permco]
 
 Outputs:
     - Leverage.csv: CSV file with columns [permno, yyyymm, Leverage]
@@ -31,7 +31,7 @@ compustat = compustat.groupby(["permno", "time_avail_m"]).first().reset_index()
 # Merge with SignalMasterTable
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    columns=["permno", "time_avail_m", "mve_permco"],
 )
 
 df = pd.merge(
@@ -42,7 +42,7 @@ df = pd.merge(
 )
 
 # SIGNAL CONSTRUCTION
-df["Leverage"] = df["lt"] / df["mve_c"]
+df["Leverage"] = df["lt"] / df["mve_permco"]
 
 # Drop missing values
 df = df.dropna(subset=["Leverage"])

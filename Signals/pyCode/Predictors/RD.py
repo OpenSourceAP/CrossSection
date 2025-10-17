@@ -1,5 +1,5 @@
 # ABOUTME: R&D intensity following Chan, Lakonishok and Sougiannis 2001, Table 4, first year
-# ABOUTME: calculates R&D expenditure (xrd) divided by market value of equity (mve_c)
+# ABOUTME: calculates R&D expenditure (xrd) divided by market value of equity (mve_permco)
 
 """
 RD.py
@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/RD.py
 
 Inputs:
-    - SignalMasterTable.parquet: Signal master table with columns [permno, gvkey, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, gvkey, time_avail_m, mve_permco]
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, time_avail_m, xrd]
 
 Outputs:
@@ -21,7 +21,7 @@ import pandas as pd
 # DATA LOAD
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "gvkey", "time_avail_m", "mve_c"],
+    columns=["permno", "gvkey", "time_avail_m", "mve_permco"],
 )
 
 # Drop observations with missing gvkey
@@ -36,7 +36,7 @@ compustat = pd.read_parquet(
 df = pd.merge(df, compustat, on=["gvkey", "time_avail_m"], how="inner")
 
 # SIGNAL CONSTRUCTION
-df["RD"] = df["xrd"] / df["mve_c"]
+df["RD"] = df["xrd"] / df["mve_permco"]
 
 # Drop missing values
 df = df.dropna(subset=["RD"])

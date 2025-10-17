@@ -11,11 +11,11 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, che]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - CashProd.csv: CSV file with columns [permno, yyyymm, CashProd]
-    - CashProd = (mve_c - at)/che (Cash productivity ratio)
+    - CashProd = (mve_permco - at)/che (Cash productivity ratio)
 """
 
 import pandas as pd
@@ -60,11 +60,11 @@ print(f"After deduplication: {df.shape[0]} rows")
 print("Merging with SignalMasterTable...")
 
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-if "mve_c" not in signal_master.columns:
-    raise ValueError("Missing required column 'mve_c' in SignalMasterTable")
+if "mve_permco" not in signal_master.columns:
+    raise ValueError("Missing required column 'mve_permco' in SignalMasterTable")
 
 # Keep only required columns from SignalMasterTable
-signal_master = signal_master[["permno", "time_avail_m", "mve_c"]].copy()
+signal_master = signal_master[["permno", "time_avail_m", "mve_permco"]].copy()
 
 # Merge (equivalent to keep(match) - inner join)
 df = pd.merge(df, signal_master, on=["permno", "time_avail_m"], how="inner")
@@ -73,9 +73,9 @@ print(f"After merging with SignalMasterTable: {df.shape[0]} rows")
 
 # SIGNAL CONSTRUCTION
 
-# Generate (mve_c - at)/che
+# Generate (mve_permco - at)/che
 print("Calculating CashProd...")
-df["CashProd"] = (df["mve_c"] - df["at"]) / df["che"]
+df["CashProd"] = (df["mve_permco"] - df["at"]) / df["che"]
 
 print(f"Calculated CashProd for {df['CashProd'].notna().sum()} observations")
 

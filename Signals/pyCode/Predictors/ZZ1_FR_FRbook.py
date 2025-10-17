@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/ZZ1_FR_FRbook.py
 
 Inputs:
-    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, shrcd, mve_c]
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, shrcd, mve_permco]
     - CompustatPensions.parquet: Pension data with columns [gvkey, year, pbnaa, pplao, pplau, pbnvv, pbpro, pbpru]
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, time_avail_m, at]
 
@@ -24,7 +24,7 @@ from pathlib import Path
 
 # DATA LOAD
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = signal_master[["permno", "gvkey", "time_avail_m", "shrcd", "mve_c"]].copy()
+df = signal_master[["permno", "gvkey", "time_avail_m", "shrcd", "mve_permco"]].copy()
 df = df.dropna(subset=["gvkey"])
 
 # Convert datetime time_avail_m to YYYYMM integer format
@@ -69,7 +69,7 @@ df["PBO"] = np.where(
 )
 
 # Funding Ratio scaled by market value
-df["FR"] = (df["FVPA"] - df["PBO"]) / df["mve_c"]
+df["FR"] = (df["FVPA"] - df["PBO"]) / df["mve_permco"]
 df.loc[df["shrcd"] > 11, "FR"] = np.nan
 
 # Funding Ratio scaled by book assets

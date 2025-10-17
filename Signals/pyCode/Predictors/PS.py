@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, fopt, oancf, ib, at, dltt, act, lct, txt, xint, sale, ceq]
-    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_permco]
     - monthlyCRSP.parquet: Monthly CRSP data with columns [permno, time_avail_m, shrout]
 
 Outputs:
@@ -54,7 +54,7 @@ compustat_df = pd.read_parquet(
 print("Merging with SignalMasterTable...")
 signal_df = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    columns=["permno", "time_avail_m", "mve_permco"],
 )
 df = compustat_df.merge(signal_df, on=["permno", "time_avail_m"], how="inner")
 
@@ -192,7 +192,7 @@ df.loc[
 
 # Restrict to highest BM quintile
 df = df.assign(ceq=lambda x: np.where(x["ceq"] > 0, x["ceq"], np.nan)).assign(
-    BM=lambda x: np.log(x["ceq"] / x["mve_c"])
+    BM=lambda x: np.log(x["ceq"] / x["mve_permco"])
 )
 df["BM_quintile"] = df.groupby("time_avail_m")["BM"].transform(
     lambda x: pd.qcut(x, q=5, labels=False, duplicates="drop") + 1

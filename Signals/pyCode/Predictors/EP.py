@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, ib]
-    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Signal master table with columns [permno, time_avail_m, mve_permco]
 
 Outputs:
     - EP.csv: CSV file with columns [permno, yyyymm, EP]
@@ -31,7 +31,7 @@ compustat = compustat.groupby(["permno", "time_avail_m"]).first().reset_index()
 # Merge with SignalMasterTable (keep using match logic)
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    columns=["permno", "time_avail_m", "mve_permco"],
 )
 
 df = pd.merge(
@@ -45,18 +45,18 @@ df = pd.merge(
 # Sort for proper lagging
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create 6-month lagged mve_c using calendar-based approach
+# Create 6-month lagged mve_permco using calendar-based approach
 # Look back exactly 6 months in calendar time to align earnings with appropriate market value
 df["time_lag6"] = df["time_avail_m"] - pd.DateOffset(months=6)
 
 # Self-merge to get 6-month lagged values
-df_lag = df[["permno", "time_avail_m", "mve_c"]].copy()
-df_lag.columns = ["permno", "time_lag6", "mve_c_lag6"]
+df_lag = df[["permno", "time_avail_m", "mve_permco"]].copy()
+df_lag.columns = ["permno", "time_lag6", "mve_permco_lag6"]
 
 df = pd.merge(df, df_lag, on=["permno", "time_lag6"], how="left")
 
 # Calculate EP with 6-month lagged market value
-df["EP"] = df["ib"] / df["mve_c_lag6"]
+df["EP"] = df["ib"] / df["mve_permco_lag6"]
 
 # Exclude negative EP values
 df.loc[df["EP"] < 0, "EP"] = pd.NA

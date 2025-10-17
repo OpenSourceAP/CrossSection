@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, act, che, lct, dlc, txp, dp, ib, oancf]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - cfp.csv: CSV file with columns [permno, yyyymm, cfp]
@@ -56,7 +56,7 @@ print(f"After deduplication: {len(compustat_df):,} observations")
 print("Loading SignalMasterTable...")
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    columns=["permno", "time_avail_m", "mve_permco"],
 )
 
 print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
@@ -110,22 +110,22 @@ df["accrual_level"] = ((df["act"] - df["l12_act"]) - (df["che"] - df["l12_che"])
     - df["dp"]
 )
 
-# Calculate initial cfp = (ib - accrual_level) / mve_c
+# Calculate initial cfp = (ib - accrual_level) / mve_permco
 df["calculated_cf"] = df["ib"] - df["accrual_level"]
 
 # Calculate cfp with correct missing value handling
 df["cfp"] = np.where(
-    df["mve_c"] == 0,
+    df["mve_permco"] == 0,
     np.nan,  # Division by zero = missing
-    df["calculated_cf"] / df["mve_c"]  # pandas: missing/missing = NaN naturally
+    df["calculated_cf"] / df["mve_permco"]  # pandas: missing/missing = NaN naturally
 )
 
-# Update with oancf/mve_c if oancf is available (equivalent to Replace oancf/mve_c if oancf ! to.)
+# Update with oancf/mve_permco if oancf is available (equivalent to Replace oancf/mve_permco if oancf ! to.)
 mask_oancf_available = df["oancf"].notna()
 df.loc[mask_oancf_available, "cfp"] = np.where(
-    df.loc[mask_oancf_available, "mve_c"] == 0,
+    df.loc[mask_oancf_available, "mve_permco"] == 0,
     np.nan,
-    df.loc[mask_oancf_available, "oancf"] / df.loc[mask_oancf_available, "mve_c"]
+    df.loc[mask_oancf_available, "oancf"] / df.loc[mask_oancf_available, "mve_permco"]
 )
 
 print(f"Generated cfp values for {df['cfp'].notna().sum():,} observations")
