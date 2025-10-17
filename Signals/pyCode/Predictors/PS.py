@@ -194,14 +194,13 @@ df.loc[
 df = df.assign(ceq=lambda x: np.where(x["ceq"] > 0, x["ceq"], np.nan)).assign(
     BM=lambda x: np.log(x["ceq"] / x["mve_permco"])
 )
-df["BM_quintile"] = df.groupby("time_avail_m")["BM"].transform(
+df["BM_filter"] = df["BM"].replace([np.inf, -np.inf], np.nan)
+df["BM_quintile"] = df.groupby("time_avail_m")["BM_filter"].transform(
     lambda x: pd.qcut(x, q=5, labels=False, duplicates="drop") + 1
 )
 df.loc[(df["BM_quintile"] != 5), "PS"] = np.nan
-
 print(f"Calculated PS for {df['PS'].notna().sum()} observations")
+
 # save
 save_predictor(df, "PS")
 print("PS.py completed successfully")
-
-# %%

@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, at, xrd]
-    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_permco]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_c]
 
 Outputs:
     - RDcap.csv: CSV file with columns [permno, yyyymm, RDcap]
@@ -37,10 +37,12 @@ df = df.drop_duplicates(subset=["permno", "time_avail_m"])
 # Merge with SignalMasterTable (keep master match like Stata)
 smt = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_permco"],
+    columns=["permno", "time_avail_m", "mve_c"],
 )
 df = df.merge(
-    smt[["permno", "time_avail_m", "mve_permco"]], on=["permno", "time_avail_m"], how="left"
+    smt[["permno", "time_avail_m", "mve_c"]],
+    on=["permno", "time_avail_m"],
+    how="left",
 )
 
 # SIGNAL CONSTRUCTION
@@ -67,7 +69,7 @@ df["RDcap"] = (
 df.loc[df["time_avail_m"].dt.year < 1980, "RDcap"] = np.nan
 
 # Create size tertiles - RDcap only works in small firms
-df["tempsizeq"] = df.groupby("time_avail_m")["mve_permco"].transform(
+df["tempsizeq"] = df.groupby("time_avail_m")["mve_c"].transform(
     lambda x: pd.qcut(x, q=3, labels=False, duplicates="drop") + 1
 )
 df.loc[df["tempsizeq"] >= 2, "RDcap"] = np.nan

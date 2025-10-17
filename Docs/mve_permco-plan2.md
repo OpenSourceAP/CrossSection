@@ -60,35 +60,17 @@ These use mve_permco only for rescaling Compustat Fund A accounting numbers. Rep
 25. ZZ1_EBM_BPEBM.py ✅
 26. ZZ1_FR_FRbook.py ✅
 27. ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py ✅
+30. MS.py ✅
+31. NetDebtPrice.py ✅
+34. PS.py ✅
 
-### Predictors: Other Uses (10 files)
+### Predictors: Multi Use
 
-These use may use mve_permco for filtering other non-scaling purposes. Use `mve_permco` *only* for scaling. Use `mve_c` for other purposes.
+These use market equity for scaling accounting *and* for other purposes. Use `mve_permco` *only* for scaling. Use `mve_c` for other purposes.
 
 28. CBOperProf.py ✅
    - use `mve_permco` for constructing B/M
    - use `mve_c` for filtering for non-missing market equity
-29. GrAdExp.py
-   - use `mve_c` for monthly size deciles and culling smallest bucket
-   - (no scaling use)
-30. MS.py
-   - use `mve_permco` for computing log B/M (ceq / mve_permco)
-   - use `mve_c` for identifying lowest quintile eligible for Mohanram score
-31. NetDebtPrice.py
-   - use `mve_permco` for scaling net debt (net debt / mve_permco)
-   - use `mve_c` for log B/M filter that removes bottom two quintiles
-32. OperProf.py
-   - use `mve_c` for size-tercile assignment (smallest firms drop out)
-   - (profitability ratio itself uses assets, not market equity)
-33. OperProfRD.py
-   - use `mve_c` as screen to exclude rows missing market equity
-   - (ratio is over assets, not market equity)
-34. PS.py
-   - use `mve_permco` for computing log B/M (ceq / mve_permco)
-   - use `mve_c` for highest BM quintile filter
-35. RDcap.py
-   - use `mve_c` for monthly size tertiles (small-firm restriction)
-   - (R&D capital is scaled by assets, not market equity)
 37. ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
    - use `mve_permco` for market-to-book ratio (mve_permco in numerator)
    - use `mve_c` for NYSE/AMEX size breakpoints, logistic RIO transformation, and dropping rows lacking market equity 
@@ -141,8 +123,8 @@ These operate at the stock (permno) level and should continue using `mve_c`:
 - VolMkt.py
 - TrendFactor.py
 
-**Scripts That Filter on mve_c (8 files)**
-These use size filters/rankings. For now, keep using `mve_c`:
+**Scripts That Filter on mve_c**
+These use size filters/rankings. Keep using `mve_c`:
 - ChNAnalyst.py
 - CitationsRD.py
 - DelBreadth.py
@@ -152,6 +134,10 @@ These use size filters/rankings. For now, keep using `mve_c`:
 - std_turn.py
 - DivYield.py
 - DivYieldAnn.py
+- GrAdExp.py ✅ (refixed)
+- OperProf.py ✅ (refixed)
+- OperProfRD.py ✅ (refixed)  
+- RDcap.py ✅ (refixed)
 
 **Other**
 - CompEquIss.py - measures equity issuance by comparing buy-hold returns with change in market value. Keep using `mve_c`.
