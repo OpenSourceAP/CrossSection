@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/CBOperProf.py
 
 Inputs:
-    - SignalMasterTable.parquet: Master signal data with columns [permno, gvkey, time_avail_m, exchcd, sicCRSP, shrcd, mve_permco]
+    - SignalMasterTable.parquet: Master signal data with columns [permno, gvkey, time_avail_m, exchcd, sicCRSP, shrcd, mve_permco, mve_c]
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, revt, cogs, xsga, xrd, rect, invt, xpp, drc, drlt, ap, xacc, at, ceq]
 
 Outputs:
@@ -31,7 +31,7 @@ print("Starting CBOperProf predictor...")
 print("Loading SignalMasterTable...")
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "gvkey", "time_avail_m", "exchcd", "sicCRSP", "shrcd", "mve_permco"],
+    columns=["permno", "gvkey", "time_avail_m", "exchcd", "sicCRSP", "shrcd", "mve_permco", "mve_c"],
 )
 
 print(f"Loaded SignalMasterTable: {len(signal_master):,} observations")
@@ -135,7 +135,7 @@ df["BM"] = np.log(df["ceq"] / df["mve_permco"])
 # replace CBOperProf = . if shrcd > 11 | mi(mve_permco) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
 exclusion_mask = (
     (df["shrcd"] > 11)
-    | df["mve_permco"].isna()
+    | df["mve_c"].isna()
     | df["BM"].isna()
     | df["at"].isna()
     | ((df["sicCRSP"] >= 6000) & (df["sicCRSP"] < 7000))
