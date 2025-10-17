@@ -19,11 +19,11 @@ These files should have references to `mve_c` removed FIRST, before any other ch
 2. **Signals/pyCode/Predictors/RevenueSurprise.py** - Remove `mve_c` references ✅
 3. **Signals/pyCode/Predictors/ZZ1_Activism1_Activism2.py** - Remove `mve_c` references ✅
 4. **Signals/pyCode/Predictors/sfe.py** - Remove `mve_c` references ✅
-5. **Signals/pyCode/Predictors/roaq.py** - Remove `mve_c` references 
+5. **Signals/pyCode/Predictors/roaq.py** - Remove `mve_c` references ✅
 
 ### Core Data Processing and Testing (3 files) ✅
 
-6. **Signals/pyCode/DataDownloads/CRSPMonthly.py**
+6. **Signals/pyCode/DataDownloads/CRSPMonthly.py** ✅
    - Add calculation of `mve_permco` after line 105 (after creating `mve_c`)
    - Aggregate `mve_c` by `permco` and `time_avail_m` to create `mve_permco`
    - Keep `permco` in the dataset (currently dropped at line 108)
@@ -33,7 +33,7 @@ These files should have references to `mve_c` removed FIRST, before any other ch
    - Update line 26 to include `mve_permco` in the columns list
    - Update line 127 to include `mve_permco` in the reordered columns (it's already there but commented as "commonly used crsp variables")
 
-8. Test by updating BM.py to use mve_permco
+8. Test by updating BM.py to use mve_permco ✅
    - Hand check result
 
 ### Predictors: Accounting Scaling Only (20 files)
@@ -65,15 +65,33 @@ These use mve_permco only for rescaling Compustat Fund A accounting numbers. Rep
 
 These use may use mve_permco for filtering other non-scaling purposes. Use `mve_permco` *only* for scaling. Use `mve_c` for other purposes.
 
-28. CBOperProf.py 
-29. GrAdExp.py 
-30. MS.py 
-31. NetDebtPrice.py 
-32. OperProf.py 
-33. OperProfRD.py 
-34. PS.py 
-35. RDcap.py 
-37. ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py 
+28. CBOperProf.py ✅
+   - use `mve_permco` for constructing B/M
+   - use `mve_c` for filtering for non-missing market equity
+29. GrAdExp.py
+   - use `mve_c` for monthly size deciles and culling smallest bucket
+   - (no scaling use)
+30. MS.py
+   - use `mve_permco` for computing log B/M (ceq / mve_permco)
+   - use `mve_c` for identifying lowest quintile eligible for Mohanram score
+31. NetDebtPrice.py
+   - use `mve_permco` for scaling net debt (net debt / mve_permco)
+   - use `mve_c` for log B/M filter that removes bottom two quintiles
+32. OperProf.py
+   - use `mve_c` for size-tercile assignment (smallest firms drop out)
+   - (profitability ratio itself uses assets, not market equity)
+33. OperProfRD.py
+   - use `mve_c` as screen to exclude rows missing market equity
+   - (ratio is over assets, not market equity)
+34. PS.py
+   - use `mve_permco` for computing log B/M (ceq / mve_permco)
+   - use `mve_c` for highest BM quintile filter
+35. RDcap.py
+   - use `mve_c` for monthly size tertiles (small-firm restriction)
+   - (R&D capital is scaled by assets, not market equity)
+37. ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py
+   - use `mve_permco` for market-to-book ratio (mve_permco in numerator)
+   - use `mve_c` for NYSE/AMEX size breakpoints, logistic RIO transformation, and dropping rows lacking market equity 
 
 ### Accounting-Based Placebos 
 
@@ -137,7 +155,7 @@ These use size filters/rankings. For now, keep using `mve_c`:
 
 **Other**
 - CompEquIss.py - measures equity issuance by comparing buy-hold returns with change in market value. Keep using `mve_c`.
-- ZZ1_iomom_cust__iomom_supp.R - Uses `mve_c` to compute value-weighted returns. Unclear what is ideal so we keep it as is to match OP.
+- ZZ1_iomom_cust__iomom_supp.R - Uses `mve_c` to compute value-weighted returns. Keep using `mve_c`.
 
 
 
