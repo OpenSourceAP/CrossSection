@@ -287,7 +287,7 @@ def main():
         }}
 
         .detail-field.inline .detail-label {{
-            width: 200px;
+            width: 220px;
             flex-shrink: 0;
             white-space: nowrap;
         }}
@@ -438,20 +438,15 @@ def main():
 
             const fields = [
                 {{ key: 'signalname', label: 'Acronym', inline: true }},
+                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},                
                 {{ key: 'Category', label: 'Category', inline: true }},
                 {{ key: 'Predictability', label: 'Predictability', inline: true }},
-                {{ key: 'Quality', label: 'Replication Quality', inline: true }},
-                {{ key: 'AuthorYear', label: 'Authors', inline: true }},
-                {{ key: 'Journal', label: 'Journal', inline: true }},
-                {{ key: 'FormCategory', label: 'Form Category', inline: true }},
-                {{ key: 'DataCategory', label: 'Data Category', inline: true }},
-                {{ key: 'EconomicCategory', label: 'Economic Category', inline: true }},
+                {{ key: 'AuthorYear', label: 'Paper', inline: true }},
                 {{ key: 'SampleStart', label: 'Sample Start', inline: true }},
                 {{ key: 'SampleEnd', label: 'Sample End', inline: true }},
-                {{ key: 'Acronym2', label: 'Acronym2', inline: true }},
                 {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
                 {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
-                {{ key: 'Sign', label: 'Sign', inline: true }},
+                {{ key: 'Sign', label: 'Sign of Predictability', inline: true }},
                 {{ key: 'Return', label: 'Return', inline: true }},
                 {{ key: 'TStat', label: 'T-Stat', inline: true }},
                 {{ key: 'StockWeight', label: 'Stock Weight', inline: true }},
@@ -461,8 +456,12 @@ def main():
                 {{ key: 'StartMonth', label: 'Start Month', inline: true }},
                 {{ key: 'Filter', label: 'Filter', inline: true }},
                 {{ key: 'EvidenceSummary', label: 'Evidence Summary', inline: true }},
-                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},
-                {{ key: 'Notes', label: 'Notes', inline: false }}
+                {{ key: 'Notes', label: 'Notes', inline: false }},
+                {{ key: 'Acronym2', label: 'Acronym2', inline: true }},                
+                {{ key: 'Quality', label: 'Replication Quality', inline: true }},
+                {{ key: 'FormCategory', label: 'Form Category', inline: true }},
+                {{ key: 'DataCategory', label: 'Data Category', inline: true }},
+                {{ key: 'EconomicCategory', label: 'Economic Category', inline: true }}
             ];
 
             const fieldsHtml = fields
