@@ -22,8 +22,22 @@ print("Starting SignalMasterTable.py...")
 print("Loading monthly CRSP data...")
 
 # Start with monthly CRSP
-df = pd.read_parquet('../pyData/Intermediate/monthlyCRSP.parquet',
-    columns=['permno', 'ticker', 'exchcd', 'shrcd', 'time_avail_m', 'mve_c', 'prc', 'ret', 'sicCRSP'])
+df = pd.read_parquet(
+    '../pyData/Intermediate/monthlyCRSP.parquet',
+    columns=[
+        'permno',
+        'permco',
+        'ticker',
+        'exchcd',
+        'shrcd',
+        'time_avail_m',
+        'mve_c',
+        'mve_permco',
+        'prc',
+        'ret',
+        'sicCRSP',
+    ],
+)
 
 print(f"Loaded monthlyCRSP: {df.shape[0]} rows, {df.shape[1]} columns")
 
@@ -64,6 +78,7 @@ df['exchcd'] = df['exchcd'].astype('int8')
 df['shrcd'] = df['shrcd'].astype('int8')
 df['sicCRSP'] = df['sicCRSP'].astype('int16')
 df['NYSE'] = df['NYSE'].astype('int8')
+df['permco'] = df['permco'].astype('Int64')
 
 # Comprehensive string column cleanup to match Stata format (handle None -> empty string)
 string_columns = ['ticker', 'sicCS']
@@ -153,7 +168,7 @@ else:
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Reorder columns: ['permno', 'time_avail_m'] + everything else
-main_cols = ['permno', 'time_avail_m']
+main_cols = ['permno', 'permco', 'time_avail_m', 'mve_c', 'mve_permco']
 other_cols = [col for col in df.columns if col not in main_cols]
 df = df[main_cols + other_cols]
 
