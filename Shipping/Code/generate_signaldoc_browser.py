@@ -257,30 +257,53 @@ def main():
         }}
 
         .detail-title {{
-            font-size: 2rem;
+            font-size: 1.75rem;
             color: #2c3e50;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             border-bottom: 3px solid #3498db;
             padding-bottom: 0.5rem;
         }}
 
         .detail-field {{
-            margin-bottom: 1.25rem;
+            margin-bottom: 0.5rem;
+        }}
+
+        .detail-field.inline {{
+            display: flex;
+            gap: 0.5rem;
+            align-items: baseline;
+        }}
+
+        .detail-field.block {{
+            margin-bottom: 1rem;
         }}
 
         .detail-label {{
             font-weight: 600;
             color: #555;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }}
+
+        .detail-field.inline .detail-label {{
+            width: 200px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }}
+
+        .detail-field.block .detail-label {{
+            margin-bottom: 0.25rem;
         }}
 
         .detail-value {{
             color: #333;
             line-height: 1.6;
-            font-size: 1rem;
+            font-size: 0.95rem;
+        }}
+
+        .detail-field.inline .detail-value {{
+            flex: 1;
         }}
 
         .detail-value.long-text {{
@@ -288,6 +311,7 @@ def main():
             padding: 1rem;
             border-radius: 4px;
             border-left: 3px solid #3498db;
+            margin-top: 0.25rem;
         }}
 
         .no-results {{
@@ -333,6 +357,14 @@ def main():
         function init() {{
             populateCategoryFilter();
             renderSignalList();
+
+            // Select BM signal by default
+            const bmSignal = signalsData.find(s => s.signalname === 'BM');
+            if (bmSignal) {{
+                selectSignal('BM');
+            }} else if (signalsData.length > 0) {{
+                selectSignal(signalsData[0].signalname);
+            }}
 
             document.getElementById('searchInput').addEventListener('input', filterSignals);
             document.getElementById('categoryFilter').addEventListener('change', filterSignals);
@@ -405,33 +437,32 @@ def main():
             }}
 
             const fields = [
-                {{ key: 'signalname', label: 'Signal' }},
-                {{ key: 'Category', label: 'Category' }},
-                {{ key: 'Predictability', label: 'Predictability' }},
-                {{ key: 'Quality', label: 'Quality' }},
-                {{ key: 'AuthorYear', label: 'Authors' }},
-                {{ key: 'Description', label: 'Description' }},
-                {{ key: 'Journal', label: 'Journal' }},
-                {{ key: 'FormCategory', label: 'Form Category' }},
-                {{ key: 'DataCategory', label: 'Data Category' }},
-                {{ key: 'EconomicCategory', label: 'Economic Category' }},
-                {{ key: 'SampleStart', label: 'Sample Start' }},
-                {{ key: 'SampleEnd', label: 'Sample End' }},
-                {{ key: 'Acronym2', label: 'Acronym2' }},
-                {{ key: 'EvidenceSummary', label: 'Evidence Summary' }},
-                {{ key: 'KeyTable', label: 'Key Table' }},
-                {{ key: 'TestInOP', label: 'Test in OP' }},
-                {{ key: 'Sign', label: 'Sign' }},
-                {{ key: 'Return', label: 'Return' }},
-                {{ key: 'TStat', label: 'T-Stat' }},
-                {{ key: 'StockWeight', label: 'Stock Weight' }},
-                {{ key: 'LSQuantile', label: 'LS Quantile' }},
-                {{ key: 'QuantileFilter', label: 'Quantile Filter' }},
-                {{ key: 'PortfolioPeriod', label: 'Portfolio Period' }},
-                {{ key: 'StartMonth', label: 'Start Month' }},
-                {{ key: 'Filter', label: 'Filter' }},
-                {{ key: 'Definition', label: 'Detailed Definition' }},
-                {{ key: 'Notes', label: 'Notes' }}
+                {{ key: 'signalname', label: 'Acronym', inline: true }},
+                {{ key: 'Category', label: 'Category', inline: true }},
+                {{ key: 'Predictability', label: 'Predictability', inline: true }},
+                {{ key: 'Quality', label: 'Replication Quality', inline: true }},
+                {{ key: 'AuthorYear', label: 'Authors', inline: true }},
+                {{ key: 'Journal', label: 'Journal', inline: true }},
+                {{ key: 'FormCategory', label: 'Form Category', inline: true }},
+                {{ key: 'DataCategory', label: 'Data Category', inline: true }},
+                {{ key: 'EconomicCategory', label: 'Economic Category', inline: true }},
+                {{ key: 'SampleStart', label: 'Sample Start', inline: true }},
+                {{ key: 'SampleEnd', label: 'Sample End', inline: true }},
+                {{ key: 'Acronym2', label: 'Acronym2', inline: true }},
+                {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
+                {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
+                {{ key: 'Sign', label: 'Sign', inline: true }},
+                {{ key: 'Return', label: 'Return', inline: true }},
+                {{ key: 'TStat', label: 'T-Stat', inline: true }},
+                {{ key: 'StockWeight', label: 'Stock Weight', inline: true }},
+                {{ key: 'LSQuantile', label: 'LS Quantile', inline: true }},
+                {{ key: 'QuantileFilter', label: 'Quantile Filter', inline: true }},
+                {{ key: 'PortfolioPeriod', label: 'Portfolio Period', inline: true }},
+                {{ key: 'StartMonth', label: 'Start Month', inline: true }},
+                {{ key: 'Filter', label: 'Filter', inline: true }},
+                {{ key: 'EvidenceSummary', label: 'Evidence Summary', inline: true }},
+                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},
+                {{ key: 'Notes', label: 'Notes', inline: false }}
             ];
 
             const fieldsHtml = fields
@@ -439,10 +470,12 @@ def main():
                 .map(field => {{
                     const value = selectedSignal[field.key];
                     const isLongText = value.length > 100;
+                    const layoutClass = field.inline && !isLongText ? 'inline' : 'block';
+                    const valueClass = isLongText ? 'long-text' : '';
                     return `
-                        <div class="detail-field">
+                        <div class="detail-field ${{layoutClass}}">
                             <div class="detail-label">${{field.label}}</div>
-                            <div class="detail-value ${{isLongText ? 'long-text' : ''}}">${{value}}</div>
+                            <div class="detail-value ${{valueClass}}">${{value}}</div>
                         </div>
                     `;
                 }})
@@ -450,7 +483,7 @@ def main():
 
             panel.innerHTML = `
                 <div class="detail-content">
-                    <div class="detail-title">${{selectedSignal.signalname}}</div>
+                    <div class="detail-title">${{selectedSignal.Description}}</div>
                     ${{fieldsHtml}}
                 </div>
             `;
