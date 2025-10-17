@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/RevenueSurprise.py
 
 Inputs:
-    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m, mve_c]
+    - SignalMasterTable.parquet: Master table with columns [permno, gvkey, time_avail_m]
     - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, revtq, cshprq]
 
 Outputs:
@@ -23,7 +23,7 @@ import numpy as np
 # Load SignalMasterTable with specific columns
 df = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "gvkey", "time_avail_m", "mve_c"],
+    columns=["permno", "gvkey", "time_avail_m"],
 )
 
 # Keep observations with valid gvkey

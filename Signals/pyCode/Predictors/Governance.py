@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/Governance.py
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, ticker, exchcd, mve_c]
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, ticker, exchcd]
     - GovIndex.parquet: Governance index data with columns [ticker, time_avail_m, G]
 
 Outputs:
@@ -21,7 +21,7 @@ import numpy as np
 
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df[["permno", "time_avail_m", "ticker", "exchcd", "mve_c"]].copy()
+df = df[["permno", "time_avail_m", "ticker", "exchcd"]].copy()
 
 # Split into records with and without ticker
 df_no_ticker = df[df["ticker"].isna()].copy()
