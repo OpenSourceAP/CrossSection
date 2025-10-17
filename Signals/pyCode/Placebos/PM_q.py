@@ -18,10 +18,11 @@ import sys
 
 import polars as pl
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).resolve().parents[2]
 PYDATA_INTERMEDIATE = ROOT_DIR / "pyData" / "Intermediate"
+PYCODE_DIR = Path(__file__).resolve().parents[1]
 
-sys.path.append(str(ROOT_DIR))
+sys.path.append(str(PYCODE_DIR))
 from utils.saveplacebo import save_placebo
 
 
