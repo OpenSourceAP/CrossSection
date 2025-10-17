@@ -24,18 +24,48 @@ def main():
     script_dir = Path(__file__).parent
     os.chdir(script_dir)
 
+    # Read settings from 00_settings.txt
+    settings = {}
+    with open('00_settings.txt', 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#'):
+                key, value = [x.strip() for x in line.split(' = ', 1)]
+                settings[key] = value
+
+    pathProject = Path(settings['pathProject']).expanduser()
+    pathStorage = Path(settings['pathStorage']).expanduser()
+
     # Determine output path
     if len(sys.argv) > 1:
         output_path = Path(sys.argv[1])
     else:
-        output_path = Path('../SignalDoc-Browser.html')
+        output_path = pathStorage / 'SignalDoc-Browser.html'
 
     print(f"Reading SignalDoc.csv...")
-    doc = pd.read_csv('../../SignalDoc.csv')
+    doc = pd.read_csv(pathProject / 'SignalDoc.csv')
 
-    # Create AuthorYear column
-    doc['AuthorYear'] = doc['Authors'].fillna('') + ' ' + doc['Year'].fillna('').astype(str)
-    doc['AuthorYear'] = doc['AuthorYear'].str.strip()
+    # Create AuthorYear column with Journal
+    doc['AuthorYear'] = doc['Authors'].fillna('')
+
+    # Add year and journal in parentheses
+    year_journal = []
+    for idx, row in doc.iterrows():
+        parts = []
+        year = str(row['Year']) if pd.notna(row['Year']) else ''
+        journal = row['Journal'] if pd.notna(row['Journal']) else ''
+
+        if year:
+            parts.append(year)
+        if journal:
+            parts.append(journal)
+
+        if parts:
+            year_journal.append(' (' + ', '.join(parts) + ')')
+        else:
+            year_journal.append('')
+
+    doc['AuthorYear'] = doc['AuthorYear'] + pd.Series(year_journal)
 
     # Prepare data for JSON
     signals = []
@@ -84,7 +114,7 @@ def main():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Chen-Zimmermann (2020) Signal Library</title>
+    <title>The Chen-Zimmermann (2020, CFR) Signal Library</title>
     <style>
         * {{
             box-sizing: border-box;
@@ -145,7 +175,7 @@ def main():
         }}
 
         .list-panel {{
-            width: 350px;
+            width: 450px;
             border-right: 1px solid #ddd;
             display: flex;
             flex-direction: column;
@@ -184,6 +214,17 @@ def main():
         .signal-item-name {{
             font-weight: 600;
             margin-bottom: 0.25rem;
+        }}
+
+        .signal-item-acronym {{
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 0.25rem;
+            font-style: italic;
+        }}
+
+        .signal-item.active .signal-item-acronym {{
+            color: #e0e0e0;
         }}
 
         .signal-item-meta {{
@@ -259,7 +300,7 @@ def main():
 <body>
     <div class="container">
         <div class="header">
-            <h1>The Chen-Zimmermann (2020) Signal Library</h1>
+            <h1>The Chen-Zimmermann (2020, CFR) Signal Library</h1>
             <div class="search-bar">
                 <select id="categoryFilter">
                     <option value="">All Categories</option>
@@ -342,7 +383,8 @@ def main():
             listEl.innerHTML = filteredSignals.map(signal => `
                 <div class="signal-item ${{selectedSignal?.signalname === signal.signalname ? 'active' : ''}}"
                      onclick="selectSignal('${{signal.signalname}}')">
-                    <div class="signal-item-name">${{signal.signalname}}</div>
+                    <div class="signal-item-name">${{signal.Description}}</div>
+                    <div class="signal-item-acronym">${{signal.signalname}}</div>
                     <div class="signal-item-meta">${{signal.AuthorYear}}</div>
                 </div>
             `).join('');
