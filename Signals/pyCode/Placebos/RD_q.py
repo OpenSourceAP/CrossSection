@@ -5,7 +5,7 @@
 RD_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, xrdq columns
 
 Outputs:
@@ -29,10 +29,10 @@ from utils.saveplacebo import save_placebo
 print("Starting RD_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # drop if mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -56,12 +56,12 @@ df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 print(f"After merge: {len(df)} rows")
 
 # SIGNAL CONSTRUCTION  
-# gen RD_q = xrdq/mve_c
+# gen RD_q = xrdq/mve_permco
 # NOTE: In Stata, missing xrdq appears to be treated as 0 in some cases
 print("Computing RD_q...")
 df = df.with_columns(
     # If xrdq is missing, treat as 0 (like Stata appears to do)
-    (pl.col('xrdq').fill_null(0) / pl.col('mve_c')).alias('RD_q')
+    (pl.col('xrdq').fill_null(0) / pl.col('mve_permco')).alias('RD_q')
 )
 
 print(f"Generated RD_q for {len(df)} observations")

@@ -6,7 +6,7 @@ KZ.py
 
 Inputs:
     - m_aCompustat.parquet: permno, time_avail_m, ib, dp, ppent, at, ceq, txdb, dlc, dltt, seq, dvc, dvp, che columns
-    - SignalMasterTable.parquet: permno, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, time_avail_m, mve_permco columns
 
 Outputs:
     - KZ.csv: permno, yyyymm, KZ columns
@@ -41,10 +41,10 @@ df = df.unique(subset=['permno', 'time_avail_m'], maintain_order=True)
 
 print(f"After removing duplicates: {len(df)} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_c)
+# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_permco)
 print("Loading SignalMasterTable...")
 signal = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-signal = signal.select(['permno', 'time_avail_m', 'mve_c'])
+signal = signal.select(['permno', 'time_avail_m', 'mve_permco'])
 
 print("Merging with SignalMasterTable...")
 df = df.join(signal, on=['permno', 'time_avail_m'], how='inner')
@@ -61,7 +61,7 @@ df = df.with_columns([
 print("ppent forward-fill completed")
 
 # SIGNAL CONSTRUCTION
-# KZ = -1.002* (ib + dp)/ppent + .283*(at + mve_c - ceq - txdb)/at + 3.139*(dlc + dltt)/(dlc + dltt + seq) - 39.368*((dvc+dvp)/ppent) - 1.315*(che/ppent)
+# KZ = -1.002* (ib + dp)/ppent + .283*(at + mve_permco - ceq - txdb)/at + 3.139*(dlc + dltt)/(dlc + dltt + seq) - 39.368*((dvc+dvp)/ppent) - 1.315*(che/ppent)
 print("Computing KZ index...")
 
 # Build the KZ formula step by step
@@ -69,8 +69,8 @@ df = df.with_columns([
     # Term 1: -1.002 * (ib + dp)/ppent
     (-1.002 * (pl.col('ib') + pl.col('dp')) / pl.col('ppent')).alias('term1'),
     
-    # Term 2: 0.283 * (at + mve_c - ceq - txdb)/at
-    (0.283 * (pl.col('at') + pl.col('mve_c') - pl.col('ceq') - pl.col('txdb')) / pl.col('at')).alias('term2'),
+    # Term 2: 0.283 * (at + mve_permco - ceq - txdb)/at
+    (0.283 * (pl.col('at') + pl.col('mve_permco') - pl.col('ceq') - pl.col('txdb')) / pl.col('at')).alias('term2'),
     
     # Term 3: 3.139 * (dlc + dltt)/(dlc + dltt + seq)
     (3.139 * (pl.col('dlc') + pl.col('dltt')) / (pl.col('dlc') + pl.col('dltt') + pl.col('seq'))).alias('term3'),

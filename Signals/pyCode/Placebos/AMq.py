@@ -5,7 +5,7 @@
 AMq.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, atq columns
 
 Outputs:
@@ -29,10 +29,10 @@ from utils.saveplacebo import save_placebo
 print("Starting AMq.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -60,10 +60,10 @@ qcomp = qcomp.with_columns([
 ])
 
 # Also apply forward fill to SignalMasterTable for better coverage
-print("Applying forward fill to SignalMasterTable mve_c...")
+print("Applying forward fill to SignalMasterTable mve_permco...")
 df = df.sort(['permno', 'time_avail_m'])
 df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
+    pl.col('mve_permco').fill_null(strategy="forward").over('permno').alias('mve_permco')
 ])
 
 
@@ -77,9 +77,9 @@ print(f"After merge: {len(df)} rows")
 # Compute AMq with comprehensive null handling
 print("Computing AMq with enhanced null handling...")
 df = df.with_columns([
-    pl.when((pl.col('mve_c').is_null()) | (pl.col('mve_c') == 0))
-    .then(None)  # If mve_c is null/zero, result is null
-    .otherwise(pl.col('atq') / pl.col('mve_c'))
+    pl.when((pl.col('mve_permco').is_null()) | (pl.col('mve_permco') == 0))
+    .then(None)  # If mve_permco is null/zero, result is null
+    .otherwise(pl.col('atq') / pl.col('mve_permco'))
     .alias('AMq')
 ])
 

@@ -5,7 +5,7 @@
 EPq.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, ibq columns
 
 Outputs:
@@ -30,10 +30,10 @@ from utils.stata_replication import stata_multi_lag
 print("Starting EPq.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -57,7 +57,7 @@ print(f"After merge: {len(df)} rows")
 
 # SIGNAL CONSTRUCTION
 # xtset permno time_avail_m
-# gen EPq = ibq/l6.mve_c
+# gen EPq = ibq/l6.mve_permco
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
@@ -66,13 +66,13 @@ print("Computing 6-month lag using stata_multi_lag...")
 
 # Convert to pandas for stata_multi_lag
 df_pandas = df.to_pandas()
-df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'mve_c', [6], freq='M', prefix='l')
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'mve_permco', [6], freq='M', prefix='l')
 
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
 df = df.with_columns(
-    (pl.col('ibq') / pl.col('l6_mve_c')).alias('EPq')
+    (pl.col('ibq') / pl.col('l6_mve_permco')).alias('EPq')
 )
 
 # replace EPq = . if EPq < 0

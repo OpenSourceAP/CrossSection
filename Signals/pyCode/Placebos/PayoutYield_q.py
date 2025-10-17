@@ -5,7 +5,7 @@
 PayoutYield_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, dvpsxq, cshoq, ajexq, prstkcyq, pstkq columns
 
 Outputs:
@@ -31,10 +31,10 @@ from utils.forward_fill import apply_quarterly_fill_to_compustat
 print("Starting PayoutYield_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -79,14 +79,14 @@ print("Applying super-aggressive forward fill to SignalMasterTable...")
 df = df.sort(['permno', 'time_avail_m'])
 for iteration in range(3):  # Multiple iterations
     df = df.with_columns([
-        pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
+        pl.col('mve_permco').fill_null(strategy="forward").over('permno').alias('mve_permco')
     ])
 
-# Also apply forward fill to SignalMasterTable mve_c for better lag coverage
-print("Applying forward fill to SignalMasterTable mve_c...")
+# Also apply forward fill to SignalMasterTable mve_permco for better lag coverage
+print("Applying forward fill to SignalMasterTable mve_permco...")
 df = df.sort(['permno', 'time_avail_m'])
 df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
+    pl.col('mve_permco').fill_null(strategy="forward").over('permno').alias('mve_permco')
 ])
 
 print("Merging with m_QCompustat...")
@@ -107,7 +107,7 @@ df = df.with_columns(
     (pl.col('dvpsxq') * pl.col('cshoq') * pl.col('ajexq')).alias('tempDiv')
 )
 
-# Need calendar-based lags for l3.pstkq and l6.mve_c
+# Need calendar-based lags for l3.pstkq and l6.mve_permco
 print("Computing 3-month and 6-month calendar-based lags...")
 
 # Convert to pandas for calendar-based lag operations
@@ -116,16 +116,16 @@ df_pd = df.to_pandas()
 
 # Apply additional aggressive fill to lag data for complete coverage
 print("Applying additional fill to lag data...")
-df_pd['mve_c'] = df_pd.groupby('permno')['mve_c'].fillna(method='ffill')
+df_pd['mve_permco'] = df_pd.groupby('permno')['mve_permco'].fillna(method='ffill')
 df_pd['pstkq'] = df_pd.groupby('permno')['pstkq'].fillna(method='ffill')
 
 # Fill any remaining nulls with conservative defaults
-df_pd['mve_c'] = df_pd['mve_c'].fillna(1.0)  # Avoid division by zero
+df_pd['mve_permco'] = df_pd['mve_permco'].fillna(1.0)  # Avoid division by zero
 
 
-# Handle mve_c=0 division issues using PM_q approach
-print("Applying advanced zero-handling for mve_c division...")
-df_pd['mve_c'] = df_pd['mve_c'].replace(0, 0.0001)  # Replace zero with tiny positive
+# Handle mve_permco=0 division issues using PM_q approach
+print("Applying advanced zero-handling for mve_permco division...")
+df_pd['mve_permco'] = df_pd['mve_permco'].replace(0, 0.0001)  # Replace zero with tiny positive
 
 df_pd['pstkq'] = df_pd['pstkq'].fillna(0.0)  # Default preferred stock to 0
 
@@ -133,7 +133,7 @@ df_pd['pstkq'] = df_pd['pstkq'].fillna(0.0)  # Default preferred stock to 0
 # Create lags using stata_multi_lag
 print("Computing lags using stata_multi_lag...")
 df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'pstkq', [3], freq='M', prefix='l')
-df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'mve_c', [6], freq='M', prefix='l')
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'mve_permco', [6], freq='M', prefix='l')
 
 # Convert back to polars
 df = pl.from_pandas(df_pd)
@@ -147,10 +147,10 @@ df = df.with_columns(
      (pl.col('pstkq').fill_null(0) - pl.col('l3_pstkq').fill_null(0))).alias('tempTotalPayout')
 )
 
-# gen PayoutYield_q = tempTotalPayout/l6.mve_c
+# gen PayoutYield_q = tempTotalPayout/l6.mve_permco
 print("Computing PayoutYield_q...")
 df = df.with_columns(
-    (pl.col('tempTotalPayout') / pl.col('l6_mve_c')).alias('PayoutYield_q')
+    (pl.col('tempTotalPayout') / pl.col('l6_mve_permco')).alias('PayoutYield_q')
 )
 
 # replace PayoutYield_q = . if PayoutYield_q <= 0

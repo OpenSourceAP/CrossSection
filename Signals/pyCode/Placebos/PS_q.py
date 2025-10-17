@@ -5,7 +5,7 @@
 PS_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, foptyq, oancfyq, ibq, atq, dlttq, actq, lctq, txtq, xintq, saleq, ceqq columns
     - monthlyCRSP.parquet: permno, time_avail_m, shrout columns
 
@@ -49,7 +49,7 @@ def main():
     print("Loading SignalMasterTable...")
     signal_df = pd.read_parquet(
         "../pyData/Intermediate/SignalMasterTable.parquet",
-        columns=["permno", "gvkey", "time_avail_m", "mve_c"],
+        columns=["permno", "gvkey", "time_avail_m", "mve_permco"],
     )
     signal_df = signal_df.dropna(subset=["gvkey"])
     signal_df["gvkey"] = signal_df["gvkey"].astype("Int64")
@@ -158,8 +158,8 @@ def main():
 
     print("Applying BM quintile filter...")
     ceqq_clean = df["ceqq"].where(df["ceqq"] > 0)
-    mve_clean = df["mve_c"].where(df["mve_c"] > 0)
-    df["BM"] = np.log(ceqq_clean / mve_clean)
+    mve_permcolean = df["mve_permco"].where(df["mve_permco"] > 0)
+    df["BM"] = np.log(ceqq_clean / mve_permcolean)
 
     df["temp"] = fastxtile(df, "BM", by="time_avail_m", n=5)
     df.loc[df["temp"] != 5, "PS_q"] = np.nan

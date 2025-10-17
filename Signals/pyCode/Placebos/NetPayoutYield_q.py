@@ -5,7 +5,7 @@
 NetPayoutYield_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, dvpsxq, cshoq, ajexq, prstkcyq, pstkq, sstkyq columns
 
 Outputs:
@@ -30,10 +30,10 @@ from utils.forward_fill import apply_quarterly_fill_to_compustat
 print("Starting NetPayoutYield_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -91,10 +91,10 @@ df = df.with_columns(
     (pl.col('tempDiv') + pl.col('prstkcyq') + (pl.col('pstkq') - pl.col('l3_pstkq'))).alias('tempTotalPayout')
 )
 
-# gen NetPayoutYield_q = (tempTotalPayout - sstkyq - (pstkq - l3.pstkq))/mve_c
+# gen NetPayoutYield_q = (tempTotalPayout - sstkyq - (pstkq - l3.pstkq))/mve_permco
 print("Computing NetPayoutYield_q...")
 df = df.with_columns(
-    ((pl.col('tempTotalPayout') - pl.col('sstkyq') - (pl.col('pstkq') - pl.col('l3_pstkq'))) / pl.col('mve_c')).alias('NetPayoutYield_q')
+    ((pl.col('tempTotalPayout') - pl.col('sstkyq') - (pl.col('pstkq') - pl.col('l3_pstkq'))) / pl.col('mve_permco')).alias('NetPayoutYield_q')
 )
 
 print(f"Generated NetPayoutYield_q for {len(df)} observations")

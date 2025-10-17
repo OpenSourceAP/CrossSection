@@ -5,7 +5,7 @@
 CBOperProfLagAT_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c, shrcd, sicCRSP columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco, shrcd, sicCRSP columns
     - m_aCompustat.parquet: permno, time_avail_m, ceq columns
     - m_QCompustat.parquet: gvkey, time_avail_m, atq, revtq, cogsq, xsgaq, xrdq, rectq, invtq, drcq, drltq, apq, xaccq columns
 
@@ -30,10 +30,10 @@ from utils.saveplacebo import save_placebo
 print("Starting CBOperProfLagAT_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c shrcd sicCRSP using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco shrcd sicCRSP using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c', 'shrcd', 'sicCRSP'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco', 'shrcd', 'sicCRSP'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -123,21 +123,21 @@ df = df.with_columns(
     (pl.col('CBOperProfLagAT_q_num') / pl.col('l3_atq')).alias('CBOperProfLagAT_q')
 )
 
-# gen BM = log(ceq/mve_c)
+# gen BM = log(ceq/mve_permco)
 print("Computing BM ratio...")
 df = df.with_columns(
-    (pl.col('ceq') / pl.col('mve_c')).log().alias('BM')
+    (pl.col('ceq') / pl.col('mve_permco')).log().alias('BM')
 )
 
 # destring sicCRSP, replace (assuming it's already numeric)
 df = df.with_columns(pl.col('sicCRSP').cast(pl.Int32, strict=False))
 
-# replace CBOperProfLagAT_q = . if shrcd > 11 | mi(mve_c) | mi(BM) | mi(atq) | (sicCRSP >= 6000 & sicCRSP < 7000)
+# replace CBOperProfLagAT_q = . if shrcd > 11 | mi(mve_permco) | mi(BM) | mi(atq) | (sicCRSP >= 6000 & sicCRSP < 7000)
 print("Applying exclusion filters...")
 df = df.with_columns(
     pl.when(
         (pl.col('shrcd') > 11) | 
-        pl.col('mve_c').is_null() | 
+        pl.col('mve_permco').is_null() | 
         pl.col('BM').is_null() | 
         pl.col('atq').is_null() |
         ((pl.col('sicCRSP') >= 6000) & (pl.col('sicCRSP') < 7000))

@@ -5,7 +5,7 @@
 KZ_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, txdiq, ibq, dpq, atq, ceqq, dlcq, dlttq, cheq, dvy, ppentq columns
 
 Outputs:
@@ -29,10 +29,10 @@ from utils.saveplacebo import save_placebo
 print("Starting KZ_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -68,7 +68,7 @@ df = df.with_columns([
     .alias('tempTX')
 ])
 
-# gen KZ_q = -1.002* (ibq + dpq)/ppentq + .283*(atq + mve_c - ceqq - tempTX)/atq + 3.139*(dlcq + dlttq)/(dlcq + dlttq + ceqq) - 39.368*(dvy/ppentq) - 1.315*(cheq/ppentq)
+# gen KZ_q = -1.002* (ibq + dpq)/ppentq + .283*(atq + mve_permco - ceqq - tempTX)/atq + 3.139*(dlcq + dlttq)/(dlcq + dlttq + ceqq) - 39.368*(dvy/ppentq) - 1.315*(cheq/ppentq)
 print("Computing KZ_q index...")
 
 # Build the KZ_q formula step by step
@@ -76,8 +76,8 @@ df = df.with_columns([
     # Term 1: -1.002 * (ibq + dpq)/ppentq
     (-1.002 * (pl.col('ibq') + pl.col('dpq')) / pl.col('ppentq')).alias('term1'),
     
-    # Term 2: 0.283 * (atq + mve_c - ceqq - tempTX)/atq
-    (0.283 * (pl.col('atq') + pl.col('mve_c') - pl.col('ceqq') - pl.col('tempTX')) / pl.col('atq')).alias('term2'),
+    # Term 2: 0.283 * (atq + mve_permco - ceqq - tempTX)/atq
+    (0.283 * (pl.col('atq') + pl.col('mve_permco') - pl.col('ceqq') - pl.col('tempTX')) / pl.col('atq')).alias('term2'),
     
     # Term 3: 3.139 * (dlcq + dlttq)/(dlcq + dlttq + ceqq)
     (3.139 * (pl.col('dlcq') + pl.col('dlttq')) / (pl.col('dlcq') + pl.col('dlttq') + pl.col('ceqq'))).alias('term3'),

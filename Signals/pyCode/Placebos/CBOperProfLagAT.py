@@ -6,7 +6,7 @@ CBOperProfLagAT.py
 
 Inputs:
     - m_aCompustat.parquet: permno, time_avail_m, revt, cogs, xsga, xrd, rect, invt, xpp, drc, drlt, ap, xacc, at, ceq columns
-    - SignalMasterTable.parquet: permno, time_avail_m, mve_c, sicCRSP, shrcd columns
+    - SignalMasterTable.parquet: permno, time_avail_m, mve_permco, sicCRSP, shrcd columns
 
 Outputs:
     - CBOperProfLagAT.csv: permno, yyyymm, CBOperProfLagAT columns
@@ -37,10 +37,10 @@ df = df.select(['permno', 'time_avail_m', 'revt', 'cogs', 'xsga', 'xrd', 'rect',
 
 print(f"After loading m_aCompustat: {len(df)} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_c sicCRSP shrcd)
+# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_permco sicCRSP shrcd)
 print("Loading SignalMasterTable...")
 signal_df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-signal_df = signal_df.select(['permno', 'time_avail_m', 'mve_c', 'sicCRSP', 'shrcd'])
+signal_df = signal_df.select(['permno', 'time_avail_m', 'mve_permco', 'sicCRSP', 'shrcd'])
 
 print("Merging with SignalMasterTable...")
 df = df.join(signal_df, on=['permno', 'time_avail_m'], how='inner')
@@ -89,16 +89,16 @@ df = df.with_columns(
     (pl.col('CBOperProfLagAT') / pl.col('l12_at')).alias('CBOperProfLagAT')
 )
 
-# gen BM = log(ceq/mve_c)
+# gen BM = log(ceq/mve_permco)
 print("Computing BM...")
 df = df.with_columns(
-    (pl.col('ceq') / pl.col('mve_c')).log().alias('BM')
+    (pl.col('ceq') / pl.col('mve_permco')).log().alias('BM')
 )
 
-# replace CBOperProfLagAT = . if shrcd > 11 | mi(mve_c) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
+# replace CBOperProfLagAT = . if shrcd > 11 | mi(mve_permco) | mi(BM) | mi(at) | (sicCRSP >= 6000 & sicCRSP < 7000)
 print("Applying filters...")
 df = df.with_columns(
-    pl.when((pl.col('shrcd') > 11) | pl.col('mve_c').is_null() | pl.col('BM').is_null() | 
+    pl.when((pl.col('shrcd') > 11) | pl.col('mve_permco').is_null() | pl.col('BM').is_null() | 
             pl.col('at').is_null() | ((pl.col('sicCRSP') >= 6000) & (pl.col('sicCRSP') < 7000)))
     .then(None)
     .otherwise(pl.col('CBOperProfLagAT'))
