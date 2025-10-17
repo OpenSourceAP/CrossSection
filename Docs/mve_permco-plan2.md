@@ -8,17 +8,6 @@ Issue #167 describes a problem where the current code fails to aggregate market 
 
 We fixed this issue in commit 68d6ce5. However, in the previous fix (commit 68d6ce5), we did not carefully track deviations of the output from the legacy Stata code. We rolled back and ensured we knew when the Stata replication was complete (see https://github.com/OpenSourceAP/CrossSection/issues/174) and then started to address the current Github issues that. The goal here is just to re-apply and check again, being more aware of how we are deviating from Stata. 
 
-## Current State
-
-Looking at the current code:
-- `Signals/pyCode/DataDownloads/CRSPMonthly.py` only creates `mve_c` (no `mve_permco`)
-- `Signals/pyCode/SignalMasterTable.py` only loads `mve_c` (no `mve_permco`)
-- All predictors use `mve_c`
-
-The old code from commit 68d6ce5:
-- `I_CRSPmonthly.py` created both `mve_c` and `mve_permco`
-- `SignalMasterTable.py` loaded both variables
-- Accounting-based predictors were updated to use `mve_permco`
 
 ## Files That Need To Be Changed
 
@@ -30,6 +19,7 @@ These files should have references to `mve_c` removed FIRST, before any other ch
 2. **Signals/pyCode/Predictors/RevenueSurprise.py** - Remove `mve_c` references ✅
 3. **Signals/pyCode/Predictors/ZZ1_Activism1_Activism2.py** - Remove `mve_c` references ✅
 4. **Signals/pyCode/Predictors/sfe.py** - Remove `mve_c` references ✅
+5. **Signals/pyCode/Predictors/roaq.py** - Remove `mve_c` references 
 
 ### Core Data Processing and Testing (3 files) ✅
 
@@ -46,41 +36,44 @@ These files should have references to `mve_c` removed FIRST, before any other ch
 8. Test by updating BM.py to use mve_permco
    - Hand check result
 
+### Predictors: Accounting Scaling Only (20 files)
 
-### Accounting-Based Predictors (31 files)
-
-These use accounting ratios and fundamental data. Replace `mve_c` with `mve_permco`:
+These use mve_permco only for rescaling Compustat Fund A accounting numbers. Replace `mve_c` with `mve_permco`:
 
 8. AccrualsBM.py ✅
 9. AdExp.py ✅
 10. AM.py ✅
-12. CashProd.py ✅
-13. CBOperProf.py ✅
-14. CF.py ✅
-15. cfp.py ✅
-16. DebtIssuance.py ✅
-17. EntMult.py ✅
-18. EP.py ✅
-19. GrAdExp.py ✅
-20. Leverage.py ✅
-21. MS.py ✅
-22. NetDebtPrice.py ✅
-23. NetPayoutYield.py ✅
-24. OperProf.py ✅
-25. OperProfRD.py ✅
-26. PayoutYield.py ✅
-27. PS.py ✅
-28. RD.py ✅
-29. RDcap.py ✅
-30. roaq.py ✅
-31. SP.py ✅
-32. VarCF.py ✅
-33. ZZ1_EBM_BPEBM.py ✅
-34. ZZ1_FR_FRbook.py ✅
-35. ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py ✅
-36. ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py ✅
-37. ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py ✅
-38. Frontier.py ✅
+11. CashProd.py ✅
+12. CF.py ✅
+13. cfp.py ✅
+14. DebtIssuance.py ✅
+15. EntMult.py ✅
+16. EP.py ✅
+17. Frontier.py ✅
+18. Leverage.py ✅
+19. NetPayoutYield.py ✅
+20. PayoutYield.py ✅
+21. RD.py ✅
+22. SP.py ✅
+23. VarCF.py ✅
+24. ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py ✅
+25. ZZ1_EBM_BPEBM.py ✅
+26. ZZ1_FR_FRbook.py ✅
+27. ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py ✅
+
+### Predictors: Other Uses (10 files)
+
+These use may use mve_permco for filtering other non-scaling purposes. Use `mve_permco` *only* for scaling. Use `mve_c` for other purposes.
+
+28. CBOperProf.py 
+29. GrAdExp.py 
+30. MS.py 
+31. NetDebtPrice.py 
+32. OperProf.py 
+33. OperProfRD.py 
+34. PS.py 
+35. RDcap.py 
+37. ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py 
 
 ### Accounting-Based Placebos 
 
