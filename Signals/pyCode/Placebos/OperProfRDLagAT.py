@@ -43,17 +43,17 @@ df = df.unique(subset=['permno', 'time_avail_m'], maintain_order=True)
 print(f"After removing duplicates: {len(df)} rows")
 
 
-# Apply comprehensive group-wise backward fill for complete data coverage
-print("Applying comprehensive group-wise backward fill for annual data...")
+# Apply comprehensive group-wise forward fill for complete data coverage
+print("Applying comprehensive group-wise forward fill for annual data...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # Fill all required variables with maximum coverage
 df = df.with_columns([
-    pl.col('xrd').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('xrd'),
-    pl.col('revt').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('revt'),
-    pl.col('cogs').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('cogs'),
-    pl.col('xsga').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('xsga'),
-    pl.col('at').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('at')
+    pl.col('xrd').fill_null(strategy="forward").over('permno').alias('xrd'),
+    pl.col('revt').fill_null(strategy="forward").over('permno').alias('revt'),
+    pl.col('cogs').fill_null(strategy="forward").over('permno').alias('cogs'),
+    pl.col('xsga').fill_null(strategy="forward").over('permno').alias('xsga'),
+    pl.col('at').fill_null(strategy="forward").over('permno').alias('at')
 ])
 
 

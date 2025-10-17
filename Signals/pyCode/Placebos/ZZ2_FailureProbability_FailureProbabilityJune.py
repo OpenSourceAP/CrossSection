@@ -122,16 +122,13 @@ df = df.with_columns([
 
 # RSIZE - relative size 
 print("Computing relative size...")
-# Create market cap ranking and total within each month
+df = df.with_columns(pl.col('tempMV').alias('tempMV2'))
 df = df.with_columns([
-    pl.col('tempMV').rank(method='dense', descending=True).over('time_avail_m').alias('tempRK')
+    pl.col('tempMV2').rank(method='ordinal', descending=True).over('time_avail_m').alias('tempRK')
 ])
-
-# Keep only top 500 firms for total market value calculation
 df = df.with_columns([
-    pl.when(pl.col('tempRK') <= 500).then(pl.col('tempMV')).otherwise(None).alias('tempMV2')
+    pl.when(pl.col('tempRK') <= 500).then(pl.col('tempMV2')).otherwise(None).alias('tempMV2')
 ])
-
 df = df.with_columns([
     pl.col('tempMV2').sum().over('time_avail_m').alias('tempTotMV')
 ])
@@ -147,42 +144,32 @@ df = df.with_columns([
 
 # NIMTA - net income to market plus total assets
 df = df.with_columns([
-    (pl.col('ibq').fill_null(0) / (pl.col('tempMV') + pl.col('ltq').fill_null(0))).alias('tempNIMTA')
+    (pl.col('ibq') / (pl.col('tempMV') + pl.col('ltq'))).alias('tempNIMTA')
 ])
 
 # TLMTA - total liabilities to market plus total assets  
 df = df.with_columns([
-    (pl.col('ltq').fill_null(0) / (pl.col('tempMV') + pl.col('ltq').fill_null(0))).alias('tempTLMTA')
+    (pl.col('ltq') / (pl.col('tempMV') + pl.col('ltq'))).alias('tempTLMTA')
 ])
 
 # CASHMTA - cash to market plus total assets
 df = df.with_columns([
-    (pl.col('cheq').fill_null(0) / (pl.col('tempMV') + pl.col('ltq').fill_null(0))).alias('tempCASHMTA')
+    (pl.col('cheq') / (pl.col('tempMV') + pl.col('ltq'))).alias('tempCASHMTA')
 ])
 
-# Apply basic winsorization (5/95 percentiles)
+# Apply basic winsorization (5/95 percentiles) across all temp* columns (matching Stata winsor2)
 print("Applying winsorization...")
+winsor_vars = [col for col in df.columns if col.startswith('temp')]
+quantile_exprs = []
+for var in winsor_vars:
+    quantile_exprs.append(pl.col(var).quantile(0.05).alias(f'{var}_q05'))
+    quantile_exprs.append(pl.col(var).quantile(0.95).alias(f'{var}_q95'))
+
+quantile_bounds = df.select(quantile_exprs).to_dicts()[0]
+
 df = df.with_columns([
-    pl.col('tempRSIZE').clip(
-        pl.col('tempRSIZE').quantile(0.05).over('time_avail_m'),
-        pl.col('tempRSIZE').quantile(0.95).over('time_avail_m')
-    ).alias('tempRSIZE'),
-    pl.col('tempEXRET').clip(
-        pl.col('tempEXRET').quantile(0.05).over('time_avail_m'),
-        pl.col('tempEXRET').quantile(0.95).over('time_avail_m')
-    ).alias('tempEXRET'),
-    pl.col('tempNIMTA').clip(
-        pl.col('tempNIMTA').quantile(0.05).over('time_avail_m'),
-        pl.col('tempNIMTA').quantile(0.95).over('time_avail_m')
-    ).alias('tempNIMTA'),
-    pl.col('tempTLMTA').clip(
-        pl.col('tempTLMTA').quantile(0.05).over('time_avail_m'),
-        pl.col('tempTLMTA').quantile(0.95).over('time_avail_m')
-    ).alias('tempTLMTA'),
-    pl.col('tempCASHMTA').clip(
-        pl.col('tempCASHMTA').quantile(0.05).over('time_avail_m'),
-        pl.col('tempCASHMTA').quantile(0.95).over('time_avail_m')
-    ).alias('tempCASHMTA')
+    pl.col(var).clip(quantile_bounds[f'{var}_q05'], quantile_bounds[f'{var}_q95']).alias(var)
+    for var in winsor_vars
 ])
 
 # Create exponentially weighted averages (simplified)
@@ -216,20 +203,30 @@ df = df.with_columns([
 # Book equity calculation
 print("Computing book equity...")
 df = df.with_columns([
-    pl.col('txditc').fill_null(0).alias('txditc'),
+    pl.col('txditc').fill_null(0).alias('txditc')
+])
+
+df = df.with_columns([
     pl.when(pl.col('pstk').is_not_null()).then(pl.col('pstk'))
     .when(pl.col('pstkrv').is_not_null()).then(pl.col('pstkrv'))
-    .otherwise(pl.col('pstkl').fill_null(0)).alias('tempPS')
+    .when(pl.col('pstkl').is_not_null()).then(pl.col('pstkl'))
+    .otherwise(None).alias('tempPS')
 ])
 
 df = df.with_columns([
-    pl.when(pl.col('seq').is_not_null()).then(pl.col('seq'))
-    .when(pl.col('ceq').is_not_null()).then(pl.col('ceq').fill_null(0) + pl.col('tempPS'))
-    .otherwise(pl.col('at').fill_null(0) - pl.col('lt').fill_null(0)).alias('tempSE')
+    pl.col('seq').alias('tempSE')
 ])
 
 df = df.with_columns([
-    (pl.col('tempSE') + pl.col('txditc') - pl.col('tempPS') + pl.col('txdb').fill_null(0)).alias('tempBE')
+    pl.col('tempSE').fill_null(pl.col('ceq') + pl.col('tempPS')).alias('tempSE')
+])
+
+df = df.with_columns([
+    pl.col('tempSE').fill_null(pl.col('at') - pl.col('lt')).alias('tempSE')
+])
+
+df = df.with_columns([
+    (pl.col('tempSE') + pl.col('txditc') - pl.col('tempPS') + pl.col('txdb')).alias('tempBE')
 ])
 
 # Adjust book equity

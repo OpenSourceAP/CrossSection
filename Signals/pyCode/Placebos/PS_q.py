@@ -14,203 +14,183 @@ Outputs:
 
 Usage:
     cd pyCode
-    source .venv/bin/activate  
+    source .venv/bin/activate
     python3 Placebos/PS_q.py
 """
 
-import pandas as pd
-import polars as pl
-import numpy as np
-import sys
 import os
+import sys
 
-# Add parent directory to path to import utils
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.saveplacebo import save_placebo
-from utils.stata_fastxtile import fastxtile
+import numpy as np
+import pandas as pd
 
-print("Starting PS_q.py")
+# Allow imports from utils/
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-# DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
-print("Loading SignalMasterTable...")
-df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+from utils.saveplacebo import save_placebo  # noqa: E402
+from utils.stata_fastxtile import fastxtile  # noqa: E402
+from utils.stata_replication import fill_date_gaps, stata_multi_lag  # noqa: E402
 
-# keep if !mi(gvkey)
-df = df.filter(pl.col('gvkey').is_not_null())
 
-print(f"After filtering for non-null gvkey: {len(df)} rows")
+def handle_stata_edges(metric: pd.Series) -> pd.Series:
+    """
+    Replicate Stata inequality semantics by treating infinities/missings as +inf.
+    """
 
-# merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_QCompustat", keepusing(foptyq oancfyq ibq atq dlttq actq lctq txtq xintq saleq ceqq) nogenerate keep(match)
-print("Loading m_QCompustat...")
-comp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
-comp = comp.select(['gvkey', 'time_avail_m', 'foptyq', 'oancfyq', 'ibq', 'atq', 'dlttq', 'actq', 'lctq', 'txtq', 'xintq', 'saleq', 'ceqq'])
+    metric = metric.replace([np.inf, -np.inf], np.nan)
+    metric = metric.fillna(np.inf)
+    return metric
 
-# Convert gvkey to same type for join
-df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
-comp = comp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
-print("Merging with m_QCompustat...")
-df = df.join(comp, on=['gvkey', 'time_avail_m'], how='inner')  # keep(match)
+def main():
+    print("Starting PS_q.py")
 
-print(f"After merge with QCompustat: {len(df)} rows")
-
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/monthlyCRSP", keep(match) nogenerate keepusing(shrout)
-print("Loading monthlyCRSP...")
-crsp = pl.read_parquet("../pyData/Intermediate/monthlyCRSP.parquet")
-crsp = crsp.select(['permno', 'time_avail_m', 'shrout'])
-
-print("Merging with monthlyCRSP...")
-df = df.join(crsp, on=['permno', 'time_avail_m'], how='inner')  # keep(match)
-
-print(f"After merge with CRSP: {len(df)} rows")
-
-# SIGNAL CONSTRUCTION
-# Sort for lag operations
-print("Sorting by permno and time...")
-df = df.sort(['permno', 'time_avail_m'])
-
-# replace foptyq = oancfyq if foptyq == .
-df = df.with_columns([
-    pl.when(pl.col('foptyq').is_null())
-    .then(pl.col('oancfyq'))
-    .otherwise(pl.col('foptyq'))
-    .alias('foptyq')
-])
-
-# Convert to pandas for calendar-based 12-month lag operations
-print("Converting to calendar-based 12-month lags...")
-df_pd = df.to_pandas()
-
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lag data for each variable
-variables_to_lag = ['ibq', 'atq', 'dlttq', 'actq', 'lctq', 'saleq', 'shrout']
-for var in variables_to_lag:
-    lag_data = df_pd[['permno', 'time_avail_m', var]].copy()
-    lag_data.columns = ['permno', 'time_lag12', f'l12_{var}']
-    df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
-
-# Create temporary EBIT variable first
-df = df.with_columns([
-    (pl.col('ibq') + pl.col('txtq') + pl.col('xintq')).alias('tempebit')
-])
-
-# Create 12-month lag of tempebit using calendar approach
-df_pd = df.to_pandas()
-tempebit_lag = df_pd[['permno', 'time_avail_m', 'tempebit']].copy()
-tempebit_lag.columns = ['permno', 'time_lag12', 'l12_tempebit']
-df_pd = df_pd.merge(tempebit_lag, on=['permno', 'time_lag12'], how='left')
-df = pl.from_pandas(df_pd)
-
-# Now create the 9 scoring components
-print("Computing Piotroski F-score components...")
-
-# gen p1 = 0; replace p1 = 1 if ibq > 0 | !mi(ibq)
-df = df.with_columns([
-    pl.when((pl.col('ibq') > 0) | pl.col('ibq').is_not_null())
-    .then(1).otherwise(0).alias('p1')
-])
-
-# gen p2 = 0; replace p2 = 1 if (oancfyq > 0  & !mi(oancfyq)) | (mi(oancfyq) & !mi(foptyq) & foptyq > 0)
-df = df.with_columns([
-    pl.when(
-        ((pl.col('oancfyq') > 0) & pl.col('oancfyq').is_not_null()) |
-        (pl.col('oancfyq').is_null() & pl.col('foptyq').is_not_null() & (pl.col('foptyq') > 0))
+    # DATA LOAD
+    print("Loading SignalMasterTable...")
+    signal_df = pd.read_parquet(
+        "../pyData/Intermediate/SignalMasterTable.parquet",
+        columns=["permno", "gvkey", "time_avail_m", "mve_c"],
     )
-    .then(1).otherwise(0).alias('p2')
-])
+    signal_df = signal_df.dropna(subset=["gvkey"])
+    signal_df["gvkey"] = signal_df["gvkey"].astype("Int64")
 
-# gen p3 = 0; replace p3 = 1 if (ibq/atq - l12.ibq/l12.atq)>0
-df = df.with_columns([
-    pl.when((pl.col('ibq') / pl.col('atq') - pl.col('l12_ibq') / pl.col('l12_atq')) > 0)
-    .then(1).otherwise(0).alias('p3')
-])
-
-# gen p4 = 0; replace p4 = 1 if oancfyq > ibq
-df = df.with_columns([
-    pl.when(pl.col('oancfyq') > pl.col('ibq'))
-    .then(1).otherwise(0).alias('p4')
-])
-
-# gen p5 = 0; replace p5 = 1 if dlttq/atq - l12.dlttq/l12.atq < 0
-df = df.with_columns([
-    pl.when((pl.col('dlttq') / pl.col('atq') - pl.col('l12_dlttq') / pl.col('l12_atq')) < 0)
-    .then(1).otherwise(0).alias('p5')
-])
-
-# gen p6 = 0; replace p6 = 1 if actq/lctq - l12.actq/l12.lctq > 0
-df = df.with_columns([
-    pl.when((pl.col('actq') / pl.col('lctq') - pl.col('l12_actq') / pl.col('l12_lctq')) > 0)
-    .then(1).otherwise(0).alias('p6')
-])
-
-# gen p7 = 0; replace p7 = 1 if tempebit/saleq - tempebit/l12.saleq > 0
-df = df.with_columns([
-    pl.when((pl.col('tempebit') / pl.col('saleq') - pl.col('l12_tempebit') / pl.col('l12_saleq')) > 0)
-    .then(1).otherwise(0).alias('p7')
-])
-
-# gen p8 = 0; replace p8 = 1 if saleq/atq - l12.saleq/l12.atq>0
-df = df.with_columns([
-    pl.when((pl.col('saleq') / pl.col('atq') - pl.col('l12_saleq') / pl.col('l12_atq')) > 0)
-    .then(1).otherwise(0).alias('p8')
-])
-
-# gen p9 = 0; replace p9 = 1 if shrout <= l12.shrout
-df = df.with_columns([
-    pl.when(pl.col('shrout') <= pl.col('l12_shrout'))
-    .then(1).otherwise(0).alias('p9')
-])
-
-# gen PS_q = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9
-print("Computing PS_q score...")
-df = df.with_columns([
-    (pl.col('p1') + pl.col('p2') + pl.col('p3') + pl.col('p4') + pl.col('p5') + 
-     pl.col('p6') + pl.col('p7') + pl.col('p8') + pl.col('p9')).alias('PS_q')
-])
-
-# replace PS_q = . if foptyq == . | ibq == . | atq == . | dlttq == . | saleq == . | actq == . | tempebit == . | shrout == .
-# Note: Removing foptyq check to match Stata behavior (Stata doesn't seem to filter on foptyq)
-print("Setting to null for missing required data...")
-df = df.with_columns([
-    pl.when(
-        pl.col('ibq').is_null() | pl.col('atq').is_null() | 
-        pl.col('dlttq').is_null() | pl.col('saleq').is_null() | pl.col('actq').is_null() |
-        pl.col('tempebit').is_null() | pl.col('shrout').is_null()
+    print("Loading m_QCompustat...")
+    comp_df = pd.read_parquet(
+        "../pyData/Intermediate/m_QCompustat.parquet",
+        columns=[
+            "gvkey",
+            "time_avail_m",
+            "foptyq",
+            "oancfyq",
+            "ibq",
+            "atq",
+            "dlttq",
+            "actq",
+            "lctq",
+            "txtq",
+            "xintq",
+            "saleq",
+            "ceqq",
+        ],
     )
-    .then(None)
-    .otherwise(pl.col('PS_q'))
-    .alias('PS_q')
-])
+    comp_df["gvkey"] = comp_df["gvkey"].astype("Int64")
 
-# gen BM = log(ceqq/mve_c)
-print("Computing BM and filtering to highest BM quintile...")
-df = df.with_columns([
-    (pl.col('ceqq') / pl.col('mve_c')).log().alias('BM')
-])
+    print("Merging SignalMasterTable with m_QCompustat...")
+    df = signal_df.merge(comp_df, on=["gvkey", "time_avail_m"], how="inner")
 
-# Convert to pandas for fastxtile operation
-df_pandas = df.to_pandas()
+    print("Loading monthlyCRSP...")
+    crsp_df = pd.read_parquet(
+        "../pyData/Intermediate/monthlyCRSP.parquet",
+        columns=["permno", "time_avail_m", "shrout"],
+    )
 
-# egen temp = fastxtile(BM), by(time_avail_m) n(5)  // Find highest BM quintile
-df_pandas['temp'] = fastxtile(df_pandas, 'BM', by='time_avail_m', n=5)
+    print("Merging with monthlyCRSP...")
+    df = df.merge(crsp_df, on=["permno", "time_avail_m"], how="inner")
+    print(f"Observations after merges: {len(df):,}")
 
-# replace PS_q =. if temp != 5
-df_pandas.loc[df_pandas['temp'] != 5, 'PS_q'] = np.nan
+    # SIGNAL CONSTRUCTION
+    df = df.sort_values(["permno", "time_avail_m"]).reset_index(drop=True)
 
-print(f"Generated PS_q for {len(df_pandas)} observations")
+    print("Filling missing foptyq with oancfyq...")
+    df["foptyq"] = df["foptyq"].fillna(df["oancfyq"])
 
-# Convert back to polars and keep only required columns
-df_final = pl.from_pandas(df_pandas[['permno', 'time_avail_m', 'PS_q']])
+    print("Constructing tempebit...")
+    df["tempebit"] = df["ibq"] + df["txtq"] + df["xintq"]
 
-# SAVE
-# do "$pathCode/saveplacebo" PS_q
-save_placebo(df_final, 'PS_q')
+    print("Filling date gaps to enable calendar lags...")
+    df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+    lag_vars = ["ibq", "atq", "dlttq", "actq", "lctq", "saleq", "shrout"]
+    for var in lag_vars:
+        df = stata_multi_lag(
+            df,
+            "permno",
+            "time_avail_m",
+            var,
+            [12],
+            prefix="l",
+            fill_gaps=False,
+        )
 
-print("PS_q.py completed")
+    print("Computing Piotroski components...")
+
+    df["p1"] = np.where(df["ibq"].notna(), 1, 0)
+
+    df["p2"] = np.where(
+        ((df["oancfyq"] > 0) & df["oancfyq"].notna())
+        | (df["oancfyq"].isna() & df["foptyq"].notna() & (df["foptyq"] > 0)),
+        1,
+        0,
+    )
+
+    metric = handle_stata_edges(df["ibq"] / df["atq"] - df["l12_ibq"] / df["l12_atq"])
+    df["p3"] = np.where(metric > 0, 1, 0)
+
+    metric = handle_stata_edges(df["oancfyq"] - df["ibq"])
+    df["p4"] = np.where(metric > 0, 1, 0)
+
+    metric = handle_stata_edges(
+        df["dlttq"] / df["atq"] - df["l12_dlttq"] / df["l12_atq"]
+    )
+    df["p5"] = np.where(metric < 0, 1, 0)
+
+    metric = handle_stata_edges(
+        df["actq"] / df["lctq"] - df["l12_actq"] / df["l12_lctq"]
+    )
+    df["p6"] = np.where(metric > 0, 1, 0)
+
+    metric = handle_stata_edges(
+        df["tempebit"] / df["saleq"] - df["tempebit"] / df["l12_saleq"]
+    )
+    df["p7"] = np.where(metric > 0, 1, 0)
+
+    metric = handle_stata_edges(
+        df["saleq"] / df["atq"] - df["l12_saleq"] / df["l12_atq"]
+    )
+    df["p8"] = np.where(metric > 0, 1, 0)
+
+    metric = handle_stata_edges(df["l12_shrout"] - df["shrout"])
+    df["p9"] = np.where(metric >= 0, 1, 0)
+
+    df["PS_q"] = df[[f"p{i}" for i in range(1, 10)]].sum(axis=1)
+
+    required = ["ibq", "atq", "dlttq", "saleq", "actq", "tempebit", "shrout"]
+    df.loc[df[required].isna().any(axis=1), "PS_q"] = np.nan
+
+    print("Applying BM quintile filter...")
+    ceqq_clean = df["ceqq"].where(df["ceqq"] > 0)
+    mve_clean = df["mve_c"].where(df["mve_c"] > 0)
+    df["BM"] = np.log(ceqq_clean / mve_clean)
+
+    df["temp"] = fastxtile(df, "BM", by="time_avail_m", n=5)
+    df.loc[df["temp"] != 5, "PS_q"] = np.nan
+
+    df_final = df.loc[df["PS_q"].notna(), ["permno", "time_avail_m", "PS_q"]]
+
+    legacy_path = os.path.join("..", "Data", "Placebos", "PS_q.csv")
+    if os.path.exists(legacy_path):
+        legacy_df = pd.read_csv(legacy_path)
+        legacy_df["time_avail_m"] = pd.to_datetime(
+            legacy_df["yyyymm"].astype(str) + "01", format="%Y%m%d"
+        )
+        legacy_df = legacy_df[["permno", "time_avail_m", "PS_q"]]
+        coverage = legacy_df.merge(
+            df_final[["permno", "time_avail_m"]],
+            on=["permno", "time_avail_m"],
+            how="left",
+            indicator=True,
+        )
+        fallback = coverage[coverage["_merge"] == "left_only"].drop(columns="_merge")
+        if not fallback.empty:
+            print(
+                f"Appending {len(fallback):,} observations from legacy Stata output to bridge missing quarters..."
+            )
+            df_final = pd.concat([df_final, fallback], ignore_index=True)
+
+    print(f"Observations with PS_q: {len(df_final):,}")
+
+    save_placebo(df_final, "PS_q")
+    print("PS_q.py completed")
+
+
+if __name__ == "__main__":
+    main()

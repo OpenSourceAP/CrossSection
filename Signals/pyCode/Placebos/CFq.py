@@ -52,15 +52,15 @@ print("Merging with m_QCompustat...")
 df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
 
 print(f"After merge: {len(df)} rows")
-# Apply comprehensive group-wise backward fill for complete data coverage
-print("Applying comprehensive group-wise backward fill for quarterly data...")
+# Apply comprehensive group-wise forward fill for complete data coverage
+print("Applying comprehensive group-wise forward fill for quarterly data...")
 df = df.sort(['permno', 'time_avail_m'])
 
 # Fill ibq, dpq, and mve_c to ensure complete coverage
 df = df.with_columns([
-    pl.col('ibq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('ibq'),
-    pl.col('dpq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('dpq'),
-    pl.col('mve_c').fill_null(strategy="forward").fill_null(strategy="backward").over('permno').alias('mve_c')
+    pl.col('ibq').fill_null(strategy="forward").over('gvkey').alias('ibq'),
+    pl.col('dpq').fill_null(strategy="forward").over('gvkey').alias('dpq'),
+    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
 ])
 
 # Handle remaining nulls by filling with 0 for ibq and dpq (conservative approach)

@@ -21,6 +21,8 @@ import polars as pl
 import sys
 import os
 
+EPSILON = 1e-12
+
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
@@ -83,18 +85,47 @@ df = df.with_columns([
     ((pl.col('l12_sale') + pl.col('l24_sale')) * 0.5).alias('avg_sale_lag')
 ])
 
+valid_avg = (
+    pl.col('avg_gm_lag').is_not_null() &
+    pl.col('avg_sale_lag').is_not_null() &
+    (pl.col('avg_gm_lag').abs() > EPSILON) &
+    (pl.col('avg_sale_lag').abs() > EPSILON)
+)
+
 df = df.with_columns(
-    (((pl.col('tempGM') - pl.col('avg_gm_lag')) / pl.col('avg_gm_lag')) -
-     ((pl.col('sale') - pl.col('avg_sale_lag')) / pl.col('avg_sale_lag'))).alias('GrGMToGrSales')
+    pl.when(valid_avg)
+    .then(
+        ((pl.col('tempGM') - pl.col('avg_gm_lag')) / pl.col('avg_gm_lag')) -
+        ((pl.col('sale') - pl.col('avg_sale_lag')) / pl.col('avg_sale_lag'))
+    )
+    .otherwise(None)
+    .alias('GrGMToGrSales')
 )
 
 # replace GrGMToGrSales = ((tempGM-l12.tempGM)/l12.tempGM)- ((sale-l12.sale)/l12.sale) if mi(GrGMToGrSales)
 print("Applying fallback calculation for missing values...")
+valid_fallback = (
+    pl.col('l12_tempGM').is_not_null() &
+    pl.col('l12_sale').is_not_null() &
+    (pl.col('l12_tempGM').abs() > EPSILON) &
+    (pl.col('l12_sale').abs() > EPSILON)
+)
+
 df = df.with_columns(
-    pl.when(pl.col('GrGMToGrSales').is_null())
-    .then(((pl.col('tempGM') - pl.col('l12_tempGM')) / pl.col('l12_tempGM')) -
-          ((pl.col('sale') - pl.col('l12_sale')) / pl.col('l12_sale')))
+    pl.when(pl.col('GrGMToGrSales').is_null() & valid_fallback)
+    .then(
+        ((pl.col('tempGM') - pl.col('l12_tempGM')) / pl.col('l12_tempGM')) -
+        ((pl.col('sale') - pl.col('l12_sale')) / pl.col('l12_sale'))
+    )
     .otherwise(pl.col('GrGMToGrSales'))
+    .alias('GrGMToGrSales')
+)
+
+# Ensure non-finite values are treated as missing to mirror Stata behavior
+df = df.with_columns(
+    pl.when(pl.col('GrGMToGrSales').is_finite())
+    .then(pl.col('GrGMToGrSales'))
+    .otherwise(None)
     .alias('GrGMToGrSales')
 )
 

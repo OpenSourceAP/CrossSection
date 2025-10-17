@@ -1,129 +1,163 @@
-# ABOUTME: EarningsSmoothness.py - calculates earnings smoothness placebo
-# ABOUTME: Python equivalent of EarningsSmoothness.do, translates line-by-line from Stata code
+# ABOUTME: Earnings smoothness placebo translated from Stata implementation
+# ABOUTME: Computes 10-year earnings and cash-flow volatility ratio using annual Compustat data
 
 """
 EarningsSmoothness.py
 
 Inputs:
-    - a_aCompustat.parquet: gvkey, permno, time_avail_m, fyear, ib, at, act, lct, che, dlc, dp, datadate columns
+    - a_aCompustat.parquet: columns [gvkey, permno, time_avail_m, fyear, datadate, ib, at, act, lct, che, dlc, dp]
 
 Outputs:
-    - EarningsSmoothness.csv: permno, yyyymm, EarningsSmoothness columns
+    - EarningsSmoothness.csv stored under ../pyData/Placebos/
 
-Usage:
-    cd pyCode
-    source .venv/bin/activate  
+How to run:
+    cd Signals/pyCode
     python3 Placebos/EarningsSmoothness.py
+    Example: python3 Placebos/EarningsSmoothness.py
 """
 
-import pandas as pd
-import polars as pl
-import numpy as np
-import sys
 import os
+import sys
+import numpy as np
+import pandas as pd
 
-# Add parent directory to path to import utils
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.save_standardized import save_placebo
-from utils.stata_replication import stata_multi_lag
+# Allow relative imports from utils
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.asrol import asrol
+from utils.saveplacebo import save_placebo
 
-print("Starting EarningsSmoothness.py")
 
-# DATA LOAD
-# use gvkey permno time_avail_m fyear ib at act lct che dlc dp at datadate using "$pathDataIntermediate/a_aCompustat", clear
-print("Loading a_aCompustat...")
-df = pl.read_parquet("../pyData/Intermediate/a_aCompustat.parquet")
-df = df.select(['gvkey', 'permno', 'time_avail_m', 'fyear', 'ib', 'at', 'act', 'lct', 'che', 'dlc', 'dp', 'datadate'])
+def main() -> None:
+    print("Starting EarningsSmoothness placebo...")
 
-print(f"After loading: {len(df)} rows")
+    # DATA LOAD
+    compustat_cols = [
+        "gvkey",
+        "permno",
+        "time_avail_m",
+        "fyear",
+        "datadate",
+        "ib",
+        "at",
+        "act",
+        "lct",
+        "che",
+        "dlc",
+        "dp",
+    ]
 
-# SIGNAL CONSTRUCTION
-# xtset gvkey fyear
-print("Sorting by gvkey and fyear...")
-df = df.sort(['gvkey', 'fyear'])
+    print("Loading annual Compustat data...")
+    df = pd.read_parquet(
+        "../pyData/Intermediate/a_aCompustat.parquet",
+        columns=compustat_cols,
+    )
+    print(f"Loaded {len(df):,} annual observations across {df['gvkey'].nunique():,} firms")
 
-# Convert to pandas for lag and rolling operations
-df_pd = df.to_pandas()
+    # Ensure sorting equivalent to xtset gvkey fyear
+    df = df.sort_values(["gvkey", "fyear", "datadate"])
 
-# Create 1-year lag using stata_multi_lag
-print("Computing 1-year lags using stata_multi_lag...")
-lag_vars = ['at', 'act', 'lct', 'che', 'dlc']
-for var in lag_vars:
-    df_pd = stata_multi_lag(df_pd, 'gvkey', 'fyear', var, [1], freq='Y', prefix='l')
-    # Rename to match expected column names
-    if f'l1_{var}' in df_pd.columns:
-        df_pd = df_pd.rename(columns={f'l1_{var}': f'l1_{var}'})
-    else:
-        df_pd[f'l1_{var}'] = df_pd[f'l1_{var}']
+    # SIGNAL CONSTRUCTION
+    print("Computing lagged balance-sheet items...")
+    lag_vars = ["at", "act", "lct", "che", "dlc"]
+    grouped = df.groupby("gvkey", sort=False)
+    for var in lag_vars:
+        df[f"lag_{var}"] = grouped[var].shift(1)
 
-# gen tempEarnings = ib/l.at
-print("Computing tempEarnings...")
-df_pd['tempEarnings'] = df_pd['ib'] / df_pd['l1_at']
+    # Avoid zero or missing lagged assets causing divide-by-zero issues
+    valid_assets = df["lag_at"]
+    df.loc[(valid_assets.isna()) | (valid_assets == 0), "lag_at"] = np.nan
 
-# gen tempCF = (ib - ( (act - l.act) - (lct - l.lct) - (che - l.che) + (dlc - l.dlc) - dp))/l.at
-print("Computing tempCF...")
-df_pd['tempCF'] = (df_pd['ib'] - ((df_pd['act'] - df_pd['l1_act']) - 
-                                  (df_pd['lct'] - df_pd['l1_lct']) - 
-                                  (df_pd['che'] - df_pd['l1_che']) + 
-                                  (df_pd['dlc'] - df_pd['l1_dlc']) - 
-                                  df_pd['dp'])) / df_pd['l1_at']
+    print("Calculating earnings and cash-flow scaled by lagged assets...")
+    df["tempEarnings"] = df["ib"] / df["lag_at"]
 
-# asrol tempEarnings, gen(sd10_tempEarnings) window(fyear 10) min(10) by(gvkey) stat(sd)
-# asrol tempCF, gen(sd10_tempCF) window(fyear 10) min(10) by(gvkey) stat(sd)
-print("Computing 10-year rolling standard deviations...")
-df_pd = df_pd.set_index(['gvkey', 'fyear']).sort_index()
+    accrual_component = (
+        (df["act"] - df["lag_act"])  # change in current assets
+        - (df["lct"] - df["lag_lct"])  # minus change in current liabilities
+        - (df["che"] - df["lag_che"])  # minus change in cash and equivalents
+        + (df["dlc"] - df["lag_dlc"])  # plus change in debt in current liabilities
+        - df["dp"]  # minus depreciation and amortization
+    )
+    df["tempCF"] = (df["ib"] - accrual_component) / df["lag_at"]
 
-df_pd['sd10_tempEarnings'] = df_pd.groupby('gvkey')['tempEarnings'].rolling(window=10, min_periods=10).std().reset_index(level=0, drop=True)
-df_pd['sd10_tempCF'] = df_pd.groupby('gvkey')['tempCF'].rolling(window=10, min_periods=10).std().reset_index(level=0, drop=True)
+    # Prepare annual date column for asrol (end of fiscal year)
+    df["fyear_int"] = pd.to_numeric(df["fyear"], errors="coerce").astype("Int64")
+    df["fyear_date"] = pd.to_datetime(
+        df["fyear_int"].astype(str) + "-12-31", errors="coerce"
+    )
 
-df_pd = df_pd.reset_index()
+    # Rolling standard deviations using asrol (10-year window, minimum 10 observations)
+    print("Applying 10-year rolling standard deviations via asrol...")
+    df = asrol(
+        df,
+        group_col="gvkey",
+        time_col="fyear_date",
+        freq="1y",
+        window=10,
+        value_col="tempEarnings",
+        stat="std",
+        new_col_name="sd10_tempEarnings",
+        min_samples=10,
+        fill_gaps=False,
+    )
+    df = asrol(
+        df,
+        group_col="gvkey",
+        time_col="fyear_date",
+        freq="1y",
+        window=10,
+        value_col="tempCF",
+        stat="std",
+        new_col_name="sd10_tempCF",
+        min_samples=10,
+        fill_gaps=False,
+    )
 
-# gen EarningsSmoothness = sd10_tempEarnings/sd10_tempCF
-print("Computing EarningsSmoothness...")
-df_pd['EarningsSmoothness'] = df_pd['sd10_tempEarnings'] / df_pd['sd10_tempCF']
+    print("Forming earnings smoothness ratio...")
+    df["EarningsSmoothness"] = df["sd10_tempEarnings"] / df["sd10_tempCF"]
+    df.loc[df["sd10_tempCF"].isna() | (df["sd10_tempCF"] == 0), "EarningsSmoothness"] = np.nan
 
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+    # Keep relevant annual observations before monthly expansion
+    annual_cols = [
+        "gvkey",
+        "permno",
+        "time_avail_m",
+        "datadate",
+        "EarningsSmoothness",
+    ]
+    annual_df = df[annual_cols].dropna(subset=["time_avail_m", "permno"])
+    annual_df = annual_df.dropna(subset=["EarningsSmoothness"])
 
-# * Expand to monthly
-print("Expanding to monthly data...")
-# Create 12 copies of each row, following Stata's logic:
-# bysort gvkey tempTime: replace time_avail_m = time_avail_m + _n - 1 
-# This adds 0, 1, 2, ..., 11 months to each original time_avail_m
-df_expanded_list = []
-for month in range(12):
-    df_month = df.clone()
-    # Convert to pandas to add months properly, then back to polars
-    df_pd_temp = df_month.to_pandas()
-    df_pd_temp['time_avail_m'] = df_pd_temp['time_avail_m'] + pd.DateOffset(months=month)
-    df_month = pl.from_pandas(df_pd_temp)
-    df_expanded_list.append(df_month)
+    print("Expanding annual values to monthly availability dates...")
+    expanded_frames = []
+    for month_offset in range(12):
+        month_df = annual_df.copy()
+        month_df["time_avail_m"] = month_df["time_avail_m"] + pd.DateOffset(
+            months=month_offset
+        )
+        expanded_frames.append(month_df)
 
-df_expanded = pl.concat(df_expanded_list)
+    expanded_df = pd.concat(expanded_frames, ignore_index=True)
 
-# bysort gvkey time_avail_m (datadate): keep if _n == _N
-print("Keeping latest datadate for each gvkey-time_avail_m...")
-df_expanded = df_expanded.sort(['gvkey', 'time_avail_m', 'datadate'])
-# Convert to pandas for more precise control over deduplication
-df_pd_dedup = df_expanded.to_pandas()
-# Keep the last row for each gvkey-time_avail_m combination (matching Stata's keep if _n == _N)
-df_pd_dedup = df_pd_dedup.groupby(['gvkey', 'time_avail_m']).last().reset_index()
+    # Mirror Stata deduplication logic
+    expanded_df = expanded_df.sort_values(["gvkey", "time_avail_m", "datadate"])
+    expanded_df = (
+        expanded_df.groupby(["gvkey", "time_avail_m"], as_index=False)
+        .tail(1)
+        .reset_index(drop=True)
+    )
+    expanded_df = (
+        expanded_df.sort_values(["permno", "time_avail_m", "datadate"])
+        .drop_duplicates(subset=["permno", "time_avail_m"], keep="first")
+        .reset_index(drop=True)
+    )
 
-# bysort permno time_avail_m: keep if _n == 1  // deletes a few observations
-print("Dropping duplicates by permno-time_avail_m...")
-# Keep the first row for each permno-time_avail_m combination (matching Stata's keep if _n == 1)
-df_pd_dedup = df_pd_dedup.groupby(['permno', 'time_avail_m']).first().reset_index()
+    final_df = expanded_df[["permno", "time_avail_m", "EarningsSmoothness"]]
 
-# Convert back to polars
-df_expanded = pl.from_pandas(df_pd_dedup)
+    print("Saving placebo output...")
+    save_placebo(final_df, "EarningsSmoothness")
 
-print(f"Generated EarningsSmoothness for {len(df_expanded)} observations")
+    print("EarningsSmoothness placebo completed successfully")
 
-# Keep only required columns for output
-df_final = df_expanded.select(['permno', 'time_avail_m', 'EarningsSmoothness'])
 
-# SAVE
-# do "$pathCode/saveplacebo" EarningsSmoothness
-save_placebo(df_final, 'EarningsSmoothness')
-
-print("EarningsSmoothness.py completed")
+if __name__ == "__main__":
+    main()

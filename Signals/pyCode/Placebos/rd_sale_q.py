@@ -44,12 +44,12 @@ print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'xrdq', 'saleq'])
 
-# Apply enhanced group-wise forward+backward fill for complete data coverage
-print("Applying enhanced group-wise forward+backward fill for R&D data...")
+# Apply enhanced group-wise forward-only fill for complete data coverage
+print("Applying enhanced group-wise forward-only fill for R&D data...")
 qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
 qcomp = qcomp.with_columns([
-    pl.col('saleq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('saleq'),
-    pl.col('xrdq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xrdq')
+    pl.col('saleq').fill_null(strategy="forward").over('gvkey').alias('saleq'),
+    pl.col('xrdq').fill_null(strategy="forward").over('gvkey').alias('xrdq')
 ])
 
 # Convert gvkey to same type for join

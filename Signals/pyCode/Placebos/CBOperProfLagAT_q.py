@@ -55,30 +55,16 @@ print("Loading m_QCompustat...")
 qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
 qcomp = qcomp.select(['gvkey', 'time_avail_m', 'atq', 'revtq', 'cogsq', 'xsgaq', 'xrdq', 'rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq'])
 
-# Apply enhanced group-wise forward+backward fill for complete data coverage
-print("Applying enhanced group-wise forward+backward fill for Compustat data...")
+# Ensure consistent ordering ahead of lags
 qcomp = qcomp.sort(['gvkey', 'time_avail_m'])
-qcomp = qcomp.with_columns([
-    pl.col('atq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('atq'),
-    pl.col('revtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('revtq'),
-    pl.col('cogsq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('cogsq'),
-    pl.col('xsgaq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xsgaq'),
-    pl.col('xrdq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xrdq'),
-    pl.col('rectq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('rectq'),
-    pl.col('invtq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('invtq'),
-    pl.col('drcq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('drcq'),
-    pl.col('drltq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('drltq'),
-    pl.col('apq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('apq'),
-    pl.col('xaccq').fill_null(strategy="forward").fill_null(strategy="backward").over('gvkey').alias('xaccq')
-])
 
 # Convert gvkey to same type for join
 df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
 qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
 
 print("Merging with m_QCompustat...")
-# Use left join instead of inner join (keep(match) → how='left')
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='left')
+# Mirror Stata keep(match) semantics by retaining only rows with quarterly data
+df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
 
 print(f"After merge with m_QCompustat: {len(df)} rows")
 

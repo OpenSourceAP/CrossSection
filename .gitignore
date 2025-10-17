@@ -1,3 +1,5 @@
+
+
 .Rproj.user
 .Rhistory
 .RData
@@ -29,9 +31,8 @@ Signals/pyData/*
 __*__*
 
 # Testing and archive
-Journal/
-Plan/
 Logs/
+temp/
 deleteme*
 Signals/Debug/*
 Signals/pyCode/Debug/*
