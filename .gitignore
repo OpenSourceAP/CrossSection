@@ -1,11 +1,22 @@
+# Testing and archive
+Logs/
+temp/
+deleteme*
+Signals/Debug/*
+Signals/pyCode/Debug/*
+Signals/zzz-archive/*
+Signals/Human/*
+Signals/pyCode/dev/*
 
+# Testing exceptions
+!Signals/Logs/testout_placebos.md
+!Signals/Logs/testout_predictors.md
 
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 
-*.csv
 *.Rprofile
 *.Rproj
 *.log
@@ -30,21 +41,6 @@ Signals/pyData/*
 .venv
 __*__*
 
-# Testing and archive
-Logs/
-temp/
-deleteme*
-Signals/Debug/*
-Signals/pyCode/Debug/*
-Signals/zzz-archive/*
-Signals/Human/*
-Signals/pyCode/dev/*
-
-# Testing exceptions
-!Signals/Logs/testout_placebos.md
-!Signals/Logs/testout_predictors.md
-!Signals/Logs/02_CreatePredictors_console.txt
-!Signals/Logs/02_CreatePredictorsFlags.csv
 
 # Other
 Portfolios/Code/Rplots.pdf
