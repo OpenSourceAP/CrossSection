@@ -438,26 +438,25 @@ def main():
 
             const fields = [
                 {{ key: 'signalname', label: 'Acronym', inline: true }},
-                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},                
-                {{ key: 'Category', label: 'Category', inline: true }},
-                {{ key: 'Predictability', label: 'Predictability', inline: true }},
+                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},
+                {{ key: 'Category', label: 'Predictor or Placebo?', inline: true }},
                 {{ key: 'AuthorYear', label: 'Paper', inline: true }},
-                {{ key: 'SampleStart', label: 'Sample Start', inline: true }},
-                {{ key: 'SampleEnd', label: 'Sample End', inline: true }},
+                {{ key: 'Predictability', label: 'Predictability', inline: true }},
                 {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
                 {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
+                {{ key: 'Sample', label: 'Sample', inline: true, computed: true }},
                 {{ key: 'Sign', label: 'Sign of Predictability', inline: true }},
-                {{ key: 'Return', label: 'Return', inline: true }},
+                {{ key: 'Return', label: 'Return (% Monthly)', inline: true }},
                 {{ key: 'TStat', label: 'T-Stat', inline: true }},
                 {{ key: 'StockWeight', label: 'Stock Weight', inline: true }},
-                {{ key: 'LSQuantile', label: 'LS Quantile', inline: true }},
+                {{ key: 'LSQuantile', label: 'Long-Short Quantile', inline: true }},
                 {{ key: 'QuantileFilter', label: 'Quantile Filter', inline: true }},
                 {{ key: 'PortfolioPeriod', label: 'Portfolio Period', inline: true }},
                 {{ key: 'StartMonth', label: 'Start Month', inline: true }},
                 {{ key: 'Filter', label: 'Filter', inline: true }},
                 {{ key: 'EvidenceSummary', label: 'Evidence Summary', inline: true }},
                 {{ key: 'Notes', label: 'Notes', inline: false }},
-                {{ key: 'Acronym2', label: 'Acronym2', inline: true }},                
+                {{ key: 'Acronym2', label: 'Acronym2', inline: true }},
                 {{ key: 'Quality', label: 'Replication Quality', inline: true }},
                 {{ key: 'FormCategory', label: 'Form Category', inline: true }},
                 {{ key: 'DataCategory', label: 'Data Category', inline: true }},
@@ -465,12 +464,49 @@ def main():
             ];
 
             const fieldsHtml = fields
-                .filter(field => selectedSignal[field.key])
+                .filter(field => {{
+                    if (field.computed && field.key === 'Sample') {{
+                        return selectedSignal['SampleStart'] || selectedSignal['SampleEnd'];
+                    }}
+                    return selectedSignal[field.key];
+                }})
                 .map(field => {{
-                    const value = selectedSignal[field.key];
+                    let value;
+                    if (field.computed && field.key === 'Sample') {{
+                        const start = selectedSignal['SampleStart'] || '';
+                        const end = selectedSignal['SampleEnd'] || '';
+                        if (start && end) {{
+                            value = `${{start}}-${{end}}`;
+                        }} else if (start) {{
+                            value = `${{start}}-`;
+                        }} else if (end) {{
+                            value = `-${{end}}`;
+                        }} else {{
+                            value = '';
+                        }}
+                    }} else if (field.key === 'Sign') {{
+                        const signValue = selectedSignal[field.key];
+                        if (signValue === '1.0' || signValue === '1') {{
+                            value = 'Buy if signal is high';
+                        }} else {{
+                            value = 'Short if signal is high';
+                        }}
+                    }} else if (field.key === 'StockWeight') {{
+                        const weightValue = selectedSignal[field.key];
+                        if (weightValue === 'EW') {{
+                            value = 'equal-weighted';
+                        }} else {{
+                            value = 'value-weighted';
+                        }}
+                    }} else if (field.key === 'EvidenceSummary') {{
+                        value = selectedSignal[field.key].replace(/HXZ variant/g, 'Hou, Xue, Zhang (2020, RFS) created this variation from the original paper');
+                    }} else {{
+                        value = selectedSignal[field.key];
+                    }}
+
                     const isLongText = value.length > 100;
                     const layoutClass = field.inline && !isLongText ? 'inline' : 'block';
-                    const valueClass = isLongText ? 'long-text' : '';
+                    const valueClass = (!field.inline || isLongText) ? 'long-text' : '';
                     return `
                         <div class="detail-field ${{layoutClass}}">
                             <div class="detail-label">${{field.label}}</div>
