@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/OperProf.py
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with mve_c for size filtering
+    - SignalMasterTable.parquet: Monthly master table with mve_c (size filtering)
     - m_aCompustat.parquet: Monthly Compustat data with revt, cogs, xsga, xint, ceq
 
 Outputs:
@@ -19,8 +19,8 @@ Outputs:
 import pandas as pd
 import numpy as np
 import sys
-
 sys.path.insert(0, ".")
+from utils.save_standardized import save_predictor
 
 # Notes:
 # Excludes smallest size tercile to simulate NYSE size breakpoints
@@ -28,23 +28,11 @@ sys.path.insert(0, ".")
 # Operating profitability = (revenue - cogs - sga - interest) / equity
 # Removing SGA expenses significantly improves signal strength (similar to Novy-Marx)
 
-import pandas as pd
-import numpy as np
-import sys
-
-sys.path.insert(0, ".")
-
-# %%
-
 # DATA LOAD
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
     columns=["permno", "gvkey", "time_avail_m", "mve_c"],
 )
-
-# Drop observations with missing gvkey
-df = signal_master.dropna(subset=["gvkey"]).copy()
-
 
 # Merge with Compustat data
 compustat = pd.read_parquet(
@@ -67,20 +55,10 @@ df["tempsizeq"] = df.groupby("time_avail_m")["mve_c"].transform(
 # Set tempprof to missing for smallest size tercile
 df.loc[df["tempsizeq"] == 1, "tempprof"] = pd.NA
 
-# %%
-
 # Assign to OperProf
 df["OperProf"] = df["tempprof"]
 
-# Drop missing values
-df = df.dropna(subset=["OperProf"])
-
-# Convert time_avail_m to yyyymm
-df["yyyymm"] = df["time_avail_m"].dt.year * 100 + df["time_avail_m"].dt.month
-
-# Keep required columns and order
-df = df[["permno", "yyyymm", "OperProf"]].copy()
 
 # SAVE
-df.to_csv("../pyData/Predictors/OperProf.csv", index=False)
+save_predictor(df, "OperProf")
 print(f"OperProf: Saved {len(df):,} observations")

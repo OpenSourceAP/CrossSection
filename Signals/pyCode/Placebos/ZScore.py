@@ -6,7 +6,7 @@ ZScore.py
 
 Inputs:
     - m_aCompustat.parquet: gvkey, permno, time_avail_m, act, lct, at, lt, re, ni, xint, txt, revt, sic columns
-    - SignalMasterTable.parquet: permno, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, time_avail_m, mve_permco columns
 
 Outputs:
     - ZScore.csv: permno, yyyymm, ZScore columns
@@ -42,10 +42,10 @@ df = df.unique(subset=['permno', 'time_avail_m'])
 
 print(f"After dropping duplicates: {len(df)} rows")
 
-# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_c)
+# merge 1:1 permno time_avail_m using "$pathDataIntermediate/SignalMasterTable", keep(match) nogenerate keepusing(mve_permco)
 print("Loading SignalMasterTable...")
 signal_df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-signal_df = signal_df.select(['permno', 'time_avail_m', 'mve_c'])
+signal_df = signal_df.select(['permno', 'time_avail_m', 'mve_permco'])
 
 print("Merging with SignalMasterTable...")
 df = df.join(signal_df, on=['permno', 'time_avail_m'], how='inner')
@@ -53,13 +53,13 @@ df = df.join(signal_df, on=['permno', 'time_avail_m'], how='inner')
 print(f"After merge: {len(df)} rows")
 
 # SIGNAL CONSTRUCTION
-# gen ZScore = 1.2*(act - lct)/at + 1.4*(re/at) + 3.3*(ni + xint + txt)/at + .6*(mve_c/lt) + revt/at
+# gen ZScore = 1.2*(act - lct)/at + 1.4*(re/at) + 3.3*(ni + xint + txt)/at + .6*(mve_permco/lt) + revt/at
 print("Computing ZScore...")
 df = df.with_columns(
     (1.2 * (pl.col('act') - pl.col('lct')) / pl.col('at') + 
      1.4 * pl.col('re') / pl.col('at') + 
      3.3 * (pl.col('ni') + pl.col('xint') + pl.col('txt')) / pl.col('at') + 
-     0.6 * pl.col('mve_c') / pl.col('lt') + 
+     0.6 * pl.col('mve_permco') / pl.col('lt') + 
      pl.col('revt') / pl.col('at')).alias('ZScore')
 )
 

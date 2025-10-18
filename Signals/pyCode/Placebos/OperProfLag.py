@@ -5,7 +5,7 @@
 OperProfLag.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_aCompustat.parquet: gvkey, time_avail_m, revt, cogs, xsga, xint, ceq columns
 
 Outputs:
@@ -31,10 +31,10 @@ from utils.stata_replication import stata_multi_lag
 print("Starting OperProfLag.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # drop if mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -80,9 +80,9 @@ df_pd['xsga'] = df_pd['xsga'].fillna(0)
 df_pd['xint'] = df_pd['xint'].fillna(0)
 df_pd['tempprof'] = (df_pd['revt'] - df_pd['cogs'] - df_pd['xsga'] - df_pd['xint']) / df_pd['l12_ceq']
 
-# egen tempsizeq = fastxtile(mve_c), by(time_avail_m) n(3)
+# egen tempsizeq = fastxtile(mve_permco), by(time_avail_m) n(3)
 print("Computing size terciles...")
-df_pd['tempsizeq'] = fastxtile(df_pd, 'mve_c', by='time_avail_m', n=3)
+df_pd['tempsizeq'] = fastxtile(df_pd, 'mve_permco', by='time_avail_m', n=3)
 
 # replace tempprof = . if tempsizeq == 1
 print("Filtering out smallest size tercile...")

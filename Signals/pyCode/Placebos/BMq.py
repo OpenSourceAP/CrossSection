@@ -5,7 +5,7 @@
 BMq.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, ceqq columns
 
 Outputs:
@@ -30,10 +30,10 @@ from utils.forward_fill import apply_quarterly_fill_to_compustat
 print("Starting BMq.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -59,9 +59,9 @@ df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
 print(f"After merge: {len(df)} rows")
 
 # SIGNAL CONSTRUCTION
-# gen BMq = log(ceqq/mve_c)
+# gen BMq = log(ceqq/mve_permco)
 df = df.with_columns(
-    (pl.col('ceqq') / pl.col('mve_c')).log().alias('BMq')
+    (pl.col('ceqq') / pl.col('mve_permco')).log().alias('BMq')
 )
 
 print(f"Generated BMq for {len(df)} observations")

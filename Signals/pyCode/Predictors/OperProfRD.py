@@ -22,7 +22,15 @@ import numpy as np
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
 df = df[
-    ["permno", "gvkey", "time_avail_m", "exchcd", "sicCRSP", "mve_c", "shrcd"]
+    [
+        "permno",
+        "gvkey",
+        "time_avail_m",
+        "exchcd",
+        "sicCRSP",
+        "mve_c",
+        "shrcd",
+    ]
 ].copy()
 
 # Merge with Compustat

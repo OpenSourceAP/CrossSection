@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Annual Compustat data with columns [permno, gvkey, time_avail_m, datadate, at, ceq, ni, oancf, fopt, wcapch, ib, dp, xrd, capx, xad, revt]
-    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_c, sicCRSP]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_permco, sicCRSP]
     - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, niq, atq, saleq, oancfy, capxy, xrdq, fyearq, fqtr, datafqtr, datadateq]
 
 Outputs:
@@ -67,7 +67,7 @@ print(f"After deduplication: {len(compustat):,} observations")
 # Load SignalMasterTable for market value and SIC codes
 print("Loading SignalMasterTable.parquet...")
 smt = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet").select(
-    ["permno", "time_avail_m", "mve_c", "sicCRSP"]
+    ["permno", "time_avail_m", "mve_permco", "sicCRSP"]
 )
 print(f"Loaded SignalMasterTable: {len(smt):,} observations")
 
@@ -108,20 +108,22 @@ print("🎯 Applying sample selection criteria...")
 # "First, the sample is limited to firms in the lowest book-to-market quintile. Then,
 # a measure ranging from zero to eight...."
 
-df = df.with_columns([(pl.col("ceq") / pl.col("mve_c")).log().alias("BM")]).filter(
-    pl.col("ceq") > 0  # Positive book equity
-)
+df = df.with_columns(
+    [
+        pl.when((pl.col("ceq") > 0) & (pl.col("mve_permco") > 0))
+        .then((pl.col("ceq") / pl.col("mve_permco")).log())
+        .otherwise(None)
+        .alias("BM")
+    ]
+).filter(pl.col("ceq") > 0)  # Positive book equity
 
 # Calculate BM quintiles using enhanced fastxtile (pandas-based for accuracy)
 # Convert to pandas temporarily for quintile calculation
 print("Calculating BM quintiles with enhanced fastxtile...")
 df_pd = df.to_pandas()
 
-# Clean infinite BM values explicitly (following successful PS pattern)
-df_pd["BM_clean"] = df_pd["BM"].replace([np.inf, -np.inf], np.nan)
-
 # Use groupby/qcut for quintile assignment
-df_pd["BM_quintile"] = df_pd.groupby("time_avail_m")["BM_clean"].transform(
+df_pd["BM_quintile"] = df_pd.groupby("time_avail_m")["BM"].transform(
     lambda x: pd.qcut(x, q=5, labels=False, duplicates="drop") + 1
 )
 

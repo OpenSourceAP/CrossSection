@@ -5,7 +5,7 @@
 ZScore_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, sicCRSP, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, sicCRSP, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, actq, lctq, atq, req, niq, xintq, txtq, ltq, revtq columns
 
 Outputs:
@@ -30,10 +30,10 @@ from utils.forward_fill import apply_quarterly_fill_to_compustat
 print("Starting ZScore_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m sicCRSP mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m sicCRSP mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'sicCRSP', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'sicCRSP', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -58,13 +58,13 @@ df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
 print(f"After merge: {len(df)} rows")
 
 # SIGNAL CONSTRUCTION
-# gen ZScore_q = 1.2*(actq - lctq)/atq + 1.4*(req/atq) + 3.3*(niq + xintq + txtq)/atq + .6*(mve_c/ltq) + revtq/atq
+# gen ZScore_q = 1.2*(actq - lctq)/atq + 1.4*(req/atq) + 3.3*(niq + xintq + txtq)/atq + .6*(mve_permco/ltq) + revtq/atq
 print("Computing ZScore_q...")
 df = df.with_columns(
     (1.2 * (pl.col('actq') - pl.col('lctq')) / pl.col('atq') + 
      1.4 * pl.col('req') / pl.col('atq') + 
      3.3 * (pl.col('niq') + pl.col('xintq') + pl.col('txtq')) / pl.col('atq') + 
-     0.6 * pl.col('mve_c') / pl.col('ltq') + 
+     0.6 * pl.col('mve_permco') / pl.col('ltq') + 
      pl.col('revtq') / pl.col('atq')).alias('ZScore_q')
 )
 

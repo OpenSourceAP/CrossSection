@@ -11,7 +11,7 @@ Usage:
 Inputs:
     - IBES_EPS_Unadj.parquet: IBES forecast data with columns [tickerIBES, time_avail_m, stdev]
     - TR_13F.parquet: Institutional ownership data with columns [permno, time_avail_m, instown_perc]
-    - SignalMasterTable.parquet: Monthly master table with columns [permno, tickerIBES, time_avail_m, exchcd, mve_c]
+    - SignalMasterTable.parquet: Monthly master table with columns [permno, tickerIBES, time_avail_m, exchcd, mve_permco, mve_c]
     - m_aCompustat.parquet: Compustat data with columns [permno, time_avail_m, at, ceq, txditc]
     - monthlyCRSP.parquet: CRSP monthly data with columns [permno, time_avail_m, vol, shrout, ret]
 
@@ -51,9 +51,11 @@ print(f"IBES EPS data: {len(temp_ibes):,} observations")
 print("📊 Loading main data sources...")
 
 # DATA LOAD
-# use permno tickerIBES time_avail_m exchcd mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno tickerIBES time_avail_m exchcd mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = signal_master.select(["permno", "tickerIBES", "time_avail_m", "exchcd", "mve_c"])
+df = signal_master.select(
+    ["permno", "tickerIBES", "time_avail_m", "exchcd", "mve_permco", "mve_c"]
+)
 print(f"SignalMasterTable: {len(df):,} observations")
 
 # merge 1:1 permno time_avail_m using "$pathDataIntermediate/TR_13F", keep(master match) nogenerate keepusing(instown_perc)
@@ -216,12 +218,12 @@ df = df.with_columns(
     .alias("txditc")
 )
 
-# gen MB = mve_c/(ceq + txditc)
+# gen MB = mve_permco/(ceq + txditc)
 # replace MB = . if (ceq + txditc) < 0
 df = df.with_columns(
     pl.when((pl.col("ceq") + pl.col("txditc")) < 0)
     .then(None)
-    .otherwise(pl.col("mve_c") / (pl.col("ceq") + pl.col("txditc")))
+    .otherwise(pl.col("mve_permco") / (pl.col("ceq") + pl.col("txditc")))
     .alias("MB")
 )
 

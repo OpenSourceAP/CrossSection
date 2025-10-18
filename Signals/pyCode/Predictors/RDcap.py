@@ -40,7 +40,9 @@ smt = pd.read_parquet(
     columns=["permno", "time_avail_m", "mve_c"],
 )
 df = df.merge(
-    smt[["permno", "time_avail_m", "mve_c"]], on=["permno", "time_avail_m"], how="left"
+    smt[["permno", "time_avail_m", "mve_c"]],
+    on=["permno", "time_avail_m"],
+    how="left",
 )
 
 # SIGNAL CONSTRUCTION

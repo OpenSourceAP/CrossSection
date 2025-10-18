@@ -5,7 +5,7 @@
 cfpq.py
 
 Inputs:
-    - SignalMasterTable.parquet: gvkey, permno, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: gvkey, permno, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, actq, cheq, lctq, dlcq, txpq, dpq, ibq, oancfyq columns
 
 Outputs:
@@ -29,10 +29,10 @@ from utils.saveplacebo import save_placebo
 print("Starting cfpq.py")
 
 # DATA LOAD
-# use gvkey permno time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use gvkey permno time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['gvkey', 'permno', 'time_avail_m', 'mve_c'])
+df = df.select(['gvkey', 'permno', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -69,7 +69,7 @@ qcomp = qcomp.with_columns([
 print("Applying forward fill to SignalMasterTable...")
 df = df.sort(['permno', 'time_avail_m'])
 df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
+    pl.col('mve_permco').fill_null(strategy="forward").over('permno').alias('mve_permco')
 ])
 
 
@@ -119,17 +119,17 @@ df = df.with_columns(
      ((pl.col('lctq') - pl.col('l12_lctq')) - pl.col('dlcq_diff') - pl.col('txpq_diff') - pl.col('dpq'))).alias('tempaccrual_level')
 )
 
-# gen cfpq =(ibq - tempaccrual_level )/ mve_c
+# gen cfpq =(ibq - tempaccrual_level )/ mve_permco
 print("Computing cfpq...")
 df = df.with_columns(
-    ((pl.col('ibq') - pl.col('tempaccrual_level')) / pl.col('mve_c')).alias('cfpq')
+    ((pl.col('ibq') - pl.col('tempaccrual_level')) / pl.col('mve_permco')).alias('cfpq')
 )
 
-# replace cfpq = oancfyq/mve_c if oancfyq !=.
+# replace cfpq = oancfyq/mve_permco if oancfyq !=.
 print("Replacing cfpq with oancfyq when available...")
 df = df.with_columns(
     pl.when(pl.col('oancfyq').is_not_null())
-    .then(pl.col('oancfyq') / pl.col('mve_c'))
+    .then(pl.col('oancfyq') / pl.col('mve_permco'))
     .otherwise(pl.col('cfpq'))
     .alias('cfpq')
 )

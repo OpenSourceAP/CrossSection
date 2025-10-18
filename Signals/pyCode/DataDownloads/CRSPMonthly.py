@@ -104,8 +104,17 @@ crsp_data['shrout'] = crsp_data['shrout'] / 1000
 crsp_data['vol'] = crsp_data['vol'] / 10000
 crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
 
+# Aggregate to permco level to obtain company-level market equity
+mve_permco = (
+    crsp_data.dropna(subset=['permco'])
+    .groupby(['permco', 'time_avail_m'], as_index=False)['mve_c']
+    .sum(min_count=1)
+    .rename(columns={'mve_c': 'mve_permco'})
+)
+crsp_data = crsp_data.merge(mve_permco, on=['permco', 'time_avail_m'], how='left')
+
 # Clean up unnecessary columns
-crsp_data = crsp_data.drop(['dlret', 'dlstcd', 'permco'], axis=1)
+crsp_data = crsp_data.drop(['dlret', 'dlstcd'], axis=1)
 
 # Save final dataset
 crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet", index=False)

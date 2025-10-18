@@ -5,7 +5,7 @@
 NetDebtPrice_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, dlttq, dlcq, pstkq, cheq, atq, ibq, ceqq columns
     - m_aCompustat.parquet: gvkey, time_avail_m, sic, ceq, csho, prcc_f columns
 
@@ -30,10 +30,10 @@ from utils.saveplacebo import save_placebo
 print("Starting NetDebtPrice_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -73,10 +73,10 @@ df = df.with_columns(
     pl.col('sic').cast(pl.Float64, strict=False)
 )
 
-# gen NetDebtPrice_q = ((dlttq + dlcq + pstkq) - cheq)/mve_c
+# gen NetDebtPrice_q = ((dlttq + dlcq + pstkq) - cheq)/mve_permco
 print("Computing NetDebtPrice_q...")
 df = df.with_columns(
-    ((pl.col('dlttq') + pl.col('dlcq') + pl.col('pstkq')) - pl.col('cheq')).truediv(pl.col('mve_c')).alias('NetDebtPrice_q')
+    ((pl.col('dlttq') + pl.col('dlcq') + pl.col('pstkq')) - pl.col('cheq')).truediv(pl.col('mve_permco')).alias('NetDebtPrice_q')
 )
 
 # replace NetDebtPrice_q = . if sic >= 6000 & sic <= 6999
@@ -99,10 +99,10 @@ df = df.with_columns(
 )
 
 # * keep constant B/M, as in Table 4
-# gen BM = log(ceq/mve_c)
+# gen BM = log(ceq/mve_permco)
 print("Computing BM for quintile filtering...")
 df = df.with_columns(
-    (pl.col('ceq') / pl.col('mve_c')).log().alias('BM')
+    (pl.col('ceq') / pl.col('mve_permco')).log().alias('BM')
 )
 
 # Convert to pandas for quintile calculation

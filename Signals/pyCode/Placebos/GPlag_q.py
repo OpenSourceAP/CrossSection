@@ -5,7 +5,7 @@
 GPlag_q.py
 
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_c columns
+    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
     - m_QCompustat.parquet: gvkey, time_avail_m, revtq, cogsq, atq columns
 
 Outputs:
@@ -29,10 +29,10 @@ from utils.saveplacebo import save_placebo
 print("Starting GPlag_q.py")
 
 # DATA LOAD
-# use permno gvkey time_avail_m mve_c using "$pathDataIntermediate/SignalMasterTable", clear
+# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
 print("Loading SignalMasterTable...")
 df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_c'])
+df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
 
 # keep if !mi(gvkey)
 df = df.filter(pl.col('gvkey').is_not_null())
@@ -64,7 +64,7 @@ qcomp = qcomp.with_columns([
 print("Applying forward fill to SignalMasterTable...")
 df = df.sort(['permno', 'time_avail_m'])
 df = df.with_columns([
-    pl.col('mve_c').fill_null(strategy="forward").over('permno').alias('mve_c')
+    pl.col('mve_permco').fill_null(strategy="forward").over('permno').alias('mve_permco')
 ])
 
 

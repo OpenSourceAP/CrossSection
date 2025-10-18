@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [gvkey, permno, time_avail_m, che, dltt, dlc, dc, dvpa, tstkp, ceq]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - EBM.csv: CSV file with columns [permno, yyyymm, EBM]
@@ -47,10 +47,10 @@ df = pl.read_parquet("../pyData/Intermediate/m_aCompustat.parquet").select(
 # Keep only first observation per permno-time to remove duplicates
 df = df.group_by(["permno", "time_avail_m"]).first()
 
-# Merge with SignalMasterTable to get market value (mve_c)
+# Merge with SignalMasterTable to get market value (mve_permco)
 signal_master = pl.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet"
-).select(["permno", "time_avail_m", "mve_c"])
+).select(["permno", "time_avail_m", "mve_permco"])
 df = df.join(signal_master, on=["permno", "time_avail_m"], how="inner")
 
 # Sort data by permno and time
@@ -74,7 +74,7 @@ df = df.with_columns(
 # Calculate enterprise book-to-market ratio
 df = df.with_columns(
     [
-        ((pl.col("ceq") + pl.col("temp")) / (pl.col("mve_c") + pl.col("temp"))).alias(
+        ((pl.col("ceq") + pl.col("temp")) / (pl.col("mve_permco") + pl.col("temp"))).alias(
             "EBM"
         )
     ]
@@ -82,7 +82,7 @@ df = df.with_columns(
 
 # Calculate book-to-price ratio
 df = df.with_columns(
-    [((pl.col("ceq") + pl.col("tstkp") - pl.col("dvpa")) / pl.col("mve_c")).alias("BP")]
+    [((pl.col("ceq") + pl.col("tstkp") - pl.col("dvpa")) / pl.col("mve_permco")).alias("BP")]
 )
 
 # Calculate difference between book-to-price and enterprise book-to-market

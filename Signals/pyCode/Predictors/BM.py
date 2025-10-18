@@ -10,7 +10,7 @@ Usage:
 
 Inputs:
     - m_aCompustat.parquet: Monthly Compustat data with columns [permno, time_avail_m, datadate, ceqt]
-    - SignalMasterTable.parquet: Monthly master table with mve_c
+    - SignalMasterTable.parquet: Monthly master table with mve_permco
 
 Outputs:
     - BM.csv: CSV file with columns [permno, yyyymm, BM]
@@ -30,7 +30,7 @@ m_compustat = m_compustat[["permno", "time_avail_m", "datadate", "ceqt"]].copy()
 # Load SignalMasterTable
 print("Loading SignalMasterTable...")
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-signal_master = signal_master[["permno", "time_avail_m", "mve_c"]].copy()
+signal_master = signal_master[["permno", "time_avail_m", "mve_permco"]].copy()
 print(f"Loaded m_aCompustat: {m_compustat.shape[0]} rows")
 print(f"Loaded SignalMasterTable: {signal_master.shape[0]} rows")
 
@@ -46,9 +46,9 @@ print(f"After merge: {df.shape[0]} rows")
 print("Setting up panel data structure...")
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create 6-month lag of market equity
+# Create 6-month lag of company-level market equity
 print("Creating 6-month lag for market equity...")
-df["me_datadate"] = df.groupby("permno")["mve_c"].shift(6)
+df["me_datadate"] = df.groupby("permno")["mve_permco"].shift(6)
 df["l6_time_avail_m"] = df.groupby("permno")["time_avail_m"].shift(6)
 
 # Convert to Period('M') format for comparison

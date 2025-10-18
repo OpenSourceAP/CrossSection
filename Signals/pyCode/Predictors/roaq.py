@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/roaq.py
 
 Inputs:
-    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, mve_c, gvkey]
+    - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, gvkey]
     - m_QCompustat.parquet: Quarterly Compustat data with columns [gvkey, time_avail_m, atq, ibq]
 
 Outputs:
@@ -21,7 +21,7 @@ import pandas as pd
 # DATA LOAD
 signal_master = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "gvkey", "time_avail_m", "mve_c"],
+    columns=["permno", "gvkey", "time_avail_m"],
 )
 
 # Keep only observations with valid company identifiers

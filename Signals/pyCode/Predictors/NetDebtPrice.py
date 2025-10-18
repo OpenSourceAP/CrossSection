@@ -11,7 +11,7 @@ Usage:
 
 Inputs:
     - ../pyData/Intermediate/m_aCompustat.parquet (permno, time_avail_m, at, dltt, dlc, pstk, dvpa, tstkp, che, sic, ib, csho, ceq, prcc_f)
-    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_c)
+    - ../pyData/Intermediate/SignalMasterTable.parquet (permno, time_avail_m, mve_permco)
 
 Outputs:
     - ../pyData/Predictors/NetDebtPrice.csv (permno, yyyymm, NetDebtPrice)
@@ -24,6 +24,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.stata_fastxtile import fastxtile_by_group
+from utils.save_standardized import save_predictor
 
 # DATA LOAD
 # Load m_aCompustat data
@@ -55,7 +56,7 @@ compustat_df = compustat_df.drop_duplicates(
 # Merge with SignalMasterTable
 signal_df = pd.read_parquet(
     "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    columns=["permno", "time_avail_m", "mve_permco"]
 )
 df = compustat_df.merge(signal_df, on=["permno", "time_avail_m"], how="inner")
 
@@ -66,7 +67,7 @@ df["sic"] = pd.to_numeric(df["sic"], errors="coerce")
 # Calculate net debt to price ratio
 df["NetDebtPrice"] = (
     (df["dltt"] + df["dlc"] + df["pstk"] + df["dvpa"] - df["tstkp"]) - df["che"]
-) / df["mve_c"]
+) / df["mve_permco"]
 
 # Exclude financial firms (SIC 6000-6999)
 df.loc[(df["sic"] >= 6000) & (df["sic"] <= 6999), "NetDebtPrice"] = np.nan
@@ -83,23 +84,14 @@ df.loc[
 
 # Keep constant B/M - exclude bottom 2 BM quintiles
 with np.errstate(divide="ignore", invalid="ignore"):
-    df["BM"] = np.log(df["ceq"] / df["mve_c"])
+    df["BM_filter"] = np.log(df["ceq"] / df["mve_permco"])
 # Handle infinite values in BM
-df["BM_clean"] = df["BM"].replace([np.inf, -np.inf], np.nan)
+df["BM_clean"] = df["BM_filter"].replace([np.inf, -np.inf], np.nan)
 # Use Stata-equivalent fastxtile for BM quintiles
 df["tempsort"] = fastxtile_by_group(df, "BM_clean", "time_avail_m", n=5)
 # Exclude bottom 2 quintiles (keep only quintiles 3, 4, 5)
 df.loc[df["tempsort"] <= 2, "NetDebtPrice"] = np.nan
 
-# Drop missing values
-df = df.dropna(subset=["NetDebtPrice"])
-
-# Convert time_avail_m to yyyymm
-df["yyyymm"] = df["time_avail_m"].dt.year * 100 + df["time_avail_m"].dt.month
-
-# Keep required columns and order
-df = df[["permno", "yyyymm", "NetDebtPrice"]].copy()
-
 # SAVE
-df.to_csv("../pyData/Predictors/NetDebtPrice.csv", index=False)
+save_predictor(df, "NetDebtPrice")
 print(f"NetDebtPrice: Saved {len(df):,} observations")
