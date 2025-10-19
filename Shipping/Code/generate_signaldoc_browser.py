@@ -28,7 +28,7 @@ def format_integer_value(val):
     if pd.isna(val) or val == '':
         return ''
     try:
-        return str(int(float(val)))
+        return f"{int(float(val)):,}"
     except (ValueError, TypeError):
         return format_value(val)
 
@@ -80,6 +80,14 @@ def main():
 
     doc['AuthorYear'] = doc['AuthorYear'] + pd.Series(year_journal)
 
+    predictability_map = {
+        '1_clear': 'Clearly Significant (Predictor)',
+        '2_likely': 'Likely Significant (Predictor)',
+        '4_not': 'Not Significant (Placebo)',
+        'indirect': 'Only indirect predictability evidence (Placebo)',
+        '9_drop': 'Signal dropped from dataset (Placebo, see notes)'
+    }
+
     # Prepare data for JSON
     signals = []
     for idx, row in doc.iterrows():
@@ -88,11 +96,18 @@ def main():
         if category == 'Drop':
             category = 'Dropped'
 
+        predictability_raw = row.get('Predictability in OP', '')
+        if pd.isna(predictability_raw) or predictability_raw == '':
+            predictability_value = ''
+        else:
+            predictability_key = str(predictability_raw).strip().lower()
+            predictability_value = predictability_map.get(predictability_key, format_value(predictability_raw))
+
         signal = {
             'signalname': format_value(row.get('Acronym', '')),
             'Category': category,
             'AuthorYear': format_value(row['AuthorYear']),
-            'Predictability': format_value(row.get('Predictability in OP', '')),
+            'Predictability': predictability_value,
             'Quality': format_value(row.get('Signal Rep Quality', '')),
             'GScholarCites202509': format_integer_value(row.get('GScholarCites202509', '')),
             'Description': format_value(row.get('LongDescription', '')),
@@ -206,7 +221,7 @@ def main():
 
         .signal-list {{
             flex: 1;
-            overflow-y: auto;
+            overflow-y: scroll;
         }}
 
         .signal-item {{
@@ -252,7 +267,7 @@ def main():
 
         .detail-panel {{
             flex: 1;
-            overflow-y: auto;
+            overflow-y: scroll;
             padding: 2rem;
             background: white;
         }}
@@ -453,9 +468,8 @@ def main():
             const fields = [
                 {{ key: 'signalname', label: 'Acronym', inline: true }},             
                 {{ key: 'AuthorYear', label: 'Paper', inline: true }},                       
+                {{ key: 'Predictability', label: 'Predictability Evidence', inline: true }},                
                 {{ key: 'Definition', label: 'Detailed Definition', inline: false }},            
-                {{ key: 'Category', label: 'Predictor or Placebo?', inline: true }},
-                {{ key: 'Predictability', label: 'Predictability', inline: true }},
                 {{ key: 'GScholarCites202509', label: 'GScholar Cites (2025)', inline: true }},
                 {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
                 {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
@@ -471,6 +485,7 @@ def main():
                 {{ key: 'Filter', label: 'Filter', inline: true }},
                 {{ key: 'EvidenceSummary', label: 'Evidence Summary', inline: true }},
                 {{ key: 'Notes', label: 'Notes', inline: false }},
+                {{ key: 'Category', label: 'Predictor or Placebo?', inline: true }},                
                 {{ key: 'Acronym2', label: 'Acronym2', inline: true }},
                 {{ key: 'Quality', label: 'Replication Quality', inline: true }},
                 {{ key: 'FormCategory', label: 'Form Category', inline: true }},
