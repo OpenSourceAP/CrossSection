@@ -95,7 +95,7 @@ file.copy(
   , to = paste0(pathStorage)
 )
 
-# source('1_pack_signals.r')
-# source('2_pack_portfolios_and_results.r')
-# source('3_check_storage.r')
+source('1_pack_signals.r')
+source('2_pack_portfolios_and_results.r')
+source('3_check_storage.r')
 
