@@ -24,7 +24,7 @@ count.us = readdocumentation() %>%
   )
 
 count.mp = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(metastudy == 'MP') %>% 
   mutate(covered = ourname != '_missing_') %>%
@@ -35,7 +35,7 @@ count.mp = read_csv(
   mutate(pctcov = covered/n*100)
 
 count.ghz = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(metastudy == 'GHZ') %>% 
   mutate(covered = ourname != '_missing_') %>%
@@ -47,7 +47,7 @@ count.ghz = read_csv(
 
 # for HXZ, we create a special category for alternative holding periods
 count.hxz = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(metastudy == 'HXZ') %>% 
   mutate(covered = ourname != '_missing_') %>% 
@@ -70,7 +70,7 @@ count.hxz = read_csv(
 # HLZ has its own csv since it's so different (not replication)
 # coverage then needs to be more judgmental
 count.hlz = read_csv(
-  paste0(pathProject, 'Comparison_to_HLZ.csv')
+  paste0(pathProject, 'Docs/Comparison_to_HLZ.csv')
 ) %>%
   mutate(
     covered = Coverage != 'zz missing'

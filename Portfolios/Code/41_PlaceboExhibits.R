@@ -114,7 +114,7 @@ statsFull <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
   )
 
 mpSignals = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(metastudy == 'MP', ourname != '_missing_')
 
@@ -208,12 +208,12 @@ df_merge %>% filter(inMP) %>% summarize(mean(rbar), sd(rbar), sum(tstat>1.5))
 # Replication rate vis-a-vis other studies --------------------------------
 
 mpSignals = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(metastudy == 'MP', ourname != '_missing_')
 
 hxzSignals = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(metastudy == 'HXZ', ourname != '_missing_')
 
