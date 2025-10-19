@@ -4,7 +4,7 @@ args = commandArgs(trailingOnly=TRUE)
 
 #%% ====
 # From master.R 
-pathProject = '/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/'
+pathProject = '~/Dropbox/oap-ac/CrossSection/'
 SignalSource = "Python" # use "Stata" for legacy signals (Signals/Data/) or "Python" for new signals (Signals/pyData/)
 
 setwd(paste0(pathProject,'Portfolios/Code/'))
