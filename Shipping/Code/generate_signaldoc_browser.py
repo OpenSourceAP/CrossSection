@@ -429,15 +429,24 @@ def main():
             }});
         }}
 
+        function getDetailTitle(signal) {{
+            const baseDescription = (signal.Description || '').toString();
+            const evidenceSummaryValue = (signal['EvidenceSummary'] || '').toString().trim().toLowerCase();
+            const suffix = evidenceSummaryValue === 'hxz variant' ? ' (HXZ variation)' : '';
+            return `${{baseDescription}}${{suffix}}`;
+        }}
+
         function filterSignals() {{
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value;
 
             filteredSignals = signalsData.filter(signal => {{
+                const detailTitle = getDetailTitle(signal).toLowerCase();
                 const matchesSearch = !searchTerm ||
                     signal.signalname.toLowerCase().includes(searchTerm) ||
                     signal.Description.toLowerCase().includes(searchTerm) ||
-                    signal.AuthorYear.toLowerCase().includes(searchTerm);
+                    signal.AuthorYear.toLowerCase().includes(searchTerm) ||
+                    detailTitle.includes(searchTerm);
 
                 const matchesCategory = !category || signal.Category === category;
 
@@ -461,7 +470,7 @@ def main():
             listEl.innerHTML = filteredSignals.map(signal => `
                 <div class="signal-item ${{selectedSignal?.signalname === signal.signalname ? 'active' : ''}}"
                      onclick="selectSignal('${{signal.signalname}}')">
-                    <div class="signal-item-name">${{signal.Description}}</div>
+                    <div class="signal-item-name">${{getDetailTitle(signal)}}</div>
                     <div class="signal-item-acronym">${{signal.signalname}}</div>
                     <div class="signal-item-meta">${{signal.AuthorYear}}</div>
                 </div>
@@ -577,9 +586,11 @@ def main():
                 }})
                 .join('');
 
+            const detailTitle = getDetailTitle(selectedSignal);
+
             panel.innerHTML = `
                 <div class="detail-content">
-                    <div class="detail-title">${{selectedSignal.Description}}</div>
+                    <div class="detail-title">${{detailTitle}}</div>
                     ${{fieldsHtml}}
                 </div>
             `;
