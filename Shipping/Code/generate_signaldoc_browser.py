@@ -32,6 +32,22 @@ def format_integer_value(val):
     except (ValueError, TypeError):
         return format_value(val)
 
+def build_code_link(signalname, category):
+    """Return the GitHub URL for the signal's implementation when available"""
+    if not signalname:
+        return ''
+
+    normalized_category = (category or '').strip().lower()
+    base_url = "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode"
+    filename = f"{signalname}.py"
+
+    if normalized_category == 'predictor':
+        return f"{base_url}/Predictors/{filename}"
+    if 'placebo' in normalized_category:
+        return f"{base_url}/Placebos/{filename}"
+
+    return ''
+
 def main():
     # Change to script directory
     script_dir = Path(__file__).parent
@@ -131,7 +147,8 @@ def main():
             'StartMonth': format_value(row.get('Start Month', '')),
             'Filter': format_value(row.get('Filter', '')),
             'Definition': format_value(row.get('Detailed Definition', '')),
-            'Notes': format_value(row.get('Notes', ''))
+            'Notes': format_value(row.get('Notes', '')),
+            'CodeLink': build_code_link(format_value(row.get('Acronym', '')), category)
         }
         signals.append(signal)
 
@@ -467,6 +484,7 @@ def main():
 
             const fields = [
                 {{ key: 'signalname', label: 'Acronym', inline: true }},             
+                {{ key: 'CodeLink', label: 'Code', inline: true }},
                 {{ key: 'AuthorYear', label: 'Paper', inline: true }},                       
                 {{ key: 'Predictability', label: 'Predictability Evidence', inline: true }},                
                 {{ key: 'Definition', label: 'Detailed Definition', inline: false }},            
@@ -498,10 +516,14 @@ def main():
                     if (field.computed && field.key === 'Sample') {{
                         return selectedSignal['SampleStart'] || selectedSignal['SampleEnd'];
                     }}
+                    if (field.key === 'CodeLink') {{
+                        return Boolean(selectedSignal[field.key]);
+                    }}
                     return selectedSignal[field.key];
                 }})
                 .map(field => {{
-                    let value;
+                    let value = '';
+                    let displayValue = '';
                     if (field.computed && field.key === 'Sample') {{
                         const start = selectedSignal['SampleStart'] || '';
                         const end = selectedSignal['SampleEnd'] || '';
@@ -514,6 +536,7 @@ def main():
                         }} else {{
                             value = '';
                         }}
+                        displayValue = value;
                     }} else if (field.key === 'Sign') {{
                         const signValue = selectedSignal[field.key];
                         if (signValue === '1.0' || signValue === '1') {{
@@ -521,6 +544,7 @@ def main():
                         }} else {{
                             value = 'High signal implies low return';
                         }}
+                        displayValue = value;
                     }} else if (field.key === 'StockWeight') {{
                         const weightValue = selectedSignal[field.key];
                         if (weightValue === 'EW') {{
@@ -528,10 +552,17 @@ def main():
                         }} else {{
                             value = 'value-weighted';
                         }}
+                        displayValue = value;
                     }} else if (field.key === 'EvidenceSummary') {{
                         value = selectedSignal[field.key].replace(/HXZ variant/g, 'Hou, Xue, Zhang (2020, RFS) created this variation from the original paper');
+                        displayValue = value;
+                    }} else if (field.key === 'CodeLink') {{
+                        const linkUrl = selectedSignal[field.key];
+                        value = linkUrl ? 'GitHub Link' : '';
+                        displayValue = linkUrl ? `<a href="${{linkUrl}}" target="_blank" rel="noopener">GitHub Link</a>` : '';
                     }} else {{
-                        value = selectedSignal[field.key];
+                        value = selectedSignal[field.key] || '';
+                        displayValue = value;
                     }}
 
                     const isLongText = value.length > 100;
@@ -540,7 +571,7 @@ def main():
                     return `
                         <div class="detail-field ${{layoutClass}}">
                             <div class="detail-label">${{field.label}}</div>
-                            <div class="detail-value ${{valueClass}}">${{value}}</div>
+                            <div class="detail-value ${{valueClass}}">${{displayValue}}</div>
                         </div>
                     `;
                 }})
