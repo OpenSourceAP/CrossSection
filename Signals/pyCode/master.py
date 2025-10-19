@@ -92,14 +92,13 @@ def run_settings():
 def check_prep_csv_files():
     """Ensure required prep CSVs exist or confirm with the user before proceeding."""
     expected_files = [
-        "../pyData/Prep/OptionMetrics.csv",
-        "../pyData/Prep/tr_13f.csv",
+        "../pyData/Prep/bali_hovak_imp_vol.csv",
         "../pyData/Prep/corwin_schultz_spread.csv",
         "../pyData/Prep/hf_monthly.csv",
-        "../pyData/Prep/bali_hovak_imp_vol.csv",
         "../pyData/Prep/OptionMetricsVolSurf.csv",
         "../pyData/Prep/OptionMetricsVolume.csv",
         "../pyData/Prep/OptionMetricsXZZ.csv",
+        "../pyData/Prep/tr_13f.csv"
     ]
 
     missing_files = [str(Path(path)) for path in expected_files if not Path(path).exists()]
