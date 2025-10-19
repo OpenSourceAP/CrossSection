@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # """
 # Inputs: Expects WRDS_USERNAME and WRDS_PASSWORD loaded from .env; optional local destination (defaults to ../pyData/Prep/)
-# Outputs: Downloads WRDS prep outputs into the local prep directory using password auth
+# Outputs: Downloads WRDS prep outputs (data_for_dl/ and temp_output/hf_monthly.csv) into the local prep directory using password auth
 # How to run: ./prep2_dl_from_wrds.sh [local_dest]
 # Example: ./prep2_dl_from_wrds.sh ../pyData/Prep
 # """
@@ -57,18 +57,22 @@ WRDS_PASS="${WRDS_PASSWORD}"
 DEST_HOST="wrds-cloud.wharton.upenn.edu"
 REMOTE_PREP_DIR="~/temp_prep"
 REMOTE_DL_PATH="${REMOTE_PREP_DIR}/data_for_dl/"
-REMOTE_PATH="${WRDS_USER}@${DEST_HOST}:${REMOTE_DL_PATH}"
+REMOTE_TEMP_OUTPUT_FILE="${REMOTE_PREP_DIR}/temp_output/hf_monthly.csv"
+REMOTE_DL_PATH_FULL="${WRDS_USER}@${DEST_HOST}:${REMOTE_DL_PATH}"
+REMOTE_TEMP_OUTPUT_PATH_FULL="${WRDS_USER}@${DEST_HOST}:${REMOTE_TEMP_OUTPUT_FILE}"
 SSH_COMMON_OPTS=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
 SSH_COMMON_OPTS_STR='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
 
 mkdir -p "${LOCAL_DEST}"
 
-echo "Downloading WRDS prep outputs from ${REMOTE_PATH} to ${LOCAL_DEST} ..."
+echo "Downloading WRDS prep outputs from ${REMOTE_DL_PATH_FULL} to ${LOCAL_DEST} ..."
 
 if command -v sshpass >/dev/null 2>&1; then
-  sshpass -p "${WRDS_PASS}" scp "${SSH_COMMON_OPTS[@]}" -r "${REMOTE_PATH}"* "${LOCAL_DEST}/"
+  sshpass -p "${WRDS_PASS}" scp "${SSH_COMMON_OPTS[@]}" -r "${REMOTE_DL_PATH_FULL}"* "${LOCAL_DEST}/"
+  echo "Downloading TAQ hf_monthly.csv from ${REMOTE_TEMP_OUTPUT_PATH_FULL} to ${LOCAL_DEST} ..."
+  sshpass -p "${WRDS_PASS}" scp "${SSH_COMMON_OPTS[@]}" "${REMOTE_TEMP_OUTPUT_PATH_FULL}" "${LOCAL_DEST}/"
 elif command -v expect >/dev/null 2>&1; then
-  LOCAL_DEST="${LOCAL_DEST}" REMOTE_PATH="${REMOTE_PATH}" WRDS_USER="${WRDS_USER}" DEST_HOST="${DEST_HOST}" WRDS_PASS="${WRDS_PASS}" SSH_COMMON_OPTS_STR="${SSH_COMMON_OPTS_STR}" expect <<'EOF'
+  LOCAL_DEST="${LOCAL_DEST}" REMOTE_DL_PATH_FULL="${REMOTE_DL_PATH_FULL}" REMOTE_TEMP_OUTPUT_PATH_FULL="${REMOTE_TEMP_OUTPUT_PATH_FULL}" WRDS_PASS="${WRDS_PASS}" SSH_COMMON_OPTS_STR="${SSH_COMMON_OPTS_STR}" expect <<'EOF'
 set timeout -1
 proc run_with_password {command password} {
     spawn /bin/sh -c $command
@@ -78,11 +82,13 @@ proc run_with_password {command password} {
         eof
     }
 }
-set remote_path $env(REMOTE_PATH)
+set remote_dl_path $env(REMOTE_DL_PATH_FULL)
 set local_dest $env(LOCAL_DEST)
+set remote_temp_output_file $env(REMOTE_TEMP_OUTPUT_PATH_FULL)
 set password $env(WRDS_PASS)
 set ssh_opts $env(SSH_COMMON_OPTS_STR)
-run_with_password "scp $ssh_opts -r ${remote_path}* \"$local_dest/\"" $password
+run_with_password "scp $ssh_opts -r ${remote_dl_path}* \"$local_dest/\"" $password
+run_with_password "scp $ssh_opts ${remote_temp_output_file} \"$local_dest/\"" $password
 EOF
 else
   echo "Neither sshpass nor expect is installed. Install sshpass (recommended) or expect to enable password automation." >&2
@@ -92,6 +98,7 @@ fi
 cat <<EON
 Prep outputs downloaded. Next steps:
   - Verify files such as tr_13f.csv, corwin_schultz_spread.csv, hf_monthly.csv, OptionMetrics*.csv, bali_hovak_imp_vol.csv now reside in ${LOCAL_DEST}
+  - Review TAQ hf_monthly.csv within ${LOCAL_DEST}
   - Optionally copy ~/temp_prep/log/ for troubleshooting (scp -r ${WRDS_USER}@wrds-cloud.wharton.upenn.edu:~/temp_prep/log/ Logs/wrds_prep_logs)
 Consult README.md for timing expectations and monitoring tips (qstat, log files).
 EON
