@@ -316,7 +316,7 @@ def main():
 
         .detail-field.inline {{
             display: flex;
-            gap: 0.5rem;
+            gap: 2.0rem;
             align-items: baseline;
         }}
 
