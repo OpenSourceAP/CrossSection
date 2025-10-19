@@ -9,9 +9,15 @@ library(readxl)
 library(data.table) # for speed
 library(googledrive)
 
-pathProject = 'C:/Dropbox/Open-AP-ac/CrossSection/' # local code base directory
-pathStorage = 'C:/Gdrive/My Drive/Work/Public/Open AP/Data Release 2024.10/' # a place to 
-OLD_PATH_RELEASES = 'https://drive.google.com/drive/folders/1EP6oEabyZRamveGNyzYU0u6qJ-N43Qfq' # location of previous release for comparison (here August 2023)
+# Read settings from 00_settings.txt
+settings_lines = readLines('00_settings.txt')
+settings_lines = settings_lines[!grepl('^#', settings_lines) & nchar(trimws(settings_lines)) > 0]
+for (line in settings_lines) {
+  parts = strsplit(line, ' = ')[[1]]
+  assign(trimws(parts[1]), trimws(parts[2]))
+}
+pathProject = path.expand(pathProject)
+pathStorage = path.expand(pathStorage)
 
 
 pathShipping = paste0(pathProject,'Shipping/') # where Code/master_shipping.r is
