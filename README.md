@@ -38,9 +38,27 @@ The code is separated into three folders:
 
 We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/pyCode/` and then do your thing.  If you just want to create portfolios, you can skip the signal generation by directly downloading its output via the [data page](https://www.openassetpricing.com/).  The whole thing is about 15,000 lines, so you might want to pick your battles.
 
-More details are below.
+More details are below
 
-### 1. Signals/pyCode/
+### 1. Set up for Creating Signals
+* Copy `Signals/pyCode/dotenv.template` to `Signals/pyCode/.env` and add your WRDS and FRED credentials.
+  - For FRED credentials, request an [API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html)
+
+### 2. (Optional) Generate Prep Data
+
+This is only necessary for a handful of signals
+
+If you have bash:
+* from `Signals/pyCode/`
+  - run `bash prep1_run_on_wrds.sh` to copy the prep scripts to the WRDS Cloud
+  - wait about 5 hours
+    - use qstat to check if it's still running
+    - if impatient, check most recent file in `~/temp_prep/log/` on WRDS server.  
+  - run `bash prep2_dl_from_wrds.sh` to download the prep data from the WRDS Cloud to `Signals/pyData/Prep/`
+
+You can alternatively upload to the WRDS Cloud manually, ssh into WRDS, run `qsub run_all_prep.sh`, and then manually download the prep data.
+
+### 3. Signals/pyCode/
 
 `master.py` runs the end-to-end Python pipeline. It calls the staged scripts in:
 
@@ -51,24 +69,8 @@ More details are below.
 
 The orchestrator blocks are written to keep running even if a particular download fails (for example due to a missing subscription) so you get as much data as possible. You can track progress in `Signals/Logs/`.
 
-#### Minimal Setup
 
-1. From `Signals/pyCode/`, create a Python 3 virtual environment (e.g. `python3 -m venv .venv`) and install the requirements via `pip install -r requirements.txt` after activating the environment. `set_up_pyCode.py` automates these steps if you prefer.
-2. Copy `dotenv.template` to `.env` and populate credentials such as `WRDS_USERNAME`, `WRDS_PASSWORD`, and any other keys you need (e.g. `FRED_API_KEY`).
-3. Run the full pipeline with `python master.py` (from inside `Signals/pyCode/`). You can also run `01_DownloadData.py` and `02_CreatePredictors.py` individually if you just need part of the workflow.
-4. Outputs are written to `Signals/pyData/`, and detailed logs are saved under `Signals/Logs/`.
-
-#### Optional Setup
-
-The minimal setup produces the vast majority of signals. Thanks to exception handling, the pipeline will keep going even if a particular source is unavailable.
-
-To reproduce every signal:
-
-* For IBES, 13F, OptionMetrics, and bid-ask spread signals, run the helper scripts in `Signals/pyCode/PrepScripts/` (many are designed for WRDS Cloud) and place the resulting files in `Signals/pyData/Prep/`.
-* For signals that use the VIX, inflation, or broker-dealer leverage, request an [API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html) and add `FRED_API_KEY` to `.env` before running the download scripts.
-* For signals that rely on patent citations, BEA input-output tables, or Compustat customer data, ensure that `Rscript` is available on your system because some helper scripts shell out to R.
-
-### 2. Portfolios/Code/
+### 4. Portfolios/Code/
 
 `master.R` runs everything. It:
 
@@ -83,11 +85,6 @@ By default the code skips the daily portfolios (`skipdaily = T`), and takes abou
 #### Minimal Setup
 
 All you need to do is set `pathProject` in `master.R` to the project root directory (where `SignalDoc.csv` is).  Then `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
-
-#### Probable Setup
-
-You probably want more than Price, Size, and STreversal portfolios, and so you probably want to set up more signal data before you run `master.R`.  
-
 There are a couple ways to set up this signal data:
 
 * Run the code in `Signals/pyCode/` (see above).
@@ -95,7 +92,7 @@ There are a couple ways to set up this signal data:
 * Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv` and put them in `Signals/Data/Predictors/`).
 
 
-### 3. Shipping/Code/
+### 5. Shipping/Code/
 
 This code zips up the data, makes some quality checks, and copies files for uploading to Gdrive.  You shouldn't need to use this but we keep it with the rest of the code for replicability.
 
