@@ -484,11 +484,10 @@ def main():
 
             const fields = [
                 {{ key: 'signalname', label: 'Acronym', inline: true }},             
-                {{ key: 'CodeLink', label: 'Code', inline: true }},
                 {{ key: 'AuthorYear', label: 'Paper', inline: true }},                       
                 {{ key: 'Predictability', label: 'Predictability Evidence', inline: true }},                
-                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},            
-                {{ key: 'GScholarCites202509', label: 'GScholar Cites (2025)', inline: true }},
+                {{ key: 'Definition', label: 'Definition', inline: false }},
+                {{ key: 'CodeLink', label: 'Code', inline: true }},                
                 {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
                 {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
                 {{ key: 'Sample', label: 'Sample', inline: true, computed: true }},
@@ -502,6 +501,7 @@ def main():
                 {{ key: 'StartMonth', label: 'Start Month', inline: true }},
                 {{ key: 'Filter', label: 'Filter', inline: true }},
                 {{ key: 'EvidenceSummary', label: 'Evidence Summary', inline: true }},
+                {{ key: 'GScholarCites202509', label: 'GScholar Cites (2025)', inline: true }},                
                 {{ key: 'Notes', label: 'Notes', inline: false }},
                 {{ key: 'Category', label: 'Predictor or Placebo?', inline: true }},                
                 {{ key: 'Acronym2', label: 'Acronym2', inline: true }},
