@@ -1,5 +1,9 @@
-# ABOUTME: Generate interactive master-detail HTML browser for SignalDoc.csv
-# ABOUTME: Run with: python generate_signal_browser.py [output_path]
+"""
+ABOUTME: Generate interactive master-detail HTML browser for SignalDoc.csv
+ABOUTME: Run with: python generate_signaldoc_browser.py [output_path]
+INPUTS: 00_settings.txt (for paths), SignalDoc.csv from pathProject
+OUTPUTS: Default path is pathStorage/SignalDoc-Browser.html (can override with command line argument)
+"""
 
 import pandas as pd
 import json
@@ -18,6 +22,15 @@ def format_value(val):
     if pd.isna(val) or val == '':
         return ''
     return str(val)
+
+def format_integer_value(val):
+    """Format a value as an integer string when possible"""
+    if pd.isna(val) or val == '':
+        return ''
+    try:
+        return str(int(float(val)))
+    except (ValueError, TypeError):
+        return format_value(val)
 
 def main():
     # Change to script directory
@@ -81,6 +94,7 @@ def main():
             'AuthorYear': format_value(row['AuthorYear']),
             'Predictability': format_value(row.get('Predictability in OP', '')),
             'Quality': format_value(row.get('Signal Rep Quality', '')),
+            'GScholarCites202509': format_integer_value(row.get('GScholarCites202509', '')),
             'Description': format_value(row.get('LongDescription', '')),
             'Journal': format_value(row.get('Journal', '')),
             'FormCategory': format_value(row.get('Cat.Form', '')),
@@ -437,11 +451,12 @@ def main():
             }}
 
             const fields = [
-                {{ key: 'signalname', label: 'Acronym', inline: true }},
-                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},
+                {{ key: 'signalname', label: 'Acronym', inline: true }},             
+                {{ key: 'AuthorYear', label: 'Paper', inline: true }},                       
+                {{ key: 'Definition', label: 'Detailed Definition', inline: false }},            
                 {{ key: 'Category', label: 'Predictor or Placebo?', inline: true }},
-                {{ key: 'AuthorYear', label: 'Paper', inline: true }},
                 {{ key: 'Predictability', label: 'Predictability', inline: true }},
+                {{ key: 'GScholarCites202509', label: 'GScholar Cites (2025)', inline: true }},
                 {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
                 {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
                 {{ key: 'Sample', label: 'Sample', inline: true, computed: true }},
@@ -487,9 +502,9 @@ def main():
                     }} else if (field.key === 'Sign') {{
                         const signValue = selectedSignal[field.key];
                         if (signValue === '1.0' || signValue === '1') {{
-                            value = 'Buy if signal is high';
+                            value = 'High signal implies high return';
                         }} else {{
-                            value = 'Short if signal is high';
+                            value = 'High signal implies low return';
                         }}
                     }} else if (field.key === 'StockWeight') {{
                         const weightValue = selectedSignal[field.key];
