@@ -92,7 +92,6 @@ def run_settings():
 def check_prep_csv_files():
     """Ensure required prep CSVs exist or confirm with the user before proceeding."""
     expected_files = [
-        "../pyData/Prep/iclink.csv",
         "../pyData/Prep/OptionMetrics.csv",
         "../pyData/Prep/tr_13f.csv",
         "../pyData/Prep/corwin_schultz_spread.csv",
