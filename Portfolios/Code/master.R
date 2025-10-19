@@ -27,7 +27,7 @@
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder & location of SignalDoc.csv)
 # if using Rstudio, pathProject = paste0(getwd(), '/') should work
-pathProject = '/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/'
+pathProject = '~/Dropbox/oap-ac/CrossSection/'
 
 SignalSource = "Python" # use "Stata" for legacy signals (Signals/Data/) or "Python" for new signals (Signals/pyData/)
 
