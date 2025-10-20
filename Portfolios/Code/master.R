@@ -52,11 +52,9 @@ source('01_PortfolioFunction.R', echo=T)
 # Check if signals data is complete
 signals_complete <- check_signal_csvs(pathProject, SignalSource)
 if (!interactive()) {
-    if (signals_complete) {
-        stop('Non-interactive run halted: signals complete; rerun interactively to confirm before proceeding.')
-    } else {
-        message('Non-interactive run continuing despite missing signals.')
-    }
+    if (!signals_complete) {
+        stop('Non-interactive run halted: signals not complete')
+    } 
 } else {
     user_response <- tolower(trimws(readline(prompt = 'Proceed with portfolio build? [y/N]: ')))
     if (!(user_response %in% c('y', 'yes'))) {
