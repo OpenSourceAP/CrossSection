@@ -1,3 +1,31 @@
+# """
+# Inputs: Relies on `pathStorage`, `pathShipping`, and signal metadata loaded via `00_settings.yaml`.
+# Outputs: Writes storage diagnostics to `storage_checks.txt` and prints summary tables to the console.
+# How to run: Called from `master_shipping.r`; can be sourced directly after loading helpers from `00_functions.r`.
+# Example: `Rscript 3_check_storage.r`
+# """
+
+library(tidyverse)
+library(data.table)
+library(lubridate)
+
+tryCatch(
+  source('00_functions.r'),
+  error = function(err) {
+    alt_path <- file.path('Shipping', 'Code', '00_functions.r')
+    if (file.exists(alt_path)) {
+      source(alt_path)
+    } else {
+      stop(err)
+    }
+  }
+)
+
+paths <- shipping_bootstrap(auth_drive = FALSE)
+list2env(paths, envir = environment())
+path_temp <- data_temp_dir
+ensure_dir(path_temp)
+
 # andrew 2021 03
 # used for checking what's in what csv
 # source without echo pls
@@ -264,10 +292,10 @@ check_doc(
 # unzip and read in
 unzip(
   paste0(pathStorage, 'Firm Level Characteristics/Full Sets/signed_predictors_dl_wide.zip')
-  , exdir = '../Data/temp'
+  , exdir = path_temp
 )
-signals = fread(paste0('../Data/temp/signed_predictors_dl_wide.csv'))
-file.remove(paste0('../Data/temp/signed_predictors_dl_wide.csv'))
+signals = fread(file.path(path_temp, 'signed_predictors_dl_wide.csv'))
+file.remove(file.path(path_temp, 'signed_predictors_dl_wide.csv'))
 
 ## check signals are all there
 store_list = names(signals) %>% as_tibble() %>% transmute(signalname=value, intarget=1) %>%

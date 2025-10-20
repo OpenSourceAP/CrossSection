@@ -1,5 +1,5 @@
 # """
-# Inputs: Reads `00_settings.txt` for `pathProject` and `pathStorage`, consumes outputs from Signals and Portfolios subpipelines.
+# Inputs: Reads `00_settings.yaml` for `pathProject` and `pathStorage`, consumes outputs from Signals and Portfolios subpipelines.
 # Outputs: Populates the release folder under `pathStorage` with signals, portfolios, results, and validation checks.
 # How to run: Execute `Rscript master_shipping.r` from `Shipping/Code/` after upstream pipelines succeed.
 # Example: `Rscript master_shipping.r`
@@ -15,86 +15,53 @@ library(readxl)
 library(data.table) # for speed
 library(googledrive)
 
-# Read settings from 00_settings.txt
-settings_lines = readLines('00_settings.txt')
-settings_lines = settings_lines[!grepl('^#', settings_lines) & nchar(trimws(settings_lines)) > 0]
-for (line in settings_lines) {
-  parts = strsplit(line, ' = ')[[1]]
-  assign(trimws(parts[1]), trimws(parts[2]))
-}
-pathProject = path.expand(pathProject)
-pathStorage = path.expand(pathStorage)
-
-
-pathShipping = paste0(pathProject,'Shipping/') # where Code/master_shipping.r is
-pathPredictors = paste0(pathProject, 'Signals/Data/Predictors/')
-pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
-pathPortfolios = paste0(pathProject, 'Portfolios/Data/Portfolios/')
-pathResults = paste0(pathProject, 'Results')
-
-ensure_dir = function(path){
-  dir.create(path, recursive = TRUE, showWarnings = FALSE)
-}
-
-# create folders
-ensure_dir(pathStorage)
-setwd(paste0(pathShipping,'Code/'))
-ensure_dir('../Data/')
-ensure_dir('../Data/Portfolios/')
-ensure_dir('../Data/Portfolios/Individual')
-ensure_dir('../Data/temp')
-
-# trigger googledrive auth
-drive_auth()
-
-# function for reading in documentation, copied for Portfolios/Code/
-readdocumentation = function(){
-  
-  # little function for converting string NA into numeric NA
-  as.num = function(x, na.strings = c("NA",'None','none')) {
-    stopifnot(is.character(x))
-    na = x %in% na.strings
-    x[na] = 0
-    x = as.numeric(x)
-    x[na] = NA_real_
-    x
+tryCatch(
+  source('00_functions.r'),
+  error = function(err) {
+    alt_path = file.path('Shipping', 'Code', '00_functions.r')
+    if (file.exists(alt_path)) {
+      source(alt_path)
+    } else {
+      stop(err)
+    }
   }
-  
-  ## load signal header
-  alldocumentation = read_csv(
-    paste0(pathProject, 'SignalDoc.csv')
-  ) %>%
-    rename(signalname = Acronym)  %>%
-    # Format order of category labels
-    mutate(Cat.Data = as_factor(Cat.Data) %>% 
-             factor(levels = c('Accounting', 'Analyst', 'Event', 'Options', 'Price', 'Trading', '13F', 'Other'))) %>% 
-    # Make economic category proper
-    mutate(Cat.Economic = str_to_title(Cat.Economic)) %>% 
-    # Clean column names
-    rename(
-      sweight = 'Stock Weight'
-      , q_cut = 'LS Quantile'
-      , q_filt = 'Quantile Filter'  
-      , portperiod = 'Portfolio Period'
-      , startmonth = 'Start Month'
-      , filterstr = 'Filter'
-    ) %>%
-    mutate(
-      filterstr = if_else(filterstr %in% c('NA','None','none')
-                          , NA_character_
-                          , filterstr)
-    ) %>%
-    select(-c(starts_with('Note'))) %>% 
-    arrange(signalname)   
-  
-  
-  
-  names(alldocumentation) = make.names(names(alldocumentation))
-  
-  return(alldocumentation)
-  
-  
-} # end function
+)
+
+paths = shipping_bootstrap(auth_drive = TRUE)
+list2env(paths, envir = environment())
+
+message('Shipping configuration:')
+config_summary <- tibble::tibble(
+  item = c(
+    'pathProject',
+    'pathStorage',
+    'pathPredictors',
+    'pathPlacebos',
+    'pathPortfolios',
+    'pathResults',
+    'OLD_PATH_RELEASES',
+    'NEW_PATH_RELEASES'
+  ),
+  value = c(
+    pathProject,
+    pathStorage,
+    pathPredictors,
+    pathPlacebos,
+    pathPortfolios,
+    pathResults,
+    ifelse(is.null(OLD_PATH_RELEASES), NA_character_, OLD_PATH_RELEASES),
+    ifelse(is.null(NEW_PATH_RELEASES), NA_character_, NEW_PATH_RELEASES)
+  )
+)
+print(config_summary, n = nrow(config_summary), width = Inf)
+
+message('All required paths and URLs look good.')
+response <- tolower(trimws(readline(prompt = 'Proceed with shipping? [y/N]: ')))
+if (!response %in% c('y', 'yes')) {
+  stop('Shipping aborted by user.', call. = FALSE)
+}
+
+message('Continuing with shipping...')
 
 
 # ==== DO STUFF ====
@@ -108,3 +75,4 @@ file.copy(
 source('1_pack_signals.r')
 source('2_pack_portfolios_and_results.r')
 source('3_check_storage.r')
+source('4_old_vs_new_check.r')

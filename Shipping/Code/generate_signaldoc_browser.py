@@ -1,7 +1,7 @@
 """
 ABOUTME: Generate interactive master-detail HTML browser for SignalDoc.csv
 ABOUTME: Run with: python generate_signaldoc_browser.py [output_path]
-INPUTS: 00_settings.txt (for paths), SignalDoc.csv from pathProject
+INPUTS: 00_settings.yaml (for paths), SignalDoc.csv from pathProject
 OUTPUTS: Default path is pathStorage/SignalDoc-Browser.html (can override with command line argument)
 """
 
@@ -10,6 +10,13 @@ import json
 import os
 import sys
 from pathlib import Path
+
+try:
+    import yaml  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - environment-specific fallback
+    yaml = None
+
+SETTINGS_FILE = '00_settings.yaml'
 
 def escape_html(text):
     """Escape HTML special characters"""
@@ -48,22 +55,41 @@ def build_code_link(signalname, category):
 
     return ''
 
+def load_settings(path):
+    """Load settings from YAML, falling back to a simple key-value parser."""
+    if yaml is not None:
+        with open(path, 'r', encoding='utf-8') as handle:
+            data = yaml.safe_load(handle)
+        return data or {}
+
+    settings = {}
+    with open(path, 'r', encoding='utf-8') as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if ':' not in line:
+                continue
+            key, value = line.split(':', 1)
+            settings[key.strip()] = value.strip()
+    return settings
+
 def main():
     # Change to script directory
     script_dir = Path(__file__).parent
     os.chdir(script_dir)
 
-    # Read settings from 00_settings.txt
-    settings = {}
-    with open('00_settings.txt', 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                key, value = [x.strip() for x in line.split(' = ', 1)]
-                settings[key] = value
+    # Read settings from 00_settings.yaml
+    if not Path(SETTINGS_FILE).exists():
+        raise FileNotFoundError(f"Missing {SETTINGS_FILE} in {script_dir}")
 
-    pathProject = Path(settings['pathProject']).expanduser()
-    pathStorage = Path(settings['pathStorage']).expanduser()
+    settings = load_settings(SETTINGS_FILE)
+
+    try:
+        pathProject = Path(settings['pathProject']).expanduser()
+        pathStorage = Path(settings['pathStorage']).expanduser()
+    except KeyError as exc:  # pragma: no cover - defensive
+        raise KeyError(f"00_settings.yaml must define {exc.args[0]}") from exc
 
     # Determine output path
     if len(sys.argv) > 1:

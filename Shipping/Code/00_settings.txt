@@ -1,6 +1,0 @@
-# ABOUTME: Language-neutral path settings for shipping scripts
-# ABOUTME: Read by both master_shipping.r and generate_signaldoc_browser.py
-
-pathProject = ~/Dropbox/oap-ac/CrossSection/
-pathStorage = ~/GoogleDrive/Work/Public/Open AP/Data Release 2025.10/
-OLD_PATH_RELEASES = https://drive.google.com/drive/folders/1EP6oEabyZRamveGNyzYU0u6qJ-N43Qfq

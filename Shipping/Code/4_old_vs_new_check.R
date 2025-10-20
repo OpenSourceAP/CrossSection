@@ -1,27 +1,40 @@
+# """
+# Inputs: Requires credentials for Google Drive, `00_settings.yaml`, and Signal/Portfolio files stored under `pathStorage`.
+# Outputs: Downloads legacy portfolio data to `Shipping/Data/temp/` and writes comparison diagnostics to `storage_checks_part2.txt`.
+# How to run: Execute after sourcing `00_functions.r`; this script loads helpers automatically.
+# Example: `Rscript 4_old_vs_new_check.R`
+# """
+
+library(tidyverse)
+library(data.table)
+library(googledrive)
+
+tryCatch(
+  source('00_functions.r'),
+  error = function(err) {
+    alt_path <- file.path('Shipping', 'Code', '00_functions.r')
+    if (file.exists(alt_path)) {
+      source(alt_path)
+    } else {
+      stop(err)
+    }
+  }
+)
+
+paths <- shipping_bootstrap(auth_drive = TRUE)
+list2env(paths, envir = environment())
+
+if (is.null(OLD_PATH_RELEASES)) {
+  stop('OLD_PATH_RELEASES must be defined in 00_settings.yaml to locate the legacy release folder.')
+}
+
+path_temp <- paths$data_temp_dir
 
 # Compare old and new returns from PredictorPortsFull.csv, where
 # old returns correspond to the last version of OpenAssetPricing,
 # and new returns correspond to the most recent release.
 
 # Prints simple tables to terminal 
-
-# # ENVIRONMENT ====
-# rm(list = ls())
-# library(tidyverse)
-# library(data.table)
-# library(googledrive)
-# library(gridExtra)
-
-# pathProject = 'C:/Dropbox/OPEN-AP-ac/CrossSection/' 
-setwd(paste0(pathProject,'Shipping/Code/'))
-
-dir.create('../Data/temp')
- 
-# # root of August 2023 release
-# OLD_PATH_RELEASES = 'https://drive.google.com/drive/folders/1EP6oEabyZRamveGNyzYU0u6qJ-N43Qfq'
-
-# root of October 2024
-# NEW_PATH_RELEASES = 'https://drive.google.com/drive/folders/1SSoHGbwgyhRwUCzLE0YWvUlS0DjLCd4k'
 
 #=====================================================================#
 # Load data                                                  ====
@@ -33,15 +46,24 @@ OLD_PATH_RELEASES %>% drive_ls() %>%
   filter(name == "Portfolios") %>% drive_ls() %>% 
   filter(name == 'Full Sets OP') %>% drive_ls() %>% 
   filter(name == FILENAME) %>% 
-  drive_download(path = paste0("../Data/temp/",FILENAME), overwrite = TRUE)
+  drive_download(path = file.path(path_temp, FILENAME), overwrite = TRUE)
 
 # import
 if (grepl('.csv',FILENAME)){
-  old_PredictorPortsFull <- fread(paste0("../Data/temp/",FILENAME))
+  old_PredictorPortsFull <- fread(file.path(path_temp, FILENAME))
 } else{
-  unzip(zipfile = paste0('../Data/temp',FILENAME), exdir = 'temp')
+  unzipped_dir <- file.path(path_temp, 'unzipped')
+  if (dir.exists(unzipped_dir)) {
+    unlink(unzipped_dir, recursive = TRUE)
+  }
+  unzip(zipfile = file.path(path_temp, FILENAME), exdir = unzipped_dir)
+  on.exit({
+    if (dir.exists(unzipped_dir)) {
+      unlink(unzipped_dir, recursive = TRUE)
+    }
+  }, add = TRUE)
   old_PredictorPortsFull <- fread(
-    paste0("../Data/temp/",substr(FILENAME, 1,(nchar(FILENAME)-4)),'.csv')
+    file.path(unzipped_dir, paste0(substr(FILENAME, 1,(nchar(FILENAME)-4)), '.csv'))
   )
 }
 
@@ -64,12 +86,12 @@ if (grepl('.csv',FILENAME)){
 
 # load new data
 new_PredictorPortsFull <- fread(
-  paste0(pathStorage,'Portfolios/Full Sets OP/',FILENAME)
+  file.path(pathStorage,'Portfolios/Full Sets OP',FILENAME)
 )
 
 # load signal doc
 SignalDoc <- fread(
-  paste0(pathStorage,'SignalDoc.csv')
+  file.path(pathStorage,'SignalDoc.csv')
 )
 
 
@@ -145,7 +167,7 @@ check = rbind(temp1,temp2) %>% arrange(signalname,port,samptype)
 
 
 # Export results
-write.csv(check, "../Data/temp/PredictorPortsCheck.csv", row.names = FALSE)
+write.csv(check, file.path(path_temp, 'PredictorPortsCheck.csv'), row.names = FALSE)
 
 
 
@@ -153,7 +175,7 @@ write.csv(check, "../Data/temp/PredictorPortsCheck.csv", row.names = FALSE)
 # Summary stats output to pathStorage/storage_checks_part2.txt ====
 #=====================================================================#
 
-sink(paste0(pathStorage,'storage_checks_part2.txt'))
+sink(file.path(pathStorage,'storage_checks_part2.txt'))
 check_ls = check %>% 
   filter(port == 'LS', !is.na(samptype), !is.na(slope)) 
 
@@ -198,4 +220,3 @@ check_ls %>%
   arrange(rsq) %>% 
   head(20) %>% 
   print()
-
