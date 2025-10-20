@@ -199,10 +199,11 @@ checkSignals = function(docs = alldocumentation, pathProj = pathProject) {
   
 } # end function
 
-check_signal_csvs <- function(path_proj = pathProject) {
+check_signal_csvs <- function(path_proj = pathProject, signal_source = SignalSource) {
   signal_doc_path <- file.path(path_proj, 'SignalDoc.csv')
-  predictors_dir <- file.path(path_proj, 'Signals', 'pyCode', 'Predictors')
-  placebos_dir <- file.path(path_proj, 'Signals', 'pyCode', 'Placebos')
+  signal_folder <- if (identical(signal_source, 'Python')) 'pyData' else 'Data'
+  predictors_dir <- file.path(path_proj, 'Signals', signal_folder, 'Predictors')
+  placebos_dir <- file.path(path_proj, 'Signals', signal_folder, 'Placebos')
 
   if (!file.exists(signal_doc_path)) {
     stop('SignalDoc.csv not found. Please verify pathProject is set correctly.')
