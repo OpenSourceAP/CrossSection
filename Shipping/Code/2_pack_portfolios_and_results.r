@@ -1,16 +1,30 @@
+# """
+# Inputs: Uses `pathStorage`, `pathPortfolios`, and `pathResults` defined by `master_shipping.r` or the caller; consumes portfolio CSVs and result artifacts.
+# Outputs: Copies and zips portfolio deliverables plus results into the release tree under `pathStorage`.
+# How to run: Called from `master_shipping.r`; can be sourced directly after sourcing `00_settings.txt`.
+# Example: `Rscript -e "source('Shipping/Code/master_shipping.r')"` (runs full pipeline including this script).
+# """
 # pack portfolios for shipping
 # Created 2021 04
 # takes about 20 min
 
 # ==== ENVIRONMENT ====
 starttime = Sys.time()
+script_wd = getwd()
+on.exit(setwd(script_wd), add = TRUE)
 
-dir.create(paste0(pathStorage,'Portfolios/'))
-dir.create(paste0(pathStorage,'Portfolios/Full Sets OP/'))
-dir.create(paste0(pathStorage,'Portfolios/Full Sets Alt/'))
-dir.create(paste0(pathStorage,'Portfolios/Individual/'))
-dir.create(paste0(pathStorage,'DailyPortfolios/'))
-dir.create(paste0(pathStorage,'Results/'))
+if (!exists('ensure_dir')) {
+  ensure_dir = function(path){
+    dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  }
+}
+
+ensure_dir(paste0(pathStorage,'Portfolios/'))
+ensure_dir(paste0(pathStorage,'Portfolios/Full Sets OP/'))
+ensure_dir(paste0(pathStorage,'Portfolios/Full Sets Alt/'))
+ensure_dir(paste0(pathStorage,'Portfolios/Individual/'))
+ensure_dir(paste0(pathStorage,'DailyPortfolios/'))
+ensure_dir(paste0(pathStorage,'Results/'))
 
 # ==== FULL SETS OP ====
 # copy the OP full sets without zipping
@@ -62,7 +76,7 @@ write_indiv  = function(setname,outfolder){
   
   pathout = paste0(pathStorage,'Portfolios/Individual/',outfolder)
   
-  dir.create(pathout)
+  ensure_dir(pathout)
   
   allport = fread(paste0(pathPortfolios, setname))
   signallist = allport %>% distinct(signalname) %>% as.matrix
@@ -143,6 +157,7 @@ print(paste0('Done zipping daily portfolio csvs ',Sys.time()))
 print(Sys.time() - starttime )
 
 # ==== RESULTS ====
+result_wd = getwd()
 setwd(pathResults)
 
 flist = list.files()
@@ -155,4 +170,4 @@ for (fcurr in flist){
     print(paste0('Failed to copy ', fcurr))
   }
 }
-
+setwd(result_wd)
