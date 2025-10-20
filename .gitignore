@@ -16,6 +16,7 @@ Signals/pyCode/dev/*
 .Rhistory
 .RData
 .Ruserdata
+.Rapp.history
 
 *.Rprofile
 *.Rproj
