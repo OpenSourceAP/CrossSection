@@ -1,3 +1,9 @@
+# """
+# Inputs: Reads `00_settings.txt` for `pathProject` and `pathStorage`, consumes outputs from Signals and Portfolios subpipelines.
+# Outputs: Populates the release folder under `pathStorage` with signals, portfolios, results, and validation checks.
+# How to run: Execute `Rscript master_shipping.r` from `Shipping/Code/` after upstream pipelines succeed.
+# Example: `Rscript master_shipping.r`
+# """
 # ==== SETTINGS ====
 # this code moves and zips files from the local repo Data subfolders
 # to some storage area for shipping
@@ -26,13 +32,17 @@ pathPlacebos = paste0(pathProject, 'Signals/Data/Placebos/')
 pathPortfolios = paste0(pathProject, 'Portfolios/Data/Portfolios/')
 pathResults = paste0(pathProject, 'Results')
 
+ensure_dir = function(path){
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+}
+
 # create folders
-dir.create(pathStorage)
+ensure_dir(pathStorage)
 setwd(paste0(pathShipping,'Code/'))
-dir.create('../Data/')
-dir.create('../Data/Portfolios/')
-dir.create('../Data/Portfolios/Individual')
-dir.create('../Data/temp')
+ensure_dir('../Data/')
+ensure_dir('../Data/Portfolios/')
+ensure_dir('../Data/Portfolios/Individual')
+ensure_dir('../Data/temp')
 
 # trigger googledrive auth
 drive_auth()
@@ -98,4 +108,3 @@ file.copy(
 source('1_pack_signals.r')
 source('2_pack_portfolios_and_results.r')
 source('3_check_storage.r')
-
