@@ -1,5 +1,5 @@
 """
-ABOUTME: Generate interactive master-detail HTML browser for SignalDoc.csv
+ABOUTME: Generate interactive HTML browser for SignalDoc.csv with Open Asset Pricing website styling
 ABOUTME: Run with: python generate_signaldoc_browser.py [output_path]
 INPUTS: 00_settings.txt (for paths), SignalDoc.csv from pathProject
 OUTPUTS: Default path is pathStorage/SignalDoc-Browser.html (can override with command line argument)
@@ -154,13 +154,18 @@ def main():
 
     signals_json = json.dumps(signals, indent=2)
 
-    # Generate HTML
+    # Count statistics for display
+    total_signals = len(signals)
+    predictor_count = sum(1 for s in signals if s['Category'] == 'Predictor')
+    placebo_count = sum(1 for s in signals if s['Category'] == 'Placebo')
+
+    # Generate HTML with Open Asset Pricing website styling
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Chen-Zimmermann (2020, CFR) Signal Library</title>
+    <title>Open Source Asset Pricing - Signal Documentation Browser</title>
     <style>
         * {{
             box-sizing: border-box;
@@ -169,87 +174,220 @@ def main():
         }}
 
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            height: 100vh;
-            overflow: hidden;
+            font-family: Georgia, serif;
+            background-color: #ffffff;
+            color: #333;
+            line-height: 1.6;
         }}
 
-        .container {{
+        /* Header styling to match Open Asset Pricing */
+        .site-header {{
+            text-align: center;
+            padding: 2rem 0 1rem;
+            background: white;
+        }}
+
+        .site-title {{
+            font-size: 2rem;
+            font-weight: normal;
+            margin-bottom: 1rem;
+            font-family: Georgia, serif;
+        }}
+
+        /* Navigation bar */
+        .nav-bar {{
+            text-align: center;
+            padding: 0.5rem 0;
+            border-top: 2px solid #666;
+            border-bottom: 2px solid #666;
+            margin: 0 auto;
+            max-width: 1000px;
+        }}
+
+        .nav-bar a {{
+            color: #333;
+            text-decoration: none;
+            padding: 0 2rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+
+        .nav-bar a:hover {{
+            text-decoration: underline;
+        }}
+
+        .nav-bar a.active {{
+            font-weight: bold;
+        }}
+
+        /* Main container - flipped layout with content area as main focus */
+        .main-container {{
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
             display: flex;
-            flex-direction: column;
-            height: 100vh;
+            gap: 2rem;
         }}
 
-        .header {{
-            background: #2c3e50;
-            color: white;
-            padding: 1rem 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Main content area (left side, larger) */
+        .content-area {{
+            flex: 1;
+            min-width: 0;
         }}
 
-        .header h1 {{
+        .content-box {{
+            border: 1px solid #999;
+            padding: 1.5rem;
+            background: white;
+        }}
+
+        .content-box h2 {{
             font-size: 1.5rem;
+            font-weight: normal;
+            margin-bottom: 1rem;
+            text-align: center;
+        }}
+
+        /* Signal details styling */
+        .signal-title {{
+            font-size: 1.75rem;
+            color: #2c3e50;
             margin-bottom: 0.5rem;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
         }}
 
-        .search-bar {{
+        .signal-meta {{
             display: flex;
+            align-items: center;
             gap: 1rem;
-            margin-top: 0.75rem;
-        }}
-
-        .search-bar input {{
-            flex: 1;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            font-family: Arial, sans-serif;
             font-size: 0.9rem;
         }}
 
-        .search-bar select {{
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            min-width: 200px;
+        .category-badge {{
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: normal;
+            background: #f0f0f0;
         }}
 
-        .main-content {{
+        .category-predictor {{
+            background: #d4edda;
+            color: #155724;
+        }}
+
+        .category-placebo {{
+            background: #fff3cd;
+            color: #856404;
+        }}
+
+        .category-dropped {{
+            background: #f8d7da;
+            color: #721c24;
+        }}
+
+        /* Detail fields */
+        .detail-row {{
             display: flex;
-            flex: 1;
-            overflow: hidden;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
         }}
 
-        .list-panel {{
-            width: 450px;
-            border-right: 1px solid #ddd;
+        .detail-label {{
+            width: 200px;
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }}
+
+        .detail-value {{
+            flex: 1;
+            color: #333;
+            line-height: 1.6;
+        }}
+
+        .detail-long {{
+            background: #f9f9f9;
+            padding: 1rem;
+            border-left: 3px solid #999;
+            margin: 1rem 0;
+            border-radius: 3px;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+        }}
+
+        /* Sidebar (right side, smaller) */
+        .sidebar {{
+            width: 400px;
+        }}
+
+        .sidebar-box {{
+            border: 1px solid #999;
+            padding: 1rem;
+            background: white;
+        }}
+
+        .sidebar-box h3 {{
+            font-size: 1rem;
+            text-transform: uppercase;
+            font-family: Arial, sans-serif;
+            font-weight: normal;
+            margin-bottom: 1rem;
+            text-align: center;
+        }}
+
+        /* Search controls */
+        .controls {{
+            margin-bottom: 1rem;
             display: flex;
             flex-direction: column;
-            background: #f8f9fa;
+            gap: 0.5rem;
         }}
 
-        .list-header {{
-            padding: 0.75rem 1rem;
-            background: #ecf0f1;
+        .controls input, .controls select {{
+            padding: 0.5rem;
+            border: 1px solid #999;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            width: 100%;
+        }}
+
+        /* Signal list */
+        .signal-count {{
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
             border-bottom: 1px solid #ddd;
-            font-weight: 600;
-            color: #2c3e50;
         }}
 
         .signal-list {{
-            flex: 1;
-            overflow-y: scroll;
+            max-height: 600px;
+            overflow-y: auto;
         }}
 
         .signal-item {{
-            padding: 0.75rem 1rem;
+            padding: 0.75rem;
             border-bottom: 1px solid #e0e0e0;
             cursor: pointer;
             transition: background 0.2s;
+            font-family: Arial, sans-serif;
         }}
 
         .signal-item:hover {{
-            background: #e8eef2;
+            background: #f0f0f0;
         }}
 
         .signal-item.active {{
@@ -259,13 +397,13 @@ def main():
 
         .signal-item-name {{
             font-weight: 600;
+            font-size: 0.9rem;
             margin-bottom: 0.25rem;
         }}
 
         .signal-item-acronym {{
-            font-size: 0.85rem;
-            color: #555;
-            margin-bottom: 0.25rem;
+            font-size: 0.8rem;
+            color: #666;
             font-style: italic;
         }}
 
@@ -274,124 +412,173 @@ def main():
         }}
 
         .signal-item-meta {{
-            font-size: 0.85rem;
-            color: #666;
-        }}
-
-        .signal-item.active .signal-item-meta {{
-            color: #ecf0f1;
-        }}
-
-        .detail-panel {{
-            flex: 1;
-            overflow-y: scroll;
-            padding: 2rem;
-            background: white;
-        }}
-
-        .detail-empty {{
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
+            font-size: 0.75rem;
             color: #999;
-            font-size: 1.1rem;
-        }}
-
-        .detail-content {{
-            max-width: 800px;
-        }}
-
-        .detail-title {{
-            font-size: 1.75rem;
-            color: #2c3e50;
-            margin-bottom: 1rem;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 0.5rem;
-        }}
-
-        .detail-field {{
-            margin-bottom: 0.5rem;
-        }}
-
-        .detail-field.inline {{
-            display: flex;
-            gap: 2.0rem;
-            align-items: baseline;
-        }}
-
-        .detail-field.block {{
-            margin-bottom: 1rem;
-        }}
-
-        .detail-label {{
-            font-weight: 600;
-            color: #555;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-
-        .detail-field.inline .detail-label {{
-            width: 220px;
-            flex-shrink: 0;
-            white-space: nowrap;
-        }}
-
-        .detail-field.block .detail-label {{
-            margin-bottom: 0.25rem;
-        }}
-
-        .detail-value {{
-            color: #333;
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }}
-
-        .detail-field.inline .detail-value {{
-            flex: 1;
-        }}
-
-        .detail-value.long-text {{
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 4px;
-            border-left: 3px solid #3498db;
             margin-top: 0.25rem;
         }}
 
+        .signal-item.active .signal-item-meta {{
+            color: #d0d0d0;
+        }}
+
+        /* Summary stats */
+        .summary-stats {{
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+        }}
+
+        .stat-item {{
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+        }}
+
+        .stat-value {{
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #333;
+        }}
+
+        .stat-label {{
+            color: #666;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }}
+
+        /* Footer */
+        .site-footer {{
+            background: #000;
+            color: white;
+            padding: 2rem;
+            margin-top: 3rem;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 0.85rem;
+        }}
+
+        .site-footer a {{
+            color: white;
+            text-decoration: underline;
+        }}
+
+        /* Links */
+        a {{
+            color: #0066cc;
+            text-decoration: none;
+        }}
+
+        a:hover {{
+            text-decoration: underline;
+        }}
+
+        /* No results message */
         .no-results {{
             padding: 2rem;
             text-align: center;
             color: #999;
+            font-family: Arial, sans-serif;
+        }}
+
+        /* Empty state */
+        .detail-empty {{
+            padding: 3rem;
+            text-align: center;
+            color: #999;
+            font-family: Arial, sans-serif;
+            font-size: 1.1rem;
+        }}
+
+        /* Info text */
+        .info-text {{
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            color: #666;
+            margin: 1rem 0;
         }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>The Chen-Zimmermann (2020, CFR) Signal Library</h1>
-            <div class="search-bar">
-                <select id="categoryFilter">
-                    <option value="">All Categories</option>
-                </select>
-                <input type="text" id="searchInput" placeholder="Search signals...">
+    <div class="site-header">
+        <h1 class="site-title">Open Source Asset Pricing</h1>
+    </div>
+
+    <nav class="nav-bar">
+        <a href="#" class="active">SIGNAL BROWSER</a>
+        <a href="https://www.openassetpricing.com/data/">DATA</a>
+        <a href="https://www.openassetpricing.com/code/">CODE</a>
+        <a href="https://www.openassetpricing.com/featured-in/">FEATURED IN</a>
+        <a href="https://www.openassetpricing.com/faq/">FAQ</a>
+    </nav>
+
+    <div class="main-container">
+        <!-- Main content area (left, larger) -->
+        <div class="content-area">
+            <div class="content-box">
+                <h2>Chen-Zimmermann Signal Documentation Browser</h2>
+                
+                <p class="info-text">
+                    This browser provides interactive access to signal documentation from the academic asset pricing literature. 
+                    If you use this data, please cite our paper:
+                    <br><br>
+                    <em>@article{{ChenZimmermann2021, title={{Open Source Cross-Sectional Asset Pricing}}, author={{Chen, Andrew Y. and Tom Zimmermann}}, journal={{Critical Finance Review}}, year={{2022}}, volume={{11}}, number={{2}}, pages={{207-264}}}}</em>
+                </p>
+
+                <div id="detailPanel">
+                    <div class="detail-empty">Select a signal from the list to view its details</div>
+                </div>
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="list-panel">
-                <div class="list-header">
-                    <span id="signalCount">0 signals</span>
+        <!-- Sidebar (right, smaller) -->
+        <div class="sidebar">
+            <div class="sidebar-box">
+                <h3>Signal List</h3>
+                
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{total_signals}</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{predictor_count}</div>
+                        <div class="stat-label">Predictors</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{placebo_count}</div>
+                        <div class="stat-label">Placebos</div>
+                    </div>
                 </div>
-                <div class="signal-list" id="signalList"></div>
-            </div>
 
-            <div class="detail-panel" id="detailPanel">
-                <div class="detail-empty">Select a signal to view details</div>
+                <div class="controls">
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="Predictor">Predictor</option>
+                        <option value="Placebo">Placebo</option>
+                        <option value="Dropped">Dropped</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search signals...">
+                </div>
+
+                <div class="signal-count">
+                    <span id="signalCount">Showing {total_signals} signals</span>
+                </div>
+
+                <div class="signal-list" id="signalList"></div>
             </div>
         </div>
     </div>
+
+    <footer class="site-footer">
+        <p>© 2025 Open Source Asset Pricing | Powered by Minimalist Blog WordPress Theme</p>
+        <p style="margin-top: 1rem;">
+            The views expressed here are those of the authors and do not necessarily reflect the position of the Board of Governors of the Federal Reserve or the Federal Reserve System.
+        </p>
+    </footer>
 
     <script>
         const signalsData = {signals_json};
@@ -401,7 +588,6 @@ def main():
 
         // Initialize
         function init() {{
-            populateCategoryFilter();
             renderSignalList();
 
             // Select BM signal by default
@@ -416,24 +602,18 @@ def main():
             document.getElementById('categoryFilter').addEventListener('change', filterSignals);
         }}
 
-        function populateCategoryFilter() {{
-            // Define specific order for categories
-            const categoryOrder = ['Predictor', 'Placebo', 'Dropped'];
-            const select = document.getElementById('categoryFilter');
-
-            categoryOrder.forEach(cat => {{
-                const option = document.createElement('option');
-                option.value = cat;
-                option.textContent = cat;
-                select.appendChild(option);
-            }});
-        }}
-
         function getDetailTitle(signal) {{
             const baseDescription = (signal.Description || '').toString();
             const evidenceSummaryValue = (signal['EvidenceSummary'] || '').toString().trim().toLowerCase();
             const suffix = evidenceSummaryValue === 'hxz variant' ? ' (HXZ variation)' : '';
             return `${{baseDescription}}${{suffix}}`;
+        }}
+
+        function getCategoryClass(category) {{
+            if (category === 'Predictor') return 'category-predictor';
+            if (category === 'Placebo') return 'category-placebo';
+            if (category === 'Dropped') return 'category-dropped';
+            return '';
         }}
 
         function filterSignals() {{
@@ -460,7 +640,7 @@ def main():
             const listEl = document.getElementById('signalList');
             const countEl = document.getElementById('signalCount');
 
-            countEl.textContent = `${{filteredSignals.length}} signal${{filteredSignals.length !== 1 ? 's' : ''}}`;
+            countEl.textContent = `Showing ${{filteredSignals.length}} signal${{filteredSignals.length !== 1 ? 's' : ''}}`;
 
             if (filteredSignals.length === 0) {{
                 listEl.innerHTML = '<div class="no-results">No signals found</div>';
@@ -487,40 +667,42 @@ def main():
             const panel = document.getElementById('detailPanel');
 
             if (!selectedSignal) {{
-                panel.innerHTML = '<div class="detail-empty">Select a signal to view details</div>';
+                panel.innerHTML = '<div class="detail-empty">Select a signal from the list to view its details</div>';
                 return;
             }}
 
+            const detailTitle = getDetailTitle(selectedSignal);
+            const categoryClass = getCategoryClass(selectedSignal.Category);
+
+            // Build detail rows
             const fields = [
-                {{ key: 'signalname', label: 'Acronym', inline: true }},             
-                {{ key: 'AuthorYear', label: 'Paper', inline: true }},                       
-                {{ key: 'Predictability', label: 'Predictability Evidence', inline: true }},                
-                {{ key: 'Definition', label: 'Definition', inline: false }},
-                {{ key: 'CodeLink', label: 'Code', inline: true }},                
-                {{ key: 'KeyTable', label: 'Table Replicated', inline: true }},
-                {{ key: 'TestInOP', label: 'Predictability Test', inline: true }},
-                {{ key: 'Sample', label: 'Sample', inline: true, computed: true }},
-                {{ key: 'Sign', label: 'Sign of Predictability', inline: true }},
-                {{ key: 'Return', label: 'Return (% Monthly)', inline: true }},
-                {{ key: 'TStat', label: 'T-Stat', inline: true }},
-                {{ key: 'StockWeight', label: 'Stock Weight', inline: true }},
-                {{ key: 'LSQuantile', label: 'Long-Short Quantile', inline: true }},
-                {{ key: 'QuantileFilter', label: 'Quantile Filter', inline: true }},
-                {{ key: 'PortfolioPeriod', label: 'Portfolio Period', inline: true }},
-                {{ key: 'StartMonth', label: 'Start Month', inline: true }},
-                {{ key: 'Filter', label: 'Filter', inline: true }},
-                {{ key: 'EvidenceSummary', label: 'Evidence Summary', inline: true }},
-                {{ key: 'GScholarCites202509', label: 'GScholar Cites (2025)', inline: true }},                
-                {{ key: 'Notes', label: 'Notes', inline: false }},
-                {{ key: 'Category', label: 'Predictor or Placebo?', inline: true }},                
-                {{ key: 'Acronym2', label: 'Acronym2', inline: true }},
-                {{ key: 'Quality', label: 'Replication Quality', inline: true }},
-                {{ key: 'FormCategory', label: 'Form Category', inline: true }},
-                {{ key: 'DataCategory', label: 'Data Category', inline: true }},
-                {{ key: 'EconomicCategory', label: 'Economic Category', inline: true }}
+                {{ key: 'signalname', label: 'Acronym' }},             
+                {{ key: 'AuthorYear', label: 'Paper' }},                       
+                {{ key: 'Predictability', label: 'Predictability Evidence' }},
+                {{ key: 'Definition', label: 'Definition', longText: true }},
+                {{ key: 'CodeLink', label: 'Code', link: true }},                
+                {{ key: 'KeyTable', label: 'Table Replicated' }},
+                {{ key: 'TestInOP', label: 'Predictability Test' }},
+                {{ key: 'Sample', label: 'Sample', computed: true }},
+                {{ key: 'Sign', label: 'Sign of Predictability', transform: 'sign' }},
+                {{ key: 'Return', label: 'Return (% Monthly)' }},
+                {{ key: 'TStat', label: 'T-Stat' }},
+                {{ key: 'StockWeight', label: 'Stock Weight', transform: 'weight' }},
+                {{ key: 'LSQuantile', label: 'Long-Short Quantile' }},
+                {{ key: 'QuantileFilter', label: 'Quantile Filter' }},
+                {{ key: 'PortfolioPeriod', label: 'Portfolio Period' }},
+                {{ key: 'StartMonth', label: 'Start Month' }},
+                {{ key: 'Filter', label: 'Filter' }},
+                {{ key: 'EvidenceSummary', label: 'Evidence Summary', transform: 'evidence' }},
+                {{ key: 'GScholarCites202509', label: 'GScholar Cites (2025)' }},
+                {{ key: 'Notes', label: 'Notes', longText: true }},
+                {{ key: 'Quality', label: 'Replication Quality' }},
+                {{ key: 'FormCategory', label: 'Form Category' }},
+                {{ key: 'DataCategory', label: 'Data Category' }},
+                {{ key: 'EconomicCategory', label: 'Economic Category' }}
             ];
 
-            const fieldsHtml = fields
+            const detailRows = fields
                 .filter(field => {{
                     if (field.computed && field.key === 'Sample') {{
                         return selectedSignal['SampleStart'] || selectedSignal['SampleEnd'];
@@ -532,7 +714,7 @@ def main():
                 }})
                 .map(field => {{
                     let value = '';
-                    let displayValue = '';
+                    
                     if (field.computed && field.key === 'Sample') {{
                         const start = selectedSignal['SampleStart'] || '';
                         const end = selectedSignal['SampleEnd'] || '';
@@ -542,56 +724,58 @@ def main():
                             value = `${{start}}-`;
                         }} else if (end) {{
                             value = `-${{end}}`;
-                        }} else {{
-                            value = '';
                         }}
-                        displayValue = value;
-                    }} else if (field.key === 'Sign') {{
+                    }} else if (field.transform === 'sign') {{
                         const signValue = selectedSignal[field.key];
                         if (signValue === '1.0' || signValue === '1') {{
                             value = 'High signal implies high return';
                         }} else {{
                             value = 'High signal implies low return';
                         }}
-                        displayValue = value;
-                    }} else if (field.key === 'StockWeight') {{
+                    }} else if (field.transform === 'weight') {{
                         const weightValue = selectedSignal[field.key];
                         if (weightValue === 'EW') {{
                             value = 'equal-weighted';
                         }} else {{
                             value = 'value-weighted';
                         }}
-                        displayValue = value;
-                    }} else if (field.key === 'EvidenceSummary') {{
+                    }} else if (field.transform === 'evidence') {{
                         value = selectedSignal[field.key].replace(/HXZ variant/g, 'Hou, Xue, Zhang (2020, RFS) created this variation from the original paper');
-                        displayValue = value;
-                    }} else if (field.key === 'CodeLink') {{
+                    }} else if (field.link && field.key === 'CodeLink') {{
                         const linkUrl = selectedSignal[field.key];
-                        value = linkUrl ? 'GitHub Link' : '';
-                        displayValue = linkUrl ? `<a href="${{linkUrl}}" target="_blank" rel="noopener">GitHub Link</a>` : '';
+                        value = linkUrl ? `<a href="${{linkUrl}}" target="_blank" rel="noopener">GitHub Link</a>` : '';
                     }} else {{
                         value = selectedSignal[field.key] || '';
-                        displayValue = value;
                     }}
 
-                    const isLongText = value.length > 100;
-                    const layoutClass = field.inline && !isLongText ? 'inline' : 'block';
-                    const valueClass = (!field.inline || isLongText) ? 'long-text' : '';
-                    return `
-                        <div class="detail-field ${{layoutClass}}">
-                            <div class="detail-label">${{field.label}}</div>
-                            <div class="detail-value ${{valueClass}}">${{displayValue}}</div>
-                        </div>
-                    `;
+                    if (field.longText && value) {{
+                        return `
+                            <div class="detail-long">
+                                <div style="font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                                    ${{field.label}}
+                                </div>
+                                <div>${{value}}</div>
+                            </div>
+                        `;
+                    }} else {{
+                        return `
+                            <div class="detail-row">
+                                <div class="detail-label">${{field.label}}</div>
+                                <div class="detail-value">${{value}}</div>
+                            </div>
+                        `;
+                    }}
                 }})
                 .join('');
 
-            const detailTitle = getDetailTitle(selectedSignal);
-
             panel.innerHTML = `
-                <div class="detail-content">
-                    <div class="detail-title">${{detailTitle}}</div>
-                    ${{fieldsHtml}}
+                <div class="signal-title">${{detailTitle}}</div>
+                <div class="signal-meta">
+                    <strong>${{selectedSignal.signalname}}</strong>
+                    <span class="category-badge ${{categoryClass}}">${{selectedSignal.Category}}</span>
+                </div>
+                <div>
+                    ${{detailRows}}
                 </div>
             `;
 
@@ -610,6 +794,8 @@ def main():
 
     print(f"✓ Generated {output_path}")
     print(f"  Contains {len(signals)} signals")
+    print(f"    - {predictor_count} Predictors")
+    print(f"    - {placebo_count} Placebos")
     print(f"\nTo view: open {output_path.absolute()}")
 
 if __name__ == '__main__':
