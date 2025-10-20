@@ -40,11 +40,20 @@ We separate the code so you can choose which parts you want to run.  If you only
 
 More details are below
 
-### 1. Set up for Creating Signals
+### `Signals/pyCode` Instructions
+
+**1. Set up for Creating Signals (Python and R)**
+
+* Install Python dependencies:
+  ```bash
+  cd Signals/pyCode/
+  pip install -r requirements.txt
+  ```
+* Install required R packages. [tbc]
 * Copy `Signals/pyCode/dotenv.template` to `Signals/pyCode/.env` and add your WRDS and FRED credentials.
   - For FRED credentials, request an [API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html)
 
-### 2. (Optional) Generate Prep Data
+**2. (Optional) Generate Prep Data**
 
 This is only necessary for a handful of signals
 
@@ -58,7 +67,7 @@ If you have bash:
 
 You can alternatively upload to the WRDS Cloud manually, ssh into WRDS, run `qsub run_all_prep.sh`, and then manually download the prep data.
 
-### 3. Signals/pyCode/
+**3. Run the Signals Code**
 
 `master.py` runs the end-to-end Python pipeline. It calls the staged scripts in:
 
@@ -67,10 +76,16 @@ You can alternatively upload to the WRDS Cloud manually, ssh into WRDS, run `qsu
 * `Predictors/` constructs stock-level predictors and outputs to `Signals/pyData/Predictors/`
 * `Placebos/` constructs "not predictors" and "indirect evidence" signals and outputs to `Signals/pyData/Placebos/`
 
+**To run:**
+```bash
+cd Signals/pyCode/
+python master.py
+```
+
 The orchestrator blocks are written to keep running even if a particular download fails (for example due to a missing subscription) so you get as much data as possible. You can track progress in `Signals/Logs/`.
 
 
-### 4. Portfolios/Code/
+### `Portfolios/Code` Instructions
 
 `master.R` runs everything. It:
 
@@ -80,11 +95,21 @@ The orchestrator blocks are written to keep running even if a particular downloa
 
 It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
+**To run:**
+* Option 1 - Command line:
+  ```bash
+  cd Portfolios/Code/
+  Rscript master.R
+  ```
+* Option 2 - RStudio: Open `master.R` in RStudio and click "Source" or press Ctrl+Shift+S (Cmd+Shift+S on Mac)
+
+**Before running:** You must set `pathProject` in `master.R` (line 30) to your project root directory (where `SignalDoc.csv` is located). If using RStudio, `pathProject = paste0(getwd(), '/')` should work automatically.
+
 By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability results in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
 #### Minimal Setup
 
-All you need to do is set `pathProject` in `master.R` to the project root directory (where `SignalDoc.csv` is).  Then `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
+To get started quickly, `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
 There are a couple ways to set up this signal data:
 
 * Run the code in `Signals/pyCode/` (see above).
@@ -92,12 +117,10 @@ There are a couple ways to set up this signal data:
 * Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv` and put them in `Signals/Data/Predictors/`).
 
 
-### 5. Shipping/Code/
+### `Shipping/Code` Instructions
 
 This code zips up the data, makes some quality checks, and copies files for uploading to Gdrive.  You shouldn't need to use this but we keep it with the rest of the code for replicability.
 
-----
 
-## Contribute
 
-Please let us know if you find typos in the code or think that we should add additional signals. You can let us know about any suggested changes via pull requests for this repo. We will keep the code up to date for other researchers to use it.
+
