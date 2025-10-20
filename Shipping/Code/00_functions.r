@@ -58,12 +58,12 @@ shipping_bootstrap <- function(settings_path = '00_settings.yaml',
 
   pathProject <- path.expand(settings$pathProject)
   pathStorage <- path.expand(settings$pathStorage)
-  pathShipping <- file.path(pathProject, 'Shipping')
-  code_dir <- file.path(pathShipping, 'Code')
-  data_dir <- file.path(pathShipping, 'Data')
-  data_portfolios_dir <- file.path(data_dir, 'Portfolios')
-  data_portfolios_indiv_dir <- file.path(data_portfolios_dir, 'Individual')
-  temp_dir <- file.path(data_dir, 'temp')
+  pathShipping <- file.path(pathProject, 'Shipping/')
+  code_dir <- file.path(pathShipping, 'Code/')
+  data_dir <- file.path(pathShipping, 'Data/')
+  data_portfolios_dir <- file.path(data_dir, 'Portfolios/')
+  data_portfolios_indiv_dir <- file.path(data_portfolios_dir, 'Individual/')
+  temp_dir <- file.path(data_dir, 'temp/')
 
   if (ensure_subdirs) {
     ensure_dir(pathStorage)

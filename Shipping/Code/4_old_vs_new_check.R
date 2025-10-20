@@ -21,7 +21,7 @@ tryCatch(
   }
 )
 
-paths <- shipping_bootstrap(auth_drive = TRUE)
+paths <- shipping_bootstrap(auth_drive = FALSE) # may need to change to TRUE to reauthenticate
 list2env(paths, envir = environment())
 
 if (is.null(OLD_PATH_RELEASES)) {
@@ -66,23 +66,6 @@ if (grepl('.csv',FILENAME)){
     file.path(unzipped_dir, paste0(substr(FILENAME, 1,(nchar(FILENAME)-4)), '.csv'))
   )
 }
-
-# # download new data
-# id <-  NEW_PATH_RELEASES %>% drive_ls() %>%
-#   filter(name == "Portfolios") %>% drive_ls() %>% 
-#   filter(name == 'Full Sets OP') %>% drive_ls() %>% 
-#   filter(name == FILENAME) %>% 
-#   drive_download(path = paste0("../Data/temp/",FILENAME), overwrite = TRUE)
-
-# # import
-# if (grepl('.csv',FILENAME)){
-#   new_PredictorPortsFull <- fread(paste0("../Data/temp/",FILENAME))
-# } else{
-#   unzip(zipfile = paste0('../Data/temp',FILENAME), exdir = 'temp')
-#   new_PredictorPortsFull <- fread(
-#     paste0("../Data/temp/",substr(FILENAME, 1,(nchar(FILENAME)-4)),'.csv')
-#   )
-# }
 
 # load new data
 new_PredictorPortsFull <- fread(
@@ -175,6 +158,7 @@ write.csv(check, file.path(path_temp, 'PredictorPortsCheck.csv'), row.names = FA
 # Summary stats output to pathStorage/storage_checks_part2.txt ====
 #=====================================================================#
 
+print('Writing results to pathStorage/storage_checks_part2.txt (with sink)')
 sink(file.path(pathStorage,'storage_checks_part2.txt'))
 check_ls = check %>% 
   filter(port == 'LS', !is.na(samptype), !is.na(slope)) 
@@ -220,3 +204,8 @@ check_ls %>%
   arrange(rsq) %>% 
   head(20) %>% 
   print()
+
+# restore output to console ====
+sink()
+
+print(paste0('Results written to ' , file.path(pathStorage,'storage_checks_part2.txt')))
