@@ -40,7 +40,7 @@ compustat = pd.read_parquet(
     columns=["gvkey", "time_avail_m", "revt", "cogs", "xsga", "xint", "ceq"],
 )
 
-df = pd.merge(df, compustat, on=["gvkey", "time_avail_m"], how="inner")
+df = pd.merge(signal_master, compustat, on=["gvkey", "time_avail_m"], how="inner")
 
 # SIGNAL CONSTRUCTION
 with np.errstate(over="ignore", invalid="ignore"):
