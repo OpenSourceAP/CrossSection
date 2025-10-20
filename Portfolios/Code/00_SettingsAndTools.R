@@ -1,3 +1,10 @@
+# """
+# Inputs: SignalDoc.csv, portfolio configuration globals, package dependencies
+# Outputs: Initialized paths, loaded documentation, and helper functions for downstream R scripts
+# How to run: source('Portfolios/Code/00_SettingsAndTools.R', echo = TRUE)
+# Example: source('Portfolios/Code/00_SettingsAndTools.R', echo = TRUE)
+# """
+
 #### GLOBAL SETTINGS
 
 options(dplyr.summarise.inform = FALSE)
@@ -191,6 +198,53 @@ checkSignals = function(docs = alldocumentation, pathProj = pathProject) {
   }
   
 } # end function
+
+check_signal_csvs <- function(path_proj = pathProject) {
+  signal_doc_path <- file.path(path_proj, 'SignalDoc.csv')
+  predictors_dir <- file.path(path_proj, 'Signals', 'pyCode', 'Predictors')
+  placebos_dir <- file.path(path_proj, 'Signals', 'pyCode', 'Placebos')
+
+  if (!file.exists(signal_doc_path)) {
+    stop('SignalDoc.csv not found. Please verify pathProject is set correctly.')
+  }
+
+  if (!dir.exists(predictors_dir) || !dir.exists(placebos_dir)) {
+    stop('Signals/pyCode directories not found. Please run the signals pipeline first.')
+  }
+
+  signal_doc <- read.csv(signal_doc_path, stringsAsFactors = FALSE)
+  expected_signals <- unique(signal_doc$Acronym[signal_doc$Acronym != '' & signal_doc$Cat.Signal != 'Drop'])
+  expected_signals <- sort(expected_signals)
+
+  predictor_files <- tools::file_path_sans_ext(list.files(predictors_dir, pattern = '\\.csv$', ignore.case = TRUE))
+  placebo_files <- tools::file_path_sans_ext(list.files(placebos_dir, pattern = '\\.csv$', ignore.case = TRUE))
+
+  all_signal_files <- sort(unique(c(predictor_files, placebo_files)))
+  missing_signals <- setdiff(expected_signals, all_signal_files)
+  extra_files <- setdiff(all_signal_files, expected_signals)
+
+  if (length(missing_signals) == 0) {
+    message('Signal completeness check: all expected signals found in pyCode/Predictors and pyCode/Placebos.')
+  } else {
+    warning(sprintf('Signal completeness check: %d missing signal CSV(s) detected.', length(missing_signals)))
+    for (signal_name in missing_signals) {
+      message(sprintf('  - Missing CSV: %s', signal_name))
+    }
+  }
+
+  if (length(extra_files) > 0) {
+    message(sprintf('Found %d extra CSV(s) not documented in SignalDoc.csv:', length(extra_files)))
+    for (signal_name in extra_files) {
+      in_predictors <- signal_name %in% predictor_files
+      in_placebos <- signal_name %in% placebo_files
+      location <- paste(c(if (in_predictors) 'Predictors' else NULL,
+                          if (in_placebos) 'Placebos' else NULL), collapse = ', ')
+      message(sprintf('  - Extra CSV: %s (%s)', signal_name, location))
+    }
+  }
+
+  invisible(length(missing_signals) == 0)
+}
 
 
 ### FUNCTION FOR STANDARD CSV EXPORT
@@ -446,4 +500,3 @@ loop_over_strategies = function(
     
     
 } # end function
-

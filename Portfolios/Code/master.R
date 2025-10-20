@@ -49,6 +49,18 @@ source('01_PortfolioFunction.R', echo=T)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Check if signals data is complete
+signals_complete <- check_signal_csvs(pathProject)
+user_response <- tolower(trimws(readline(prompt = 'Proceed with portfolio build? [y/N]: ')))
+if (!(user_response %in% c('y', 'yes'))) {
+    stop('Aborting master.R execution at user request.')
+}
+if (!signals_complete) {
+    message('Continuing despite missing signals based on user confirmation.')
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # PREPARE INTERMEDIATE DATA ####
 
 print('master: 10_DownloadCRSP.R')
