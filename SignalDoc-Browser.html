@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Open Source Asset Pricing - Signal Documentation Browser</title>
+    <title>The Chen-Zimmermann (2020, CFR) Signal Library</title>
     <style>
         * {
             box-sizing: border-box;
@@ -12,44 +12,46 @@
         }
 
         body {
-            font-family: Georgia, serif;
-            background-color: #ffffff;
-            color: #333;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* Header styling to match Open Asset Pricing */
         .site-header {
             text-align: center;
             padding: 2rem 0 1rem;
             background: white;
+            border-bottom: 1px solid #000;
         }
 
         .site-title {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: normal;
-            margin-bottom: 1rem;
+            margin-bottom: 0;
             font-family: Georgia, serif;
+            color: #000;
         }
 
-        /* Navigation bar */
         .nav-bar {
             text-align: center;
-            padding: 0.5rem 0;
-            border-top: 2px solid #666;
-            border-bottom: 2px solid #666;
-            margin: 0 auto;
-            max-width: 1000px;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #000;
+            background: white;
         }
 
         .nav-bar a {
-            color: #333;
+            color: #000;
             text-decoration: none;
-            padding: 0 2rem;
+            padding: 0 1.5rem;
             font-family: Arial, sans-serif;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            border-right: 1px solid #000;
+        }
+
+        .nav-bar a:last-child {
+            border-right: none;
         }
 
         .nav-bar a:hover {
@@ -60,172 +62,82 @@
             font-weight: bold;
         }
 
-        /* Main container - flipped layout with content area as main focus */
-        .main-container {
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            display: flex;
-            gap: 2rem;
-        }
-
-        /* Main content area (left side, larger) */
-        .content-area {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .content-box {
-            border: 1px solid #999;
-            padding: 1.5rem;
-            background: white;
-        }
-
-        .content-box h2 {
-            font-size: 1.5rem;
-            font-weight: normal;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        /* Signal details styling */
-        .signal-title {
-            font-size: 1.75rem;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 0.5rem;
-        }
-
-        .signal-meta {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            font-family: Arial, sans-serif;
-            font-size: 0.9rem;
-        }
-
-        .category-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
-            font-size: 0.8rem;
-            font-weight: normal;
-            background: #f0f0f0;
-        }
-
-        .category-predictor {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .category-placebo {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .category-dropped {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* Detail fields */
-        .detail-row {
-            display: flex;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e9ecef;
-            font-family: Arial, sans-serif;
-            font-size: 0.9rem;
-        }
-
-        .detail-label {
-            width: 200px;
-            font-weight: 600;
-            color: #6c757d;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-        }
-
-        .detail-value {
-            flex: 1;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .detail-long {
-            background: #f9f9f9;
-            padding: 1rem;
-            border-left: 3px solid #999;
-            margin: 1rem 0;
-            border-radius: 3px;
-            font-family: Arial, sans-serif;
-            font-size: 0.9rem;
-        }
-
-        /* Sidebar (right side, smaller) */
-        .sidebar {
-            width: 400px;
-        }
-
-        .sidebar-box {
-            border: 1px solid #999;
-            padding: 1rem;
-            background: white;
-        }
-
-        .sidebar-box h3 {
-            font-size: 1rem;
-            text-transform: uppercase;
-            font-family: Arial, sans-serif;
-            font-weight: normal;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        /* Search controls */
-        .controls {
-            margin-bottom: 1rem;
+        .container {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            height: 100vh;
         }
 
-        .controls input, .controls select {
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .search-bar input {
+            flex: 1;
             padding: 0.5rem;
-            border: 1px solid #999;
-            font-family: Arial, sans-serif;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-size: 0.9rem;
-            width: 100%;
         }
 
-        /* Signal list */
-        .signal-count {
-            font-family: Arial, sans-serif;
+        .search-bar select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 1rem;
-            padding: 0.5rem 0;
+            min-width: 200px;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .list-panel {
+            width: 450px;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
+        .list-header {
+            padding: 0.75rem 1rem;
+            background: #ecf0f1;
             border-bottom: 1px solid #ddd;
+            font-weight: 600;
+            color: #2c3e50;
         }
 
         .signal-list {
-            max-height: 600px;
-            overflow-y: auto;
+            flex: 1;
+            overflow-y: scroll;
         }
 
         .signal-item {
-            padding: 0.75rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid #e0e0e0;
             cursor: pointer;
             transition: background 0.2s;
-            font-family: Arial, sans-serif;
         }
 
         .signal-item:hover {
-            background: #f0f0f0;
+            background: #e8eef2;
         }
 
         .signal-item.active {
@@ -235,13 +147,13 @@
 
         .signal-item-name {
             font-weight: 600;
-            font-size: 0.9rem;
             margin-bottom: 0.25rem;
         }
 
         .signal-item-acronym {
-            font-size: 0.8rem;
-            color: #666;
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 0.25rem;
             font-style: italic;
         }
 
@@ -250,173 +162,135 @@
         }
 
         .signal-item-meta {
-            font-size: 0.75rem;
-            color: #999;
-            margin-top: 0.25rem;
+            font-size: 0.85rem;
+            color: #666;
         }
 
         .signal-item.active .signal-item-meta {
-            color: #d0d0d0;
+            color: #ecf0f1;
         }
 
-        /* Summary stats */
-        .summary-stats {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-family: Arial, sans-serif;
-            font-size: 0.9rem;
-        }
-
-        .stat-item {
+        .detail-panel {
             flex: 1;
-            text-align: center;
-            padding: 0.5rem;
-            background: #f9f9f9;
-            border: 1px solid #ddd;
+            overflow-y: scroll;
+            padding: 2rem;
+            background: white;
         }
 
-        .stat-value {
-            font-size: 1.25rem;
-            font-weight: bold;
+        .detail-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .detail-content {
+            max-width: 800px;
+        }
+
+        .detail-title {
+            font-size: 1.75rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .detail-field {
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-field.inline {
+            display: flex;
+            gap: 2.0rem;
+            align-items: baseline;
+        }
+
+        .detail-field.block {
+            margin-bottom: 1rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-field.inline .detail-label {
+            width: 220px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .detail-field.block .detail-label {
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-value {
             color: #333;
+            line-height: 1.6;
+            font-size: 0.95rem;
         }
 
-        .stat-label {
-            color: #666;
-            font-size: 0.75rem;
+        .detail-field.inline .detail-value {
+            flex: 1;
+        }
+
+        .detail-value.long-text {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
             margin-top: 0.25rem;
         }
 
-        /* Footer */
-        .site-footer {
-            background: #000;
-            color: white;
-            padding: 2rem;
-            margin-top: 3rem;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            font-size: 0.85rem;
-        }
-
-        .site-footer a {
-            color: white;
-            text-decoration: underline;
-        }
-
-        /* Links */
-        a {
-            color: #0066cc;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        /* No results message */
         .no-results {
             padding: 2rem;
             text-align: center;
             color: #999;
-            font-family: Arial, sans-serif;
-        }
-
-        /* Empty state */
-        .detail-empty {
-            padding: 3rem;
-            text-align: center;
-            color: #999;
-            font-family: Arial, sans-serif;
-            font-size: 1.1rem;
-        }
-
-        /* Info text */
-        .info-text {
-            font-family: Arial, sans-serif;
-            font-size: 0.9rem;
-            color: #666;
-            margin: 1rem 0;
         }
     </style>
 </head>
 <body>
-    <div class="site-header">
+    <header class="site-header">
         <h1 class="site-title">Open Source Asset Pricing</h1>
-    </div>
+    </header>
 
     <nav class="nav-bar">
+        <a href="#">DATA</a>
+        <a href="#">CODE</a>
+        <a href="#">FAQ</a>
         <a href="#" class="active">SIGNAL BROWSER</a>
-        <a href="https://www.openassetpricing.com/data/">DATA</a>
-        <a href="https://www.openassetpricing.com/code/">CODE</a>
-        <a href="https://www.openassetpricing.com/featured-in/">FEATURED IN</a>
-        <a href="https://www.openassetpricing.com/faq/">FAQ</a>
     </nav>
 
-    <div class="main-container">
-        <!-- Main content area (left, larger) -->
-        <div class="content-area">
-            <div class="content-box">
-                <h2>Chen-Zimmermann Signal Documentation Browser</h2>
-                
-                <p class="info-text">
-                    This browser provides interactive access to signal documentation from the academic asset pricing literature. 
-                    If you use this data, please cite our paper:
-                    <br><br>
-                    <em>@article{ChenZimmermann2021, title={Open Source Cross-Sectional Asset Pricing}, author={Chen, Andrew Y. and Tom Zimmermann}, journal={Critical Finance Review}, year={2022}, volume={11}, number={2}, pages={207-264}}</em>
-                </p>
-
-                <div id="detailPanel">
-                    <div class="detail-empty">Select a signal from the list to view its details</div>
-                </div>
+    <div class="container">
+        <div class="header">
+            <h1>The Chen-Zimmermann (2020, CFR) Signal Library</h1>
+            <div class="search-bar">
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search signals...">
             </div>
         </div>
 
-        <!-- Sidebar (right, smaller) -->
-        <div class="sidebar">
-            <div class="sidebar-box">
-                <h3>Signal List</h3>
-                
-                <div class="summary-stats">
-                    <div class="stat-item">
-                        <div class="stat-value">331</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">212</div>
-                        <div class="stat-label">Predictors</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">114</div>
-                        <div class="stat-label">Placebos</div>
-                    </div>
+        <div class="main-content">
+            <div class="list-panel">
+                <div class="list-header">
+                    <span id="signalCount">0 signals</span>
                 </div>
-
-                <div class="controls">
-                    <select id="categoryFilter">
-                        <option value="">All Categories</option>
-                        <option value="Predictor">Predictor</option>
-                        <option value="Placebo">Placebo</option>
-                        <option value="Dropped">Dropped</option>
-                    </select>
-                    <input type="text" id="searchInput" placeholder="Search signals...">
-                </div>
-
-                <div class="signal-count">
-                    <span id="signalCount">Showing 331 signals</span>
-                </div>
-
                 <div class="signal-list" id="signalList"></div>
+            </div>
+
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-empty">Select a signal to view details</div>
             </div>
         </div>
     </div>
-
-    <footer class="site-footer">
-        <p>© 2025 Open Source Asset Pricing | Powered by Minimalist Blog WordPress Theme</p>
-        <p style="margin-top: 1rem;">
-            The views expressed here are those of the authors and do not necessarily reflect the position of the Board of Governors of the Federal Reserve or the Federal Reserve System.
-        </p>
-    </footer>
 
     <script>
         const signalsData = [
@@ -10688,6 +10562,7 @@
 
         // Initialize
         function init() {
+            populateCategoryFilter();
             renderSignalList();
 
             // Select BM signal by default
@@ -10702,18 +10577,24 @@
             document.getElementById('categoryFilter').addEventListener('change', filterSignals);
         }
 
+        function populateCategoryFilter() {
+            // Define specific order for categories
+            const categoryOrder = ['Predictor', 'Placebo', 'Dropped'];
+            const select = document.getElementById('categoryFilter');
+
+            categoryOrder.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                select.appendChild(option);
+            });
+        }
+
         function getDetailTitle(signal) {
             const baseDescription = (signal.Description || '').toString();
             const evidenceSummaryValue = (signal['EvidenceSummary'] || '').toString().trim().toLowerCase();
             const suffix = evidenceSummaryValue === 'hxz variant' ? ' (HXZ variation)' : '';
             return `${baseDescription}${suffix}`;
-        }
-
-        function getCategoryClass(category) {
-            if (category === 'Predictor') return 'category-predictor';
-            if (category === 'Placebo') return 'category-placebo';
-            if (category === 'Dropped') return 'category-dropped';
-            return '';
         }
 
         function filterSignals() {
@@ -10740,7 +10621,7 @@
             const listEl = document.getElementById('signalList');
             const countEl = document.getElementById('signalCount');
 
-            countEl.textContent = `Showing ${filteredSignals.length} signal${filteredSignals.length !== 1 ? 's' : ''}`;
+            countEl.textContent = `${filteredSignals.length} signal${filteredSignals.length !== 1 ? 's' : ''}`;
 
             if (filteredSignals.length === 0) {
                 listEl.innerHTML = '<div class="no-results">No signals found</div>';
@@ -10767,42 +10648,40 @@
             const panel = document.getElementById('detailPanel');
 
             if (!selectedSignal) {
-                panel.innerHTML = '<div class="detail-empty">Select a signal from the list to view its details</div>';
+                panel.innerHTML = '<div class="detail-empty">Select a signal to view details</div>';
                 return;
             }
 
-            const detailTitle = getDetailTitle(selectedSignal);
-            const categoryClass = getCategoryClass(selectedSignal.Category);
-
-            // Build detail rows
             const fields = [
-                { key: 'signalname', label: 'Acronym' },             
-                { key: 'AuthorYear', label: 'Paper' },                       
-                { key: 'Predictability', label: 'Predictability Evidence' },
-                { key: 'Definition', label: 'Definition', longText: true },
-                { key: 'CodeLink', label: 'Code', link: true },                
-                { key: 'KeyTable', label: 'Table Replicated' },
-                { key: 'TestInOP', label: 'Predictability Test' },
-                { key: 'Sample', label: 'Sample', computed: true },
-                { key: 'Sign', label: 'Sign of Predictability', transform: 'sign' },
-                { key: 'Return', label: 'Return (% Monthly)' },
-                { key: 'TStat', label: 'T-Stat' },
-                { key: 'StockWeight', label: 'Stock Weight', transform: 'weight' },
-                { key: 'LSQuantile', label: 'Long-Short Quantile' },
-                { key: 'QuantileFilter', label: 'Quantile Filter' },
-                { key: 'PortfolioPeriod', label: 'Portfolio Period' },
-                { key: 'StartMonth', label: 'Start Month' },
-                { key: 'Filter', label: 'Filter' },
-                { key: 'EvidenceSummary', label: 'Evidence Summary', transform: 'evidence' },
-                { key: 'GScholarCites202509', label: 'GScholar Cites (2025)' },
-                { key: 'Notes', label: 'Notes', longText: true },
-                { key: 'Quality', label: 'Replication Quality' },
-                { key: 'FormCategory', label: 'Form Category' },
-                { key: 'DataCategory', label: 'Data Category' },
-                { key: 'EconomicCategory', label: 'Economic Category' }
+                { key: 'signalname', label: 'Acronym', inline: true },             
+                { key: 'AuthorYear', label: 'Paper', inline: true },                       
+                { key: 'Predictability', label: 'Predictability Evidence', inline: true },                
+                { key: 'Definition', label: 'Definition', inline: false },
+                { key: 'CodeLink', label: 'Code', inline: true },                
+                { key: 'KeyTable', label: 'Table Replicated', inline: true },
+                { key: 'TestInOP', label: 'Predictability Test', inline: true },
+                { key: 'Sample', label: 'Sample', inline: true, computed: true },
+                { key: 'Sign', label: 'Sign of Predictability', inline: true },
+                { key: 'Return', label: 'Return (% Monthly)', inline: true },
+                { key: 'TStat', label: 'T-Stat', inline: true },
+                { key: 'StockWeight', label: 'Stock Weight', inline: true },
+                { key: 'LSQuantile', label: 'Long-Short Quantile', inline: true },
+                { key: 'QuantileFilter', label: 'Quantile Filter', inline: true },
+                { key: 'PortfolioPeriod', label: 'Portfolio Period', inline: true },
+                { key: 'StartMonth', label: 'Start Month', inline: true },
+                { key: 'Filter', label: 'Filter', inline: true },
+                { key: 'EvidenceSummary', label: 'Evidence Summary', inline: true },
+                { key: 'GScholarCites202509', label: 'GScholar Cites (2025)', inline: true },                
+                { key: 'Notes', label: 'Notes', inline: false },
+                { key: 'Category', label: 'Predictor or Placebo?', inline: true },                
+                { key: 'Acronym2', label: 'Acronym2', inline: true },
+                { key: 'Quality', label: 'Replication Quality', inline: true },
+                { key: 'FormCategory', label: 'Form Category', inline: true },
+                { key: 'DataCategory', label: 'Data Category', inline: true },
+                { key: 'EconomicCategory', label: 'Economic Category', inline: true }
             ];
 
-            const detailRows = fields
+            const fieldsHtml = fields
                 .filter(field => {
                     if (field.computed && field.key === 'Sample') {
                         return selectedSignal['SampleStart'] || selectedSignal['SampleEnd'];
@@ -10814,7 +10693,7 @@
                 })
                 .map(field => {
                     let value = '';
-                    
+                    let displayValue = '';
                     if (field.computed && field.key === 'Sample') {
                         const start = selectedSignal['SampleStart'] || '';
                         const end = selectedSignal['SampleEnd'] || '';
@@ -10824,58 +10703,56 @@
                             value = `${start}-`;
                         } else if (end) {
                             value = `-${end}`;
+                        } else {
+                            value = '';
                         }
-                    } else if (field.transform === 'sign') {
+                        displayValue = value;
+                    } else if (field.key === 'Sign') {
                         const signValue = selectedSignal[field.key];
                         if (signValue === '1.0' || signValue === '1') {
                             value = 'High signal implies high return';
                         } else {
                             value = 'High signal implies low return';
                         }
-                    } else if (field.transform === 'weight') {
+                        displayValue = value;
+                    } else if (field.key === 'StockWeight') {
                         const weightValue = selectedSignal[field.key];
                         if (weightValue === 'EW') {
                             value = 'equal-weighted';
                         } else {
                             value = 'value-weighted';
                         }
-                    } else if (field.transform === 'evidence') {
+                        displayValue = value;
+                    } else if (field.key === 'EvidenceSummary') {
                         value = selectedSignal[field.key].replace(/HXZ variant/g, 'Hou, Xue, Zhang (2020, RFS) created this variation from the original paper');
-                    } else if (field.link && field.key === 'CodeLink') {
+                        displayValue = value;
+                    } else if (field.key === 'CodeLink') {
                         const linkUrl = selectedSignal[field.key];
-                        value = linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener">GitHub Link</a>` : '';
+                        value = linkUrl ? 'GitHub Link' : '';
+                        displayValue = linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener">GitHub Link</a>` : '';
                     } else {
                         value = selectedSignal[field.key] || '';
+                        displayValue = value;
                     }
 
-                    if (field.longText && value) {
-                        return `
-                            <div class="detail-long">
-                                <div style="font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
-                                    ${field.label}
-                                </div>
-                                <div>${value}</div>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="detail-row">
-                                <div class="detail-label">${field.label}</div>
-                                <div class="detail-value">${value}</div>
-                            </div>
-                        `;
-                    }
+                    const isLongText = value.length > 100;
+                    const layoutClass = field.inline && !isLongText ? 'inline' : 'block';
+                    const valueClass = (!field.inline || isLongText) ? 'long-text' : '';
+                    return `
+                        <div class="detail-field ${layoutClass}">
+                            <div class="detail-label">${field.label}</div>
+                            <div class="detail-value ${valueClass}">${displayValue}</div>
+                        </div>
+                    `;
                 })
                 .join('');
 
+            const detailTitle = getDetailTitle(selectedSignal);
+
             panel.innerHTML = `
-                <div class="signal-title">${detailTitle}</div>
-                <div class="signal-meta">
-                    <strong>${selectedSignal.signalname}</strong>
-                    <span class="category-badge ${categoryClass}">${selectedSignal.Category}</span>
-                </div>
-                <div>
-                    ${detailRows}
+                <div class="detail-content">
+                    <div class="detail-title">${detailTitle}</div>
+                    ${fieldsHtml}
                 </div>
             `;
 
