@@ -33,7 +33,7 @@ SignalSource = "Python" # use "Stata" for legacy signals (Signals/Data/) or "Pyt
 
 quickrun =  F # use T if you want to run quickly for testing
 quickrunlist = c('Accruals','AM') # list of signals to use for quickrun
-skipdaily = T # use T to skip daily CRSP which is very slow
+skipdaily = F # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
 # Check whether project path is set correctly
