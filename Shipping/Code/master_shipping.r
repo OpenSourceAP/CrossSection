@@ -55,7 +55,7 @@ config_summary <- tibble::tibble(
 )
 print(config_summary, n = nrow(config_summary), width = Inf)
 
-message('All required paths and URLs look good.')
+message('Please check the configuration above')
 response <- tolower(trimws(readline(prompt = 'Proceed with shipping? [y/N]: ')))
 if (!response %in% c('y', 'yes')) {
   stop('Shipping aborted by user.', call. = FALSE)
