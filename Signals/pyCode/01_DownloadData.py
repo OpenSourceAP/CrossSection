@@ -227,7 +227,6 @@ def check_optional_files():
     print("Checking for optional preprocessed files...")
     
     optional_files = [
-        "../pyData/Prep/iclink.csv",
         "../pyData/Prep/OptionMetrics.csv", 
         "../pyData/Prep/tr_13f.csv",
         "../pyData/Prep/corwin_schultz_spread.csv"

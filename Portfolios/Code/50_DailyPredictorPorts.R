@@ -47,6 +47,9 @@ dir.create(pathDataDailyDecileVW)
 dir.create(pathDataDailyQuintile)
 dir.create(pathDataDailyQuintileVW)
 
+# Ensure CRAN mirror is defined for non-interactive runs
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
 # since no other script uses lme4, it should go here.
 install.packages(setdiff(c('lme4'), rownames(installed.packages())))
 library(lme4)

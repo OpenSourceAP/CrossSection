@@ -27,13 +27,13 @@
 rm(list = ls())
 # ENTER PROJECT PATH HERE (i.e. this should be the path to your local repo folder & location of SignalDoc.csv)
 # if using Rstudio, pathProject = paste0(getwd(), '/') should work
-pathProject = '/Users/chen1678/Library/CloudStorage/Dropbox/oap-ac/CrossSection/'
+pathProject = '~/Dropbox/oap-ac/CrossSection/'
 
 SignalSource = "Python" # use "Stata" for legacy signals (Signals/Data/) or "Python" for new signals (Signals/pyData/)
 
 quickrun =  F # use T if you want to run quickly for testing
 quickrunlist = c('Accruals','AM') # list of signals to use for quickrun
-skipdaily = T # use T to skip daily CRSP which is very slow
+skipdaily = F # use T to skip daily CRSP which is very slow
 feed.verbose = F # use T if you want lots of feedback
 
 # Check whether project path is set correctly
@@ -46,6 +46,24 @@ setwd(paste0(pathProject,'Portfolios/Code/'))
 
 source('00_SettingsAndTools.R', echo=T)
 source('01_PortfolioFunction.R', echo=T)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Check if signals data is complete
+signals_complete <- check_signal_csvs(pathProject, SignalSource)
+if (!interactive()) {
+    if (!signals_complete) {
+        stop('Non-interactive run halted: signals not complete')
+    } 
+} else {
+    user_response <- tolower(trimws(readline(prompt = 'Proceed with portfolio build? [y/N]: ')))
+    if (!(user_response %in% c('y', 'yes'))) {
+        stop('Aborting master.R execution at user request.')
+    }
+    if (!signals_complete) {
+        message('Continuing despite missing signals based on user confirmation.')
+    }
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

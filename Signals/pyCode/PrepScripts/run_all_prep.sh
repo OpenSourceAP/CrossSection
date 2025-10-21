@@ -6,20 +6,12 @@
 # takes about four hours, mostly for option metrics
 # the hf stuff is not really being used right now (it's a placebo, pretty much)
 
-# Instructions if you're on mac/linux:
-# - run ./prep1_run_on_wrds.sh
-# - wait a few hours
-# - run ./prep2_dl_from_wrds.sh
-
 # Instructions if you're on windows:
 # - upload PrepScripts/* to wrds server in ~/temp_prep/
 # - ssh into wrds
 # - cd ~/temp_prep/, run "qsub run_all_prep.sh"
 # - download ~/temp_prep/data_for_dl/* to pathProject/Signals/pyData/Prep/* 
-# 	(i.e. tr_13f.csv, corwin_schultz_spread.csv, hf_monthly.csv, OptionMetrics*.csv, bali_hovak_imp_vol.csv)
-
-# Heads up: Option Metrics data requires .pgpass is set up on WRDS
-# https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/r-from-the-web/
+# - also download ~/temp_prep/temp_output/hf_monthly.csv to pathProject/Signals/pyData/Prep/hf_monthly.csv
 	
 # Need help with ssh or accessing the wrds server in general?
 # 	https://wrds-www.wharton.upenn.edu/pages/support/programming-wrds/programming-r/submitting-r-programs/
@@ -38,7 +30,7 @@ cd ~/temp_prep/
 
 # # ==== TR 13F ====
 # echo "CREATING 13F DATA (10 min?)"
-# sas tr13f_pmg_edit.sas -log log/tr13f_pmg_edit.log
+sas tr13f_pmg_edit.sas -log log/tr13f_pmg_edit.log
 
 # ==== OPTION METRICS: Volume ====
 echo "CREATING OPTION METRICS VOLUME (about 60 minutes)"

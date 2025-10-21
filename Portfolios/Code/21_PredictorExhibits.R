@@ -471,7 +471,7 @@ statsFull <- read_xlsx(paste0(pathDataPortfolios, "PredictorSummary.xlsx"),
   select(signalname, tstat, rbar) 
 
 mpSignals = read_csv(
-  paste0(pathProject, 'Comparison_to_MetaReplications.csv')
+  paste0(pathProject, 'Docs/Comparison_to_MetaReplications.csv')
 ) %>%
   filter(
     metastudy == 'MP', ourname != '_missing_'

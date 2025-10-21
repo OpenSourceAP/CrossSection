@@ -17,6 +17,9 @@ def check_environment():
     """Verify WRDS credentials are available in environment"""
     print("Checking environment setup...")
 
+    if not check_env_file():
+        return False
+
     # Load environment variables
     load_dotenv()
 
@@ -30,6 +33,21 @@ def check_environment():
         return False
 
     print("✓ WRDS credentials found")
+    return True
+
+
+def check_env_file():
+    """Check for the required .env file with WRDS credentials"""
+    env_file = Path(".env")
+    if not env_file.exists():
+        print("ERROR: .env file not found")
+        print("Create .env with your WRDS credentials, for example:")
+        print('WRDS_USERNAME="your_username"')
+        print('WRDS_PASSWORD="your_password"')
+        print("You can copy .env.template and modify it.")
+        return False
+
+    print("✓ .env file found")
     return True
 
 
@@ -53,8 +71,7 @@ def check_folder_structure():
             missing_folders.append(folder)
 
     if missing_folders:
-        print(f"ERROR: Missing folders: {missing_folders}")
-        print("Please run set_up_pyCode.py first to create folder structure")
+        print(f"Folder(s) missing and will be created: {missing_folders}")
         return False
 
     print("✓ Folder structure verified")
@@ -67,11 +84,57 @@ def run_settings():
 
     if not check_folder_structure():
         print("Creating missing folders...")
-        # Import and run folder creation
-        from set_up_pyCode import create_folder_structure  # pylint: disable=import-outside-toplevel
         create_folder_structure()
 
     print("✓ Setup complete")
+
+
+def check_prep_csv_files():
+    """Ensure required prep CSVs exist or confirm with the user before proceeding."""
+    expected_files = [
+        "../pyData/Prep/bali_hovak_imp_vol.csv",
+        "../pyData/Prep/corwin_schultz_spread.csv",
+        "../pyData/Prep/hf_monthly.csv",
+        "../pyData/Prep/OptionMetricsVolSurf.csv",
+        "../pyData/Prep/OptionMetricsVolume.csv",
+        "../pyData/Prep/OptionMetricsXZZ.csv",
+        "../pyData/Prep/tr_13f.csv"
+    ]
+
+    missing_files = [str(Path(path)) for path in expected_files if not Path(path).exists()]
+
+    if not missing_files:
+        print("✓ All expected prep CSV files found")
+        return True
+
+    print("WARNING: Missing expected prep CSV files:")
+    for path in missing_files:
+        print(f"  - {path}")
+
+    response = input("Proceed without these files? (y/N): ").strip().lower()
+    if response not in {"y", "yes"}:
+        print("Aborting at user request. Populate the missing prep files and rerun.")
+        return False
+
+    print("Continuing despite missing prep files.")
+    return True
+
+
+def create_folder_structure():
+    """Create the folder structure matching ../Code/settings.do"""
+    folders = [
+        "../pyData",
+        "../pyData/temp",
+        "../pyData/Prep",
+        "../pyData/Intermediate",
+        "../pyData/Predictors",
+        "../pyData/Placebos",
+        "../Logs",
+    ]
+
+    for folder in folders:
+        Path(folder).mkdir(parents=True, exist_ok=True)
+        print(f"Created: {folder}")
 
 
 def main():
@@ -93,6 +156,10 @@ def main():
 
     # Create required folders and verify structure
     run_settings()
+
+    # Confirm prep CSV availability with the user
+    if not check_prep_csv_files():
+        sys.exit(1)
 
     # Enable CSV output for data files
     os.environ["SAVE_CSV"] = "1"
