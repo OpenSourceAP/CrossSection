@@ -60,7 +60,7 @@ def load_settings(path):
     if yaml is not None:
         with open(path, 'r', encoding='utf-8') as handle:
             data = yaml.safe_load(handle)
-        return data or {}
+        return data if data else {}
 
     settings = {}
     with open(path, 'r', encoding='utf-8') as handle:
@@ -71,7 +71,7 @@ def load_settings(path):
             if ':' not in line:
                 continue
             key, value = line.split(':', 1)
-            settings[key.strip()] = value.strip()
+            settings[key.strip()] = value.strip().strip('"').strip("'")
     return settings
 
 def main():
@@ -204,22 +204,39 @@ def main():
             text-align: center;
             padding: 2rem 0 1rem;
             background: white;
+        }}
+
+        .site-header::after {{
+            content: '';
+            display: block;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
             border-bottom: 1px solid #000;
         }}
 
         .site-title {{
-            font-size: 2.5rem;
+            font-size: 3.4rem;
             font-weight: normal;
-            margin-bottom: 0;
+            margin-bottom: 1rem;
             font-family: Georgia, serif;
             color: #000;
         }}
 
         .nav-bar {{
             text-align: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #000;
+            padding: 0rem 0.25 0.75rem 0;
             background: white;
+            margin-bottom: 2rem;
+        }}
+
+        .nav-bar::after {{
+            content: '';
+            display: block;
+            width: 90%;
+            max-width: 1200px;
+            margin: 1rem auto 0;
+            border-bottom: 1px solid #000;
         }}
 
         .nav-bar a {{
@@ -230,11 +247,8 @@ def main():
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border-right: 1px solid #000;
-        }}
-
-        .nav-bar a:last-child {{
-            border-right: none;
+            display: inline-block;
+            line-height: 1;
         }}
 
         .nav-bar a:hover {{
@@ -248,7 +262,7 @@ def main():
         .container {{
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: calc(100vh - 180px);
         }}
 
         .header {{
