@@ -198,36 +198,21 @@ def main():
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             height: 100vh;
             overflow: hidden;
+            padding-top: 1rem;
         }}
 
-        .site-header {{
-            text-align: center;
-            padding: 2rem 0 1rem;
-            background: white;
-        }}
-
-        .site-header::after {{
-            content: '';
-            display: block;
+        .top-border {{
             width: 90%;
             max-width: 1200px;
-            margin: 0 auto;
+            margin: 0 auto 0;
             border-bottom: 1px solid #000;
-        }}
-
-        .site-title {{
-            font-size: 3.4rem;
-            font-weight: normal;
-            margin-bottom: 1rem;
-            font-family: Georgia, serif;
-            color: #000;
         }}
 
         .nav-bar {{
             text-align: center;
-            padding: 0rem 0.25 0.75rem 0;
+            padding: 1rem 0 0.5rem 0;
             background: white;
-            margin-bottom: 2rem;
+            margin-bottom: 0;
         }}
 
         .nav-bar::after {{
@@ -235,7 +220,7 @@ def main():
             display: block;
             width: 90%;
             max-width: 1200px;
-            margin: 1rem auto 0;
+            margin: 0.75rem auto 0;
             border-bottom: 1px solid #000;
         }}
 
@@ -262,7 +247,7 @@ def main():
         .container {{
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 180px);
+            height: calc(100vh - 75px);
         }}
 
         .header {{
@@ -280,7 +265,7 @@ def main():
         .search-bar {{
             display: flex;
             gap: 1rem;
-            margin-top: 0.75rem;
+            margin-top: 0rem;
         }}
 
         .search-bar input {{
@@ -453,20 +438,16 @@ def main():
     </style>
 </head>
 <body>
-    <header class="site-header">
-        <h1 class="site-title">Open Source Asset Pricing</h1>
-    </header>
-
+    <div class="top-border"></div>
     <nav class="nav-bar">
-        <a href="#">DATA</a>
-        <a href="#">CODE</a>
-        <a href="#">FAQ</a>
+        <a href="https://www.openassetpricing.com/data/">DATA</a>
+        <a href="https://www.openassetpricing.com/code/">CODE</a>
+        <a href="https://www.openassetpricing.com/faq/">FAQ</a>
         <a href="#" class="active">SIGNAL BROWSER</a>
     </nav>
 
     <div class="container">
         <div class="header">
-            <h1>The Chen-Zimmermann (2020, CFR) Signal Library</h1>
             <div class="search-bar">
                 <select id="categoryFilter">
                     <option value="">All Categories</option>
