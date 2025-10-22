@@ -484,7 +484,14 @@ def main():
             }}
 
             .detail-title {{
-                font-size: 1.4rem;
+                font-size: 1.2rem;
+                margin-top: 0.1rem;
+                margin-bottom: 0.1rem;
+                padding-bottom: 0.2rem;
+            }}
+
+            .detail-field {{
+                margin-bottom: 0.3rem;
             }}
 
             .detail-field.inline {{
