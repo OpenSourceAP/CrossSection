@@ -435,6 +435,68 @@ def main():
             text-align: center;
             color: #999;
         }}
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {{
+            .nav-bar a {{
+                padding: 0 0.75rem;
+                font-size: 0.8rem;
+            }}
+
+            .header {{
+                padding: 0.75rem 1rem;
+            }}
+
+            .header h1 {{
+                font-size: 1.25rem;
+            }}
+
+            .search-bar {{
+                flex-direction: column;
+                gap: 0.5rem;
+            }}
+
+            .search-bar select {{
+                display: none;
+            }}
+
+            .main-content {{
+                flex-direction: column;
+            }}
+
+            .list-panel {{
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+                max-height: 25vh;
+            }}
+
+            .list-header {{
+                display: none;
+            }}
+
+            .signal-item {{
+                padding: 0.5rem 1rem;
+            }}
+
+            .detail-panel {{
+                padding: 1rem;
+            }}
+
+            .detail-title {{
+                font-size: 1.4rem;
+            }}
+
+            .detail-field.inline {{
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-start;
+            }}
+
+            .detail-field.inline .detail-label {{
+                width: 100%;
+            }}
+        }}
     </style>
 </head>
 <body>
