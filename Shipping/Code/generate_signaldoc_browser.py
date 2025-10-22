@@ -438,8 +438,16 @@ def main():
 
         /* Mobile responsive styles */
         @media (max-width: 768px) {{
+            .nav-bar {{
+                padding: 0.25rem 0 0.25rem 0;
+            }}
+
+            .nav-bar::after {{
+                margin: 0.25rem auto 0;
+            }}
+
             .nav-bar a {{
-                padding: 0 0.75rem;
+                padding: 0 0.50rem;
                 font-size: 0.8rem;
             }}
 
@@ -453,7 +461,7 @@ def main():
 
             .search-bar {{
                 flex-direction: column;
-                gap: 0.5rem;
+                gap: 0.3rem;
             }}
 
             .search-bar select {{
@@ -468,7 +476,7 @@ def main():
                 width: 100%;
                 border-right: none;
                 border-bottom: 1px solid #ddd;
-                max-height: 25vh;
+                max-height: 35vh;
             }}
 
             .list-header {{
