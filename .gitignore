@@ -5,17 +5,13 @@ deleteme*
 Signals/Debug/*
 Signals/pyCode/Debug/*
 Signals/zzz-archive/*
-Signals/Human/*
 Signals/pyCode/dev/*
-
-# Testing exceptions
-!Signals/Logs/testout_placebos.md
-!Signals/Logs/testout_predictors.md
 
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+.Rapp.history
 
 *.Rprofile
 *.Rproj
@@ -30,6 +26,7 @@ Portfolios/Data/*
 Portfolios/pyData/*
 Signals/Data/*
 Signals/pyData/*
+Shipping/Data/* 
 
 # Credentials
 .env
@@ -45,4 +42,5 @@ __*__*
 # Other
 Portfolios/Code/Rplots.pdf
 .git
+AGENTS.md
 

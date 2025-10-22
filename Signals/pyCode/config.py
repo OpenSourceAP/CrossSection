@@ -19,4 +19,4 @@ SCRIPT_TIMEOUT_MINUTES = 60
 
 # Patch Option Metrics Implied Vol signals
 # https://github.com/OpenSourceAP/CrossSection/issues/156
-PATCH_OPTIONM_IV = False
+PATCH_OPTIONM_IV = True
