@@ -60,7 +60,7 @@ def load_settings(path):
     if yaml is not None:
         with open(path, 'r', encoding='utf-8') as handle:
             data = yaml.safe_load(handle)
-        return data or {}
+        return data if data else {}
 
     settings = {}
     with open(path, 'r', encoding='utf-8') as handle:
@@ -71,7 +71,7 @@ def load_settings(path):
             if ':' not in line:
                 continue
             key, value = line.split(':', 1)
-            settings[key.strip()] = value.strip()
+            settings[key.strip()] = value.strip().strip('"').strip("'")
     return settings
 
 def main():
@@ -198,12 +198,56 @@ def main():
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             height: 100vh;
             overflow: hidden;
+            padding-top: 1rem;
+        }}
+
+        .top-border {{
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto 0;
+            border-bottom: 1px solid #000;
+        }}
+
+        .nav-bar {{
+            text-align: center;
+            padding: 1rem 0 0.5rem 0;
+            background: white;
+            margin-bottom: 0;
+        }}
+
+        .nav-bar::after {{
+            content: '';
+            display: block;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0.75rem auto 0;
+            border-bottom: 1px solid #000;
+        }}
+
+        .nav-bar a {{
+            color: #000;
+            text-decoration: none;
+            padding: 0 1.5rem;
+            font-family: Arial, sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            line-height: 1;
+        }}
+
+        .nav-bar a:hover {{
+            text-decoration: underline;
+        }}
+
+        .nav-bar a.active {{
+            font-weight: bold;
         }}
 
         .container {{
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: calc(100vh - 75px);
         }}
 
         .header {{
@@ -221,7 +265,7 @@ def main():
         .search-bar {{
             display: flex;
             gap: 1rem;
-            margin-top: 0.75rem;
+            margin-top: 0rem;
         }}
 
         .search-bar input {{
@@ -391,12 +435,96 @@ def main():
             text-align: center;
             color: #999;
         }}
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {{
+            .nav-bar {{
+                padding: 0.25rem 0 0.25rem 0;
+            }}
+
+            .nav-bar::after {{
+                margin: 0.25rem auto 0;
+            }}
+
+            .nav-bar a {{
+                padding: 0 0.50rem;
+                font-size: 0.8rem;
+            }}
+
+            .header {{
+                padding: 0.75rem 1rem;
+            }}
+
+            .header h1 {{
+                font-size: 1.25rem;
+            }}
+
+            .search-bar {{
+                flex-direction: column;
+                gap: 0.3rem;
+            }}
+
+            .search-bar select {{
+                display: none;
+            }}
+
+            .main-content {{
+                flex-direction: column;
+            }}
+
+            .list-panel {{
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+                max-height: 35vh;
+            }}
+
+            .list-header {{
+                display: none;
+            }}
+
+            .signal-item {{
+                padding: 0.5rem 1rem;
+            }}
+
+            .detail-panel {{
+                padding: 1rem;
+            }}
+
+            .detail-title {{
+                font-size: 1.2rem;
+                margin-top: 0.1rem;
+                margin-bottom: 0.1rem;
+                padding-bottom: 0.2rem;
+            }}
+
+            .detail-field {{
+                margin-bottom: 0.3rem;
+            }}
+
+            .detail-field.inline {{
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-start;
+            }}
+
+            .detail-field.inline .detail-label {{
+                width: 100%;
+            }}
+        }}
     </style>
 </head>
 <body>
+    <div class="top-border"></div>
+    <nav class="nav-bar">
+        <a href="https://www.openassetpricing.com/data/">DATA</a>
+        <a href="https://www.openassetpricing.com/code/">CODE</a>
+        <a href="https://www.openassetpricing.com/faq/">FAQ</a>
+        <a href="#" class="active">SIGNAL BROWSER</a>
+    </nav>
+
     <div class="container">
         <div class="header">
-            <h1>The Chen-Zimmermann (2020, CFR) Signal Library</h1>
             <div class="search-bar">
                 <select id="categoryFilter">
                     <option value="">All Categories</option>
