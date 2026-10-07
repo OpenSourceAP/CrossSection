@@ -33,7 +33,7 @@ Compatibility decisions: keep ret_b4_dl as a return excluding delisting events;
 its dividend reinvestment follows native CIZ monthly returns. Keep ret as the
 native CIZ total return, without reproducing legacy exchange-specific imputation.
 Both are explicitly changed return definitions, to be compared and reported.
-Keep legacy numeric share/exchange fields through documented WRDS mappings;
+Keep legacy numeric share/exchange fields through documented WRDS mappings (verified against the macro and Appendix B; see Docs/CRSP-v2-Migration.md);
 unknown combinations remain visible through fallback codes and mismatch reports.
 The other seven in-scope scripts are untouched until the monthly comparison is
 reviewed. The frozen v1 files remain unchanged.
