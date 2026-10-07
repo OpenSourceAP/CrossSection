@@ -1,9 +1,130 @@
 # CRSP v2 (CIZ) migration: known output differences
 
-This file records accepted differences between the legacy CRSP (v1, SIZ) downloads
-and the CRSP v2 (CIZ) downloads. Comparisons use the frozen v1 baseline in
-`Signals/pyData-v1/` (code revision `ff623e3`) and the Stage 1 selections in
-`Signals/tests/crsp_v2/README.md`.
+This file records how the downloads were migrated from legacy CRSP (v1, SIZ) to
+CRSP v2 (CIZ), the differences found, and the decisions taken. Comparisons use the
+frozen v1 baseline in `Signals/pyData-v1/` (code revision `ff623e3`) and the Stage 1
+selections in `Signals/tests/crsp_v2/README.md`. It is deliberately detailed;
+trim later.
+
+Status (2026-10-07): `CRSPMonthly.py` is migrated (`ecf7b3c`) and its comparison
+reviewed. The other eight in-scope scripts are still on v1. Plan and checklist:
+`temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
+
+## How comparisons were run
+
+- Candidate: `CRSPMonthly.py` run with `DEBUG_MODE = True` set in memory (not
+  in `config.py`) and `OPENAP_DATA_ROOT=Signals/pyData-v2`. The debug selection is
+  all securities in calendar 1981.
+- Comparison: `Signals/tests/crsp_v2/compare.py monthlyCRSP` writes
+  `Signals/pyData-v2/Logs/crsp_v2/monthlyCRSP_comparison.json`, plus key
+  inventories and up to 100 examples per mismatching column.
+- Diagnostics: ad hoc probes on saved 1981 v2 extracts in `temp/data/`
+  (`crsp_v2_monthly_inputs`, `crsp_v2_delist_inputs`, `crsp_v2_daily_support`,
+  `crsp_v2_name_inputs`, `crsp_v2_flags.json`). Probes on these extracts
+  reproduced the WRDS run exactly, so most attribution work needs no database
+  access.
+- Tolerances (fixed before comparing) are in the test README. Most "mismatches"
+  in the summary below are rounding or documented definition changes; the counts
+  are diagnostics, not acceptance criteria.
+
+## Implementation: `CRSPMonthly.py`
+
+Sources:
+
+| v2 table | Used for |
+|---|---|
+| `crsp.msf_v2` | identifiers, `mthret`, `mthretx`, `mthprc`/`mthprcflg`/`mthprcdt`, `mthvol`, `shrout`, `mthcumfacshr`, `mthdelflg`, ticker, classification fields |
+| `crsp.stksecurityinfohist` | `shareclass`, `siccd` (effective-dated) |
+| `crsp.stkdelists` | `delret`; full history, one event per PERMNO |
+| `crsp.dsf_v2` | `bidlo`, `askhi`, aggregated in SQL per security-month |
+
+Column rules (full table in `Signals/tests/crsp_v2/monthly_mapping.md`):
+
+- `ret`, `retx`: native `mthret`, `mthretx`. No legacy −35%/−55% delisting
+  imputation and no second delisting adjustment.
+- `ret_b4_dl`: rebuilt; see the next sections.
+- `prc`: `mthprc`, negated when `mthprcflg = 'BA'` (bid/ask average) to keep v1's
+  sign convention.
+- `vol`: `mthvol / 1e6`. CIZ volume is in shares; v1 monthly volume was in
+  hundreds and divided by 1e4. The output unit (millions of shares) is unchanged.
+- `shrout`: `shrout / 1e3` (millions), unchanged.
+- `cfacshr`: `mthcumfacshr`.
+- `bidlo`, `askhi`: minimum and maximum daily closing price over regular days
+  (`dlydelflg = 'N'`), ranked by magnitude, keeping the chosen day's BA sign;
+  the earliest date breaks ties. The v1 monthly fields are signed daily
+  closing-price extrema, not intraday high/low (checked against the legacy data
+  guide and the 1981 data).
+- `shrcd`, `exchcd`: `Signals/pyCode/utils/crsp_v2_codes.py`; see "Share and
+  exchange codes".
+- `shrcls`: `shareclass`, with `NCS` (no class) and missing mapped to `''`.
+- `sicCRSP`, `sic2D`: effective-dated `siccd`.
+- Security information is joined on `COALESCE(mthprcdt, mthcaldt)`, the date of
+  the month's last price. CIZ descriptors belong to that date, so name history
+  stays available in delisting and no-price months.
+
+Safety checks: the script raises an error on duplicate `(permno, time_avail_m)`
+after the join, duplicate PERMNOs in `stkdelists`, more than one
+delisting-inclusive month per PERMNO, a delisting-inclusive month without
+`delret`, or an unknown `mthdelflg`. Nothing is silently deduplicated.
+
+## Reference: CIZ flags used here
+
+`mthdelflg` (flag type DE):
+
+| Flag | Meaning | Delisting return in `mthret`? |
+|---|---|---|
+| N | Not applicable (active) | — |
+| A | Amount (distributions) | included |
+| P | Price (next available) | included |
+| V | Value partial | included |
+| G | Gap | excluded |
+| M | Missing | excluded |
+
+`mthretflg` (aggregate return flag, type AR). 1981 counts: CR 61,017, NT 1,862,
+MP 856, NS 577, IP 369, DE 262, GP 99. Meanings follow the matching codes in the
+AV and PC flag types: NS new security, IP incomplete period, GP gap during period,
+DE delisting, MP missing price, NT not tracked. CR is presumably the regular
+complete return; the AR value list was not retrieved.
+
+`mthprcflg` (type PC): TR closing trade price, BA bid/ask average, MP missing price.
+
+In CIZ daily data, the delisting return is a separate `dsf_v2` row
+(`dlydelflg = 'Y'`) dated `deldlydt`, the trading day after the delisting date. It
+can therefore fall in the month after `delistingdt`.
+
+## Comparison summary (1981, WRDS run 2026-10-07)
+
+Rows: v1 65,652; v2 65,042. Keys: 65,039 matched, 613 v1-only, 3 v2-only.
+Schema: the same 20 columns and dtypes.
+
+| Column | Mismatches | % | v1 missing → v2 present | v1 present → v2 missing |
+|---|---|---|---|---|
+| `askhi` | 791 | 1.22% | 0 | 0 |
+| `bidlo` | 872 | 1.34% | 0 | 0 |
+| `cfacshr` | 4,834 | 7.43% | 0 | 244 |
+| `exchcd` | 439 | 0.67% | 244 | 0 |
+| `mve_c` | 1,313 | 2.02% | 452 | 14 |
+| `mve_permco` | 1,315 | 2.02% | 451 | 14 |
+| `permco` | 0 | 0.00% | 0 | 0 |
+| `prc` | 1,303 | 2.00% | 456 | 0 |
+| `ret` | 10,563 | 16.24% | 906 | 3 |
+| `ret_b4_dl` | 10,504 | 16.15% | 882 | 3 |
+| `retx` | 1,379 | 2.12% | 1,126 | 2 |
+| `shrcd` | 256 | 0.39% | 244 | 0 |
+| `shrcls` | 6 | 0.01% | 0 | 0 |
+| `shrout` | 19 | 0.03% | 0 | 19 |
+| `sic2D` | 246 | 0.38% | 244 | 0 |
+| `sicCRSP` | 246 | 0.38% | 244 | 0 |
+| `ticker` | 234 | 0.36% | 0 | 0 |
+| `vol` | 30 | 0.05% | 0 | 0 |
+
+Mismatch counts include missingness transitions. The sections below attribute
+each group. In short:
+- dividend reinvestment: `ret`, `ret_b4_dl`;
+- mid-month delisting months: the 244-row blocks;
+- partial-period returns: most other missing-to-present rows;
+- cumulative-factor vintage scaling and rounding: `cfacshr`;
+- rounding: price and volume.
 
 ## monthlyCRSP: `ret_b4_dl` (return before delisting)
 
@@ -22,8 +143,25 @@ delisting return. `CRSPMonthly.py` rebuilds `ret_b4_dl` from monthly data:
 `delret` comes from `crsp.stkdelists` (one event per PERMNO). The mid-month rule
 reproduces v1. There, `msf.ret` is missing in a delisting month whenever the last
 price comes before month end; all 196 such A/P/V months in 1981 follow this rule.
+G and M months behave the same way: v1 is missing in 44 of 49 M and 8 of 9 G
+months.
 
-### Match to v1 (1981, all securities, offline probe 2026-10-06)
+Events are matched to the flagged month by PERMNO, not by the `delistingdt`
+month. In 1981 the two always coincide (all 283 flagged months), but CIZ can
+place the delisting return in a later month. The full delisting table is
+downloaded, because a 1981 window on `delistingdt` could miss an event whose
+flagged month differs.
+
+Rejected alternative: an earlier draft fell back to compounding regular daily
+returns (`dlydelflg = 'N'`) within the month when the inversion failed. It was
+dropped for three reasons:
+- it was inconsistent with the mapping doc;
+- it covered only one 1981 case (`delret = -1`);
+- it did not reproduce v1, which is missing in mid-month delisting months.
+
+`dsf_v2` is still queried, but only for `bidlo`/`askhi`.
+
+### Match to v1 (1981, all securities)
 
 | | Rows | `ret_b4_dl` missing |
 |---|---|---|
@@ -45,18 +183,25 @@ price comes before month end; all 196 such A/P/V months in 1981 follow this rule
   The median difference is 0, the 90th percentile 0.00023, the 99th percentile
   0.0019, and the maximum 1.74.
 - Delisting months: all 39 P and all 49 M months match. 160 of 181 A months
-  are within tolerance; most of the rest are within about 1e-6.
+  are within tolerance; most of the rest are within about 1e-6, and the largest
+  is 8e-5.
 - The rule leaves two delisting months unmatched:
-  - one A month with `delret = -1`, which cannot be inverted (v2 missing, v1 −0.33);
-  - one G month that differs by 0.011.
+  - one A month with `delret = -1` (PERMNO 52330, September 1981), which cannot
+    be inverted (v2 missing, v1 −0.33);
+  - one G month (PERMNO 57525, July 1981) that differs by 0.011.
+- Compared with the first candidate (daily fallback, `delistingdt` matching),
+  the rule changed 245 values and cut v1-missing → v2-present rows from 1,126 to
+  882.
 
 ### Interpretation
 
 The small differences in returns fit CIZ's change in dividend reinvestment
-convention. The CRSP v2 paper ("Rewriting CRSP History", JFQA) finds that 9.6% of
-monthly returns change by more than 1bp. This has not been confirmed row by row.
-The 882 returns that v2 adds in active months are partial-period returns; see
-"Partial-period prices and returns" below.
+convention. The CRSP v2 paper ("Rewriting CRSP History", JFQA, in the cellar)
+finds that 9.6% of monthly returns change by more than 1bp. WRDS's transition FAQ
+reports over 3,000 stock-months with return changes above 5% across the full
+history; its largest examples carry partial-period flags (GP, IP, DE). Neither has
+been confirmed row by row here. The 882 returns that v2 adds in active months
+are partial-period returns; see "Partial-period prices and returns" below.
 
 Decision (2026-10-06): accepted as close enough. The only downstream consumer
 is `Signals/pyCode/Predictors/CustomerMomentum.py`, which drops missing values.
@@ -67,7 +212,8 @@ In v1, the name-history record (`msenames`) ends on the last trading day. In a
 month where a security delists before month end, the name join therefore fails:
 `shrcd`, `exchcd`, `sicCRSP`, `sic2D`, `ticker`, `shrcls`, `prc`, `retx` and
 `mve_c` are missing, `cfacshr` is 0, and the row drops out of
-`SignalMasterTable` (`shrcd ∈ {10,11,12}`, `exchcd ∈ {1,2,3}`).
+`SignalMasterTable` (`shrcd ∈ {10,11,12}`, `exchcd ∈ {1,2,3}`). v1 `ret`, which
+includes the delisting return, is still present in 220 of these rows.
 
 `CRSPMonthly.py` joins CIZ security information on the month's last price date
 (`mthprcdt`), so these rows keep their descriptors, last price and market equity.
@@ -76,19 +222,40 @@ month where a security delists before month end, the name join therefore fails:
 In 1981, this affects 244 security-months, all in delisting months (154 A,
 43 M, 38 P, 8 G, 1 V). Of these, 235 would pass the `SignalMasterTable` filter,
 so the master table gains roughly that many final-month rows per year relative to
-v1. This group accounts for the 244-row blocks in the `shrcd`, `exchcd`,
-`sicCRSP`, `sic2D` and `cfacshr` comparisons, and for 244 of the 456 `prc` and 452
-`mve_c` missing-to-present rows. Pre-delisting returns in these months stay missing
-(see above).
+v1. This group accounts for:
+- the 244-row blocks in the `shrcd`, `exchcd`, `sicCRSP`, `sic2D` and `cfacshr`
+  comparisons;
+- all 234 `ticker` and 6 `shrcls` mismatches;
+- 244 of the 456 `prc` and 452 `mve_c` missing-to-present rows.
+
+Pre-delisting returns in these months stay missing (see above).
+
+Alternative considered: blank the descriptors and price in these months to
+replicate v1 exactly. Rejected in favor of keeping the information.
 
 Decision (2026-10-07): keep the v2 values.
 
 ## monthlyCRSP: share and exchange codes
 
 `Signals/pyCode/utils/crsp_v2_codes.py` rebuilds `shrcd` and `exchcd` from CIZ
-classifications. It matches the WRDS CIZ-to-SIZ macro exactly, and its share
+classifications. It matches the WRDS CIZ-to-SIZ macro
+(`cellar/Manuals-and-Reference/CRSP-v2/CRSP CIZtoSIZ.md`) exactly, and its share
 codes match Appendix B of the CRSP cross-reference guide (July 2026). Appendix B's
 extra row (75 for non-US ETV units) is covered by the default code 75.
+
+- `shrcd` maps the tuple (`sharetype`, `securitytype`, `securitysubtype`,
+  `usincflg`, `issuertype`) to 22 legacy codes; anything else is 75.
+- `exchcd` maps `primaryexch` and the trading flags:
+  - `primaryexch` N/A/Q/R/B/I → 1–6, for regular-way (`conditionaltype = RW`),
+    active (`tradingstatusflg = A`) securities;
+  - halted (H) and suspended (S) NYSE/AMEX/NASDAQ securities → −2 and −1;
+  - when-issued securities → 31–33;
+  - `primaryexch = X` with `conditionaltype = NT` → 0;
+  - anything else → 99.
+
+  The macro's conditions do not overlap, so assignment order does not matter.
+- Legacy codes that CIZ cannot recover, such as regional exchanges, become 0
+  or 99.
 
 Apart from the delisting months above, 1981 differences are:
 
@@ -112,6 +279,9 @@ non-delisting months, v2 adds:
 | Incomplete period | IP | 56 | `ret` |
 | Gap during period | GP | 43 | `ret` |
 
+In the first case, 184 of the 212 prices are bid/ask averages (BA) and 166 are
+NASDAQ (v1 `exchcd = 3`). v1 has no `ret` in any of the 212.
+
 These account for all 882 `ret_b4_dl` missing-to-present rows, and for the
 non-delisting `prc` and `mve_c` missing-to-present rows. The remaining
 missing-to-present rows are the mid-month delisting months above.
@@ -124,31 +294,81 @@ prices dated before month end.
 
 - `ret`: 9,654 matched values differ. 9,486 of them (98%) fall in dividend months
   (v1 `ret ≠ retx`), consistent with CIZ reinvesting dividends on the ex-date;
-  85% of dividend months differ. The other 168 are mostly partial-period flags
-  (IP 61, GP 35, DE 30, MP 1) plus 41 regular (CR) months; 33 are delisting
-  months.
+  85% of dividend months differ. Of the other 168, 127 carry partial-period
+  flags (IP 61, GP 35, DE 30, MP 1) and 41 are regular (CR) months; 33 of the
+  168 are delisting months.
 - `retx`: 251 matched values differ (0.4%), even though prices are identical
-  in all but 3 of these rows. 148 are partial-period months (IP, GP, DE, MP) where
-  CIZ compounds from a different base price. 103 are regular months with no
-  price-factor change (median relative difference 1.1e-4); these are probably
-  non-ordinary distributions, which `retx` includes, affected by the
-  reinvestment change. This has not been confirmed. Missing-to-present `retx`
-  rows (1,126) are the delisting and partial-period cases above.
-- `cfacshr`: after rebasing each PERMNO to its first common date, 632 rows
-  differ. v1 stores factors to exactly 6 decimal places and v2 at full
-  precision. 625 rows differ by a relative 1e-7 to 1e-6. The other 7 belong to
-  PERMNO 18148, whose factor (1.9e-5) loses about 5% to 6-decimal rounding.
-  The 244 present-to-missing rows are delisting months (v1 0, v2 missing).
+  in all but 3 of these rows.
+  - 148 are partial-period months (IP, GP, DE, MP), where CIZ compounds from a
+    different base price.
+  - 103 are regular months with no price-factor change (median relative
+    difference 1.1e-4). These are probably non-ordinary distributions, which
+    `retx` includes, affected by the reinvestment change. This has not been
+    confirmed.
+  - Regular months with a price-factor change (917 in 1981) match except for 2.
+  - The 1,126 missing-to-present `retx` rows are the delisting and
+    partial-period cases above.
+- `cfacshr`: cumulative factors are normalized to the end of each source
+  vintage, so raw levels differ by a constant within each PERMNO when a later
+  split occurred.
+  - 4,177 of the 4,834 raw mismatches are consistent with this scaling.
+  - After rebasing each PERMNO to its first common date (5,813 PERMNOs; 79 have
+    only one comparable date), 632 rows differ. v1 stores factors to exactly 6
+    decimal places and v2 at full precision. 625 rows differ by a relative 1e-7
+    to 1e-6. The other 7 belong to PERMNO 18148, whose factor (1.9e-5) loses
+    about 5% to 6-decimal rounding.
+  - The 244 present-to-missing rows are delisting months (v1 0, v2 missing).
 - `vol`: 30 rows differ by at most 5e-5 million shares; v1 monthly volume is in
   hundreds of shares, while v2 reports exact shares.
 - `shrout`: 19 rows are 0 in v1 and missing in v2 (CIZ has no shares
-  outstanding there), so `mve_c` is 0 in v1 and missing in v2.
+  outstanding there), so `mve_c` is 0 in v1 and missing in v2 (14 rows).
 - `sicCRSP`: 2 rows have SIC 0 (unknown) in v1 and a real code in v2.
-- `ticker` (234 rows) and `shrcls` (6 rows): all are mid-month delisting months
-  where v1 was empty.
+- `mve_c`, `mve_permco`: differences follow from `prc` and `shrout`. The largest
+  `mve_permco` difference (281, PERMCO 21926 in April 1981) comes from a second
+  share class (PERMNO 59475) in its mid-month delisting month, which v2 includes
+  and v1 did not.
 - `prc`, `bidlo`, `askhi`: value differences are at most 5e-6, which is rounding.
 - Coverage: the 613 v1-only rows are one empty month per PERMNO, with every
   value missing. 590 fall in the month before the security's first v2 month;
   the other 23 PERMNOs have no v2 month in 1981, presumably because their first
   month is in 1982 (not checked). No data are lost. The 3 v2-only rows (PERMNO
   18383 and 80550 in January, 31377 in April) have not been investigated.
+
+## Downstream effects
+
+- `SignalMasterTable.py:49` keeps `shrcd ∈ {10,11,12}` and `exchcd ∈ {1,2,3}`.
+  `ExchSwitch.py` and other predictors test only exchange codes 1–3. Share-code
+  filters use `<= 11`, `> 11`, `{10,11}` or `{10,11,12}`. So the 10 → 11 share
+  codes and regional-exchange → 0 codes have no effect.
+- The master table gains final-month rows for mid-month delistings (about 235
+  in 1981) and rows with partial-period prices.
+- Missing codes behave differently by language. In pandas, `shrcd > 11` is
+  False for a missing `shrcd`, so a "drop if > 11" filter keeps the row. In
+  Stata, missing is greater than any number, so the row is dropped. v2 fills
+  codes where v1 had them missing, which reduces this ambiguity.
+- `ret_b4_dl` is read only by `CustomerMomentum.py`.
+
+## Caveats for the full-history (Stage 2) run
+
+- One delisting event per PERMNO, and at most one delisting-inclusive month per
+  PERMNO, hold in 1981. Over full history they are assumptions; the script
+  raises an error, rather than guessing, if they fail.
+- 1981 cannot test cases that are absent or rare in that year, such as ETFs and
+  other later security types, or classification changes after 1981.
+- CIZ is updated continuously, while v1 stopped at December 2024. Stage 2
+  differences against `temp/pyData25/` will mix definition changes with a year
+  of revisions.
+
+## Lessons for the remaining scripts
+
+- Check WRDS metadata (`crsp.metaiteminfo`, `crsp.metaflaginfo`) and the cellar
+  docs before assuming a v1 field has no v2 equivalent. Earlier planning wrongly
+  listed `cfacshr` and the `ret_b4_dl` inputs as unavailable.
+- Expect the same two definition changes elsewhere: delisting months and
+  partial-period returns. In `dsf_v2`, delisting returns are separate rows
+  (`dlydelflg = 'Y'`); the daily download must decide whether to keep them.
+- v1 numeric fields are often rounded (factors to 6 decimals, volume to hundreds
+  of shares), so tight tolerances flag many harmless differences. Attribute
+  groups rather than relying on tolerance pass rates.
+- Saving small v2 extracts locally made iteration fast and avoided repeated
+  WRDS sessions.
