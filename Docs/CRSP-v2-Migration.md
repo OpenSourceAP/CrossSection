@@ -6,8 +6,8 @@ frozen v1 baseline in `Signals/pyData-v1/` (code revision `ff623e3`) and the Sta
 selections in `Signals/tests/crsp_v2/README.md`. It is deliberately detailed;
 trim later.
 
-Status (2026-10-07): `CRSPMonthly.py` is migrated (`ecf7b3c`) and its comparison
-reviewed. The other eight in-scope scripts are still on v1. Plan and checklist:
+Status (2026-10-07): `CRSPMonthly.py` and `CRSPDaily.py` are migrated and their
+Stage 1 comparisons reviewed. The other seven in-scope scripts are still on v1. Plan and checklist:
 `temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
 
 ## How comparisons were run
@@ -366,9 +366,38 @@ prices dated before month end.
   listed `cfacshr` and the `ret_b4_dl` inputs as unavailable.
 - Expect the same two definition changes elsewhere: delisting months and
   partial-period returns. In `dsf_v2`, delisting returns are separate rows
-  (`dlydelflg = 'Y'`); the daily download must decide whether to keep them.
+  (`dlydelflg = 'Y'`); the daily download excludes them to match v1 `dsf` keys.
 - v1 numeric fields are often rounded (factors to 6 decimals, volume to hundreds
   of shares), so tight tolerances flag many harmless differences. Attribute
   groups rather than relying on tolerance pass rates.
 - Saving small v2 extracts locally made iteration fast and avoided repeated
   WRDS sessions.
+
+## dailyCRSP and dailyCRSPprc (January 1981)
+
+`CRSPDaily.py` reads native `crsp.dsf_v2` stock days with `dlydelflg = 'N'`.
+The 29 separate delisting-event rows in January (`Y`) are excluded because v1
+`dsf` has no corresponding stock-day rows. The script keeps native `dlyret`,
+`dlyvol` (shares), `dlycumfacpr`, and `shrout` (thousands), and negates `dlyprc`
+when `dlyprcflg = 'BA'`. WRDS metadata and the CRSP v2 transition FAQ confirm
+those field meanings. The full column mapping is in
+`Signals/tests/crsp_v2/daily_mapping.md`.
+
+The debug run wrote both outputs to `Signals/pyData-v2/`. Each has 108,923 rows,
+the same schema and keys as the frozen v1 baseline; missingness is identical.
+`dailyCRSPprc` equals the corresponding five columns of `dailyCRSP` exactly.
+Under the predeclared tolerances, `vol` and `shrout` match exactly. The remaining
+differences are:
+
+| Column | Beyond tolerance | Attribution |
+|---|---:|---|
+| `prc` | 912 | Every case is a negative bid/ask price and differs by exactly 0.000005, the last decimal of the v1 stored price. |
+| `ret` | 60 | Every case differs by exactly 0.000001; only four pairs of v1/v2 values occur. These are precision-level differences, with no missingness transition. The upstream rounding rule is unverified. |
+| `cfacpr` | 15,884 raw | 15,745 pass after rebasing to each security's first common date. The other 139 raw mismatches and 42 rebased-only mismatches fit v1's six-decimal factor rounding. A fixed positive scale per PERMNO can put *every* v2 factor within half a unit of its v1 value's sixth decimal; all 5,224 PERMNOs satisfy this interval check. |
+
+Decision (2026-10-07): keep the native v2 values and exclude the separate
+delisting-event rows. No January sample membership or missingness changes. The
+constant-scale factor result is consistent with vintage normalization and
+rounding, but does not identify each security's endpoint normalization. Stage 2
+must check later periods, where return definitions or delisting handling may
+produce larger changes.
