@@ -7,8 +7,9 @@ selections in `Signals/tests/crsp_v2/README.md`. It is deliberately detailed;
 trim later.
 
 Status (2026-10-07): `CRSPMonthly.py`, `CRSPDaily.py`, `CRSPDistributions.py`, and
-`CRSPAcquisitions.py` are migrated and their Stage 1 comparisons reviewed. The
-other five in-scope scripts are still on v1. Plan and checklist:
+`CRSPAcquisitions.py` are migrated and their Stage 1 comparisons reviewed.
+`CompustatAnnual.py` is confirmed compatible with CIZ and matches v1 exactly in
+Stage 1. The other four in-scope scripts are still on v1. Plan and checklist:
 `temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
 
 ## How comparisons were run
@@ -27,6 +28,45 @@ other five in-scope scripts are still on v1. Plan and checklist:
 - Tolerances (fixed before comparing) are in the test README. Most "mismatches"
   in the summary below are rounding or documented definition changes; the counts
   are diagnostics, not acceptance criteria.
+
+## CompustatAnnual.py: CCM source unchanged
+
+The script's CRSP dependency is `crsp.ccmxpf_lnkhist`. WRDS's CIZ sample
+programs in `cellar/Manuals-and-Reference/CRSP-v2/ccm_ciz_merge.ipynb` and
+`ccm_link_collapse.ipynb` still use this table. WRDS metadata confirms the
+current names and types of `gvkey`, `linkprim`, `linktype`, `liid`, `lpermno`,
+`lpermco`, `linkdt`, and `linkenddt`. Its existing `LC`/`LU` and `P`/`C`
+filters, inclusive interval test, and output schema therefore need no CIZ field
+substitution. The code now checks that the interval match resolves each
+`(gvkey, datadate)` to one link before producing annual data.
+
+Column mapping for this script:
+
+| Output fields | Classification and rule |
+|---|---|
+| All 110 `CompustatAnnual.csv` fields | Exact values from the shared `comp.funda` extract; `datadate` is formatted as a Stata date string. No CRSP fields. |
+| Original annual fields, except the zero-filled fields below | Carried from the extract; `gvkey` is converted to numeric and `datadate` to a timestamp. |
+| `permno`, `permco` | Exact `ccmxpf_lnkhist.lpermno`, `.lpermco`, renamed and converted to nullable integers. |
+| `cik`, `sic`, `naics` | Exact `comp.names` fields, with missing `naics` represented as an empty string. |
+| `nopi`, `dvt`, `ob`, `dm`, `dc`, `aco`, `ap`, `intan`, `ao`, `lco`, `lo`, `rect`, `invt`, `drc`, `spi`, `gdwl`, `che`, `dp`, `act`, `lct`, `tstkp`, `dvpa`, `scstkc`, `sstk`, `mib`, `ivao`, `prstkc`, `prstkcc`, `txditc`, `ivst` | Derived by filling missing values with zero. |
+| `cnum`, `dr`, `dc`, `xint0`, `xsga0`, `xad0`, `time_avail_m` | Derived: six-character CUSIP prefix; sum of available deferred-revenue components; convertible-debt fallback rule then zero fill; expense zero fills; report month plus six months. |
+| Monthly output | Annual fields carried through, except `time_avail_m` advances by 0–11 months; existing month-key deduplication applies. |
+
+No field was redefined for CIZ and no downstream consumer needs a new rule.
+`ccmxpf_lnkhist` is joined by `gvkey` across historical intervals and then
+filtered by report date. The 1981 run had 6,486 rows before this interval filter
+and 4,493 after it; the latter had no repeated `(gvkey, datadate)` or
+`(gvkey, permno, datadate)` keys. Monthly output had no repeated
+`(permno, time_avail_m)` keys. The older full-history `temp/pyData25` annual and
+monthly files also have no repeated keys on these respective output keys.
+
+Stage 1 reused `Signals/pyData-v1/Inputs/CompustatAnnual_raw.parquet`, set
+`DEBUG_MODE=True` in memory, and wrote to `Signals/pyData-v2/`. The three
+`compare.py` reports have identical schemas and dtypes, zero unmatched keys, and
+zero column mismatches: 6,744 `CompustatAnnual.csv` rows, 4,493
+`a_aCompustat` rows, and 3,692 `m_aCompustat` rows. The CSV files are also byte
+identical (SHA-256 `b59af83af4f9521f92ddfee0faac669513f1dfdcc9ab930a20d2aec00dd1ef1e`).
+There is no Stage 1 sample or value change to approve.
 
 ## Implementation: `CRSPMonthly.py`
 

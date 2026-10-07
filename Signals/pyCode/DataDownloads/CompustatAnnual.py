@@ -4,7 +4,7 @@
 Inputs:
 - WRDS comp.funda database (annual fundamentals)
 - comp.names (company master file)
-- crsp.ccmxpf_lnkhist (CRSP-Compustat link history)
+- crsp.ccmxpf_lnkhist (CCM link history, shared by CRSP SIZ and CIZ)
 - OPENAP_COMPUSTAT_EXTRACT: optional saved raw fundamentals parquet to reuse
 
 Outputs:
@@ -159,7 +159,9 @@ zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
 for var in zero_fill_vars:
     compustat_data[var] = compustat_data[var].fillna(0)
 
-# Download CCM linking table data directly (removing dependency on CCMLinkingTable.py)
+# CCMXPF_LNKHIST is also the link source in WRDS's CIZ examples. Its link
+# identifiers and date intervals retain their meaning across the CRSP migration.
+# Download it directly (removing dependency on CCMLinkingTable.py).
 print("Downloading CCM linking table data...", flush=True)
 CCM_QUERY = """
 SELECT a.gvkey, a.conm, a.tic, a.cusip, a.cik, a.sic, a.naics,
@@ -216,6 +218,18 @@ temp = (
 )
 compustat_data = compustat_data[temp]
 print(f"After filtering for valid link dates: {len(compustat_data)} records", flush=True)
+
+# A report date must resolve to one primary CCM link. The gvkey join above
+# expands across historical intervals intentionally; reject overlapping matches.
+duplicate_links = compustat_data.duplicated(['gvkey', 'datadate'], keep=False)
+if duplicate_links.any():
+    examples = compustat_data.loc[
+        duplicate_links, ['gvkey', 'datadate', 'permno', 'permco']
+    ].head(10)
+    raise ValueError(
+        f"{duplicate_links.sum()} rows have repeated (gvkey, datadate) CCM links; "
+        f"inspect link intervals before producing annual data:\n{examples}"
+    )
 
 # Create annual version of the dataset
 annual_data = compustat_data.copy()
