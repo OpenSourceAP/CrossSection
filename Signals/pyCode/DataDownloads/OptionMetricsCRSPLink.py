@@ -14,10 +14,11 @@ import os
 import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.debug_mode import log_selection
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 
 log_selection("OptionMetricsCRSPLink")
 load_dotenv()
@@ -26,9 +27,7 @@ load_dotenv()
 # Load OptionMetrics linking data from WRDS database
 print("Downloading OptionMetrics-CRSP linking data from WRDS...")
 
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # Query WRDS database for OptionMetrics linking data
 QUERY = """
@@ -41,10 +40,10 @@ WHERE permno is not null
 omlink = pd.read_sql_query(QUERY, engine)
 print(f"Loaded {len(omlink)} OptionMetrics linking records from WRDS")
 
-engine.dispose()
+release_wrds_engine(engine)
 
 # Save raw linking table
-omlink.to_parquet("../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet", index=False)
+omlink.to_parquet(intermediate_path("OPTIONMETRICSCRSPLinkingTable.parquet"), index=False)
 
 print(f"OptionMetrics linking data saved with {len(omlink)} records")
 print(f"Head: {omlink.head()}")

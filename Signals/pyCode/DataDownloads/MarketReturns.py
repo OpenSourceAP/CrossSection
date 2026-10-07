@@ -13,19 +13,17 @@ How to run: python3 MarketReturns.py
 import os
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.debug_mode import log_selection
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 
 load_dotenv()
 
 # Connect to WRDS database
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@"
-    f"wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # Query for market returns data
 QUERY = """
@@ -38,6 +36,7 @@ log_selection("MarketReturns")
 
 # Download market returns data
 market_data = pd.read_sql_query(QUERY, engine)
+release_wrds_engine(engine)
 
 
 # Convert date to monthly timestamp format
@@ -48,7 +47,7 @@ market_data['time_avail_m'] = market_data['date'].dt.to_period('M').dt.to_timest
 market_data = market_data.drop('date', axis=1)
 
 # Save data
-market_data.to_parquet("../pyData/Intermediate/monthlyMarket.parquet")
+market_data.to_parquet(intermediate_path("monthlyMarket.parquet"))
 
 # Display summary information
 print(f"Monthly Market Returns downloaded with {len(market_data)} records")

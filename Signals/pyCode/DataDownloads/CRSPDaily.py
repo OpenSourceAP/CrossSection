@@ -17,12 +17,13 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 
 load_dotenv()
 
@@ -47,9 +48,7 @@ def get_crsp_daily_year(year, engine):
 print("Starting CRSP Daily data download...")
 
 # Setup database connection
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # Select the debug month or retain the existing production year chunks.
 log_selection("CRSPDaily")
@@ -70,7 +69,7 @@ for year in year_range:
     import time
     time.sleep(1)
 
-engine.dispose()
+release_wrds_engine(engine)
 
 # Combine and process all downloaded data
 print("Combining all years of data...")
@@ -83,7 +82,7 @@ full_columns = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
 daily_full = combined_data[full_columns].copy()
 daily_full['permno'] = daily_full['permno'].astype('int32')
 daily_full['time_d'] = pd.to_datetime(daily_full['time_d']).dt.floor('D')
-daily_full.to_parquet("../pyData/Intermediate/dailyCRSP.parquet", index=False)
+daily_full.to_parquet(intermediate_path("dailyCRSP.parquet"), index=False)
 print(f"Saved full daily CRSP data with {len(daily_full)} records")
 
 # Create and save price-only file (prices, adjustment factors, shares outstanding)
@@ -91,7 +90,7 @@ price_columns = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
 daily_prc = combined_data[price_columns].copy()
 daily_prc['permno'] = daily_prc['permno'].astype('int32')
 daily_prc['time_d'] = pd.to_datetime(daily_prc['time_d']).dt.floor('D')
-daily_prc.to_parquet("../pyData/Intermediate/dailyCRSPprc.parquet", index=False)
+daily_prc.to_parquet(intermediate_path("dailyCRSPprc.parquet"), index=False)
 print(f"Saved price-only daily CRSP data with {len(daily_prc)} records")
 
 # Display date range summary

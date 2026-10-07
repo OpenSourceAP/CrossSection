@@ -26,6 +26,8 @@ Portfolios/Data/*
 Portfolios/pyData/*
 Signals/Data/*
 Signals/pyData/*
+Signals/pyData-v1/
+Signals/pyData-v2/
 Shipping/Data/* 
 
 # Credentials

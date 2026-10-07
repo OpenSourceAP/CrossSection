@@ -11,19 +11,18 @@ How to run: python3 CRSPAcquisitions.py
 """
 
 import os
-from sqlalchemy import create_engine
 import pandas as pd
 from dotenv import load_dotenv
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 
 load_dotenv()
 
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 QUERY = """
 SELECT a.permno, a.distcd, a.exdt, a.acperm
@@ -41,7 +40,7 @@ if DEBUG_MODE:
         engine,
     ).iloc[0]["missing_exdt"]
     print(f"Source records with missing exdt (outside debug window): {missing_exdt}", flush=True)
-engine.dispose()
+release_wrds_engine(engine)
 
 print(f"Downloaded {len(acq_data)} distribution records")
 
@@ -72,7 +71,7 @@ duplicates_removed = initial_count - len(acq_data)
 print(f"Removed {duplicates_removed} duplicate records")
 
 
-acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet", index=False)
+acq_data.to_parquet(intermediate_path("m_CRSPAcquisitions.parquet"), index=False)
 
 print(f"CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
 

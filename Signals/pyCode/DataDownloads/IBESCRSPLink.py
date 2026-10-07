@@ -4,6 +4,7 @@
 Inputs:
 - Env vars `WRDS_USERNAME` and `WRDS_PASSWORD` for database access
 - ../pyData/Intermediate/monthlyCRSP.parquet (columns: permno, time_avail_m)
+- OPENAP_CRSP_CALENDAR: required full keys-only calendar in debug mode
 
 Outputs:
 - ../pyData/Intermediate/IBESCRSPLinkingTable.parquet
@@ -11,6 +12,7 @@ Outputs:
 How to run:
 - From Signals/pyCode/: `python3 DataDownloads/IBESCRSPLink.py`
 - Configure DEBUG_MODE in config.py; link output always uses the full input calendar.
+- Set OPENAP_DATA_ROOT for migration output and OPENAP_CRSP_CALENDAR for its calendar.
 """
 
 import os
@@ -19,10 +21,11 @@ from typing import List
 
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.debug_mode import log_selection  # noqa: E402
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path, crsp_calendar_path
 
 
 def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
@@ -54,8 +57,8 @@ def main() -> None:
 
     print("Processing CRSP-IBES linking data...")
 
-    # Ensure output directory exists
-    os.makedirs("../pyData/Intermediate", exist_ok=True)
+    # Validate the complete calendar before issuing any database query.
+    calendar_path = crsp_calendar_path()
 
     username = os.getenv("WRDS_USERNAME")
     password = os.getenv("WRDS_PASSWORD")
@@ -63,9 +66,7 @@ def main() -> None:
         raise RuntimeError("WRDS credentials not found in environment variables.")
 
     print("Querying IBES-CRSP link from WRDS database...")
-    engine = create_engine(
-        f"postgresql://{username}:{password}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-    )
+    engine = get_wrds_engine()
 
     query = """
         SELECT ticker, permno, ncusip, sdate, edate, score
@@ -76,7 +77,7 @@ def main() -> None:
     iblink_raw = pd.read_sql_query(query, engine)
     print(f"Loaded {len(iblink_raw):,} IBES-CRSP linking records from WRDS")
 
-    engine.dispose()
+    release_wrds_engine(engine)
 
     # Convert start/end dates to monthly timestamps
     iclink = iblink_raw.copy()
@@ -88,7 +89,7 @@ def main() -> None:
 
     # Load CRSP monthly calendar to align date ranges
     crsp_monthly = pd.read_parquet(
-        "../pyData/Intermediate/monthlyCRSP.parquet",
+        calendar_path,
         columns=["permno", "time_avail_m"],
     )
 
@@ -115,7 +116,7 @@ def main() -> None:
     desired_columns = ["tickerIBES", "permno", "time_avail_m", "score"]
     final_data = enforce_column_schema(merged, desired_columns)
 
-    output_path = "../pyData/Intermediate/IBESCRSPLinkingTable.parquet"
+    output_path = intermediate_path("IBESCRSPLinkingTable.parquet")
     final_data.to_parquet(output_path, index=False)
 
     print(f"IBES-CRSP Linking Table saved with {len(final_data):,} records")

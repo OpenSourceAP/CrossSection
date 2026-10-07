@@ -12,7 +12,6 @@ How to run: python3 CRSPDistributions.py
 
 import os
 import sys
-from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
@@ -20,6 +19,8 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 
 print("=" * 60, flush=True)
 print("💰 CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
@@ -28,11 +29,7 @@ print("=" * 60, flush=True)
 load_dotenv()
 
 # Create database connection
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:"
-    f"{os.getenv('WRDS_PASSWORD')}"
-    "@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # Define SQL query to download distributions data
 QUERY = """
@@ -53,7 +50,7 @@ if DEBUG_MODE:
         engine,
     ).iloc[0]["missing_exdt"]
     print(f"Source records with missing exdt (outside debug window): {missing_exdt}", flush=True)
-engine.dispose()
+release_wrds_engine(engine)
 
 print(f"Downloaded {len(dist_data)} distribution records")
 
@@ -90,7 +87,7 @@ dist_data['cd4'] = pd.to_numeric(dist_data['distcd_str'].str[3],
 dist_data = dist_data.drop('distcd_str', axis=1)
 
 # Save processed data to parquet file
-dist_data.to_parquet("../pyData/Intermediate/CRSPdistributions.parquet")
+dist_data.to_parquet(intermediate_path("CRSPdistributions.parquet"))
 
 print(f"CRSP Distributions data saved with {len(dist_data)} records",
       flush=True)

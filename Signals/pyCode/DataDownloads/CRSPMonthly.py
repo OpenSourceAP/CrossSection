@@ -16,11 +16,12 @@ import os
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.debug_mode import log_selection, sql_date_window
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 
 print("=" * 60, flush=True)
 print("📊 CRSPMonthly.py - CRSP Monthly Stock Data", flush=True)
@@ -29,9 +30,7 @@ print("=" * 60, flush=True)
 load_dotenv()
 
 # Set up database connection to WRDS
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # SQL query to get CRSP monthly data with company names and delisting info
 QUERY = """
@@ -52,7 +51,7 @@ QUERY += f" WHERE {predicate}"
 
 # Download data from WRDS
 crsp_data = pd.read_sql_query(QUERY, engine, params=query_params)
-engine.dispose()
+release_wrds_engine(engine)
 
 # enforce formats
 crsp_data[['permno','permco']] = crsp_data[['permno','permco']].astype('Int64')
@@ -117,7 +116,7 @@ crsp_data = crsp_data.merge(mve_permco, on=['permco', 'time_avail_m'], how='left
 crsp_data = crsp_data.drop(['dlret', 'dlstcd'], axis=1)
 
 # Save final dataset
-crsp_data.to_parquet("../pyData/Intermediate/monthlyCRSP.parquet", index=False)
+crsp_data.to_parquet(intermediate_path("monthlyCRSP.parquet"), index=False)
 
 print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
 print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)

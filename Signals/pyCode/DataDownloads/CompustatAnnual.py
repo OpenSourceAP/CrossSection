@@ -5,23 +5,27 @@ Inputs:
 - WRDS comp.funda database (annual fundamentals)
 - comp.names (company master file)
 - crsp.ccmxpf_lnkhist (CRSP-Compustat link history)
+- OPENAP_COMPUSTAT_EXTRACT: optional saved raw fundamentals parquet to reuse
 
 Outputs:
 - ../pyData/Intermediate/CompustatAnnual.csv
 - ../pyData/Intermediate/a_aCompustat.parquet
 - ../pyData/Intermediate/m_aCompustat.parquet
+- Raw fundamentals parquet when OPENAP_COMPUSTAT_EXTRACT is explicitly set
 
 How to run: python CompustatAnnual.py
+Set OPENAP_DATA_ROOT to route outputs to a separate migration run directory.
 """
 
 import os
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.debug_mode import log_selection, sql_date_window, select_dates
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path, compustat_extract_path
 
 # Print script header
 print("=" * 60, flush=True)
@@ -30,9 +34,7 @@ print("=" * 60, flush=True)
 
 # Load environment variables and create database connection
 load_dotenv()
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # Define SQL query to download Compustat annual fundamentals data
 QUERY = """
@@ -62,9 +64,14 @@ log_selection("CompustatAnnual")
 predicate, query_params = sql_date_window("a.datadate", "annual")
 QUERY += f" AND {predicate}"
 
-# Execute query and download data from WRDS
-compustat_data_raw = pd.read_sql_query(QUERY, engine, params=query_params)
-print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
+extract_path = compustat_extract_path() if os.getenv("OPENAP_COMPUSTAT_EXTRACT") else None
+if extract_path is not None and extract_path.exists():
+    # Reuse the exact saved fundamentals input in both Stage 1 runs.
+    compustat_data_raw = pd.read_parquet(extract_path)
+    print(f"Reused {len(compustat_data_raw)} annual records from {extract_path}", flush=True)
+else:
+    compustat_data_raw = pd.read_sql_query(QUERY, engine, params=query_params)
+    print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
 
 # Fix column types: convert object columns with all None values to float64
 for col in compustat_data_raw.columns:
@@ -72,11 +79,19 @@ for col in compustat_data_raw.columns:
         compustat_data_raw[col].isna().all()):
         compustat_data_raw[col] = compustat_data_raw[col].astype('float64')
 
+if extract_path is not None and not extract_path.exists():
+    # Keep dataframe dates, before the downstream Stata-formatted CSV copy.
+    compustat_data_raw.to_parquet(extract_path, index=False)
+    print(f"Saved reusable Compustat fundamentals to {extract_path}", flush=True)
+
+# Reused full-history extracts still follow the configured debug selection.
+compustat_data_raw = select_dates(compustat_data_raw, "datadate", "annual")
+
 
 # Save raw CSV immediately with Stata-formatted dates
 compustat_csv = compustat_data_raw.copy()
 compustat_csv['datadate'] = pd.to_datetime(compustat_csv['datadate']).dt.strftime('%d%b%Y').str.lower()
-compustat_csv.to_csv("../pyData/Intermediate/CompustatAnnual.csv", index=False)
+compustat_csv.to_csv(intermediate_path("CompustatAnnual.csv"), index=False)
 print(f"CompustatAnnual.csv saved with {len(compustat_csv)} records", flush=True)
 
 # Create working copy for further processing
@@ -177,7 +192,7 @@ ccm_data['cik'] = ccm_data['cik'].fillna('')
 print(f"CCM linking table loaded with {len(ccm_data)} records", flush=True)
 
 # Close database connection after both queries are complete
-engine.dispose()
+release_wrds_engine(engine)
 
 # Remove duplicate columns from CCM data to replicate Stata's joinby update behavior
 ccm_columns_to_drop = ['conm', 'cusip', 'tic']  # Keep these from compustat_data
@@ -217,7 +232,7 @@ annual_data['time_avail_m'] = (
 ).dt.to_timestamp()
 
 # Save annual version
-annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
+annual_data.to_parquet(intermediate_path("a_aCompustat.parquet"), index=False)
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
 
 # Create monthly version by expanding annual data
@@ -249,7 +264,7 @@ monthly_data = monthly_data.drop(columns=['month_offset'])
 
 # Save debug availability months after expansion and deduplication.
 monthly_data = select_dates(monthly_data, "time_avail_m", "monthly")
-monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
+monthly_data.to_parquet(intermediate_path("m_aCompustat.parquet"), index=False)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)
 
 print("=" * 60, flush=True)

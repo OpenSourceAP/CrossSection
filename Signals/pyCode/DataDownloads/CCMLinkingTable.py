@@ -15,9 +15,10 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.debug_mode import log_selection
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.download_paths import intermediate_path
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 
 # Display script header
 print("=" * 60, flush=True)
@@ -29,9 +30,7 @@ log_selection("CCMLinkingTable")
 load_dotenv()
 
 # Create database connection to WRDS
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
 # SQL query to download CRSP-Compustat linking table with primary links only
 QUERY = """
@@ -48,7 +47,7 @@ ORDER BY a.gvkey
 
 # Execute query to download linking table data
 df = pd.read_sql_query(QUERY, engine)
-engine.dispose()
+release_wrds_engine(engine)
 
 # Enforce formats
 df[['lpermno','lpermco']] = df[['lpermno','lpermco']].astype('Int64')
@@ -63,7 +62,7 @@ df = df.rename(columns={
 })
 df['naics'] = df['naics'].fillna('')
 df['cik'] = df['cik'].fillna('')
-df.to_parquet("../pyData/Intermediate/CCMLinkingTable.parquet", index=False)
+df.to_parquet(intermediate_path("CCMLinkingTable.parquet"), index=False)
 
 # Display summary statistics
 print(f"CCM Linking Table downloaded with {len(df)} records", flush=True)
