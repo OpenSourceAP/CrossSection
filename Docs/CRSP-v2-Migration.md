@@ -583,3 +583,30 @@ overlaps. These are Compustat source revisions, not migration effects; the
 
 Decision (2026-10-07): keep current source values without backfills, per the
 guiding principle. Details: `Signals/tests/crsp_v2/ccm_mapping.md`.
+
+## Stage 2: monthlyCRSP (full history vs `temp/pyData25/`)
+
+Report: `Signals/tests/crsp_v2/s2_report.py monthlyCRSP` (saved under
+`Signals/pyData/Logs/crsp_v2/`). Compared through the baseline's last month,
+2024-12; the 122,990 candidate rows in 2025 are excluded.
+
+- Keys: 5,117,046 matched; 36,717 baseline-only (one empty month per PERMNO,
+  every value missing, as in Stage 1); 570 candidate-only across 40 PERMNOs,
+  95% with missing `ret`.
+- Means by decade of `ret`, `shrout`, `prc` and `mve_c` agree closely. The lower
+  candidate `retx` mean in recent decades comes entirely from newly present
+  delisting and partial-period months; on rows present in both, means agree to
+  the fifth decimal.
+- Matched values: `ret`/`ret_b4_dl` differ in 18% of rows (dividend
+  reinvestment; 16% in 1981). `vol` differs in 48%, all but 8 within one hundred
+  shares (v1 units). `cfacshr` 6.6% (vintage normalization and rounding).
+  `retx`, `prc`, `mve_c` 1-2%, mostly newly present values. Two `permco` values
+  in 2024-12 are source revisions.
+- SIC: about 189k stock-months coded 9999 (unclassified) in v1 carry a real SIC
+  in v2, almost all from 2010 on (most common: 2834, 6799, 8731, 7389); about 25k
+  more are reclassified. This changes samples for predictors that exclude
+  financials (`CBOperProf`, `OperProfRD`, `CitationsRD`, `PatentsRD`) and for
+  industry-based signals.
+
+Decision (2026-10-07): accepted, using v2 SIC codes as they come. A GitHub issue
+tracks revisiting the SIC change later.
