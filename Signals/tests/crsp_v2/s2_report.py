@@ -103,7 +103,9 @@ def main():
     # 2. Key coverage by decade (or overall when undated).
     j = old[keys].merge(new[keys], on=keys, how='outer', indicator=True)
     j['_merge'] = j['_merge'].map({'both': 'matched', 'left_only': 'baseline only', 'right_only': 'candidate only'})
-    group = (j[date].dt.year // 10 * 10).astype('Int64').rename('decade') if date else pd.Series('all', index=j.index, name='')
+    # Undated rows get their own row instead of being dropped by crosstab.
+    group = ((j[date].dt.year // 10 * 10).astype('Int64').astype(str).replace('<NA>', 'no date').rename('decade')
+             if date else pd.Series('all', index=j.index, name=''))
     cov = pd.crosstab(group, j['_merge']).reindex(columns=['matched', 'baseline only', 'candidate only'], fill_value=0)
     cov.loc['total'] = cov.sum()
     out += ['## 2. Key coverage', '', table(cov), '']
@@ -111,7 +113,7 @@ def main():
     # Means by decade on each version, for the numeric columns.
     if date:
         num = [c for c in MAIN.get(name, numeric(old, keys)) if c in new.columns]
-        means = pd.concat({lab: df.groupby(df[date].dt.year // 10 * 10)[num].mean()
+        means = pd.concat({lab: df.groupby((df[date].dt.year // 10 * 10).astype('Int64'))[num].mean()
                            for lab, df in (('base', old), ('cand', new))}, axis=1)
         means.columns = [f'{c} {lab}' for lab, c in means.columns]
         means = means[[f'{c} {lab}' for c in num for lab in ('base', 'cand')]]

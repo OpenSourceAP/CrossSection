@@ -632,3 +632,33 @@ Compared through 2024-12; 2,541,089 candidate rows in 2025 are excluded.
   scaling, as in Stage 1.
 
 Decision (2026-10-07): accepted.
+
+## Stage 2: CRSPdistributions and m_CRSPAcquisitions (full history)
+
+Reports: `s2_report.py CRSPdistributions` and `m_CRSPAcquisitions`. Attribution
+used one read-only pull of `crsp.stkdistributions` and current `crsp.msedist`.
+Distributions are compared through 2024-12 (37,001 events in 2025 excluded).
+
+- Distribution keys: 1,060,784 matched. 3,115 baseline-only/candidate-only pairs
+  are the same event with a changed `paydt` (almost always v1 date to v2
+  missing); `paydt` has no downstream consumer. Unpaired: 186 baseline-only
+  (mostly legacy information codes 7111/7181 absent from CIZ, as in Stage 1,
+  plus about 100 small dividends), 18 baseline events without ex-date, and 67
+  candidate-only. No new `distcd` values.
+- `divamt` on matched keys: 85,768 differences are rounding (v1 five decimals;
+  CIZ four for some large amounts). 175 are real and all occur where CIZ has
+  several events for the same PERMNO and ex-date; the lowest-`DisSeqNbr` rule
+  (715 duplicates removed in full history) picks a different event than v1. In
+  156, v1's amount is one of the CIZ events; about 19 may be a dividend split
+  across CIZ events that v1 recorded as one amount (e.g. PERMNO 81774).
+- Acquisitions: with CIZ events cut at 2024-12, 5,291 children vs 5,632 in the
+  baseline (115 more children come from 2025 events). All 342 baseline-only
+  children still have their parent event in CIZ, which records the child as
+  -5 (264), a different child (55), or a zero/small code (23). None of the 342
+  is in the monthly stock panel, so the Spinoff join is unaffected. One new
+  pre-2025 child is in the v2 panel. Current `msedist` reproduces the baseline's
+  5,632 children, so the changes come from CIZ.
+
+Decision (2026-10-07): accepted. The duplicate-key amount picks (0.02% of
+events, feeding the DivYield placebos) are a known limitation; summing amounts
+over duplicate keys was considered and not adopted.
