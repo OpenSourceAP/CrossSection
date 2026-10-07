@@ -6,8 +6,9 @@ frozen v1 baseline in `Signals/pyData-v1/` (code revision `ff623e3`) and the Sta
 selections in `Signals/tests/crsp_v2/README.md`. It is deliberately detailed;
 trim later.
 
-Status (2026-10-07): `CRSPMonthly.py` and `CRSPDaily.py` are migrated and their
-Stage 1 comparisons reviewed. The other seven in-scope scripts are still on v1. Plan and checklist:
+Status (2026-10-07): `CRSPMonthly.py`, `CRSPDaily.py`, `CRSPDistributions.py`, and
+`CRSPAcquisitions.py` are migrated and their Stage 1 comparisons reviewed. The
+other five in-scope scripts are still on v1. Plan and checklist:
 `temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
 
 ## How comparisons were run
@@ -401,3 +402,61 @@ constant-scale factor result is consistent with vintage normalization and
 rounding, but does not identify each security's endpoint normalization. Stage 2
 must check later periods, where return definitions or delisting handling may
 produce larger changes.
+
+## CRSPdistributions and m_CRSPAcquisitions (1981 ex-dates)
+
+Both scripts now read `crsp.stkdistributions`. WRDS `information_schema` confirmed
+the field names. The 3,473-row code-only projection of CRSP's
+`CRSP_DistributionCode_SIZ_to_CIZ_Mapping.html` is bundled as
+`Signals/pyCode/utils/crsp_distribution_code_map.csv`. Its seven CIZ code fields
+uniquely determine `distcd`; `DisOrdinaryFlg` is not in the published crosswalk.
+All 65 CIZ code combinations observed in 1981 map, including special dividends
+(1272) and spinoffs (3762–3763). Unknown combinations raise an error. Full
+field rules and consumers: `Signals/tests/crsp_v2/distribution_mapping.md`.
+
+The 1981 run found 12,916 CIZ source events and zero CIZ events with missing
+ex-dates (counted outside the selected window). The distributions script removes
+six records sharing another record's legacy event key, keeping the lowest CIZ
+`DisSeqNbr` deterministically. Its output has 12,910 rows versus 12,914 v1;
+12,910 keys match, four are v1-only, and none is v2-only. Schemas, dtypes,
+missingness, and all four derived code digits match on common keys. The four
+missing v1 rows are `distcd` 7111 (three bankruptcy filings) and 7181 (one
+exchange-requirement failure), all with zero amount. These are legacy
+information records, absent from `stkdistributions` for their PERMNOs and dates.
+
+On matched distribution keys, `divamt` differs in 283 rows. In 282, the
+absolute difference is at most 0.000005, consistent with the v1 stored amount
+being rounded to five decimals. The exception is PERMNO 19430 on 1981-03-10,
+`distcd` 3723: two CIZ events share the legacy output key but have different
+`DisSeqNbr`, child identifiers, and amounts (11.5285 and 30.875). The frozen
+v1 output retained 30.875; the deterministic lowest-sequence CIZ rule retains
+11.5285. The old script selected an unspecified first row after sorting only
+the legacy key, so this cannot be resolved from that key. This changes the
+March 1981 amount consumed by the two DivYield placebos; it does not change
+event or stock-month membership. The six discarded CIZ rows and their distinct
+sequence numbers are retained in the diagnostic source extract at
+`temp/data/crsp_v2_distributions_1981.parquet`.
+
+`facshr` differs in 15 matched rows, each by at most 0.000003; the v1 stored
+factor has five decimals and CIZ has six. CIZ has 1,022 null `DisDivAmt` source
+values in 1981, mainly stock splits and stock dividends. These become zero to
+reproduce the v1 `divamt` convention; the corresponding output has no amount
+missingness difference.
+
+The acquisition script preserves its legacy rule: any source event with
+`DisPERMNO > 999` contributes that distinct child PERMNO, regardless of the
+distribution code. It finds 70 qualifying CIZ events and 62 children versus
+63 v1 children. The 62 common children and their `SpinoffCo` values match.
+The sole v1-only child is PERMNO 3679. In the same parent event (PERMNO 46252,
+1981-08-13, amount 33.3025, code 3823), legacy `ACPERM=3679` became CIZ
+`DisPERMNO=-5`; no CIZ event references 3679. This is a source identifier
+change, not a code-mapping or filter error. PERMNO 3679 does not occur in the
+frozen monthly stock panel, so it cannot affect the downstream Spinoff join.
+
+Decision (2026-10-07): retain CIZ events, native numeric precision, the
+deterministic first-sequence rule for duplicate legacy keys, and the distinct
+child rule. Do not backfill records or identifiers from v1. The collision on
+PERMNO 19430 is documented as an output-key limitation and should be revisited
+if the downstream DivYield amount is material. Stage 2 must check whether new
+CIZ code combinations appear and whether full-history duplicate-key collisions
+require a richer output key.

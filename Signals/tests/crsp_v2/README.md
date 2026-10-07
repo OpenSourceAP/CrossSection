@@ -36,6 +36,9 @@ Producing a report does not mean its discrepancies are accepted.
 | IBESCRSPLinkingTable | Full links and full stock calendar for each version | permno, time_avail_m |
 | OPTIONMETRICSCRSPLinkingTable | Full link history | secid, permno, sdate |
 
+Distribution and acquisition field mappings, code crosswalk, collision rule,
+and 1981 coverage: `Signals/tests/crsp_v2/distribution_mapping.md`.
+
 Tolerances were fixed before the comparisons: returns use absolute and relative
 1e-7; prices use absolute 1e-6 / relative 1e-8; share/price factors use absolute
 1e-7 / relative 1e-8; volume uses absolute 1e-6 / relative 1e-8; shares use
