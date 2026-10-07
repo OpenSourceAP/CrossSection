@@ -51,6 +51,15 @@ OptionMetrics mapping and full-history comparison: `optionmetrics_mapping.md`.
 The WRDS source is unchanged; all five columns map exactly, `(secid, permno,
 sdate)` is unique, and all 34,881 candidate rows match the frozen baseline.
 
+Market index mapping and full-history comparison: `market_mapping.md`.
+`monthlyMarket` has 1,189 common months and 12 CIZ-only months in 2025, with
+no v1-only months or common-month missingness changes. Native CIZ values differ
+in 51 `vwretd`, 47 `ewretd`, and 1,003 `usdval` months, all negligible.
+
+CCM full-history mapping and comparison: `ccm_mapping.md`. The shared
+`ccmxpf_lnkhist` source has 32,306 matching link keys and no link or interval
+differences. Ten rows have `comp.names` descriptor revisions, kept as is.
+
 Tolerances were fixed before the comparisons: returns use absolute and relative
 1e-7; prices use absolute 1e-6 / relative 1e-8; share/price factors use absolute
 1e-7 / relative 1e-8; volume uses absolute 1e-6 / relative 1e-8; shares use

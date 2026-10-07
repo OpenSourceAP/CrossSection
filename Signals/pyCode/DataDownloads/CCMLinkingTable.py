@@ -1,14 +1,16 @@
-# ABOUTME: Downloads CRSP-Compustat linking table with company and stock identifiers
-# ABOUTME: Filters for primary links (LC/LU + P/C) and converts to CSV/Parquet formats
+# ABOUTME: Downloads the shared CRSP-Compustat link history and company identifiers.
+# ABOUTME: Keeps primary links and checks the link key before saving Parquet.
 """
 Inputs:
 - comp.names (company master file)
-- crsp.ccmxpf_lnkhist (CRSP-Compustat link history)
+- crsp.ccmxpf_lnkhist (CCM link history used with both CRSP SIZ and CIZ)
+- OPENAP_DATA_ROOT (optional output root; defaults to Signals/pyData)
 
 Outputs:
-- ../pyData/Intermediate/CCMLinkingTable.parquet
+- <data root>/Intermediate/CCMLinkingTable.parquet
 
-How to run: python3 CCMLinkingTable.py
+How to run: from the project root, python3 Signals/pyCode/DataDownloads/CCMLinkingTable.py
+DEBUG_MODE reads the full link history for the Stage 1 comparison.
 """
 
 import os
@@ -46,8 +48,10 @@ ORDER BY a.gvkey
 """
 
 # Execute query to download linking table data
-df = pd.read_sql_query(QUERY, engine)
-release_wrds_engine(engine)
+try:
+    df = pd.read_sql_query(QUERY, engine)
+finally:
+    release_wrds_engine(engine)
 
 # Enforce formats
 df[['lpermno','lpermco']] = df[['lpermno','lpermco']].astype('Int64')
@@ -62,6 +66,14 @@ df = df.rename(columns={
 })
 df['naics'] = df['naics'].fillna('')
 df['cik'] = df['cik'].fillna('')
+
+key = ['gvkey', 'permno', 'permco', 'liid', 'linktype', 'linkprim', 'timeLinkStart_d']
+if df[key].isna().any().any():
+    raise ValueError(f"CCM link has null key values: {key}")
+duplicate_count = int(df.duplicated(key, keep=False).sum())
+if duplicate_count:
+    raise ValueError(f"CCM link has {duplicate_count} rows with duplicate {key} keys")
+
 df.to_parquet(intermediate_path("CCMLinkingTable.parquet"), index=False)
 
 # Display summary statistics

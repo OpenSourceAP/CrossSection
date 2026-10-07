@@ -11,8 +11,9 @@ Status (2026-10-07): `CRSPMonthly.py`, `CRSPDaily.py`, `CRSPDistributions.py`, a
 `CompustatAnnual.py` is confirmed compatible with CIZ and matches v1 exactly in
 Stage 1. `OptionMetricsCRSPLink.py` is confirmed unchanged (no CIZ link table
 exists) and matches v1 exactly. `IBESCRSPLink.py` matches v1 on every common key and
-follows the full CIZ calendar. `MarketReturns.py` and
-`CCMLinkingTable.py` are still on v1. Plan and checklist:
+follows the full CIZ calendar. `MarketReturns.py` reads
+the CIZ index series; `CCMLinkingTable.py` is confirmed unchanged. Stage 1 is
+complete for all nine scripts. Plan and checklist:
 `temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
 
 ## Guiding principle: simple code over exact reproduction
@@ -546,3 +547,39 @@ value, schema, or missingness differences. Both files have 1,515 intervals
 starting and 13,807 ending after the 2024-12-31 stock calendar cutoff. Stage 2
 should check how this unchanged link joins to the full CIZ stock calendar.
 Details: `Signals/tests/crsp_v2/optionmetrics_mapping.md`.
+
+## monthlyMarket
+
+`MarketReturns.py` now reads `crsp.indmthseriesdata`: `MthTotRet` from
+IndNo 1000200 and 1000201 supplies `vwretd` and `ewretd`; `MthUsdVal`
+from 1000200 supplies `usdval` in thousands of dollars. `time_avail_m`
+is derived from `MthCalDt`. The output schema is unchanged. See
+`Signals/tests/crsp_v2/market_mapping.md` for the full mapping.
+
+The full-history comparison has 1,189 common months, no v1-only months,
+and 12 CIZ-only months in 2025. Common-month mismatches are 51 `vwretd`,
+47 `ewretd`, and 1,003 `usdval`; there are no missingness, schema, or
+dtype changes. Of the return differences, 89 are one unit in the sixth
+decimal; the largest is 0.000038. Of the used-value differences, 271 are
+at most 0.5 thousand dollars and 732 are larger; the maximum is 7,377,924
+thousand dollars (0.00966%) in 2024-12. Current `crsp.msi` exactly
+matches the frozen v1 values, so these are CIZ series differences. Their
+underlying cause is not identified; they are accepted as negligible.
+
+Decision (2026-10-07): keep native CIZ coverage, including 2025, per the
+guiding principle.
+
+## CCMLinkingTable.py
+
+WRDS's CIZ examples continue to use `crsp.ccmxpf_lnkhist`; catalog
+inspection found no separate CIZ CCM link history. The script retains the
+same query and conversions as `CompustatAnnual.py` and now checks for null
+or duplicate link keys. Full-history comparison found 32,306 matching keys,
+no unmatched keys, and no link-field, interval, schema, or missingness
+differences. Current `comp.names` descriptors differ on 10 rows across seven
+GVKEYs: `conm` 4, `tic` 7, `cusip` 2, and `sic`/`naics` 1 each, with
+overlaps. These are Compustat source revisions, not migration effects; the
+`conm` changes can touch `CustomerMomentum.py` name matches.
+
+Decision (2026-10-07): keep current source values without backfills, per the
+guiding principle. Details: `Signals/tests/crsp_v2/ccm_mapping.md`.
