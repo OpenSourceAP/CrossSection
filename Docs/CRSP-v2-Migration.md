@@ -610,3 +610,25 @@ Report: `Signals/tests/crsp_v2/s2_report.py monthlyCRSP` (saved under
 
 Decision (2026-10-07): accepted, using v2 SIC codes as they come. A GitHub issue
 tracks revisiting the SIC change later.
+
+## Stage 2: dailyCRSP and dailyCRSPprc (full history vs `temp/pyData25/`)
+
+Reports: `s2_report.py dailyCRSP` and `dailyCRSPprc` (value section on January
+1981). A separate full-history value check on matched keys used polars.
+Compared through 2024-12; 2,541,089 candidate rows in 2025 are excluded.
+`dailyCRSPprc` equals the matching columns of `dailyCRSP`.
+
+- Keys: 107,662,848 matched (every key before 2010). 11,470 candidate-only rows
+  (15 PERMNOs, 2011-2024) and 113 baseline-only rows (one PERMNO, 2024-07 to
+  2024-12) all have missing `ret` and `prc`.
+- Means by decade of `ret`, `prc`, `vol` and `shrout` agree to about four
+  significant digits.
+- `ret`: all but 115 differences are 1e-6; the 115 are scattered days from 2000
+  on, probably source revisions. `prc`: stored precision (5e-6 before 2000,
+  typically 1e-5 after; maximum 0.05 on a $607k price); no sign changes. `vol`:
+  identical. `shrout`: 58,140 days are 0 in v1 and missing in v2; about 41k
+  values changed, 30k of them in 2024 across about 2,500 PERMNOs (median 0.9%),
+  consistent with share updates after the baseline vintage. `cfacpr`: vintage
+  scaling, as in Stage 1.
+
+Decision (2026-10-07): accepted.
