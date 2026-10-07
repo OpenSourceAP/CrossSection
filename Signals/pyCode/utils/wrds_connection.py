@@ -1,6 +1,6 @@
 """WRDS engine creation and an optional single-session download context.
 
-How to run: imported by DataDownloads scripts or temp/dl_crsp_v2.py.
+How to run: imported by DataDownloads scripts or temp/code/dl_crsp_v2.py.
 Inputs: WRDS_USERNAME and WRDS_PASSWORD environment variables (or pyCode/.env).
 Outputs: a SQLAlchemy engine, or the runner's existing connection; no data files.
 The shared context attempts one connection and never retries or reconnects.
