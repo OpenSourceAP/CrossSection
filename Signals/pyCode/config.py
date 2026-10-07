@@ -6,10 +6,10 @@ This file contains configuration settings that control the behavior of
 all DataDownloads scripts. It is version controlled and not private.
 """
 
-# Row limit for DataDownloads scripts
-# 1000 = debug mode (download only 1000 rows per query)
-# -1 = production mode (download all rows)
-MAX_ROWS_DL = -1
+# Debug selections for DataDownloads scripts.
+# True = debug selections documented in utils/debug_mode.py
+# False = full production output
+DEBUG_MODE = False
 
 # Timeout for individual DataDownloads scripts (in minutes)
 # 60 = 60 minutes (default for production, handles large downloads like J_CRSPdaily.py)

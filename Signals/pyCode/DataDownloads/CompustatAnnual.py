@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from utils.debug_mode import log_selection, sql_date_window, select_dates
 
 # Print script header
 print("=" * 60, flush=True)
@@ -57,13 +57,13 @@ AND a.curcd = 'USD'
 AND a.indfmt = 'INDL'
 """
 
-# Apply row limit for debugging mode if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+# Apply the shared debug report-date selection
+log_selection("CompustatAnnual")
+predicate, query_params = sql_date_window("a.datadate", "annual")
+QUERY += f" AND {predicate}"
 
 # Execute query and download data from WRDS
-compustat_data_raw = pd.read_sql_query(QUERY, engine)
+compustat_data_raw = pd.read_sql_query(QUERY, engine, params=query_params)
 print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
 
 # Fix column types: convert object columns with all None values to float64
@@ -247,7 +247,8 @@ monthly_data = monthly_data.drop_duplicates(['permno', 'time_avail_m'], keep='la
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
 
-# Save monthly version
+# Save debug availability months after expansion and deduplication.
+monthly_data = select_dates(monthly_data, "time_avail_m", "monthly")
 monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)
 

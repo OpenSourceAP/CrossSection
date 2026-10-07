@@ -12,6 +12,9 @@ How to run: python3 CCMLinkingTable.py
 """
 
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from utils.debug_mode import log_selection
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -22,6 +25,7 @@ print("🔗 CCMLinkingTable.py - CRSP-Compustat Linking Table", flush=True)
 print("=" * 60, flush=True)
 
 # Load environment variables for database credentials
+log_selection("CCMLinkingTable")
 load_dotenv()
 
 # Create database connection to WRDS

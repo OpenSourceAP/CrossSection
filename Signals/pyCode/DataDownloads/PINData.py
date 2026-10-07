@@ -19,7 +19,10 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("PINData")
 
 load_dotenv()
 
@@ -174,9 +177,9 @@ def main():
     pin_monthly['permno'] = pin_monthly['permno'].astype('int64')
     
     # Apply debugging row limit if configured
-    if MAX_ROWS_DL > 0:
-        pin_monthly = pin_monthly.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+    if DEBUG_MODE:
+        pin_monthly = pin_monthly.head(DEBUG_ROWS)
+        print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
     # Save to parquet
     pin_monthly.to_parquet("../pyData/Intermediate/pin_monthly.parquet", index=False)

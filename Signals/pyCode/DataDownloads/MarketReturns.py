@@ -17,7 +17,7 @@ from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from utils.debug_mode import log_selection
 
 load_dotenv()
 
@@ -33,10 +33,8 @@ SELECT date, vwretd, ewretd, usdval
 FROM crsp.msi
 """
 
-# Apply debug row limit if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+log_selection("MarketReturns")
+
 
 # Download market returns data
 market_data = pd.read_sql_query(QUERY, engine)

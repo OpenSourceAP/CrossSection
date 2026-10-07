@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from utils.debug_mode import log_selection, sql_date_window
 
 print("=" * 60, flush=True)
 print("📊 CRSPMonthly.py - CRSP Monthly Stock Data", flush=True)
@@ -45,13 +45,13 @@ LEFT JOIN crsp.msedelist as c
 ON a.permno=c.permno AND date_trunc('month', a.date) = date_trunc('month', c.dlstdt)
 """
 
-# Add row limit for debugging if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+# Apply the shared debug calendar selection
+log_selection("CRSPMonthly")
+predicate, query_params = sql_date_window("a.date", "monthly")
+QUERY += f" WHERE {predicate}"
 
 # Download data from WRDS
-crsp_data = pd.read_sql_query(QUERY, engine)
+crsp_data = pd.read_sql_query(QUERY, engine, params=query_params)
 engine.dispose()
 
 # enforce formats

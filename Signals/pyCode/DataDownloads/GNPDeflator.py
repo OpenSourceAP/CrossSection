@@ -19,7 +19,10 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("GNPDeflator")
 
 load_dotenv()
 
@@ -92,9 +95,9 @@ else:
     final_data = final_data.drop_duplicates(subset=['time_avail_m'])
 
     # Apply debug row limit if configured
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+    if DEBUG_MODE:
+        final_data = final_data.head(DEBUG_ROWS)
+        print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
     # Save to parquet
     final_data.to_parquet("../pyData/Intermediate/GNPdefl.parquet", index=False)

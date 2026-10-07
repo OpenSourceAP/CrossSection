@@ -14,7 +14,10 @@ import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("BidAskSpreads")
 
 print("Processing high-frequency bid-ask spread data...")
 
@@ -47,9 +50,9 @@ data['permno'] = data['permno'].astype('int64')
 data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
 
 # Apply debugging row limit if configured
-if MAX_ROWS_DL > 0:
-    data = data.head(MAX_ROWS_DL)
-    print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+if DEBUG_MODE:
+    data = data.head(DEBUG_ROWS)
+    print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
 # Save processed data to parquet
 output_file = "../pyData/Intermediate/hf_spread.parquet"

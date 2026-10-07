@@ -20,7 +20,10 @@ from sqlalchemy import create_engine
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("CompustatShortInterest")
 
 load_dotenv()
 
@@ -35,8 +38,8 @@ def _build_query(source: Literal["legacy", "new"]) -> str:
 SELECT a.gvkey, a.iid, a.shortint, a.shortintadj, a.datadate
 FROM {table} as a
 """
-    if MAX_ROWS_DL > 0:
-        query += f" LIMIT {MAX_ROWS_DL}"
+    if DEBUG_MODE:
+        query += f" LIMIT {DEBUG_ROWS}"
     return query
 
 
@@ -64,8 +67,8 @@ def _collapse_monthly(df: pd.DataFrame) -> pd.DataFrame:
 
 # Download and process legacy short interest data (1973-2024)
 query_legacy = _build_query("legacy")
-if MAX_ROWS_DL > 0:
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+if DEBUG_MODE:
+    print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
 print(f"Downloading legacy short interest data...", flush=True)
 si_legacy = pd.read_sql_query(query_legacy, engine)

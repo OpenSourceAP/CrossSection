@@ -21,19 +21,25 @@ from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import log_selection, sql_date_window
 
 load_dotenv()
 
 def get_crsp_daily_year(year, engine):
     # Download CRSP daily data for a specific year
+    if DEBUG_MODE:
+        predicate, query_params = sql_date_window("a.date", "daily")
+    else:
+        predicate = "a.date >= %(year_start)s AND a.date <= %(year_end)s"
+        query_params = {"year_start": f"{year}-01-01", "year_end": f"{year}-12-31"}
     query = f"""
     SELECT a.permno, a.date, a.ret, a.vol, a.shrout, a.prc, a.cfacshr, a.cfacpr
     FROM crsp.dsf as a
-    WHERE date >= '{year}-01-01' and date <= '{year}-12-31'
+    WHERE {predicate}
     """
 
-    data = pd.read_sql_query(query, engine)
+    data = pd.read_sql_query(query, engine, params=query_params)
     print(f"Downloaded {len(data)} records for year {year}")
     return data
 
@@ -45,11 +51,11 @@ engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Determine year range for download (debug mode downloads only 1932, production mode downloads 1926-current)
+# Select the debug month or retain the existing production year chunks.
+log_selection("CRSPDaily")
 current_year = datetime.now().year
-if MAX_ROWS_DL > 0:
-    year_range = [1932]
-    print(f"DEBUG MODE: Only downloading year 1932 (instead of 1926-{current_year})")
+if DEBUG_MODE:
+    year_range = [1981]
 else:
     year_range = range(1926, current_year + 1)
     print(f"PRODUCTION MODE: Downloading years 1926-{current_year}")

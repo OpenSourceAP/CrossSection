@@ -21,8 +21,9 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from utils.debug_mode import log_selection
 
+log_selection("BrokerDealerLeverage")
 load_dotenv()
 
 

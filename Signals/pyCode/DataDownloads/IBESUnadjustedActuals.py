@@ -18,7 +18,10 @@ from dotenv import load_dotenv
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("IBESUnadjustedActuals")
 
 load_dotenv()
 
@@ -35,9 +38,9 @@ WHERE a.measure = 'EPS'
 """
 
 # Apply debug row limit if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+if DEBUG_MODE:
+    QUERY += f" LIMIT {DEBUG_ROWS}"
+    print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
 actuals_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()

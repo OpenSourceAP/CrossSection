@@ -18,7 +18,8 @@ import numpy as np
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import log_selection, sql_date_window
 
 print("=" * 60, flush=True)
 print("💰 CRSPDistributions.py - CRSP Dividends & Distributions", flush=True)
@@ -39,13 +40,19 @@ SELECT d.permno, d.divamt, d.distcd, d.facshr, d.rcrddt, d.exdt, d.paydt
 FROM crsp.msedist as d
 """
 
-# Add row limit for debugging if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+# Apply the shared debug calendar selection
+log_selection("CRSPDistributions")
+predicate, query_params = sql_date_window("d.exdt", "events")
+QUERY += f" WHERE {predicate}"
 
 # Execute query and download data
-dist_data = pd.read_sql_query(QUERY, engine)
+dist_data = pd.read_sql_query(QUERY, engine, params=query_params)
+if DEBUG_MODE:
+    missing_exdt = pd.read_sql_query(
+        "SELECT COUNT(*) AS missing_exdt FROM crsp.msedist WHERE exdt IS NULL",
+        engine,
+    ).iloc[0]["missing_exdt"]
+    print(f"Source records with missing exdt (outside debug window): {missing_exdt}", flush=True)
 engine.dispose()
 
 print(f"Downloaded {len(dist_data)} distribution records")

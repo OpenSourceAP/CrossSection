@@ -17,7 +17,10 @@ from sqlalchemy import create_engine
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("FamaFrenchMonthly")
 
 load_dotenv()
 
@@ -34,9 +37,9 @@ FROM ff.factors_monthly
 """
 
 # Apply row limit if in debug mode
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+if DEBUG_MODE:
+    QUERY += f" LIMIT {DEBUG_ROWS}"
+    print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
 # Download the data
 ff_monthly = pd.read_sql_query(QUERY, engine)

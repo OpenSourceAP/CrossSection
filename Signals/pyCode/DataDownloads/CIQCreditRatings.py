@@ -20,7 +20,10 @@ import os
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("CIQCreditRatings")
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -57,9 +60,9 @@ WHERE b.gvkey IS NOT NULL
 AND a.ratingdate >= '1970-01-01'
 """
 
-if MAX_ROWS_DL > 0:
-    entity_query += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting entity query to {MAX_ROWS_DL} rows")
+if DEBUG_MODE:
+    entity_query += f" LIMIT {DEBUG_ROWS}"
+    print(f"DEBUG MODE: Limiting entity query to {DEBUG_ROWS} rows")
 
 try:
     start_time = time.time()
@@ -84,9 +87,9 @@ WHERE b.gvkey IS NOT NULL
 AND a.ratingdate >= '1970-01-01'
 """
 
-if MAX_ROWS_DL > 0:
-    instrument_query += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting instrument query to {MAX_ROWS_DL} rows")
+if DEBUG_MODE:
+    instrument_query += f" LIMIT {DEBUG_ROWS}"
+    print(f"DEBUG MODE: Limiting instrument query to {DEBUG_ROWS} rows")
 
 try:
     start_time = time.time()
@@ -111,9 +114,9 @@ WHERE b.gvkey IS NOT NULL
 AND a.ratingdate >= '1970-01-01'
 """
 
-if MAX_ROWS_DL > 0:
-    security_query += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting security query to {MAX_ROWS_DL} rows")
+if DEBUG_MODE:
+    security_query += f" LIMIT {DEBUG_ROWS}"
+    print(f"DEBUG MODE: Limiting security query to {DEBUG_ROWS} rows")
 
 try:
     start_time = time.time()

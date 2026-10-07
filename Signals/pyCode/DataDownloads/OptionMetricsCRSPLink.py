@@ -17,7 +17,9 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.debug_mode import log_selection
 
+log_selection("OptionMetricsCRSPLink")
 load_dotenv()
 
 

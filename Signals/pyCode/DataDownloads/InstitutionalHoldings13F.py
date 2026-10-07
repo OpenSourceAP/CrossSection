@@ -14,7 +14,10 @@ import pandas as pd
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("InstitutionalHoldings13F")
 
 print("Processing Thomson Reuters 13F holdings data...")
 
@@ -22,11 +25,11 @@ print("Processing Thomson Reuters 13F holdings data...")
 input_file = "../pyData/Prep/tr_13f.csv"
 
 # Read CSV data with optional row limit for debugging
-nrows = None if MAX_ROWS_DL == -1 else MAX_ROWS_DL
+nrows = DEBUG_ROWS
 data = pd.read_csv(input_file, nrows=nrows)
 
-if MAX_ROWS_DL > 0:
-    print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+if DEBUG_MODE:
+    print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 print(f"Loaded {len(data)} records from {input_file}")
 
 # Remove observations without valid PERMNO identifier

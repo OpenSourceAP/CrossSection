@@ -9,8 +9,8 @@ Outputs:
 - ../pyData/Intermediate/IBESCRSPLinkingTable.parquet
 
 How to run:
-- From Signals/pyCode/: `python3 DataDownloads/CRSPIBESLink.py`
-- Example (debug mode with MAX_ROWS_DL=100): `MAX_ROWS_DL=100 python3 DataDownloads/CRSPIBESLink.py`
+- From Signals/pyCode/: `python3 DataDownloads/IBESCRSPLink.py`
+- Configure DEBUG_MODE in config.py; link output always uses the full input calendar.
 """
 
 import os
@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from config import MAX_ROWS_DL  # noqa: E402
+from utils.debug_mode import log_selection  # noqa: E402
 
 
 def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
@@ -49,6 +49,7 @@ def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
 
 
 def main() -> None:
+    log_selection("IBESCRSPLink")
     load_dotenv()
 
     print("Processing CRSP-IBES linking data...")
@@ -113,10 +114,6 @@ def main() -> None:
 
     desired_columns = ["tickerIBES", "permno", "time_avail_m", "score"]
     final_data = enforce_column_schema(merged, desired_columns)
-
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
 
     output_path = "../pyData/Intermediate/IBESCRSPLinkingTable.parquet"
     final_data.to_parquet(output_path, index=False)
