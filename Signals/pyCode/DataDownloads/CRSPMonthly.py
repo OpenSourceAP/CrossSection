@@ -1,125 +1,117 @@
-# ABOUTME: Downloads CRSP monthly stock data with company names and delisting information
-# ABOUTME: Processes returns incorporating delisting returns and computes market value of equity
-"""
-Inputs:
-- crsp.msf (CRSP monthly stock file)
-- crsp.msenames (CRSP stock names)
-- crsp.msedelist (CRSP delisting information)
+# ABOUTME: Downloads native CRSP CIZ monthly stocks and restores the existing output schema.
+"""Run: python3 Signals/pyCode/DataDownloads/CRSPMonthly.py with the project venv.
 
-Outputs:
-- ../pyData/Intermediate/monthlyCRSP.parquet
-
-How to run: python3 CRSPMonthly.py
+Inputs: crsp.msf_v2, crsp.stksecurityinfohist, crsp.stkdelists and regular
+crsp.dsf_v2 observations. Native monthly returns preserve source precision;
+ret_b4_dl inverts the delisting return in month-end delisting months and is missing
+for mid-month delistings, as in v1 (Docs/CRSP-v2-Migration.md). Daily data supply bidlo/askhi.
+DEBUG_MODE selects all 1981 stock months; supporting daily aggregation uses that
+same calendar window. Production uses full history. Cumulative factors are native.
+Outputs: OPENAP_DATA_ROOT/Intermediate/monthlyCRSP.parquet (default Signals/pyData).
+Mapping/compatibility decisions: Signals/tests/crsp_v2/monthly_mapping.md.
 """
 
 import os
-import pandas as pd
-import numpy as np
-from dotenv import load_dotenv
 import sys
-import os
+
+import numpy as np
+import pandas as pd
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.crsp_v2_codes import legacy_exchange_codes, legacy_share_codes
 from utils.debug_mode import log_selection, sql_date_window
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
 from utils.download_paths import intermediate_path
+from utils.wrds_connection import get_wrds_engine, release_wrds_engine
 
-print("=" * 60, flush=True)
-print("📊 CRSPMonthly.py - CRSP Monthly Stock Data", flush=True)
-print("=" * 60, flush=True)
 
-load_dotenv()
+def restore_pre_delisting_returns(monthly, delist):
+    """Rebuild v1-style returns before delisting; rules in Docs/CRSP-v2-Migration.md."""
+    if delist.permno.duplicated().any():
+        raise ValueError('CIZ delisting events have duplicate PERMNOs; resolve the event identity.')
+    known = monthly.mthdelflg.isin(['N', 'G', 'M', 'A', 'P', 'V'])
+    if not known.all():
+        raise ValueError(f'Unknown CIZ monthly delisting flags: {monthly.loc[~known, "mthdelflg"].unique()}')
+    includes_delisting = monthly.mthdelflg.isin(['A', 'P', 'V'])
+    if monthly.loc[includes_delisting, 'permno'].duplicated().any():
+        raise ValueError('A PERMNO has several delisting-inclusive months; resolve the event month.')
+    # Match each event to its flagged month, which can differ from the DelistingDt month.
+    monthly = monthly.merge(delist[['permno', 'delret']], on='permno', how='left', validate='many_to_one')
+    if monthly.loc[includes_delisting, 'delret'].isna().any():
+        raise ValueError('Delisting-inclusive months lack a CIZ delisting return.')
+    # V1 monthly returns are missing when a delisting month has no month-end price.
+    month_end = pd.to_datetime(monthly.mthprcdt).eq(pd.to_datetime(monthly.date))
+    monthly['ret_b4_dl'] = monthly.ret
+    monthly.loc[monthly.mthdelflg.ne('N') & ~month_end, 'ret_b4_dl'] = np.nan
+    invert = includes_delisting & month_end
+    monthly.loc[invert, 'ret_b4_dl'] = np.where(
+        monthly.loc[invert, 'delret'].gt(-1),
+        (1 + monthly.loc[invert, 'ret']) / (1 + monthly.loc[invert, 'delret']) - 1,
+        np.nan,
+    )
+    print(f'Pre-delisting returns: {invert.sum():,} month-end inverses; '
+          f'{(monthly.mthdelflg.ne("N") & ~month_end).sum():,} mid-month delistings left missing', flush=True)
+    return monthly.drop(columns='delret')
 
-# Set up database connection to WRDS
-engine = get_wrds_engine()
 
-# SQL query to get CRSP monthly data with company names and delisting info
-QUERY = """
-SELECT a.permno, a.permco, a.date, a.ret, a.retx, a.vol, a.shrout, a.prc, a.cfacshr, a.bidlo, a.askhi,
-       b.shrcd, b.exchcd, b.siccd, b.ticker, b.shrcls,
-       c.dlstcd, c.dlret
-FROM crsp.msf as a
-LEFT JOIN crsp.msenames as b
-ON a.permno=b.permno AND b.namedt<=a.date AND a.date<=b.nameendt
-LEFT JOIN crsp.msedelist as c
-ON a.permno=c.permno AND date_trunc('month', a.date) = date_trunc('month', c.dlstdt)
+log_selection('CRSPMonthly')
+engine=get_wrds_engine()
+predicate,params=sql_date_window('a.mthcaldt','monthly')
+query=f"""
+SELECT a.permno, a.permco, a.mthcaldt AS date, a.mthret AS ret, a.mthretx AS retx,
+       a.mthvol AS vol, a.shrout, a.mthprc, a.mthprcflg, a.mthprcdt, a.mthdelflg, a.mthcumfacshr AS cfacshr,
+       a.ticker, a.sharetype, a.securitytype, a.securitysubtype, a.usincflg,
+       a.issuertype, a.primaryexch, a.conditionaltype, a.tradingstatusflg,
+       b.shareclass, b.siccd
+FROM crsp.msf_v2 AS a
+LEFT JOIN crsp.stksecurityinfohist AS b
+  ON a.permno=b.permno
+ AND b.secinfostartdt <= COALESCE(a.mthprcdt,a.mthcaldt)
+ AND COALESCE(a.mthprcdt,a.mthcaldt) <= b.secinfoenddt
+WHERE {predicate}
 """
+crsp_data=pd.read_sql_query(query,engine,params=params)
+crsp_data['time_avail_m']=pd.to_datetime(crsp_data['date']).dt.to_period('M').dt.to_timestamp()
+keys=['permno','time_avail_m']
+if crsp_data.duplicated(keys).any():
+    raise ValueError('CIZ monthly/name join has duplicate security-month keys; resolve the intervals.')
 
-# Apply the shared debug calendar selection
-log_selection("CRSPMonthly")
-predicate, query_params = sql_date_window("a.date", "monthly")
-QUERY += f" WHERE {predicate}"
-
-# Download data from WRDS
-crsp_data = pd.read_sql_query(QUERY, engine, params=query_params)
+# SQL aggregation avoids downloading the complete daily file for monthly outputs.
+# V1 monthly high/low columns are extrema of daily closing prices, including BA signs.
+daily_predicate,daily_params=sql_date_window('dlycaldt','monthly')
+daily_query=f"""
+SELECT permno, date_trunc('month',dlycaldt)::date AS time_avail_m,
+       (array_agg(CASE WHEN dlyprcflg='BA' THEN -dlyprc ELSE dlyprc END
+          ORDER BY dlyprc ASC,dlycaldt ASC) FILTER(WHERE dlyprc IS NOT NULL))[1] AS bidlo,
+       (array_agg(CASE WHEN dlyprcflg='BA' THEN -dlyprc ELSE dlyprc END
+          ORDER BY dlyprc DESC,dlycaldt ASC) FILTER(WHERE dlyprc IS NOT NULL))[1] AS askhi
+FROM crsp.dsf_v2
+WHERE dlydelflg='N' AND {daily_predicate}
+GROUP BY permno,date_trunc('month',dlycaldt)
+"""
+support=pd.read_sql_query(daily_query,engine,params=daily_params)
+# Full delisting history: events are matched to flagged months by PERMNO.
+delist=pd.read_sql_query("SELECT permno, delret FROM crsp.stkdelists",engine)
 release_wrds_engine(engine)
+support['time_avail_m']=pd.to_datetime(support.time_avail_m).astype('datetime64[ns]')
+crsp_data=crsp_data.merge(support,on=keys,how='left',validate='one_to_one')
+crsp_data=restore_pre_delisting_returns(crsp_data,delist)
 
-# enforce formats
-crsp_data[['permno','permco']] = crsp_data[['permno','permco']].astype('Int64')
-crsp_data['date'] = pd.to_datetime(crsp_data['date'])
-
-
-# Handle missing string values to match Stata behavior (empty strings instead of NaN)
-string_columns = ['ticker', 'shrcls']
-for col in string_columns:
-    crsp_data[col] = crsp_data[col].fillna('')
-
-# Process SIC codes: rename siccd to sicCRSP and create 2-digit SIC
-crsp_data['sicCRSP'] = crsp_data['siccd']
-crsp_data['sic2D'] = crsp_data['sicCRSP'].astype(str).str[:2]
-crsp_data['sic2D'] = pd.to_numeric(crsp_data['sic2D'], errors='coerce')
-crsp_data['sicCRSP'] = pd.to_numeric(crsp_data['sicCRSP'], errors='coerce')
-crsp_data = crsp_data.drop('siccd', axis=1)
-
-# Convert date to monthly timestamp (equivalent to Stata's mofd function)
-crsp_data['time_avail_m'] = crsp_data['date'].dt.to_period('M').dt.to_timestamp()
-crsp_data = crsp_data.drop('date', axis=1)
-
-# Preserve original returns before delisting adjustment
-crsp_data['ret_b4_dl'] = crsp_data['ret']
-
-# Process delisting returns with exchange-specific defaults
-mask1 = (crsp_data['dlret'].isna() &
-         ((crsp_data['dlstcd'] == 500) |
-          ((crsp_data['dlstcd'] >= 520) & (crsp_data['dlstcd'] <= 584))) &
-         ((crsp_data['exchcd'] == 1) | (crsp_data['exchcd'] == 2)))
-crsp_data.loc[mask1, 'dlret'] = -0.35
-
-mask2 = (crsp_data['dlret'].isna() &
-         ((crsp_data['dlstcd'] == 500) |
-          ((crsp_data['dlstcd'] >= 520) & (crsp_data['dlstcd'] <= 584))) &
-         (crsp_data['exchcd'] == 3))
-crsp_data.loc[mask2, 'dlret'] = -0.55
-
-crsp_data.loc[(crsp_data['dlret'] < -1) & crsp_data['dlret'].notna(), 'dlret'] = -1
-crsp_data['dlret'] = crsp_data['dlret'].fillna(0)
-
-# Incorporate delisting returns into main returns
-crsp_data['ret'] = (1 + crsp_data['ret']) * (1 + crsp_data['dlret']) - 1
-mask3 = crsp_data['ret'].isna() & (crsp_data['dlret'] != 0)
-crsp_data.loc[mask3, 'ret'] = crsp_data.loc[mask3, 'dlret']
-
-# Convert units and compute market value of equity
-crsp_data['shrout'] = crsp_data['shrout'] / 1000
-crsp_data['vol'] = crsp_data['vol'] / 10000
-crsp_data['mve_c'] = crsp_data['shrout'] * np.abs(crsp_data['prc'])
-
-# Aggregate to permco level to obtain company-level market equity
-mve_permco = (
-    crsp_data.dropna(subset=['permco'])
-    .groupby(['permco', 'time_avail_m'], as_index=False)['mve_c']
-    .sum(min_count=1)
-    .rename(columns={'mve_c': 'mve_permco'})
-)
-crsp_data = crsp_data.merge(mve_permco, on=['permco', 'time_avail_m'], how='left')
-
-# Clean up unnecessary columns
-crsp_data = crsp_data.drop(['dlret', 'dlstcd'], axis=1)
-
-# Save final dataset
-crsp_data.to_parquet(intermediate_path("monthlyCRSP.parquet"), index=False)
-
-print(f"CRSP Monthly data downloaded with {len(crsp_data)} records", flush=True)
-print(f"Date range: {crsp_data['time_avail_m'].min()} to {crsp_data['time_avail_m'].max()}", flush=True)
-print("=" * 60, flush=True)
-print("✅ CRSPMonthly.py completed successfully", flush=True)
-print("=" * 60, flush=True)
+crsp_data[['permno','permco']]=crsp_data[['permno','permco']].astype('Int64')
+crsp_data['prc']=np.where(crsp_data.mthprcflg.eq('BA'),-crsp_data.mthprc,crsp_data.mthprc)
+crsp_data['shrcd']=legacy_share_codes(crsp_data)
+crsp_data['exchcd']=legacy_exchange_codes(crsp_data)
+crsp_data['ticker']=crsp_data.ticker.fillna('')
+crsp_data['shrcls']=crsp_data.shareclass.replace('NCS','').fillna('')
+crsp_data['sicCRSP']=pd.to_numeric(crsp_data.siccd,errors='coerce').astype('float64')
+crsp_data['sic2D']=pd.to_numeric(crsp_data.sicCRSP.astype(str).str[:2],errors='coerce')
+crsp_data['shrout']=crsp_data.shrout/1000
+crsp_data['vol']=crsp_data.vol/1000000
+crsp_data['mve_c']=crsp_data.shrout*crsp_data.prc.abs()
+company=(crsp_data.dropna(subset='permco').groupby(['permco','time_avail_m'],as_index=False)
+         .mve_c.sum(min_count=1).rename(columns={'mve_c':'mve_permco'}))
+crsp_data=crsp_data.merge(company,on=['permco','time_avail_m'],how='left',validate='many_to_one')
+columns=['permno','permco','ret','retx','vol','shrout','prc','cfacshr','bidlo','askhi',
+         'shrcd','exchcd','ticker','shrcls','sicCRSP','sic2D','time_avail_m','ret_b4_dl','mve_c','mve_permco']
+crsp_data=crsp_data[columns]
+crsp_data.to_parquet(intermediate_path('monthlyCRSP.parquet'),index=False)
+print(f'CRSP CIZ monthly saved: {len(crsp_data):,} rows; {crsp_data.time_avail_m.min()} to {crsp_data.time_avail_m.max()}',flush=True)
