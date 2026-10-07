@@ -662,3 +662,32 @@ Distributions are compared through 2024-12 (37,001 events in 2025 excluded).
 Decision (2026-10-07): accepted. The duplicate-key amount picks (0.02% of
 events, feeding the DivYield placebos) are a known limitation; summing amounts
 over duplicate keys was considered and not adopted.
+
+## Stage 2: market, link tables and Compustat (full history)
+
+Reports: `s2_report.py` for `monthlyMarket`, `CCMLinkingTable`,
+`OPTIONMETRICSCRSPLinkingTable`, `IBESCRSPLinkingTable`, `CompustatAnnual`,
+`a_aCompustat` and `m_aCompustat`, each restricted to the baseline's coverage.
+
+- `monthlyMarket`, `CCMLinkingTable`, `OPTIONMETRICSCRSPLinkingTable` and
+  `IBESCRSPLinkingTable` are identical to their Stage 1 outputs, which were
+  full-history comparisons against the frozen current-vintage v1. Their
+  differences from `temp/pyData25/` are therefore source-vintage changes:
+  `monthlyMarket` repeats the Stage 1 CIZ index differences (51 `vwretd`, 47
+  `ewretd`, 1,003 `usdval` months); CCM has 95 baseline-only and 137
+  candidate-only link keys, 370 links that have since ended, and `comp.names`
+  descriptor revisions; OptionMetrics has 75 baseline-only and 1,041
+  candidate-only links (1,006 in the 2020s) and extended `edate`s; IBES has
+  422 baseline-only and 3,255 candidate-only stock-months, identical tickers
+  on matched keys, and 240 changed scores.
+- Compustat: the only CRSP input is `ccmxpf_lnkhist`, so all differences are
+  Compustat revisions and new filings. `CompustatAnnual.csv` matches 517,119
+  `(gvkey, datadate)` keys (156 baseline-only, 887 candidate-only, mostly in the
+  2020s); every value column differs in at most 0.15% of matched rows apart
+  from identifier text (`conm`, `tic`, `cusip`) and `ajex` (about 1.5%). Means by
+  decade agree to four digits before 2020. `a_aCompustat` follows the same
+  pattern (302,333 matched, 107/47 unmatched). `m_aCompustat` adds 27,697
+  stock-months inside the baseline window, almost all from fiscal 2025 reports
+  filed after the baseline was pulled.
+
+Decision (2026-10-07): accepted. Stage 2 is complete for all nine scripts.
