@@ -1,13 +1,15 @@
-# ABOUTME: Downloads raw OptionMetrics-CRSP linking data from WRDS
-# ABOUTME: Saves the raw linking table without any processing
+# ABOUTME: Downloads the WRDS OptionMetrics-CRSP history link.
+# ABOUTME: Checks its comparison key and saves the raw linking table.
 """
 Inputs:
 - wrdsapps_link_crsp_optionm.opcrsphist (WRDS database)
+- OPENAP_DATA_ROOT (optional output root; defaults to Signals/pyData)
 
 Outputs:
-- ../pyData/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet
+- <data root>/Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet
 
-How to run: python3 OptionMetricsCRSPLink.py
+How to run: from the project root, python3 Signals/pyCode/DataDownloads/OptionMetricsCRSPLink.py
+The link source has no separate CIZ table; DEBUG_MODE still reads full history.
 """
 
 import os
@@ -27,8 +29,6 @@ load_dotenv()
 # Load OptionMetrics linking data from WRDS database
 print("Downloading OptionMetrics-CRSP linking data from WRDS...")
 
-engine = get_wrds_engine()
-
 # Query WRDS database for OptionMetrics linking data
 QUERY = """
 SELECT secid, sdate, edate, permno, score
@@ -37,10 +37,21 @@ WHERE permno is not null
 """
 
 # Read linking data from WRDS
-omlink = pd.read_sql_query(QUERY, engine)
+engine = get_wrds_engine()
+try:
+    omlink = pd.read_sql_query(QUERY, engine)
+finally:
+    release_wrds_engine(engine)
 print(f"Loaded {len(omlink)} OptionMetrics linking records from WRDS")
 
-release_wrds_engine(engine)
+key = ["secid", "permno", "sdate"]
+if omlink[key].isna().any().any():
+    raise ValueError(f"OptionMetrics-CRSP link has null key values: {key}")
+duplicate_count = int(omlink.duplicated(key, keep=False).sum())
+if duplicate_count:
+    raise ValueError(
+        f"OptionMetrics-CRSP link has {duplicate_count} rows with duplicate {key} keys"
+    )
 
 # Save raw linking table
 omlink.to_parquet(intermediate_path("OPTIONMETRICSCRSPLinkingTable.parquet"), index=False)

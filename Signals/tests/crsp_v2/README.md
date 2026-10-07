@@ -39,6 +39,18 @@ Producing a report does not mean its discrepancies are accepted.
 Distribution and acquisition field mappings, code crosswalk, collision rule,
 and 1981 coverage: `Signals/tests/crsp_v2/distribution_mapping.md`.
 
+IBES Stage 1 uses the frozen v1 full keys-only calendar and the separate CIZ
+calendar at `Signals/pyData-v2/Inputs/CRSP_stock_month_calendar.parquet`; the v2
+debug `monthlyCRSP` is not a full calendar. Run `compare.py IBESCRSPLinkingTable`
+over the full outputs. Result: 2,684,399 common keys with identical ticker and
+score, zero v1-only keys, and 50,529 v2-only keys (289 historical CIZ-only
+calendar keys and 50,240 in 2025). See `ibes_mapping.md` for the seven historical
+PERMNOs and sample decisions.
+
+OptionMetrics mapping and full-history comparison: `optionmetrics_mapping.md`.
+The WRDS source is unchanged; all five columns map exactly, `(secid, permno,
+sdate)` is unique, and all 34,881 candidate rows match the frozen baseline.
+
 Tolerances were fixed before the comparisons: returns use absolute and relative
 1e-7; prices use absolute 1e-6 / relative 1e-8; share/price factors use absolute
 1e-7 / relative 1e-8; volume uses absolute 1e-6 / relative 1e-8; shares use

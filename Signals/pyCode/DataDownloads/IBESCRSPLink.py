@@ -3,16 +3,16 @@
 """
 Inputs:
 - Env vars `WRDS_USERNAME` and `WRDS_PASSWORD` for database access
-- ../pyData/Intermediate/monthlyCRSP.parquet (columns: permno, time_avail_m)
-- OPENAP_CRSP_CALENDAR: required full keys-only calendar in debug mode
+- wrdsapps_link_crsp_ibes.ibcrsphist (historical ticker/PERMNO intervals)
+- Full CRSP stock-month calendar (permno, time_avail_m); in debug mode,
+  OPENAP_CRSP_CALENDAR must point to a separate full keys-only extract from msf_v2
 
 Outputs:
-- ../pyData/Intermediate/IBESCRSPLinkingTable.parquet
+- OPENAP_DATA_ROOT/Intermediate/IBESCRSPLinkingTable.parquet
 
 How to run:
-- From Signals/pyCode/: `python3 DataDownloads/IBESCRSPLink.py`
-- Configure DEBUG_MODE in config.py; link output always uses the full input calendar.
-- Set OPENAP_DATA_ROOT for migration output and OPENAP_CRSP_CALENDAR for its calendar.
+- From repository root: `OPENAP_DATA_ROOT=Signals/pyData-v2 OPENAP_CRSP_CALENDAR=Signals/pyData-v2/Inputs/CRSP_stock_month_calendar.parquet /opt/venv/projects/openap/bin/python3 Signals/pyCode/DataDownloads/IBESCRSPLink.py`
+- For Stage 1, set DEBUG_MODE=True in memory; the link uses the full calendar.
 """
 
 import os
@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.debug_mode import log_selection  # noqa: E402
 from utils.wrds_connection import get_wrds_engine, release_wrds_engine
 from utils.download_paths import intermediate_path, crsp_calendar_path
+from config import DEBUG_MODE
 
 
 def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
@@ -59,6 +60,18 @@ def main() -> None:
 
     # Validate the complete calendar before issuing any database query.
     calendar_path = crsp_calendar_path()
+    crsp_monthly = pd.read_parquet(calendar_path, columns=["permno", "time_avail_m"])
+    crsp_monthly["time_avail_m"] = pd.to_datetime(crsp_monthly["time_avail_m"])
+    keys = ["permno", "time_avail_m"]
+    if crsp_monthly.empty or crsp_monthly[keys].isna().any().any() or crsp_monthly.duplicated(keys).any():
+        raise ValueError("The CRSP calendar is empty or has null/duplicate security-month keys.")
+    if DEBUG_MODE and (
+        crsp_monthly.time_avail_m.min() > pd.Timestamp("1976-01-01")
+        or crsp_monthly.time_avail_m.max() < pd.Timestamp("2024-12-01")
+    ):
+        raise ValueError("Debug IBES requires a full CRSP stock-month calendar, not the 1981 monthly debug output.")
+    print(f"Full CRSP calendar: {len(crsp_monthly):,} distinct stock-months, "
+          f"{crsp_monthly.time_avail_m.min():%Y-%m} to {crsp_monthly.time_avail_m.max():%Y-%m}")
 
     username = os.getenv("WRDS_USERNAME")
     password = os.getenv("WRDS_PASSWORD")
@@ -69,15 +82,16 @@ def main() -> None:
     engine = get_wrds_engine()
 
     query = """
-        SELECT ticker, permno, ncusip, sdate, edate, score
-        FROM wrdsapps.ibcrsphist AS a
+        SELECT ticker, permno, sdate, edate, score
+        FROM wrdsapps_link_crsp_ibes.ibcrsphist
         WHERE permno IS NOT NULL
     """
 
-    iblink_raw = pd.read_sql_query(query, engine)
+    try:
+        iblink_raw = pd.read_sql_query(query, engine)
+    finally:
+        release_wrds_engine(engine)
     print(f"Loaded {len(iblink_raw):,} IBES-CRSP linking records from WRDS")
-
-    release_wrds_engine(engine)
 
     # Convert start/end dates to monthly timestamps
     iclink = iblink_raw.copy()
@@ -87,13 +101,9 @@ def main() -> None:
     ).dt.to_timestamp()
     iclink = iclink.drop(columns=["sdate", "edate"])
 
-    # Load CRSP monthly calendar to align date ranges
-    crsp_monthly = pd.read_parquet(
-        calendar_path,
-        columns=["permno", "time_avail_m"],
-    )
-
-    merged = iclink.merge(crsp_monthly, on="permno", how="outer")
+    # Each link can cover many months and a PERMNO can have several link
+    # intervals. Calendar keys are unique; this expansion is intentional.
+    merged = iclink.merge(crsp_monthly, on="permno", how="inner")
     merged = merged.query("ticker.notna()").copy()
     merged = merged[
         (merged["time_avail_m"].notna())
@@ -103,13 +113,18 @@ def main() -> None:
 
     print(f"Joined IBES-CRSP link with CRSP monthly data: {len(merged):,} rows")
 
-    # De-duplicate by keeping the lowest score within each permno-month
+    # Keep the lowest score per stock-month; ties go to the first IBES ticker.
+    overlapping = merged.duplicated(keys, keep=False)
+    overlap_groups = merged.loc[overlapping, keys].drop_duplicates().shape[0]
+    print(f"Overlapping link candidates: {overlapping.sum():,} rows across "
+          f"{overlap_groups:,} stock-months")
     merged = (
-        merged.sort_values(["permno", "time_avail_m", "score"], ascending=[True, True, True])
+        merged.sort_values(["permno", "time_avail_m", "score", "ticker"])
         .groupby(["permno", "time_avail_m"], as_index=False)
         .first()
     )
-    print(f"Removed duplicates by score: {len(merged):,} rows")
+    print(f"Resolved {overlapping.sum() - overlap_groups:,} extra link candidates; "
+          f"{len(merged):,} unique stock-months")
 
     merged = merged.rename(columns={"ticker": "tickerIBES"})
 

@@ -9,8 +9,21 @@ trim later.
 Status (2026-10-07): `CRSPMonthly.py`, `CRSPDaily.py`, `CRSPDistributions.py`, and
 `CRSPAcquisitions.py` are migrated and their Stage 1 comparisons reviewed.
 `CompustatAnnual.py` is confirmed compatible with CIZ and matches v1 exactly in
-Stage 1. The other four in-scope scripts are still on v1. Plan and checklist:
+Stage 1. `OptionMetricsCRSPLink.py` is confirmed unchanged (no CIZ link table
+exists) and matches v1 exactly. `IBESCRSPLink.py` matches v1 on every common key and
+follows the full CIZ calendar. `MarketReturns.py` and
+`CCMLinkingTable.py` are still on v1. Plan and checklist:
 `temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
+
+## Guiding principle: simple code over exact reproduction
+
+The project trades off simplicity of code against exact reproduction of v1
+output, and generally favors simplicity. Use CIZ data and coverage as they come
+rather than adding filters or backfills to reproduce v1 samples. Accept a
+difference when it follows from v2 data or coverage and the code stays simple;
+fix it when it is a migration error. Selections must still be deterministic:
+whenever a rule picks one row from several, sort on a stable identifier after the
+substantive criterion.
 
 ## How comparisons were run
 
@@ -500,3 +513,36 @@ PERMNO 19430 is documented as an output-key limitation and should be revisited
 if the downstream DivYield amount is material. Stage 2 must check whether new
 CIZ code combinations appear and whether full-history duplicate-key collisions
 require a richer output key.
+
+## IBESCRSPLinkingTable
+
+`IBESCRSPLink.py` uses `wrdsapps_link_crsp_ibes.ibcrsphist`. WRDS metadata and
+bidirectional `EXCEPT ALL` show that it is row-for-row identical to
+`wrdsapps.ibcrsphist`; no distinct CIZ link table was found in the inspected
+schemas. A separate full keys-only `crsp.msf_v2` calendar has 5,240,606 unique
+stock-months through 2025-12. The existing debug `monthlyCRSP` covers only 1981
+and cannot serve as this calendar.
+
+The Stage 1 output has 2,684,399 keys matching v1 exactly, no v1-only keys, and
+50,529 v2-only keys. Ticker, score, schema, dtypes, and missingness match on every
+common key. All added keys are absent from the v1 calendar: 50,240 are in 2025,
+and 289 are historical months for seven CIZ-only PERMNOs. The existing interval
+and lowest-score rules were retained; 46 stock-months have overlapping link
+candidates.
+
+Decisions (2026-10-07): the 289 historical CIZ-only months and the 2025 months
+enter downstream samples; the link follows the v2 calendar without filtering.
+Equal-score overlaps now go to the first IBES ticker (sort on `score`, then
+`ticker`). A rerun with this tie rule leaves every common key unchanged.
+Details: `Signals/tests/crsp_v2/ibes_mapping.md`.
+
+## OptionMetrics–CRSP link
+
+WRDS catalog inspection on 2026-10-07 found no CIZ or `_v2` counterpart to
+`wrdsapps_link_crsp_optionm.opcrsphist`. All five output columns remain direct
+mappings. The full-history candidate equals the frozen v1 output: 34,881 common
+keys; zero unmatched, null, or duplicate `(secid, permno, sdate)` keys; and zero
+value, schema, or missingness differences. Both files have 1,515 intervals
+starting and 13,807 ending after the 2024-12-31 stock calendar cutoff. Stage 2
+should check how this unchanged link joins to the full CIZ stock calendar.
+Details: `Signals/tests/crsp_v2/optionmetrics_mapping.md`.
