@@ -41,7 +41,10 @@ df = df.with_columns(
             (pl.col("time_avail_m").dt.year() - 1960) * 12
             + pl.col("time_avail_m").dt.month()
             - 1
-        ).alias("time_numeric")
+        )
+        # polars_ols under polars 2 requires float regressors
+        .cast(pl.Float64)
+        .alias("time_numeric")
     ]
 )
 df = df.with_columns(

@@ -269,7 +269,7 @@ def _agg_sum_polars(
 ) -> pl.Expr:
     """Aggregate `expr` according to mode (rolling/expanding/group) and groups `over`."""
     if mode == "rolling":
-        return expr.rolling_sum(window_size, min_periods=min_samples).over(over)
+        return expr.rolling_sum(window_size, min_samples=min_samples).over(over)
     elif mode == "expanding":
         return expr.cumsum().over(over)
     else:

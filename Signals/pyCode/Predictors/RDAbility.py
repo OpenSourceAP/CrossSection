@@ -161,18 +161,18 @@ def _stata_rolling(
     # Rolling function mapping
     rolling_funcs = {
         "mean": lambda col: col.rolling_mean(
-            window_size=window, min_periods=min_periods
+            window_size=window, min_samples=min_periods
         ),
-        "sum": lambda col: col.rolling_sum(window_size=window, min_periods=min_periods),
-        "std": lambda col: col.rolling_std(window_size=window, min_periods=min_periods),
+        "sum": lambda col: col.rolling_sum(window_size=window, min_samples=min_periods),
+        "std": lambda col: col.rolling_std(window_size=window, min_samples=min_periods),
         "sd": lambda col: col.rolling_std(
-            window_size=window, min_periods=min_periods
+            window_size=window, min_samples=min_periods
         ),  # Alias for std
         "count": lambda col: col.is_not_null()
         .cast(pl.Int32)
-        .rolling_sum(window_size=window, min_periods=min_periods),
-        "min": lambda col: col.rolling_min(window_size=window, min_periods=min_periods),
-        "max": lambda col: col.rolling_max(window_size=window, min_periods=min_periods),
+        .rolling_sum(window_size=window, min_samples=min_periods),
+        "min": lambda col: col.rolling_min(window_size=window, min_samples=min_periods),
+        "max": lambda col: col.rolling_max(window_size=window, min_samples=min_periods),
         "first": lambda col: col.first(),
     }
 

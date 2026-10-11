@@ -91,7 +91,7 @@ daily_crsp = daily_crsp.with_columns([
 
 # Compute 3-month rolling standard deviation (60 business days, min 10 observations)
 daily_crsp = daily_crsp.with_columns([
-    pl.col('ret').rolling_std(60, min_periods=10).over('permno').alias('SIGMA')
+    pl.col('ret').rolling_std(60, min_samples=10).over('permno').alias('SIGMA')
 ])
 
 # Drop missing SIGMA
