@@ -64,26 +64,26 @@ Each script below has an approval checkbox for review of its consolidated findin
 Rows: v1 65,652; v2 65,042. Keys: 65,039 matched, 613 v1-only, 3 v2-only.
 Schema: the same 20 columns and dtypes.
 
-| Column | Mismatches | % | v1 missing → v2 present | v1 present → v2 missing |
-|---|---|---|---|---|
-| `askhi` | 791 | 1.22% | 0 | 0 |
-| `bidlo` | 872 | 1.34% | 0 | 0 |
-| `cfacshr` | 4,834 | 7.43% | 0 | 244 |
-| `exchcd` | 439 | 0.67% | 244 | 0 |
-| `mve_c` | 1,313 | 2.02% | 452 | 14 |
-| `mve_permco` | 1,315 | 2.02% | 451 | 14 |
-| `permco` | 0 | 0.00% | 0 | 0 |
-| `prc` | 1,303 | 2.00% | 456 | 0 |
-| `ret` | 10,563 | 16.24% | 906 | 3 |
-| `ret_b4_dl` | 10,504 | 16.15% | 882 | 3 |
-| `retx` | 1,379 | 2.12% | 1,126 | 2 |
-| `shrcd` | 256 | 0.39% | 244 | 0 |
-| `shrcls` | 6 | 0.01% | 0 | 0 |
-| `shrout` | 19 | 0.03% | 0 | 19 |
-| `sic2D` | 246 | 0.38% | 244 | 0 |
-| `sicCRSP` | 246 | 0.38% | 244 | 0 |
-| `ticker` | 234 | 0.36% | 0 | 0 |
-| `vol` | 30 | 0.05% | 0 | 0 |
+| Column       | Mismatches | %      | v1 missing → v2 present | v1 present → v2 missing |
+| ------------ | ---------- | ------ | ----------------------- | ----------------------- |
+| `askhi`      | 791        | 1.22%  | 0                       | 0                       |
+| `bidlo`      | 872        | 1.34%  | 0                       | 0                       |
+| `cfacshr`    | 4,834      | 7.43%  | 0                       | 244                     |
+| `exchcd`     | 439        | 0.67%  | 244                     | 0                       |
+| `mve_c`      | 1,313      | 2.02%  | 452                     | 14                      |
+| `mve_permco` | 1,315      | 2.02%  | 451                     | 14                      |
+| `permco`     | 0          | 0.00%  | 0                       | 0                       |
+| `prc`        | 1,303      | 2.00%  | 456                     | 0                       |
+| `ret`        | 10,563     | 16.24% | 906                     | 3                       |
+| `ret_b4_dl`  | 10,504     | 16.15% | 882                     | 3                       |
+| `retx`       | 1,379      | 2.12%  | 1,126                   | 2                       |
+| `shrcd`      | 256        | 0.39%  | 244                     | 0                       |
+| `shrcls`     | 6          | 0.01%  | 0                       | 0                       |
+| `shrout`     | 19         | 0.03%  | 0                       | 19                      |
+| `sic2D`      | 246        | 0.38%  | 244                     | 0                       |
+| `sicCRSP`    | 246        | 0.38%  | 244                     | 0                       |
+| `ticker`     | 234        | 0.36%  | 0                       | 0                       |
+| `vol`        | 30         | 0.05%  | 0                       | 0                       |
 
 Mismatch counts include missingness transitions. The sections below attribute
 each group. In short:
@@ -116,12 +116,12 @@ each group. In short:
 
 Sources:
 
-| v2 table | Used for |
-|---|---|
-| `crsp.msf_v2` | identifiers, `mthret`, `mthretx`, `mthprc`/`mthprcflg`/`mthprcdt`, `mthvol`, `shrout`, `mthcumfacshr`, `mthdelflg`, ticker, classification fields |
-| `crsp.stksecurityinfohist` | `shareclass`, `siccd` (effective-dated) |
-| `crsp.stkdelists` | `delret`; full history, one event per PERMNO |
-| `crsp.dsf_v2` | `bidlo`, `askhi`, aggregated in SQL per security-month |
+| v2 table                   | Used for                                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `crsp.msf_v2`              | identifiers, `mthret`, `mthretx`, `mthprc`/`mthprcflg`/`mthprcdt`, `mthvol`, `shrout`, `mthcumfacshr`, `mthdelflg`, ticker, classification fields |
+| `crsp.stksecurityinfohist` | `shareclass`, `siccd` (effective-dated)                                                                                                           |
+| `crsp.stkdelists`          | `delret`; full history, one event per PERMNO                                                                                                      |
+| `crsp.dsf_v2`              | `bidlo`, `askhi`, aggregated in SQL per security-month                                                                                            |
 
 Column rules (full table in `Signals/tests/crsp_v2/monthly_mapping.md`):
 
@@ -156,14 +156,14 @@ delisting-inclusive month per PERMNO, a delisting-inclusive month without
 
 `mthdelflg` (flag type DE):
 
-| Flag | Meaning | Delisting return in `mthret`? |
-|---|---|---|
-| N | Not applicable (active) | — |
-| A | Amount (distributions) | included |
-| P | Price (next available) | included |
-| V | Value partial | included |
-| G | Gap | excluded |
-| M | Missing | excluded |
+| Flag | Meaning                 | Delisting return in `mthret`? |
+| ---- | ----------------------- | ----------------------------- |
+| N    | Not applicable (active) | —                             |
+| A    | Amount (distributions)  | included                      |
+| P    | Price (next available)  | included                      |
+| V    | Value partial           | included                      |
+| G    | Gap                     | excluded                      |
+| M    | Missing                 | excluded                      |
 
 `mthretflg` (aggregate return flag, type AR). 1981 counts: CR 61,017, NT 1,862,
 MP 856, NS 577, IP 369, DE 262, GP 99. Meanings follow the matching codes in the
@@ -184,12 +184,12 @@ can therefore fall in the month after `delistingdt`.
 CIZ has no monthly return-before-delisting field: `mthret` already includes the
 delisting return. `CRSPMonthly.py` rebuilds `ret_b4_dl` from monthly data:
 
-| `mthdelflg` | Last price at month end? | `ret_b4_dl` |
-|---|---|---|
-| N (active) | any | `mthret` |
-| A, P, V (delisting return included) | yes | `(1 + mthret) / (1 + delret) - 1`; missing if `delret = -1` |
-| G, M (delisting return excluded) | yes | `mthret` |
-| A, P, V, G, M | no (mid-month delisting) | missing |
+| `mthdelflg`                         | Last price at month end? | `ret_b4_dl`                                                 |
+| ----------------------------------- | ------------------------ | ----------------------------------------------------------- |
+| N (active)                          | any                      | `mthret`                                                    |
+| A, P, V (delisting return included) | yes                      | `(1 + mthret) / (1 + delret) - 1`; missing if `delret = -1` |
+| G, M (delisting return excluded)    | yes                      | `mthret`                                                    |
+| A, P, V, G, M                       | no (mid-month delisting) | missing                                                     |
 
 `delret` comes from `crsp.stkdelists` (one event per PERMNO). The mid-month rule
 reproduces v1. There, `msf.ret` is missing in a delisting month whenever the last
@@ -214,10 +214,10 @@ dropped for three reasons:
 
 ##### Match to v1 (1981, all securities)
 
-| | Rows | `ret_b4_dl` missing |
-|---|---|---|
-| v1 | 65,652 | 3,599 (5.48%) |
-| v2 | 65,042 | 2,110 (3.24%) |
+|     | Rows   | `ret_b4_dl` missing |
+| --- | ------ | ------------------- |
+| v1  | 65,652 | 3,599 (5.48%)       |
+| v2  | 65,042 | 2,110 (3.24%)       |
 
 - Keys: 65,039 matched; 613 v1-only, all with missing `ret_b4_dl`; 3 v2-only.
 - Missingness on matched keys: 2,104 both missing; 882 v1 missing → v2
@@ -225,11 +225,11 @@ dropped for three reasons:
 - Values on the 62,050 rows where both are present:
 
 | Absolute difference | Share of rows |
-|---|---|
-| ≤ 1e-7 | 84.5% |
-| ≤ 1e-4 | 86.9% |
-| ≤ 1e-3 | 97.1% |
-| ≤ 1e-2 | 99.8% |
+| ------------------- | ------------- |
+| ≤ 1e-7              | 84.5%         |
+| ≤ 1e-4              | 86.9%         |
+| ≤ 1e-3              | 97.1%         |
+| ≤ 1e-2              | 99.8%         |
 
   The median difference is 0, the 90th percentile 0.00023, the 99th percentile
   0.0019, and the maximum 1.74.
@@ -323,12 +323,12 @@ or no valid previous month-end price to compound from. CIZ instead uses the last
 price within the month and flags partial periods in `mthretflg`. In 1981
 non-delisting months, v2 adds:
 
-| Case | `mthretflg` | Rows | v2 adds |
-|---|---|---|---|
-| Last price before month end (1–28 days, median 4) | mostly IP | 212 | `prc`, `mve_c`, `ret` |
-| First month of a new security | NS | 577 | `ret` |
-| Incomplete period | IP | 56 | `ret` |
-| Gap during period | GP | 43 | `ret` |
+| Case                                              | `mthretflg` | Rows | v2 adds               |
+| ------------------------------------------------- | ----------- | ---- | --------------------- |
+| Last price before month end (1–28 days, median 4) | mostly IP   | 212  | `prc`, `mve_c`, `ret` |
+| First month of a new security                     | NS          | 577  | `ret`                 |
+| Incomplete period                                 | IP          | 56   | `ret`                 |
+| Gap during period                                 | GP          | 43   | `ret`                 |
 
 In the first case, 184 of the 212 prices are bid/ask averages (BA) and 166 are
 NASDAQ (v1 `exchcd = 3`). v1 has no `ret` in any of the 212.
@@ -457,11 +457,11 @@ the same schema and keys as the frozen v1 baseline; missingness is identical.
 Under the predeclared tolerances, `vol` and `shrout` match exactly. The remaining
 differences are:
 
-| Column | Beyond tolerance | Attribution |
-|---|---:|---|
-| `prc` | 912 | Every case is a negative bid/ask price and differs by exactly 0.000005, the last decimal of the v1 stored price. |
-| `ret` | 60 | Every case differs by exactly 0.000001; only four pairs of v1/v2 values occur. These are precision-level differences, with no missingness transition. The upstream rounding rule is unverified. |
-| `cfacpr` | 15,884 raw | 15,745 pass after rebasing to each security's first common date. The other 139 raw mismatches and 42 rebased-only mismatches fit v1's six-decimal factor rounding. A fixed positive scale per PERMNO can put *every* v2 factor within half a unit of its v1 value's sixth decimal; all 5,224 PERMNOs satisfy this interval check. |
+| Column   | Beyond tolerance | Attribution                                                                                                                                                                                                                                                                                                                       |
+| -------- | ---------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prc`    |              912 | Every case is a negative bid/ask price and differs by exactly 0.000005, the last decimal of the v1 stored price.                                                                                                                                                                                                                  |
+| `ret`    |               60 | Every case differs by exactly 0.000001; only four pairs of v1/v2 values occur. These are precision-level differences, with no missingness transition. The upstream rounding rule is unverified.                                                                                                                                   |
+| `cfacpr` |       15,884 raw | 15,745 pass after rebasing to each security's first common date. The other 139 raw mismatches and 42 rebased-only mismatches fit v1's six-decimal factor rounding. A fixed positive scale per PERMNO can put *every* v2 factor within half a unit of its v1 value's sixth decimal; all 5,224 PERMNOs satisfy this interval check. |
 
 Decision (2026-10-07): keep the native v2 values and exclude the separate
 delisting-event rows. No January sample membership or missingness changes. The
@@ -647,15 +647,15 @@ substitution. The code now checks that the interval match resolves each
 
 Column mapping for this script:
 
-| Output fields | Classification and rule |
-|---|---|
-| All 110 `CompustatAnnual.csv` fields | Exact values from the shared `comp.funda` extract; `datadate` is formatted as a Stata date string. No CRSP fields. |
-| Original annual fields, except the zero-filled fields below | Carried from the extract; `gvkey` is converted to numeric and `datadate` to a timestamp. |
-| `permno`, `permco` | Exact `ccmxpf_lnkhist.lpermno`, `.lpermco`, renamed and converted to nullable integers. |
-| `cik`, `sic`, `naics` | Exact `comp.names` fields, with missing `naics` represented as an empty string. |
-| `nopi`, `dvt`, `ob`, `dm`, `dc`, `aco`, `ap`, `intan`, `ao`, `lco`, `lo`, `rect`, `invt`, `drc`, `spi`, `gdwl`, `che`, `dp`, `act`, `lct`, `tstkp`, `dvpa`, `scstkc`, `sstk`, `mib`, `ivao`, `prstkc`, `prstkcc`, `txditc`, `ivst` | Derived by filling missing values with zero. |
-| `cnum`, `dr`, `dc`, `xint0`, `xsga0`, `xad0`, `time_avail_m` | Derived: six-character CUSIP prefix; sum of available deferred-revenue components; convertible-debt fallback rule then zero fill; expense zero fills; report month plus six months. |
-| Monthly output | Annual fields carried through, except `time_avail_m` advances by 0–11 months; existing month-key deduplication applies. |
+| Output fields                                                                                                                                                                                                                      | Classification and rule                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| All 110 `CompustatAnnual.csv` fields                                                                                                                                                                                               | Exact values from the shared `comp.funda` extract; `datadate` is formatted as a Stata date string. No CRSP fields.                                                                  |
+| Original annual fields, except the zero-filled fields below                                                                                                                                                                        | Carried from the extract; `gvkey` is converted to numeric and `datadate` to a timestamp.                                                                                            |
+| `permno`, `permco`                                                                                                                                                                                                                 | Exact `ccmxpf_lnkhist.lpermno`, `.lpermco`, renamed and converted to nullable integers.                                                                                             |
+| `cik`, `sic`, `naics`                                                                                                                                                                                                              | Exact `comp.names` fields, with missing `naics` represented as an empty string.                                                                                                     |
+| `nopi`, `dvt`, `ob`, `dm`, `dc`, `aco`, `ap`, `intan`, `ao`, `lco`, `lo`, `rect`, `invt`, `drc`, `spi`, `gdwl`, `che`, `dp`, `act`, `lct`, `tstkp`, `dvpa`, `scstkc`, `sstk`, `mib`, `ivao`, `prstkc`, `prstkcc`, `txditc`, `ivst` | Derived by filling missing values with zero.                                                                                                                                        |
+| `cnum`, `dr`, `dc`, `xint0`, `xsga0`, `xad0`, `time_avail_m`                                                                                                                                                                       | Derived: six-character CUSIP prefix; sum of available deferred-revenue components; convertible-debt fallback rule then zero fill; expense zero fills; report month plus six months. |
+| Monthly output                                                                                                                                                                                                                     | Annual fields carried through, except `time_avail_m` advances by 0–11 months; existing month-key deduplication applies.                                                             |
 
 No field was redefined for CIZ and no downstream consumer needs a new rule.
 `ccmxpf_lnkhist` is joined by `gvkey` across historical intervals and then
