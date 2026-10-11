@@ -16,7 +16,7 @@ the CIZ index series; `CCMLinkingTable.py` is confirmed unchanged. Stage 1 is
 complete for all nine scripts. Plan and checklist:
 `temp/docs/1007a_plan-crsp-v2.md` (not version controlled).
 
-## Guiding principle: simple code over exact reproduction
+### Guiding principle: simple code over exact reproduction
 
 The project trades off simplicity of code against exact reproduction of v1
 output, and generally favors simplicity. Use CIZ data and coverage as they come
@@ -26,7 +26,40 @@ fix it when it is a migration error. Selections must still be deterministic:
 whenever a rule picks one row from several, sort on a stable identifier after the
 substantive criterion.
 
-## How comparisons were run
+### Lessons for the remaining scripts
+
+- Check WRDS metadata (`crsp.metaiteminfo`, `crsp.metaflaginfo`) and the cellar
+  docs before assuming a v1 field has no v2 equivalent. Earlier planning wrongly
+  listed `cfacshr` and the `ret_b4_dl` inputs as unavailable.
+- Expect the same two definition changes elsewhere: delisting months and
+  partial-period returns. In `dsf_v2`, delisting returns are separate rows
+  (`dlydelflg = 'Y'`); the daily download excludes them to match v1 `dsf` keys.
+- v1 numeric fields are often rounded (factors to 6 decimals, volume to hundreds
+  of shares), so tight tolerances flag many harmless differences. Attribute
+  groups rather than relying on tolerance pass rates.
+- Saving small v2 extracts locally made iteration fast and avoided repeated
+  WRDS sessions.
+
+### Stage 2: market, link tables and Compustat (full history) — shared comparison scope
+
+Reports: `s2_report.py` for `monthlyMarket`, `CCMLinkingTable`,
+`OPTIONMETRICSCRSPLinkingTable`, `IBESCRSPLinkingTable`, `CompustatAnnual`,
+`a_aCompustat` and `m_aCompustat`, each restricted to the baseline's coverage.
+
+`monthlyMarket`, `CCMLinkingTable`, `OPTIONMETRICSCRSPLinkingTable` and
+`IBESCRSPLinkingTable` are identical to their Stage 1 outputs, which were
+full-history comparisons against the frozen current-vintage v1. Their
+differences from `temp/pyData25/` are therefore source-vintage changes.
+
+Decision (2026-10-07): accepted. Stage 2 is complete for all nine scripts.
+
+Each script below has an approval checkbox for review of its consolidated findings.
+
+## CRSPMonthly.py
+
+- [ ] Approved
+
+### How comparisons were run
 
 - Candidate: `CRSPMonthly.py` run with `DEBUG_MODE = True` set in memory (not
   in `config.py`) and `OPENAP_DATA_ROOT=Signals/pyData-v2`. The debug selection is
@@ -43,46 +76,7 @@ substantive criterion.
   in the summary below are rounding or documented definition changes; the counts
   are diagnostics, not acceptance criteria.
 
-## CompustatAnnual.py: CCM source unchanged
-
-The script's CRSP dependency is `crsp.ccmxpf_lnkhist`. WRDS's CIZ sample
-programs in `cellar/Manuals-and-Reference/CRSP-v2/ccm_ciz_merge.ipynb` and
-`ccm_link_collapse.ipynb` still use this table. WRDS metadata confirms the
-current names and types of `gvkey`, `linkprim`, `linktype`, `liid`, `lpermno`,
-`lpermco`, `linkdt`, and `linkenddt`. Its existing `LC`/`LU` and `P`/`C`
-filters, inclusive interval test, and output schema therefore need no CIZ field
-substitution. The code now checks that the interval match resolves each
-`(gvkey, datadate)` to one link before producing annual data.
-
-Column mapping for this script:
-
-| Output fields | Classification and rule |
-|---|---|
-| All 110 `CompustatAnnual.csv` fields | Exact values from the shared `comp.funda` extract; `datadate` is formatted as a Stata date string. No CRSP fields. |
-| Original annual fields, except the zero-filled fields below | Carried from the extract; `gvkey` is converted to numeric and `datadate` to a timestamp. |
-| `permno`, `permco` | Exact `ccmxpf_lnkhist.lpermno`, `.lpermco`, renamed and converted to nullable integers. |
-| `cik`, `sic`, `naics` | Exact `comp.names` fields, with missing `naics` represented as an empty string. |
-| `nopi`, `dvt`, `ob`, `dm`, `dc`, `aco`, `ap`, `intan`, `ao`, `lco`, `lo`, `rect`, `invt`, `drc`, `spi`, `gdwl`, `che`, `dp`, `act`, `lct`, `tstkp`, `dvpa`, `scstkc`, `sstk`, `mib`, `ivao`, `prstkc`, `prstkcc`, `txditc`, `ivst` | Derived by filling missing values with zero. |
-| `cnum`, `dr`, `dc`, `xint0`, `xsga0`, `xad0`, `time_avail_m` | Derived: six-character CUSIP prefix; sum of available deferred-revenue components; convertible-debt fallback rule then zero fill; expense zero fills; report month plus six months. |
-| Monthly output | Annual fields carried through, except `time_avail_m` advances by 0–11 months; existing month-key deduplication applies. |
-
-No field was redefined for CIZ and no downstream consumer needs a new rule.
-`ccmxpf_lnkhist` is joined by `gvkey` across historical intervals and then
-filtered by report date. The 1981 run had 6,486 rows before this interval filter
-and 4,493 after it; the latter had no repeated `(gvkey, datadate)` or
-`(gvkey, permno, datadate)` keys. Monthly output had no repeated
-`(permno, time_avail_m)` keys. The older full-history `temp/pyData25` annual and
-monthly files also have no repeated keys on these respective output keys.
-
-Stage 1 reused `Signals/pyData-v1/Inputs/CompustatAnnual_raw.parquet`, set
-`DEBUG_MODE=True` in memory, and wrote to `Signals/pyData-v2/`. The three
-`compare.py` reports have identical schemas and dtypes, zero unmatched keys, and
-zero column mismatches: 6,744 `CompustatAnnual.csv` rows, 4,493
-`a_aCompustat` rows, and 3,692 `m_aCompustat` rows. The CSV files are also byte
-identical (SHA-256 `b59af83af4f9521f92ddfee0faac669513f1dfdcc9ab930a20d2aec00dd1ef1e`).
-There is no Stage 1 sample or value change to approve.
-
-## Implementation: `CRSPMonthly.py`
+### Implementation: `CRSPMonthly.py`
 
 Sources:
 
@@ -122,7 +116,7 @@ after the join, duplicate PERMNOs in `stkdelists`, more than one
 delisting-inclusive month per PERMNO, a delisting-inclusive month without
 `delret`, or an unknown `mthdelflg`. Nothing is silently deduplicated.
 
-## Reference: CIZ flags used here
+### Reference: CIZ flags used here
 
 `mthdelflg` (flag type DE):
 
@@ -147,7 +141,7 @@ In CIZ daily data, the delisting return is a separate `dsf_v2` row
 (`dlydelflg = 'Y'`) dated `deldlydt`, the trading day after the delisting date. It
 can therefore fall in the month after `delistingdt`.
 
-## Comparison summary (1981, WRDS run 2026-10-07)
+### Comparison summary (1981, WRDS run 2026-10-07)
 
 Rows: v1 65,652; v2 65,042. Keys: 65,039 matched, 613 v1-only, 3 v2-only.
 Schema: the same 20 columns and dtypes.
@@ -181,9 +175,9 @@ each group. In short:
 - cumulative-factor vintage scaling and rounding: `cfacshr`;
 - rounding: price and volume.
 
-## monthlyCRSP: `ret_b4_dl` (return before delisting)
+### monthlyCRSP: `ret_b4_dl` (return before delisting)
 
-### Definition
+#### Definition
 
 CIZ has no monthly return-before-delisting field: `mthret` already includes the
 delisting return. `CRSPMonthly.py` rebuilds `ret_b4_dl` from monthly data:
@@ -216,7 +210,7 @@ dropped for three reasons:
 
 `dsf_v2` is still queried, but only for `bidlo`/`askhi`.
 
-### Match to v1 (1981, all securities)
+#### Match to v1 (1981, all securities)
 
 | | Rows | `ret_b4_dl` missing |
 |---|---|---|
@@ -248,7 +242,7 @@ dropped for three reasons:
   the rule changed 245 values and cut v1-missing → v2-present rows from 1,126 to
   882.
 
-### Interpretation
+#### Interpretation
 
 The small differences in returns fit CIZ's change in dividend reinvestment
 convention. The CRSP v2 paper ("Rewriting CRSP History", JFQA, in the cellar)
@@ -261,7 +255,7 @@ are partial-period returns; see "Partial-period prices and returns" below.
 Decision (2026-10-06): accepted as close enough. The only downstream consumer
 is `Signals/pyCode/Predictors/CustomerMomentum.py`, which drops missing values.
 
-## monthlyCRSP: mid-month delisting months
+### monthlyCRSP: mid-month delisting months
 
 In v1, the name-history record (`msenames`) ends on the last trading day. In a
 month where a security delists before month end, the name join therefore fails:
@@ -290,7 +284,7 @@ replicate v1 exactly. Rejected in favor of keeping the information.
 
 Decision (2026-10-07): keep the v2 values.
 
-## monthlyCRSP: share and exchange codes
+### monthlyCRSP: share and exchange codes
 
 `Signals/pyCode/utils/crsp_v2_codes.py` rebuilds `shrcd` and `exchcd` from CIZ
 classifications. It matches the WRDS CIZ-to-SIZ macro
@@ -320,7 +314,7 @@ Apart from the delisting months above, 1981 differences are:
   exchange codes; the macro maps them (`primaryexch = X`, `conditionaltype = NT`)
   to 0. Both are excluded by downstream filters, which use only codes 1–3.
 
-## monthlyCRSP: partial-period prices and returns
+### monthlyCRSP: partial-period prices and returns
 
 v1 monthly prices and returns are missing when there is no valid month-end price,
 or no valid previous month-end price to compound from. CIZ instead uses the last
@@ -345,7 +339,7 @@ Decision (2026-10-07): keep the v2 values, consistent with the delisting-month
 decision. To restore v1 behavior, blank returns with these `mthretflg` values and
 prices dated before month end.
 
-## monthlyCRSP: other column differences (1981)
+### monthlyCRSP: other column differences (1981)
 
 - `ret`: 9,654 matched values differ. 9,486 of them (98%) fall in dividend months
   (v1 `ret ≠ retx`), consistent with CIZ reinvesting dividends on the ex-date;
@@ -389,7 +383,7 @@ prices dated before month end.
   month is in 1982 (not checked). No data are lost. The 3 v2-only rows (PERMNO
   18383 and 80550 in January, 31377 in April) have not been investigated.
 
-## Downstream effects
+### Downstream effects
 
 - `SignalMasterTable.py:49` keeps `shrcd ∈ {10,11,12}` and `exchcd ∈ {1,2,3}`.
   `ExchSwitch.py` and other predictors test only exchange codes 1–3. Share-code
@@ -403,7 +397,7 @@ prices dated before month end.
   codes where v1 had them missing, which reduces this ambiguity.
 - `ret_b4_dl` is read only by `CustomerMomentum.py`.
 
-## Caveats for the full-history (Stage 2) run
+### Caveats for the full-history (Stage 2) run
 
 - One delisting event per PERMNO, and at most one delisting-inclusive month per
   PERMNO, hold in 1981. Over full history they are assumptions; the script
@@ -414,21 +408,38 @@ prices dated before month end.
   differences against `temp/pyData25/` will mix definition changes with a year
   of revisions.
 
-## Lessons for the remaining scripts
+### Stage 2: monthlyCRSP (full history vs `temp/pyData25/`)
 
-- Check WRDS metadata (`crsp.metaiteminfo`, `crsp.metaflaginfo`) and the cellar
-  docs before assuming a v1 field has no v2 equivalent. Earlier planning wrongly
-  listed `cfacshr` and the `ret_b4_dl` inputs as unavailable.
-- Expect the same two definition changes elsewhere: delisting months and
-  partial-period returns. In `dsf_v2`, delisting returns are separate rows
-  (`dlydelflg = 'Y'`); the daily download excludes them to match v1 `dsf` keys.
-- v1 numeric fields are often rounded (factors to 6 decimals, volume to hundreds
-  of shares), so tight tolerances flag many harmless differences. Attribute
-  groups rather than relying on tolerance pass rates.
-- Saving small v2 extracts locally made iteration fast and avoided repeated
-  WRDS sessions.
+Report: `Signals/tests/crsp_v2/s2_report.py monthlyCRSP` (saved under
+`Signals/pyData/Logs/crsp_v2/`). Compared through the baseline's last month,
+2024-12; the 122,990 candidate rows in 2025 are excluded.
 
-## dailyCRSP and dailyCRSPprc (January 1981)
+- Keys: 5,117,046 matched; 36,717 baseline-only (one empty month per PERMNO,
+  every value missing, as in Stage 1); 570 candidate-only across 40 PERMNOs,
+  95% with missing `ret`.
+- Means by decade of `ret`, `shrout`, `prc` and `mve_c` agree closely. The lower
+  candidate `retx` mean in recent decades comes entirely from newly present
+  delisting and partial-period months; on rows present in both, means agree to
+  the fifth decimal.
+- Matched values: `ret`/`ret_b4_dl` differ in 18% of rows (dividend
+  reinvestment; 16% in 1981). `vol` differs in 48%, all but 8 within one hundred
+  shares (v1 units). `cfacshr` 6.6% (vintage normalization and rounding).
+  `retx`, `prc`, `mve_c` 1-2%, mostly newly present values. Two `permco` values
+  in 2024-12 are source revisions.
+- SIC: about 189k stock-months coded 9999 (unclassified) in v1 carry a real SIC
+  in v2, almost all from 2010 on (most common: 2834, 6799, 8731, 7389); about 25k
+  more are reclassified. This changes samples for predictors that exclude
+  financials (`CBOperProf`, `OperProfRD`, `CitationsRD`, `PatentsRD`) and for
+  industry-based signals.
+
+Decision (2026-10-07): accepted, using v2 SIC codes as they come. A GitHub issue
+tracks revisiting the SIC change later.
+
+## CRSPDaily.py
+
+- [ ] Approved
+
+### dailyCRSP and dailyCRSPprc (January 1981)
 
 `CRSPDaily.py` reads native `crsp.dsf_v2` stock days with `dlydelflg = 'N'`.
 The 29 separate delisting-event rows in January (`Y`) are excluded because v1
@@ -457,7 +468,33 @@ rounding, but does not identify each security's endpoint normalization. Stage 2
 must check later periods, where return definitions or delisting handling may
 produce larger changes.
 
-## CRSPdistributions and m_CRSPAcquisitions (1981 ex-dates)
+### Stage 2: dailyCRSP and dailyCRSPprc (full history vs `temp/pyData25/`)
+
+Reports: `s2_report.py dailyCRSP` and `dailyCRSPprc` (value section on January
+1981). A separate full-history value check on matched keys used polars.
+Compared through 2024-12; 2,541,089 candidate rows in 2025 are excluded.
+`dailyCRSPprc` equals the matching columns of `dailyCRSP`.
+
+- Keys: 107,662,848 matched (every key before 2010). 11,470 candidate-only rows
+  (15 PERMNOs, 2011-2024) and 113 baseline-only rows (one PERMNO, 2024-07 to
+  2024-12) all have missing `ret` and `prc`.
+- Means by decade of `ret`, `prc`, `vol` and `shrout` agree to about four
+  significant digits.
+- `ret`: all but 115 differences are 1e-6; the 115 are scattered days from 2000
+  on, probably source revisions. `prc`: stored precision (5e-6 before 2000,
+  typically 1e-5 after; maximum 0.05 on a $607k price); no sign changes. `vol`:
+  identical. `shrout`: 58,140 days are 0 in v1 and missing in v2; about 41k
+  values changed, 30k of them in 2024 across about 2,500 PERMNOs (median 0.9%),
+  consistent with share updates after the baseline vintage. `cfacpr`: vintage
+  scaling, as in Stage 1.
+
+Decision (2026-10-07): accepted.
+
+## CRSPDistributions.py
+
+- [ ] Approved
+
+### Shared source and code mapping
 
 Both scripts now read `crsp.stkdistributions`. WRDS `information_schema` confirmed
 the field names. The 3,473-row code-only projection of CRSP's
@@ -467,6 +504,8 @@ uniquely determine `distcd`; `DisOrdinaryFlg` is not in the published crosswalk.
 All 65 CIZ code combinations observed in 1981 map, including special dividends
 (1272) and spinoffs (3762–3763). Unknown combinations raise an error. Full
 field rules and consumers: `Signals/tests/crsp_v2/distribution_mapping.md`.
+
+### CRSPdistributions (1981 ex-dates)
 
 The 1981 run found 12,916 CIZ source events and zero CIZ events with missing
 ex-dates (counted outside the selected window). The distributions script removes
@@ -497,6 +536,58 @@ values in 1981, mainly stock splits and stock dividends. These become zero to
 reproduce the v1 `divamt` convention; the corresponding output has no amount
 missingness difference.
 
+### Shared distributions and acquisitions decision (Stage 1)
+
+Decision (2026-10-07): retain CIZ events, native numeric precision, the
+deterministic first-sequence rule for duplicate legacy keys, and the distinct
+child rule. Do not backfill records or identifiers from v1. The collision on
+PERMNO 19430 is documented as an output-key limitation and should be revisited
+if the downstream DivYield amount is material. Stage 2 must check whether new
+CIZ code combinations appear and whether full-history duplicate-key collisions
+require a richer output key.
+
+### Stage 2: CRSPdistributions (full history)
+
+Reports: `s2_report.py CRSPdistributions` and `m_CRSPAcquisitions`. Attribution
+used one read-only pull of `crsp.stkdistributions` and current `crsp.msedist`.
+Distributions are compared through 2024-12 (37,001 events in 2025 excluded).
+
+- Distribution keys: 1,060,784 matched. 3,115 baseline-only/candidate-only pairs
+  are the same event with a changed `paydt` (almost always v1 date to v2
+  missing); `paydt` has no downstream consumer. Unpaired: 186 baseline-only
+  (mostly legacy information codes 7111/7181 absent from CIZ, as in Stage 1,
+  plus about 100 small dividends), 18 baseline events without ex-date, and 67
+  candidate-only. No new `distcd` values.
+- `divamt` on matched keys: 85,768 differences are rounding (v1 five decimals;
+  CIZ four for some large amounts). 175 are real and all occur where CIZ has
+  several events for the same PERMNO and ex-date; the lowest-`DisSeqNbr` rule
+  (715 duplicates removed in full history) picks a different event than v1. In
+  156, v1's amount is one of the CIZ events; about 19 may be a dividend split
+  across CIZ events that v1 recorded as one amount (e.g. PERMNO 81774).
+
+### Shared distributions and acquisitions decision (Stage 2)
+
+Decision (2026-10-07): accepted. The duplicate-key amount picks (0.02% of
+events, feeding the DivYield placebos) are a known limitation; summing amounts
+over duplicate keys was considered and not adopted.
+
+## CRSPAcquisitions.py
+
+- [ ] Approved
+
+### Shared source and code mapping
+
+Both scripts now read `crsp.stkdistributions`. WRDS `information_schema` confirmed
+the field names. The 3,473-row code-only projection of CRSP's
+`CRSP_DistributionCode_SIZ_to_CIZ_Mapping.html` is bundled as
+`Signals/pyCode/utils/crsp_distribution_code_map.csv`. Its seven CIZ code fields
+uniquely determine `distcd`; `DisOrdinaryFlg` is not in the published crosswalk.
+All 65 CIZ code combinations observed in 1981 map, including special dividends
+(1272) and spinoffs (3762–3763). Unknown combinations raise an error. Full
+field rules and consumers: `Signals/tests/crsp_v2/distribution_mapping.md`.
+
+### m_CRSPAcquisitions (1981 ex-dates)
+
 The acquisition script preserves its legacy rule: any source event with
 `DisPERMNO > 999` contributes that distinct child PERMNO, regardless of the
 distribution code. It finds 70 qualifying CIZ events and 62 children versus
@@ -507,6 +598,8 @@ The sole v1-only child is PERMNO 3679. In the same parent event (PERMNO 46252,
 change, not a code-mapping or filter error. PERMNO 3679 does not occur in the
 frozen monthly stock panel, so it cannot affect the downstream Spinoff join.
 
+### Shared distributions and acquisitions decision (Stage 1)
+
 Decision (2026-10-07): retain CIZ events, native numeric precision, the
 deterministic first-sequence rule for duplicate legacy keys, and the distinct
 child rule. Do not backfill records or identifiers from v1. The collision on
@@ -515,7 +608,86 @@ if the downstream DivYield amount is material. Stage 2 must check whether new
 CIZ code combinations appear and whether full-history duplicate-key collisions
 require a richer output key.
 
-## IBESCRSPLinkingTable
+### Stage 2: m_CRSPAcquisitions (full history)
+
+Reports: `s2_report.py CRSPdistributions` and `m_CRSPAcquisitions`. Attribution
+used one read-only pull of `crsp.stkdistributions` and current `crsp.msedist`.
+Distributions are compared through 2024-12 (37,001 events in 2025 excluded).
+
+- Acquisitions: with CIZ events cut at 2024-12, 5,291 children vs 5,632 in the
+  baseline (115 more children come from 2025 events). All 342 baseline-only
+  children still have their parent event in CIZ, which records the child as
+  -5 (264), a different child (55), or a zero/small code (23). None of the 342
+  is in the monthly stock panel, so the Spinoff join is unaffected. One new
+  pre-2025 child is in the v2 panel. Current `msedist` reproduces the baseline's
+  5,632 children, so the changes come from CIZ.
+
+### Shared distributions and acquisitions decision (Stage 2)
+
+Decision (2026-10-07): accepted. The duplicate-key amount picks (0.02% of
+events, feeding the DivYield placebos) are a known limitation; summing amounts
+over duplicate keys was considered and not adopted.
+
+## CompustatAnnual.py
+
+- [ ] Approved
+
+### CompustatAnnual.py: CCM source unchanged
+
+The script's CRSP dependency is `crsp.ccmxpf_lnkhist`. WRDS's CIZ sample
+programs in `cellar/Manuals-and-Reference/CRSP-v2/ccm_ciz_merge.ipynb` and
+`ccm_link_collapse.ipynb` still use this table. WRDS metadata confirms the
+current names and types of `gvkey`, `linkprim`, `linktype`, `liid`, `lpermno`,
+`lpermco`, `linkdt`, and `linkenddt`. Its existing `LC`/`LU` and `P`/`C`
+filters, inclusive interval test, and output schema therefore need no CIZ field
+substitution. The code now checks that the interval match resolves each
+`(gvkey, datadate)` to one link before producing annual data.
+
+Column mapping for this script:
+
+| Output fields | Classification and rule |
+|---|---|
+| All 110 `CompustatAnnual.csv` fields | Exact values from the shared `comp.funda` extract; `datadate` is formatted as a Stata date string. No CRSP fields. |
+| Original annual fields, except the zero-filled fields below | Carried from the extract; `gvkey` is converted to numeric and `datadate` to a timestamp. |
+| `permno`, `permco` | Exact `ccmxpf_lnkhist.lpermno`, `.lpermco`, renamed and converted to nullable integers. |
+| `cik`, `sic`, `naics` | Exact `comp.names` fields, with missing `naics` represented as an empty string. |
+| `nopi`, `dvt`, `ob`, `dm`, `dc`, `aco`, `ap`, `intan`, `ao`, `lco`, `lo`, `rect`, `invt`, `drc`, `spi`, `gdwl`, `che`, `dp`, `act`, `lct`, `tstkp`, `dvpa`, `scstkc`, `sstk`, `mib`, `ivao`, `prstkc`, `prstkcc`, `txditc`, `ivst` | Derived by filling missing values with zero. |
+| `cnum`, `dr`, `dc`, `xint0`, `xsga0`, `xad0`, `time_avail_m` | Derived: six-character CUSIP prefix; sum of available deferred-revenue components; convertible-debt fallback rule then zero fill; expense zero fills; report month plus six months. |
+| Monthly output | Annual fields carried through, except `time_avail_m` advances by 0–11 months; existing month-key deduplication applies. |
+
+No field was redefined for CIZ and no downstream consumer needs a new rule.
+`ccmxpf_lnkhist` is joined by `gvkey` across historical intervals and then
+filtered by report date. The 1981 run had 6,486 rows before this interval filter
+and 4,493 after it; the latter had no repeated `(gvkey, datadate)` or
+`(gvkey, permno, datadate)` keys. Monthly output had no repeated
+`(permno, time_avail_m)` keys. The older full-history `temp/pyData25` annual and
+monthly files also have no repeated keys on these respective output keys.
+
+Stage 1 reused `Signals/pyData-v1/Inputs/CompustatAnnual_raw.parquet`, set
+`DEBUG_MODE=True` in memory, and wrote to `Signals/pyData-v2/`. The three
+`compare.py` reports have identical schemas and dtypes, zero unmatched keys, and
+zero column mismatches: 6,744 `CompustatAnnual.csv` rows, 4,493
+`a_aCompustat` rows, and 3,692 `m_aCompustat` rows. The CSV files are also byte
+identical (SHA-256 `b59af83af4f9521f92ddfee0faac669513f1dfdcc9ab930a20d2aec00dd1ef1e`).
+There is no Stage 1 sample or value change to approve.
+
+### Stage 2: full history
+
+- Compustat: the only CRSP input is `ccmxpf_lnkhist`, so all differences are
+  Compustat revisions and new filings. `CompustatAnnual.csv` matches 517,119
+  `(gvkey, datadate)` keys (156 baseline-only, 887 candidate-only, mostly in the
+  2020s); every value column differs in at most 0.15% of matched rows apart
+  from identifier text (`conm`, `tic`, `cusip`) and `ajex` (about 1.5%). Means by
+  decade agree to four digits before 2020. `a_aCompustat` follows the same
+  pattern (302,333 matched, 107/47 unmatched). `m_aCompustat` adds 27,697
+  stock-months inside the baseline window, almost all from fiscal 2025 reports
+  filed after the baseline was pulled.
+
+## IBESCRSPLink.py
+
+- [ ] Approved
+
+### IBESCRSPLinkingTable
 
 `IBESCRSPLink.py` uses `wrdsapps_link_crsp_ibes.ibcrsphist`. WRDS metadata and
 bidirectional `EXCEPT ALL` show that it is row-for-row identical to
@@ -537,7 +709,16 @@ Equal-score overlaps now go to the first IBES ticker (sort on `score`, then
 `ticker`). A rerun with this tie rule leaves every common key unchanged.
 Details: `Signals/tests/crsp_v2/ibes_mapping.md`.
 
-## OptionMetrics–CRSP link
+### Stage 2: full history
+
+IBES has 422 baseline-only and 3,255 candidate-only stock-months, identical tickers
+on matched keys, and 240 changed scores.
+
+## OptionMetricsCRSPLink.py
+
+- [ ] Approved
+
+### OptionMetrics–CRSP link
 
 WRDS catalog inspection on 2026-10-07 found no CIZ or `_v2` counterpart to
 `wrdsapps_link_crsp_optionm.opcrsphist`. All five output columns remain direct
@@ -548,7 +729,16 @@ starting and 13,807 ending after the 2024-12-31 stock calendar cutoff. Stage 2
 should check how this unchanged link joins to the full CIZ stock calendar.
 Details: `Signals/tests/crsp_v2/optionmetrics_mapping.md`.
 
-## monthlyMarket
+### Stage 2: full history
+
+OptionMetrics has 75 baseline-only and 1,041
+candidate-only links (1,006 in the 2020s) and extended `edate`s.
+
+## MarketReturns.py
+
+- [ ] Approved
+
+### monthlyMarket
 
 `MarketReturns.py` now reads `crsp.indmthseriesdata`: `MthTotRet` from
 IndNo 1000200 and 1000201 supplies `vwretd` and `ewretd`; `MthUsdVal`
@@ -569,7 +759,16 @@ underlying cause is not identified; they are accepted as negligible.
 Decision (2026-10-07): keep native CIZ coverage, including 2025, per the
 guiding principle.
 
+### Stage 2: full history
+
+`monthlyMarket` repeats the Stage 1 CIZ index differences (51 `vwretd`, 47
+`ewretd`, 1,003 `usdval` months).
+
 ## CCMLinkingTable.py
+
+- [ ] Approved
+
+### CCMLinkingTable.py
 
 WRDS's CIZ examples continue to use `crsp.ccmxpf_lnkhist`; catalog
 inspection found no separate CIZ CCM link history. The script retains the
@@ -584,110 +783,8 @@ overlaps. These are Compustat source revisions, not migration effects; the
 Decision (2026-10-07): keep current source values without backfills, per the
 guiding principle. Details: `Signals/tests/crsp_v2/ccm_mapping.md`.
 
-## Stage 2: monthlyCRSP (full history vs `temp/pyData25/`)
+### Stage 2: full history
 
-Report: `Signals/tests/crsp_v2/s2_report.py monthlyCRSP` (saved under
-`Signals/pyData/Logs/crsp_v2/`). Compared through the baseline's last month,
-2024-12; the 122,990 candidate rows in 2025 are excluded.
-
-- Keys: 5,117,046 matched; 36,717 baseline-only (one empty month per PERMNO,
-  every value missing, as in Stage 1); 570 candidate-only across 40 PERMNOs,
-  95% with missing `ret`.
-- Means by decade of `ret`, `shrout`, `prc` and `mve_c` agree closely. The lower
-  candidate `retx` mean in recent decades comes entirely from newly present
-  delisting and partial-period months; on rows present in both, means agree to
-  the fifth decimal.
-- Matched values: `ret`/`ret_b4_dl` differ in 18% of rows (dividend
-  reinvestment; 16% in 1981). `vol` differs in 48%, all but 8 within one hundred
-  shares (v1 units). `cfacshr` 6.6% (vintage normalization and rounding).
-  `retx`, `prc`, `mve_c` 1-2%, mostly newly present values. Two `permco` values
-  in 2024-12 are source revisions.
-- SIC: about 189k stock-months coded 9999 (unclassified) in v1 carry a real SIC
-  in v2, almost all from 2010 on (most common: 2834, 6799, 8731, 7389); about 25k
-  more are reclassified. This changes samples for predictors that exclude
-  financials (`CBOperProf`, `OperProfRD`, `CitationsRD`, `PatentsRD`) and for
-  industry-based signals.
-
-Decision (2026-10-07): accepted, using v2 SIC codes as they come. A GitHub issue
-tracks revisiting the SIC change later.
-
-## Stage 2: dailyCRSP and dailyCRSPprc (full history vs `temp/pyData25/`)
-
-Reports: `s2_report.py dailyCRSP` and `dailyCRSPprc` (value section on January
-1981). A separate full-history value check on matched keys used polars.
-Compared through 2024-12; 2,541,089 candidate rows in 2025 are excluded.
-`dailyCRSPprc` equals the matching columns of `dailyCRSP`.
-
-- Keys: 107,662,848 matched (every key before 2010). 11,470 candidate-only rows
-  (15 PERMNOs, 2011-2024) and 113 baseline-only rows (one PERMNO, 2024-07 to
-  2024-12) all have missing `ret` and `prc`.
-- Means by decade of `ret`, `prc`, `vol` and `shrout` agree to about four
-  significant digits.
-- `ret`: all but 115 differences are 1e-6; the 115 are scattered days from 2000
-  on, probably source revisions. `prc`: stored precision (5e-6 before 2000,
-  typically 1e-5 after; maximum 0.05 on a $607k price); no sign changes. `vol`:
-  identical. `shrout`: 58,140 days are 0 in v1 and missing in v2; about 41k
-  values changed, 30k of them in 2024 across about 2,500 PERMNOs (median 0.9%),
-  consistent with share updates after the baseline vintage. `cfacpr`: vintage
-  scaling, as in Stage 1.
-
-Decision (2026-10-07): accepted.
-
-## Stage 2: CRSPdistributions and m_CRSPAcquisitions (full history)
-
-Reports: `s2_report.py CRSPdistributions` and `m_CRSPAcquisitions`. Attribution
-used one read-only pull of `crsp.stkdistributions` and current `crsp.msedist`.
-Distributions are compared through 2024-12 (37,001 events in 2025 excluded).
-
-- Distribution keys: 1,060,784 matched. 3,115 baseline-only/candidate-only pairs
-  are the same event with a changed `paydt` (almost always v1 date to v2
-  missing); `paydt` has no downstream consumer. Unpaired: 186 baseline-only
-  (mostly legacy information codes 7111/7181 absent from CIZ, as in Stage 1,
-  plus about 100 small dividends), 18 baseline events without ex-date, and 67
-  candidate-only. No new `distcd` values.
-- `divamt` on matched keys: 85,768 differences are rounding (v1 five decimals;
-  CIZ four for some large amounts). 175 are real and all occur where CIZ has
-  several events for the same PERMNO and ex-date; the lowest-`DisSeqNbr` rule
-  (715 duplicates removed in full history) picks a different event than v1. In
-  156, v1's amount is one of the CIZ events; about 19 may be a dividend split
-  across CIZ events that v1 recorded as one amount (e.g. PERMNO 81774).
-- Acquisitions: with CIZ events cut at 2024-12, 5,291 children vs 5,632 in the
-  baseline (115 more children come from 2025 events). All 342 baseline-only
-  children still have their parent event in CIZ, which records the child as
-  -5 (264), a different child (55), or a zero/small code (23). None of the 342
-  is in the monthly stock panel, so the Spinoff join is unaffected. One new
-  pre-2025 child is in the v2 panel. Current `msedist` reproduces the baseline's
-  5,632 children, so the changes come from CIZ.
-
-Decision (2026-10-07): accepted. The duplicate-key amount picks (0.02% of
-events, feeding the DivYield placebos) are a known limitation; summing amounts
-over duplicate keys was considered and not adopted.
-
-## Stage 2: market, link tables and Compustat (full history)
-
-Reports: `s2_report.py` for `monthlyMarket`, `CCMLinkingTable`,
-`OPTIONMETRICSCRSPLinkingTable`, `IBESCRSPLinkingTable`, `CompustatAnnual`,
-`a_aCompustat` and `m_aCompustat`, each restricted to the baseline's coverage.
-
-- `monthlyMarket`, `CCMLinkingTable`, `OPTIONMETRICSCRSPLinkingTable` and
-  `IBESCRSPLinkingTable` are identical to their Stage 1 outputs, which were
-  full-history comparisons against the frozen current-vintage v1. Their
-  differences from `temp/pyData25/` are therefore source-vintage changes:
-  `monthlyMarket` repeats the Stage 1 CIZ index differences (51 `vwretd`, 47
-  `ewretd`, 1,003 `usdval` months); CCM has 95 baseline-only and 137
-  candidate-only link keys, 370 links that have since ended, and `comp.names`
-  descriptor revisions; OptionMetrics has 75 baseline-only and 1,041
-  candidate-only links (1,006 in the 2020s) and extended `edate`s; IBES has
-  422 baseline-only and 3,255 candidate-only stock-months, identical tickers
-  on matched keys, and 240 changed scores.
-- Compustat: the only CRSP input is `ccmxpf_lnkhist`, so all differences are
-  Compustat revisions and new filings. `CompustatAnnual.csv` matches 517,119
-  `(gvkey, datadate)` keys (156 baseline-only, 887 candidate-only, mostly in the
-  2020s); every value column differs in at most 0.15% of matched rows apart
-  from identifier text (`conm`, `tic`, `cusip`) and `ajex` (about 1.5%). Means by
-  decade agree to four digits before 2020. `a_aCompustat` follows the same
-  pattern (302,333 matched, 107/47 unmatched). `m_aCompustat` adds 27,697
-  stock-months inside the baseline window, almost all from fiscal 2025 reports
-  filed after the baseline was pulled.
-
-Decision (2026-10-07): accepted. Stage 2 is complete for all nine scripts.
+CCM has 95 baseline-only and 137
+candidate-only link keys, 370 links that have since ended, and `comp.names`
+descriptor revisions.
