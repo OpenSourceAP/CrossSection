@@ -7,16 +7,24 @@ Outputs: OPENAP_DATA_ROOT/Intermediate/CRSPdistributions.parquet.
 """
 
 import os
+from pathlib import Path
 import sys
 
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import DEBUG_MODE
-from utils.crsp_distribution_codes import restore_distcd
+from config import DATA_ROOT, DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
-from utils.download_paths import intermediate_path
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.wrds_connection import get_wrds_engine
+
+
+# Official CRSP code-only crosswalk (3,473 rows); literal N/A values are codes.
+# The seven flags uniquely determine DISTCD; DisOrdinaryFlg is not in the crosswalk.
+CODE_FIELDS = [
+    'distype', 'disfreqtype', 'dispaymenttype', 'disdetailtype',
+    'distaxtype', 'disorigcurtype', 'disamountsourcetype',
+]
+MAP_PATH = Path(__file__).resolve().parents[1] / 'utils/crsp_distribution_code_map.csv'
 
 
 OUTPUT_COLUMNS = [
@@ -28,7 +36,20 @@ KEY = ['permno', 'rcrddt', 'exdt', 'paydt', 'distcd']
 
 def prepare_distributions(source):
     """Restore legacy fields and apply the original event-key deduplication."""
-    data = restore_distcd(source)
+    mapping = pd.read_csv(MAP_PATH, dtype={field: 'string' for field in CODE_FIELDS},
+                          keep_default_na=False)
+    if mapping.duplicated(CODE_FIELDS).any():
+        raise ValueError('CRSP distribution crosswalk has ambiguous CIZ flag tuples.')
+    if source[CODE_FIELDS].isna().any().any():
+        raise ValueError('CIZ distribution rows have null code fields.')
+    data = source.merge(mapping, on=CODE_FIELDS, how='left', validate='many_to_one',
+                        indicator=True, sort=False)
+    unknown = data['_merge'].ne('both')
+    if unknown.any():
+        examples = data.loc[unknown, CODE_FIELDS].drop_duplicates().head(10)
+        raise ValueError(f'{unknown.sum()} CIZ distribution rows have unmapped flags:\n'
+                         f'{examples.to_string(index=False)}')
+    data = data.drop(columns='_merge')
     data = data.rename(columns={
         'disdivamt': 'divamt', 'disfacshr': 'facshr',
         'disrecorddt': 'rcrddt', 'disexdt': 'exdt', 'dispaydt': 'paydt',
@@ -53,6 +74,7 @@ def prepare_distributions(source):
 
 
 def main():
+    (DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
     log_selection('CRSPDistributions')
     predicate, params = sql_date_window('d.disexdt', 'events')
     query = f"""
@@ -73,10 +95,10 @@ def main():
             print(f'Source events with missing ex-date (outside debug window): {missing}',
                   flush=True)
     finally:
-        release_wrds_engine(engine)
+        engine.dispose()
     print(f'Downloaded {len(source)} CIZ distribution events', flush=True)
     result = prepare_distributions(source)
-    result.to_parquet(intermediate_path('CRSPdistributions.parquet'))
+    result.to_parquet(DATA_ROOT / 'Intermediate/CRSPdistributions.parquet')
     print(f'Saved {len(result)} distribution events', flush=True)
 
 

@@ -18,10 +18,28 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from utils.crsp_v2_codes import legacy_exchange_codes, legacy_share_codes
+from config import DATA_ROOT
 from utils.debug_mode import log_selection, sql_date_window
-from utils.download_paths import intermediate_path
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.wrds_connection import get_wrds_engine
+
+(DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
+
+
+# WRDS CIZ-to-SIZ share classifications; see monthly_mapping.md.
+SHARE_COLUMNS = ['sharetype', 'securitytype', 'securitysubtype', 'usincflg', 'issuertype']
+SHARE_CODES = {
+    ('NS','EQTY','COM','Y','ACOR'):10, ('NS','EQTY','COM','Y','CORP'):11,
+    ('NS','EQTY','COM','N','CORP'):12, ('NS','FUND','CEF','Y','ACOR'):14,
+    ('NS','FUND','CEF','N','ACOR'):15, ('NS','EQTY','COM','Y','REIT'):18,
+    ('CE','EQTY','COM','Y','ACOR'):20, ('CE','EQTY','COM','Y','CORP'):21,
+    ('NS','DERV','ATR','Y','ACOR'):23, ('CE','FUND','CEF','Y','ACOR'):24,
+    ('AD','EQTY','COM','N','ACOR'):30, ('AD','EQTY','COM','N','CORP'):31,
+    ('SB','EQTY','COM','Y','ACOR'):40, ('SB','EQTY','COM','Y','CORP'):41,
+    ('SB','EQTY','COM','N','CORP'):42, ('SB','FUND','CEF','Y','ACOR'):44,
+    ('SB','EQTY','COM','Y','REIT'):48, ('UG','EQTY','COM','Y','ACOR'):70,
+    ('UG','EQTY','COM','Y','CORP'):71, ('UG','EQTY','COM','N','CORP'):72,
+    ('NS','FUND','ETF','Y','ACOR'):73, ('UG','FUND','ETV','Y','ACOR'):74,
+}
 
 
 def restore_pre_delisting_returns(monthly, delist):
@@ -77,13 +95,33 @@ if crsp_data.duplicated(keys).any():
 
 # Full delisting history: events are matched to flagged months by PERMNO.
 delist=pd.read_sql_query("SELECT permno, delret FROM crsp.stkdelists",engine)
-release_wrds_engine(engine)
+engine.dispose()
 crsp_data=restore_pre_delisting_returns(crsp_data,delist)
 
 crsp_data[['permno','permco']]=crsp_data[['permno','permco']].astype('Int64')
 crsp_data['prc']=np.where(crsp_data.mthprcflg.eq('BA'),-crsp_data.mthprc,crsp_data.mthprc)
-crsp_data['shrcd']=legacy_share_codes(crsp_data)
-crsp_data['exchcd']=legacy_exchange_codes(crsp_data)
+# Restore the legacy numeric classifications using WRDS's CIZ-to-SIZ rules.
+crsp_data['shrcd'] = pd.Series(
+    [SHARE_CODES.get(tuple(row), 75)
+     for row in crsp_data[SHARE_COLUMNS].itertuples(index=False, name=None)],
+    index=crsp_data.index, dtype='float64',
+)
+exchange = crsp_data.primaryexch
+regular = crsp_data.conditionaltype.eq('RW')
+active = crsp_data.tradingstatusflg.eq('A')
+exchange_codes = pd.Series(99.0, index=crsp_data.index)
+mapped = exchange.map({'N': 1, 'A': 2, 'Q': 3, 'R': 4, 'B': 5, 'I': 6})
+mask = regular & active & mapped.notna()
+exchange_codes.loc[mask] = mapped.loc[mask]
+main = exchange.isin(['N', 'A', 'Q'])
+exchange_codes.loc[main & regular & crsp_data.tradingstatusflg.eq('H')] = -2
+exchange_codes.loc[main & regular & crsp_data.tradingstatusflg.eq('S')] = -1
+when_issued = (crsp_data.conditionaltype.eq('NW')
+               | (exchange.eq('N') & crsp_data.conditionaltype.eq('WI')))
+mask = main & active & when_issued
+exchange_codes.loc[mask] = exchange.loc[mask].map({'N': 31, 'A': 32, 'Q': 33})
+exchange_codes.loc[exchange.eq('X') & crsp_data.conditionaltype.eq('NT')] = 0
+crsp_data['exchcd'] = exchange_codes
 crsp_data['ticker']=crsp_data.ticker.fillna('')
 crsp_data['shrcls']=crsp_data.shareclass.replace('NCS','').fillna('')
 crsp_data['sicCRSP']=pd.to_numeric(crsp_data.siccd,errors='coerce').astype('float64')
@@ -97,5 +135,5 @@ crsp_data=crsp_data.merge(company,on=['permco','time_avail_m'],how='left',valida
 columns=['permno','permco','ret','retx','vol','shrout','prc','cfacshr',
          'shrcd','exchcd','ticker','shrcls','sicCRSP','sic2D','time_avail_m','ret_b4_dl','mve_c','mve_permco']
 crsp_data=crsp_data[columns]
-crsp_data.to_parquet(intermediate_path('monthlyCRSP.parquet'),index=False)
+crsp_data.to_parquet(DATA_ROOT / 'Intermediate/monthlyCRSP.parquet',index=False)
 print(f'CRSP CIZ monthly saved: {len(crsp_data):,} rows; {crsp_data.time_avail_m.min()} to {crsp_data.time_avail_m.max()}',flush=True)

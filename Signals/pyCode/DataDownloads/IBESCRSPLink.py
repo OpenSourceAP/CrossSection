@@ -17,6 +17,7 @@ How to run:
 
 import os
 import sys
+from pathlib import Path
 from typing import List
 
 import pandas as pd
@@ -24,9 +25,8 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.debug_mode import log_selection  # noqa: E402
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
-from utils.download_paths import intermediate_path, crsp_calendar_path
-from config import DEBUG_MODE
+from utils.wrds_connection import get_wrds_engine
+from config import DATA_ROOT, DEBUG_MODE
 
 
 def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
@@ -53,13 +53,25 @@ def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
 
 
 def main() -> None:
+    (DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
     log_selection("IBESCRSPLink")
     load_dotenv()
 
     print("Processing CRSP-IBES linking data...")
 
     # Validate the complete calendar before issuing any database query.
-    calendar_path = crsp_calendar_path()
+    configured_calendar = os.getenv("OPENAP_CRSP_CALENDAR")
+    if configured_calendar:
+        calendar_path = Path(configured_calendar).expanduser().resolve()
+    elif DEBUG_MODE:
+        raise RuntimeError(
+            "Debug IBES requires OPENAP_CRSP_CALENDAR pointing to the full "
+            "keys-only (permno, time_avail_m) CRSP calendar."
+        )
+    else:
+        calendar_path = DATA_ROOT / "Intermediate/monthlyCRSP.parquet"
+    if not calendar_path.is_file():
+        raise FileNotFoundError(f"CRSP monthly calendar not found: {calendar_path}")
     crsp_monthly = pd.read_parquet(calendar_path, columns=["permno", "time_avail_m"])
     crsp_monthly["time_avail_m"] = pd.to_datetime(crsp_monthly["time_avail_m"])
     keys = ["permno", "time_avail_m"]
@@ -90,7 +102,7 @@ def main() -> None:
     try:
         iblink_raw = pd.read_sql_query(query, engine)
     finally:
-        release_wrds_engine(engine)
+        engine.dispose()
     print(f"Loaded {len(iblink_raw):,} IBES-CRSP linking records from WRDS")
 
     # Convert start/end dates to monthly timestamps
@@ -131,7 +143,7 @@ def main() -> None:
     desired_columns = ["tickerIBES", "permno", "time_avail_m", "score"]
     final_data = enforce_column_schema(merged, desired_columns)
 
-    output_path = intermediate_path("IBESCRSPLinkingTable.parquet")
+    output_path = DATA_ROOT / 'Intermediate/IBESCRSPLinkingTable.parquet'
     final_data.to_parquet(output_path, index=False)
 
     print(f"IBES-CRSP Linking Table saved with {len(final_data):,} records")

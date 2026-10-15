@@ -15,9 +15,11 @@ import pandas as pd
 from dotenv import load_dotenv
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import DATA_ROOT
 from utils.debug_mode import log_selection
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
-from utils.download_paths import intermediate_path
+from utils.wrds_connection import get_wrds_engine
+
+(DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
 
 load_dotenv()
 
@@ -39,7 +41,7 @@ engine = get_wrds_engine()
 try:
     series = pd.read_sql_query(QUERY, engine)
 finally:
-    release_wrds_engine(engine)
+    engine.dispose()
 
 series['time_avail_m'] = pd.to_datetime(series['mthcaldt']).dt.to_period('M').dt.to_timestamp()
 if series[['indno', 'time_avail_m']].isna().any().any():
@@ -61,7 +63,7 @@ market_data = market_data[['vwretd', 'ewretd', 'usdval', 'time_avail_m']].sort_v
     'time_avail_m').reset_index(drop=True)
 
 # Save data
-market_data.to_parquet(intermediate_path("monthlyMarket.parquet"))
+market_data.to_parquet(DATA_ROOT / 'Intermediate/monthlyMarket.parquet')
 
 # Display summary information
 print(f"Monthly Market Returns downloaded with {len(market_data)} records")

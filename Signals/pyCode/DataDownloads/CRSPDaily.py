@@ -11,7 +11,6 @@ Mapping: Signals/tests/crsp_v2/daily_mapping.md.
 
 import os
 import sys
-from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 
@@ -19,13 +18,11 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-from sqlalchemy.engine import Engine
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import DEBUG_MODE
+from config import DATA_ROOT, DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
-from utils.download_paths import intermediate_path
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.wrds_connection import get_wrds_engine
 
 
 FULL_COLUMNS = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
@@ -70,10 +67,11 @@ def restore_legacy_daily(data):
 
 
 def main():
+    (DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
     log_selection('CRSPDaily')
     years = [1981] if DEBUG_MODE else range(1926, datetime.now().year + 1)
-    full_path = intermediate_path('dailyCRSP.parquet')
-    price_path = intermediate_path('dailyCRSPprc.parquet')
+    full_path = DATA_ROOT / 'Intermediate/dailyCRSP.parquet'
+    price_path = DATA_ROOT / 'Intermediate/dailyCRSPprc.parquet'
     full_tmp = Path(str(full_path) + '.tmp')
     price_tmp = Path(str(price_path) + '.tmp')
     engine = get_wrds_engine()
@@ -82,10 +80,8 @@ def main():
     try:
         full_writer = pq.ParquetWriter(full_tmp, FULL_SCHEMA)
         price_writer = pq.ParquetWriter(price_tmp, PRICE_SCHEMA)
-        # A standalone run opens one session for all yearly queries. A migration
-        # runner may already supply its shared SQLAlchemy Connection.
-        session = engine.connect() if isinstance(engine, Engine) else nullcontext(engine)
-        with session as connection:
+        # Reuse one session for all yearly queries in this download.
+        with engine.connect() as connection:
             for year in years:
                 daily = restore_legacy_daily(get_crsp_daily_year(year, connection))
                 if daily.empty:
@@ -110,7 +106,7 @@ def main():
             price_writer.close()
         full_tmp.unlink(missing_ok=True)
         price_tmp.unlink(missing_ok=True)
-        release_wrds_engine(engine)
+        engine.dispose()
 
 
 if __name__ == '__main__':

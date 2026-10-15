@@ -14,13 +14,14 @@ The link source has no separate CIZ table; DEBUG_MODE still reads full history.
 
 import os
 import pandas as pd
-from pathlib import Path
 from dotenv import load_dotenv
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import DATA_ROOT
 from utils.debug_mode import log_selection
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
-from utils.download_paths import intermediate_path
+from utils.wrds_connection import get_wrds_engine
+
+(DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
 
 log_selection("OptionMetricsCRSPLink")
 load_dotenv()
@@ -41,7 +42,7 @@ engine = get_wrds_engine()
 try:
     omlink = pd.read_sql_query(QUERY, engine)
 finally:
-    release_wrds_engine(engine)
+    engine.dispose()
 print(f"Loaded {len(omlink)} OptionMetrics linking records from WRDS")
 
 key = ["secid", "permno", "sdate"]
@@ -54,7 +55,7 @@ if duplicate_count:
     )
 
 # Save raw linking table
-omlink.to_parquet(intermediate_path("OPTIONMETRICSCRSPLinkingTable.parquet"), index=False)
+omlink.to_parquet(DATA_ROOT / 'Intermediate/OPTIONMETRICSCRSPLinkingTable.parquet', index=False)
 
 print(f"OptionMetrics linking data saved with {len(omlink)} records")
 print(f"Head: {omlink.head()}")

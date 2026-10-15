@@ -16,11 +16,13 @@ DEBUG_MODE reads the full link history for the Stage 1 comparison.
 import os
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from config import DATA_ROOT
 from utils.debug_mode import log_selection
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
-from utils.download_paths import intermediate_path
+from utils.wrds_connection import get_wrds_engine
 import pandas as pd
 from dotenv import load_dotenv
+
+(DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
 
 # Display script header
 print("=" * 60, flush=True)
@@ -51,7 +53,7 @@ ORDER BY a.gvkey
 try:
     df = pd.read_sql_query(QUERY, engine)
 finally:
-    release_wrds_engine(engine)
+    engine.dispose()
 
 # Enforce formats
 df[['lpermno','lpermco']] = df[['lpermno','lpermco']].astype('Int64')
@@ -74,7 +76,7 @@ duplicate_count = int(df.duplicated(key, keep=False).sum())
 if duplicate_count:
     raise ValueError(f"CCM link has {duplicate_count} rows with duplicate {key} keys")
 
-df.to_parquet(intermediate_path("CCMLinkingTable.parquet"), index=False)
+df.to_parquet(DATA_ROOT / 'Intermediate/CCMLinkingTable.parquet', index=False)
 
 # Display summary statistics
 print(f"CCM Linking Table downloaded with {len(df)} records", flush=True)

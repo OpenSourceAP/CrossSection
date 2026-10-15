@@ -12,10 +12,9 @@ import sys
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import DEBUG_MODE
+from config import DATA_ROOT, DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
-from utils.download_paths import intermediate_path
-from utils.wrds_connection import get_wrds_engine, release_wrds_engine
+from utils.wrds_connection import get_wrds_engine
 
 
 def prepare_acquisitions(source):
@@ -33,6 +32,7 @@ def prepare_acquisitions(source):
 
 
 def main():
+    (DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
     log_selection('CRSPAcquisitions')
     predicate, params = sql_date_window('d.disexdt', 'events')
     query = f"""
@@ -50,10 +50,10 @@ def main():
             print(f'Source events with missing ex-date (outside debug window): {missing}',
                   flush=True)
     finally:
-        release_wrds_engine(engine)
+        engine.dispose()
     print(f'Downloaded {len(source)} CIZ distribution events', flush=True)
     result = prepare_acquisitions(source)
-    result.to_parquet(intermediate_path('m_CRSPAcquisitions.parquet'), index=False)
+    result.to_parquet(DATA_ROOT / 'Intermediate/m_CRSPAcquisitions.parquet', index=False)
     print(f'Saved {len(result)} distinct child securities', flush=True)
 
 

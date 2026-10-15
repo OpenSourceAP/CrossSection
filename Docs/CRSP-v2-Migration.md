@@ -127,7 +127,7 @@ Column rules (full table in `Signals/tests/crsp_v2/monthly_mapping.md`):
   hundreds and divided by 1e4. The output unit (millions of shares) is unchanged.
 - `shrout`: `shrout / 1e3` (millions), unchanged.
 - `cfacshr`: `mthcumfacshr`.
-- `shrcd`, `exchcd`: `Signals/pyCode/utils/crsp_v2_codes.py`; see "Share and
+- `shrcd`, `exchcd`: `Signals/pyCode/DataDownloads/CRSPMonthly.py`; see "Share and
   exchange codes".
 - `shrcls`: `shareclass`, with `NCS` (no class) and missing mapped to `''`.
 - `sicCRSP`, `sic2D`: effective-dated `siccd`.
@@ -276,7 +276,7 @@ Decision (2026-10-07): keep the v2 values.
 
 #### Share and exchange codes
 
-`Signals/pyCode/utils/crsp_v2_codes.py` rebuilds `shrcd` and `exchcd` from CIZ
+`Signals/pyCode/DataDownloads/CRSPMonthly.py` rebuilds `shrcd` and `exchcd` from CIZ
 classifications. It matches the WRDS CIZ-to-SIZ macro exactly, and its share
 codes match Appendix B of the CRSP cross-reference guide (July 2026). Appendix B's
 extra row (75 for non-US ETV units) is covered by the default code 75.

@@ -9,6 +9,12 @@ Candidate downloads go to `Signals/pyData-v2/`. Reuse the baseline's explicit
 Compustat raw extract. Pull a separate v2 keys-only calendar for IBES. The default
 production root remains `Signals/pyData/`. Production output is Stage 2 work.
 
+The downloads now take `DATA_ROOT` from `Signals/pyCode/config.py` and append
+their own relative output paths. `OPENAP_DATA_ROOT` still overrides the default;
+set it before importing `config`. Each standalone download owns and disposes its
+WRDS engine. The old single-session helper used by the temporary migration runner
+has been removed; run the download scripts directly for subsequent comparisons.
+
 Run with the project environment:
 
 ```sh
