@@ -6,7 +6,8 @@ Inputs:
 
 Outputs:
 - ../pyData/Intermediate/pin_monthly.parquet
-- The failure fallback writes example data if the source cannot be processed.
+
+Download or source-processing failures stop the script before writing monthly output.
 
 How to run: from Signals/pyCode, run python3 DataDownloads/PINData.py
 
@@ -17,10 +18,8 @@ import os
 import pandas as pd
 import requests
 import zipfile
-from requests.exceptions import Timeout, RequestException
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import DEBUG_MODE
 from utils.debug_mode import get_debug_row_limit
@@ -78,71 +77,23 @@ def main():
 
         # Reject likely error pages before treating the response as a data archive.
         if file_size < 1000:
-            raise Exception(f"Downloaded file too small ({file_size} bytes), likely an error page")
+            raise ValueError(f"Downloaded file too small ({file_size} bytes), likely an error page")
 
-        # Require a readable archive before extracting the yearly PIN observations.
-        try:
-            with zipfile.ZipFile(zip_path, 'r') as test_zip:
-                file_list = test_zip.namelist()
-                print(f"ZIP contains {len(file_list)} files: {file_list[:5]}...")
-        except zipfile.BadZipFile:
-            raise Exception("Downloaded file is not a valid ZIP archive")
-
+        # Require annual observations from this download before preparing monthly data.
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall("../pyData/Intermediate")
+            file_list = zip_ref.namelist()
+            print(f"ZIP contains {len(file_list)} files: {file_list[:5]}...")
 
-        # Select the annual PIN estimates from the archive's other trading datasets.
-        pin_yearly_path = "../pyData/Intermediate/pin_yearly.csv"
-        if not os.path.exists(pin_yearly_path):
-            raise Exception("pin_yearly.csv not found in extracted files")
-
-        pin_data = pd.read_csv(pin_yearly_path)
+            # Use only observations from this download, never a leftover extracted CSV.
+            with zip_ref.open('pin_yearly.csv') as yearly_file:
+                pin_data = pd.read_csv(yearly_file)
         print(f"Successfully loaded PIN data from zip file")
 
         os.remove(zip_path)
-        for file in ['owr_yearly.csv', 'pin_yearly.csv', 'cpie_daily.csv',
-                     'gpin_yearly.csv', 'dy_yearly.csv']:
-            file_path = f"../pyData/Intermediate/{file}"
-            if os.path.exists(file_path):
-                os.remove(file_path)
-
-    # Supply example PIN observations if downloading or processing the source fails.
-    except Timeout:
-        print("Download timed out after 30 seconds")
-        print("Creating placeholder file")
-        pin_data = pd.DataFrame({
-            'permno': [10001, 10001, 10001],
-            'year': [2020, 2021, 2022],
-            'a': [0.25, 0.23, 0.27],
-            'eb': [5.5, 5.8, 5.2],
-            'es': [15.2, 14.8, 15.6],
-            'u': [0.12, 0.14, 0.11],
-            'd': [0.65, 0.62, 0.68]
-        })
-    except RequestException as e:
-        print(f"Network error downloading PIN data: {e}")
-        print("Creating placeholder file")
-        pin_data = pd.DataFrame({
-            'permno': [10001, 10001, 10001],
-            'year': [2020, 2021, 2022],
-            'a': [0.25, 0.23, 0.27],
-            'eb': [5.5, 5.8, 5.2],
-            'es': [15.2, 14.8, 15.6],
-            'u': [0.12, 0.14, 0.11],
-            'd': [0.65, 0.62, 0.68]
-        })
-    except Exception as e:
-        print(f"Error processing PIN data: {e}")
-        print("Creating placeholder file")
-        pin_data = pd.DataFrame({
-            'permno': [10001, 10001, 10001],
-            'year': [2020, 2021, 2022],
-            'a': [0.25, 0.23, 0.27],
-            'eb': [5.5, 5.8, 5.2],
-            'es': [15.2, 14.8, 15.6],
-            'u': [0.12, 0.14, 0.11],
-            'd': [0.65, 0.62, 0.68]
-        })
+    except Exception as error:
+        raise RuntimeError(
+            'PIN source download or parsing failed; monthly output was not updated.'
+        ) from error
 
     print(f"Downloaded {len(pin_data)} PIN yearly records")
 

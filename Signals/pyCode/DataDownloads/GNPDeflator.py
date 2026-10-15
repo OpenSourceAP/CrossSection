@@ -8,6 +8,8 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/GNPdefl.parquet
 
+Missing credentials or failed downloads stop the script before writing output.
+
 How to run: from Signals/pyCode, run python3 DataDownloads/GNPDeflator.py
 
 Use the project Python environment at /opt/venv/projects/openap.
@@ -15,11 +17,9 @@ Use the project Python environment at /opt/venv/projects/openap.
 
 import os
 import pandas as pd
-import numpy as np
 import requests
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config import DEBUG_MODE
 from utils.debug_mode import get_debug_row_limit
@@ -28,26 +28,15 @@ DEBUG_ROWS = get_debug_row_limit("GNPDeflator")
 
 load_dotenv()
 
-print("Downloading GNP Deflator from FRED...")
 
-fred_api_key = os.getenv("FRED_API_KEY")
-if not fred_api_key:
-    print("WARNING: FRED_API_KEY not found in environment variables")
-    print("GNP deflator data requires FRED API key. "
-          "Creating placeholder file.")
+def main():
+    print("Downloading GNP Deflator from FRED...")
 
-    # Create in-memory example data when the API key is absent; no output is saved.
-    dates = pd.date_range(
-        start='2020-01-01', end='2024-12-31', freq='Q'
-    )
-    placeholder_data = pd.DataFrame({
-        'date': dates,
-        'value': np.linspace(120, 130, len(dates))
-    })
+    # Require credentials so a skipped download cannot be reported as successful.
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        raise ValueError('FRED_API_KEY is required to download the GNP deflator.')
 
-    deflator_data = placeholder_data.copy()
-
-else:
     # Obtain the quarterly price index used to deflate nominal quantities.
     print(f"Downloading GNPCTPI...")
     url = "https://api.stlouisfed.org/fred/series/observations"
@@ -59,6 +48,7 @@ else:
     }
 
     response = requests.get(url, params=params, timeout=30)
+    response.raise_for_status()
     data = response.json()
 
     # Keep dated numeric index observations, treating FRED missing-value markers as missing.
@@ -66,6 +56,8 @@ else:
     df['date'] = pd.to_datetime(df['date'])
     df['value'] = pd.to_numeric(df['value'], errors='coerce')
     deflator_data = df[['date', 'value']].dropna()
+    if deflator_data.empty:
+        raise ValueError('GNPCTPI download contains no usable numeric observations.')
     print(f"Successfully downloaded {len(deflator_data)} observations")
 
     # Align each quarterly index observation with the monthly signal calendar.
@@ -114,3 +106,7 @@ else:
     print(f"Mean: {final_data['gnpdefl'].mean():.3f}")
     print(f"Min: {final_data['gnpdefl'].min():.3f}")
     print(f"Max: {final_data['gnpdefl'].max():.3f}")
+
+
+if __name__ == '__main__':
+    main()
