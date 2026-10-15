@@ -68,6 +68,41 @@ uniqueness, and post-2024 coverage require a WRDS run. SAS is unavailable
 locally; no WRDS connection was attempted. See
 `temp/docs/1015b_plan-corwin-schultz-crsp-v2.md` for the validation plan.
 
+### PrepScripts follow-up: TAQ–Chen–Velikov links
+
+Implementation (2026-10-15, issue #215 / PR #214): made the minimal CRSP input
+change in `taq-chen-velikov/add_permnos.sas` and `macro_tclink.sas`. The direct
+ticker/class match reads `crsp.stksecurityinfohist` and uses the native
+`secinfostartdt`, `secinfoenddt`, and `shareclass` names directly.
+`NCS` is normalized to blank; missing classes remain blank in SAS. Both macro
+reads also use native CIZ `cusip`, `issuernm`, `tradingsymbol`, and history-date
+names throughout the intermediate steps. The macro's output retains `comnam`
+via a final rename of `issuernm`; its other output names are preserved as well.
+Header identifiers are not used. The macro include is relative to the project's
+prep directory.
+
+The existing direct-match endpoint rounding (dates after the 15th move to the
+next month; end month excluded), TCLINK CUSIP/name scoring and ticker-date
+envelopes, 1993–2010 macro window, link precedence, spread calculations,
+duplicate cleanup, and CSV interface are retained. No new universe or trading
+status filter is applied. The proposed `wrdsapps.taqmclink` replacement and
+CIZ midpoint fallback were deferred at the user's direction.
+
+Known limitation: finer CIZ history intervals, including separate delisting
+records, can alter monthly matches under the retained endpoint rule. For
+example, splitting June 1–30 into June 1–15 and June 16–30 turns a valid June
+interval into two empty rounded intervals. This update does not redesign that
+rule or the macro's existing name/tie selection. Historical link differences
+must be measured before approving regenerated outputs.
+
+Offline checks confirm the mapped columns exist in saved WRDS schema metadata,
+the downstream linking/calculation source is unchanged apart from the native
+share-class reference, include path, and corrected sort comment. The final CSV
+export still uses the original `hf3` construction. Read-only WRDS identifier research was performed
+during planning; it did not execute this SAS migration. SAS execution,
+historical output/key comparisons, ambiguity and uniqueness checks, library
+resolution, and post-2024 coverage remain pending. SAS is unavailable locally.
+
 ## CRSPMonthly.py: ✅
 
 PR #214 follow-up: removed the daily CRSP aggregation and the unused monthly

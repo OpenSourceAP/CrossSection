@@ -27,6 +27,25 @@ https://github.com/velikov-mihail/Chen-Velikov
 * WRDS Support for their assistance with understanding the IID data
 
 # Instructions
+For CrossSection, stage the contents of `PrepScripts/` in `~/temp_prep/`
+and run from that directory. To rerun only the linking step after generating
+the two monthly spread inputs:
+
+```sh
+sas taq-chen-velikov/add_permnos.sas -log log/add_permnos.log
+```
+
+The linker reads `temp_output/issm_monthly.csv` and
+`temp_output/wrds_iid_monthly.csv`, then writes `temp_output/hf_monthly.csv`.
+It retains the original ticker/share-class matching and historical TCLINK
+macro in `macro_tclink.sas`. Both now read native CRSP CIZ security history. The existing monthly
+endpoint rounding, matching scores, and duplicate cleanup are retained.
+Using the separate WRDS link table is deferred. See
+`Docs/CRSP-v2-Migration.md` in the repository for validation status and the
+known risk from finer CIZ history intervals.
+
+Original standalone instructions:
+
 upload to wrds server, run "qsub main.sh" at the linux prompt.
 
 Takes about 1 hour, mostly for the issm data.
