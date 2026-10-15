@@ -24,6 +24,9 @@ run;
 data msenames;
     set crsp.stksecurityinfohist
       (keep=permno secinfostartdt secinfoenddt ticker shareclass);
+    * blank tickers can never match (hf1 requires a sym_root), but SAS
+      pairs blank with blank, so ~35k CIZ rows x 1.2m mtaq rows stalled hf1;
+    if not missing(ticker);
     if shareclass='NCS' then shareclass='';
     /* Retain the existing monthly endpoint rule; CIZ has finer intervals. */
 	* round to nearest month to ensure distinct;
