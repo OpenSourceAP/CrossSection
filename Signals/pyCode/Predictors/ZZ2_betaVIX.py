@@ -50,7 +50,12 @@ df = (
     daily_crsp.select(["permno", "time_d", "ret"])
     .join(daily_ff.select(["time_d", "rf", "mktrf"]), on="time_d", how="inner")
     .with_columns((pl.col("ret") - pl.col("rf")).alias("ret_excess"))
-    .join(d_vix.select(["time_d", "dVIX"]), on="time_d", how="inner")
+    # polars_ols under polars 2 requires Float64 regressors; dVIX is stored as Float32
+    .join(
+        d_vix.select(["time_d", pl.col("dVIX").cast(pl.Float64)]),
+        on="time_d",
+        how="inner",
+    )
     .sort(["permno", "time_d"])
 )
 print(f"Combined daily panel observations: {len(df):,}")

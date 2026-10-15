@@ -39,7 +39,10 @@ for col in numeric_cols:
     data[col] = pd.to_numeric(data[col], errors='coerce')
 
 # Create monthly time variable from report date
-data['time_d'] = pd.to_datetime(data['rdate'], format='%d%b%Y')
+# Prep exports have written rdate as 30SEP1986 (SAS date9.) and as 19860930
+rdate = data['rdate'].astype(str)
+rdate_format = '%Y%m%d' if rdate.str.fullmatch(r'\d{8}').all() else '%d%b%Y'
+data['time_d'] = pd.to_datetime(rdate, format=rdate_format)
 data['time_avail_m'] = data['time_d'].dt.to_period('M')
 
 # Clean up intermediate date columns
