@@ -48,6 +48,26 @@ Decision (2026-10-07): accepted. Stage 2 is complete for all nine scripts.
 
 A ✅ in a script heading indicates approval of its consolidated findings.
 
+### PrepScripts follow-up: corwin_schultz_edit.sas
+
+Implementation (2026-10-15, issue #215 / PR #214): replaced `crspa.dsf` with
+`crsp.dsf_v2`, mapping daily dates, prices, trade highs/lows, and volume in
+shares. Regular rows (`dlydelflg='N'`) exclude the separate delisting events.
+The adapter negates `dlyprc` when `dlyprcflg='BA'` so the existing screen and
+retained-range replacement still handle bid/ask-average days. It does not
+filter those days out or substitute closing quotes for trading ranges.
+
+The script now sorts by security/month/date and aborts on missing or duplicate
+security-date keys. The estimator calculations, 12-valid-day monthly minimum,
+and `PERMNO,month,hlspread` CSV interface are unchanged. No cumulative-factor
+price adjustment or additional universe filter was introduced.
+
+SAS execution and data validation remain pending: library resolution,
+historical keys/missingness/value comparisons, range-reset behavior, output
+uniqueness, and post-2024 coverage require a WRDS run. SAS is unavailable
+locally; no WRDS connection was attempted. See
+`temp/docs/1015b_plan-corwin-schultz-crsp-v2.md` for the validation plan.
+
 ## CRSPMonthly.py: ✅
 
 PR #214 follow-up: removed the daily CRSP aggregation and the unused monthly

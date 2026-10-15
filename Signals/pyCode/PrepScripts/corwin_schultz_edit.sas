@@ -1,4 +1,10 @@
 /*
+Run on WRDS from the prep directory, with data_for_dl/ and log/ present:
+    sas corwin_schultz_edit.sas -log log/corwin_schultz_edit.log
+Input: crsp.dsf_v2, full-history daily CIZ prices and volume.
+Output: ./data_for_dl/corwin_schultz_spread.csv (PERMNO,month,hlspread).
+Daily and additional monthly estimates remain in SAS WORK tables.
+
 This is an edit of Shane Corwin's code.  I changed it
 to be consistent with WRDS's crsp.dsf's notation, 
 skip the shrcd exchcd screens, and use sas PC connect
@@ -7,6 +13,8 @@ Andrew Chen 2019 10
 2020 10 removed sas PC Connect
 
 2022 02 fixed volume bug, added wrds library manual load
+
+2026 10 migrated daily CRSP inputs to CIZ, preserving the bid/ask price screen
 */
 
 
@@ -16,7 +24,7 @@ Andrew Chen 2019 10
 ** IN THEIR EQUATIONS (14) AND (18).                                                                 **;
 *******************************************************************************************************;
 ** FIRMS ARE IDENTIFIED BY CRSP PERM NUMBER (PERMNO). THE NECESSARY INPUT DATA INCLUDE THE           **;
-** DATE (YYYYMMDD) AND MONTH (YYYYMM), AND THE DAILY SPLIT-ADJUSTED HIGH PRICE (HIPRC),              **;
+** DATE (YYYYMMDD) AND MONTH (YYYYMM), AND THE DAILY HIGH PRICE (HIPRC),                             **;
 ** LOW PRICE (LOPRC), AND CLOSE PRICE (PRC). IF AVAILABLE, VOLUME CAN BE USED TO IDENTIFY            **;
 ** NON-TRADING DAYS.                                                                                 **;
 *******************************************************************************************************;
@@ -34,7 +42,7 @@ dm "out;clear;log;clear;"; /*clears output and log windows*/
 %include '/wrds/lib/utility/wrdslib.sas' ;
 options sasautos=('/wrds/wrdsmacros/', SASAUTOS) MAUTOSOURCE;
 
-%let obsmax = max; * use max for full production, use 20 for debugging;
+%let obsmax = max; * use max for production, 20 is only an input smoke check;
 
 * output path;
 %let path_dl_me = ./data_for_dl/;
@@ -48,33 +56,46 @@ options sasautos=('/wrds/wrdsmacros/', SASAUTOS) MAUTOSOURCE;
 *******************************************************************************************************;
 ** READ IN CRSP PRICE DATA                                                                           **; 
 ** ASSIGN VARIABLE NAMES AS FOLLOWS:                                                                 **; 
-** DATE = DATE IN YYYYMMDD FORMAT                                                                    **; 
+** DATE = SAS DAILY DATE                                                                            **;
 ** PRC = DAILY CLOSING PRICE                                                                         **; 
 ** LOPRC = DAILY LOW PRICE                                                                           **; 
 ** HIPRC = DAILY HIGH PRICE                                                                          **; 
 *******************************************************************************************************;
 
 
-/*
-* pull and rename stuff in crspa.dsf (daily stock file) to match Corwin's notation
-Note: I don't get exchcd and shrcd which Corwin uses.  These need to be merged
-later (from msenames).  
-Note also: Corwin's code does some odd renaming in the first step that they don't use later
-*/
-
-DATA SAMPLE; SET crspa.dsf (obs = &obsmax);  
-  where year(date) <= 9999;
-
-  loprc = bidlo;
-  hiprc = askhi;
-  
+/* Map native CIZ daily data to the estimator's inputs.
+   Keep regular rows only; Y rows are separate delisting events.
+   Restore the legacy negative PRC signal for bid/ask-average days, keeping
+   those days for the range-replacement logic below. Use trade highs/lows,
+   not closing bid/ask quotes. Volume is in shares, with no rescaling.
+   Preserve the existing unrestricted universe and raw price basis. */
+DATA SAMPLE;
+  SET crsp.dsf_v2
+    (obs=&obsmax
+     keep=permno dlycaldt dlyvol dlyprc dlyprcflg dlylow dlyhigh dlydelflg
+     rename=(dlycaldt=date dlyvol=volume dlyprc=prc
+             dlylow=loprc dlyhigh=hiprc));
+  WHERE dlydelflg='N';
+  IF dlyprcflg='BA' THEN prc=-prc;
   month = year(date)*100 + month(date);
- 
-  KEEP PERMNO DATE vol prc loprc hiprc month;
-  
-  rename vol = volume; * fixed 2022 02;
+  KEEP PERMNO DATE volume prc loprc hiprc month;
+RUN;
 
-run;
+/* The retained ranges, lags, and monthly aggregation require this order.
+   Reject invalid keys instead of silently discarding duplicate source rows. */
+PROC SORT DATA=SAMPLE; BY PERMNO MONTH DATE; RUN;
+DATA _NULL_;
+  SET SAMPLE (KEEP=PERMNO MONTH DATE);
+  BY PERMNO MONTH DATE;
+  IF MISSING(PERMNO) OR MISSING(DATE) THEN DO;
+    PUT 'ERROR: Missing CRSP security-date key.' PERMNO= DATE=date9.;
+    ABORT ABEND;
+  END;
+  IF NOT (FIRST.DATE AND LAST.DATE) THEN DO;
+    PUT 'ERROR: Duplicate CRSP security-date key.' PERMNO= DATE=date9.;
+    ABORT ABEND;
+  END;
+RUN;
 
 
 ***************************************************************************;
@@ -83,10 +104,10 @@ run;
 *******************************************************************************;
 *
 Data notes: 
-	negative prc => bid-ask average, not actual cloosing price
-	negative loprc => closing bid if no trades
-	negative hiprc => closing ask if no trades
-The code below takes care of those negative value indicators
+	negative prc => CIZ bid-ask average (dlyprcflg='BA'), not a trade close
+	loprc and hiprc => CIZ low/high trade prices, without closing-quote fallback
+The code below screens bad ranges and zero-volume/bid-ask-average days,
+then may replace the range using retained values and the absolute close
 ;
 
 DATA SAMPLE2 (DROP = LOPRCR HIPRCR); RETAIN LOPRCR HIPRCR; SET SAMPLE; *SET SAMPLEX; BY PERMNO MONTH DATE;  
