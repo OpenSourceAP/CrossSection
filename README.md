@@ -60,8 +60,9 @@ This is only necessary for a handful of signals
 If you have bash:
 * from `Signals/pyCode/`
   - run `bash prep1_run_on_wrds.sh` to copy the prep scripts to the WRDS Cloud
-  - wait about 5 hours
-    - use qstat to check if it's still running
+  - the submission runs two concurrent array tasks: all OptionMetrics scripts in one, and 13F plus low-/high-frequency spreads in the other; scripts within each task run sequentially
+  - wait for both tasks to finish (OptionMetrics can still take about 5 hours)
+    - use qstat to check whether either task is still running
     - if impatient, check most recent file in `~/temp_prep/log/` on WRDS server.  
   - run `bash prep2_dl_from_wrds.sh` to download the prep data from the WRDS Cloud to `Signals/pyData/Prep/`
 
