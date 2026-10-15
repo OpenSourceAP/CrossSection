@@ -9,11 +9,12 @@
 # Inputs: the R/SAS scripts in ~/temp_prep and their WRDS source datasets.
 # Outputs: data_for_dl/*, temp_output/hf_monthly.csv, and per-script logs in log/.
 # Task 1 runs all OptionMetrics scripts; task 2 runs 13F and LF/HF spreads.
-# Each task runs sequentially and stops if a command fails. qstat tracks both.
+# Each task runs sequentially and continues past failures (SAS exits 1 on mere
+# warnings); check log/ for errors. qstat tracks both.
 # For a direct run on a WRDS compute node: bash run_all_prep.sh
 # (This starts both workers and waits for both; do not run on a login node.)
 
-set -euo pipefail
+set -uo pipefail
 
 mkdir -p ~/temp_prep/data_for_dl ~/temp_prep/temp_output ~/temp_prep/log
 cd ~/temp_prep/
