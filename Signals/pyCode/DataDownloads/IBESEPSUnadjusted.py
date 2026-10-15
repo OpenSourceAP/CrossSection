@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/IBES_EPS_Unadj.parquet
 
-How to run: python3 IBESEPSUnadjusted.py
+How to run: from Signals/pyCode, run python3 DataDownloads/IBESEPSUnadjusted.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -23,13 +25,12 @@ DEBUG_ROWS = get_debug_row_limit("IBESEPSUnadjusted")
 
 load_dotenv()
 
-# Create database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Download IBES EPS estimates for specific forecast periods
-# FPI codes: 0=long-term growth, 1=next year, 2=year after, 6=current quarter
+# Obtain unadjusted EPS forecasts for the horizons used by downstream signals.
+# Select the forecast horizons used by downstream signals: FPI 0, 1, 2, and 6.
 QUERY = """
 SELECT a.ticker, a.statpers, a.measure, a.fpi, a.numest, a.medest,
        a.meanest, a.stdev, a.fpedats
@@ -47,38 +48,35 @@ engine.dispose()
 
 print(f"Downloaded {len(ibes_data)} IBES EPS records")
 
-
-# Process date variables and prepare linking variables
+# Align forecasts with their observation month for monthly analyst-data joins.
 ibes_data['statpers'] = pd.to_datetime(ibes_data['statpers'])
 ibes_data['time_avail_m'] = ibes_data['statpers'].dt.to_period('M').dt.to_timestamp()
 ibes_data['time_avail_m'] = pd.to_datetime(ibes_data['time_avail_m'])
 
-# Convert forecast period end dates to datetime
+# Preserve the forecast-period end date for horizon-specific calculations.
 ibes_data['fpedats'] = pd.to_datetime(ibes_data['fpedats'])
 
-# Rename ticker to match IBES convention
+# Distinguish IBES tickers from identifiers supplied by other datasets.
 ibes_data = ibes_data.rename(columns={'ticker': 'tickerIBES'})
 
-# Remove unnecessary measure column
 ibes_data = ibes_data.drop('measure', axis=1)
 
-# Clean data by removing missing estimates and keeping latest monthly observations
+# Exclude observations without a usable mean forecast.
 initial_count = len(ibes_data)
 ibes_data = ibes_data.dropna(subset=['meanest'])
 print(f"Removed {initial_count - len(ibes_data)} records with missing meanest")
 
-# Keep only the latest estimate for each ticker/forecast period/month combination
+# Keep the latest forecast per ticker, forecast horizon, and month.
 ibes_data = ibes_data.sort_values(['tickerIBES', 'fpi', 'time_avail_m', 'statpers'])
 ibes_data = ibes_data.drop_duplicates(['tickerIBES', 'fpi', 'time_avail_m'], keep='last')
 
 print(f"After keeping last obs per month: {len(ibes_data)} records")
 
-# Save final dataset
+# Save monthly unadjusted EPS forecasts for downstream signals.
 ibes_data.to_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet", index=False)
 
 print(f"IBES EPS Unadjusted data saved with {len(ibes_data)} records")
 
-# Display summary statistics and data preview
 print("\nRecords by FPI (Forecast Period Indicator):")
 fpi_counts = ibes_data['fpi'].value_counts().sort_index()
 print(fpi_counts)

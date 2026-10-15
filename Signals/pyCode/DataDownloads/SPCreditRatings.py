@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/m_SP_creditratings.parquet
 
-How to run: python3 SPCreditRatings.py
+How to run: from Signals/pyCode, run python3 DataDownloads/SPCreditRatings.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -23,12 +25,11 @@ DEBUG_ROWS = get_debug_row_limit("SPCreditRatings")
 
 load_dotenv()
 
-# Connect to WRDS database
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Download S&P credit ratings from Compustat
+# Obtain company credit ratings for credit-quality signals.
 QUERY = """
 SELECT gvkey, datadate, splticrm
 FROM comp.adsprate
@@ -43,15 +44,14 @@ engine.dispose()
 
 print(f"Downloaded {len(rating_data)} credit rating records")
 
-# Convert datadate to monthly time variable
+# Align each rating with the monthly signal calendar.
 rating_data['datadate'] = pd.to_datetime(rating_data['datadate'])
 rating_data['time_avail_m'] = rating_data['datadate'].dt.to_period('M').dt.to_timestamp()
 rating_data = rating_data.drop('datadate', axis=1)
 
-# Rename column for easier reference
 rating_data = rating_data.rename(columns={'splticrm': 'sp'})
 
-# Define rating to numerical mapping (higher number = better rating)
+# Order credit quality on a common numeric scale, with larger values indicating better ratings.
 rating_map = {
     'D': 1,
     'C': 2,
@@ -77,20 +77,19 @@ rating_map = {
     'AAA': 22
 }
 
-# Convert text ratings to numerical scale
+# Assign numeric credit quality, retaining legacy code 0 for unrecognized or missing ratings.
 rating_data['credrat'] = rating_data['sp'].map(rating_map).fillna(0)
 rating_data = rating_data.drop('sp', axis=1)
 
-# Clean data types
+# Keep company identifiers and rating scores compatible with downstream company-month data.
 rating_data['gvkey'] = pd.to_numeric(rating_data['gvkey'], errors='coerce')
 rating_data['credrat'] = rating_data['credrat'].astype('int8')
 
-# Save data
+# Save monthly-dated company credit ratings for downstream signals.
 rating_data.to_parquet("../pyData/Intermediate/m_SP_creditratings.parquet")
 
 print(f"S&P Credit Ratings data saved with {len(rating_data)} records")
 
-# Display summary statistics
 print(f"Date range: {rating_data['time_avail_m'].min()} to {rating_data['time_avail_m'].max()}")
 print(f"Unique companies: {rating_data['gvkey'].nunique()}")
 

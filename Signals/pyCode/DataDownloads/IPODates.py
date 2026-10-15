@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/IPODates.parquet
 
-How to run: python3 IPODates.py
+How to run: from Signals/pyCode, run python3 DataDownloads/IPODates.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -26,10 +28,9 @@ load_dotenv()
 
 print("Downloading IPO dates from Ritter's website...")
 
-# Set URL for Ritter's IPO data Excel file
+# Obtain offering dates and founding years for stock-age and company-age signals.
 webloc = "https://site.warrington.ufl.edu/ritter/files/IPO-age.xlsx"
 
-# Download IPO data from website
 response = requests.get(webloc, timeout=30)
 response.raise_for_status()
 
@@ -42,37 +43,36 @@ os.remove(temp_file)
 
 print(f"Downloaded {len(ipo_data)} IPO records")
 
-# Standardize column names to handle different possible variations
+# Use the stock identifier and age-field names expected by downstream signals.
 ipo_data = ipo_data.rename(columns={'Founding': 'FoundingYear'})
 ipo_data = ipo_data.rename(columns={'offer date': 'OfferDate'})
 ipo_data = ipo_data.rename(columns={'CRSP Perm': 'permno'})
 
-# Convert permno to numeric format
+# Make stock identifiers usable for linking, treating invalid identifiers as missing.
 ipo_data['permno'] = pd.to_numeric(ipo_data['permno'], errors='coerce')
 
-# Process offer date to create monthly IPO date variable
-ipo_data['temp'] = ipo_data['OfferDate'].astype(str)
-ipo_data['temp2'] = pd.to_datetime(ipo_data['temp'], format='%Y%m%d', errors='coerce')
-ipo_data['IPOdate'] = ipo_data['temp2'].dt.to_period('M').dt.to_timestamp()
-ipo_data = ipo_data.drop(['temp', 'temp2'], axis=1)
+# Record the IPO month so stock age can be measured on the monthly signal calendar.
+offer_date_text = ipo_data['OfferDate'].astype(str)
+offer_date = pd.to_datetime(offer_date_text, format='%Y%m%d', errors='coerce')
+ipo_data['IPOdate'] = offer_date.dt.to_period('M').dt.to_timestamp()
 
-# Select final columns to keep
+# Retain the stock identifier, founding year, and IPO month needed for age calculations.
 keep_cols = ['permno', 'FoundingYear', 'IPOdate']
 available_cols = [col for col in keep_cols if col in ipo_data.columns]
 ipo_data = ipo_data[available_cols]
 
-# Clean permno data - remove missing, invalid (999), and non-positive values
+# Exclude missing identifiers and source placeholders that cannot identify a CRSP security.
 initial_count = len(ipo_data)
 ipo_data = ipo_data.dropna(subset=['permno'])
 ipo_data = ipo_data[~ipo_data['permno'].isin([999])]
 ipo_data = ipo_data[ipo_data['permno'] > 0]
 print(f"Filtered from {initial_count} to {len(ipo_data)} records after cleaning permno")
 
-# Keep only first observation per permno to avoid duplicates
+# Keep one source record per stock so age-data joins do not duplicate observations.
 ipo_data = ipo_data.drop_duplicates(subset=['permno'], keep='first')
 print(f"After keeping first obs per permno: {len(ipo_data)} records")
 
-# Clean FoundingYear - set negative values to missing
+# Treat negative founding-year placeholders as unknown company ages.
 ipo_data.loc[ipo_data['FoundingYear'] < 0, 'FoundingYear'] = None
 
 # Apply debug row limit if configured
@@ -80,11 +80,10 @@ if DEBUG_MODE:
     ipo_data = ipo_data.head(DEBUG_ROWS)
     print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
-# Save to parquet
+# Save stock-level IPO and founding dates for downstream age signals.
 ipo_data.to_parquet("../pyData/Intermediate/IPODates.parquet")
 print(f"IPO Dates data saved with {len(ipo_data)} records")
 
-# Display summary statistics
 print(f"IPO date range: {ipo_data['IPOdate'].min()} to {ipo_data['IPOdate'].max()}")
 
 founding_clean = ipo_data['FoundingYear'].dropna()

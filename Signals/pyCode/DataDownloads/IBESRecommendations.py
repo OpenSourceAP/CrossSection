@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/IBES_Recommendations.parquet
 
-How to run: python3 IBESRecommendations.py
+How to run: from Signals/pyCode, run python3 DataDownloads/IBESRecommendations.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -23,12 +25,11 @@ DEBUG_ROWS = get_debug_row_limit("IBESRecommendations")
 
 load_dotenv()
 
-# Connect to WRDS database
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Query IBES recommendation detail data for US firms only
+# Obtain analyst recommendation events for the US-firm sample.
 QUERY = """
 SELECT a.ticker, a.estimid, a.ereccd, a.etext, a.ireccd, a.itext, a.emaskcd,
        a.amaskcd, a.anndats, actdats
@@ -41,43 +42,42 @@ if DEBUG_MODE:
     QUERY += f" LIMIT {DEBUG_ROWS}"
     print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
-# Download recommendation data
 rec_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
 print(f"Downloaded {len(rec_data)} IBES recommendation records")
 
-# Clean recommendation codes - convert to numeric and drop missing values
+# Retain recommendation events with a usable numeric recommendation code.
 rec_data['ireccd'] = pd.to_numeric(rec_data['ireccd'], errors='coerce')
 initial_count = len(rec_data)
 rec_data = rec_data.dropna(subset=['ireccd'])
 print(f"Removed {initial_count - len(rec_data)} records with missing ireccd")
 
-# Rename ticker column to distinguish from other ticker fields
+# Distinguish IBES tickers from identifiers supplied by other datasets.
 rec_data = rec_data.rename(columns={'ticker': 'tickerIBES'})
 
-# Convert date columns to datetime format
+# Preserve announcement and activation dates for timing recommendation events.
 rec_data['anndats'] = pd.to_datetime(rec_data['anndats'])
 rec_data['actdats'] = pd.to_datetime(rec_data['actdats'])
 
-# Fill missing earnings recommendation codes with empty strings
+# Represent absent source recommendation codes consistently as empty text.
 rec_data['ereccd'] = rec_data['ereccd'].fillna('')
 
-# Create monthly time availability variable from announcement date
+# Assign each recommendation to its announcement month for monthly signal calculations.
 rec_data['time_avail_m'] = rec_data['anndats'].dt.to_period('M').dt.to_timestamp()
 rec_data['time_avail_m'] = pd.to_datetime(rec_data['time_avail_m'])
 
-# Reorder columns with key variables first
-columns_order = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd'] + \
-                [col for col in rec_data.columns if col not in ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd']]
+# Put linking identifiers, event dates, and the recommendation measure first in the saved data.
+key_columns = ['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd']
+other_columns = [col for col in rec_data.columns if col not in key_columns]
+columns_order = key_columns + other_columns
 rec_data = rec_data[columns_order]
 
-# Save data
+# Save recommendation events with monthly linking dates for downstream signals.
 rec_data.to_parquet("../pyData/Intermediate/IBES_Recommendations.parquet", index=False)
 
 print(f"IBES Recommendations data saved with {len(rec_data)} records")
 
-# Display recommendation code distribution
 print("\nRecommendation distribution:")
 rec_counts = rec_data['ireccd'].value_counts().sort_index()
 rec_labels = {1: 'Strong Buy', 2: 'Buy', 3: 'Hold', 4: 'Underperform', 5: 'Sell'}
@@ -85,9 +85,7 @@ for code, count in rec_counts.items():
     label = rec_labels.get(int(code), f'Unknown ({int(code)})')
     print(f"  {int(code)} ({label}): {count:,}")
 
-# Display data date range and sample
 print(f"\nDate range: {rec_data['time_avail_m'].min()} to {rec_data['time_avail_m'].max()}")
 
-# Sample data
 print("\nSample data:")
 print(rec_data[['tickerIBES', 'amaskcd', 'anndats', 'time_avail_m', 'ireccd']].head())

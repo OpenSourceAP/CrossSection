@@ -4,6 +4,8 @@ How to run: python3 Signals/pyCode/DataDownloads/CRSPDistributions.py
 Inputs: crsp.stkdistributions and the bundled CRSP CIZ-to-SIZ code crosswalk.
   DEBUG_MODE selects all events with 1981 ex-dates.
 Outputs: OPENAP_DATA_ROOT/Intermediate/CRSPdistributions.parquet.
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -17,15 +19,13 @@ from config import DATA_ROOT, DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
 from utils.wrds_connection import get_wrds_engine
 
-
-# Official CRSP code-only crosswalk (3,473 rows); literal N/A values are codes.
-# The seven flags uniquely determine DISTCD; DisOrdinaryFlg is not in the crosswalk.
+# Recover legacy distribution codes so signals can identify the same event types.
+# The official crosswalk uses these seven flags; literal N/A values are valid codes.
 CODE_FIELDS = [
     'distype', 'disfreqtype', 'dispaymenttype', 'disdetailtype',
     'distaxtype', 'disorigcurtype', 'disamountsourcetype',
 ]
 MAP_PATH = Path(__file__).resolve().parents[1] / 'utils/crsp_distribution_code_map.csv'
-
 
 OUTPUT_COLUMNS = [
     'permno', 'divamt', 'distcd', 'facshr', 'rcrddt', 'exdt', 'paydt',
@@ -35,7 +35,7 @@ KEY = ['permno', 'rcrddt', 'exdt', 'paydt', 'distcd']
 
 
 def prepare_distributions(source):
-    """Restore legacy fields and apply the original event-key deduplication."""
+    """Provide one record per legacy distribution event, with its type and cash amount."""
     mapping = pd.read_csv(MAP_PATH, dtype={field: 'string' for field in CODE_FIELDS},
                           keep_default_na=False)
     if mapping.duplicated(CODE_FIELDS).any():
@@ -44,7 +44,7 @@ def prepare_distributions(source):
         raise ValueError('CIZ distribution rows have null code fields.')
     data = source.merge(mapping, on=CODE_FIELDS, how='left', validate='many_to_one',
                         indicator=True, sort=False)
-    unknown = data['_merge'].ne('both')
+    unknown = data['_merge'] != 'both'
     if unknown.any():
         examples = data.loc[unknown, CODE_FIELDS].drop_duplicates().head(10)
         raise ValueError(f'{unknown.sum()} CIZ distribution rows have unmapped flags:\n'
@@ -56,15 +56,17 @@ def prepare_distributions(source):
     })
     for column in ('rcrddt', 'exdt', 'paydt'):
         data[column] = pd.to_datetime(data[column])
-    # In SIZ, noncash events report zero DIVAMT where CIZ leaves DisDivAmt null.
+    # Preserve the legacy zero-cash amount for events whose cash amount is missing.
     data['divamt'] = data['divamt'].fillna(0).astype('float64')
     data['facshr'] = data['facshr'].astype('float64')
     data['permno'] = data['permno'].astype('int64')
     data['distcd'] = data['distcd'].astype('int64')
+    # Keep the lowest source sequence number when several records describe the same event.
     data = data.sort_values(KEY + ['disseqnbr'], kind='stable')
     duplicate_count = int(data.duplicated(KEY).sum())
     data = data.drop_duplicates(KEY, keep='first').copy()
     print(f'Removed {duplicate_count} duplicate event keys', flush=True)
+    # Expose each distribution-code component for downstream event filters.
     digits = data['distcd'].astype(str).str.zfill(4)
     for position in range(4):
         data[f'cd{position + 1}'] = digits.str[position].astype('int64')

@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/IBES_UnadjustedActuals.parquet
 
-How to run: python3 IBESUnadjustedActuals.py
+How to run: from Signals/pyCode, run python3 DataDownloads/IBESUnadjustedActuals.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -25,12 +27,11 @@ DEBUG_ROWS = get_debug_row_limit("IBESUnadjustedActuals")
 
 load_dotenv()
 
-# Create database connection
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Download IBES actual earnings data (EPS measure only)
+# Obtain unadjusted actual EPS and shares for earnings-related signals.
 QUERY = """
 SELECT a.*
 FROM ibes.actpsumu_epsus as a
@@ -47,77 +48,77 @@ engine.dispose()
 
 print(f"Downloaded {len(actuals_data)} IBES actual earnings records")
 
-# Rename shout column to distinguish from adjusted version
+# Distinguish unadjusted IBES shares from split-adjusted shares in other datasets.
 actuals_data = actuals_data.rename(columns={'shout': 'shoutIBESUnadj'})
 
-# Convert statement period to monthly time variable
+# Align actuals with their observation month for monthly analyst-data joins.
 actuals_data['statpers'] = pd.to_datetime(actuals_data['statpers'])
 actuals_data['time_avail_m'] = actuals_data['statpers'].dt.to_period('M').dt.to_timestamp()
 actuals_data['time_avail_m'] = pd.to_datetime(actuals_data['time_avail_m'])
 
-# Remove duplicate ticker-month observations
+# Retain the first source observation when a ticker has multiple records in a month.
 initial_count = len(actuals_data)
 actuals_data = actuals_data.drop_duplicates(['ticker', 'time_avail_m'], keep='first')
 print(f"After removing within-month duplicates: {len(actuals_data)} records")
 
-# Fill monthly time series gaps for each ticker
+# Carry available actuals into gaps within each ticker's observed monthly history.
 print("Filling time series gaps...")
 
+
 def fill_ticker_gaps(group):
+    """Carry reported earnings and shares into gaps within a ticker's observed history."""
     group = group.sort_values('time_avail_m')
 
     if len(group) <= 1:
         return group
 
-    # Create full monthly time range for this ticker
+    # Include months between the first and last observations, without extending coverage beyond them.
     min_time = group['time_avail_m'].min()
     max_time = group['time_avail_m'].max()
     full_time_range = pd.date_range(start=min_time, end=max_time, freq='MS')
 
-    # Reindex to create missing months
     group = group.set_index('time_avail_m').reindex(full_time_range)
     group.index.name = 'time_avail_m'
     group = group.reset_index()
 
-    # Forward fill key variables into missing months
+    # Carry forward the reported interim/annual earnings and shares until the next observation.
     fill_vars = ['int0a', 'fy0a', 'shoutIBESUnadj', 'ticker']
     for var in fill_vars:
         group[var] = group[var].ffill()
 
     return group
 
-# Apply gap filling to each ticker
-actuals_data = actuals_data.groupby('ticker').apply(fill_ticker_gaps).reset_index(drop=True)
+
+ticker_groups = actuals_data.groupby('ticker')
+actuals_data = ticker_groups.apply(fill_ticker_gaps)
+del ticker_groups
+actuals_data = actuals_data.reset_index(drop=True)
 print(f"After filling time series gaps: {len(actuals_data)} records")
 
-# Remove original statement period column
 actuals_data = actuals_data.drop('statpers', axis=1)
 
-# Standardize ticker column name
+# Keep the monthly linking fields compatible with other IBES datasets.
 actuals_data = actuals_data.rename(columns={'ticker': 'tickerIBES'})
 
-# Ensure ticker column is string type
 actuals_data['tickerIBES'] = actuals_data['tickerIBES'].astype(str)
 
-# Ensure time column remains datetime format
 actuals_data['time_avail_m'] = pd.to_datetime(actuals_data['time_avail_m'])
 
-# Handle missing values in string columns
+# Represent absent text descriptors consistently as empty text, including in added months.
 string_columns = ['curr_price', 'measure', 'cusip', 'cname', 'curcode', 'oftic']
 for col in string_columns:
     actuals_data[col] = actuals_data[col].fillna('')
 
-# Handle missing values in date columns
+# Preserve missing price and period-end dates in months added by gap filling.
 date_columns = ['prdays', 'fy0edats', 'int0dats']
 for col in date_columns:
     actuals_data[col] = pd.to_datetime(actuals_data[col])
 
-# Save data
+# Save the monthly unadjusted-actuals history for downstream signals.
 actuals_data.to_parquet("../pyData/Intermediate/IBES_UnadjustedActuals.parquet")
 
 print(f"IBES Unadjusted Actuals data saved with {len(actuals_data)} records")
 
-# Display summary statistics
 print(f"Date range: {actuals_data['time_avail_m'].min()} to {actuals_data['time_avail_m'].max()}")
 print(f"Unique tickers: {actuals_data['tickerIBES'].nunique()}")
 

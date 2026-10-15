@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/GovIndex.parquet
 
-How to run: python3 GovernanceIndex.py
+How to run: from Signals/pyCode, run python3 DataDownloads/GovernanceIndex.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -26,38 +28,35 @@ load_dotenv()
 
 print("Downloading Governance Index data...")
 
-# Download governance index data from Gompers, Ishii, and Metrick
+# Obtain the survey-based governance scores used in the governance signal.
 webloc = "https://spinup-000d1a-wp-offload-media.s3.amazonaws.com/faculty/wp-content/uploads/sites/7/2019/06/Governance.xlsx"
 
-# Download Excel file from web
 response = requests.get(webloc, timeout=60)
 response.raise_for_status()
 
-# Save to temporary file
 temp_file = "../pyData/Intermediate/temp_governance.xlsx"
 with open(temp_file, 'wb') as f:
     f.write(response.content)
 
-# Read governance index sheet (equivalent to importing A24:F14024)
+# Read the governance-score observations, excluding the workbook introduction.
 gov_data = pd.read_excel(temp_file, sheet_name='governance index',
                         skiprows=23, nrows=14000)
 
-# Clean up temp file
 os.remove(temp_file)
 
 print(f"Downloaded {len(gov_data)} governance records")
 
-# Clean and deduplicate data
+# Remove ticker whitespace so repeated survey observations can be identified consistently.
 gov_data['ticker'] = gov_data['ticker'].str.strip()
 
-# Keep first observation per ticker-year combination
+# Retain one source observation per ticker and survey year.
 gov_data = gov_data.drop_duplicates(['ticker', 'year'], keep='first')
 print(f"After removing ticker-year duplicates: {len(gov_data)} records")
 
-# Fix year 2000 data (treat as 1999 per original specification)
+# Assign the 2000-labelled survey to 1999 under the original signal convention.
 gov_data.loc[gov_data['year'] == 2000, 'year'] = 1999
 
-# Assign publication months for each survey year
+# Begin using each survey score in its specified publication month.
 month_mapping = {
     1990: 9,
     1993: 7,
@@ -70,56 +69,50 @@ gov_data['month'] = None
 for year, month in month_mapping.items():
     gov_data.loc[gov_data['year'] == year, 'month'] = month
 
-# For years >= 2002, assume January publication
+# Use January as the assumed publication month for surveys from 2002 onward.
 gov_data.loc[gov_data['year'] >= 2002, 'month'] = 1
 
-# Create monthly time availability variable
 gov_data['time_avail_m'] = pd.to_datetime(
     gov_data['year'].astype(str) + '-' + gov_data['month'].astype(str) + '-01'
 ).dt.to_period('M').dt.to_timestamp()
 
-# Create monthly panel by interpolating between survey dates
+# Carry the latest published score forward between surveys to form a monthly panel.
 print("Interpolating time series...")
 
-# For each ticker, create monthly observations through 2007
 extended_data = []
 for ticker in gov_data['ticker'].unique():
     ticker_data = gov_data[gov_data['ticker'] == ticker].copy()
     ticker_data = ticker_data.sort_values('time_avail_m')
 
-    # Extend final observation to 2007-01
+    # Extend the final reported score to January 2007.
     last_row = ticker_data.iloc[-1].copy()
     last_row['time_avail_m'] = pd.Timestamp('2007-01-01')
     ticker_data = pd.concat([ticker_data, pd.DataFrame([last_row])], ignore_index=True)
 
-    # Fill in monthly observations between survey dates
+    # Include every month between the first survey and the end of the extended history.
     min_time = ticker_data['time_avail_m'].min()
     max_time = ticker_data['time_avail_m'].max()
     full_range = pd.date_range(start=min_time, end=max_time, freq='MS')
 
-    # Reindex to monthly frequency and forward fill G-index values
     ticker_data = ticker_data.set_index('time_avail_m').reindex(full_range)
     ticker_data.index.name = 'time_avail_m'
     ticker_data = ticker_data.reset_index()
 
-    # Forward fill ticker and G-index values
+    # Use the most recent survey score in months without a new survey.
     ticker_data['ticker'] = ticker_data['ticker'].ffill()
     ticker_data['G'] = ticker_data['G'].ffill()
 
     extended_data.append(ticker_data)
 
-# Combine all tickers into final dataset
 final_data = pd.concat(extended_data, ignore_index=True)
 
-# Keep only necessary columns for output
+# Provide one governance score per ticker-month.
 keep_cols = ['ticker', 'time_avail_m', 'G']
 final_data = final_data[keep_cols]
 
-# Format columns for output
 final_data['time_avail_m'] = pd.to_datetime(final_data['time_avail_m'])
 final_data['G'] = final_data['G'].astype('int8')
 
-# Sort by ticker and date
 final_data = final_data.sort_values(['ticker', 'time_avail_m']).reset_index(drop=True)
 
 print(f"After interpolation: {len(final_data)} records")
@@ -129,12 +122,11 @@ if DEBUG_MODE:
     final_data = final_data.head(DEBUG_ROWS)
     print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
-# Save final dataset
+# Save the monthly governance-score history for downstream signals.
 final_data.to_parquet("../pyData/Intermediate/GovIndex.parquet")
 
 print(f"Governance Index data saved with {len(final_data)} records")
 
-# Display summary statistics
 print(f"Date range: {final_data['time_avail_m'].min()} to {final_data['time_avail_m'].max()}")
 print(f"Unique tickers: {final_data['ticker'].nunique()}")
 

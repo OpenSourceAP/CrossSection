@@ -24,7 +24,6 @@ from config import DATA_ROOT, DEBUG_MODE
 from utils.debug_mode import log_selection, sql_date_window
 from utils.wrds_connection import get_wrds_engine
 
-
 FULL_COLUMNS = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
 PRICE_COLUMNS = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
 FULL_SCHEMA = pa.schema([
@@ -52,15 +51,18 @@ def get_crsp_daily_year(year, engine):
 
 
 def restore_legacy_daily(data):
-    """Restore the v1 price sign and output types without changing CIZ returns."""
+    """Provide daily stock data with legacy price signs, columns, and units."""
     if data.duplicated(['permno', 'time_d']).any():
         raise ValueError('CIZ daily data contain duplicate security-date keys.')
-    if data.permno.isna().any() or data.time_d.isna().any():
+    if data['permno'].isna().any() or data['time_d'].isna().any():
         raise ValueError('CIZ daily data contain null security-date keys.')
     data = data.copy()
-    data['permno'] = data.permno.astype('int32')
-    data['time_d'] = pd.to_datetime(data.time_d).dt.floor('D')
-    data['prc'] = np.where(data.dlyprcflg.eq('BA'), -data.prc, data.prc)
+    data['permno'] = data['permno'].astype('int32')
+    data['time_d'] = pd.to_datetime(data['time_d']).dt.floor('D')
+
+    # Mark bid/ask averages with negative prices, as in the legacy daily data.
+    is_bid_ask_average = data['dlyprcflg'] == 'BA'
+    data['prc'] = np.where(is_bid_ask_average, -data['prc'], data['prc'])
     for column in ('ret', 'vol', 'prc', 'cfacpr', 'shrout'):
         data[column] = pd.to_numeric(data[column], errors='raise').astype('float64')
     return data[FULL_COLUMNS]
@@ -80,22 +82,29 @@ def main():
     try:
         full_writer = pq.ParquetWriter(full_tmp, FULL_SCHEMA)
         price_writer = pq.ParquetWriter(price_tmp, PRICE_SCHEMA)
-        # Reuse one session for all yearly queries in this download.
+        # Build the full daily history one year at a time to limit memory use.
         with engine.connect() as connection:
             for year in years:
                 daily = restore_legacy_daily(get_crsp_daily_year(year, connection))
                 if daily.empty:
                     print(f'{year}: no regular observations', flush=True)
                     continue
-                full_writer.write_table(pa.Table.from_pandas(daily, schema=FULL_SCHEMA, preserve_index=False))
-                price_writer.write_table(pa.Table.from_pandas(
-                    daily[PRICE_COLUMNS], schema=PRICE_SCHEMA, preserve_index=False))
+                full_table = pa.Table.from_pandas(
+                    daily, schema=FULL_SCHEMA, preserve_index=False,
+                )
+                full_writer.write_table(full_table)
+                price_table = pa.Table.from_pandas(
+                    daily[PRICE_COLUMNS], schema=PRICE_SCHEMA, preserve_index=False,
+                )
+                price_writer.write_table(price_table)
+                del full_table, price_table
                 total += len(daily)
                 print(f'{year}: {len(daily):,} regular observations', flush=True)
         full_writer.close()
         full_writer = None
         price_writer.close()
         price_writer = None
+        # Publish complete datasets only after all selected years have been written.
         full_tmp.replace(full_path)
         price_tmp.replace(price_path)
         print(f'Saved {total:,} daily CRSP rows to both outputs', flush=True)

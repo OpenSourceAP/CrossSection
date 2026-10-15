@@ -30,13 +30,13 @@ from config import DATA_ROOT, DEBUG_MODE
 
 
 def enforce_column_schema(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
-    """Return a copy of df with the desired columns and pandas dtypes."""
+    """Standardize linking fields for monthly analyst-data joins."""
     df_out = df.copy()
 
-    # Keep only requested columns in the specified order
+    # Provide the linking fields expected by downstream analyst-data joins.
     df_out = df_out.reindex(columns=columns)
 
-    # Apply dtypes / cleanup to match historical expectations
+    # Represent absent tickers as empty text, and invalid numeric links or dates as missing.
     if "tickerIBES" in df_out.columns:
         df_out["tickerIBES"] = df_out["tickerIBES"].fillna("").astype(str)
 
@@ -59,7 +59,7 @@ def main() -> None:
 
     print("Processing CRSP-IBES linking data...")
 
-    # Validate the complete calendar before issuing any database query.
+    # Require a complete, unique stock-month calendar so monthly links have full history.
     configured_calendar = os.getenv("OPENAP_CRSP_CALENDAR")
     if configured_calendar:
         calendar_path = Path(configured_calendar).expanduser().resolve()
@@ -78,12 +78,12 @@ def main() -> None:
     if crsp_monthly.empty or crsp_monthly[keys].isna().any().any() or crsp_monthly.duplicated(keys).any():
         raise ValueError("The CRSP calendar is empty or has null/duplicate security-month keys.")
     if DEBUG_MODE and (
-        crsp_monthly.time_avail_m.min() > pd.Timestamp("1976-01-01")
-        or crsp_monthly.time_avail_m.max() < pd.Timestamp("2024-12-01")
+        crsp_monthly['time_avail_m'].min() > pd.Timestamp("1976-01-01")
+        or crsp_monthly['time_avail_m'].max() < pd.Timestamp("2024-12-01")
     ):
         raise ValueError("Debug IBES requires a full CRSP stock-month calendar, not the 1981 monthly debug output.")
     print(f"Full CRSP calendar: {len(crsp_monthly):,} distinct stock-months, "
-          f"{crsp_monthly.time_avail_m.min():%Y-%m} to {crsp_monthly.time_avail_m.max():%Y-%m}")
+          f"{crsp_monthly['time_avail_m'].min():%Y-%m} to {crsp_monthly['time_avail_m'].max():%Y-%m}")
 
     username = os.getenv("WRDS_USERNAME")
     password = os.getenv("WRDS_PASSWORD")
@@ -105,7 +105,7 @@ def main() -> None:
         engine.dispose()
     print(f"Loaded {len(iblink_raw):,} IBES-CRSP linking records from WRDS")
 
-    # Convert start/end dates to monthly timestamps
+    # Make links available from their starting month through the month before expiry.
     iclink = iblink_raw.copy()
     iclink["sdate_m"] = pd.to_datetime(iclink["sdate"]).dt.to_period("M").dt.to_timestamp()
     iclink["edate_m"] = (
@@ -113,28 +113,27 @@ def main() -> None:
     ).dt.to_timestamp()
     iclink = iclink.drop(columns=["sdate", "edate"])
 
-    # Each link can cover many months and a PERMNO can have several link
-    # intervals. Calendar keys are unique; this expansion is intentional.
+    # Associate each stock-month with the IBES tickers whose links cover that month.
     merged = iclink.merge(crsp_monthly, on="permno", how="inner")
-    merged = merged.query("ticker.notna()").copy()
-    merged = merged[
-        (merged["time_avail_m"].notna())
+    merged = merged[merged['ticker'].notna()].copy()
+    is_within_link_dates = (
+        merged["time_avail_m"].notna()
         & (merged["time_avail_m"] >= merged["sdate_m"])
         & (merged["time_avail_m"] <= merged["edate_m"])
-    ]
+    )
+    merged = merged[is_within_link_dates]
 
     print(f"Joined IBES-CRSP link with CRSP monthly data: {len(merged):,} rows")
 
-    # Keep the lowest score per stock-month; ties go to the first IBES ticker.
+    # Prefer the best-scored ticker link per stock-month, breaking ties alphabetically.
     overlapping = merged.duplicated(keys, keep=False)
     overlap_groups = merged.loc[overlapping, keys].drop_duplicates().shape[0]
     print(f"Overlapping link candidates: {overlapping.sum():,} rows across "
           f"{overlap_groups:,} stock-months")
-    merged = (
-        merged.sort_values(["permno", "time_avail_m", "score", "ticker"])
-        .groupby(["permno", "time_avail_m"], as_index=False)
-        .first()
-    )
+    merged = merged.sort_values(["permno", "time_avail_m", "score", "ticker"])
+    stock_month_groups = merged.groupby(["permno", "time_avail_m"], as_index=False)
+    merged = stock_month_groups.first()
+    del stock_month_groups
     print(f"Resolved {overlapping.sum() - overlap_groups:,} extra link candidates; "
           f"{len(merged):,} unique stock-months")
 

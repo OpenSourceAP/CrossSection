@@ -4,6 +4,8 @@ How to run: python3 Signals/pyCode/DataDownloads/CRSPAcquisitions.py
 Inputs: crsp.stkdistributions. DEBUG_MODE selects 1981 source ex-dates.
 Outputs: OPENAP_DATA_ROOT/Intermediate/m_CRSPAcquisitions.parquet.
 The output preserves the legacy distinct-child rule, regardless of DISTCD.
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -18,13 +20,15 @@ from utils.wrds_connection import get_wrds_engine
 
 
 def prepare_acquisitions(source):
-    """Apply the legacy ACPERM > 999 rule and keep unique child PERMNOs."""
-    rows = source.loc[source['dispermno'].gt(999) & source['disexdt'].notna(),
-                      ['dispermno']].copy()
-    result = rows.rename(columns={'dispermno': 'permno'}).drop_duplicates()
+    """Flag distinct child securities, retaining the legacy identifier cutoff."""
+    is_qualifying_child = (source['dispermno'] > 999) & source['disexdt'].notna()
+    rows = source.loc[is_qualifying_child, ['dispermno']].copy()
+    result = rows.rename(columns={'dispermno': 'permno'})
+    result = result.drop_duplicates()
     result['permno'] = result['permno'].astype('int64')
+    # Mark each qualifying child security once, regardless of its number of events.
     result['SpinoffCo'] = 1
-    if result.permno.duplicated().any():
+    if result['permno'].duplicated().any():
         raise ValueError('Acquisition output contains duplicate child PERMNOs.')
     print(f'{len(rows)} qualifying events; {len(result)} distinct child securities',
           flush=True)

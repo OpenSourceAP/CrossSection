@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/CompustatSegments.parquet
 
-How to run: python3 CompustatBusinessSegments.py
+How to run: from Signals/pyCode, run python3 DataDownloads/CompustatBusinessSegments.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -26,15 +28,13 @@ print("=" * 60, flush=True)
 print("🏢 CompustatBusinessSegments.py - Business Segment Data", flush=True)
 print("=" * 60, flush=True)
 
-# Load environment variables for database connection
 load_dotenv()
 
-# Create database connection to WRDS
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Define SQL query to extract business segment data
+# Obtain segment sales and industry classifications for measuring company diversification.
 QUERY = """
 SELECT a.gvkey, a.datadate, a.stype, a.sid, a.sales, a.srcdate, a.naicsh, a.sics1, a.snms
 FROM compseg.wrds_segmerged as a
@@ -45,31 +45,28 @@ if DEBUG_MODE:
     QUERY += f" LIMIT {DEBUG_ROWS}"
     print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
-# Execute query and download data
 segments_data = pd.read_sql_query(QUERY, engine)
 engine.dispose()
 
 print(f"Downloaded {len(segments_data)} business segment records")
 
-
-# Convert numeric columns from string to numeric format
+# Make company and industry identifiers numeric, treating invalid values as missing.
 segments_data['gvkey'] = pd.to_numeric(segments_data['gvkey'], errors='coerce')
 segments_data['sics1'] = pd.to_numeric(segments_data['sics1'], errors='coerce')
 segments_data['naicsh'] = pd.to_numeric(segments_data['naicsh'], errors='coerce')
 
-# Convert date columns to datetime format
+# Preserve both report and source dates for selecting segment information over time.
 segments_data['datadate'] = pd.to_datetime(segments_data['datadate'])
 segments_data['srcdate'] = pd.to_datetime(segments_data['srcdate'])
 
-# Handle missing string values by converting NaN to empty strings
+# Represent absent segment names consistently as empty text.
 segments_data['snms'] = segments_data['snms'].fillna('')
 
-# Save data
+# Save segment-level sales and classifications for downstream signals.
 segments_data.to_parquet("../pyData/Intermediate/CompustatSegments.parquet")
 
 print(f"Compustat Business Segments data saved with {len(segments_data)} records")
 
-# Display summary statistics and sample data
 print("\nSegment types:")
 print(segments_data['stype'].value_counts())
 

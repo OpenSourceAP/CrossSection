@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/d_qfactor.parquet
 
-How to run: python QFactorModel.py
+How to run: from Signals/pyCode, run python3 DataDownloads/QFactorModel.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import pandas as pd
@@ -18,10 +20,9 @@ load_dotenv()
 
 print("Downloading Q-factor model data...")
 
-# Download Q-factor data from HXZ website
+# Obtain daily q-factor returns for factor-adjusted return calculations.
 webloc = "http://global-q.org/uploads/1/2/2/6/122679606/q5_factors_daily_2019.csv"
 
-# Download data from website
 response = requests.get(webloc, timeout=30)
 response.raise_for_status()
 
@@ -35,36 +36,35 @@ os.remove(temp_file)
 
 print(f"Downloaded {len(qfactor_data)} Q-factor records")
 
-# Clean and standardize column names
+# Standardize source field names before selecting the factor series used by signals.
 qfactor_data.columns = qfactor_data.columns.str.lower()
 
-# Remove r_eg column as it's not needed
+# Exclude expected-growth returns from the factor-model inputs used downstream.
 qfactor_data = qfactor_data.drop('r_eg', axis=1)
 
-# Add _qfac suffix to factor return columns
+# Distinguish q-factor returns from similarly named factors in other datasets.
 rename_dict = {}
 for col in qfactor_data.columns:
     if col.startswith('r_') and col != 'r_eg':
         rename_dict[col] = col + '_qfac'
 qfactor_data = qfactor_data.rename(columns=rename_dict)
 
-# Convert date column to datetime format
+# Align factor observations with the daily stock-data calendar.
 date_col = 'date'
 qfactor_data[date_col] = qfactor_data[date_col].astype(str)
 qfactor_data['time_d'] = pd.to_datetime(qfactor_data[date_col], format='%Y%m%d')
 qfactor_data = qfactor_data.drop(date_col, axis=1)
 
-# Convert factor returns from percentage to decimal
+# Express factor returns as decimals, consistent with stock returns.
 factor_cols = [col for col in qfactor_data.columns if col.startswith('r_')]
 for col in factor_cols:
     qfactor_data[col] = qfactor_data[col] / 100
 
-# Save to parquet
+# Save daily q-factor returns for downstream return calculations.
 qfactor_data.to_parquet("../pyData/Intermediate/d_qfactor.parquet")
 
 print(f"Q-factor model data saved with {len(qfactor_data)} records")
 
-# Display summary information
 print(f"Date range: {qfactor_data['time_d'].min().strftime('%Y-%m-%d')} to {qfactor_data['time_d'].max().strftime('%Y-%m-%d')}")
 
 print("\nSample data:")

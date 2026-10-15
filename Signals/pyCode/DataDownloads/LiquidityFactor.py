@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/monthlyLiquidity.parquet
 
-How to run: python3 LiquidityFactor.py
+How to run: from Signals/pyCode, run python3 DataDownloads/LiquidityFactor.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -24,13 +26,12 @@ DEBUG_ROWS = get_debug_row_limit("LiquidityFactor")
 
 load_dotenv()
 
-# Connect to WRDS database
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@"
     f"wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Query Pastor-Stambaugh liquidity factor data
+# Obtain the monthly liquidity innovation used in liquidity-risk calculations.
 QUERY = """
 SELECT date, ps_innov
 FROM ff.liq_ps
@@ -40,20 +41,17 @@ if DEBUG_MODE:
     QUERY += f" LIMIT {DEBUG_ROWS}"
     print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
-# Download liquidity factor data
 liquidity_data = pd.read_sql_query(QUERY, engine)
 
-# Convert date to monthly time_avail_m variable
+# Align liquidity innovations with the monthly stock-data calendar.
 liquidity_data['date'] = pd.to_datetime(liquidity_data['date'])
 liquidity_data['time_avail_m'] = liquidity_data['date'].dt.to_period('M').dt.to_timestamp()
 
-# Remove original date column
 liquidity_data = liquidity_data.drop('date', axis=1)
 
-# Save data
+# Save monthly liquidity innovations for downstream signals.
 liquidity_data.to_parquet("../pyData/Intermediate/monthlyLiquidity.parquet")
 
-# Display summary statistics
 print(f"Monthly Liquidity Factor downloaded with {len(liquidity_data)} records")
 print(f"Date range: {liquidity_data['time_avail_m'].min()} to {liquidity_data['time_avail_m'].max()}")
 print("\nSample data:")

@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/dailyFF.parquet
 
-How to run: python3 FamaFrenchDaily.py
+How to run: from Signals/pyCode, run python3 DataDownloads/FamaFrenchDaily.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -26,16 +28,14 @@ print("=" * 60, flush=True)
 print("📈 FamaFrenchDaily.py - Daily Fama-French Factors", flush=True)
 print("=" * 60, flush=True)
 
-# Load environment variables for WRDS credentials
 load_dotenv()
 
-# Create database connection to WRDS
 engine = create_engine(
     f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@"
     f"wrds-pgdata.wharton.upenn.edu:9737/wrds"
 )
 
-# Define SQL query to get daily Fama-French factors
+# Obtain market, size, value, momentum, and risk-free returns for daily factor models.
 QUERY = """
 SELECT date, mktrf, smb, hml, rf, umd
 FROM ff.factors_daily
@@ -46,20 +46,16 @@ if DEBUG_MODE:
     QUERY += f" LIMIT {DEBUG_ROWS}"
     print(f"DEBUG MODE: Limiting to {DEBUG_ROWS} rows", flush=True)
 
-# Download daily Fama-French factors from WRDS
 ff_daily = pd.read_sql_query(QUERY, engine)
 
-
-# Rename date column to time_d for consistency
+# Use the standard daily date field so factor observations can be joined to stock data.
 ff_daily = ff_daily.rename(columns={'date': 'time_d'})
 
-# Convert time_d to datetime format
 ff_daily['time_d'] = pd.to_datetime(ff_daily['time_d'])
 
-# Save to parquet
+# Save daily factors in the format used by downstream return calculations.
 ff_daily.to_parquet("../pyData/Intermediate/dailyFF.parquet")
 
-# Print summary statistics
 print(f"Daily Fama-French factors downloaded with {len(ff_daily)} records", flush=True)
 print(f"Date range: {ff_daily['time_d'].min().strftime('%Y-%m-%d')} to {ff_daily['time_d'].max().strftime('%Y-%m-%d')}", flush=True)
 print("\nSample data:", flush=True)

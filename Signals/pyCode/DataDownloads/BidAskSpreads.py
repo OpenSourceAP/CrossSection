@@ -7,7 +7,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/hf_spread.parquet
 
-How to run: python3 BidAskSpreads.py
+How to run: from Signals/pyCode, run python3 DataDownloads/BidAskSpreads.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import pandas as pd
@@ -21,31 +23,30 @@ DEBUG_ROWS = get_debug_row_limit("BidAskSpreads")
 
 print("Processing high-frequency bid-ask spread data...")
 
-# Load input data from preprocessed CSV
+# Read the prepared security-month spread estimates used by the spread signal.
 input_file = "../pyData/Prep/hf_monthly.csv"
 
 data = pd.read_csv(input_file)
 print(f"Loaded {len(data)} records from {input_file}")
 
-# Parse yearm string format (YYYYMM) into year and month components
+# Align the source YYYYMM labels with the monthly calendar used by other signals.
 data['yearm'] = data['yearm'].astype(str)
 data['y'] = data['yearm'].str[:4].astype(int)
 data['m'] = data['yearm'].str[4:6].astype(int)
 
-# Create monthly period index from year and month
 data['time_avail_m'] = pd.PeriodIndex.from_fields(
     year=data['y'], month=data['m'], freq='M'
 )
 
-# Create hf_spread variable from espread_pct_mean
+# Expose the source effective-spread measure under the name expected by signals.
 data['hf_spread'] = data['espread_pct_mean']
 
-# Select final columns and clean data
+# Retain only security-months with both an identifier and a usable spread.
 data = data[['permno', 'time_avail_m', 'hf_spread']].copy()
 data = data.dropna()
 print(f"After dropping missing values: {len(data)} records")
 
-# Optimize data types
+# Store security identifiers and months in the standard signal-data format.
 data['permno'] = data['permno'].astype('int64')
 data['time_avail_m'] = data['time_avail_m'].dt.to_timestamp()
 
@@ -54,7 +55,7 @@ if DEBUG_MODE:
     data = data.head(DEBUG_ROWS)
     print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
-# Save processed data to parquet
+# Save monthly security-level spreads for downstream signals.
 output_file = "../pyData/Intermediate/hf_spread.parquet"
 data.to_parquet(output_file, index=False)
 
