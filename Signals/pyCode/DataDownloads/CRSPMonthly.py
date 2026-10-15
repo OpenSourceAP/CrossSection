@@ -1,12 +1,12 @@
-# ABOUTME: Downloads native CRSP CIZ monthly stocks and restores the existing output schema.
+# ABOUTME: Downloads native CRSP CIZ monthly stocks and prepares monthly stock outputs.
 """Run: python3 Signals/pyCode/DataDownloads/CRSPMonthly.py with the project venv.
 
-Inputs: crsp.msf_v2, crsp.stksecurityinfohist, crsp.stkdelists and regular
-crsp.dsf_v2 observations. Native monthly returns preserve source precision;
+Inputs: crsp.msf_v2, crsp.stksecurityinfohist and crsp.stkdelists.
+Native monthly returns preserve source precision;
 ret_b4_dl inverts the delisting return in month-end delisting months and is missing
-for mid-month delistings, as in v1 (Docs/CRSP-v2-Migration.md). Daily data supply bidlo/askhi.
-DEBUG_MODE selects all 1981 stock months; supporting daily aggregation uses that
-same calendar window. Production uses full history. Cumulative factors are native.
+for mid-month delistings, as in v1 (Docs/CRSP-v2-Migration.md).
+The unused legacy bidlo/askhi columns are omitted. DEBUG_MODE selects all 1981
+stock months; production uses full history. Cumulative factors are native.
 Outputs: OPENAP_DATA_ROOT/Intermediate/monthlyCRSP.parquet (default Signals/pyData).
 Mapping/compatibility decisions: Signals/tests/crsp_v2/monthly_mapping.md.
 """
@@ -75,25 +75,9 @@ keys=['permno','time_avail_m']
 if crsp_data.duplicated(keys).any():
     raise ValueError('CIZ monthly/name join has duplicate security-month keys; resolve the intervals.')
 
-# SQL aggregation avoids downloading the complete daily file for monthly outputs.
-# V1 monthly high/low columns are extrema of daily closing prices, including BA signs.
-daily_predicate,daily_params=sql_date_window('dlycaldt','monthly')
-daily_query=f"""
-SELECT permno, date_trunc('month',dlycaldt)::date AS time_avail_m,
-       (array_agg(CASE WHEN dlyprcflg='BA' THEN -dlyprc ELSE dlyprc END
-          ORDER BY dlyprc ASC,dlycaldt ASC) FILTER(WHERE dlyprc IS NOT NULL))[1] AS bidlo,
-       (array_agg(CASE WHEN dlyprcflg='BA' THEN -dlyprc ELSE dlyprc END
-          ORDER BY dlyprc DESC,dlycaldt ASC) FILTER(WHERE dlyprc IS NOT NULL))[1] AS askhi
-FROM crsp.dsf_v2
-WHERE dlydelflg='N' AND {daily_predicate}
-GROUP BY permno,date_trunc('month',dlycaldt)
-"""
-support=pd.read_sql_query(daily_query,engine,params=daily_params)
 # Full delisting history: events are matched to flagged months by PERMNO.
 delist=pd.read_sql_query("SELECT permno, delret FROM crsp.stkdelists",engine)
 release_wrds_engine(engine)
-support['time_avail_m']=pd.to_datetime(support.time_avail_m).astype('datetime64[ns]')
-crsp_data=crsp_data.merge(support,on=keys,how='left',validate='one_to_one')
 crsp_data=restore_pre_delisting_returns(crsp_data,delist)
 
 crsp_data[['permno','permco']]=crsp_data[['permno','permco']].astype('Int64')
@@ -110,7 +94,7 @@ crsp_data['mve_c']=crsp_data.shrout*crsp_data.prc.abs()
 company=(crsp_data.dropna(subset='permco').groupby(['permco','time_avail_m'],as_index=False)
          .mve_c.sum(min_count=1).rename(columns={'mve_c':'mve_permco'}))
 crsp_data=crsp_data.merge(company,on=['permco','time_avail_m'],how='left',validate='many_to_one')
-columns=['permno','permco','ret','retx','vol','shrout','prc','cfacshr','bidlo','askhi',
+columns=['permno','permco','ret','retx','vol','shrout','prc','cfacshr',
          'shrcd','exchcd','ticker','shrcls','sicCRSP','sic2D','time_avail_m','ret_b4_dl','mve_c','mve_permco']
 crsp_data=crsp_data[columns]
 crsp_data.to_parquet(intermediate_path('monthlyCRSP.parquet'),index=False)

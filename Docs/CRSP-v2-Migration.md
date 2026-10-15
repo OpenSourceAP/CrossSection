@@ -50,6 +50,13 @@ A ✅ in a script heading indicates approval of its consolidated findings.
 
 ## CRSPMonthly.py: ✅
 
+PR #214 follow-up: removed the daily CRSP aggregation and the unused monthly
+`bidlo`/`askhi` columns. No predictor or placebo reads those columns. The output
+now has 18 columns; the other columns and return calculations are unchanged.
+The comparison results below describe the previously approved 20-column output,
+including the two columns subsequently removed. New comparison reports should
+list only `bidlo` and `askhi` as baseline-only monthly columns.
+
 ### Stage 1 summary (1981, WRDS run 2026-10-07)
 
 Rows: v1 65,652; v2 65,042. Keys: 65,039 matched, 613 v1-only, 3 v2-only.
@@ -108,7 +115,6 @@ Sources:
 | `crsp.msf_v2`              | identifiers, `mthret`, `mthretx`, `mthprc`/`mthprcflg`/`mthprcdt`, `mthvol`, `shrout`, `mthcumfacshr`, `mthdelflg`, ticker, classification fields |
 | `crsp.stksecurityinfohist` | `shareclass`, `siccd` (effective-dated)                                                                                                           |
 | `crsp.stkdelists`          | `delret`; full history, one event per PERMNO                                                                                                      |
-| `crsp.dsf_v2`              | `bidlo`, `askhi`, aggregated in SQL per security-month                                                                                            |
 
 Column rules (full table in `Signals/tests/crsp_v2/monthly_mapping.md`):
 
@@ -121,11 +127,6 @@ Column rules (full table in `Signals/tests/crsp_v2/monthly_mapping.md`):
   hundreds and divided by 1e4. The output unit (millions of shares) is unchanged.
 - `shrout`: `shrout / 1e3` (millions), unchanged.
 - `cfacshr`: `mthcumfacshr`.
-- `bidlo`, `askhi`: minimum and maximum daily closing price over regular days
-  (`dlydelflg = 'N'`), ranked by magnitude, keeping the chosen day's BA sign;
-  the earliest date breaks ties. The v1 monthly fields are signed daily
-  closing-price extrema, not intraday high/low (checked against the legacy data
-  guide and the 1981 data).
 - `shrcd`, `exchcd`: `Signals/pyCode/utils/crsp_v2_codes.py`; see "Share and
   exchange codes".
 - `shrcls`: `shareclass`, with `NCS` (no class) and missing mapped to `''`.
@@ -197,7 +198,7 @@ dropped for three reasons:
 - it covered only one 1981 case (`delret = -1`);
 - it did not reproduce v1, which is missing in mid-month delisting months.
 
-`dsf_v2` is still queried, but only for `bidlo`/`askhi`.
+The monthly script no longer queries `dsf_v2`; `bidlo`/`askhi` were unused and removed.
 
 ##### Match to v1 (1981, all securities)
 

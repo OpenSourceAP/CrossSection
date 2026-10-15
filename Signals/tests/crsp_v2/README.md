@@ -21,20 +21,23 @@ It saves complete key inventories, unmatched keys, schemas, missingness
 transitions, value mismatch percentages, p99/max absolute differences, and
 up to 100 examples per mismatching column under the candidate's Logs/crsp_v2.
 Producing a report does not mean its discrepancies are accepted.
+PR #214 intentionally removes unused monthly `bidlo`/`askhi`; new monthly
+reports should list those two columns as baseline-only. Historical reports
+predate their removal; the frozen baseline remains unchanged.
 
-| Output | Selection | Comparison key |
-|---|---|---|
-| monthlyCRSP | 1981 stock months, all securities | permno, time_avail_m |
-| dailyCRSP, dailyCRSPprc | January 1981, all securities | permno, time_d |
-| CRSPdistributions | 1981 ex-dates, all events | permno, rcrddt, exdt, paydt, distcd |
-| m_CRSPAcquisitions | 1981 source ex-dates, existing distinct-child logic | permno |
-| monthlyMarket | Full history; later coverage reported separately | time_avail_m |
-| CCMLinkingTable | Full link history | gvkey, permno, permco, liid, linktype, linkprim, timeLinkStart_d |
-| CompustatAnnual.csv | 1981 datadate, shared fundamentals extract | gvkey, datadate |
-| a_aCompustat | 1981 datadate, all linked firms | gvkey, permno, datadate |
-| m_aCompustat | 1981 availability months, built solely from 1981 reports | permno, time_avail_m |
-| IBESCRSPLinkingTable | Full links and full stock calendar for each version | permno, time_avail_m |
-| OPTIONMETRICSCRSPLinkingTable | Full link history | secid, permno, sdate |
+| Output                        | Selection                                                | Comparison key                                                   |
+| ----------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| monthlyCRSP                   | 1981 stock months, all securities                        | permno, time_avail_m                                             |
+| dailyCRSP, dailyCRSPprc       | January 1981, all securities                             | permno, time_d                                                   |
+| CRSPdistributions             | 1981 ex-dates, all events                                | permno, rcrddt, exdt, paydt, distcd                              |
+| m_CRSPAcquisitions            | 1981 source ex-dates, existing distinct-child logic      | permno                                                           |
+| monthlyMarket                 | Full history; later coverage reported separately         | time_avail_m                                                     |
+| CCMLinkingTable               | Full link history                                        | gvkey, permno, permco, liid, linktype, linkprim, timeLinkStart_d |
+| CompustatAnnual.csv           | 1981 datadate, shared fundamentals extract               | gvkey, datadate                                                  |
+| a_aCompustat                  | 1981 datadate, all linked firms                          | gvkey, permno, datadate                                          |
+| m_aCompustat                  | 1981 availability months, built solely from 1981 reports | permno, time_avail_m                                             |
+| IBESCRSPLinkingTable          | Full links and full stock calendar for each version      | permno, time_avail_m                                             |
+| OPTIONMETRICSCRSPLinkingTable | Full link history                                        | secid, permno, sdate                                             |
 
 Distribution and acquisition field mappings, code crosswalk, collision rule,
 and 1981 coverage: `Signals/tests/crsp_v2/distribution_mapping.md`.
