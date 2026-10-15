@@ -1358,13 +1358,15 @@ print("📊 Loading daily CRSP data...")
 
 # 1. Compute moving averages
 # use permno time_d prc cfacpr using "$pathDataIntermediate/dailyCRSP", clear
-daily_crsp = pl.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
+df_daily = pl.read_parquet(
+    "../pyData/Intermediate/dailyCRSP.parquet",
+    columns=["permno", "time_d", "prc", "cfacpr"],
+)
 
 # convert time_d to datetime[D]
 # tbc: should standardize in DataDownloads
-daily_crsp = daily_crsp.with_columns(col("time_d").cast(pl.Date).alias("time_d"))
+df_daily = df_daily.with_columns(col("time_d").cast(pl.Date).alias("time_d"))
 
-df_daily = daily_crsp.select(["permno", "time_d", "prc", "cfacpr"])
 print(f"Daily CRSP data: {len(df_daily):,} observations")
 
 print("🔄 Computing adjusted prices and time variables...")
@@ -1391,14 +1393,16 @@ print("📈 Computing moving averages for 11 different lags...")
 # xtset permno time_temp
 lag_lengths = [3, 5, 10, 20, 50, 100, 200, 400, 600, 800, 1000]
 
-# Convert to pandas for asrol_legacy operations
-df_daily_pd = df_daily.to_pandas()
+# Roll on a narrow frame and attach each average, so the full daily panel
+# (~110M rows) is not copied on every call (the wide version ran out of memory)
+df_daily = df_daily.drop(["prc", "cfacpr"])
+ma_input = df_daily.select(["permno", "time_temp", "P"])
 
 for L in lag_lengths:
     print(f"  Computing {L}-day moving average...")
     # asrol P, window(time_temp `L') stat(mean) by(permno) gen(A_`L')
-    df_daily_pd = asrol(
-        df_daily_pd,
+    ma = asrol(
+        ma_input,
         group_col="permno",
         time_col="time_temp",
         freq="1d",
@@ -1408,11 +1412,12 @@ for L in lag_lengths:
         new_col_name=f"A_{L}",
         min_samples=1,  # Allow partial windows like Stata default
     )
-
-# Convert back to polars
-df_daily = pl.from_pandas(df_daily_pd).with_columns(
-    col("time_avail_m").cast(pl.Date).alias("time_avail_m")
-)
+    # time_temp has no gaps, so asrol returns the same rows in the same order
+    assert ma.height == df_daily.height
+    assert ma["permno"].equals(df_daily["permno"])
+    df_daily = df_daily.with_columns(ma[f"A_{L}"])
+    del ma
+del ma_input
 
 print("📅 Keeping only end-of-month observations...")
 

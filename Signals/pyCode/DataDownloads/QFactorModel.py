@@ -23,7 +23,8 @@ print("Downloading Q-factor model data...")
 # Obtain daily q-factor returns for factor-adjusted return calculations.
 webloc = "http://global-q.org/uploads/1/2/2/6/122679606/q5_factors_daily_2019.csv"
 
-response = requests.get(webloc, timeout=30)
+# global-q.org returns 400 Bad Request to the default python-requests User-Agent.
+response = requests.get(webloc, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
 response.raise_for_status()
 
 temp_file = "../pyData/Intermediate/temp_qfactor.csv"
