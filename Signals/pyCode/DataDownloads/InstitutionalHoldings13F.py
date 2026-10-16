@@ -27,7 +27,8 @@ print("Processing Thomson Reuters 13F holdings data...")
 input_file = "../pyData/Prep/tr_13f.csv"
 
 nrows = DEBUG_ROWS
-data = pd.read_csv(input_file, nrows=nrows)
+# The SAS export writes numinstown with thousands separators (e.g. "1,036").
+data = pd.read_csv(input_file, nrows=nrows, thousands=',')
 
 if DEBUG_MODE:
     print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
