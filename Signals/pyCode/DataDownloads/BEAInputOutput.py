@@ -6,7 +6,9 @@ ABOUTME: Outputs: 4 xlsx files in pyData/Intermediate/:
   - IOUse_Before_Redefinitions_PRO_1963-1996_Summary.xlsx
   - Supply_Tables_1997-20XX_Summary.xlsx
   - Supply-Use_Framework_1997-20XX_Summary.xlsx
-ABOUTME: Usage: python BEA_InputOutput.py (run from pyCode/)
+ABOUTME: Usage: from Signals/pyCode, run python3 DataDownloads/BEAInputOutput.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -14,10 +16,9 @@ import requests
 import zipfile
 import re
 
-
 data_dir = os.path.join('..', 'pyData', 'Intermediate')
 
-# Download required pre-1997 tables directly as xlsx
+# Obtain historical make/use tables for industry input-output momentum.
 pre1997_urls = [
     ("https://apps.bea.gov/industry/xls/io-annual/IOMake_Before_Redefinitions_1963-1996_Summary.xlsx",
         "IOMake_Before_Redefinitions_1963-1996_Summary.xlsx"),
@@ -32,7 +33,7 @@ for url, filename in pre1997_urls:
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
 
-# Download all 1997-present tables as zip
+# Obtain the newer supply/use tables to extend industry coverage beyond 1996.
 zip_url = "https://apps.bea.gov//industry/iTables%20Static%20Files/AllTablesSUP.zip"
 zip_path = os.path.join(data_dir, 'temp_bea.zip')
 
@@ -41,7 +42,7 @@ with open(zip_path, 'wb') as f:
     for chunk in response.iter_content(chunk_size=8192):
         f.write(chunk)
 
-# unzip the necessary files for 1997-present
+# Keep the summary supply and supply-use workbooks needed by the signal.
 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
     file_list = zip_ref.namelist()
 

@@ -1,76 +1,65 @@
-# ABOUTME: Downloads CRSP distributions data to identify companies created in spinoffs
-# ABOUTME: Filters for acquisition permnos and creates a list of spinoff companies
-"""
-Inputs:
-- crsp.msedist (CRSP distributions data)
+"""Identify child securities from CRSP CIZ distribution events.
 
-Outputs:
-- ../pyData/Intermediate/m_CRSPAcquisitions.parquet
+How to run: python3 Signals/pyCode/DataDownloads/CRSPAcquisitions.py
+Inputs: crsp.stkdistributions. DEBUG_MODE selects 1981 source ex-dates.
+Outputs: OPENAP_DATA_ROOT/Intermediate/m_CRSPAcquisitions.parquet.
+The output preserves the legacy distinct-child rule, regardless of DISTCD.
 
-How to run: python3 CRSPAcquisitions.py
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
-from sqlalchemy import create_engine
-import pandas as pd
-from dotenv import load_dotenv
 import sys
+
+import pandas as pd
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
-
-load_dotenv()
-
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
-
-QUERY = """
-SELECT a.permno, a.distcd, a.exdt, a.acperm
-FROM crsp.msedist as a
-"""
-
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
-
-acq_data = pd.read_sql_query(QUERY, engine)
-engine.dispose()
-
-print(f"Downloaded {len(acq_data)} distribution records")
+from config import DATA_ROOT, DEBUG_MODE
+from utils.debug_mode import log_selection, sql_date_window
+from utils.wrds_connection import get_wrds_engine
 
 
-initial_count = len(acq_data)
-acq_data = acq_data[(acq_data['acperm'] > 999) & acq_data['acperm'].notna()]
-print(f"Filtered to {len(acq_data)} records with acperm > 999")
-
-acq_data = acq_data.dropna(subset=['exdt'])
-print(f"After removing missing exdt: {len(acq_data)} records")
-
-acq_data = acq_data.rename(columns={'exdt': 'time_d'})
-acq_data['time_d'] = pd.to_datetime(acq_data['time_d'])
-
-acq_data['time_avail_m'] = acq_data['time_d'].dt.to_period('M').dt.to_timestamp()
-
-acq_data = acq_data.drop('time_d', axis=1)
-
-acq_data['SpinoffCo'] = 1
-acq_data = acq_data.drop('permno', axis=1)
-acq_data = acq_data.rename(columns={'acperm': 'permno'})
-
-acq_data = acq_data[['permno', 'SpinoffCo']]
-
-initial_count = len(acq_data)
-acq_data = acq_data.drop_duplicates()
-duplicates_removed = initial_count - len(acq_data)
-print(f"Removed {duplicates_removed} duplicate records")
+def prepare_acquisitions(source):
+    """Flag distinct child securities, retaining the legacy identifier cutoff."""
+    is_qualifying_child = (source['dispermno'] > 999) & source['disexdt'].notna()
+    rows = source.loc[is_qualifying_child, ['dispermno']].copy()
+    result = rows.rename(columns={'dispermno': 'permno'})
+    result = result.drop_duplicates()
+    result['permno'] = result['permno'].astype('int64')
+    # Mark each qualifying child security once, regardless of its number of events.
+    result['SpinoffCo'] = 1
+    if result['permno'].duplicated().any():
+        raise ValueError('Acquisition output contains duplicate child PERMNOs.')
+    print(f'{len(rows)} qualifying events; {len(result)} distinct child securities',
+          flush=True)
+    return result[['permno', 'SpinoffCo']]
 
 
-acq_data.to_parquet("../pyData/Intermediate/m_CRSPAcquisitions.parquet", index=False)
+def main():
+    (DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
+    log_selection('CRSPAcquisitions')
+    predicate, params = sql_date_window('d.disexdt', 'events')
+    query = f"""
+        SELECT d.disexdt, d.dispermno
+        FROM crsp.stkdistributions AS d
+        WHERE {predicate}
+    """
+    engine = get_wrds_engine()
+    try:
+        source = pd.read_sql_query(query, engine, params=params)
+        if DEBUG_MODE:
+            missing = pd.read_sql_query(
+                'SELECT COUNT(*) AS n FROM crsp.stkdistributions WHERE disexdt IS NULL',
+                engine).iloc[0]['n']
+            print(f'Source events with missing ex-date (outside debug window): {missing}',
+                  flush=True)
+    finally:
+        engine.dispose()
+    print(f'Downloaded {len(source)} CIZ distribution events', flush=True)
+    result = prepare_acquisitions(source)
+    result.to_parquet(DATA_ROOT / 'Intermediate/m_CRSPAcquisitions.parquet', index=False)
+    print(f'Saved {len(result)} distinct child securities', flush=True)
 
-print(f"CRSP Acquisitions data saved with {len(acq_data)} unique spinoff companies")
 
-print("\nSample data:")
-print(acq_data.head())
-
-print(f"\nUnique spinoff companies: {acq_data['permno'].nunique()}")
-print(f"Total records: {len(acq_data)}")
+if __name__ == '__main__':
+    main()

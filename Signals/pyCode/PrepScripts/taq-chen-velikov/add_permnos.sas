@@ -1,10 +1,10 @@
 /*
-
-adds permnos to high freq data
-
-andrew chen 2021 08
-
-
+Run on WRDS from the CrossSection prep directory:
+    sas taq-chen-velikov/add_permnos.sas -log log/add_permnos.log
+Inputs: ./temp_output/issm_monthly.csv, ./temp_output/wrds_iid_monthly.csv,
+        crsp.stksecurityinfohist (CIZ), and historical TAQ masters via TCLINK.
+Output: ./temp_output/hf_monthly.csv.
+Andrew Chen 2021; CRSP inputs migrated to CIZ in 2026.
 */
 
 * ==== import issm, iid, and msenames ====;
@@ -21,17 +21,24 @@ proc import datafile = './temp_output/wrds_iid_monthly.csv' out=iid
 	guessingrows=6000;
 run;	
 
-data msenames; set crsp.msenames; 	
+data msenames;
+    set crsp.stksecurityinfohist
+      (keep=permno secinfostartdt secinfoenddt ticker shareclass);
+    * blank tickers can never match (hf1 requires a sym_root), but SAS
+      pairs blank with blank, so ~35k CIZ rows x 1.2m mtaq rows stalled hf1;
+    if not missing(ticker);
+    if shareclass='NCS' then shareclass='';
+    /* Retain the existing monthly endpoint rule; CIZ has finer intervals. */
 	* round to nearest month to ensure distinct;
 	* note this means we should use < for end dates;
-	linkstart = namedt; linkend = nameendt;
+	linkstart = secinfostartdt; linkend = secinfoenddt;
 	if day(linkstart) > 15 then linkstart = intnx('month', linkstart, 1);
 	if day(linkend) > 15 then linkend = intnx('month', linkend, 1);
 	
 	linkyearmstart = year(linkstart)*100 + month(linkstart);
 	linkyearmend = year(linkend)*100 + month(linkend);	
 	
-	keep permno namedt nameendt ticker shrcls link: name:;
+	keep permno secinfostartdt secinfoenddt ticker shareclass link:;
 run;
 
 * ==== append into dataset hf0 ==== ;
@@ -59,7 +66,7 @@ data hf0;
 run;	
 
 
-* ==== add permnos using ticker + shrcls as hf1 ==== ;
+* ==== add permnos using ticker + shareclass as hf1 ==== ;
 *
 	according to wrds, this is sufficient for dtaq
 	but we also use this for issm due to lack of other options	
@@ -71,7 +78,7 @@ proc sql; create table hf1 as select
 	a.*, b.permno
 	from hf0 as a
 	left join msenames as b
-	on a.sym_root = b.ticker and a.sym_suffix = b.shrcls
+	on a.sym_root = b.ticker and a.sym_suffix = b.shareclass
 	and a.yearm >= b.linkyearmstart and a.yearm < b.linkyearmend
 	and not missing(a.sym_root);
 quit;
@@ -81,10 +88,10 @@ data hf1; format permno yearm _all_;  set hf1; run;
 * ==== add permnos using WRDS tclink algo as hf2 ==== ;
 
 * create link table using WRDS code;
-%include '~/PrepScripts/taq-chen-velikov/macro_tclink.sas';
+%include 'taq-chen-velikov/macro_tclink.sas';
 %TCLINK (BEGDATE=199301,ENDDATE=201012,OUTSET=WORK.mtaq_link);
 
-* remove duplicates from mtaq_link by keeping first symbol (also shortest symbol);
+* remove duplicates from mtaq_link by keeping the first symbol in sort order;
 proc sort data = mtaq_link; by permno date symbol; run;
 data mtaq_link2; set mtaq_link; 
 	by permno date;

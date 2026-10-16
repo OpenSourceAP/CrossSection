@@ -8,7 +8,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/TBill3M.parquet
 
-How to run: python TreasuryBill3M.py
+How to run: from Signals/pyCode, run python3 DataDownloads/TreasuryBill3M.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -21,10 +23,9 @@ load_dotenv()
 
 print("Processing 3-month T-bill rate...")
 
-# Get FRED API key from environment
 fred_api_key = os.getenv("FRED_API_KEY")
 
-# Download monthly T-bill data from FRED
+# Obtain monthly three-month Treasury bill rates for the quarterly interest-rate measure.
 print("Downloading TB3MS from FRED...")
 url = "https://api.stlouisfed.org/fred/series/observations"
 params = {
@@ -43,28 +44,24 @@ monthly_data = df[['date', 'TB3MS']].dropna()
 
 print(f"Downloaded {len(monthly_data)} monthly observations")
 
-# Prepare data for quarterly aggregation
 monthly_data = monthly_data.set_index('date')
 
-# Aggregate monthly data to quarterly averages
+# Use the average available monthly rate to represent each calendar quarter.
 quarterly_data = monthly_data.resample('QE').mean()
 quarterly_data = quarterly_data.dropna().reset_index()
 
 print(f"Aggregated to {len(quarterly_data)} quarterly observations")
 
-# Convert T-bill rate from percentage to decimal
+# Express the annualized quoted rate as a decimal, without changing its rate convention.
 quarterly_data['TbillRate3M'] = quarterly_data['TB3MS'] / 100.0
 
-# Extract quarter from date
+# Identify calendar quarters for joining the rate to quarterly signal inputs.
 quarterly_data['qtr'] = quarterly_data['date'].dt.quarter
 
-# Extract year from date
 quarterly_data['year'] = quarterly_data['date'].dt.year
 
-# Keep only required columns
 final_data = quarterly_data[['year', 'qtr', 'TbillRate3M']].copy()
 
-# Display summary information
 print(f"Final dataset: {len(final_data)} quarterly records")
 date_range_start = (
     f"{final_data['year'].min()}Q"
@@ -76,12 +73,11 @@ date_range_end = (
 )
 print(f"Date range: {date_range_start} to {date_range_end}")
 
-# Save to parquet
+# Save quarterly Treasury bill rates for downstream signals.
 final_data.to_parquet("../pyData/Intermediate/TBill3M.parquet", index=False)
 
 print("3-month T-bill rate data saved successfully")
 
-# Display sample data and summary statistics
 print("\nSample data:")
 print(final_data.head())
 

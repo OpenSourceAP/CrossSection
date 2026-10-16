@@ -8,7 +8,9 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/d_vix.parquet
 
-How to run: python3 VIX.py
+How to run: from Signals/pyCode, run python3 DataDownloads/VIX.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
@@ -29,7 +31,7 @@ print("Environment variables loaded.", flush=True)
 
 
 def download_fred_series(series_id, api_key):
-    """Pull a single FRED series as a tidy DataFrame."""
+    """Provide dated volatility levels, retaining source missing values."""
     params = {
         "series_id": series_id,
         "api_key": api_key,
@@ -40,7 +42,7 @@ def download_fred_series(series_id, api_key):
     response.raise_for_status()
     observations = response.json()["observations"]
 
-    # Build DataFrame with parsed dates and numeric values for the requested series
+    # Preserve dated volatility observations, treating source missing-value markers as missing.
     df = pd.DataFrame(observations)
     df["date"] = pd.to_datetime(df["date"])
     df["value"] = pd.to_numeric(df["value"], errors="coerce")
@@ -51,7 +53,6 @@ print("Downloading VIX data from FRED...", flush=True)
 api_key = os.getenv("FRED_API_KEY")
 
 if not api_key:
-    # Fail fast so the user knows credentials are missing before making requests
     raise ValueError("FRED_API_KEY not found in environment variables")
 
 vxocls = download_fred_series("VXOCLS", api_key)
@@ -60,14 +61,14 @@ vixcls = download_fred_series("VIXCLS", api_key)
 print(f"Downloaded {len(vxocls)} VXO observations and {len(vixcls)} VIX observations.", flush=True)
 
 cutoff = pd.Timestamp("2021-09-23")
-# Merge both series and take VXO up to the cutoff, VIX afterwards to build a continuous history
+# Extend the VXO history with VIX where VXO is missing on or after the cutoff.
 vix_data = vxocls.merge(vixcls, on="date", how="outer").sort_values("date")
 
 vix_data["vix"] = vix_data["VXOCLS"]
 fill_mask = (vix_data["date"] >= cutoff) & vix_data["VXOCLS"].isna()
 vix_data.loc[fill_mask, "vix"] = vix_data.loc[fill_mask, "VIXCLS"]
 
-# Compute daily changes for the blended series and persist to parquet
+# Provide volatility levels and changes from the preceding observation for daily signals.
 final_data = vix_data[["date", "vix"]].rename(columns={"date": "time_d"})
 final_data["vix"] = final_data["vix"].astype("float32")
 final_data["dVIX"] = final_data["vix"].diff().astype("float32")

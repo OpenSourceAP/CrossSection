@@ -1,0 +1,115 @@
+# CRSP v2 migration comparisons
+
+The v1 baseline is frozen at commit `ff623e3` in `Signals/pyData-v1/`.
+`FROZEN.json` records the committed source and verified data/source checksums.
+Source release identifiers were not obtained. The v1 stock calendar ends in
+December 2024; link-table intervals may extend later. Never overwrite this root.
+
+Candidate downloads go to `Signals/pyData-v2/`. Reuse the baseline's explicit
+Compustat raw extract. Pull a separate v2 keys-only calendar for IBES. The default
+production root remains `Signals/pyData/`. Production output is Stage 2 work.
+
+The downloads now take `DATA_ROOT` from `Signals/pyCode/config.py` and append
+their own relative output paths. `OPENAP_DATA_ROOT` still overrides the default;
+set it before importing `config`. Each standalone download owns and disposes its
+WRDS engine. The old single-session helper used by the temporary migration runner
+has been removed; run the download scripts directly for subsequent comparisons.
+
+Run with the project environment:
+
+```sh
+/opt/venv/projects/openap/bin/python3 Signals/tests/crsp_v2/compare.py monthlyCRSP
+```
+
+`compare.py` selects each side independently, verifies key uniqueness, and
+outer-joins their key union. Null event-date components match explicitly.
+It saves complete key inventories, unmatched keys, schemas, missingness
+transitions, value mismatch percentages, p99/max absolute differences, and
+up to 100 examples per mismatching column under the candidate's Logs/crsp_v2.
+Producing a report does not mean its discrepancies are accepted.
+PR #214 intentionally removes unused monthly `bidlo`/`askhi`; new monthly
+reports should list those two columns as baseline-only. Historical reports
+predate their removal; the frozen baseline remains unchanged.
+
+| Output                        | Selection                                                | Comparison key                                                   |
+| ----------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
+| monthlyCRSP                   | 1981 stock months, all securities                        | permno, time_avail_m                                             |
+| dailyCRSP, dailyCRSPprc       | January 1981, all securities                             | permno, time_d                                                   |
+| CRSPdistributions             | 1981 ex-dates, all events                                | permno, rcrddt, exdt, paydt, distcd                              |
+| m_CRSPAcquisitions            | 1981 source ex-dates, existing distinct-child logic      | permno                                                           |
+| monthlyMarket                 | Full history; later coverage reported separately         | time_avail_m                                                     |
+| CCMLinkingTable               | Full link history                                        | gvkey, permno, permco, liid, linktype, linkprim, timeLinkStart_d |
+| CompustatAnnual.csv           | 1981 datadate, shared fundamentals extract               | gvkey, datadate                                                  |
+| a_aCompustat                  | 1981 datadate, all linked firms                          | gvkey, permno, datadate                                          |
+| m_aCompustat                  | 1981 availability months, built solely from 1981 reports | permno, time_avail_m                                             |
+| IBESCRSPLinkingTable          | Full links and full stock calendar for each version      | permno, time_avail_m                                             |
+| OPTIONMETRICSCRSPLinkingTable | Full link history                                        | secid, permno, sdate                                             |
+
+Distribution and acquisition field mappings, code crosswalk, collision rule,
+and 1981 coverage: `Signals/tests/crsp_v2/distribution_mapping.md`.
+
+IBES Stage 1 uses the frozen v1 full keys-only calendar and the separate CIZ
+calendar at `Signals/pyData-v2/Inputs/CRSP_stock_month_calendar.parquet`; the v2
+debug `monthlyCRSP` is not a full calendar. Run `compare.py IBESCRSPLinkingTable`
+over the full outputs. Result: 2,684,399 common keys with identical ticker and
+score, zero v1-only keys, and 50,529 v2-only keys (289 historical CIZ-only
+calendar keys and 50,240 in 2025). See `ibes_mapping.md` for the seven historical
+PERMNOs and sample decisions.
+
+OptionMetrics mapping and full-history comparison: `optionmetrics_mapping.md`.
+The WRDS source is unchanged; all five columns map exactly, `(secid, permno,
+sdate)` is unique, and all 34,881 candidate rows match the frozen baseline.
+
+Market index mapping and full-history comparison: `market_mapping.md`.
+`monthlyMarket` has 1,189 common months and 12 CIZ-only months in 2025, with
+no v1-only months or common-month missingness changes. Native CIZ values differ
+in 51 `vwretd`, 47 `ewretd`, and 1,003 `usdval` months, all negligible.
+
+CCM full-history mapping and comparison: `ccm_mapping.md`. The shared
+`ccmxpf_lnkhist` source has 32,306 matching link keys and no link or interval
+differences. Ten rows have `comp.names` descriptor revisions, kept as is.
+
+Tolerances were fixed before the comparisons: returns use absolute and relative
+1e-7; prices use absolute 1e-6 / relative 1e-8; share/price factors use absolute
+1e-7 / relative 1e-8; volume uses absolute 1e-6 / relative 1e-8; shares use
+absolute and relative 1e-8; market equities use absolute 1e-6 / relative 1e-8.
+Identifiers, classifications, dates, strings, and unspecified numeric fields
+require exact equality. Derived columns need independent expected-value checks;
+this label does not exempt them from v1 comparison. Report definition changes,
+evidenced source revisions, migration errors and unresolved differences explicitly.
+
+## Monthly mapping research
+
+Schema inspection confirms `crsp.msf_v2` contains monthly cumulative factors;
+`crsp.stksecurityinfohist` contains `shareclass`; `crsp.stkdelists` contains
+`delret`. Earlier plan statements implying those inputs were absent were
+incorrect. Monthly returns already incorporate delisting returns, and prices
+use a separate price flag rather than a negative sign. Mapping decisions must
+be finalized before replacing the monthly script.
+
+Primary references:
+
+- [WRDS CIZ-to-SIZ conversion guide](https://wrds-www.wharton.upenn.edu/pages/wrds-research/macros/crsp-ciztosiz-macro/)
+- [WRDS CRSP transition notice](https://wrds-www.wharton.upenn.edu/pages/data-announcements/changes-to-crsp-data/)
+- WRDS `crsp.metaiteminfo` and `crsp.metaflaginfo`, queried in the authorized session.
+
+The agreed monthly sample contains 323 company-months with multiple securities;
+it also contains delistings and multiple share classes. Cases outside the windows
+remain untested. Monthly Compustat covers only July–December 1981 by agreement.
+
+## Factor comparisons across vintages
+
+Cumulative factors are normalized to the endpoint of each source vintage, so
+raw factor-level differences alone do not establish a migration error. Keep
+raw differences as diagnostics, but assess split adjustment using factor ratios
+between common dates or factors rebased to a shared date within each PERMNO.
+Report missingness and nonconstant within-security scaling separately. Never
+normalize away missing observations or claim every difference is vintage-related.
+
+Relevant repository discussions:
+
+- [Closed issue #152: proper usage of cfacshr](https://github.com/OpenSourceAP/CrossSection/issues/152)
+- [Closed issue #95: cfacpr vintage normalization](https://github.com/OpenSourceAP/CrossSection/issues/95)
+
+Predictor work remains outside this migration checklist. Consumer inspection
+only establishes the compatibility requirements for downloaded output columns.

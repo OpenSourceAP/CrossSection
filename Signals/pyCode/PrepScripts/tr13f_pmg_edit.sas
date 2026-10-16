@@ -1,10 +1,10 @@
-/* minor edit of Palacios, Moussawi, and Glushkov code to simplify and output to csv 
--Andrew Chen 2022
+/* Minor edit of Palacios, Moussawi, and Glushkov code to output to CSV.
+Andrew Chen 2022; CRSP inputs migrated to native CIZ in 2026.
 
-notes: 
-the PWG code relies on wrds macro crspmerge.
-for some reason, I had to manually load the wrds macros and libraries this year (2022)
-	antonio did not have this issue, it seems.
+Run on WRDS from the prep directory, with data_for_dl/ and log/ present:
+    sas tr13f_pmg_edit.sas -log log/tr13f_pmg_edit.log
+Inputs: crsp.msf_v2, crsp.stksecurityinfohist, tfn.s34type1, tfn.s34type3.
+Output: ./data_for_dl/tr_13f.csv, quarterly institutional ownership measures.
 */
 
 * paths;
@@ -30,39 +30,35 @@ libname tfn "/wrds/tfn/sasdata/s34";
 /* Select Date Ranges for CRSP and Thomson Data                   */
 %let begdate = 01JAN1979;
 %let enddate = 31DEC2110;
-/* Create a CRSP Subsample with Monthly Stock and Event Variables */
-/* Restriction on the type of shares (common stocks only)         */
-%let sfilter = (shrcd in (10,11));
-/* Selected variables from the CRSP monthly data file (crsp.msf)  */
-%let msfvars = prc ret shrout cfacpr cfacshr;
-/* Selected variables from the CRSP monthly event file (crsp.mse) */
-%let msevars = ncusip exchcd shrcd ;
-/* This procedure creates a Monthly CRSP dataset named "CRSP_M"   */
-%crspmerge(s=m,start=&begdate,end=&enddate,sfvars=&msfvars,sevars=&msevars,filters=&sfilter);
- 
-
-/* Adjust Share and Price in Monthly Data              */
-/* and Since Thomson 13-F is Quarterly (FDATE & RDATE) */
-/* Align CRSP month-end Dates and keep Quarter Ends    */
-data crsp_m; format QDATE date9.;
-set crsp_m;
+/* CIZ classifications corresponding to legacy shrcd in (10,11). */
+/* Adjust shares and align monthly dates to calendar quarter ends. */
+data crsp_m;
+set crsp.msf_v2 (keep=permno mthcaldt shrout mthcumfacshr
+    sharetype securitytype securitysubtype usincflg issuertype);
+where "&begdate"d <= mthcaldt <= "&enddate"d
+    and sharetype='NS' and securitytype='EQTY' and securitysubtype='COM'
+    and usincflg='Y' and issuertype in ('ACOR','CORP');
+DATE = INTNX('MONTH',mthcaldt,0,'E');
 QDATE = INTNX('QTR',date,0,'E');
-DATE = INTNX("MONTH",date,0,"E");
-P = abs(prc)/cfacpr;
+cfacshr = mthcumfacshr;
+/* Native CIZ shrout is in thousands; TSO is adjusted shares in units. */
 TSO=shrout*cfacshr*1000;
 if TSO<=0 then TSO=.;
-ME = P*TSO/1000000;
-label P = "Price at Period End, Adjusted";
 label TSO = "Total Shares Outstanding, Adjusted";
-label ME = "Market Capitalization, x$1m";
-drop ncusip prc cfacpr shrout exchcd shrcd ret;
-format ret percentn8.4 ME P dollar12.3 TSO comma12.;
+keep permno date qdate cfacshr TSO;
+format DATE QDATE date9. TSO comma12.;
 run;
  
-/* Keep Last Monthly Observation for Each quarter */
+/* Sort explicitly; reject duplicate months before selecting one row per quarter. */
+proc sort data=crsp_m; by permno qdate date; run;
 data crsp_m;
 set crsp_m;
 by permno qdate date;
+if not (first.date and last.date) then do;
+    put 'ERROR: Duplicate CRSP security-month key.' permno= date=date9.;
+    abort abend;
+end;
+/* Keep the last eligible month, including securities that end before quarter end. */
 if last.qdate;
 drop date;
 run;
@@ -123,9 +119,9 @@ create view Holdings_v2 as
 select distinct a.rdate, a.fdate, a.mgrno, a.NumInst,
         a.first_report, a.last_report, b.permno, a.shares
 from Holdings_v1 as a,
-   (select distinct ncusip, permno from crsp.msenames
-    where not missing(ncusip)) as b
-    where a.cusip=b.ncusip;
+   (select distinct cusip, permno from crsp.stksecurityinfohist
+    where not missing(cusip)) as b
+    where a.cusip=b.cusip;
 quit;
  
 /* Step4. Adjust Shares using CRSP Adjustment Factors aligned at Vintage Dates */
@@ -141,7 +137,7 @@ quit;
 /* If No Errors, then Duplicates can be due to 2 historical CUSIPs   */
 /*    (Separate Holdings by Same Manager) mapping to the same permno */
 proc sort data=Holdings nodupkey; by permno rdate mgrno; run;
-proc sort data=crsp_m   nodupkey; by permno qdate;       run;
+/* crsp_m is already sorted and has one row per permno/qdate. */
  
 /* Step5. Calculate Institutional Measures at the Security Level */
 proc means data=Holdings noprint;
@@ -264,6 +260,8 @@ proc download data=tr_13f_stock out=tr_13f_stock; run;
 data tr_13f_stock2;
 	set tr_13f_stock;
 	if missing(numinstown) then delete;
+	/* Match the date parser in InstitutionalHoldings13F.py. */
+	format rdate date9.;
 run;
 proc sort data = tr_13f_stock2; by permno rdate; run;
 

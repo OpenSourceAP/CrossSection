@@ -8,44 +8,36 @@ Inputs:
 Outputs:
 - ../pyData/Intermediate/GNPdefl.parquet
 
-How to run: python3 GNPDeflator.py
+Missing credentials or failed downloads stop the script before writing output.
+
+How to run: from Signals/pyCode, run python3 DataDownloads/GNPDeflator.py
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
 import pandas as pd
-import numpy as np
 import requests
 from dotenv import load_dotenv
 import sys
-import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DEBUG_MODE
+from utils.debug_mode import get_debug_row_limit
+
+DEBUG_ROWS = get_debug_row_limit("GNPDeflator")
 
 load_dotenv()
 
 
-print("Downloading GNP Deflator from FRED...")
+def main():
+    print("Downloading GNP Deflator from FRED...")
 
-# Check for FRED API key
-fred_api_key = os.getenv("FRED_API_KEY")
-if not fred_api_key:
-    print("WARNING: FRED_API_KEY not found in environment variables")
-    print("GNP deflator data requires FRED API key. "
-          "Creating placeholder file.")
+    # Require credentials so a skipped download cannot be reported as successful.
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        raise ValueError('FRED_API_KEY is required to download the GNP deflator.')
 
-    # Create placeholder quarterly data for testing
-    dates = pd.date_range(
-        start='2020-01-01', end='2024-12-31', freq='Q'
-    )
-    placeholder_data = pd.DataFrame({
-        'date': dates,
-        'value': np.linspace(120, 130, len(dates))
-    })
-
-    deflator_data = placeholder_data.copy()
-
-else:
-    # Download real data from FRED - simplified version
+    # Obtain the quarterly price index used to deflate nominal quantities.
     print(f"Downloading GNPCTPI...")
     url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
@@ -56,19 +48,22 @@ else:
     }
 
     response = requests.get(url, params=params, timeout=30)
+    response.raise_for_status()
     data = response.json()
 
-    # Process response
+    # Keep dated numeric index observations, treating FRED missing-value markers as missing.
     df = pd.DataFrame(data['observations'])
     df['date'] = pd.to_datetime(df['date'])
     df['value'] = pd.to_numeric(df['value'], errors='coerce')
     deflator_data = df[['date', 'value']].dropna()
+    if deflator_data.empty:
+        raise ValueError('GNPCTPI download contains no usable numeric observations.')
     print(f"Successfully downloaded {len(deflator_data)} observations")
 
-    # Convert quarterly dates to monthly periods
+    # Align each quarterly index observation with the monthly signal calendar.
     deflator_data['temp_time_m'] = deflator_data['date'].dt.to_period('M').dt.to_timestamp()
 
-    # Expand quarterly data to monthly (3 months per quarter)
+    # Carry each quarterly value across its three months.
     monthly_data = []
     for _, row in deflator_data.iterrows():
         base_period = pd.to_datetime(row['temp_time_m']).to_period('M')
@@ -79,27 +74,26 @@ else:
 
     monthly_deflator = pd.DataFrame(monthly_data)
 
-    # Add 3-month availability lag for realistic data timing
+    # Delay monthly availability by the specified three-month reporting lag.
     monthly_deflator['time_avail_m'] = (
         pd.to_datetime(monthly_deflator['time_avail_m']).dt.to_period('M') + 3
     ).dt.to_timestamp()
 
-    # Convert index to ratio (divide by 100)
+    # Express the price index as a deflator ratio with a base of one.
     monthly_deflator['gnpdefl'] = monthly_deflator['value'] / 100
-    
-    # Keep final columns and remove duplicates
+
+    # Keep one deflator value per availability month.
     final_data = monthly_deflator[['time_avail_m', 'gnpdefl']].copy()
     final_data = final_data.drop_duplicates(subset=['time_avail_m'])
 
     # Apply debug row limit if configured
-    if MAX_ROWS_DL > 0:
-        final_data = final_data.head(MAX_ROWS_DL)
-        print(f"DEBUG MODE: Limited to {MAX_ROWS_DL} rows")
+    if DEBUG_MODE:
+        final_data = final_data.head(DEBUG_ROWS)
+        print(f"DEBUG MODE: Limited to {DEBUG_ROWS} rows")
 
-    # Save to parquet
+    # Save the monthly deflator series for downstream inflation adjustments.
     final_data.to_parquet("../pyData/Intermediate/GNPdefl.parquet", index=False)
 
-    # Print summary information
     print(f"GNP Deflator data saved with {len(final_data)} monthly records")
     date_min = final_data['time_avail_m'].min()
     date_max = final_data['time_avail_m'].max()
@@ -113,3 +107,6 @@ else:
     print(f"Min: {final_data['gnpdefl'].min():.3f}")
     print(f"Max: {final_data['gnpdefl'].max():.3f}")
 
+
+if __name__ == '__main__':
+    main()

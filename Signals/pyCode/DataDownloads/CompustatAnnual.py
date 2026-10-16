@@ -4,37 +4,42 @@
 Inputs:
 - WRDS comp.funda database (annual fundamentals)
 - comp.names (company master file)
-- crsp.ccmxpf_lnkhist (CRSP-Compustat link history)
+- crsp.ccmxpf_lnkhist (CCM link history, shared by CRSP SIZ and CIZ)
+- OPENAP_COMPUSTAT_EXTRACT: optional saved raw fundamentals parquet to reuse
 
-Outputs:
-- ../pyData/Intermediate/CompustatAnnual.csv
-- ../pyData/Intermediate/a_aCompustat.parquet
-- ../pyData/Intermediate/m_aCompustat.parquet
+Outputs (under OPENAP_DATA_ROOT, default Signals/pyData):
+- Intermediate/CompustatAnnual.csv
+- Intermediate/a_aCompustat.parquet
+- Intermediate/m_aCompustat.parquet
+- Raw fundamentals parquet when OPENAP_COMPUSTAT_EXTRACT is explicitly set
 
-How to run: python CompustatAnnual.py
+How to run: from Signals/pyCode, run python3 DataDownloads/CompustatAnnual.py
+Set OPENAP_DATA_ROOT to route outputs to a separate migration run directory.
+
+Use the project Python environment at /opt/venv/projects/openap.
 """
 
 import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from config import DATA_ROOT
+from utils.debug_mode import log_selection, sql_date_window, select_dates
+from utils.wrds_connection import get_wrds_engine
 
-# Print script header
+(DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
+
 print("=" * 60, flush=True)
 print("📈 CompustatAnnual.py - Compustat Annual Fundamentals", flush=True)
 print("=" * 60, flush=True)
 
-# Load environment variables and create database connection
 load_dotenv()
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+engine = get_wrds_engine()
 
-# Define SQL query to download Compustat annual fundamentals data
+# Obtain standardized, consolidated USD industrial accounts for comparable annual fundamentals.
 QUERY = """
 SELECT a.gvkey, a.datadate, a.conm, a.fyear, a.tic, a.cusip, a.naicsh, a.sich, 
        a.aco,a.act,a.ajex,a.am,a.ao,a.ap,a.at,a.capx,a.ceq,a.ceqt,a.che,a.cogs,
@@ -57,77 +62,97 @@ AND a.curcd = 'USD'
 AND a.indfmt = 'INDL'
 """
 
-# Apply row limit for debugging mode if configured
-if MAX_ROWS_DL > 0:
-    QUERY += f" LIMIT {MAX_ROWS_DL}"
-    print(f"DEBUG MODE: Limiting to {MAX_ROWS_DL} rows", flush=True)
+# Restrict development runs to the shared annual report-date sample.
+log_selection("CompustatAnnual")
+predicate, query_params = sql_date_window("a.datadate", "annual")
+QUERY += f" AND {predicate}"
 
-# Execute query and download data from WRDS
-compustat_data_raw = pd.read_sql_query(QUERY, engine)
-print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
+# Optionally reuse a fixed fundamentals extract so comparison runs share the same input.
+configured_extract = os.getenv("OPENAP_COMPUSTAT_EXTRACT")
+extract_path = Path(configured_extract).expanduser().resolve() if configured_extract else None
+if extract_path is not None:
+    extract_path.parent.mkdir(parents=True, exist_ok=True)
+if extract_path is not None and extract_path.exists():
+    compustat_data_raw = pd.read_parquet(extract_path)
+    print(f"Reused {len(compustat_data_raw)} annual records from {extract_path}", flush=True)
+else:
+    compustat_data_raw = pd.read_sql_query(QUERY, engine, params=query_params)
+    print(f"Downloaded {len(compustat_data_raw)} annual records", flush=True)
 
-# Fix column types: convert object columns with all None values to float64
+# Keep entirely missing numeric fields usable in calculations and saved extracts.
 for col in compustat_data_raw.columns:
-    if (compustat_data_raw[col].dtype == 'object' and 
+    if (compustat_data_raw[col].dtype == 'object' and
         compustat_data_raw[col].isna().all()):
         compustat_data_raw[col] = compustat_data_raw[col].astype('float64')
 
+if extract_path is not None and not extract_path.exists():
+    # Preserve original date values in the reusable input extract.
+    compustat_data_raw.to_parquet(extract_path, index=False)
+    print(f"Saved reusable Compustat fundamentals to {extract_path}", flush=True)
 
-# Save raw CSV immediately with Stata-formatted dates
+# Apply the same development sample to saved extracts and freshly downloaded data.
+compustat_data_raw = select_dates(compustat_data_raw, "datadate", "annual")
+
+# Keep an unprocessed fundamentals CSV with dates readable by the legacy Stata pipeline.
 compustat_csv = compustat_data_raw.copy()
 compustat_csv['datadate'] = pd.to_datetime(compustat_csv['datadate']).dt.strftime('%d%b%Y').str.lower()
-compustat_csv.to_csv("../pyData/Intermediate/CompustatAnnual.csv", index=False)
+compustat_csv.to_csv(DATA_ROOT / 'Intermediate/CompustatAnnual.csv', index=False)
 print(f"CompustatAnnual.csv saved with {len(compustat_csv)} records", flush=True)
 
-# Create working copy for further processing
+# Prepare signal inputs while preserving the raw fundamentals extract.
 compustat_data = compustat_data_raw.copy()
 
-# Filter to records with required fields: total assets, price, and net income
+# Require assets, price, and net income for the accounting-signal sample.
 compustat_data = compustat_data.dropna(subset=['at', 'prcc_c', 'ni'])
 print(f"After requiring AT, PRCC_C, NI: {len(compustat_data)} records", flush=True)
 
-# Extract 6-digit CUSIP identifier
+# Provide the company CUSIP prefix for matching other company datasets.
 compustat_data['cnum'] = compustat_data['cusip'].str[:6]
 
-# Create derived variable: deferred revenue (dr) from drc and drlt components
+# Recover total deferred revenue from whichever current and long-term components exist.
 compustat_data['dr'] = np.nan
-# Sum both current and long-term deferred revenue when both exist
-mask1 = compustat_data['drc'].notna() & compustat_data['drlt'].notna()
-compustat_data.loc[mask1, 'dr'] = (
-    compustat_data.loc[mask1, 'drc'] + compustat_data.loc[mask1, 'drlt']
+has_both_revenue_components = compustat_data['drc'].notna() & compustat_data['drlt'].notna()
+compustat_data.loc[has_both_revenue_components, 'dr'] = (
+    compustat_data.loc[has_both_revenue_components, 'drc']
+    + compustat_data.loc[has_both_revenue_components, 'drlt']
 )
-# Use only current deferred revenue when long-term is missing
-mask2 = compustat_data['drc'].notna() & compustat_data['drlt'].isna()
-compustat_data.loc[mask2, 'dr'] = compustat_data.loc[mask2, 'drc']
-# Use only long-term deferred revenue when current is missing
-mask3 = compustat_data['drc'].isna() & compustat_data['drlt'].notna()
-compustat_data.loc[mask3, 'dr'] = compustat_data.loc[mask3, 'drlt']
+has_only_current_revenue = compustat_data['drc'].notna() & compustat_data['drlt'].isna()
+compustat_data.loc[has_only_current_revenue, 'dr'] = (
+    compustat_data.loc[has_only_current_revenue, 'drc']
+)
+has_only_long_term_revenue = compustat_data['drc'].isna() & compustat_data['drlt'].notna()
+compustat_data.loc[has_only_long_term_revenue, 'dr'] = (
+    compustat_data.loc[has_only_long_term_revenue, 'drlt']
+)
 
-# Create derived variable: convertible debt (dc) using complex logic
+# Recover convertible debt when the direct measure is unavailable.
 compustat_data['dc'] = np.nan
-# Calculate convertible debt as difference when dcpstk > pstk and dcvt is missing
-mask_dc1 = (
+# Separate debt from combined debt/preferred stock when preferred stock is known.
+can_separate_convertible_debt = (
     (compustat_data['dcpstk'] > compustat_data['pstk']) &
     compustat_data['pstk'].notna() &
     compustat_data['dcpstk'].notna() &
     compustat_data['dcvt'].isna()
 )
-compustat_data.loc[mask_dc1, 'dc'] = (
-    compustat_data.loc[mask_dc1, 'dcpstk'] - compustat_data.loc[mask_dc1, 'pstk']
+compustat_data.loc[can_separate_convertible_debt, 'dc'] = (
+    compustat_data.loc[can_separate_convertible_debt, 'dcpstk']
+    - compustat_data.loc[can_separate_convertible_debt, 'pstk']
 )
-# Use dcpstk directly when pstk is missing and dcvt is missing
-mask_dc2 = (
+# Retain the combined amount when preferred stock cannot be separated.
+has_only_combined_debt = (
     compustat_data['pstk'].isna() &
     compustat_data['dcpstk'].notna() &
     compustat_data['dcvt'].isna()
 )
-compustat_data.loc[mask_dc2, 'dc'] = compustat_data.loc[mask_dc2, 'dcpstk']
-# Fall back to dcvt for remaining missing convertible debt values
-mask_dc3 = compustat_data['dc'].isna()
-compustat_data.loc[mask_dc3, 'dc'] = compustat_data.loc[mask_dc3, 'dcvt']
+compustat_data.loc[has_only_combined_debt, 'dc'] = (
+    compustat_data.loc[has_only_combined_debt, 'dcpstk']
+)
+# Use the reported convertible debt amount wherever an estimate is still missing.
+needs_reported_debt = compustat_data['dc'].isna()
+compustat_data.loc[needs_reported_debt, 'dc'] = compustat_data.loc[needs_reported_debt, 'dcvt']
 
-# Create zero-filled versions of expense variables
-compustat_data['xint0'] = 0.0  # 0.0 ensures float64
+# Provide expense measures that treat unreported interest, SG&A, and advertising as zero.
+compustat_data['xint0'] = 0.0
 compustat_data.loc[compustat_data['xint'].notna(), 'xint0'] = compustat_data['xint']
 
 compustat_data['xsga0'] = 0.0
@@ -135,7 +160,7 @@ compustat_data.loc[compustat_data['xsga'].notna(), 'xsga0'] = compustat_data['xs
 
 compustat_data['xad0'] = compustat_data['xad'].fillna(0)
 
-# Fill missing values with zero for specified balance sheet and income statement items
+# Apply the existing missing-as-zero convention to selected accounting items.
 zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
                   'lco', 'lo', 'rect', 'invt', 'drc', 'spi', 'gdwl', 'che',
                   'dp', 'act', 'lct', 'tstkp', 'dvpa', 'scstkc', 'sstk',
@@ -144,7 +169,7 @@ zero_fill_vars = ['nopi', 'dvt', 'ob', 'dm', 'dc', 'aco', 'ap', 'intan', 'ao',
 for var in zero_fill_vars:
     compustat_data[var] = compustat_data[var].fillna(0)
 
-# Download CCM linking table data directly (removing dependency on CCMLinkingTable.py)
+# Obtain primary company-security links so each report can be matched to its CRSP stock.
 print("Downloading CCM linking table data...", flush=True)
 CCM_QUERY = """
 SELECT a.gvkey, a.conm, a.tic, a.cusip, a.cik, a.sic, a.naics,
@@ -158,14 +183,12 @@ AND b.linkprim in ('P', 'C')
 ORDER BY a.gvkey
 """
 
-# Execute CCM linking query using same engine
 ccm_data = pd.read_sql_query(CCM_QUERY, engine)
 
-# Process CCM data with same logic as CCMLinkingTable.py
-ccm_data[['lpermno','lpermco']] = ccm_data[['lpermno','lpermco']].astype('Int64')
-ccm_data[['linkdt','linkenddt']] = ccm_data[['linkdt','linkenddt']].astype('datetime64[ns]')
+# Keep stock identifiers and link validity dates consistent with the shared linking table.
+ccm_data[['lpermno', 'lpermco']] = ccm_data[['lpermno', 'lpermco']].astype('Int64')
+ccm_data[['linkdt', 'linkenddt']] = ccm_data[['linkdt', 'linkenddt']].astype('datetime64[ns]')
 
-# Rename columns to match expected format
 ccm_data = ccm_data.rename(columns={
     'linkdt': 'timeLinkStart_d',
     'linkenddt': 'timeLinkEnd_d',
@@ -176,69 +199,72 @@ ccm_data['naics'] = ccm_data['naics'].fillna('')
 ccm_data['cik'] = ccm_data['cik'].fillna('')
 print(f"CCM linking table loaded with {len(ccm_data)} records", flush=True)
 
-# Close database connection after both queries are complete
 engine.dispose()
 
-# Remove duplicate columns from CCM data to replicate Stata's joinby update behavior
-ccm_columns_to_drop = ['conm', 'cusip', 'tic']  # Keep these from compustat_data
+# Preserve report-specific company names, tickers, and CUSIPs when adding stock links.
+ccm_columns_to_drop = ['conm', 'cusip', 'tic']
 ccm_merge_data = ccm_data.drop(columns=[col for col in ccm_columns_to_drop if col in ccm_data.columns])
 
-# Merge tables without creating duplicate column suffixes
 compustat_data = compustat_data.merge(ccm_merge_data, on='gvkey', how='inner')
 print(f"After merging with CCM links: {len(compustat_data)} records", flush=True)
 
-
-# Filter records to valid CCM link date ranges
+# Keep only stock links valid on the accounting report date.
 compustat_data['datadate'] = pd.to_datetime(compustat_data['datadate'])
 compustat_data['timeLinkStart_d'] = pd.to_datetime(compustat_data['timeLinkStart_d'])
 compustat_data['timeLinkEnd_d'] = pd.to_datetime(compustat_data['timeLinkEnd_d'])
 
-# Apply date filtering where missing end dates indicate active links
-temp = (
+# Treat links without an end date as still valid after their start date.
+is_within_link_dates = (
     (compustat_data['timeLinkStart_d'] <= compustat_data['datadate']) &
-    ((compustat_data['datadate'] <= compustat_data['timeLinkEnd_d']) | 
+    ((compustat_data['datadate'] <= compustat_data['timeLinkEnd_d']) |
      compustat_data['timeLinkEnd_d'].isna())
 )
-compustat_data = compustat_data[temp]
+compustat_data = compustat_data[is_within_link_dates]
 print(f"After filtering for valid link dates: {len(compustat_data)} records", flush=True)
 
-# Create annual version of the dataset
+# Require one stock link per report so overlapping histories cannot duplicate signal inputs.
+duplicate_links = compustat_data.duplicated(['gvkey', 'datadate'], keep=False)
+if duplicate_links.any():
+    examples = compustat_data.loc[
+        duplicate_links, ['gvkey', 'datadate', 'permno', 'permco']
+    ].head(10)
+    raise ValueError(
+        f"{duplicate_links.sum()} rows have repeated (gvkey, datadate) CCM links; "
+        f"inspect link intervals before producing annual data:\n{examples}"
+    )
+
+# Produce one linked observation per annual report, with a six-month availability lag.
 annual_data = compustat_data.copy()
 
-# Remove CCM linking metadata columns
 annual_data = annual_data.drop(columns=['timeLinkStart_d', 'timeLinkEnd_d', 'linkprim', 'liid', 'linktype'])
 
-# Convert gvkey to numeric format
 annual_data['gvkey'] = pd.to_numeric(annual_data['gvkey'])
 
-# Add 6-month reporting lag to determine data availability date
+# Delay use of annual accounts until six months after the report month.
 annual_data['time_avail_m'] = (
     annual_data['datadate'].dt.to_period('M') + 6
 ).dt.to_timestamp()
 
-# Save annual version
-annual_data.to_parquet("../pyData/Intermediate/a_aCompustat.parquet", index=False)
+# Save report-level fundamentals with their first availability month.
+annual_data.to_parquet(DATA_ROOT / 'Intermediate/a_aCompustat.parquet', index=False)
 print(f"Annual version saved with {len(annual_data)} records", flush=True)
 
-# Create monthly version by expanding annual data
+# Carry each annual report across twelve monthly signal dates.
 monthly_data = annual_data.copy()
 
-# Replicate each annual record 12 times for monthly availability
 monthly_data = pd.concat([monthly_data] * 12, ignore_index=True)
 
-# Add sequential month offsets within each gvkey-time group
 monthly_data = monthly_data.sort_values(['gvkey', 'time_avail_m']).reset_index(drop=True)
 monthly_data['tempTime'] = monthly_data['time_avail_m']
 monthly_data['month_offset'] = monthly_data.groupby(['gvkey', 'tempTime']).cumcount()
 
-# Apply month offsets to create monthly availability dates
 monthly_data['time_avail_m'] = (
     monthly_data['time_avail_m'].dt.to_period('M') + monthly_data['month_offset']
 ).dt.to_timestamp()
 
 monthly_data = monthly_data.drop('tempTime', axis=1)
 
-# Remove duplicates keeping most recent data for each gvkey-month and permno-month
+# Prefer the latest report when annual availability windows overlap for a company or stock.
 monthly_data = monthly_data.sort_values(['gvkey', 'time_avail_m', 'datadate'])
 monthly_data = monthly_data.drop_duplicates(['gvkey', 'time_avail_m'], keep='last')
 
@@ -247,8 +273,9 @@ monthly_data = monthly_data.drop_duplicates(['permno', 'time_avail_m'], keep='la
 
 monthly_data = monthly_data.drop(columns=['month_offset'])
 
-# Save monthly version
-monthly_data.to_parquet("../pyData/Intermediate/m_aCompustat.parquet", index=False)
+# Save monthly fundamentals, restricting development output to the shared monthly sample.
+monthly_data = select_dates(monthly_data, "time_avail_m", "monthly")
+monthly_data.to_parquet(DATA_ROOT / 'Intermediate/m_aCompustat.parquet', index=False)
 print(f"Monthly version saved with {len(monthly_data)} records", flush=True)
 
 print("=" * 60, flush=True)

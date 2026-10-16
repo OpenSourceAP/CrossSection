@@ -1,94 +1,122 @@
-# ABOUTME: Downloads CRSP daily stock file (DSF) data in yearly chunks to manage memory efficiently
-# ABOUTME: Creates two output files: full daily data with returns/volume and price-only version
-"""
-Inputs:
-- crsp.dsf (CRSP Daily Stock File from WRDS)
+# ABOUTME: Downloads regular CRSP CIZ daily stock observations in yearly chunks.
+"""Run: python3 Signals/pyCode/DataDownloads/CRSPDaily.py with the project venv.
 
-Outputs:
-- ../pyData/Intermediate/dailyCRSP.parquet (full daily data with returns, volume, prices)
-- ../pyData/Intermediate/dailyCRSPprc.parquet (price-only version)
-
-How to run: python3 CRSPDaily.py
+Inputs: crsp.dsf_v2. DEBUG_MODE selects January 1981; production uses full years
+from 1926 through the current year. Delisting-event rows are excluded because
+v1 dsf did not contain the separate CIZ delisting return observations.
+Outputs: OPENAP_DATA_ROOT/Intermediate/dailyCRSP.parquet and dailyCRSPprc.parquet
+(default Signals/pyData). Both retain the v1 column order and units.
+Mapping: Signals/tests/crsp_v2/daily_mapping.md.
 """
 
-# Import required libraries and setup
 import os
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
 import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from config import MAX_ROWS_DL
+from datetime import datetime
+from pathlib import Path
 
-load_dotenv()
+import numpy as np
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import DATA_ROOT, DEBUG_MODE
+from utils.debug_mode import log_selection, sql_date_window
+from utils.wrds_connection import get_wrds_engine
+
+FULL_COLUMNS = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
+PRICE_COLUMNS = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
+FULL_SCHEMA = pa.schema([
+    ('permno', pa.int32()), ('time_d', pa.timestamp('ns')),
+    ('ret', pa.float64()), ('vol', pa.float64()), ('prc', pa.float64()),
+    ('cfacpr', pa.float64()), ('shrout', pa.float64()),
+])
+PRICE_SCHEMA = pa.schema([FULL_SCHEMA.field(c) for c in PRICE_COLUMNS])
+
 
 def get_crsp_daily_year(year, engine):
-    # Download CRSP daily data for a specific year
+    """Fetch regular stock days, preserving native daily return and volume units."""
+    if DEBUG_MODE:
+        predicate, params = sql_date_window('a.dlycaldt', 'daily')
+    else:
+        predicate = 'a.dlycaldt >= %(year_start)s AND a.dlycaldt < %(next_year)s'
+        params = {'year_start': f'{year}-01-01', 'next_year': f'{year + 1}-01-01'}
     query = f"""
-    SELECT a.permno, a.date, a.ret, a.vol, a.shrout, a.prc, a.cfacshr, a.cfacpr
-    FROM crsp.dsf as a
-    WHERE date >= '{year}-01-01' and date <= '{year}-12-31'
+    SELECT a.permno, a.dlycaldt AS time_d, a.dlyret AS ret, a.dlyvol AS vol,
+           a.dlyprc AS prc, a.dlyprcflg, a.dlycumfacpr AS cfacpr, a.shrout
+    FROM crsp.dsf_v2 AS a
+    WHERE a.dlydelflg = 'N' AND {predicate}
     """
+    return pd.read_sql_query(query, engine, params=params)
 
-    data = pd.read_sql_query(query, engine)
-    print(f"Downloaded {len(data)} records for year {year}")
-    return data
 
-# Main processing - download CRSP daily data
-print("Starting CRSP Daily data download...")
+def restore_legacy_daily(data):
+    """Provide daily stock data with legacy price signs, columns, and units."""
+    if data.duplicated(['permno', 'time_d']).any():
+        raise ValueError('CIZ daily data contain duplicate security-date keys.')
+    if data['permno'].isna().any() or data['time_d'].isna().any():
+        raise ValueError('CIZ daily data contain null security-date keys.')
+    data = data.copy()
+    data['permno'] = data['permno'].astype('int32')
+    data['time_d'] = pd.to_datetime(data['time_d']).dt.floor('D')
 
-# Setup database connection
-engine = create_engine(
-    f"postgresql://{os.getenv('WRDS_USERNAME')}:{os.getenv('WRDS_PASSWORD')}@wrds-pgdata.wharton.upenn.edu:9737/wrds"
-)
+    # Mark bid/ask averages with negative prices, as in the legacy daily data.
+    is_bid_ask_average = data['dlyprcflg'] == 'BA'
+    data['prc'] = np.where(is_bid_ask_average, -data['prc'], data['prc'])
+    for column in ('ret', 'vol', 'prc', 'cfacpr', 'shrout'):
+        data[column] = pd.to_numeric(data[column], errors='raise').astype('float64')
+    return data[FULL_COLUMNS]
 
-# Determine year range for download (debug mode downloads only 1932, production mode downloads 1926-current)
-current_year = datetime.now().year
-if MAX_ROWS_DL > 0:
-    year_range = [1932]
-    print(f"DEBUG MODE: Only downloading year 1932 (instead of 1926-{current_year})")
-else:
-    year_range = range(1926, current_year + 1)
-    print(f"PRODUCTION MODE: Downloading years 1926-{current_year}")
 
-# Download data year by year to manage memory
-all_data = []
+def main():
+    (DATA_ROOT / 'Intermediate').mkdir(parents=True, exist_ok=True)
+    log_selection('CRSPDaily')
+    years = [1981] if DEBUG_MODE else range(1926, datetime.now().year + 1)
+    full_path = DATA_ROOT / 'Intermediate/dailyCRSP.parquet'
+    price_path = DATA_ROOT / 'Intermediate/dailyCRSPprc.parquet'
+    full_tmp = Path(str(full_path) + '.tmp')
+    price_tmp = Path(str(price_path) + '.tmp')
+    engine = get_wrds_engine()
+    full_writer = price_writer = None
+    total = 0
+    try:
+        full_writer = pq.ParquetWriter(full_tmp, FULL_SCHEMA)
+        price_writer = pq.ParquetWriter(price_tmp, PRICE_SCHEMA)
+        # Build the full daily history one year at a time to limit memory use.
+        with engine.connect() as connection:
+            for year in years:
+                daily = restore_legacy_daily(get_crsp_daily_year(year, connection))
+                if daily.empty:
+                    print(f'{year}: no regular observations', flush=True)
+                    continue
+                full_table = pa.Table.from_pandas(
+                    daily, schema=FULL_SCHEMA, preserve_index=False,
+                )
+                full_writer.write_table(full_table)
+                price_table = pa.Table.from_pandas(
+                    daily[PRICE_COLUMNS], schema=PRICE_SCHEMA, preserve_index=False,
+                )
+                price_writer.write_table(price_table)
+                del full_table, price_table
+                total += len(daily)
+                print(f'{year}: {len(daily):,} regular observations', flush=True)
+        full_writer.close()
+        full_writer = None
+        price_writer.close()
+        price_writer = None
+        # Publish complete datasets only after all selected years have been written.
+        full_tmp.replace(full_path)
+        price_tmp.replace(price_path)
+        print(f'Saved {total:,} daily CRSP rows to both outputs', flush=True)
+    finally:
+        if full_writer is not None:
+            full_writer.close()
+        if price_writer is not None:
+            price_writer.close()
+        full_tmp.unlink(missing_ok=True)
+        price_tmp.unlink(missing_ok=True)
+        engine.dispose()
 
-for year in year_range:
-    print(f"Processing year {year}...")
-    year_data = get_crsp_daily_year(year, engine)
-    all_data.append(year_data)
-    import time
-    time.sleep(1)
 
-engine.dispose()
-
-# Combine and process all downloaded data
-print("Combining all years of data...")
-combined_data = pd.concat(all_data, ignore_index=True)
-print(f"Total records downloaded: {len(combined_data)}")
-combined_data = combined_data.rename(columns={'date': 'time_d'})
-
-# Create and save full daily file with returns, volume, and prices
-full_columns = ['permno', 'time_d', 'ret', 'vol', 'prc', 'cfacpr', 'shrout']
-daily_full = combined_data[full_columns].copy()
-daily_full['permno'] = daily_full['permno'].astype('int32')
-daily_full['time_d'] = pd.to_datetime(daily_full['time_d']).dt.floor('D')
-daily_full.to_parquet("../pyData/Intermediate/dailyCRSP.parquet", index=False)
-print(f"Saved full daily CRSP data with {len(daily_full)} records")
-
-# Create and save price-only file (prices, adjustment factors, shares outstanding)
-price_columns = ['permno', 'time_d', 'prc', 'cfacpr', 'shrout']
-daily_prc = combined_data[price_columns].copy()
-daily_prc['permno'] = daily_prc['permno'].astype('int32')
-daily_prc['time_d'] = pd.to_datetime(daily_prc['time_d']).dt.floor('D')
-daily_prc.to_parquet("../pyData/Intermediate/dailyCRSPprc.parquet", index=False)
-print(f"Saved price-only daily CRSP data with {len(daily_prc)} records")
-
-# Display date range summary
-min_date = pd.to_datetime(combined_data['time_d']).min()
-max_date = pd.to_datetime(combined_data['time_d']).max()
-print(f"Date range: {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')}")
+if __name__ == '__main__':
+    main()

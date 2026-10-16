@@ -1,3 +1,8 @@
+/* Run: include taq-chen-velikov/macro_tclink.sas and call
+   %TCLINK(BEGDATE=199301,ENDDATE=201012,OUTSET=work.mtaq_link).
+   Inputs: taq.mast_YYYYMM and crsp.stksecurityinfohist (CIZ); initialize WRDS libraries first.
+   Output: the OUTSET SAS link table. Matching and scoring follow the original macro.
+   CRSP input names migrated to CIZ in 2026. */
 /* ********************************************************************************* */
 /* ******************** W R D S   R E S E A R C H   M A C R O S ******************** */
 /* ********************************************************************************* */
@@ -59,22 +64,22 @@ run;
 proc sort data=_mast2 nodupkey; by date symbol fdate cusip; run;
  
 /* Step 1: Link by CUSIP */
-/* CRSP: Get all PERMNO-NCUSIP combinations */
+/* CRSP: Get all historical PERMNO-CUSIP combinations */
 proc sql;
 create table _msenames
-as select distinct permno, ncusip, upcase(compbl(comnam)) as comnam
- from crsp.msenames where not missing(ncusip)
-group by permno, ncusip
-having nameendt=max(nameendt);
+as select distinct permno, cusip, upcase(compbl(issuernm)) as issuernm
+ from crsp.stksecurityinfohist where not missing(cusip)
+group by permno, cusip
+having secinfoenddt=max(secinfoenddt);
 quit;
-proc sort data=_msenames nodupkey; by permno ncusip; run;
+proc sort data=_msenames nodupkey; by permno cusip; run;
  
 /* Map TAQ and CRSP using 8-digit CUSIP */
 proc sql;
 create table _mast3
-as select b.permno, a.*, b.comnam
+as select b.permno, a.*, b.issuernm
 from _mast2 as a left join _msenames as b
-on a.cusip8=b.ncusip;
+on a.cusip8=b.cusip;
 quit;
  
 /* Step 2: Find links for the remaining unmatched cases using Exchange Ticker */
@@ -85,7 +90,7 @@ set _mast3;
 by date symbol permno fdate;
 if last.symbol;
 SCORE=(missing(permno));
-NAMEDIS=min(spedis(name,comnam),spedis(comnam,name));
+NAMEDIS=min(spedis(name,issuernm),spedis(issuernm,name));
 if not missing(permno) then output _match1;
 else output _NoMap1;
 run;
@@ -96,30 +101,32 @@ set _NoMap1;
 where not missing(name);
 symbol=strip(symbol);
 name = upcase(compbl(name));
-drop permno comnam score namedis;
+drop permno issuernm score namedis;
 run;
  
 /* Get entire list of CRSP stocks with Exchange Ticker information */
 /* Arrange effective dates for link by Exchange 'Trading' Ticker */
 /* Use CRSP Ticker if Trading Ticker is missing */
 data _CRSP1;
-set crsp.msenames;
-if not missing(tsymbol) then SMBL = tsymbol;
+set crsp.stksecurityinfohist
+  (keep=permno ticker tradingsymbol issuernm secinfostartdt secinfoenddt);
+if not missing(tradingsymbol) then SMBL = tradingsymbol;
 else SMBL=ticker;
 smbl=strip(smbl);
 if not missing(smbl);
-COMNAM=upcase(compbl(comnam));
+IssuerNm=upcase(compbl(issuernm));
 run;
  
 /* Get date ranges for every permno-ticker combination */
 proc sql;
   create table _CRSP2
-  as select permno, smbl, comnam, 
-              min(namedt)as namedt,max(nameendt) as nameenddt
+  as select permno, smbl, issuernm,
+              min(secinfostartdt) as secinfostartdt,
+              max(secinfoenddt) as secinfoenddt
   from _CRSP1
   where not missing (smbl)
   group by permno, smbl
-  order by permno, smbl, namedt;
+  order by permno, smbl, secinfostartdt;
 quit;
  
 /* Label date range variables and keep only most recent company name */
@@ -127,18 +134,18 @@ data _CRSP3;
   set _CRSP2;
   by permno smbl;
   if  last.smbl;
-  label namedt="Start date of exch. ticker record";
-  label nameenddt="End date of exch. ticker record";
-  format namedt nameenddt date9.;
+  label secinfostartdt="Start date of exch. ticker record";
+  label secinfoenddt="End date of exch. ticker record";
+  format secinfostartdt secinfoenddt date9.;
 run;
  
 /* Get PERMNO for Unmatched Stocks using Ticker-DATE Match*/
 proc sql;
 create table _NoMap3
-as select a.*, b.permno,comnam,
- min(spedis(a.name,b.comnam),spedis(b.comnam,a.name)) as NAMEDIS
+as select a.*, b.permno,b.issuernm,
+ min(spedis(a.name,b.issuernm),spedis(b.issuernm,a.name)) as NAMEDIS
 from _NoMap2 as a, _CRSP3 as b
-where strip(a.symbol)=strip(b.smbl) and a.date between namedt and nameenddt
+where strip(a.symbol)=strip(b.smbl) and a.date between secinfostartdt and secinfoenddt
 order by date,symbol,namedis;
 quit;
  
@@ -160,10 +167,11 @@ label NAMEDIS="Spelling Distance between TAQ and CRSP Company Names";
 label DATE="TAQ Vintage Date";
 label CUSIP8='8-digit CUSIP';
 label CUSIP ='Full CUSIP Number: 9-digit CUSIP + 3-digit NSCC Exchange ID';
-rename CUSIP=CUSIP_FULL CUSIP8=CUSIP;
+/* Preserve the original link-table column names at output. */
+rename CUSIP=CUSIP_FULL CUSIP8=CUSIP issuernm=comnam;
 label SYMBOL="Stock Symbol in TAQ";
 label NAME = "Company Name in TAQ";
-label COMNAM = "Company Name in CRSP";
+label IssuerNm = "Company Name in CRSP";
 label FDATE = "Effective Date of Current TAQ Name Record";
 run;
  
