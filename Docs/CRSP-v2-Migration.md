@@ -62,11 +62,7 @@ security-date keys. The estimator calculations, 12-valid-day monthly minimum,
 and `PERMNO,month,hlspread` CSV interface are unchanged. No cumulative-factor
 price adjustment or additional universe filter was introduced.
 
-SAS execution and data validation remain pending: library resolution,
-historical keys/missingness/value comparisons, range-reset behavior, output
-uniqueness, and post-2024 coverage require a WRDS run. SAS is unavailable
-locally; no WRDS connection was attempted. See
-`temp/docs/1015b_plan-corwin-schultz-crsp-v2.md` for the validation plan.
+Validated 2026-10-15 on the WRDS prep run; see "PrepScripts validation" below.
 
 ### PrepScripts follow-up: TAQ–Chen–Velikov links
 
@@ -92,16 +88,34 @@ Known limitation: finer CIZ history intervals, including separate delisting
 records, can alter monthly matches under the retained endpoint rule. For
 example, splitting June 1–30 into June 1–15 and June 16–30 turns a valid June
 interval into two empty rounded intervals. This update does not redesign that
-rule or the macro's existing name/tie selection. Historical link differences
-must be measured before approving regenerated outputs.
+rule or the macro's existing name/tie selection. The measured effect is small;
+see "PrepScripts validation" below.
 
-Offline checks confirm the mapped columns exist in saved WRDS schema metadata,
-the downstream linking/calculation source is unchanged apart from the native
-share-class reference, include path, and corrected sort comment. The final CSV
-export still uses the original `hf3` construction. Read-only WRDS identifier research was performed
-during planning; it did not execute this SAS migration. SAS execution,
-historical output/key comparisons, ambiguity and uniqueness checks, library
-resolution, and post-2024 coverage remain pending. SAS is unavailable locally.
+The first WRDS run of `add_permnos.sas` stalled in the ticker join because CIZ
+has many more blank-ticker rows than `msenames`; blank tickers are now dropped
+before the join (they could never match).
+
+### PrepScripts validation
+
+WRDS prep run 2026-10-15 (`run_all_prep.sh`, all three CRSP-dependent outputs
+regenerated). Compared with the 2025 prep outputs (`temp/pyData25/Prep/`), the
+only baseline. Differences may mix the migration with source revisions since
+2025; that is accepted.
+
+| Output | Duplicate keys | Coverage | Overlap through 2024 |
+|---|---|---|---|
+| `corwin_schultz_spread.csv` | 0 (PERMNO, month) | through 202512 (was 202412) | 4,481,621 common; 1 only in 2025; 0 values differ by more than 1e-6 |
+| `hf_monthly.csv` | 0 (permno, yearm) | through 202512 (was 202412) | 3,262,441 common; 486 only in 2025; 17 only in new; 14 symbol-months changed permno |
+| `tr_13f.csv` | 0 (PERMNO, rdate) | through 2025Q4 (was 2024Q4) | 865,654 common; 63 only in 2025; 464 only in new; `numinstown` differs in 1 row, `instown_perc` in 1,941 (0.2%) |
+
+CSV headers and formats are unchanged (`rdate` remains SAS `date9.`;
+`numinstown` keeps its quoted thousands separators). The `hf_monthly.csv`
+link losses are consistent with the interval-rounding limitation above. The
+13F `instown_perc` differences go through shares outstanding, so they likely
+reflect CIZ share/factor revisions or the CIZ common-stock filter; they were
+not investigated row by row.
+
+Decision: pending approval.
 
 ## CRSPMonthly.py: ✅
 
