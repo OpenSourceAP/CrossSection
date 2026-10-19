@@ -17,6 +17,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 # DATA LOAD
 # Load m_aCompustat with specific columns
@@ -47,37 +52,26 @@ signal_master = pd.read_parquet(
 df = df.merge(signal_master, on=["permno", "time_avail_m"], how="inner")
 
 # SIGNAL CONSTRUCTION
-# Sort data chronologically within each company
-df = df.sort_values(["permno", "time_avail_m"])
+# Fill calendar gaps once so the shared lag helper's shifts count months.
+# Annual accounts are carried monthly, so preferred stock needs a 12-month lag.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+for column, months in [("mve_permco", 6), ("pstkrv", 12)]:
+    df = stata_multi_lag(
+        df, "permno", "time_avail_m", column, [months],
+        prefix="l", fill_gaps=False,
+    )
 
-# Create 6-month lagged market value for payout yield calculation
-# Use calendar-based lag (6 months prior) rather than positional lag
-df["lag6_date"] = df["time_avail_m"] - pd.DateOffset(months=6)
-
-# Create lag lookup table
-lag_lookup = df[["permno", "time_avail_m", "mve_permco"]].copy()
-lag_lookup = lag_lookup.rename(
-    columns={"time_avail_m": "lag6_date", "mve_permco": "mve_permco_l6"}
-)
-
-# Merge to get 6-month lagged values
-df = df.merge(lag_lookup, on=["permno", "lag6_date"], how="left")
-
-# Annual accounts are carried across monthly signal dates. Match the same month
-# one year earlier; a one-row lag would mostly compare an annual report to itself.
-df["lag12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-preferred_lag = df[["permno", "time_avail_m", "pstkrv"]].rename(
-    columns={"time_avail_m": "lag12_date", "pstkrv": "pstkrv_l12"}
-)
-df = df.merge(preferred_lag, on=["permno", "lag12_date"], how="left")
+# Remove inserted calendar rows before eligibility filters and observation counts.
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Boudoukh et al. (2007), pp. 882-884: payout is dividends plus repurchases,
 # including any annual reduction in preferred stock, not its outstanding level.
 # If either preferred-stock value is unavailable, add no inferred reduction.
-df["preferred_reduction"] = (df["pstkrv_l12"] - df["pstkrv"]).clip(lower=0).fillna(0)
+df["preferred_reduction"] = (df["l12_pstkrv"] - df["pstkrv"]).clip(lower=0).fillna(0)
 df["PayoutYield"] = (
     df["dvc"] + df["prstkc"] + df["preferred_reduction"]
-) / df["mve_permco_l6"]
+) / df["l6_mve_permco"]
 
 # Set negative or zero payout yields to missing
 df.loc[df["PayoutYield"] <= 0, "PayoutYield"] = np.nan
