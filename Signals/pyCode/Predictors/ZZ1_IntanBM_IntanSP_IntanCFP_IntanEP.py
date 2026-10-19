@@ -9,7 +9,7 @@ Usage:
     python3 Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py
 
 Inputs:
-    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, gvkey, time_avail_m, sale, ib, dp, ni, ceq]
+    - m_aCompustat.parquet: Monthly Compustat data with columns [permno, gvkey, time_avail_m, sale, ib, dp, ceq]
     - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, ret, mve_permco]
 
 Outputs:
@@ -37,7 +37,7 @@ print("Starting ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py")
 # DATA LOAD
 print("Loading data...")
 # Load m_aCompustat data
-compustat_cols = ["permno", "gvkey", "time_avail_m", "sale", "ib", "dp", "ni", "ceq"]
+compustat_cols = ["permno", "gvkey", "time_avail_m", "sale", "ib", "dp", "ceq"]
 df = pd.read_parquet(
     "../pyData/Intermediate/m_aCompustat.parquet", columns=compustat_cols
 )
@@ -57,12 +57,21 @@ print(f"Data loaded. Shape: {df.shape}")
 # SIGNAL CONSTRUCTION
 print("Constructing signals...")
 # Generate temporary accounting measures
-# Handle cases where ceq/mve_permco <= 0 (Stata would treat log of negative/zero as missing)
-df["ceq_mve_ratio"] = df["ceq"] / df["mve_permco"]
-df["tempAccBM"] = np.where(df["ceq_mve_ratio"] > 0, np.log(df["ceq_mve_ratio"]), np.nan)
-df["tempAccSP"] = df["sale"] / df["mve_permco"]
-df["tempAccCFP"] = (df["ib"] + df["dp"]) / df["mve_permco"]
-df["tempAccEP"] = df["ni"] / df["mve_permco"]
+# Daniel and Titman (2006) define all four fundamental-to-price ratios in logs
+# (Section II.A.1: "The other three ratios are defined analogously") and require
+# the fundamentals to be positive (last line of section A1). 
+# Earnings are income before extraordinary items (ib), per the paper's Appendix.
+
+
+def log_ratio(numerator):
+    ratio = numerator / df["mve_permco"]
+    return np.where(ratio > 0, np.log(ratio.where(ratio > 0)), np.nan)
+
+
+df["tempAccBM"] = log_ratio(df["ceq"])
+df["tempAccSP"] = log_ratio(df["sale"])
+df["tempAccCFP"] = log_ratio(df["ib"] + df["dp"])
+df["tempAccEP"] = log_ratio(df["ib"])
 
 # Set panel data (equivalent to xtset permno time_avail_m)
 df = df.sort_values(["permno", "time_avail_m"])
