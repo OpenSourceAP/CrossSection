@@ -74,7 +74,11 @@ df["l60_tempBD"] = df["l60_tempBD"].fillna(shift_lag)
 df = df.drop(columns=["target_lag_date", "lag_date"])
 
 # Calculate composite debt issuance as log growth in total debt over 60 months
-df["CompositeDebtIssuance"] = np.log(df["tempBD"] / df["l60_tempBD"])
+# Stata's log(x/0) and log(0) are missing; numpy returns +/-inf. Match Stata so that
+# firms with zero total debt now or 60 months ago are dropped rather than kept as inf.
+with np.errstate(divide="ignore", invalid="ignore"):
+    df["CompositeDebtIssuance"] = np.log(df["tempBD"] / df["l60_tempBD"])
+df["CompositeDebtIssuance"] = df["CompositeDebtIssuance"].replace([np.inf, -np.inf], np.nan)
 
 print(
     f"Generated CompositeDebtIssuance values for {df['CompositeDebtIssuance'].notna().sum():,} observations"
