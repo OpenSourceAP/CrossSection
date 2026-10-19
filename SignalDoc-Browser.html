@@ -252,6 +252,83 @@
             text-align: center;
             color: #999;
         }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .nav-bar {
+                padding: 0.25rem 0 0.25rem 0;
+            }
+
+            .nav-bar::after {
+                margin: 0.25rem auto 0;
+            }
+
+            .nav-bar a {
+                padding: 0 0.50rem;
+                font-size: 0.8rem;
+            }
+
+            .header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.25rem;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+
+            .search-bar select {
+                display: none;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .list-panel {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+                max-height: 35vh;
+            }
+
+            .list-header {
+                display: none;
+            }
+
+            .signal-item {
+                padding: 0.5rem 1rem;
+            }
+
+            .detail-panel {
+                padding: 1rem;
+            }
+
+            .detail-title {
+                font-size: 1.2rem;
+                margin-top: 0.1rem;
+                margin-bottom: 0.1rem;
+                padding-bottom: 0.2rem;
+            }
+
+            .detail-field {
+                margin-bottom: 0.3rem;
+            }
+
+            .detail-field.inline {
+                flex-direction: column;
+                gap: 0.25rem;
+                align-items: flex-start;
+            }
+
+            .detail-field.inline .detail-label {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1486,7 +1563,7 @@
     "KeyTable": "Table IIC",
     "TestInOP": "port sort",
     "Sign": "-1.0",
-    "Return": "-1.68",
+    "Return": "1.68",
     "TStat": "6.77",
     "StockWeight": "EW",
     "LSQuantile": "0.1",
@@ -2920,7 +2997,7 @@
     "PortfolioPeriod": "1.0",
     "StartMonth": "6.0",
     "Filter": "abs(prc)>5",
-    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on 5 year lagged BM (defined above) and a constructed regressor that is the change in BM from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanBM.",
+    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on 5 year lagged log BM (book equity (ceq)/market value of equity) and a constructed regressor that is the change in log BM from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanBM.",
     "Notes": "",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanBM.py"
   },
@@ -2951,7 +3028,7 @@
     "PortfolioPeriod": "1.0",
     "StartMonth": "6.0",
     "Filter": "abs(prc)>5",
-    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on the 5 year lagged  CFP = (net income (ni) plus depreciation (dp))/market value of equity and a constructed regressor that is the change in CFP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanCFP.",
+    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on the 5 year lagged log CFP, where CFP = (income before extraordinary items (ib) plus depreciation (dp))/market value of equity, and a constructed regressor that is the change in log CFP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanCFP.",
     "Notes": "",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanCFP.py"
   },
@@ -2982,7 +3059,7 @@
     "PortfolioPeriod": "12.0",
     "StartMonth": "6.0",
     "Filter": "abs(prc)>5",
-    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on the 5 year lagged  EP = net income (ni)/market value of equity and a constructed regressor that is the change in EP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanEP.",
+    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on the 5 year lagged log EP, where EP = income before extraordinary items (ib)/market value of equity, and a constructed regressor that is the change in log EP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanEP.",
     "Notes": "",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanEP.py"
   },
@@ -3013,7 +3090,7 @@
     "PortfolioPeriod": "12.0",
     "StartMonth": "6.0",
     "Filter": "",
-    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on 5 year lagged SP (defined above) and a constructed regressor that is the change in SP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanSP.",
+    "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on 5 year lagged log SP (sales (sale)/market value of equity) and a constructed regressor that is the change in log SP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanSP.",
     "Notes": "Not as clear as the other Intan* variables because the other coefficients in the regression are significant.  We took the liberty to remove the price filter and categorize this as clear",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanSP.py"
   },
@@ -6144,7 +6221,7 @@
     "PortfolioPeriod": "6.0",
     "StartMonth": "6.0",
     "Filter": "",
-    "Definition": "Price (prc/cfacshr) divided by the maximum price over the previous 12 months.",
+    "Definition": "Price (abs(prc)/cfacpr) divided by the maximum price over the previous 12 months.",
     "Notes": "Table 1 shows t=2.00 in LS.  Tab 2 shows sign depends entirely on January or non-January, and t-stats are huge in each subsample.  Should work really well VW, not sure why they don't do this.  Also works with price filter.",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/High52.py"
   },
