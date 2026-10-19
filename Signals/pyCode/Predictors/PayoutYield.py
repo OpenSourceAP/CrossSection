@@ -63,8 +63,21 @@ lag_lookup = lag_lookup.rename(
 # Merge to get 6-month lagged values
 df = df.merge(lag_lookup, on=["permno", "lag6_date"], how="left")
 
-# Calculate payout yield as total payouts divided by lagged market value
-df["PayoutYield"] = (df["dvc"] + df["prstkc"] + df["pstkrv"]) / df["mve_permco_l6"]
+# Annual accounts are carried across monthly signal dates. Match the same month
+# one year earlier; a one-row lag would mostly compare an annual report to itself.
+df["lag12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
+preferred_lag = df[["permno", "time_avail_m", "pstkrv"]].rename(
+    columns={"time_avail_m": "lag12_date", "pstkrv": "pstkrv_l12"}
+)
+df = df.merge(preferred_lag, on=["permno", "lag12_date"], how="left")
+
+# Boudoukh et al. (2007), pp. 882-884: payout is dividends plus repurchases,
+# including any annual reduction in preferred stock, not its outstanding level.
+# If either preferred-stock value is unavailable, add no inferred reduction.
+df["preferred_reduction"] = (df["pstkrv_l12"] - df["pstkrv"]).clip(lower=0).fillna(0)
+df["PayoutYield"] = (
+    df["dvc"] + df["prstkc"] + df["preferred_reduction"]
+) / df["mve_permco_l6"]
 
 # Set negative or zero payout yields to missing
 df.loc[df["PayoutYield"] <= 0, "PayoutYield"] = np.nan
