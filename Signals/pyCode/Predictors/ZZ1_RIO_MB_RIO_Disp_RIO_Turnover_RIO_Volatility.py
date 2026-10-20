@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 from utils.stata_fastxtile import fastxtile
 from utils.asrol import asrol
+from utils.stata_replication import stata_multi_lag
 
 
 print("=" * 80)
@@ -176,28 +177,12 @@ df = df.with_columns(
 )
 
 
-# xtset permno time_avail_m
-# gen RIOlag = l6.RIO
-# CRITICAL FIX: Use calendar-based lag (6 months) instead of position-based shift(6)
-# This matches Stata's l6. behavior which goes back 6 calendar months
-df = df.sort(["permno", "time_avail_m"])
+# Calendar lag on the existing Polars panel; restore observed rows before ranking.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = stata_multi_lag(df, "permno", "time_avail_m", "RIO", [6])
+df = df.rename({"RIO_lag6": "RIOlag"})
+df = df.filter(pl.col("_observed") == True).drop("_observed")
 
-# Convert to pandas for easier date arithmetic
-df_pandas = df.to_pandas()
-
-# Calculate the exact 6-month lag date for each observation
-df_pandas["lag_date"] = df_pandas["time_avail_m"] - pd.DateOffset(months=6)
-
-# Create lookup for RIO values by permno and date
-rio_lookup = df_pandas.set_index(["permno", "time_avail_m"])["RIO"]
-
-# Get RIOlag by looking up RIO at lag_date
-df_pandas["RIOlag"] = df_pandas.apply(
-    lambda row: rio_lookup.get((row["permno"], row["lag_date"]), None), axis=1
-)
-
-# Convert back to polars (lag_date was already used and not in dataframe)
-df = pl.from_pandas(df_pandas)
 
 # egen cat_RIO = fastxtile(RIOlag), n(5) by(time_avail_m)
 # Convert to pandas for fastxtile operation

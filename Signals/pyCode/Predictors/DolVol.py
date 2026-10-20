@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -27,8 +32,11 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # SIGNAL CONSTRUCTION
 # Calculate 2-month lags
-df["vol_lag2"] = df.groupby("permno")["vol"].shift(2)
-df["prc_lag2"] = df.groupby("permno")["prc"].shift(2)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "vol", [2])
+df = stata_multi_lag(df, "permno", "time_avail_m", "prc", [2], fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate dollar volume with log transformation
 df["DolVol"] = np.log(df["vol_lag2"] * np.abs(df["prc_lag2"]))

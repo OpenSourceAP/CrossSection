@@ -69,8 +69,12 @@ print("Creating calendar-based lags...")
 df = df.sort_values(["permno", "time_avail_m"])
 
 # Create calendar-based lags: 6-month lag for citations, 24-month lag for R&D
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ncitscale", [6], freq="M")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "xrd", [24], freq="M")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Rename lag columns and fill missing with 0
 df["ncitscale"] = df["ncitscale_lag6"].fillna(0)
@@ -95,6 +99,7 @@ df_pl = pl.from_pandas(df)
 
 print("  Computing 48-month calendar rolling XRD sums...")
 # Calculate 48-month rolling sum of R&D expenses by firm
+df_pl = df_pl.with_columns(pl.lit(True).alias("_observed_rolling"))
 df_pl = asrol(
     df_pl,
     "permno",
@@ -106,9 +111,11 @@ df_pl = asrol(
     "sum_xrd",
     min_samples=1,
 )
+df_pl = df_pl.filter(pl.col("_observed_rolling") == True).drop("_observed_rolling")
 
 print("  Computing 48-month calendar rolling citation sums...")
 # Calculate 48-month rolling sum of scaled citations by firm
+df_pl = df_pl.with_columns(pl.lit(True).alias("_observed_rolling"))
 df_pl = asrol(
     df_pl,
     "permno",
@@ -120,6 +127,7 @@ df_pl = asrol(
     "sum_ncit",
     min_samples=1,
 )
+df_pl = df_pl.filter(pl.col("_observed_rolling") == True).drop("_observed_rolling")
 
 # Convert back to pandas
 df = df_pl.to_pandas()

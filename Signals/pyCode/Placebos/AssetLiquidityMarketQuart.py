@@ -24,6 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting AssetLiquidityMarketQuart.py")
@@ -67,21 +68,13 @@ df = df.with_columns([
 ])
 
 # Convert to pandas for lag operations
-df_pd = df.to_pandas()
-
-# Create 1-month lag date
-df_pd['time_lag1'] = df_pd['time_avail_m'] - pd.DateOffset(months=1)
-
-# Create lag data for merging
-lag_vars = ['atq', 'prccq', 'cshoq', 'ceqq']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag1'] + [f'l1_{var}' for var in lag_vars]
-
-# Merge lag data
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag1'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['time_lag1']))
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['atq', 'prccq', 'cshoq', 'ceqq'], [1], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 # gen AssetLiquidityMarketQuart = (cheq + .75*(actq - cheq) + .5*(atq - actq - gdwlq - intanq))/(l.atq + l.prccq*l.cshoq - l.ceqq)
 print("Computing AssetLiquidityMarketQuart...")

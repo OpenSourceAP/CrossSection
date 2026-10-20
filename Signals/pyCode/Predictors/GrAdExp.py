@@ -25,6 +25,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 
 print("Starting GrAdExp.py...")
@@ -72,7 +73,11 @@ with np.errstate(divide="ignore", invalid="ignore"):
     df["log_xad"] = np.log(df["xad"])
 
 # Calculate growth in advertising expenses 
-df["log_xad_l12"] = df.groupby("permno")["log_xad"].shift(12)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "log_xad", [12])
+df = df.rename(columns={"log_xad_lag12": "log_xad_l12"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["GrAdExp"] = df["log_xad"] - df["log_xad_l12"]
 
 # Calculate size deciles for filtering

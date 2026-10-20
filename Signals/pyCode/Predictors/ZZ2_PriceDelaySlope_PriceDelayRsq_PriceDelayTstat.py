@@ -52,7 +52,8 @@ print("📊 Preparing daily Fama-French data with lags...")
 daily_ff = pl.read_parquet("../pyData/Intermediate/dailyFF.parquet")
 daily_ff = daily_ff.select(["time_d", "mktrf", "rf"]).sort("time_d")
 
-# Create market return lags
+# Source explicitly uses mktrf[_n-n] on the sorted trading-day factor file.
+# Keep observation shifts across weekends and market holidays.
 for n in range(1, nlag + 1):
     daily_ff = daily_ff.with_columns(pl.col("mktrf").shift(n).alias(f"mktLag{n}"))
 

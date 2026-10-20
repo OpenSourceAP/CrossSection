@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 from pathlib import Path
 
@@ -51,7 +56,11 @@ df["temp"] = (
 ) / df["at"]
 
 # Calculate 12-month change in net noncurrent operating assets
-df["temp_l12"] = df.groupby("permno")["temp"].shift(12)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "temp", [12])
+df = df.rename(columns={"temp_lag12": "temp_l12"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["ChNNCOA"] = df["temp"] - df["temp_l12"]
 
 # Clean up temporary columns

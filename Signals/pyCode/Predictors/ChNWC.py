@@ -45,7 +45,9 @@ df["NWC"] = df["nwc_numerator"] / df["at"]
 
 # take first differences
 # Create 12-month lag of working capital ratio
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "NWC", [12], prefix='l')
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["ChNWC"] = df["NWC"] - df["l12_NWC"]
 
 print(f"Generated ChNWC values for {df['ChNWC'].notna().sum():,} observations")

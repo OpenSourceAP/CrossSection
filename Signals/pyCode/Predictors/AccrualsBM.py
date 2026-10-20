@@ -26,6 +26,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 from utils.stata_fastxtile import fastxtile
 
 print("Starting AccrualsBM.py...")
@@ -93,12 +94,14 @@ df["BM"] = np.log(df["ceq"] / df["mve_permco"])
 
 # Create lag variables for accruals calculation
 print("Creating lag variables for accruals...")
-df["lag_act"] = df.groupby("permno")["act"].shift(12)
-df["lag_che"] = df.groupby("permno")["che"].shift(12)
-df["lag_lct"] = df.groupby("permno")["lct"].shift(12)
-df["lag_dlc"] = df.groupby("permno")["dlc"].shift(12)
-df["lag_txp"] = df.groupby("permno")["txp"].shift(12)
-df["lag_at"] = df.groupby("permno")["at"].shift(12)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+lag_vars = ['act', 'che', 'lct', 'dlc', 'txp', 'at']
+for var in lag_vars:
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], fill_gaps=False)
+df = df.rename(columns={f"{var}_lag12": f"lag_{var}" for var in lag_vars})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate working capital accruals: change in working capital divided by average total assets
 print("Calculating tempacc...")

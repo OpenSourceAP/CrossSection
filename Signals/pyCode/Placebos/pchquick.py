@@ -26,7 +26,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
 from utils.forward_fill import apply_quarterly_fill_to_compustat
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting pchquick.py")
 
@@ -63,6 +63,8 @@ df = df.with_columns([
 
 # Create calendar-based lags (matching Stata's l12.)
 print("Calculating 12-month calendar-based lags...")
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
 df = stata_multi_lag(
     df,
     group_col='permno',
@@ -71,8 +73,9 @@ df = stata_multi_lag(
     lag_list=[12],
     freq='M',
     prefix='l',
-    fill_gaps=True
+    fill_gaps=False
 )
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # Fill lag nulls with 0 as well
 df = df.with_columns([
@@ -112,8 +115,12 @@ print("Applying Stata's special missing value logic...")
 print("Applying Stata's special rule iteratively...")
 
 for pass_num in range(10):  # Allow multiple passes for full propagation
-    # Calculate 12-month lag of pchquick (position-based like Stata's l12.)
-    df_pd['l12_pchquick'] = df_pd.groupby('permno')['pchquick'].shift(12)
+    # Recompute the calendar endpoint after updating observed pchquick values.
+    df_pd["_observed"] = True
+    df_pd = stata_multi_lag(
+        df_pd, "permno", "time_avail_m", "pchquick", [12], prefix="l"
+    )
+    df_pd = df_pd.loc[df_pd["_observed"].eq(True)].drop(columns="_observed")
     
     # Identify observations where both pchquick and l12_pchquick are missing
     both_missing = df_pd['pchquick'].isna() & df_pd['l12_pchquick'].isna()

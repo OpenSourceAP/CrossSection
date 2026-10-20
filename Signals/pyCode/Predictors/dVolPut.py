@@ -24,6 +24,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 from config import PATCH_OPTIONM_IV
 
 print("Starting dVolPut.py...")
@@ -62,7 +63,11 @@ options_df = options_df[options_df["cp_flag"] == "P"]
 options_df = options_df.sort_values(["secid", "time_avail_m"])
 
 # Create 1-month lag of implied volatility
-options_df["l1_impl_vol"] = options_df.groupby("secid")["impl_vol"].shift(1)
+# Fill calendar gaps for lags, then restore the observed rows.
+options_df["_observed"] = True
+options_df = stata_multi_lag(options_df, "secid", "time_avail_m", "impl_vol", [1])
+options_df = options_df.rename(columns={"impl_vol_lag1": "l1_impl_vol"})
+options_df = options_df.loc[options_df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate change in put implied volatility
 options_df["dVolPut"] = options_df["impl_vol"] - options_df["l1_impl_vol"]

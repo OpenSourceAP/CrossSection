@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.save_standardized import save_placebo
 
 print("Starting pchdepr.py")
@@ -56,10 +57,11 @@ print("ppent forward-fill completed")
 
 # gen pchdepr = ((dp/ppent)-(l12.dp/l12.ppent))/(l12.dp/l12.ppent)
 print("Computing 12-month lag and pchdepr...")
-df = df.with_columns([
-    pl.col('dp').shift(12).over('permno').alias('l12_dp'),
-    pl.col('ppent').shift(12).over('permno').alias('l12_ppent')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['dp', 'ppent'], [12], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # Calculate current and lagged ratios
 df = df.with_columns([

@@ -1,6 +1,8 @@
 # ABOUTME: BetaDimson placebo - Dimson beta using lead, contemporaneous, and lagged market returns
 # ABOUTME: Rolling regression of daily stock returns on lead, current, and lagged market returns
 
+# Lag exception: Sequential daily trading index time_temp; leads/lags are trading observations.
+
 """
 Usage:
     python3 Placebos/ZZ2_BetaDimson.py

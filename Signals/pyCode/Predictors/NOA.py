@@ -17,6 +17,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 print("Starting NOA calculation...")
 
@@ -53,7 +58,12 @@ df["OA"] = df["at"] - df["che"]
 df["OL"] = df["at"] - df["dltt"] - df["mib"] - df["dc"] - df["ceq"]
 
 # Calculate NOA = (OA - OL) scaled by lagged total assets
-df["l12_at"] = df.groupby("permno")["at"].shift(12)
+# Keep the full monthly grid until all calendar lags are calculated.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+df = stata_multi_lag(df, "permno", "time_avail_m", "at", [12], prefix="l", fill_gaps=False)
+# Preserve the source observation set before subsequent calculations.
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
 # Calculate NOA
 df["NOA"] = (df["OA"] - df["OL"]) / df["l12_at"]

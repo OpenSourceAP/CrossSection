@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting GPlag.py")
@@ -42,9 +43,11 @@ df = df.sort(['permno', 'time_avail_m'])
 
 # gen GPlag = (sale-cogs)/l12.at
 print("Computing GPlag...")
-df = df.with_columns([
-    pl.col('at').shift(12).over('permno').alias('l12_at')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['at'], [12], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 df = df.with_columns(
     ((pl.col('sale') - pl.col('cogs')) / pl.col('l12_at')).alias('GPlag')

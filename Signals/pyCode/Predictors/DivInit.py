@@ -30,6 +30,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.asrol import asrol
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 print("=" * 80)
 print("🏗️  DivInit.py")
@@ -66,9 +67,11 @@ print("🧮 Computing dividend initiation signal...")
 df["divamt"] = df["divamt"].fillna(0)
 
 # Rolling 24-month sum of dividends using asrol
+df["_observed_rolling"] = True
 df = asrol(
     df, "permno", "time_avail_m", "1mo", 24, "divamt", "sum", "divamt_sum", min_samples=1
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Sort by permno and time_avail_m for lag calculation
 df = df.sort_values(["permno", "time_avail_m"])
@@ -76,14 +79,20 @@ df = df.sort_values(["permno", "time_avail_m"])
 # Create dividend initiation indicator
 # Flag firms paying dividends after 24 months of no dividends
 # for some reason, asrol(stat="sum") can return 1e-17 instead of 0. This seems to be due to how polars handles rolling_sum. So I'm patching with this 1e-10 cutoff
-df["divsum_lag1"] = df.groupby("permno")["divamt_sum"].shift(1)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "divamt_sum", [1])
+df = df.rename(columns={"divamt_sum_lag1": "divsum_lag1"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["divinit_firstmonth"] = ((df["divamt"] > 0) & (df["divsum_lag1"] < 1e-10)).astype(int)
 
 # Signal is valid for 6 months
+df["_observed_rolling"] = True
 df = asrol(
     df, "permno", "time_avail_m", "1mo", 6, "divinit_firstmonth", 
     "max", "DivInit", min_samples=1
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # save
 print("💾 Saving DivInit predictor...")

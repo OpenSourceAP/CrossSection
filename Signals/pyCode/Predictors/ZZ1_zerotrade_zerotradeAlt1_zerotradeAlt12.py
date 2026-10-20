@@ -20,6 +20,11 @@ Outputs:
 import pandas as pd
 import numpy as np
 import warnings
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 warnings.filterwarnings("ignore")
 
@@ -50,39 +55,44 @@ collapsed = collapsed.rename(columns={"days": "ndays"})
 # xtset permno time_avail_m
 collapsed = collapsed.sort_values(["permno", "time_avail_m"]).reset_index(drop=True)
 
-# Group by permno for time series operations
-grouped = collapsed.groupby("permno")
+# Use a date-valued grid while retaining the original YYYYMM output column.
+collapsed["_calendar_m"] = pd.to_datetime(collapsed["time_avail_m"].astype(str), format="%Y%m")
+collapsed["_observed"] = True
+collapsed = fill_date_gaps(collapsed, "permno", "_calendar_m")
+for var in ("turn", "countzero", "ndays"):
+    collapsed = stata_multi_lag(collapsed, "permno", "_calendar_m", var, list(range(1, 12)), fill_gaps=False)
 
 # 40n1 Number of days with 0 trades (1 month version)
 collapsed["temp_zerotrade"] = (
     collapsed["countzero"] + ((1 / collapsed["turn"]) / 480000)
 ) * (21 / collapsed["ndays"])
-collapsed["zerotrade1M"] = grouped["temp_zerotrade"].shift(1)
+collapsed = stata_multi_lag(collapsed, "permno", "_calendar_m", "temp_zerotrade", [1], fill_gaps=False)
+collapsed["zerotrade1M"] = collapsed["temp_zerotrade_lag1"]
 
 # 40 Number of days with 0 trades (6 month version)
 collapsed["Turn6"] = (
     collapsed["turn"]
-    + grouped["turn"].shift(1)
-    + grouped["turn"].shift(2)
-    + grouped["turn"].shift(3)
-    + grouped["turn"].shift(4)
-    + grouped["turn"].shift(5)
+    + collapsed["turn_lag1"]
+    + collapsed["turn_lag2"]
+    + collapsed["turn_lag3"]
+    + collapsed["turn_lag4"]
+    + collapsed["turn_lag5"]
 )
 collapsed["countzero6"] = (
     collapsed["countzero"]
-    + grouped["countzero"].shift(1)
-    + grouped["countzero"].shift(2)
-    + grouped["countzero"].shift(3)
-    + grouped["countzero"].shift(4)
-    + grouped["countzero"].shift(5)
+    + collapsed["countzero_lag1"]
+    + collapsed["countzero_lag2"]
+    + collapsed["countzero_lag3"]
+    + collapsed["countzero_lag4"]
+    + collapsed["countzero_lag5"]
 )
 collapsed["ndays6"] = (
     collapsed["ndays"]
-    + grouped["ndays"].shift(1)
-    + grouped["ndays"].shift(2)
-    + grouped["ndays"].shift(3)
-    + grouped["ndays"].shift(4)
-    + grouped["ndays"].shift(5)
+    + collapsed["ndays_lag1"]
+    + collapsed["ndays_lag2"]
+    + collapsed["ndays_lag3"]
+    + collapsed["ndays_lag4"]
+    + collapsed["ndays_lag5"]
 )
 
 collapsed["temp_zerotrade6"] = (
@@ -91,50 +101,51 @@ collapsed["temp_zerotrade6"] = (
     21 * 6 / collapsed["ndays6"]
 )  # I use a deflator of 11,000 in constructing LM6 and LM12, and a deflator of 480,000 for LM1 (Liu (2006, fn 4, p. 635))
 
-collapsed["zerotrade6M"] = grouped["temp_zerotrade6"].shift(1)
+collapsed = stata_multi_lag(collapsed, "permno", "_calendar_m", "temp_zerotrade6", [1], fill_gaps=False)
+collapsed["zerotrade6M"] = collapsed["temp_zerotrade6_lag1"]
 
 # 40n12 Number of days with 0 trades (12 month version)
 collapsed["Turn12"] = (
     collapsed["turn"]
-    + grouped["turn"].shift(1)
-    + grouped["turn"].shift(2)
-    + grouped["turn"].shift(3)
-    + grouped["turn"].shift(4)
-    + grouped["turn"].shift(5)
-    + grouped["turn"].shift(6)
-    + grouped["turn"].shift(7)
-    + grouped["turn"].shift(8)
-    + grouped["turn"].shift(9)
-    + grouped["turn"].shift(10)
-    + grouped["turn"].shift(11)
+    + collapsed["turn_lag1"]
+    + collapsed["turn_lag2"]
+    + collapsed["turn_lag3"]
+    + collapsed["turn_lag4"]
+    + collapsed["turn_lag5"]
+    + collapsed["turn_lag6"]
+    + collapsed["turn_lag7"]
+    + collapsed["turn_lag8"]
+    + collapsed["turn_lag9"]
+    + collapsed["turn_lag10"]
+    + collapsed["turn_lag11"]
 )
 collapsed["countzero12"] = (
     collapsed["countzero"]
-    + grouped["countzero"].shift(1)
-    + grouped["countzero"].shift(2)
-    + grouped["countzero"].shift(3)
-    + grouped["countzero"].shift(4)
-    + grouped["countzero"].shift(5)
-    + grouped["countzero"].shift(6)
-    + grouped["countzero"].shift(7)
-    + grouped["countzero"].shift(8)
-    + grouped["countzero"].shift(9)
-    + grouped["countzero"].shift(10)
-    + grouped["countzero"].shift(11)
+    + collapsed["countzero_lag1"]
+    + collapsed["countzero_lag2"]
+    + collapsed["countzero_lag3"]
+    + collapsed["countzero_lag4"]
+    + collapsed["countzero_lag5"]
+    + collapsed["countzero_lag6"]
+    + collapsed["countzero_lag7"]
+    + collapsed["countzero_lag8"]
+    + collapsed["countzero_lag9"]
+    + collapsed["countzero_lag10"]
+    + collapsed["countzero_lag11"]
 )
 collapsed["ndays12"] = (
     collapsed["ndays"]
-    + grouped["ndays"].shift(1)
-    + grouped["ndays"].shift(2)
-    + grouped["ndays"].shift(3)
-    + grouped["ndays"].shift(4)
-    + grouped["ndays"].shift(5)
-    + grouped["ndays"].shift(6)
-    + grouped["ndays"].shift(7)
-    + grouped["ndays"].shift(8)
-    + grouped["ndays"].shift(9)
-    + grouped["ndays"].shift(10)
-    + grouped["ndays"].shift(11)
+    + collapsed["ndays_lag1"]
+    + collapsed["ndays_lag2"]
+    + collapsed["ndays_lag3"]
+    + collapsed["ndays_lag4"]
+    + collapsed["ndays_lag5"]
+    + collapsed["ndays_lag6"]
+    + collapsed["ndays_lag7"]
+    + collapsed["ndays_lag8"]
+    + collapsed["ndays_lag9"]
+    + collapsed["ndays_lag10"]
+    + collapsed["ndays_lag11"]
 )
 
 collapsed["temp_zerotrade12"] = (
@@ -143,7 +154,12 @@ collapsed["temp_zerotrade12"] = (
     21 * 12 / collapsed["ndays12"]
 )  # I use a deflator of 11,000 in constructing LM6 and LM12, and a deflator of 480,000 for LM1 (Liu (2006, fn 4, p. 635))
 
-collapsed["zerotrade12M"] = grouped["temp_zerotrade12"].shift(1)
+collapsed = stata_multi_lag(collapsed, "permno", "_calendar_m", "temp_zerotrade12", [1], fill_gaps=False)
+collapsed["zerotrade12M"] = collapsed["temp_zerotrade12_lag1"]
+
+# Remove inserted months before saving any of the three signals.
+collapsed = collapsed.loc[collapsed["_observed"].eq(True)].drop(columns=["_observed", "_calendar_m"]).copy()
+collapsed["time_avail_m"] = collapsed["time_avail_m"].astype(int)
 
 # SAVE
 # Save zerotrade1M

@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -26,7 +31,7 @@ df = pd.read_parquet("../pyData/Intermediate/dailyCRSP.parquet")
 print("Constructing Illiquidity signal...")
 
 # Convert time_d to monthly time_avail_m (year * 100 + month format)
-df["time_avail_m"] = df["time_d"].dt.year * 100 + df["time_d"].dt.month
+df["time_avail_m"] = df["time_d"].dt.to_period("M").dt.start_time
 
 # Calculate daily illiquidity measure
 df["ill"] = np.abs(df["ret"]) / (np.abs(df["prc"]) * df["vol"])
@@ -41,17 +46,9 @@ monthly_ill = df.groupby(["permno", "time_avail_m"])["ill"].mean().reset_index()
 monthly_ill = monthly_ill.sort_values(["permno", "time_avail_m"])
 
 # Calculate 12-month rolling mean using lags
-monthly_ill["ill_lag1"] = monthly_ill.groupby("permno")["ill"].shift(1)
-monthly_ill["ill_lag2"] = monthly_ill.groupby("permno")["ill"].shift(2)
-monthly_ill["ill_lag3"] = monthly_ill.groupby("permno")["ill"].shift(3)
-monthly_ill["ill_lag4"] = monthly_ill.groupby("permno")["ill"].shift(4)
-monthly_ill["ill_lag5"] = monthly_ill.groupby("permno")["ill"].shift(5)
-monthly_ill["ill_lag6"] = monthly_ill.groupby("permno")["ill"].shift(6)
-monthly_ill["ill_lag7"] = monthly_ill.groupby("permno")["ill"].shift(7)
-monthly_ill["ill_lag8"] = monthly_ill.groupby("permno")["ill"].shift(8)
-monthly_ill["ill_lag9"] = monthly_ill.groupby("permno")["ill"].shift(9)
-monthly_ill["ill_lag10"] = monthly_ill.groupby("permno")["ill"].shift(10)
-monthly_ill["ill_lag11"] = monthly_ill.groupby("permno")["ill"].shift(11)
+monthly_ill["_observed"] = True
+monthly_ill = stata_multi_lag(monthly_ill, "permno", "time_avail_m", "ill", list(range(1, 12)))
+monthly_ill = monthly_ill.loc[monthly_ill["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate 12-month rolling mean
 # Require ALL 12 values to be non-missing for the calculation
@@ -83,7 +80,8 @@ monthly_ill["Illiquidity"] = np.where(
 
 # Prepare final output - rename time_avail_m to yyyymm for consistency
 result = monthly_ill[["permno", "time_avail_m", "Illiquidity"]].copy()
-result = result.rename(columns={"time_avail_m": "yyyymm"})
+result["yyyymm"] = result["time_avail_m"].dt.year * 100 + result["time_avail_m"].dt.month
+result = result.drop(columns="time_avail_m")
 
 # Drop rows with missing Illiquidity values
 result = result.dropna(subset=["Illiquidity"])

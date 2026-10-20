@@ -26,7 +26,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting pchsaleinv.py")
 
@@ -51,6 +51,8 @@ df = df.sort(['permno', 'time_avail_m'])
 
 # gen pchsaleinv = ( (sale/invt)-(l12.sale/l12.invt) ) / (l12.sale/l12.invt)
 print("Computing 12-month lags using stata_multi_lag...")
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
 df = stata_multi_lag(
     df,
     group_col='permno',
@@ -58,8 +60,8 @@ df = stata_multi_lag(
     value_col=['sale', 'invt'],
     lag_list=[12],
     freq='M',
-    prefix='l',
-)
+    prefix='l', fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 print("Computing pchsaleinv...")
 # Calculate the components with proper null handling

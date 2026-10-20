@@ -18,6 +18,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 # DATA LOAD
 # Load SignalMasterTable with specific columns
@@ -44,23 +49,14 @@ df = df.sort_values(["permno", "time_avail_m"])
 # Calculate revenue per share
 df["revps"] = df["revtq"] / df["cshprq"]
 
-# Calculate year-over-year change in revenue per share
-# Use calendar-based lags for exact date matching
-df["date_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
-temp_merge = df[["permno", "time_avail_m", "revps"]].copy()
-temp_merge.columns = ["permno", "date_lag12", "revps_l12"]
-df = df.merge(temp_merge, on=["permno", "date_lag12"], how="left")
-df = df.drop("date_lag12", axis=1)
+# Keep the monthly grid until all three lag stages are complete.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "revps", [12])
+df = df.rename(columns={"revps_lag12": "revps_l12"})
 df["GrTemp"] = df["revps"] - df["revps_l12"]
 
-# Create historical revenue changes for drift calculation
-# Use 3, 6, 9, 12, 15, 18, 21, 24 month lags of revenue changes
-for n in range(3, 25, 3):
-    df[f"date_lag{n}"] = df["time_avail_m"] - pd.DateOffset(months=n)
-    temp_merge = df[["permno", "time_avail_m", "GrTemp"]].copy()
-    temp_merge.columns = ["permno", f"date_lag{n}", f"grtemp_lag{n}"]
-    df = df.merge(temp_merge, on=["permno", f"date_lag{n}"], how="left")
-    df = df.drop(f"date_lag{n}", axis=1)
+df = stata_multi_lag(df, "permno", "time_avail_m", "GrTemp", list(range(3, 25, 3)), fill_gaps=False)
+df = df.rename(columns={f"GrTemp_lag{n}": f"grtemp_lag{n}" for n in range(3, 25, 3)})
 
 # Calculate mean of historical revenue changes
 grtemp_lag_cols = [f"grtemp_lag{n}" for n in range(3, 25, 3)]
@@ -72,14 +68,10 @@ df["RevenueSurprise"] = df["revps"] - df["revps_l12"] - df["Drift"]
 # Drop grtemp lag columns
 df = df.drop(columns=grtemp_lag_cols)
 
-# Create historical revenue surprises for volatility calculation
-# Use 3, 6, 9, 12, 15, 18, 21, 24 month lags of revenue surprises
-for n in range(3, 25, 3):
-    df[f"date_lag{n}"] = df["time_avail_m"] - pd.DateOffset(months=n)
-    temp_merge = df[["permno", "time_avail_m", "RevenueSurprise"]].copy()
-    temp_merge.columns = ["permno", f"date_lag{n}", f"rs_lag{n}"]
-    df = df.merge(temp_merge, on=["permno", f"date_lag{n}"], how="left")
-    df = df.drop(f"date_lag{n}", axis=1)
+df = stata_multi_lag(df, "permno", "time_avail_m", "RevenueSurprise", list(range(3, 25, 3)), fill_gaps=False)
+df = df.rename(columns={f"RevenueSurprise_lag{n}": f"rs_lag{n}" for n in range(3, 25, 3)})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+
 
 # Calculate standard deviation of historical revenue surprises
 # Use sample standard deviation with n-1 denominator

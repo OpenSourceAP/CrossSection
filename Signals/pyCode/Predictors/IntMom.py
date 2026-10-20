@@ -21,6 +21,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")[
@@ -39,22 +40,11 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Create time-based lags for months t-7 to t-12 (intermediate momentum period)
 
-# Generate calendar-based lags (not position-based)
-for months_back in range(7, 13):
-    # Create lag date (months_back months before current date)
-    df[f"lag_date_{months_back}"] = df["time_avail_m"] - pd.DateOffset(
-        months=months_back
-    )
-
-    # Create a copy of data for merging (source for lag values)
-    lag_data = df[["permno", "time_avail_m", "ret"]].copy()
-    lag_data.columns = ["permno", f"lag_date_{months_back}", f"l{months_back}_ret"]
-
-    # Merge to get the lagged values
-    df = df.merge(lag_data, on=["permno", f"lag_date_{months_back}"], how="left")
-
-    # Clean up temporary lag date column
-    df = df.drop(f"lag_date_{months_back}", axis=1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [7, 8, 9, 10, 11, 12])
+df = df.rename(columns={'ret_lag7': 'l7_ret', 'ret_lag8': 'l8_ret', 'ret_lag9': 'l9_ret', 'ret_lag10': 'l10_ret', 'ret_lag11': 'l11_ret', 'ret_lag12': 'l12_ret'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Missing lagged values result in missing IntMom (consistent with methodology)
 

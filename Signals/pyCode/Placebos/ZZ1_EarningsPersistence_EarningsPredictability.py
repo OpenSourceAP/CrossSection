@@ -1,6 +1,8 @@
 # ABOUTME: EarningsPersistence and EarningsPredictability placebos
 # ABOUTME: Python equivalent of ZZ1_EarningsPersistence_EarningsPredictability.do using rolling regressions
 
+# Lag exception: Fiscal-year lag and rolling regression.
+
 """
 Usage:
     python3 Placebos/ZZ1_EarningsPersistence_EarningsPredictability.py

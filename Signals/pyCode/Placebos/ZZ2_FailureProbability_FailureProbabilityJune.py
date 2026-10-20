@@ -30,7 +30,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting ZZ2_FailureProbability_FailureProbabilityJune.py")
 
@@ -177,8 +177,11 @@ print("Computing exponentially weighted averages...")
 rho = 2**(-1/3)
 
 # Create lags for NIMTA and EXRET using stata_multi_lag
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempNIMTA', list(range(1, 13)), prefix='l')
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempEXRET', list(range(1, 13)), prefix='l')
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempNIMTA', list(range(1, 13)), prefix='l', fill_gaps=False)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempEXRET', list(range(1, 13)), prefix='l', fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # Compute weighted averages (matching Stata exactly)
 df = df.with_columns([

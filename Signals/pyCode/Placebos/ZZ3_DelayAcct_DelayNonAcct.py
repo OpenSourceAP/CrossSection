@@ -25,6 +25,7 @@ import os
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_placebo
 
 print("Starting ZZ3_DelayAcct_DelayNonAcct.py...")
@@ -145,9 +146,11 @@ print("Step 5: Computing variables...")
 df = df.sort(["permno", "time_avail_m"])
 
 # tempSI = spi/(.5*(at + l12.at))
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = stata_multi_lag(df, "permno", "time_avail_m", "at", [12], prefix="l")
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+df = df.rename({"l12_at": "at_l12"})
 df = df.with_columns([
-    pl.col("at").shift(12).over("permno").alias("at_l12")
-]).with_columns([
     (pl.col("spi") / (0.5 * (pl.col("at") + pl.col("at_l12")))).alias("tempSI")
 ])
 
@@ -158,10 +161,10 @@ df = df.with_columns([
 ])
 
 # Create lagged tempSurprise for 12, 24, 36, 48 months
-for n in [12, 24, 36, 48]:
-    df = df.with_columns([
-        pl.col("tempSurprise").shift(n).over("permno").alias(f"tempSurprise{n}")
-    ])
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = stata_multi_lag(df, "permno", "time_avail_m", "tempSurprise", [12, 24, 36, 48])
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+df = df.rename({f"tempSurprise_lag{n}": f"tempSurprise{n}" for n in [12, 24, 36, 48]})
 
 # Compute rolling standard deviation (rowsd) and count non-missing (rowmiss)
 surf_cols = ["tempSurprise", "tempSurprise12", "tempSurprise24", "tempSurprise36", "tempSurprise48"]

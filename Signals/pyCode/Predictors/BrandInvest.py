@@ -122,6 +122,8 @@ df.loc[df["xad"].isna(), "BrandCapital"] = np.nan
 df["BrandCapital"] = df["BrandCapital"] / df["at"]
 
 # Calculate BrandInvest = xad0/l.BrandCapital
+# Fiscal-year capital recurrence/lag needs a separate fiscal-gap review;
+# retained here outside the ordinary monthly calendar-lag migration.
 df["l_BrandCapital"] = df.groupby("gvkey")["BrandCapital"].shift(1)
 df["BrandInvest"] = df["xad0"] / df["l_BrandCapital"]
 

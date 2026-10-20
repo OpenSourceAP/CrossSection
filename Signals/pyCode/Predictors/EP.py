@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 # Load Compustat data
@@ -45,15 +50,10 @@ df = pd.merge(
 # Sort for proper lagging
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create 6-month lagged mve_permco using calendar-based approach
-# Look back exactly 6 months in calendar time to align earnings with appropriate market value
-df["time_lag6"] = df["time_avail_m"] - pd.DateOffset(months=6)
-
-# Self-merge to get 6-month lagged values
-df_lag = df[["permno", "time_avail_m", "mve_permco"]].copy()
-df_lag.columns = ["permno", "time_lag6", "mve_permco_lag6"]
-
-df = pd.merge(df, df_lag, on=["permno", "time_lag6"], how="left")
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "mve_permco", [6])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate EP with 6-month lagged market value
 df["EP"] = df["ib"] / df["mve_permco_lag6"]

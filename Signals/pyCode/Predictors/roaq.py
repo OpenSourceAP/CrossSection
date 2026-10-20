@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 signal_master = pd.read_parquet(
@@ -40,14 +45,11 @@ df = pd.merge(signal_master, qcompustat, on=["gvkey", "time_avail_m"], how="inne
 # Sort by company and time for historical data lookups
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Get assets from 3 months ago for each observation
-df["time_lag3"] = df["time_avail_m"] - pd.DateOffset(months=3)
+# Calendar lags retain missing endpoints; inserted rows are removed before calculating the signal.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "atq", [3])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
-# Self-merge to get 3-month lagged values
-df_lag = df[["permno", "time_avail_m", "atq"]].copy()
-df_lag.columns = ["permno", "time_lag3", "atq_lag3"]
-
-df = pd.merge(df, df_lag, on=["permno", "time_lag3"], how="left")
 
 # Calculate quarterly return on assets: quarterly income divided by lagged assets
 df["roaq"] = df["ibq"] / df["atq_lag3"]

@@ -24,6 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting ChangeRoE.py")
@@ -90,22 +91,13 @@ df = df.with_columns([
 # gen ChangeRoE = tempRoe - l12.tempRoe
 print("Computing 12-month calendar-based lag and ChangeRoE...")
 
-# Convert to pandas for calendar-based lag operations
-df_pd = df.to_pandas()
-
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lag data for merging
-lag_vars = ['tempRoe']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag12'] + [f'l12_{var}' for var in lag_vars]
-
-# Merge to get lagged values
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['tempRoe'], [12], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 df = df.with_columns(
     (pl.col('tempRoe') - pl.col('l12_tempRoe')).alias('ChangeRoE')

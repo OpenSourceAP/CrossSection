@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting AssetLiquidityBook.py")
@@ -40,10 +41,12 @@ print(f"After loading: {len(df)} rows")
 print("Sorting for lag operations...")
 df = df.sort(['permno', 'time_avail_m'])
 
-# Create 1-period lag using polars (position-based like Stata l. operator)
-df = df.with_columns(
-    pl.col('at').shift(1).over('permno').alias('l1_at')
-)
+# Create the Stata one-month calendar lag.
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['at'], [1], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # gen AssetLiquidityBook = (che + .75*(act - che) + .5*(at - act - gdwl - intan))/l.at
 print("Computing AssetLiquidityBook...")

@@ -42,6 +42,7 @@ ibes_df["tmp"] = np.where(
 
 # For invalid forecasts with same end date as previous record, use previous mean estimate
 ibes_df = ibes_df.sort_values(["tickerIBES", "time_avail_m"])
+# Stata explicitly reuses the previous IBES record (_n-1), not a calendar lag.
 ibes_df["meanest_lag1"] = ibes_df.groupby("tickerIBES")["meanest"].shift(1)
 ibes_df["fpedats_lag1"] = ibes_df.groupby("tickerIBES")["fpedats"].shift(1)
 
@@ -69,7 +70,9 @@ df = pd.merge(df, temp_ibes, on=["tickerIBES", "time_avail_m"], how="left")
 df = df.sort_values(["permno", "time_avail_m"]).reset_index(drop=True)
 
 # Calculate 3-month lagged analyst coverage using stata_multi_lag
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "numest", [3])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df = df.rename(columns={"numest_lag3": "numest_l3"})
 df["ChNAnalyst"] = np.nan
 

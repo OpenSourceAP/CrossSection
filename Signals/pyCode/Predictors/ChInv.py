@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 from pathlib import Path
 
@@ -35,8 +40,13 @@ df = df.drop_duplicates(subset=["permno", "time_avail_m"], keep="first").copy()
 df = df.sort_values(["permno", "time_avail_m"]).reset_index(drop=True)
 
 # Calculate change in inventory scaled by average total assets
-df["invt_l12"] = df.groupby("permno")["invt"].shift(12)
-df["at_l12"] = df.groupby("permno")["at"].shift(12)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "invt", [12])
+df = df.rename(columns={"invt_lag12": "invt_l12"})
+df = stata_multi_lag(df, "permno", "time_avail_m", "at", [12], fill_gaps=False)
+df = df.rename(columns={"at_lag12": "at_l12"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["ChInv"] = (df["invt"] - df["invt_l12"]) / ((df["at"] + df["at_l12"]) / 2)
 
 # Keep only needed columns and non-missing values

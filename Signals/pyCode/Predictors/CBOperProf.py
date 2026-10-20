@@ -24,6 +24,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting CBOperProf predictor...")
 
@@ -90,22 +91,15 @@ for var in zero_fill_vars:
 # Sort by permno and time_avail_m for lag calculations
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create 12-month lags using calendar-based method (not position-based shift)
-# This matches Stata's l12. behavior which uses calendar-based lags
-df["lag_time"] = df["time_avail_m"] - pd.DateOffset(months=12)
-
 lag_vars = ["rect", "invt", "xpp", "drc", "drlt", "ap", "xacc"]
-
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+lag_vars = ['rect', 'invt', 'xpp', 'drc', 'drlt', 'ap', 'xacc']
 for var in lag_vars:
-    # Create lag data for this variable
-    var_lag_data = df[["permno", "time_avail_m", var]].copy()
-    var_lag_data = var_lag_data.rename(
-        columns={"time_avail_m": "lag_time", var: f"l12_{var}"}
-    )
-    df = pd.merge(df, var_lag_data, on=["permno", "lag_time"], how="left")
-
-# Clean up temporary lag_time column
-df = df.drop("lag_time", axis=1)
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], fill_gaps=False)
+df = df.rename(columns={f"{var}_lag12": f"l12_{var}" for var in lag_vars})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # some confusion about lagging assets or not
 # OP 2016 JFE seems to lag assets, but 2015 JFE does not

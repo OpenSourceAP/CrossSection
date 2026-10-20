@@ -26,6 +26,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 
 print("Starting DelDRC.py...")
@@ -67,8 +68,13 @@ df["sic"] = pd.to_numeric(df["sic"], errors="coerce")
 
 # Create 12-month lag variables for deferred revenue and assets
 print("Creating lag variables...")
-df["lag_drc"] = df.groupby("permno")["drc"].shift(12)
-df["lag_at"] = df.groupby("permno")["at"].shift(12)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "drc", [12])
+df = df.rename(columns={"drc_lag12": "lag_drc"})
+df = stata_multi_lag(df, "permno", "time_avail_m", "at", [12], fill_gaps=False)
+df = df.rename(columns={"at_lag12": "lag_at"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate change in deferred revenue scaled by average total assets
 print("Calculating DelDRC...")

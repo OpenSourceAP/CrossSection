@@ -43,7 +43,9 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Calculate earnings growth: (EPS - EPS_12m_ago) / average(abs(EPS_12m_ago), abs(EPS_24m_ago))
 print("Creating lag variables for earnings...")
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "epspx", [12, 24], prefix="l")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df = df.assign(
     egrowth=lambda x: (x["epspx"] - x["l12_epspx"])
     / (0.5 * (abs(x["l12_epspx"]) + abs(x["l24_epspx"])))
@@ -54,9 +56,11 @@ df["egrowth"] = df["egrowth"].replace([np.inf, -np.inf], np.nan)
 
 # Calculate earnings consistency as mean of current and lagged earnings growth over 48 months
 print("Creating additional lag variables for earnings growth...")
+df["_observed"] = True
 df = stata_multi_lag(
     df, "permno", "time_avail_m", "egrowth", [12, 24, 36, 48], prefix="l"
 )
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 print("Calculating earnings consistency...")
 temp_cols = ["egrowth", "l12_egrowth", "l24_egrowth", "l36_egrowth", "l48_egrowth"]
 df["EarningsConsistency"] = df[temp_cols].mean(axis=1, skipna=True)

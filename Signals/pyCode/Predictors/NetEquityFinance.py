@@ -16,6 +16,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 print("Starting NetEquityFinance calculation...")
 
@@ -38,7 +43,12 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Calculate net equity financing as net equity issuance scaled by average assets
 # Create 12-month lag of total assets
-df["l12_at"] = df.groupby("permno")["at"].shift(12)
+# Keep the full monthly grid until all calendar lags are calculated.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+df = stata_multi_lag(df, "permno", "time_avail_m", "at", [12], prefix="l", fill_gaps=False)
+# Preserve the source observation set before subsequent calculations.
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
 # Calculate NetEquityFinance
 df["NetEquityFinance"] = (df["sstk"] - df["prstkc"] - df["dv"]) / (

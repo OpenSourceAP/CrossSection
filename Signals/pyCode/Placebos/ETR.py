@@ -7,7 +7,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.saveplacebo import save_placebo
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 # DATA LOAD
 # use gvkey permno time_avail_m am txt pi am epspx ajex prcc_f using "$pathDataIntermediate/m_aCompustat", clear
@@ -35,9 +35,12 @@ df = df.with_columns(
 )
 
 # Create lags using stata_multi_lag
-df = stata_multi_lag(df, 'permno', 'time_avail_m', ['tempTaxOverEBT'], [12, 24, 36], prefix='l')
-df = stata_multi_lag(df, 'permno', 'time_avail_m', ['tempEarn'], [12], prefix='l')
-df = stata_multi_lag(df, 'permno', 'time_avail_m', ['prcc_f'], [1], prefix='l')
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, 'permno', 'time_avail_m', ['tempTaxOverEBT'], [12, 24, 36], prefix='l', fill_gaps=False)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', ['tempEarn'], [12], prefix='l', fill_gaps=False)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', ['prcc_f'], [1], prefix='l', fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # gen ETR = ( tempTaxOverEBT - 1/3*(l12.tempTaxOverEBT + l24.tempTaxOverEBT + l36.tempTaxOverEBT))*((tempEarn - l12.tempEarn)/l.prcc_f)
 df = df.with_columns(

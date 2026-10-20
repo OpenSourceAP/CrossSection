@@ -25,6 +25,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 
 print("Starting AnalystRevision.py...")
@@ -88,7 +89,11 @@ df = df.sort_values(["permno", "time_avail_m"])
 print("Calculating 1-month lag and AnalystRevision...")
 
 # Create 1-month lag of mean earnings estimate
-df["l_meanest"] = df.groupby("permno")["meanest"].shift(1)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "meanest", [1])
+df = df.rename(columns={"meanest_lag1": "l_meanest"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compute forecast revision ratio
 df["AnalystRevision"] = df["meanest"] / df["l_meanest"]

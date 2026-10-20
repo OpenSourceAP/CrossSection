@@ -1,6 +1,8 @@
 # ABOUTME: Earnings smoothness placebo translated from Stata implementation
 # ABOUTME: Computes 10-year earnings and cash-flow volatility ratio using annual Compustat data
 
+# Lag exception: Fiscal-year accounting lags combined with rolling annual correlation.
+
 """
 EarningsSmoothness.py
 

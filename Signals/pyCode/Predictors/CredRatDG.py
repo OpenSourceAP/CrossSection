@@ -26,6 +26,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 # %%
 
@@ -40,11 +41,14 @@ comp_df = pd.read_parquet(
 
 # enforce standard formats (ideally, we should be more systematic about this)
 comp_df["gvkey"] = comp_df["gvkey"].astype(np.int64)
-comp_df["time_avail_m"] = comp_df["time_avail_m"].dt.to_period("M")
+comp_df["time_avail_m"] = comp_df["time_avail_m"].dt.to_period("M").dt.to_timestamp()
 
 # define downgrade_sp: downgrade_sp = 1 if credrat - l.credrat < 0
 comp_df = comp_df.sort_values(["gvkey", "time_avail_m"])
-comp_df["l_credrat"] = comp_df.groupby("gvkey")["credrat"].shift(1)
+comp_df["_observed"] = True
+comp_df = stata_multi_lag(comp_df, "gvkey", "time_avail_m", "credrat", [1])
+comp_df = comp_df.loc[comp_df["_observed"].eq(True)].drop(columns="_observed")
+comp_df = comp_df.rename(columns={"credrat_lag1": "l_credrat"})
 comp_df["downgrade_sp"] = np.where(
     comp_df["credrat"] - comp_df["l_credrat"] < 0, 1, np.nan
 )
@@ -66,7 +70,7 @@ ciq_df = pd.read_parquet(
     columns=["gvkey", "ratingdate", "source", "anydowngrade"],
 )
 ciq_df["gvkey"] = ciq_df["gvkey"].astype(np.int64)
-ciq_df["ratingdate"] = pd.to_datetime(ciq_df["ratingdate"]).dt.to_period("M")
+ciq_df["ratingdate"] = pd.to_datetime(ciq_df["ratingdate"]).dt.to_period("M").dt.to_timestamp()
 ciq_df.rename(
     columns={"ratingdate": "time_avail_m", "anydowngrade": "downgrade_ciq"},
     inplace=True,
@@ -92,7 +96,7 @@ signal_master = pd.read_parquet(
 ).dropna(subset=["gvkey"])
 
 signal_master["gvkey"] = signal_master["gvkey"].astype(np.int64)
-signal_master["time_avail_m"] = signal_master["time_avail_m"].dt.to_period("M")
+signal_master["time_avail_m"] = signal_master["time_avail_m"].dt.to_period("M").dt.to_timestamp()
 
 print(f"Loaded {len(signal_master):,} SignalMasterTable observations")
 
@@ -115,21 +119,14 @@ print("Constructing CredRatDG signal...")
 
 # define CredRatDG: 1 if any downgrade in current or previous 6 months
 df.sort_values(["permno", "time_avail_m"], inplace=True)
-df.set_index(["permno", "time_avail_m"], inplace=True)
-df["CredRatDG"] = (
-    df.groupby("permno")["dg_cur"]
-    .rolling(6, min_periods=1)
-    .max()
-    .reset_index(level=0, drop=True)
-)
-df.reset_index(inplace=True)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "dg_cur", [1, 2, 3, 4, 5])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+df["CredRatDG"] = df[["dg_cur"] + [f"dg_cur_lag{lag}" for lag in range(1, 6)]].max(axis=1)
 
 # SAVE
 print("Saving predictor...")
 
-# convert time_avail_m to datetime for comptability with `savepredictor`
-# tbc: we should really standardize the date formats better and from the DataDownloads
-df["time_avail_m"] = df["time_avail_m"].dt.to_timestamp()
 
 save_predictor(df, "CredRatDG")
 

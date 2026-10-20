@@ -1,6 +1,8 @@
 # ABOUTME: BetaBDLeverage.py - calculates broker-dealer leverage beta placebo
 # ABOUTME: Python equivalent of BetaBDLeverage.do, translates line-by-line from Stata code
 
+# Lag exception: Quarterly aggregate beta lag uses tempTime quarter index; specialized regression.
+
 """
 BetaBDLeverage.py
 

@@ -156,7 +156,7 @@ for permno in df.index.get_level_values("permno").unique():
     # Forward fill up to 6 months
     temp = permno_df["AnnouncementReturn"].copy()
 
-    # Sequential forward fill up to 6 months for missing values
+# Sequential forward fill up to 6 months for missing values
     for i in range(1, 7):  # fill up to 6 lags
         mask = permno_df["AnnouncementReturn"].isna()
         permno_df.loc[mask, "AnnouncementReturn"] = temp.shift(i).loc[mask]

@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 from pathlib import Path
 
@@ -81,20 +86,10 @@ df = df.sort_values(["permno", "time_avail_m"]).copy()
 # Create 12-month calendar-based lag for inventory values
 print("Implementing efficient calendar-based 12-month lag...")
 
-# Create lag target date for each observation
-df["lag_target_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-
-# Create a dataset for merging lag values
-lag_df = df[["permno", "time_avail_m", "invt"]].copy()
-lag_df = lag_df.rename(
-    columns={"time_avail_m": "lag_target_date", "invt": "invt_lag12"}
-)
-
-# Merge to get calendar-based lag values
-df = pd.merge(df, lag_df, on=["permno", "lag_target_date"], how="left")
-
-# Clean up temporary columns
-df = df.drop(columns=["lag_target_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "invt", [12])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate inventory growth as percentage change from 12 months ago
 df["InvGrowth"] = df["invt"] / df["invt_lag12"] - 1

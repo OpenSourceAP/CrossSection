@@ -17,6 +17,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 print("Starting ShareIss5Y calculation...")
 
@@ -49,21 +54,11 @@ df["temp"] = df["shrout"] * df["cfacshr"]
 # Sort for lag operations
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create time-based lags for adjusted shares outstanding
-# Get values from 5 months and 65 months ago
-df["time_lag5"] = df["time_avail_m"] - pd.DateOffset(months=5)
-df["time_lag65"] = df["time_avail_m"] - pd.DateOffset(months=65)
+# Calendar lags retain missing endpoints; inserted rows are removed before calculating the signal.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "temp", [5, 65], prefix="l")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
-# Create lag data for merging
-lag5_data = df[["permno", "time_avail_m", "temp"]].copy()
-lag5_data.columns = ["permno", "time_lag5", "l5_temp"]
-
-lag65_data = df[["permno", "time_avail_m", "temp"]].copy()
-lag65_data.columns = ["permno", "time_lag65", "l65_temp"]
-
-# Merge to get lagged values
-df = df.merge(lag5_data, on=["permno", "time_lag5"], how="left")
-df = df.merge(lag65_data, on=["permno", "time_lag65"], how="left")
 
 # Calculate 5-year share issuance: (shares 5mo ago - shares 65mo ago) / shares 65mo ago
 df["ShareIss5Y"] = (df["l5_temp"] - df["l65_temp"]) / df["l65_temp"]

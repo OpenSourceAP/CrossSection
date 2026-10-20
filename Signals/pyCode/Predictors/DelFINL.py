@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 import numpy as np
 
 # DATA LOAD
@@ -32,24 +37,18 @@ df = df.drop_duplicates(subset=["permno", "time_avail_m"], keep="first")
 df = df.sort_values(["permno", "time_avail_m"])
 
 # Create 12-month lags using time-based approach
-df["time_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
 
 # Handle missing pstk values
 df["tempPSTK"] = df["pstk"].fillna(0)
 
-# Create lag data for merge
-lag_data = df[["permno", "time_avail_m", "at", "dltt", "dlc", "tempPSTK"]].copy()
-lag_data.columns = [
-    "permno",
-    "time_lag12",
-    "l12_at",
-    "l12_dltt",
-    "l12_dlc",
-    "l12_tempPSTK",
-]
-
-# Merge to get lagged values
-df = df.merge(lag_data, on=["permno", "time_lag12"], how="left")
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+lag_vars = ['at', 'dltt', 'dlc', 'tempPSTK']
+for var in lag_vars:
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], fill_gaps=False)
+df = df.rename(columns={f"{var}_lag12": f"l12_{var}" for var in lag_vars})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate average total assets
 df["tempAvAT"] = 0.5 * (df["at"] + df["l12_at"])

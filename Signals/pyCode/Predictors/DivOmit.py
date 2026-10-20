@@ -23,6 +23,7 @@ import os
 
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.stata_replication import stata_multi_lag
 from utils.asrol import asrol
 
 # PREP DISTRIBUTIONS DATA
@@ -61,6 +62,7 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # QUARTERLY OMISSION (3-month window)
 # Rolling 3-month sum of dividend indicators
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -72,11 +74,13 @@ df = asrol(
     "sum3_divind",
     min_samples=1,
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Company paid dividend in the quarter
 df["temppaid"] = (df["sum3_divind"] == 1).astype(int)
 
 # Rolling 18-month mean of quarterly payment indicator
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -88,13 +92,17 @@ df = asrol(
     "mean18_temppaid",
     min_samples=1,
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Regular payer indicator
 df["temppayer"] = (df["mean18_temppaid"] == 1).astype(int)
 
 # Create lags for omission logic
-df["sum3_divind_lag1"] = df.groupby("permno")["sum3_divind"].shift(1)
-df["temppayer_lag3"] = df.groupby("permno")["temppayer"].shift(3)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "sum3_divind", [1])
+df = stata_multi_lag(df, "permno", "time_avail_m", "temppayer", [3], fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Quarterly omission: no dividend now, had dividend last quarter, was regular payer 3 months ago
 df["omit_3"] = (
@@ -117,6 +125,7 @@ df = df.drop(
 
 # SEMI-ANNUAL OMISSION (6-month window)
 # Rolling 6-month sum of dividend indicators
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -128,11 +137,13 @@ df = asrol(
     "sum6_divind",
     min_samples=1,
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Company paid dividend in the semi-annual period
 df["temppaid"] = (df["sum6_divind"] == 1).astype(int)
 
 # Rolling 18-month mean of semi-annual payment indicator
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -144,13 +155,17 @@ df = asrol(
     "mean18_temppaid",
     min_samples=1,
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Regular payer indicator
 df["temppayer"] = (df["mean18_temppaid"] == 1).astype(int)
 
 # Create lags for omission logic
-df["sum6_divind_lag1"] = df.groupby("permno")["sum6_divind"].shift(1)
-df["temppayer_lag6"] = df.groupby("permno")["temppayer"].shift(6)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "sum6_divind", [1])
+df = stata_multi_lag(df, "permno", "time_avail_m", "temppayer", [6], fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Semi-annual omission: no dividend now, had dividend last period, was regular payer 6 months ago
 df["omit_6"] = (
@@ -173,6 +188,7 @@ df = df.drop(
 
 # ANNUAL OMISSION (12-month window)
 # Rolling 12-month sum of dividend indicators
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -184,11 +200,13 @@ df = asrol(
     "sum12_divind",
     min_samples=1,
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Company paid dividend in the annual period
 df["temppaid"] = (df["sum12_divind"] == 1).astype(int)
 
 # Rolling 24-month mean of annual payment indicator
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -200,13 +218,17 @@ df = asrol(
     "mean24_temppaid",
     min_samples=1,
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Regular payer indicator
 df["temppayer"] = (df["mean24_temppaid"] == 1).astype(int)
 
 # Create lags for omission logic
-df["sum12_divind_lag1"] = df.groupby("permno")["sum12_divind"].shift(1)
-df["temppayer_lag12"] = df.groupby("permno")["temppayer"].shift(12)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "sum12_divind", [1])
+df = stata_multi_lag(df, "permno", "time_avail_m", "temppayer", [12], fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Annual omission: no dividend now, had dividend last period, was regular payer 12 months ago
 df["omit_12"] = (
@@ -234,9 +256,11 @@ df["omitnow"] = (
 ).astype(int)
 
 # Rolling 2-month sum to extend signal
+df["_observed_rolling"] = True
 df = asrol(
     df, "permno", "time_avail_m", "1mo", 2, "omitnow", "sum", "temp", min_samples=1
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # Final dividend omission signal
 df["DivOmit"] = (df["temp"] == 1).astype(int)

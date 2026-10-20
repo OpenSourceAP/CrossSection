@@ -24,7 +24,7 @@ import os
 # Add the parent directory to sys.path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.asrol import asrol
-from utils.stata_replication import stata_ineq_pd
+from utils.stata_replication import stata_ineq_pd, stata_multi_lag
 from utils.save_standardized import save_predictor
 
 print("Starting DivSeason.py...")
@@ -112,6 +112,7 @@ print("Calculating DivSeason signal...")
 # Short all others with a dividend in last 12 months
 # Use calendar-based asrol for 12-month rolling sum of dividend payments
 print("Creating 12-month rolling dividend payments...")
+df["_observed_rolling"] = True
 df = asrol(
     df,
     "permno",
@@ -122,6 +123,7 @@ df = asrol(
     "sum",
     new_col_name="divpaid_sum",
 )
+df = df.loc[df["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 
 # Initialize DivSeason: 0 for companies with dividends in last 12 months, missing otherwise
@@ -133,8 +135,9 @@ df["DivSeason"] = np.where(df["divpaid_sum"] > 0, 0, np.nan)
 
 # Create lags for dividend prediction logic
 print("Creating lag variables for dividend prediction...")
-for lag in [2, 5, 8, 11]:
-    df[f"divpaid_lag{lag}"] = df.groupby("permno")["divpaid"].shift(lag)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "divpaid", [2, 5, 8, 11])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Quarterly or unknown frequency companies with expected dividend timing
 # For quarterly payers, check for dividends 2, 5, 8, or 11 months ago

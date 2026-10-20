@@ -22,6 +22,7 @@ import os
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_placebo
 
 print("Starting ZZ1_EarningsValueRelevance_EarningsTimeliness_EarningsConservatism.py...")
@@ -45,21 +46,13 @@ print("Step 2: Computing 15-month momentum...")
 # Compute 15-month return: (1+f2.ret)*(1+f.ret)*(1+ret)*(1+l.ret)*...*(1+l11.ret) - 1
 
 # Create lead and lag variables
-crsp = crsp.with_columns([
-    pl.col("ret").shift(-2).over("permno").alias("f2_ret"),  # 2 months future
-    pl.col("ret").shift(-1).over("permno").alias("f_ret"),   # 1 month future
-    pl.col("ret").shift(1).over("permno").alias("l_ret"),    # 1 month lag
-    pl.col("ret").shift(2).over("permno").alias("l2_ret"),   # 2 months lag
-    pl.col("ret").shift(3).over("permno").alias("l3_ret"),   # 3 months lag
-    pl.col("ret").shift(4).over("permno").alias("l4_ret"),   # 4 months lag
-    pl.col("ret").shift(5).over("permno").alias("l5_ret"),   # 5 months lag
-    pl.col("ret").shift(6).over("permno").alias("l6_ret"),   # 6 months lag
-    pl.col("ret").shift(7).over("permno").alias("l7_ret"),   # 7 months lag
-    pl.col("ret").shift(8).over("permno").alias("l8_ret"),   # 8 months lag
-    pl.col("ret").shift(9).over("permno").alias("l9_ret"),   # 9 months lag
-    pl.col("ret").shift(10).over("permno").alias("l10_ret"), # 10 months lag
-    pl.col("ret").shift(11).over("permno").alias("l11_ret")  # 11 months lag
-])
+# Stata monthly leads and lags; restore the CRSP observation set before merging.
+crsp_time_dtype = crsp.schema["time_m"]
+crsp = crsp.with_columns(pl.lit(True).alias("_observed"))
+crsp = stata_multi_lag(crsp, "permno", "time_m", "ret", [-2, -1, *range(1, 12)], prefix="l")
+crsp = crsp.rename({"l-2_ret": "f2_ret", "l-1_ret": "f_ret", "l1_ret": "l_ret"})
+crsp = crsp.filter(pl.col("_observed").eq(True)).drop("_observed")
+crsp = crsp.with_columns(pl.col("time_m").cast(crsp_time_dtype))
 
 # Calculate 15-month momentum
 crsp = crsp.with_columns([
@@ -102,6 +95,7 @@ df = df.sort(["gvkey", "fyear"])
 df = df.with_columns([
     # tempEarn = ib / tempmktcap
     (pl.col("ib") / pl.col("tempmktcap")).alias("tempEarn"),
+    # Fiscal-year earnings lag is retained for separate fiscal/rolling review.
     # tempDEarn = (ib - l.ib) / tempmktcap (change in earnings)
     ((pl.col("ib") - pl.col("ib").shift(1).over("gvkey")) / pl.col("tempmktcap")).alias("tempDEarn")
 ])

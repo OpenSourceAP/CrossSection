@@ -15,6 +15,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -29,14 +34,9 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # SIGNAL CONSTRUCTION
 # Calculate 12-month revenue growth using calendar-based lag
-df_revt = df[["permno", "time_avail_m", "revt"]].copy()
-df["time_lag12_revt"] = df["time_avail_m"] - pd.DateOffset(months=12)
-df = df.merge(
-    df_revt.rename(columns={"time_avail_m": "time_lag12_revt", "revt": "revt_lag12"}),
-    on=["permno", "time_lag12_revt"],
-    how="left",
-)
-df = df.drop("time_lag12_revt", axis=1)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "revt", [12])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Replicate Stata's log behavior: log of zero/negative is missing
 valid_mask = (
@@ -65,58 +65,9 @@ df = df.drop("row_num", axis=1)
 # Sort back for lag operations
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Calculate calendar-based lagged ranks (not positional shift)
-# Create a copy for merging
-df_ranks = df[["permno", "time_avail_m", "tempRank"]].copy()
-
-# Calculate lag times
-df["time_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
-df["time_lag24"] = df["time_avail_m"] - pd.DateOffset(months=24)
-df["time_lag36"] = df["time_avail_m"] - pd.DateOffset(months=36)
-df["time_lag48"] = df["time_avail_m"] - pd.DateOffset(months=48)
-df["time_lag60"] = df["time_avail_m"] - pd.DateOffset(months=60)
-
-# Merge to get lagged ranks
-df = df.merge(
-    df_ranks.rename(
-        columns={"time_avail_m": "time_lag12", "tempRank": "tempRank_lag12"}
-    ),
-    on=["permno", "time_lag12"],
-    how="left",
-)
-df = df.merge(
-    df_ranks.rename(
-        columns={"time_avail_m": "time_lag24", "tempRank": "tempRank_lag24"}
-    ),
-    on=["permno", "time_lag24"],
-    how="left",
-)
-df = df.merge(
-    df_ranks.rename(
-        columns={"time_avail_m": "time_lag36", "tempRank": "tempRank_lag36"}
-    ),
-    on=["permno", "time_lag36"],
-    how="left",
-)
-df = df.merge(
-    df_ranks.rename(
-        columns={"time_avail_m": "time_lag48", "tempRank": "tempRank_lag48"}
-    ),
-    on=["permno", "time_lag48"],
-    how="left",
-)
-df = df.merge(
-    df_ranks.rename(
-        columns={"time_avail_m": "time_lag60", "tempRank": "tempRank_lag60"}
-    ),
-    on=["permno", "time_lag60"],
-    how="left",
-)
-
-# Clean up temporary columns
-df = df.drop(
-    ["time_lag12", "time_lag24", "time_lag36", "time_lag48", "time_lag60"], axis=1
-)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "tempRank", [12, 24, 36, 48, 60])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate weighted average rank
 df["MeanRankRevGrowth"] = (

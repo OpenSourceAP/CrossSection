@@ -52,6 +52,7 @@ df = df.sort_values(["tickerIBES", "anndats_act"])
 
 # Identify streaks: consecutive surprises with same sign (positive or negative)
 df["surp_sign"] = np.sign(df["surp"])
+# Stata counts consecutive earnings announcements by observation (_n-1).
 df["surp_sign_lag"] = df.groupby("tickerIBES")["surp_sign"].shift(1)
 df["streak"] = (df["surp_sign"] == df["surp_sign_lag"]).astype(int)
 

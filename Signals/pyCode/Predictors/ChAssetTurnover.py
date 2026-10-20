@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 from pathlib import Path
 
@@ -61,13 +66,11 @@ df["temp"] = (
 )
 
 # Calculate asset turnover as sales divided by average total assets over 12 months
-# Use calendar-based lag (12 months back) rather than positional lag
-df["temp_l12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-temp_lag = df[["permno", "time_avail_m", "temp"]].rename(
-    columns={"time_avail_m": "temp_l12_date", "temp": "temp_l12"}
-)
-df = df.merge(temp_lag, on=["permno", "temp_l12_date"], how="left")
-df = df.drop(columns=["temp_l12_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "temp", [12])
+df = df.rename(columns={'temp_lag12': 'temp_l12'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 df["AssetTurnover"] = df["sale"] / ((df["temp"] + df["temp_l12"]) / 2)
 
@@ -78,15 +81,11 @@ df = df.drop(columns=["temp", "temp_l12"])
 df.loc[df["AssetTurnover"] < 0, "AssetTurnover"] = np.nan
 
 # Calculate change in asset turnover as current minus 12-month lagged value
-df["AssetTurnover_l12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-asset_turnover_lag = df[["permno", "time_avail_m", "AssetTurnover"]].rename(
-    columns={
-        "time_avail_m": "AssetTurnover_l12_date",
-        "AssetTurnover": "AssetTurnover_l12",
-    }
-)
-df = df.merge(asset_turnover_lag, on=["permno", "AssetTurnover_l12_date"], how="left")
-df = df.drop(columns=["AssetTurnover_l12_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "AssetTurnover", [12])
+df = df.rename(columns={'AssetTurnover_lag12': 'AssetTurnover_l12'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 df["ChAssetTurnover"] = df["AssetTurnover"] - df["AssetTurnover_l12"]
 

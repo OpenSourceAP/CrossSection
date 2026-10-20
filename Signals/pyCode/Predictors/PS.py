@@ -79,12 +79,16 @@ df["fopt"] = df["fopt"].fillna(df["oancf"])
 df["tempebit"] = df["ib"] + df["txt"] + df["xint"]
 
 # Create 12-month lags for required variables using stata_multi_lag
+df["_observed"] = True
 df = fill_date_gaps(
     df, "permno", "time_avail_m", "1mo"
 )  # fill gaps first for efficiency
 lag_vars = ["ib", "at", "dltt", "act", "lct", "sale", "shrout"]
 for var in lag_vars:
-    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], prefix="l")
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], prefix="l", fill_gaps=False)
+
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+
 
 # to replicate stata, we need to do some painful handling of
 #   1: division by zero

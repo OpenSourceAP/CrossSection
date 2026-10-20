@@ -42,6 +42,7 @@ df = df.groupby(["tickerIBES", "time_avail_m"], as_index=False)["ireccd"].mean()
 df = df.sort_values(["tickerIBES", "time_avail_m"])
 
 # Generate 1-month lagged recommendation
+# Stata explicitly compares the previous recommendation observation (_n-1).
 df["ireccd_lag"] = df.groupby("tickerIBES")["ireccd"].shift(1)
 
 # Identify recommendation improvements (higher values = better recommendations)

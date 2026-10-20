@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 print("Starting BM.py...")
@@ -48,8 +53,13 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Create 6-month lag of company-level market equity
 print("Creating 6-month lag for market equity...")
-df["me_datadate"] = df.groupby("permno")["mve_permco"].shift(6)
-df["l6_time_avail_m"] = df.groupby("permno")["time_avail_m"].shift(6)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "mve_permco", [6])
+df = df.rename(columns={"mve_permco_lag6": "me_datadate"})
+df = stata_multi_lag(df, "permno", "time_avail_m", "time_avail_m", [6], fill_gaps=False)
+df = df.rename(columns={"time_avail_m_lag6": "l6_time_avail_m"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Convert to Period('M') format for comparison
 df["l6_time_avail_m_period"] = pd.to_datetime(df["l6_time_avail_m"]).dt.to_period("M")

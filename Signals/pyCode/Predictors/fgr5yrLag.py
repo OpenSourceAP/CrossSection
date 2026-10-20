@@ -19,6 +19,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # Load long-term growth forecasts from IBES
@@ -85,17 +90,11 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Apply 6-month calendar-based lag to long-term forecasts
 print("Calculating 6-month calendar lags...")
-# Generate 6-month lagged date for each observation
-df["lag6_date"] = df["time_avail_m"] - pd.DateOffset(months=6)
-
-# Prepare lookup table for lagged forecast values
-lag_lookup = df[["permno", "time_avail_m", "fgr5yr"]].rename(
-    columns={"time_avail_m": "lag6_date", "fgr5yr": "fgr5yrLag"}
-)
-
-# Add lagged forecast values using calendar-based matching
-df = df.merge(lag_lookup, on=["permno", "lag6_date"], how="left")
-df = df.drop(columns=["lag6_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "fgr5yr", [6])
+df = df.rename(columns={'fgr5yr_lag6': 'fgr5yrLag'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Restrict to June observations per original methodology
 df = df[df["time_avail_m"].dt.month == 6].copy()

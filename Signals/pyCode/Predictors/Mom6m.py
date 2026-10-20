@@ -44,7 +44,9 @@ print("🧮 Computing 6-month momentum signal...")
 df["ret"] = df["ret"].fillna(0)
 
 # Create 5 monthly lags (t-1 to t-5) using calendar-aware lag function
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compounds monthly returns over months t-5 to t-1 to create 6-month momentum (skips current month t)
 df["Mom6m"] = (

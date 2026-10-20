@@ -23,6 +23,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.stata_replication import stata_multi_lag
 
 # PREP DISTRIBUTIONS DATA
 dist_df = pd.read_parquet("../pyData/Intermediate/CRSPdistributions.parquet")
@@ -86,20 +87,24 @@ df["div12"] = (
 )
 df = df[(df["div12"] > 0) & df["div12"].notna()]
 
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "divamt", [2, 5, 11])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+
 # Calculate expected dividends based on frequency-specific lags
 df["Ediv1"] = np.nan
 
 # Quarterly or unknown frequency: use 2-month lag
 mask_quarterly = df["cd3"].isin([3, 0, 1]) | df["cd3"].isna()
-df.loc[mask_quarterly, "Ediv1"] = df.groupby("permno")["divamt"].shift(2)
+df.loc[mask_quarterly, "Ediv1"] = df["divamt_lag2"]
 
 # Semi-annual frequency: use 5-month lag
 mask_semiann = df["cd3"] == 4
-df.loc[mask_semiann, "Ediv1"] = df.groupby("permno")["divamt"].shift(5)
+df.loc[mask_semiann, "Ediv1"] = df["divamt_lag5"]
 
 # Annual frequency: use 11-month lag
 mask_annual = df["cd3"] == 5
-df.loc[mask_annual, "Ediv1"] = df.groupby("permno")["divamt"].shift(11)
+df.loc[mask_annual, "Ediv1"] = df["divamt_lag11"]
 
 # Calculate expected dividend yield
 df["Edy1"] = df["Ediv1"] / abs(df["prc"])

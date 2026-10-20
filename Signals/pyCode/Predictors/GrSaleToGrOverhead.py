@@ -24,6 +24,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 
 print("Starting GrSaleToGrOverhead.py...")
@@ -58,10 +59,17 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # Create 12-month and 24-month lags
 print("Calculating 12-month and 24-month lags...")
-df["l12_sale"] = df.groupby("permno")["sale"].shift(12)
-df["l24_sale"] = df.groupby("permno")["sale"].shift(24)
-df["l12_xsga"] = df.groupby("permno")["xsga"].shift(12)
-df["l24_xsga"] = df.groupby("permno")["xsga"].shift(24)
+# Fill calendar gaps for lags, then restore the observed rows.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "sale", [12])
+df = df.rename(columns={"sale_lag12": "l12_sale"})
+df = stata_multi_lag(df, "permno", "time_avail_m", "sale", [24], fill_gaps=False)
+df = df.rename(columns={"sale_lag24": "l24_sale"})
+df = stata_multi_lag(df, "permno", "time_avail_m", "xsga", [12], fill_gaps=False)
+df = df.rename(columns={"xsga_lag12": "l12_xsga"})
+df = stata_multi_lag(df, "permno", "time_avail_m", "xsga", [24], fill_gaps=False)
+df = df.rename(columns={"xsga_lag24": "l24_xsga"})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Primary formula: GrSaleToGrOverhead =
 # ( (sale- (.5*(l12.sale + l24.sale)))/(.5*(l12.sale + l24.sale)) )

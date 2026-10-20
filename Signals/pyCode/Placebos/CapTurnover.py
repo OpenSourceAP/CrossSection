@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting CapTurnover.py")
@@ -49,27 +50,14 @@ df = df.sort(['permno', 'time_avail_m'])
 # gen CapTurnover = l12.sale/l24.at
 print("Computing 12-month and 24-month calendar-based lags and CapTurnover...")
 
-# Convert to pandas for calendar-based lag operations
-df_pd = df.to_pandas()
-
-# Create 12-month and 24-month lag dates
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-df_pd['time_lag24'] = df_pd['time_avail_m'] - pd.DateOffset(months=24)
-
-# Create lag data for merging (12-month lag for sale)
-lag12_data = df_pd[['permno', 'time_avail_m', 'sale']].copy()
-lag12_data.columns = ['permno', 'time_lag12', 'l12_sale']
-
-# Create lag data for merging (24-month lag for at)
-lag24_data = df_pd[['permno', 'time_avail_m', 'at']].copy()
-lag24_data.columns = ['permno', 'time_lag24', 'l24_at']
-
-# Merge to get lagged values
-df_pd = df_pd.merge(lag12_data, on=['permno', 'time_lag12'], how='left')
-df_pd = df_pd.merge(lag24_data, on=['permno', 'time_lag24'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['sale'], [12], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", ['at'], [24], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 df = df.with_columns(
     (pl.col('l12_sale') / pl.col('l24_at')).alias('CapTurnover')

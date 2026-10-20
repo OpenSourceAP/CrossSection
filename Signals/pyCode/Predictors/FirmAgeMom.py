@@ -45,7 +45,9 @@ df = df[price_condition & (df["age"] >= 12)].copy()
 
 # Calculate 6-month momentum (months t-5 to t-1) for youngest firms only
 # Create lagged returns using calendar-based lags
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5], prefix="l")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate FirmAgeMom
 df["FirmAgeMom"] = (

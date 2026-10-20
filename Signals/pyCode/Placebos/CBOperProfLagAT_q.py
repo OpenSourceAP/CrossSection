@@ -25,6 +25,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting CBOperProfLagAT_q.py")
@@ -85,22 +86,13 @@ df = df.with_columns([
 # Create 3-month calendar-based lags (not position-based)
 print("Computing calendar-based 3-month lags...")
 
-# Convert to pandas for calendar-based lag operations
-df_pd = df.to_pandas()
-
-# Create 3-month lag date
-df_pd['time_lag3'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)
-
-# Create lag data for merging
-lag_vars = ['rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq', 'atq']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag3'] + [f'l3_{var}' for var in lag_vars]
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag3'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['rectq', 'invtq', 'drcq', 'drltq', 'apq', 'xaccq', 'atq'], [3], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 # gen CBOperProfLagAT_q = (revtq - cogsq - (xsgaq - xrdq)) - ///
 #     (rectq - l3.rectq) - (invtq - l3.invtq) + ///

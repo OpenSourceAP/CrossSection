@@ -106,7 +106,8 @@ print(f"Completed rolling regressions for {len(df):,} observations")
 print("Calculating lagged residuals and momentum signals...")
 df = df.with_columns(
     [
-        # Lag residuals by 1 observation: temp = l1._residuals
+        # Source xtsets time_temp = _n: l1 is one observed regression period.
+        # Keep this observation shift with the matching observation windows.
         pl.col("_residuals")
         .shift(1)
         .over("permno")

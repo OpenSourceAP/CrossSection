@@ -22,7 +22,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
-from utils.stata_replication import stata_ineq_pl
+from utils.stata_replication import stata_ineq_pl, stata_multi_lag
 
 print("Starting ShareVol.py...")
 
@@ -49,14 +49,12 @@ print("Setting up panel data structure...")
 df = df.sort(["permno", "time_avail_m"])
 
 print("Creating lag variables for volume calculation...")
-# Calculate 3-month rolling share volume using current and previous 2 months
+# Number original observations before expanding the calendar for lag calculation.
 df = df.with_columns(
-    [
-        pl.col("vol").shift(1).over("permno").alias("l1_vol"),
-        pl.col("vol").shift(2).over("permno").alias("l2_vol"),
-        pl.col("shrout").shift(1).over("permno").alias("l1_shrout"),
-    ]
+    pl.lit(True).alias("_observed"),
+    pl.int_range(pl.len()).over("permno").alias("_n"),
 )
+df = stata_multi_lag(df, "permno", "time_avail_m", ["vol", "shrout"], [1, 2], prefix="l")
 
 df = df.with_columns(
     [
@@ -72,9 +70,6 @@ df = df.with_columns(
 # Identify changes in shares outstanding
 df = df.with_columns([(pl.col("shrout") != pl.col("l1_shrout")).alias("dshrout")])
 
-# Set up observation numbering for each stock
-df = df.with_columns([pl.int_range(pl.len()).over("permno").alias("_n")])
-
 # Set no change for first observation (no prior period to compare)
 df = df.with_columns(
     [
@@ -85,13 +80,9 @@ df = df.with_columns(
     ]
 )
 
-# Create lagged indicators of shares outstanding changes
-df = df.with_columns(
-    [
-        pl.col("dshrout").shift(1).over("permno").alias("l1_dshrout"),
-        pl.col("dshrout").shift(2).over("permno").alias("l2_dshrout"),
-    ]
-)
+df = stata_multi_lag(df, "permno", "time_avail_m", "dshrout", [1, 2], prefix="l", fill_gaps=False)
+# Restore observed rows before applying the original first-two-observation rules.
+df = df.filter(pl.col("_observed") == True).drop("_observed")
 
 # Flag observations for dropping if any change occurred in current or prior 2 months
 df = df.with_columns(

@@ -33,6 +33,9 @@ print("🏗️  MS.py")
 print("Generating Mohanram G-score predictor")
 print("=" * 80)
 
+# Retain the specialized sparse low-BM quarterly/rolling calculation;
+# its guarded panel and rolling-window semantics need a separate review.
+
 # DATA LOAD
 print("📊 Loading Compustat and SignalMasterTable data...")
 

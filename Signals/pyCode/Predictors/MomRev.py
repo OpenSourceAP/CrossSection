@@ -47,7 +47,9 @@ df.loc[df["ret"].isna(), "ret"] = 0
 
 # Create lag variables using stata_multi_lag for calendar validation
 # Mom6m uses lags 1-5
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compounds monthly returns over months t-5 to t-1 to create 6-month momentum
 df["Mom6m"] = (
@@ -59,7 +61,9 @@ df["Mom6m"] = (
 ) - 1
 
 # Mom36m uses lags 13-36 (skips recent 12 months)
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", list(range(13, 37)))
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compounds monthly returns over months t-36 to t-13 to create long-term momentum
 mom36m_product = 1

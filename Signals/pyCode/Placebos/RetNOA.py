@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting RetNOA.py")
@@ -76,11 +77,12 @@ df = df.with_columns([
 
 # Create lags
 print("Computing 12 and 24 month lags...")
-df = df.with_columns([
-    pl.col('oiadp').shift(12).over('permno').alias('l12_oiadp'),
-    pl.col('tempOA').shift(24).over('permno').alias('l24_tempOA'),
-    pl.col('tempOL').shift(24).over('permno').alias('l24_tempOL')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['oiadp'], [12], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", ['tempOA', 'tempOL'], [24], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # gen RetNOA = l12.oiadp/(l24.tempOA - l24.tempOL)
 print("Computing RetNOA...")
