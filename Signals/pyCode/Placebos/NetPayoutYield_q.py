@@ -1,109 +1,62 @@
-# ABOUTME: NetPayoutYield_q.py - calculates net payout yield placebo (quarterly)
-# ABOUTME: Python equivalent of NetPayoutYield_q.do, translates line-by-line from Stata code
+# ABOUTME: Net payout yield using individual-quarter Compustat flows.
+"""NetPayoutYield_q.py
 
-"""
-NetPayoutYield_q.py
-
+Run from Signals/pyCode:
+    /opt/venv/projects/openap/bin/python3 Placebos/NetPayoutYield_q.py
 Inputs:
-    - SignalMasterTable.parquet: permno, gvkey, time_avail_m, mve_permco columns
-    - m_QCompustat.parquet: gvkey, time_avail_m, dvpsxq, cshoq, ajexq, prstkcyq, pstkq, sstkyq columns
-
-Outputs:
-    - NetPayoutYield_q.csv: permno, yyyymm, NetPayoutYield_q columns
-
-Usage:
-    cd pyCode
-    source .venv/bin/activate  
-    python3 Placebos/NetPayoutYield_q.py
+    - ../pyData/Intermediate/SignalMasterTable.parquet:
+      permno, gvkey, time_avail_m, mve_permco
+    - ../pyData/Intermediate/m_QCompustat.parquet:
+      gvkey, time_avail_m, dvpsxq, cshoq, ajexq, prstkcyq, pstkq, sstkyq
+Output: ../pyData/Placebos/NetPayoutYield_q.csv (permno, yyyymm, NetPayoutYield_q).
 """
 
-import pandas as pd
-import polars as pl
-import sys
 import os
+import sys
 
-# Add parent directory to path to import utils
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+import numpy as np
+import pandas as pd
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.saveplacebo import save_placebo
-from utils.forward_fill import apply_quarterly_fill_to_compustat
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
-print("Starting NetPayoutYield_q.py")
-
-# DATA LOAD
-# use permno gvkey time_avail_m mve_permco using "$pathDataIntermediate/SignalMasterTable", clear
-print("Loading SignalMasterTable...")
-df = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
-df = df.select(['permno', 'gvkey', 'time_avail_m', 'mve_permco'])
-
-# keep if !mi(gvkey)
-df = df.filter(pl.col('gvkey').is_not_null())
-
-print(f"After filtering for non-null gvkey: {len(df)} rows")
-
-# merge 1:1 gvkey time_avail_m using "$pathDataIntermediate/m_QCompustat", keepusing(dvpsxq cshoq ajexq prstkcyq pstkq sstkyq) nogenerate keep(match)
-print("Loading m_QCompustat...")
-qcomp = pl.read_parquet("../pyData/Intermediate/m_QCompustat.parquet")
-qcomp = qcomp.select(['gvkey', 'time_avail_m', 'dvpsxq', 'cshoq', 'ajexq', 'prstkcyq', 'pstkq', 'sstkyq'])
-
-# Convert gvkey to same type for join
-df = df.with_columns(pl.col('gvkey').cast(pl.Int32))
-qcomp = qcomp.with_columns(pl.col('gvkey').cast(pl.Int32))
-
-print("Applying forward-fill for missing quarterly values...")
-qcomp = apply_quarterly_fill_to_compustat(qcomp, quarterly_columns=['dvpsxq', 'cshoq', 'ajexq', 'prstkcyq', 'pstkq', 'sstkyq'])
-
-print("Merging with m_QCompustat...")
-df = df.join(qcomp, on=['gvkey', 'time_avail_m'], how='inner')
-
-print(f"After merge: {len(df)} rows")
-
-# SIGNAL CONSTRUCTION
-# xtset permno time_avail_m
-print("Sorting for lag operations...")
-df = df.sort(['permno', 'time_avail_m'])
-
-# Convert to pandas for lag operations
-df_pd = df.to_pandas()
-
-# Create 3-month lag date
-df_pd['time_lag3'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)
-
-# Create lag data for merging
-lag_vars = ['pstkq']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag3'] + [f'l3_{var}' for var in lag_vars]
-
-# Merge lag data
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag3'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd.drop(columns=['time_lag3']))
-
-# gen tempDiv = dvpsxq*cshoq*ajexq
-print("Computing tempDiv...")
-df = df.with_columns(
-    (pl.col('dvpsxq') * pl.col('cshoq') * pl.col('ajexq')).alias('tempDiv')
+# Use matched accounting rows without additional flow or market-cap imputation.
+df = pd.read_parquet(
+    "../pyData/Intermediate/SignalMasterTable.parquet",
+    columns=["permno", "gvkey", "time_avail_m", "mve_permco"],
 )
-
-# gen tempTotalPayout = tempDiv + prstkcyq + (pstkq - l3.pstkq)
-print("Computing tempTotalPayout...")
-df = df.with_columns(
-    (pl.col('tempDiv') + pl.col('prstkcyq') + (pl.col('pstkq') - pl.col('l3_pstkq'))).alias('tempTotalPayout')
+df = df.loc[df["gvkey"].notna()].copy()
+qcomp = pd.read_parquet(
+    "../pyData/Intermediate/m_QCompustat.parquet",
+    columns=["gvkey", "time_avail_m", "dvpsxq", "cshoq", "ajexq", "prstkcyq", "pstkq", "sstkyq"],
 )
+df["gvkey"] = df["gvkey"].astype(int)
+qcomp["gvkey"] = qcomp["gvkey"].astype(int)
+df = df.merge(qcomp, on=["gvkey", "time_avail_m"], how="inner", validate="many_to_one")
 
-# gen NetPayoutYield_q = (tempTotalPayout - sstkyq - (pstkq - l3.pstkq))/mve_permco
-print("Computing NetPayoutYield_q...")
-df = df.with_columns(
-    ((pl.col('tempTotalPayout') - pl.col('sstkyq') - (pl.col('pstkq') - pl.col('l3_pstkq'))) / pl.col('mve_permco')).alias('NetPayoutYield_q')
-)
+# Fill the monthly calendar once for calendar lags; remove inserted months.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+for column, months in [("pstkq", 3)]:
+    df = stata_multi_lag(
+        df, "permno", "time_avail_m", column, [months],
+        prefix="l", fill_gaps=False,
+    )
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
-print(f"Generated NetPayoutYield_q for {len(df)} observations")
+# Zero dividends need no share inputs. All other missing flow inputs propagate.
+df["tempDiv"] = (df["dvpsxq"] * df["cshoq"] * df["ajexq"]).mask(df["dvpsxq"].eq(0), 0)
+df["preferred_reduction"] = (df["l3_pstkq"] - df["pstkq"]).clip(lower=0).fillna(0)
+# prstkcyq and sstkyq are already individual-quarter flows from the downloader.
+df["gross_payout"] = df["tempDiv"] + df["prstkcyq"] + df["preferred_reduction"]
+df["preferred_increase"] = (df["pstkq"] - df["l3_pstkq"]).clip(lower=0).fillna(0)
+df["equity_issuance"] = df["sstkyq"] - df["preferred_increase"]
+df["NetPayoutYield_q"] = (df["gross_payout"] - df["equity_issuance"]) / df["mve_permco"]
 
-# Keep only required columns for output
-df_final = df.select(['permno', 'time_avail_m', 'NetPayoutYield_q'])
-
-# SAVE
-# do "$pathCode/saveplacebo" NetPayoutYield_q
-save_placebo(df_final, 'NetPayoutYield_q')
-
-print("NetPayoutYield_q.py completed")
+# Require observed, finite, positive market cap and finite nonzero net yield.
+df = df.loc[
+    np.isfinite(df["mve_permco"]) & (df["mve_permco"] > 0)
+    & np.isfinite(df["NetPayoutYield_q"]) & (df["NetPayoutYield_q"] != 0)
+]
+result = save_placebo(df[["permno", "time_avail_m", "NetPayoutYield_q"]], "NetPayoutYield_q")
