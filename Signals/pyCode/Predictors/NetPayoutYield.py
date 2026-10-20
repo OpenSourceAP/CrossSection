@@ -69,9 +69,9 @@ df = df[df["NetPayoutYield"] != 0]
 df["sic"] = pd.to_numeric(df["sic"], errors="coerce")
 
 # Filter out financial firms (SIC 6000-6999) and require positive book equity
-# Missing book equity values are included (treated as positive in original logic)
+# Missing, zero, and negative book equity values are excluded.
 df = df[
-    ((df["sic"] < 6000) | (df["sic"] >= 7000)) & ((df["ceq"] > 0) | df["ceq"].isna())
+    ((df["sic"] < 6000) | (df["sic"] >= 7000)) & (df["ceq"] > 0)
 ]
 
 # Sort data by permno and time

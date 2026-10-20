@@ -25,7 +25,7 @@ class PayoutFamilyTests(unittest.TestCase):
         dates = pd.date_range("2018-01-01", periods=48, freq="MS")
         panels = []
         masters = []
-        for permno in range(1, 22):
+        for permno in range(1, 26):
             panel = pd.DataFrame({
                 "permno": permno, "gvkey": permno, "time_avail_m": dates,
                 "dvc": 2.0, "dvpsxq": 2.0, "cshoq": 1.0, "ajexq": 1.0,
@@ -62,6 +62,14 @@ class PayoutFamilyTests(unittest.TestCase):
                 panel["cshoq"] = np.nan  # Nonzero dividends require shares.
             elif permno == 21:
                 panel[["sstk", "sstkyq"]] = np.nan
+            elif permno == 22:
+                panel["ceq"] = np.nan
+            elif permno == 23:
+                panel["ceq"] = 0.0
+            elif permno == 24:
+                panel["ceq"] = -10.0
+            elif permno == 25:
+                panel.loc[:11, "ceq"] = np.nan
             master = panel[["permno", "gvkey", "time_avail_m"]].copy()
             master["mve_permco"] = 100.0 + master.time_avail_m.dt.month
             if permno in (14, 15, 16, 17):
@@ -124,6 +132,17 @@ class PayoutFamilyTests(unittest.TestCase):
                 else:
                     self.assertIn((18, 202001), result.index)
                     self.assertNotIn((20, 202001), result.index)
+
+
+    def test_annual_requires_observed_positive_book_equity(self):
+        result = self.run_signal("NetPayoutYield")
+        for permno in (22, 23, 24):
+            with self.subTest(permno=permno):
+                self.assertFalse((result.index.get_level_values("permno") == permno).any())
+        self.assertIn((1, 202001), result.index)  # Positive book equity remains eligible.
+        # Age is counted after the universe screen: missing-ceq months do not count.
+        self.assertNotIn((25, 202001), result.index)
+        self.assertIn((25, 202012), result.index)
 
 
 if __name__ == "__main__":
