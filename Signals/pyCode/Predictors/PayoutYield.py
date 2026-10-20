@@ -1,4 +1,4 @@
-# ABOUTME: Payout Yield following Boudoukh et al. 2007, Table 6B
+# ABOUTME: Payout Yield following Boudoukh et al. 2007, Table III B
 # ABOUTME: calculates payout yield predictor scaled by market value of equity
 """
 PayoutYield.py

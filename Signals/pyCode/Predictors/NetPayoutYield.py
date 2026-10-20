@@ -1,4 +1,4 @@
-# ABOUTME: Net Payout Yield following Boudoukh et al. 2007, Table VI B
+# ABOUTME: Net Payout Yield following Boudoukh et al. 2007, Table III D
 # ABOUTME: calculates net payout yield scaled by lagged market value of equity
 
 """
