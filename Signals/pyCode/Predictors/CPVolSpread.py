@@ -10,6 +10,7 @@ Usage:
     python3 Predictors/CPVolSpread.py
 
 Inputs:
+    - If PATCH_OPTIONM_IV (config.py): only the 2023-vintage CPVolSpread from Google Drive, via utils/optionm_patch.py (issue #156)
     - bali_hovak_imp_vol.csv: Option metrics data with implied volatility by call/put flag
     - SignalMasterTable.parquet: Monthly master table with permno, time_avail_m, secid, sicCRSP
 
@@ -28,6 +29,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.optionm_patch import load_optionm_patch
 from config import PATCH_OPTIONM_IV
 
 
@@ -35,12 +37,9 @@ print("Starting CPVolSpread.py...")
 
 # Patch Option Metrics IV data if configured
 if PATCH_OPTIONM_IV:
-    print("PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing...")
-    from openassetpricing import OpenAP
-
-    openap = OpenAP(2023)
-    df = openap.dl_signal("polars", ["CPVolSpread"])
-    df = df.rename({"yyyymm": "time_avail_m"})
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage via Google Drive")
+    print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    df = load_optionm_patch("CPVolSpread")
     save_predictor(df, "CPVolSpread")
     print("CPVolSpread.py completed successfully with 2023 vintage patch")
     sys.exit()

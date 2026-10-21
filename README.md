@@ -49,7 +49,10 @@ More details are below
   cd Signals/pyCode/
   pip install -r requirements.txt
   ```
-* Install required R packages. [tbc]
+* Install required R packages: `googledrive` (pulls in `gargle`), used by `Signals/pyCode/`. In R: `install.packages("googledrive")`.
+* **Google Drive login (for 7 OptionMetrics signals).** While `PATCH_OPTIONM_IV = True` in `Signals/pyCode/config.py` (see [#156](https://github.com/OpenSourceAP/CrossSection/issues/156)), CPVolSpread, dCPVolSpread, dVolCall, dVolPut, skew1, SmileSlope and RIVolSpread are downloaded from our 2023 data release with your Google account. Once, from `Signals/pyCode/`, start R interactively and run `source("gdrive_login.R")`. Open the printed URL, sign in, tick "See and download all your Google Drive files", and paste the code back into R. The login is cached, so later pipeline runs are headless.
+  - Any Google account works, since the files are public. Access is read-only.
+  - Skipping the login only loses those seven signals; `master.py` warns and asks before it starts.
 * Copy `Signals/pyCode/dotenv.template` to `Signals/pyCode/.env` and add your WRDS and FRED credentials.
   - For FRED credentials, request an [API key from FRED](https://research.stlouisfed.org/docs/api/api_key.html)
 
