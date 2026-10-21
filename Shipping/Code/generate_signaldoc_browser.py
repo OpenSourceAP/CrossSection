@@ -1,22 +1,33 @@
 """
 ABOUTME: Generate interactive master-detail HTML browser for SignalDoc.csv
-ABOUTME: Run with: python generate_signaldoc_browser.py [output_path]
-INPUTS: 00_settings.yaml (for paths), SignalDoc.csv from pathProject
-OUTPUTS: Default path is pathStorage/SignalDoc-Browser.html (can override with command line argument)
+ABOUTME: Each signal's "Code" link points to the Signals/pyCode script that creates it
+
+How to run (from anywhere; paths are found from this script's location):
+    python3 Shipping/Code/generate_signaldoc_browser.py [output_path]
+
+INPUTS:
+    - <repo root>/SignalDoc.csv
+    - <repo root>/Signals/pyCode/Predictors/*.py and Placebos/*.py, scanned to
+      resolve each signal's code link (prints a warning and leaves the link
+      empty for any signal that resolves to no script or to more than one)
+
+OUTPUTS:
+    - <repo root>/SignalDoc-Browser.html by default, or output_path if given
+
+NOTE: After regenerating, upload SignalDoc-Browser.html by hand to WordPress at
+https://openassetpricing.com/SignalDoc-Browser.html. The live page does not
+update on its own.
 """
 
 import pandas as pd
 import json
-import os
+import re
 import sys
 from pathlib import Path
 
-try:
-    import yaml  # type: ignore
-except ModuleNotFoundError:  # pragma: no cover - environment-specific fallback
-    yaml = None
-
-SETTINGS_FILE = '00_settings.yaml'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PYCODE_DIR = REPO_ROOT / 'Signals' / 'pyCode'
+CODE_BASE_URL = "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode"
 
 def escape_html(text):
     """Escape HTML special characters"""
@@ -39,66 +50,94 @@ def format_integer_value(val):
     except (ValueError, TypeError):
         return format_value(val)
 
-def build_code_link(signalname, category):
-    """Return the GitHub URL for the signal's implementation when available"""
+def code_folder(category):
+    """Return the pyCode subfolder for a signal category, or '' if none"""
+    normalized_category = (category or '').strip().lower()
+    if normalized_category == 'predictor':
+        return 'Predictors'
+    if 'placebo' in normalized_category:
+        return 'Placebos'
+    return ''
+
+def find_signal_script(signalname, folder, signal_names):
+    """Return the script in pyCode/<folder> that creates signalname.
+
+    Tries, in order: an exact <signalname>.py; a script whose stem, split on
+    '_', contains signalname as a run of consecutive parts; a script that
+    saves the signal by name (save_predictor/save_placebo or to_csv). Scripts
+    that are the exact <OtherSignal>.py of another signal in signal_names are
+    skipped by the last two rules (so PM_q.py is not a candidate for PM).
+    Returns (filename, candidates): filename is '' unless exactly one script
+    matches at the first rule that finds any.
+    """
+    folder_path = PYCODE_DIR / folder
+    if (folder_path / f"{signalname}.py").exists():
+        return f"{signalname}.py", [f"{signalname}.py"]
+
+    scripts = [script for script in sorted(folder_path.glob('*.py'))
+               if script.stem not in signal_names]
+
+    name_parts = signalname.split('_')
+    n = len(name_parts)
+    matches = []
+    for script in scripts:
+        stem_parts = script.stem.split('_')
+        if any(stem_parts[i:i + n] == name_parts for i in range(len(stem_parts) - n + 1)):
+            matches.append(script.name)
+
+    if not matches:
+        name = re.escape(signalname)
+        save_pattern = re.compile(
+            rf"""save_(?:predictor|placebo)\(\s*[^,]+,\s*["']{name}["']"""
+            rf"""|to_csv\(\s*[rf]?["'][^"']*/{name}\.csv["']"""
+        )
+        for script in scripts:
+            if save_pattern.search(script.read_text(encoding='utf-8')):
+                matches.append(script.name)
+
+    return (matches[0] if len(matches) == 1 else ''), matches
+
+def build_code_link(signalname, category, signal_names):
+    """Return the GitHub URL for the signal's implementation when available.
+
+    Searches the category's own folder first. Only if nothing matches there
+    does it search the other folder, because some placebos (e.g.
+    AbnormalAccrualsPercent) are created by multi-signal Predictors scripts.
+    """
     if not signalname:
         return ''
 
-    normalized_category = (category or '').strip().lower()
-    base_url = "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode"
-    filename = f"{signalname}.py"
+    folder = code_folder(category)
+    if not folder:
+        return ''
 
-    if normalized_category == 'predictor':
-        return f"{base_url}/Predictors/{filename}"
-    if 'placebo' in normalized_category:
-        return f"{base_url}/Placebos/{filename}"
+    filename, candidates = find_signal_script(signalname, folder, signal_names)
+    if not candidates:
+        other = 'Placebos' if folder == 'Predictors' else 'Predictors'
+        filename, candidates = find_signal_script(signalname, other, signal_names)
+        if candidates:
+            folder = other
 
-    return ''
+    if not filename:
+        if candidates:
+            print(f"WARNING: {signalname} matches multiple scripts in {folder}: "
+                  f"{', '.join(candidates)}; leaving code link empty")
+        else:
+            print(f"WARNING: no script found for {signalname}; "
+                  f"leaving code link empty")
+        return ''
 
-def load_settings(path):
-    """Load settings from YAML, falling back to a simple key-value parser."""
-    if yaml is not None:
-        with open(path, 'r', encoding='utf-8') as handle:
-            data = yaml.safe_load(handle)
-        return data if data else {}
-
-    settings = {}
-    with open(path, 'r', encoding='utf-8') as handle:
-        for line in handle:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            if ':' not in line:
-                continue
-            key, value = line.split(':', 1)
-            settings[key.strip()] = value.strip().strip('"').strip("'")
-    return settings
+    return f"{CODE_BASE_URL}/{folder}/{filename}"
 
 def main():
-    # Change to script directory
-    script_dir = Path(__file__).parent
-    os.chdir(script_dir)
-
-    # Read settings from 00_settings.yaml
-    if not Path(SETTINGS_FILE).exists():
-        raise FileNotFoundError(f"Missing {SETTINGS_FILE} in {script_dir}")
-
-    settings = load_settings(SETTINGS_FILE)
-
-    try:
-        pathProject = Path(settings['pathProject']).expanduser()
-        pathStorage = Path(settings['pathStorage']).expanduser()
-    except KeyError as exc:  # pragma: no cover - defensive
-        raise KeyError(f"00_settings.yaml must define {exc.args[0]}") from exc
-
     # Determine output path
     if len(sys.argv) > 1:
         output_path = Path(sys.argv[1])
     else:
-        output_path = pathStorage / 'SignalDoc-Browser.html'
+        output_path = REPO_ROOT / 'SignalDoc-Browser.html'
 
     print(f"Reading SignalDoc.csv...")
-    doc = pd.read_csv(pathProject / 'SignalDoc.csv')
+    doc = pd.read_csv(REPO_ROOT / 'SignalDoc.csv')
 
     # Create AuthorYear column with Journal
     doc['AuthorYear'] = doc['Authors'].fillna('')
@@ -131,6 +170,7 @@ def main():
     }
 
     # Prepare data for JSON
+    signal_names = set(doc['Acronym'].dropna().astype(str))
     signals = []
     for idx, row in doc.iterrows():
         # Rename "Drop" to "Dropped"
@@ -174,7 +214,7 @@ def main():
             'Filter': format_value(row.get('Filter', '')),
             'Definition': format_value(row.get('Detailed Definition', '')),
             'Notes': format_value(row.get('Notes', '')),
-            'CodeLink': build_code_link(format_value(row.get('Acronym', '')), category)
+            'CodeLink': build_code_link(format_value(row.get('Acronym', '')), category, signal_names)
         }
         signals.append(signal)
 

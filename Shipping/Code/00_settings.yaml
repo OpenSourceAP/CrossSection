@@ -1,5 +1,5 @@
 # ABOUTME: Language-neutral path settings for shipping scripts
-# ABOUTME: Read by both master_shipping.r and generate_signaldoc_browser.py
+# ABOUTME: Read by master_shipping.r (generate_signaldoc_browser.py no longer reads it)
 
 pathProject: ~/Dropbox/oap-ac/CrossSection/
 pathStorage: ~/GoogleDrive/Work/Public/Open AP/Data Release 2025.10/
