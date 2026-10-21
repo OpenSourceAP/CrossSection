@@ -23,6 +23,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 print("Starting dNoa predictor...")
 
@@ -78,19 +79,11 @@ df["tempOL"] = (
 df["tempNOA"] = df["tempOA"] - df["tempOL"]
 
 # Calculate change in net operating assets scaled by lagged assets
-# Create 12-month lags using time-based approach
-df["time_lag12"] = pd.to_datetime(df["time_avail_m"]) - pd.DateOffset(months=12)
-
-# Create lag data for merging
-lag_data = df[["permno", "time_avail_m", "tempNOA", "at"]].copy()
-lag_data["time_avail_m"] = pd.to_datetime(lag_data["time_avail_m"])
-lag_data.columns = ["permno", "time_lag12", "tempNOA_lag12", "at_lag12"]
-
-# Convert time_lag12 to datetime for consistent merging
-df["time_lag12"] = pd.to_datetime(df["time_lag12"])
-
-# Merge to get lagged values
-df = df.merge(lag_data, on=["permno", "time_lag12"], how="left")
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "tempNOA", [12])
+df = stata_multi_lag(df, "permno", "time_avail_m", "at", [12], fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate dNoa with proper missing value handling
 df["dNoa"] = np.where(

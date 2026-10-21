@@ -75,7 +75,8 @@ df = df.with_columns(
 # == Calculate R-sq from regressing 3-day stock returns on 3-day market returns ==
 print("Creating 3-day overlapping returns...")
 
-# Create 3-day returns
+# Source xtsets time_temp = _n: these are three trading observations.
+# Keep observation shifts across weekends and market holidays.
 df = df.with_columns(
     [
         (

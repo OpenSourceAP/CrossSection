@@ -24,6 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting WW.py")
@@ -73,10 +74,12 @@ df = df.with_columns([
 
 # Create 12-month lag of tempIndSales and 1-month lag of sale
 print("Computing lags...")
-df = df.with_columns([
-    pl.col('tempIndSales').shift(12).over('permno').alias('l12_tempIndSales'),
-    pl.col('sale').shift(1).over('permno').alias('l1_sale')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['tempIndSales'], [12], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", ['sale'], [1], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # * Divide CF and growth rates by 4 to approximate quarterly rates
 # gen WW = -.091* (ib+dp)/(4*at) -.062*(dvpsx_c>0 & !mi(dvpsx_c)) + .021*dltt/at ///

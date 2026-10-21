@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -30,12 +35,10 @@ df = df.sort_values(["permno", "time_avail_m"])
 df["ret"] = df["ret"].fillna(0)
 
 # Create 24 monthly lags (t-13 to t-36) for long-term reversal calculation
-lag_cols = []
-for i in range(13, 37):
-    lag_col = f"ret_lag{i}"
-    df[lag_col] = df.groupby("permno")["ret"].shift(i)
-    # Keep missing values as NaN to match Stata's behavior
-    lag_cols.append(lag_col)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ret", list(range(13, 37)))
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+lag_cols = [f"ret_lag{i}" for i in range(13, 37)]
 
 # Compounds monthly returns over months t-36 to t-13 to create long-term reversal signal
 product = df[lag_cols[0]] * 0 + 1  # Initialize to 1

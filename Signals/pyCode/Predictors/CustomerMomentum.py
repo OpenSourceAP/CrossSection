@@ -254,6 +254,7 @@ def main():
     # Create stop rows to avoid stale data (R lines 131-145)
     # This ensures that stale data (more than 12 months after data is available) is not used.
     temp1b = temp1.sort_values(["permno", "datadate"]).copy()
+    # Stata uses adjacent firm/customer records here to delimit annual links.
     temp1b["next_permno"] = temp1b["permno"].shift(-1)
     temp1b["next_year"] = temp1b["datadate"].shift(-1).dt.year
     temp1b["current_year"] = temp1b["datadate"].dt.year

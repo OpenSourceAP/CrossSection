@@ -23,6 +23,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 print("Starting ShareIss1Y calculation...")
 
@@ -55,20 +60,11 @@ df["temp"] = df["shrout"] * df["cfacshr"]
 # Sort for lag operations
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Get historical values from 6 and 18 months ago
-df["time_lag6"] = df["time_avail_m"] - pd.DateOffset(months=6)
-df["time_lag18"] = df["time_avail_m"] - pd.DateOffset(months=18)
+# Calendar lags retain missing endpoints; inserted rows are removed before calculating the signal.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "temp", [6, 18], prefix="l")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
-# Create lag data for merging
-lag6_data = df[["permno", "time_avail_m", "temp"]].copy()
-lag6_data.columns = ["permno", "time_lag6", "l6_temp"]
-
-lag18_data = df[["permno", "time_avail_m", "temp"]].copy()
-lag18_data.columns = ["permno", "time_lag18", "l18_temp"]
-
-# Merge to get lagged values
-df = df.merge(lag6_data, on=["permno", "time_lag6"], how="left")
-df = df.merge(lag18_data, on=["permno", "time_lag18"], how="left")
 
 # Calculate 1-year share issuance as percentage change in shares
 df["ShareIss1Y"] = (df["l6_temp"] - df["l18_temp"]) / df["l18_temp"]

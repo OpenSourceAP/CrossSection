@@ -25,6 +25,7 @@ import sys
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 
 # %%
@@ -83,27 +84,8 @@ df["credrat"] = df["ratingsp"].fillna(df["ratingciq"])
 # ac: the fill date gaps is only needed because we drop missing gvkey above
 
 
-# get all permno and time_avail_m
-permno_list = df["permno"].unique()
-ym_list = df["time_avail_m"].unique()  # let's make this cleaner
-
-# 're-index' the df to make a balanced panel with lots of missing values
-full_idx = pd.MultiIndex.from_product(
-    [permno_list, ym_list], names=["permno", "time_avail_m"]
-)
-df_balanced = (
-    df.set_index(["permno", "time_avail_m"])
-    .reindex(full_idx)
-    .reset_index()
-    .sort_values(["permno", "time_avail_m"])
-)
-
-# keep only the observations that are within the range of the original df
-ym_ranges = (
-    df.groupby("permno")["time_avail_m"].agg(ym_min="min", ym_max="max").reset_index()
-)
-df_balanced = df_balanced.merge(ym_ranges, on="permno", how="left")
-df_balanced.query("time_avail_m >= ym_min & time_avail_m <= ym_max", inplace=True)
+# Stata explicitly expands this panel with tsfill before filling ratings/returns.
+df = fill_date_gaps(df, "permno", "time_avail_m")
 
 # finally, fill credrat with most recent rating
 df.sort_values(["permno", "time_avail_m"], inplace=True)
@@ -121,11 +103,8 @@ df = df.sort_values(["permno", "time_avail_m"])
 df.loc[df["ret"].isna(), "ret"] = 0
 
 # Calculate 6-month momentum using lags
-df["ret_lag1"] = df.groupby("permno")["ret"].shift(1)
-df["ret_lag2"] = df.groupby("permno")["ret"].shift(2)
-df["ret_lag3"] = df.groupby("permno")["ret"].shift(3)
-df["ret_lag4"] = df.groupby("permno")["ret"].shift(4)
-df["ret_lag5"] = df.groupby("permno")["ret"].shift(5)
+# Explicit tsfill above supplies the complete grid, including intended added rows.
+df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5], fill_gaps=False)
 
 # Calculate 6-month momentum (geometric return)
 df["Mom6m"] = (

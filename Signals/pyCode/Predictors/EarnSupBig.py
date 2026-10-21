@@ -23,7 +23,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
-from utils.stata_replication import relrank
+from utils.stata_replication import relrank, stata_multi_lag
 from utils.sicff import sicff
 
 print("Creating EarnSupBig predictor...")
@@ -52,12 +52,17 @@ df = df.merge(m_qcompustat, on=["gvkey", "time_avail_m"], how="inner")
 df = df.sort_values(["permno", "time_avail_m"])
 
 # Calculate quarterly earnings growth over 12-month period
-df["GrTemp"] = df.groupby("permno")["epspxq"].transform(lambda x: x - x.shift(12))
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "epspxq", [12])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+df["GrTemp"] = df["epspxq"] - df["epspxq_lag12"]
 
 
 # Create lagged earnings growth values for drift calculation
-for n in range(3, 25, 3):  # 3, 6, 9, 12, 15, 18, 21, 24
-    df[f"temp{n}"] = df.groupby("permno")["GrTemp"].transform(lambda x: x.shift(n))
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "GrTemp", list(range(3, 25, 3)))
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+df = df.rename(columns={f"GrTemp_lag{n}": f"temp{n}" for n in range(3, 25, 3)})
 
 # Calculate average earnings growth drift
 temp_cols = [f"temp{n}" for n in range(3, 25, 3)]
@@ -66,7 +71,7 @@ df["Drift"] = df[temp_cols].mean(axis=1)
 
 # Calculate earnings surprise as growth minus drift
 df["EarningsSurprise"] = (
-    df.groupby("permno")["epspxq"].transform(lambda x: x - x.shift(12)) - df["Drift"]
+    df["GrTemp"] - df["Drift"]
 )
 
 
@@ -74,10 +79,10 @@ df["EarningsSurprise"] = (
 df = df.drop(columns=temp_cols)
 
 # Create lagged earnings surprise values for volatility calculation
-for n in range(3, 25, 3):  # 3, 6, 9, 12, 15, 18, 21, 24
-    df[f"temp{n}"] = df.groupby("permno")["EarningsSurprise"].transform(
-        lambda x: x.shift(n)
-    )
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "EarningsSurprise", list(range(3, 25, 3)))
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+df = df.rename(columns={f"EarningsSurprise_lag{n}": f"temp{n}" for n in range(3, 25, 3)})
 
 # Calculate standard deviation of historical earnings surprises
 temp_cols = [f"temp{n}" for n in range(3, 25, 3)]

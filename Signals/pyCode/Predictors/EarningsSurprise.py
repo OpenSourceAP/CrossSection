@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -42,20 +47,20 @@ df = df.merge(qcompustat, on=["gvkey", "time_avail_m"], how="inner")
 df = df.sort_values(["permno", "time_avail_m"])
 
 # Calculate quarterly earnings growth over 12-month period
-df["date_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
-temp_merge = df[["permno", "time_avail_m", "epspxq"]].copy()
-temp_merge.columns = ["permno", "date_lag12", "epspxq_l12"]
-df = df.merge(temp_merge, on=["permno", "date_lag12"], how="left")
-df = df.drop("date_lag12", axis=1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "epspxq", [12])
+df = df.rename(columns={'epspxq_lag12': 'epspxq_l12'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+
 df["GrTemp"] = df["epspxq"] - df["epspxq_l12"]
 
 # Create lagged earnings growth values at 3-month intervals for drift calculation
-for n in range(3, 25, 3):
-    df[f"date_lag{n}"] = df["time_avail_m"] - pd.DateOffset(months=n)
-    temp_merge = df[["permno", "time_avail_m", "GrTemp"]].copy()
-    temp_merge.columns = ["permno", f"date_lag{n}", f"grtemp_lag{n}"]
-    df = df.merge(temp_merge, on=["permno", f"date_lag{n}"], how="left")
-    df = df.drop(f"date_lag{n}", axis=1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "GrTemp", [3, 6, 9, 12, 15, 18, 21, 24])
+df = df.rename(columns={'GrTemp_lag3': 'grtemp_lag3', 'GrTemp_lag6': 'grtemp_lag6', 'GrTemp_lag9': 'grtemp_lag9', 'GrTemp_lag12': 'grtemp_lag12', 'GrTemp_lag15': 'grtemp_lag15', 'GrTemp_lag18': 'grtemp_lag18', 'GrTemp_lag21': 'grtemp_lag21', 'GrTemp_lag24': 'grtemp_lag24'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate average earnings growth over past 8 quarters (drift component)
 grtemp_lag_cols = [f"grtemp_lag{n}" for n in range(3, 25, 3)]
@@ -68,12 +73,11 @@ df["EarningsSurprise"] = df["epspxq"] - df["epspxq_l12"] - df["Drift"]
 df = df.drop(columns=grtemp_lag_cols)
 
 # Create lagged earnings surprise values for volatility calculation
-for n in range(3, 25, 3):
-    df[f"date_lag{n}"] = df["time_avail_m"] - pd.DateOffset(months=n)
-    temp_merge = df[["permno", "time_avail_m", "EarningsSurprise"]].copy()
-    temp_merge.columns = ["permno", f"date_lag{n}", f"es_lag{n}"]
-    df = df.merge(temp_merge, on=["permno", f"date_lag{n}"], how="left")
-    df = df.drop(f"date_lag{n}", axis=1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "EarningsSurprise", [3, 6, 9, 12, 15, 18, 21, 24])
+df = df.rename(columns={'EarningsSurprise_lag3': 'es_lag3', 'EarningsSurprise_lag6': 'es_lag6', 'EarningsSurprise_lag9': 'es_lag9', 'EarningsSurprise_lag12': 'es_lag12', 'EarningsSurprise_lag15': 'es_lag15', 'EarningsSurprise_lag18': 'es_lag18', 'EarningsSurprise_lag21': 'es_lag21', 'EarningsSurprise_lag24': 'es_lag24'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate standard deviation of historical earnings surprises
 es_lag_cols = [f"es_lag{n}" for n in range(3, 25, 3)]

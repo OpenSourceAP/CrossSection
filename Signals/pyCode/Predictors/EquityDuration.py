@@ -47,6 +47,8 @@ autocorr_growth = 0.24
 longrun_growth = 0.06
 
 # Compute ROE, book equity growth, and cash distributions to equity
+# Fiscal-year lags (Stata xtset gvkey fyear) need a separate fiscal-gap review;
+# retained here outside the ordinary monthly calendar-lag migration.
 df["tempRoE"] = df["ib"] / df.groupby("gvkey")["ceq"].shift(1)
 
 # Create sale_lag while handling division by zero

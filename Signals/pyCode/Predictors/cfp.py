@@ -24,6 +24,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting cfp predictor...")
 
@@ -91,15 +92,14 @@ print("Constructing cfp signal...")
 # Sort by permno and time_avail_m (equivalent to xtset permno time_avail_m)
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create 12-month lags for accrual calculation (calendar-based, not position-based)
-lag_cols = ["act", "che", "lct", "dlc", "txp"]
-for col in lag_cols:
-    # Create 12-month lag using calendar months, not position-based shift
-    df[f"lag_time"] = df["time_avail_m"] - pd.DateOffset(months=12)
-    lag_data = df[["permno", "time_avail_m", col]].copy()
-    lag_data = lag_data.rename(columns={"time_avail_m": "lag_time", col: f"l12_{col}"})
-    df = pd.merge(df, lag_data, on=["permno", "lag_time"], how="left")
-    df = df.drop("lag_time", axis=1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+lag_vars = ['act', 'che', 'lct', 'dlc', 'txp']
+for var in lag_vars:
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], fill_gaps=False)
+df = df.rename(columns={f"{var}_lag12": f"l12_{var}" for var in lag_vars})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate accrual_level
 # accrual_level = (act-l12.act - (che-l12.che)) - ((lct-l12.lct)-(dlc-l12.dlc)-(txp-l12.txp)-dp)
@@ -132,7 +132,7 @@ print(f"Generated cfp values for {df['cfp'].notna().sum():,} observations")
 print(f"Used oancf for {mask_oancf_available.sum():,} observations")
 
 # Clean up temporary columns
-lag_cols_to_drop = [f"l12_{col}" for col in lag_cols]
+lag_cols_to_drop = [f"l12_{col}" for col in lag_vars]
 df = df.drop(columns=lag_cols_to_drop + ["accrual_level", "calculated_cf"])
 
 # SAVE

@@ -41,7 +41,9 @@ df["ret"] = df["ret"].fillna(0)
 # This creates lags for periods: 23, 35, 47, 59 months
 print("Creating lag variables for returns (23, 35, 47, 59 months)...")
 lag_periods = [23, 35, 47, 59]
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", lag_periods)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # eGenerate rowtotal(temp*), missing
 print("Calculating seasonal momentum signal...")

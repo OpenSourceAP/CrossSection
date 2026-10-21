@@ -24,6 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting GPlag_q.py")
@@ -79,22 +80,14 @@ print("Sorting by permno and time...")
 df = df.sort(['permno', 'time_avail_m'])
 
 
-# Convert to pandas for calendar-based 3-month lag operations
-print("Converting to calendar-based 3-month lag...")
-df_pd = df.to_pandas()
-
-# Create 3-month lag date
-df_pd['time_lag3'] = df_pd['time_avail_m'] - pd.DateOffset(months=3)
-
-# Create lag data for merging
-lag3_data = df_pd[['permno', 'time_avail_m', 'atq']].copy()
-lag3_data.columns = ['permno', 'time_lag3', 'l3_atq']
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag3_data, on=['permno', 'time_lag3'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+print("Computing calendar-based 3-month lag...")
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['atq'], [3], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 
 # Compute GPlag_q with enhanced null handling and calendar-based lag

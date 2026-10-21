@@ -24,6 +24,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 
 print("Starting ChTax predictor...")
@@ -57,27 +58,15 @@ print("Constructing ChTax signal...")
 # Sort by company and time for lag calculations
 df = df.sort_values(["gvkey", "time_avail_m"])
 
-# Create 12-month lags using calendar-based matching
-# Create lag time column
-df["lag_time"] = df["time_avail_m"] - pd.DateOffset(months=12)
-
-# Create lag data for txtq
-txtq_lag_data = df[["gvkey", "time_avail_m", "txtq"]].copy()
-txtq_lag_data = txtq_lag_data.rename(
-    columns={"time_avail_m": "lag_time", "txtq": "l12_txtq"}
-)
-df = pd.merge(df, txtq_lag_data, on=["gvkey", "lag_time"], how="left")
-
-# Create lag data for at
-at_lag_data = df[["gvkey", "time_avail_m", "at"]].copy()
-at_lag_data = at_lag_data.rename(columns={"time_avail_m": "lag_time", "at": "l12_at"})
-df = pd.merge(df, at_lag_data, on=["gvkey", "lag_time"], how="left")
-
-# Sort data
-df = df.sort_values(["gvkey", "time_avail_m"])
-
-# Clean up
-df = df.drop("lag_time", axis=1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "gvkey", "time_avail_m", "txtq", [12])
+df = df.rename(columns={'txtq_lag12': 'l12_txtq'})
+df = stata_multi_lag(df, "gvkey", "time_avail_m", "at", [12], fill_gaps=False)
+df = df.rename(columns={'at_lag12': 'l12_at'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+# Inserted gvkey-grid rows had missing permno, which made the column float
+df["permno"] = df["permno"].astype("int64")
 
 # Calculate change in taxes scaled by lagged total assets
 df["ChTax"] = (df["txtq"] - df["l12_txtq"]) / df["l12_at"]

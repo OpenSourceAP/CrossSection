@@ -24,7 +24,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting AssetLiquidityMarket.py")
 
@@ -53,8 +53,11 @@ df_pd = df.to_pandas()
 # Create 1-month lags using stata_multi_lag
 print("Computing 1-month lags using stata_multi_lag...")
 lag_vars = ['at', 'prcc_f', 'csho', 'ceq']
+df_pd["_observed"] = True
+df_pd = fill_date_gaps(df_pd, "permno", "time_avail_m", "1mo")
 for var in lag_vars:
-    df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', var, [1], freq='M', prefix='l')
+    df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', var, [1], freq='M', prefix='l', fill_gaps=False)
+df_pd = df_pd.loc[df_pd["_observed"].eq(True)].drop(columns="_observed")
 
 # Convert back to polars
 df = pl.from_pandas(df_pd)

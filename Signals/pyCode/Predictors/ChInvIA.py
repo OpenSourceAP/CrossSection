@@ -17,6 +17,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 from pathlib import Path
 
@@ -45,31 +50,21 @@ df["sicCRSP"] = df["sicCRSP"].astype(str)
 df["sic2D"] = df["sicCRSP"].str[:2]
 
 # Fill missing capital expenditures using change in PP&E when capx is missing
-# Use calendar-based lag (12 months back) instead of positional lag
-df["ppent_l12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-ppent_lag = df[["permno", "time_avail_m", "ppent"]].rename(
-    columns={"time_avail_m": "ppent_l12_date", "ppent": "ppent_l12"}
-)
-df = df.merge(ppent_lag, on=["permno", "ppent_l12_date"], how="left")
-df = df.drop(columns=["ppent_l12_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ppent", [12])
+df = df.rename(columns={'ppent_lag12': 'ppent_l12'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 df["capx"] = df["capx"].fillna(df["ppent"] - df["ppent_l12"])
 
 # Calculate percentage change in capx relative to average of 12 and 24 month lags
-# Use calendar-based lags for capx
-df["capx_l12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-capx_lag12 = df[["permno", "time_avail_m", "capx"]].rename(
-    columns={"time_avail_m": "capx_l12_date", "capx": "capx_l12"}
-)
-df = df.merge(capx_lag12, on=["permno", "capx_l12_date"], how="left")
-df = df.drop(columns=["capx_l12_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "capx", [12, 24])
+df = df.rename(columns={'capx_lag12': 'capx_l12', 'capx_lag24': 'capx_l24'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
-df["capx_l24_date"] = df["time_avail_m"] - pd.DateOffset(months=24)
-capx_lag24 = df[["permno", "time_avail_m", "capx"]].rename(
-    columns={"time_avail_m": "capx_l24_date", "capx": "capx_l24"}
-)
-df = df.merge(capx_lag24, on=["permno", "capx_l24_date"], how="left")
-df = df.drop(columns=["capx_l24_date"])
 df["avg_lag_capx"] = 0.5 * (df["capx_l12"] + df["capx_l24"])
 
 # Handle division by zero - in Stata, division by zero results in missing

@@ -25,7 +25,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting AssetGrowth_q.py")
 
@@ -62,7 +62,10 @@ df = df.sort(['permno', 'time_avail_m'])
 
 print("Computing 12-month lag using stata_multi_lag...")
 df_pandas = df.to_pandas()
-df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'atq', [12], freq='M', prefix='l')
+df_pandas["_observed"] = True
+df_pandas = fill_date_gaps(df_pandas, "permno", "time_avail_m", "1mo")
+df_pandas = stata_multi_lag(df_pandas, 'permno', 'time_avail_m', 'atq', [12], freq='M', prefix='l', fill_gaps=False)
+df_pandas = df_pandas.loc[df_pandas["_observed"].eq(True)].drop(columns="_observed")
 df = pl.from_pandas(df_pandas)
 
 print("Computing AssetGrowth_q...")

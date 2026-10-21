@@ -25,6 +25,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.stata_fastxtile import fastxtile
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 signal_master = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -53,18 +54,14 @@ df = df.dropna(subset=["gvkey"])
 patents = pd.read_parquet("../pyData/Intermediate/PatentDataProcessed.parquet")
 df = df.merge(patents[["gvkey", "year", "npat"]], on=["gvkey", "year"], how="left")
 
-# Set up time series structure
-df = df.sort_values(["permno", "time_avail_m"])
-df = df.set_index(["permno", "time_avail_m"])
-
-# Lag patent data by 6 months
-df["temp"] = df.groupby("permno")["npat"].shift(6)
-df["temp"] = df["temp"].fillna(0)
-df["npat"] = df["temp"]
-df = df.drop("temp", axis=1)
-
-# Reset index for further processing
-df = df.reset_index()
+# Convert the established YYYYMM key only for calendar lagging.
+df["_calendar_m"] = pd.to_datetime(df["time_avail_m"].astype(str), format="%Y%m")
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "_calendar_m", "npat", [6])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+# The source replaces missing patent counts after the lag, only on observed rows.
+df["npat"] = df["npat_lag6"].fillna(0)
+df = df.drop(columns="npat_lag6")
 
 # SIGNAL CONSTRUCTION - form portfolios only in June
 df = df[df["time_avail_m"] % 100 == 6]  # month == 6
@@ -77,23 +74,16 @@ df = df[
 # Replace missing R&D with 0
 df["xrd"] = df["xrd"].fillna(0)
 
-# Components of R&D capital
-df = df.sort_values(["permno", "time_avail_m"])
-df = df.set_index(["permno", "time_avail_m"])
-
-df["comp1"] = 0
-df["comp2"] = 0
-df["comp3"] = 0
-df["comp4"] = 0
-df["comp5"] = 0
-
-# Create lagged R&D components with depreciation (June-only data: shift by years)
-grouped = df.groupby("permno")["xrd"]
-comp1_lag = grouped.shift(2)  # 2 years back
-comp2_lag = 0.8 * grouped.shift(3)  # 3 years back, depreciated 20%
-comp3_lag = 0.6 * grouped.shift(4)  # 4 years back, depreciated 40%
-comp4_lag = 0.4 * grouped.shift(5)  # 5 years back, depreciated 60%
-comp5_lag = 0.2 * grouped.shift(6)  # 6 years back, depreciated 80%
+# June-only observations use annual calendar endpoints, including across missing years.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "_calendar_m", "xrd", [2, 3, 4, 5, 6], freq="Y")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+df["time_avail_m"] = df["time_avail_m"].astype(int)
+comp1_lag = df["xrd_lag2"]
+comp2_lag = 0.8 * df["xrd_lag3"]
+comp3_lag = 0.6 * df["xrd_lag4"]
+comp4_lag = 0.4 * df["xrd_lag5"]
+comp5_lag = 0.2 * df["xrd_lag6"]
 
 df["comp1"] = np.where(comp1_lag.notna(), comp1_lag, 0.0)
 df["comp2"] = np.where(comp2_lag.notna(), comp2_lag, 0.0)
@@ -106,7 +96,7 @@ df["tempPatentsRD"] = np.where(df["RDcap"] > 0, df["npat"] / df["RDcap"], np.nan
 
 # Patent efficiency ratio: number of patents divided by R&D capital
 
-df = df.reset_index()
+df = df.drop(columns="_calendar_m")
 
 # Filter
 df = df.sort_values(["gvkey", "time_avail_m"])

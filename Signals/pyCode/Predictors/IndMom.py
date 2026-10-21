@@ -22,6 +22,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
@@ -39,17 +40,11 @@ df.loc[df["ret"].isna(), "ret"] = 0
 # Sort data for lag operations (ensuring proper panel structure)
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create calendar-based lags for months t-1 to t-5 using time-based merges
-for lag in range(1, 6):
-    # Create lag data by shifting time_avail_m forward by lag months
-    df_lag = df[["permno", "time_avail_m", "ret"]].copy()
-    df_lag["time_avail_m"] = df_lag["time_avail_m"] + pd.DateOffset(months=lag)
-    df_lag = df_lag.rename(columns={"ret": f"l{lag}_ret"})
-    df = df.merge(
-        df_lag[["permno", "time_avail_m", f"l{lag}_ret"]],
-        on=["permno", "time_avail_m"],
-        how="left",
-    )
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5])
+df = df.rename(columns={'ret_lag1': 'l1_ret', 'ret_lag2': 'l2_ret', 'ret_lag3': 'l3_ret', 'ret_lag4': 'l4_ret', 'ret_lag5': 'l5_ret'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compounds monthly returns over months t-5 to t-1 to create individual 6-month momentum
 df["Mom6m"] = (

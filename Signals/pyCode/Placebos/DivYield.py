@@ -26,7 +26,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
 from utils.stata_fastxtile import fastxtile
-from utils.stata_replication import stata_multi_lag_pl
+from utils.stata_replication import stata_multi_lag_pl, fill_date_gaps
 
 print("Starting DivYield.py")
 
@@ -88,6 +88,8 @@ df = df.with_columns(
 
 # Create calendar-based lags for temp (l1 through l11) to match Stata l. syntax
 print("Computing multiple calendar-based lags...")
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
 df = stata_multi_lag_pl(
     df,
     group_col='permno',
@@ -96,8 +98,9 @@ df = stata_multi_lag_pl(
     lag_list=list(range(1, 12)),  # l1 through l11
     freq='M',
     prefix='l',
-    fill_gaps=True
+    fill_gaps=False
 )
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # gen tempdy = 4*max(temp, l1.temp, l2.temp)/abs(prc)
 print("Computing tempdy...")

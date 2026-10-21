@@ -24,6 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting cfpq.py")
@@ -88,22 +89,13 @@ df = df.sort(['permno', 'time_avail_m'])
 # gen tempaccrual_level = (actq-l12.actq - (cheq-l12.cheq)) - ( (lctq-l12.lctq)- (dlcq-l12.dlcq)-(txpq-l12.txpq)-dpq )
 print("Computing 12-month calendar-based lags...")
 
-# Convert to pandas for calendar-based lag operations (polars merge approach is more complex)
-df_pd = df.to_pandas()
-
-# Create 12-month lag date
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-
-# Create lag data for merging
-lag_vars = ['actq', 'cheq', 'lctq', 'dlcq', 'txpq']
-lag_data = df_pd[['permno', 'time_avail_m'] + lag_vars].copy()
-lag_data.columns = ['permno', 'time_lag12'] + [f'l12_{var}' for var in lag_vars]
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag_data, on=['permno', 'time_lag12'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['actq', 'cheq', 'lctq', 'dlcq', 'txpq'], [12], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 print("Computing tempaccrual_level...")
 # Handle missing values in differences: if current value is missing, treat as 0 for the difference

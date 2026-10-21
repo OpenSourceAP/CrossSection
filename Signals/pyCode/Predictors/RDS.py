@@ -18,6 +18,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 # DATA LOAD
 # Load m_aCompustat data
@@ -60,22 +65,14 @@ df["msa_orig_missing"] = df["msa"].isna()
 df["recta"] = df["recta"].fillna(0)
 df["msa"] = df["msa"].fillna(0)
 
-# Create 12-month lags using time-based approach
-df["time_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
-
-# Create lag data for merge (include missing flags)
-lag_vars = ["msa", "recta", "pcupsu", "paddml", "ceq", "csho"]
-lag_data = df[
-    ["permno", "time_avail_m"] + lag_vars + ["recta_orig_missing", "msa_orig_missing"]
-].copy()
-lag_data.columns = (
-    ["permno", "time_lag12"]
-    + [f"l12_{var}" for var in lag_vars]
-    + ["l12_recta_orig_missing", "l12_msa_orig_missing"]
-)
-
-# Merge to get lagged values
-df = df.merge(lag_data, on=["permno", "time_lag12"], how="left")
+# Fill once after current-value imputation; absent calendar endpoints stay missing.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+lag_vars = ["msa", "recta", "pcupsu", "paddml", "ceq", "csho",
+            "recta_orig_missing", "msa_orig_missing"]
+for var in lag_vars:
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], prefix="l", fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
 
 # Calculate dirty surplus (DS)

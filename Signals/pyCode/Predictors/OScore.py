@@ -23,6 +23,7 @@ import sys
 import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet("../pyData/Intermediate/m_aCompustat.parquet")
@@ -61,12 +62,10 @@ df = df.sort_values(["permno", "time_avail_m"])
 # Replace missing fopt with oancf
 df["fopt"] = df["fopt"].fillna(df["oancf"])
 
-# Calculate 12-month lag of ib using calendar-based approach
-df["time_avail_m_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
-df_lag = df[["permno", "time_avail_m", "ib"]].copy()
-df_lag = df_lag.rename(columns={"time_avail_m": "time_avail_m_lag12", "ib": "ib_lag12"})
-df = df.merge(df_lag, on=["permno", "time_avail_m_lag12"], how="left")
-df = df.drop("time_avail_m_lag12", axis=1)
+# Calendar lags retain missing endpoints; inserted rows are removed before calculating the signal.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ib", [12])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
 
 # Calculate O-Score using Dichev formula with safe math operations

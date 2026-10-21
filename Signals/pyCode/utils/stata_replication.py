@@ -1,7 +1,9 @@
 # %%
 # ABOUTME: Stata function replications for consistent behavior with Stata code
-# ABOUTME: Usage: from utils.stata_replication import fill_date_gaps, stata_lag, stata_multi_lag, stata_quantile, stata_ineq_pd, stata_ineq_pl, relrank
-# These functions are in principle not necessary. But if we want to exactly replicate the Stata code, we should try to use them.
+# ABOUTME: Usage: from utils.stata_replication import fill_date_gaps, stata_multi_lag, stata_quantile, stata_ineq_pd, stata_ineq_pl, relrank
+# Inputs: in-memory Pandas/Polars panels or arrays; outputs: transformed panels or statistics.
+# Run: import the functions above from Signals/pyCode; no standalone command is required.
+# Use the shared calendar lag helpers to match Stata time-series operators.
 
 import pandas as pd
 import numpy as np
@@ -11,6 +13,14 @@ import re
 
 # %% stata_multi_lag functions
 
+_LAG_FREQ_INTERVALS = {"M": "1mo", "D": "1d", "Q": "3mo", "Y": "1y"}
+
+
+def _lag_interval(freq):
+    if freq not in _LAG_FREQ_INTERVALS:
+        raise ValueError(f"Unsupported lag frequency: {freq!r}. Expected M, D, Q, or Y.")
+    return _LAG_FREQ_INTERVALS[freq]
+
 
 def stata_multi_lag(
     df, group_col, time_col, value_col, lag_list, freq="M", prefix="", fill_gaps=True
@@ -18,7 +28,10 @@ def stata_multi_lag(
     """
     Create multiple Stata-style lags efficiently (unified wrapper).
 
-    Automatically detects DataFrame type and calls appropriate implementation.
+    Automatically detects DataFrame type and calls the matching implementation.
+    Use this helper for calendar lags. An absent target period or missing target
+    value stays missing; an unrelated intervening gap does not invalidate a lag.
+    Explain exceptions for intentional observation-time or specialized lags.
 
     Parameters
     ----------
@@ -29,7 +42,8 @@ def stata_multi_lag(
     time_col : str
         Time column (e.g., 'time_avail_m')
     value_col : str or list of str
-        Column(s) to lag. Single string for pandas, list for polars
+        Pandas accepts one column (a string or singleton list); Polars accepts
+        a string or a list of columns.
     lag_list : list of int
         List of lag periods (e.g., [1, 2, 3, 6, 12])
     freq : str, default 'M'
@@ -37,12 +51,21 @@ def stata_multi_lag(
     prefix : str, default ''
         Optional prefix for column names (e.g., 'l' creates 'l12_at')
     fill_gaps : bool, default True
-        Whether to fill date gaps before lagging
+        Fill each group's minimum-to-maximum calendar grid before lagging.
+        False requires an already complete grid at the requested frequency;
+        this assumption is not checked. Keep inserted rows until all lags are
+        calculated, and do not filter periods between filling and lagging.
 
     Returns
     -------
     pd.DataFrame or pl.DataFrame
-        Original dataframe with new lag columns added
+        Panel sorted by group and time, with new lag columns. By default the
+        result includes inserted calendar rows with missing input values; the
+        original Pandas index and input row order are not preserved. Callers
+        must resolve duplicate group-time keys and use consistent date anchors.
+        To retain only original observations, add an observed-row marker before
+        calling, then filter on that marker after calculating all lags, before
+        subsequent counts, ranks, or saving. Expansion is otherwise retained.
     """
     if isinstance(df, pl.DataFrame):
         # Ensure value_col is a list for polars version
@@ -89,14 +112,19 @@ def stata_multi_lag_pd(
         List of lag periods (e.g., [1, 2, 3, 6, 12])
     freq : str, default 'M'
         Frequency: 'M' for monthly, 'D' for daily, 'Q' for quarterly, 'Y' for yearly
-        (Note: freq parameter kept for compatibility but gaps are always filled)
     prefix : str, default ''
         Optional prefix for column names (e.g., 'l' creates 'l12_at')
+    fill_gaps : bool, default True
+        Expand to the requested calendar grid before lagging. False assumes
+        the input already has that complete grid; completeness is not checked.
 
     Returns
     -------
     pd.DataFrame
-        Original dataframe with new lag columns added
+        Panel sorted by group and time with lag columns and, by default,
+        inserted calendar rows. The original index is not preserved when
+        filling. Mark observed rows before calling and filter afterward when
+        expansion is not intended. See stata_multi_lag for caller requirements.
 
     Examples
     --------
@@ -107,11 +135,12 @@ def stata_multi_lag_pd(
     >>> # Creates column: l12_at
     """
 
+    period_str = _lag_interval(freq)
     if fill_gaps:
         # By default, fill date gaps to ensure proper calendar-based lag alignment
-        out = fill_date_gaps(df, group_col, time_col)
+        out = fill_date_gaps(df, group_col, time_col, period_str=period_str)
     else:
-        # In special cases, skip filling gaps (e.g. to save time)
+        # The caller has already provided a complete calendar grid.
         out = df
 
     # Sort by group and time
@@ -163,16 +192,19 @@ def stata_multi_lag_pl(
     prefix : str, default ''
         Optional prefix for column names (e.g., 'l' creates 'l12_at')
     fill_gaps : bool, default True
-        Whether to fill date gaps before lagging
+        Expand to the requested calendar grid before lagging. False assumes
+        the input already has that complete grid; completeness is not checked.
 
     Returns
     -------
     pl.DataFrame
-        Original dataframe with new lag columns added
+        Panel sorted by group and time with lag columns and, by default,
+        inserted calendar rows. Mark observed rows before calling and filter
+        afterward when expansion is not intended. This backend accepts multiple
+        value columns; see stata_multi_lag for caller requirements.
     """
     # Convert freq to period_str for fill_date_gaps
-    freq_map = {"M": "1mo", "D": "1d", "Q": "3mo", "Y": "1y"}
-    period_str = freq_map.get(freq, "1mo")
+    period_str = _lag_interval(freq)
 
     if fill_gaps:
         df = fill_date_gaps_pl(df, group_col, time_col, period_str)

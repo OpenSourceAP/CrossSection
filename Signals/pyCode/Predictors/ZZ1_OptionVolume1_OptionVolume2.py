@@ -31,6 +31,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 print("Started ZZ1_OptionVolume1_OptionVolume2.py...")
 
@@ -74,13 +75,17 @@ df["OptionVolume1"] = df["optvolume_js12"] / df["vol"]
 # Set OptionVolume1 to missing if prior period option or stock volume is missing
 # Create lagged optvolume_js12 and vol for the condition check
 df = df.sort_values(["permno", "time_avail_m"])
-df["l1_optvolume"] = df.groupby("permno")["optvolume_js12"].shift(1)
-df["l1_vol"] = df.groupby("permno")["vol"].shift(1)
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+for var in ("optvolume_js12", "vol"):
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [1], prefix="l", fill_gaps=False)
+df = df.rename(columns={"l1_optvolume_js12": "l1_optvolume"})
 df.loc[df["l1_optvolume"].isna() | df["l1_vol"].isna(), "OptionVolume1"] = np.nan
 
-# Create 6 lags of OptionVolume1 for calculating 6-month moving average
-for n in range(1, 7):
-    df[f"tempVol{n}"] = df.groupby("permno")["OptionVolume1"].shift(n)
+df = stata_multi_lag(df, "permno", "time_avail_m", "OptionVolume1", list(range(1, 7)), fill_gaps=False)
+df = df.rename(columns={f"OptionVolume1_lag{n}": f"tempVol{n}" for n in range(1, 7)})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+
 
 # Calculate 6-month moving average of OptionVolume1
 temp_cols = [f"tempVol{n}" for n in range(1, 7)]

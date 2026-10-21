@@ -44,6 +44,7 @@ df["opscore"] = 6 - df["ireccd"]
 df = df.sort_values(["tickerIBES", "time_avail_m"])
 
 # Calculate change in recommendation from previous month
+# Stata explicitly compares the previous recommendation observation (_n-1).
 df["opscore_lag"] = df.groupby("tickerIBES")["opscore"].shift(1)
 df["ChangeInRecommendation"] = np.where(
     df["opscore_lag"].notna(), df["opscore"] - df["opscore_lag"], np.nan

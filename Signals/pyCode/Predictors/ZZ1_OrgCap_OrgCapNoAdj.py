@@ -26,7 +26,7 @@ import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor, save_placebo
 from utils.sicff import sicff
-from utils.stata_replication import fill_date_gaps, stata_multi_lag
+from utils.stata_replication import fill_date_gaps
 
 # DATA LOAD
 print("Loading data files...")
@@ -64,6 +64,9 @@ df["age"] = df.groupby("permno").cumcount() + 1
 df["xsga"] = df["xsga"].fillna(0)
 df["xsga"] = df["xsga"] / df["gnpdefl"]
 
+# This capital-stock recursion uses earlier computed values on a completed
+# monthly grid, rather than a lag of an existing input column. Retain it for
+# separate review of initialization and sparse-panel eligibility.
 # Define the orgcap recursive function
 def build_orgcap(group, a=0.85):
     xsga = group['xsga'].to_numpy(dtype=float)

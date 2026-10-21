@@ -26,7 +26,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.save_standardized import save_placebo
 from utils.stata_fastxtile import fastxtile
-from utils.stata_replication import stata_multi_lag
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 print("Starting OperProfLag.py")
 
@@ -70,7 +70,10 @@ df = df.sort(['permno', 'time_avail_m'])
 # gen tempprof = (revt - cogs - xsga - xint)/l12.ceq
 print("Computing 12-month lag using stata_multi_lag...")
 df_pd = df.to_pandas()
-df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'ceq', [12], freq='M', prefix='l')
+df_pd["_observed"] = True
+df_pd = fill_date_gaps(df_pd, "permno", "time_avail_m", "1mo")
+df_pd = stata_multi_lag(df_pd, 'permno', 'time_avail_m', 'ceq', [12], freq='M', prefix='l', fill_gaps=False)
+df_pd = df_pd.loc[df_pd["_observed"].eq(True)].drop(columns="_observed")
 
 print("Computing tempprof...")
 # Fill missing values with 0 to match Stata behavior

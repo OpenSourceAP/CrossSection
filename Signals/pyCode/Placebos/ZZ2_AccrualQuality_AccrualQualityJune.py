@@ -1,6 +1,8 @@
 # ABOUTME: ZZ2_AccrualQuality_AccrualQualityJune.py - calculates accrual quality placebos
 # ABOUTME: Python equivalent of ZZ2_AccrualQuality_AccrualQualityJune.do, mirrors Stata logic
 
+# Lag exception: Custom fiscal-year guarded lags and leads; defer separate endpoint correctness check.
+
 """
 ZZ2_AccrualQuality_AccrualQualityJune.py
 

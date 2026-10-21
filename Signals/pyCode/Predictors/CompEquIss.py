@@ -48,8 +48,12 @@ df["tempIdx"] = df.groupby("permno")["ret"].transform(lambda x: (1 + x).cumprod(
 
 # Create 60-month lags with calendar validation
 print("Creating 60-month lags with calendar validation...")
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "tempIdx", [60])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "mve_c", [60])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate buy-and-hold returns over 60 months
 df["tempBH"] = (df["tempIdx"] - df["tempIdx_lag60"]) / df["tempIdx_lag60"]

@@ -29,7 +29,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor, save_placebo
 from utils.stata_fastxtile import fastxtile
-from utils.stata_replication import relrank
+from utils.stata_replication import relrank, stata_multi_lag
 from utils.winsor2 import winsor2
 
 print("=" * 80)
@@ -123,11 +123,16 @@ df = df.join(
 
 print(f"After merging CRSP and Compustat: {len(df):,} observations")
 
+# Preserve the input date dtype for subsequent joins after calendar expansion.
+time_dtype = df.schema["time_avail_m"]
+
 # Calculate 5-year sales growth
 df = df.sort(["permno", "time_avail_m"])
-df = df.with_columns(
-    (pl.col("sale") / pl.col("sale").shift(60).over("permno")).alias("SG")
-)
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = stata_multi_lag(df, "permno", "time_avail_m", "sale", [60])
+df = df.filter(pl.col("_observed") == True).drop("_observed")
+df = df.with_columns(pl.col("time_avail_m").cast(time_dtype))
+df = df.with_columns((pl.col("sale") / pl.col("sale_lag60")).alias("SG"))
 
 # Restrict to June observations
 df = df.filter(pl.col("time_avail_m").dt.month() == 6)
@@ -149,16 +154,15 @@ print("🧮 Computing financial variables and screens...")
 # Sort data by firm and time for panel calculations
 df = df.sort(["permno", "time_avail_m"])
 
-# Calculate average book equity using 12-month lag
-# Use current book equity for first observation per firm
-# Calculate lagged book equity for 12-month average
-# Since we filtered to June observations only, previous June is 1 position back
+# Count original June observations before expanding for the 12-month lag.
 df = df.with_columns(
-    [
-        pl.col("ceq").shift(1).over("permno").alias("l12_ceq"),
-        pl.int_range(pl.len()).over("permno").alias("row_num"),
-    ]
+    pl.int_range(pl.len()).over("permno").alias("row_num"),
+    pl.lit(True).alias("_observed"),
 )
+df = stata_multi_lag(df, "permno", "time_avail_m", "ceq", [12], prefix="l")
+df = df.filter(pl.col("_observed") == True).drop("_observed")
+df = df.with_columns(pl.col("time_avail_m").cast(time_dtype))
+
 
 df = df.with_columns(
     pl.when(pl.col("row_num") == 0)
@@ -351,18 +355,11 @@ print("🔮 Computing predicted forecast error...")
 # Predicted FE
 # ===============================================
 
-# Calculate forecast error as difference between forecasted and realized ROE
-# Create time-based 12-month lag for FROE1 (not position-based)
-df_lag = (
-    df.select(["permno", "time_avail_m", "FROE1"])
-    .with_columns(
-        pl.col("time_avail_m").dt.offset_by("12mo").alias("time_avail_m_future")
-    )
-    .select(["permno", "time_avail_m_future", "FROE1"])
-    .rename({"time_avail_m_future": "time_avail_m", "FROE1": "FROE1_lag12"})
-)
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = stata_multi_lag(df, "permno", "time_avail_m", "FROE1", [12])
+df = df.filter(pl.col("_observed") == True).drop("_observed")
+df = df.with_columns(pl.col("time_avail_m").cast(time_dtype))
 
-df = df.join(df_lag, on=["permno", "time_avail_m"], how="left")
 
 df = df.with_columns((pl.col("FROE1_lag12") - pl.col("ROE")).alias("FErr"))
 
@@ -380,17 +377,13 @@ for var in variables:
 # Convert back to polars
 df = pl.from_pandas(df_pandas)
 
-# Lag for forecasting and run reg - create time-based 12-month lags
-for var in variables:
-    df_lag_rank = (
-        df.select(["permno", "time_avail_m", f"rank{var}"])
-        .with_columns(
-            pl.col("time_avail_m").dt.offset_by("12mo").alias("time_avail_m_future")
-        )
-        .select(["permno", "time_avail_m_future", f"rank{var}"])
-        .rename({"time_avail_m_future": "time_avail_m", f"rank{var}": f"lag{var}"})
-    )
-    df = df.join(df_lag_rank, on=["permno", "time_avail_m"], how="left")
+# Preserve the June observation set before the cross-sectional regressions.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = stata_multi_lag(df, "permno", "time_avail_m", [f"rank{var}" for var in variables], [12])
+df = df.rename({f"rank{var}_lag12": f"lag{var}" for var in variables})
+df = df.filter(pl.col("_observed") == True).drop("_observed")
+df = df.with_columns(pl.col("time_avail_m").cast(time_dtype))
+
 
 # Run cross-sectional regressions of forecast errors on lagged firm characteristics
 # This estimates how firm characteristics predict analyst forecast errors

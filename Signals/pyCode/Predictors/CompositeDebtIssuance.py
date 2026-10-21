@@ -23,6 +23,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 print("Starting CompositeDebtIssuance predictor...")
 
@@ -51,27 +52,13 @@ df["tempBD"] = df["dltt"] + df["dlc"]
 # Create 60-month lag using calendar-based calculation
 print("Calculating 60-month calendar-based lag...")
 
-# Create target date column and merge with self for exact date matching
-df["target_lag_date"] = df["time_avail_m"] - pd.DateOffset(months=60)
-
-# Create lookup table for lag values
-lag_lookup = df[["permno", "time_avail_m", "tempBD"]].copy()
-lag_lookup.columns = ["permno", "lag_date", "l60_tempBD"]
-
-# Merge to get exact matches first
-df = df.merge(
-    lag_lookup,
-    left_on=["permno", "target_lag_date"],
-    right_on=["permno", "lag_date"],
-    how="left",
+# Fill the monthly calendar before lagging; missing target months and debt
+# values stay missing. Remove inserted months to preserve the observed panel.
+df["_observed"] = True
+df = stata_multi_lag(
+    df, "permno", "time_avail_m", "tempBD", [60], prefix="l"
 )
-
-# For cases without exact matches, use position-based approximation
-shift_lag = df.groupby("permno")["tempBD"].shift(60)
-df["l60_tempBD"] = df["l60_tempBD"].fillna(shift_lag)
-
-# Clean up temporary columns
-df = df.drop(columns=["target_lag_date", "lag_date"])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate composite debt issuance as log growth in total debt over 60 months
 # Stata's log(x/0) and log(0) are missing; numpy returns +/-inf. Match Stata so that

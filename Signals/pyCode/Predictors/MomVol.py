@@ -58,7 +58,9 @@ df_pd = df.to_pandas()
 df_pd = df_pd.sort_values(["permno", "time_avail_m"])
 
 # Use stata_multi_lag for calendar-validated lag operations
+df_pd["_observed"] = True
 df_pd = stata_multi_lag(df_pd, "permno", "time_avail_m", "ret", [1, 2, 3, 4, 5])
+df_pd = df_pd.loc[df_pd["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate 6-month momentum: (1+l.ret)*(1+l2.ret)*...*(1+l5.ret) - 1
 df_pd["Mom6m"] = (1 + df_pd["ret_lag1"]) * (1 + df_pd["ret_lag2"]) * (
@@ -69,6 +71,7 @@ df_pd["Mom6m"] = (1 + df_pd["ret_lag1"]) * (1 + df_pd["ret_lag2"]) * (
 # Calculate 6-month calendar-based rolling mean volume (like Stata asrol window(time_avail_m 6))
 # Use the asrol utility but with calendar-based approach
 print("Calculating 6-month calendar-based rolling mean volume...")
+df_pd["_observed_rolling"] = True
 df_pd = asrol(
     df_pd,
     group_col="permno",
@@ -80,6 +83,7 @@ df_pd = asrol(
     new_col_name="temp",
     min_samples=5,
 )
+df_pd = df_pd.loc[df_pd["_observed_rolling"].eq(True)].drop(columns="_observed_rolling")
 
 # time_avail_m is already a column, no need to reset index
 

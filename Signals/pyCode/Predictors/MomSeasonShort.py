@@ -39,7 +39,9 @@ df["ret"] = df["ret"].fillna(0)
 
 # Generate l11.ret
 print("Creating 11-month lag for seasonal momentum...")
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", [11])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["MomSeasonShort"] = df["ret_lag11"]
 print(
     f"Calculated MomSeasonShort for {df['MomSeasonShort'].notna().sum()} observations"

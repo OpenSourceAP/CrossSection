@@ -18,6 +18,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 # DATA LOAD
 df = pd.read_parquet(
@@ -34,21 +39,16 @@ df = df.merge(temp_df, on=["gvkey", "time_avail_m"], how="inner")
 # SIGNAL CONSTRUCTION
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Create calendar-based lag for quarterly data (l12.ibq means 12 months ago)
-df["time_lag12"] = df["time_avail_m"] - pd.DateOffset(months=12)
-temp_ibq = df[["permno", "time_avail_m", "ibq"]].copy()
-temp_ibq.columns = ["permno", "time_lag12", "l12_ibq"]
-df = df.merge(temp_ibq, on=["permno", "time_lag12"], how="left")
+# Keep the monthly grid through all lag stages.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ibq", [12], prefix="l")
 
 df["chearn"] = df["ibq"] - df["l12_ibq"]
 
 
-# Create calendar-based lag variables for chearn (quarterly lags)
-for lag in [3, 6, 9, 12, 15, 18, 21, 24]:
-    df[f"time_lag{lag}"] = df["time_avail_m"] - pd.DateOffset(months=lag)
-    temp_chearn = df[["permno", "time_avail_m", "chearn"]].copy()
-    temp_chearn.columns = ["permno", f"time_lag{lag}", f"l{lag}_chearn"]
-    df = df.merge(temp_chearn, on=["permno", f"time_lag{lag}"], how="left")
+df = stata_multi_lag(df, "permno", "time_avail_m", "chearn", list(range(3, 25, 3)), prefix="l", fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+
 
 df["nincr"] = 0
 

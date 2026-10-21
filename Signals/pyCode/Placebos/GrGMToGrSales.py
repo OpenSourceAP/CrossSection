@@ -25,6 +25,7 @@ EPSILON = 1e-12
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting GrGMToGrSales.py")
@@ -53,28 +54,15 @@ df = df.with_columns(
     (pl.col('sale') - pl.col('cogs')).alias('tempGM')
 )
 
-# Convert to pandas for calendar-based lag operations
 print("Computing calendar-based 12-month and 24-month lags...")
-df_pd = df.to_pandas()
-
-# Create 12-month and 24-month lag dates
-df_pd['time_lag12'] = df_pd['time_avail_m'] - pd.DateOffset(months=12)
-df_pd['time_lag24'] = df_pd['time_avail_m'] - pd.DateOffset(months=24)
-
-# Create lag data for merging (12-month lags)
-lag12_data = df_pd[['permno', 'time_avail_m', 'tempGM', 'sale']].copy()
-lag12_data.columns = ['permno', 'time_lag12', 'l12_tempGM', 'l12_sale']
-
-# Create lag data for merging (24-month lags)  
-lag24_data = df_pd[['permno', 'time_avail_m', 'tempGM', 'sale']].copy()
-lag24_data.columns = ['permno', 'time_lag24', 'l24_tempGM', 'l24_sale']
-
-# Merge to get lagged values (calendar-based, not position-based)
-df_pd = df_pd.merge(lag12_data, on=['permno', 'time_lag12'], how='left')
-df_pd = df_pd.merge(lag24_data, on=['permno', 'time_lag24'], how='left')
-
-# Convert back to polars
-df = pl.from_pandas(df_pd)
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['tempGM', 'sale'], [12], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", ['tempGM', 'sale'], [24], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
+# Match the former Pandas-to-Polars conversion of computed NaN values.
+df = df.fill_nan(None)
 
 # gen GrGMToGrSales = ((tempGM- (.5*(l12.tempGM + l24.tempGM)))/(.5*(l12.tempGM + l24.tempGM))) - ((sale- (.5*(l12.sale + l24.sale)))/(.5*(l12.sale + l24.sale)))
 print("Computing GrGMToGrSales...")

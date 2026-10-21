@@ -47,14 +47,14 @@ df = df.merge(
 
 # SIGNAL CONSTRUCTION
 
-# Fill date gaps before processing R&D data
-df = fill_date_gaps(df)
-
 # Assume missing xrd values are 0
 df["tempXRD"] = df["xrd"].fillna(0)
 
-# Calculate calendar-based lags of tempXRD using stata_multi_lag
+# Impute only observed values before expanding for calendar lags.
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "tempXRD", [12, 24, 36, 48])
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+
 
 # Calculate R&D capital (weighted sum of current and lagged R&D)
 df["RDcap"] = (

@@ -98,6 +98,7 @@ def main():
     df["tempebit"] = df["ibq"] + df["txtq"] + df["xintq"]
 
     print("Filling date gaps to enable calendar lags...")
+    df["_observed"] = True
     df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
     lag_vars = ["ibq", "atq", "dlttq", "actq", "lctq", "saleq", "shrout"]
     for var in lag_vars:
@@ -110,6 +111,8 @@ def main():
             prefix="l",
             fill_gaps=False,
         )
+
+    df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
     print("Computing Piotroski components...")
 

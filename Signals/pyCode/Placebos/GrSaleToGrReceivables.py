@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting GrSaleToGrReceivables.py")
@@ -48,12 +49,12 @@ df = df.sort(['permno', 'time_avail_m'])
 
 # Create lags for complex calculation
 print("Computing lags...")
-df = df.with_columns([
-    pl.col('sale').shift(12).over('permno').alias('l12_sale'),
-    pl.col('sale').shift(24).over('permno').alias('l24_sale'),
-    pl.col('rect').shift(12).over('permno').alias('l12_rect'),
-    pl.col('rect').shift(24).over('permno').alias('l24_rect')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['sale', 'rect'], [12], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", ['sale', 'rect'], [24], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # gen GrSaleToGrReceivables = ((sale- (.5*(l12.sale + l24.sale)))/(.5*(l12.sale + l24.sale))) - ((rect- (.5*(l12.rect + l24.rect)))/(.5*(l12.rect + l24.rect)))
 print("Computing GrSaleToGrReceivables...")

@@ -18,6 +18,11 @@ Outputs:
 
 import pandas as pd
 import numpy as np
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 print("Loading and processing REV6...")
 
@@ -36,6 +41,7 @@ ibes_df["tmp"] = np.where(
 # Fill forward estimates when forecast periods match but validity flag missing
 ibes_df = ibes_df.sort_values(["tickerIBES", "time_avail_m"])
 
+# Stata explicitly uses [_n-1] here: retain observation-order forecast imputation.
 # Create lagged values for conditional fill-forward logic
 ibes_df["meanest_lag1"] = ibes_df.groupby("tickerIBES")["meanest"].shift(1)
 ibes_df["fpedats_lag1"] = ibes_df.groupby("tickerIBES")["fpedats"].shift(1)
@@ -70,25 +76,20 @@ df = df.merge(
 # Sort data by firm and time for panel calculations
 df = df.sort_values(["permno", "time_avail_m"])
 
-# Calculate monthly forecast revision scaled by lagged stock price
-df["meanest_lag1"] = df.groupby("permno")["meanest"].shift(1)
-df["prc_lag1"] = df.groupby("permno")["prc"].shift(1)
+# Keep the complete monthly grid through both calendar-lag stages.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+for var in ("meanest", "prc"):
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [1], fill_gaps=False)
 
 # Compute price-scaled forecast change
 df["tempRev"] = (df["meanest"] - df["meanest_lag1"]) / np.abs(df["prc_lag1"])
 
-# Sum current and 6 lagged monthly revisions for 6-month window
-rev6_terms = [df["tempRev"]]  # Current tempRev
-for lag in range(1, 7):  # l., l2., l3., l4., l5., l6.
-    tempRev_lag = df.groupby("permno")["tempRev"].shift(lag)
-    rev6_terms.append(tempRev_lag)
-
-# Organize revision terms for aggregation
-rev6_df = pd.DataFrame({f"term_{i}": term for i, term in enumerate(rev6_terms)})
-
-# Sum all 7 revision terms (current plus 6 lags)
-# Missing if any component term is missing
-df["REV6"] = rev6_df.sum(axis=1, skipna=False)  # NaN if any term is NaN
+df = stata_multi_lag(df, "permno", "time_avail_m", "tempRev", list(range(1, 7)), fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
+# Require every monthly revision, including the current month.
+rev6_cols = ["tempRev"] + [f"tempRev_lag{lag}" for lag in range(1, 7)]
+df["REV6"] = df[rev6_cols].sum(axis=1, skipna=False)
 
 # Format output variables
 df["yyyymm"] = df["time_avail_m"].dt.year * 100 + df["time_avail_m"].dt.month

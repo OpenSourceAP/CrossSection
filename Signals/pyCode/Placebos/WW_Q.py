@@ -24,6 +24,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting WW_Q.py")
@@ -73,10 +74,12 @@ df = df.with_columns([
 
 # Create 3-month lag of tempIndSales and 1-quarter lag of saleq
 print("Computing lags...")
-df = df.with_columns([
-    pl.col('tempIndSales').shift(3).over('permno').alias('l3_tempIndSales'),
-    pl.col('saleq').shift(1).over('permno').alias('l1_saleq')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['tempIndSales'], [3], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", ['saleq'], [1], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 # gen WW_Q = -.091* (ibq+dpq)/atq -.062*(dvpsxq>0 & !mi(dvpsxq)) + .021*dlttq/atq ///
 #          -.044*log(atq) + .102*(tempIndSales/l3.tempIndSales - 1) - .035*(saleq/l.saleq - 1)

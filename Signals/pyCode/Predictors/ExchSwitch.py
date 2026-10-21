@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -27,8 +32,9 @@ df = df.sort_values(["permno", "time_avail_m"])
 
 # SIGNAL CONSTRUCTION
 # Create lags for 12 months
-for i in range(1, 13):
-    df[f"exchcd_lag{i}"] = df.groupby("permno")["exchcd"].shift(i)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "exchcd", list(range(1, 13)))
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Create exchange switch indicator
 # NYSE (1) <- AMEX (2) or NASDAQ (3) in past 12 months

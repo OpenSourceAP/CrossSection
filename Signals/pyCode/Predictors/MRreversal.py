@@ -16,6 +16,11 @@ Outputs:
 """
 
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from utils.stata_replication import stata_multi_lag
 import numpy as np
 
 # DATA LOAD
@@ -34,32 +39,14 @@ df["ret"] = df["ret"].fillna(0).infer_objects(copy=False)
 
 
 # Calculate lags for months 13-18 using calendar-based approach (matching Stata's l13.ret etc.)
-# Use merge operations to efficiently create calendar-based lags
-for lag in [13, 14, 15, 16, 17, 18]:
-    # Create a copy for the lag data with shifted dates
-    lag_df = df[["permno", "time_avail_m", "ret", "ret_orig_missing"]].copy()
-    lag_df["time_avail_m"] = lag_df["time_avail_m"] + pd.DateOffset(months=lag)
-    lag_df = lag_df.rename(
-        columns={
-            "ret": f"ret_lag{lag}",
-            "ret_orig_missing": f"ret_lag{lag}_orig_missing",
-        }
-    )
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "ret", list(range(13, 19)))
+df = stata_multi_lag(df, "permno", "time_avail_m", "ret_orig_missing", list(range(13, 19)), fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
+for lag in range(13, 19):
+    df[f"ret_lag{lag}_orig_missing"] = df[f"ret_orig_missing_lag{lag}"].fillna(True).infer_objects(copy=False)
 
-    # Merge to get the lagged values
-    df = df.merge(
-        lag_df[
-            ["permno", "time_avail_m", f"ret_lag{lag}", f"ret_lag{lag}_orig_missing"]
-        ],
-        on=["permno", "time_avail_m"],
-        how="left",
-    )
-
-    # Fill missing lags with 0 (consistent with Stata behavior for missing)
-    df[f"ret_lag{lag}"] = df[f"ret_lag{lag}"].fillna(0).infer_objects(copy=False)
-    df[f"ret_lag{lag}_orig_missing"] = (
-        df[f"ret_lag{lag}_orig_missing"].fillna(True).infer_objects(copy=False)
-    )
+# Observed missing returns were set to zero above; absent target months stay missing.
 
 # Calculate momentum-reversal (geometric return over months 13-18)
 df["MRreversal"] = (

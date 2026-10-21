@@ -21,6 +21,7 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 print("Starting High52 calculation...")
 
@@ -62,8 +63,9 @@ df = df_collapsed.sort_values(["permno", "time_avail_m"])
 # current month bounds the ratio at 1.
 
 # Create lags 0 to 11 of maxpr (lag 0 is the current month)
-for i in range(0, 12):
-    df[f"l{i}_maxpr"] = df.groupby("permno")["maxpr"].shift(i)
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "maxpr", list(range(12)), prefix="l")
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate maximum across the 12 months
 lag_columns = [f"l{i}_maxpr" for i in range(0, 12)]

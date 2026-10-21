@@ -33,6 +33,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor, save_placebo
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 
 
 print("Starting ZZ1_grcapx_grcapx1y_grcapx3y.py...")
@@ -98,7 +99,10 @@ df.loc[df["tempcrsptime"] == df["FirmAge"], "FirmAge"] = np.nan
 
 # Create l12_ppent lag first (needed for conditional capx replacement)
 print("Creating l12_ppent lag for conditional replacement...")
-df["l12_ppent"] = df.groupby("permno")["ppent"].shift(12)
+# Keep the full monthly grid until all calendar lags are calculated.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+df = stata_multi_lag(df, "permno", "time_avail_m", "ppent", [12], prefix="l", fill_gaps=False)
 
 # Replace missing capx with change in ppent for firms with sufficient age
 print("Applying conditional capx replacement...")
@@ -107,9 +111,11 @@ df.loc[condition, "capx"] = df.loc[condition, "ppent"] - df.loc[condition, "l12_
 
 # Create lags for capx AFTER the conditional replacement
 print("Creating lags for capx after replacement...")
-df["l12_capx"] = df.groupby("permno")["capx"].shift(12)
-df["l24_capx"] = df.groupby("permno")["capx"].shift(24)
-df["l36_capx"] = df.groupby("permno")["capx"].shift(36)
+df = stata_multi_lag(df, "permno", "time_avail_m", "capx", [12], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", "capx", [24], prefix="l", fill_gaps=False)
+df = stata_multi_lag(df, "permno", "time_avail_m", "capx", [36], prefix="l", fill_gaps=False)
+# Preserve the source observation set before subsequent calculations.
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed").copy()
 
 # Calculate the three predictors
 print("Calculating predictors...")

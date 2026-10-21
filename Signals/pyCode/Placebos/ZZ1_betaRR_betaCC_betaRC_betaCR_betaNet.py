@@ -73,12 +73,14 @@ df = df.rename(columns={'usdval': 'MarketCapitalization'})
 
 # Use fill_date_gaps for proper calendar-based lags
 print("Filling date gaps for proper lag operations...")
+df["_observed"] = True
 df = fill_date_gaps(df, 'permno', 'time_avail_m')
 df = df.sort_values(['permno', 'time_avail_m'])
 
 # Create lags using stata_multi_lag for calendar-based alignment
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'MarketCapitalization', [1, 2], prefix='l')
-df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ill', [1, 2], prefix='l')
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'MarketCapitalization', [1, 2], prefix='l', fill_gaps=False)
+df = stata_multi_lag(df, 'permno', 'time_avail_m', 'ill', [1, 2], prefix='l', fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compute c_i with proper bounds
 df['c_i'] = np.minimum(0.25 + 0.3 * df['ill'] * df['MarketCapitalization'], 30)
@@ -128,9 +130,13 @@ market_agg = market_agg.sort_values('time_avail_m')
 market_agg['market_group'] = 'market'
 
 # Create proper calendar-based lags using stata_multi_lag
-market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'MarketCapitalization', [1, 2], prefix='l')
-market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'MarketIlliquidity', [1, 2], prefix='l')
-market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'rM', [1, 2], prefix='l')
+market_agg["_observed"] = True
+market_agg = fill_date_gaps(market_agg, 'market_group', 'time_avail_m')
+market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'MarketCapitalization', [1, 2], prefix='l', fill_gaps=False)
+market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'MarketIlliquidity', [1, 2], prefix='l', fill_gaps=False)
+market_agg = stata_multi_lag(market_agg, 'market_group', 'time_avail_m', 'rM', [1, 2], prefix='l', fill_gaps=False)
+# Keep the complete monthly grid through the 60-row rolling regressions.
+# Here expansion is needed so each regression window spans 60 calendar months.
 
 # Drop the dummy group column
 market_agg = market_agg.drop('market_group', axis=1)
@@ -200,6 +206,9 @@ market_pl = market_pl.with_columns([
 # Convert back to pandas for compatibility with rest of code
 market_agg = market_pl.to_pandas()
 
+# Remove inserted market months before merging innovations back to stocks.
+market_agg = market_agg.loc[market_agg["_observed"].eq(True)].drop(columns="_observed")
+
 # Keep only needed columns for merge
 temp_placebo = market_agg[['time_avail_m', 'eps_c_M', 'eps_r_M', 'APa0', 'APa1', 'APa2']].copy()
 
@@ -219,7 +228,9 @@ df['tempIll'] = np.where(
 )
 
 # Create lags for tempIll using calendar-based lags  
+df["_observed"] = True
 df = stata_multi_lag(df, 'permno', 'time_avail_m', 'tempIll', [1, 2], prefix='l')
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Stock-specific temp variables (not using market values!)
 df['temp'] = 0.25 + df['tempIll'] * df['l1_MarketCapitalization']

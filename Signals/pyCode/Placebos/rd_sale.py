@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting rd_sale.py")
@@ -42,10 +43,11 @@ df = df.sort(['permno', 'time_avail_m'])
 
 # gen rd_sale = l12.xrd/l12.sale  // Returns seem to be strongest in the second year after portfolio formation
 print("Computing 12-month lag and rd_sale...")
-df = df.with_columns([
-    pl.col('xrd').shift(12).over('permno').alias('l12_xrd'),
-    pl.col('sale').shift(12).over('permno').alias('l12_sale')
-])
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['xrd', 'sale'], [12], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 df = df.with_columns(
     (pl.col('l12_xrd') / pl.col('l12_sale')).alias('rd_sale')

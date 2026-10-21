@@ -24,6 +24,7 @@ import sys
 import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 # Load and prepare IBES earnings forecast data
 ibes_df = pd.read_parquet("../pyData/Intermediate/IBES_EPS_Unadj.parquet")
@@ -60,22 +61,14 @@ df = df.sort_values(["permno", "time_avail_m"]).reset_index(drop=True)
 
 # Calculate working capital accruals using 12-month lagged values
 # Working capital accruals = changes in operating assets minus operating liabilities
-def create_calendar_lag(df, var_name, months=12):
-    """Create calendar-based lag by matching exact date 12 months prior"""
-    df[f"{var_name}_l{months}_date"] = df["time_avail_m"] - pd.DateOffset(months=months)
-    lag_data = df[["permno", "time_avail_m", var_name]].rename(
-        columns={
-            "time_avail_m": f"{var_name}_l{months}_date",
-            var_name: f"{var_name}_l{months}",
-        }
-    )
-    df = df.merge(lag_data, on=["permno", f"{var_name}_l{months}_date"], how="left")
-    df = df.drop(columns=[f"{var_name}_l{months}_date"])
-    return df
-
-
-for var in ["act", "che", "lct", "dlc", "txp", "at"]:
-    df = create_calendar_lag(df, var, 12)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
+lag_vars = ['act', 'che', 'lct', 'dlc', 'txp', 'at']
+for var in lag_vars:
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], fill_gaps=False)
+df = df.rename(columns={f"{var}_lag12": f"{var}_l12" for var in lag_vars})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Compute accruals scaled by average total assets
 numerator = (
@@ -100,7 +93,11 @@ df["tempsort"] = df.groupby("time_avail_m")["tempAccruals"].transform(
 )
 
 # Create forecast change indicator by comparing current earnings estimate to previous month
-df["meanest_l"] = df.groupby("permno")["meanest"].shift(1)
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "meanest", [1])
+df = df.rename(columns={'meanest_lag1': 'meanest_l'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 df["ChForecastAccrual"] = np.nan
 
 # Mark forecast increases

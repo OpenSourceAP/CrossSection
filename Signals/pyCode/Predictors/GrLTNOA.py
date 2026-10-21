@@ -25,6 +25,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag, fill_date_gaps
 
 
 print("Starting GrLTNOA.py...")
@@ -82,8 +83,11 @@ df = df.sort_values(["permno", "time_avail_m"])
 print("Calculating 12-month lags...")
 lag_vars = ["rect", "invt", "ppent", "aco", "intan", "ao", "ap", "lco", "lo", "at"]
 
+df["_observed"] = True
+df = fill_date_gaps(df, "permno", "time_avail_m")
 for var in lag_vars:
-    df[f"l12_{var}"] = df.groupby("permno")[var].shift(12)
+    df = stata_multi_lag(df, "permno", "time_avail_m", var, [12], prefix="l", fill_gaps=False)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate GrLTNOA as change in long-term net operating assets scaled by average total assets
 # Formula: Current LTNOA/AT - Lagged LTNOA/AT - Working Capital Adjustment

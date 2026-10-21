@@ -23,6 +23,7 @@ import os
 
 # Add parent directory to path to import utils
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.stata_replication import fill_date_gaps, stata_multi_lag
 from utils.saveplacebo import save_placebo
 
 print("Starting cashdebt.py")
@@ -48,9 +49,11 @@ df = df.sort(['permno', 'time_avail_m'])
 
 # gen cashdebt = (ib+dp)/((lt+l12.lt)/2)  // Cash flow to debt
 print("Computing 12-month lag and cashdebt...")
-df = df.with_columns(
-    pl.col('lt').shift(12).over('permno').alias('l12_lt')
-)
+# Calendar endpoints require the target month; retain only observed rows.
+df = df.with_columns(pl.lit(True).alias("_observed"))
+df = fill_date_gaps(df, "permno", "time_avail_m", "1mo")
+df = stata_multi_lag(df, "permno", "time_avail_m", ['lt'], [12], prefix="l", fill_gaps=False)
+df = df.filter(pl.col("_observed").eq(True)).drop("_observed")
 
 df = df.with_columns(
     ((pl.col('ib') + pl.col('dp')) / ((pl.col('lt') + pl.col('l12_lt')) / 2)).alias('cashdebt')

@@ -23,6 +23,7 @@ import os
 
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.stata_replication import stata_multi_lag
 from utils.save_standardized import save_predictor
 from config import PATCH_OPTIONM_IV
 
@@ -72,8 +73,12 @@ options_wide = options_wide.sort_values(["secid", "time_avail_m"])
 
 # Create changes in implied volatility
 print("Calculating volatility changes...")
-options_wide["dVolCall"] = options_wide.groupby("secid")["impl_volC"].diff()
-options_wide["dVolPut"] = options_wide.groupby("secid")["impl_volP"].diff()
+options_wide["_observed"] = True
+options_wide = stata_multi_lag(options_wide, "secid", "time_avail_m", "impl_volC", [1])
+options_wide = stata_multi_lag(options_wide, "secid", "time_avail_m", "impl_volP", [1], fill_gaps=False)
+options_wide = options_wide.loc[options_wide["_observed"].eq(True)].drop(columns="_observed")
+options_wide["dVolCall"] = options_wide["impl_volC"] - options_wide["impl_volC_lag1"]
+options_wide["dVolPut"] = options_wide["impl_volP"] - options_wide["impl_volP_lag1"]
 options_wide["dCPVolSpread"] = options_wide["dVolPut"] - options_wide["dVolCall"]
 
 # Keep only necessary columns

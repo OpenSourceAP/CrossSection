@@ -24,6 +24,7 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.stata_replication import stata_multi_lag
 
 print("Starting BMdec predictor...")
 
@@ -106,38 +107,11 @@ df.loc[mask_still_missing, "tempSE"] = (
 # Step 4: Compute book equity
 df["tempBE"] = df["tempSE"] + df["txditc"] - df["tempPS"]
 
-# Create calendar-based time lags to look up December market equity from prior periods
-# Need actual calendar month lags, not just shifting by position in dataset
-
-# Create lag dates for each observation
-df["lag12_date"] = df["time_avail_m"] - pd.DateOffset(months=12)
-df["lag17_date"] = df["time_avail_m"] - pd.DateOffset(months=17)
-
-# Create a lookup table for tempDecME values by permno and date
-lookup_df = df[["permno", "time_avail_m", "tempDecME"]].copy()
-
-# Merge for 12-month lag
-lag12_merge = df[["permno", "lag12_date"]].merge(
-    lookup_df,
-    left_on=["permno", "lag12_date"],
-    right_on=["permno", "time_avail_m"],
-    how="left",
-    suffixes=("", "_lag12"),
-)
-df["l12_tempDecME"] = lag12_merge["tempDecME"]
-
-# Merge for 17-month lag
-lag17_merge = df[["permno", "lag17_date"]].merge(
-    lookup_df,
-    left_on=["permno", "lag17_date"],
-    right_on=["permno", "time_avail_m"],
-    how="left",
-    suffixes=("", "_lag17"),
-)
-df["l17_tempDecME"] = lag17_merge["tempDecME"]
-
-# Clean up temporary columns
-df = df.drop(columns=["lag12_date", "lag17_date"])
+# Preserve observed rows while filling the monthly grid for calendar lags.
+df["_observed"] = True
+df = stata_multi_lag(df, "permno", "time_avail_m", "tempDecME", [12, 17])
+df = df.rename(columns={'tempDecME_lag12': 'l12_tempDecME', 'tempDecME_lag17': 'l17_tempDecME'})
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # Calculate book-to-market ratio using appropriate December market equity lag
 # Handle division by zero and missing value cases appropriately

@@ -43,7 +43,8 @@ df = df.groupby(["tickerIBES", "time_avail_m"], as_index=False)["ireccd"].mean()
 # Sort data by firm and time for lag calculations
 df = df.sort_values(["tickerIBES", "time_avail_m"])
 
-# Generate 1-month lagged recommendation
+# Source explicitly uses ireccd[_n-1], the previous observed recommendation.
+# Keep this observation shift even when calendar months are absent.
 df["ireccd_lag"] = df.groupby("tickerIBES")["ireccd"].shift(1)
 
 # Identify recommendation upgrades (lower values = better recommendations)

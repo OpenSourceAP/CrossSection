@@ -38,7 +38,9 @@ df["ret"] = df["ret"].fillna(0)
 # foreach n of numlist 131(12)180 { Generate l`n'.ret }
 # This creates lags for periods: 131, 143, 155, 167, 179 months
 lag_periods = list(range(131, 181, 12))  # 131, 143, 155, 167, 179
+df["_observed"] = True
 df = stata_multi_lag(df, "permno", "time_avail_m", "ret", lag_periods)
+df = df.loc[df["_observed"].eq(True)].drop(columns="_observed")
 
 # eGenerate rowtotal(temp*), missing
 lag_cols = [f"ret_lag{n}" for n in lag_periods]
