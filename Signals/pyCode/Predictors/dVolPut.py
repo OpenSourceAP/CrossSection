@@ -9,6 +9,7 @@ Usage:
     python3 Predictors/dVolPut.py
 
 Inputs:
+    - If PATCH_OPTIONM_IV (config.py): only the 2023-vintage dVolPut from Google Drive, via utils/optionm_patch.py (issue #156)
     - OptionMetricsVolSurf.csv: Option metrics volatility surface data with columns [secid, time_avail_m, days, delta, cp_flag, impl_vol]
     - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, secid]
 
@@ -25,19 +26,16 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
 from utils.stata_replication import stata_multi_lag
+from utils.optionm_patch import load_optionm_patch
 from config import PATCH_OPTIONM_IV
 
 print("Starting dVolPut.py...")
 
 # Check for Option Metrics patch
 if PATCH_OPTIONM_IV:
-    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage via Google Drive")
     print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
-    from openassetpricing import OpenAP
-
-    openap = OpenAP(2023)
-    df = openap.dl_signal("polars", ["dVolPut"])
-    df = df.rename({"yyyymm": "time_avail_m"})
+    df = load_optionm_patch("dVolPut")
     save_predictor(df, "dVolPut")
     sys.exit()
 

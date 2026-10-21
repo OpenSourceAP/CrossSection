@@ -1,16 +1,20 @@
 """
 ABOUTME: Master orchestrator that runs the complete data processing pipeline
 ABOUTME: Executes data downloads (01_DownloadData.py) then predictor creation (02_CreatePredictors.py)
-Inputs: WRDS credentials from .env file, existing folder structure
+Inputs: WRDS credentials from .env file, existing folder structure,
+    cached Google Drive login if PATCH_OPTIONM_IV (see gdrive_login.R)
 Outputs: Complete pipeline execution with data in pyData/ folders
 How to run: python master.py (from pyCode/ directory)
 """
 
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+
+from config import PATCH_OPTIONM_IV
 
 
 def check_environment():
@@ -120,6 +124,43 @@ def check_prep_csv_files():
     return True
 
 
+def check_optionm_patch_login():
+    """If PATCH_OPTIONM_IV, check the Google Drive login used by the 7 patched signals."""
+    if not PATCH_OPTIONM_IV:
+        return True
+
+    # Same client options as utils/gdrive_download.R, so the cached token matches
+    r_check = (
+        "suppressPackageStartupMessages(library(googledrive)); "
+        "options(gargle_oauth_client_type = 'web'); "
+        "invisible(tryCatch(drive_auth(scopes = 'drive.readonly', email = TRUE), "
+        "error = function(e) NULL)); "
+        "quit(status = if (drive_has_token()) 0 else 1)"
+    )
+    if shutil.which("Rscript") is None:
+        problem = "Rscript not found on PATH"
+    else:
+        result = subprocess.run(["Rscript", "-e", r_check], capture_output=True, check=False)
+        problem = None if result.returncode == 0 else "no googledrive package or no cached Google login"
+
+    if problem is None:
+        print("✓ Google Drive login found for the OptionMetrics 2023 patch")
+        return True
+
+    print(f"WARNING: PATCH_OPTIONM_IV is True but {problem}.")
+    print("  CPVolSpread, dCPVolSpread, dVolCall, dVolPut, skew1, SmileSlope and")
+    print("  RIVolSpread will fail. See https://github.com/OpenSourceAP/CrossSection/issues/156")
+    print('  To fix: from Signals/pyCode/, start R and run source("gdrive_login.R")')
+
+    response = input("Proceed without these 7 signals? (y/N): ").strip().lower()
+    if response not in {"y", "yes"}:
+        print("Aborting at user request. Log in to Google Drive and rerun.")
+        return False
+
+    print("Continuing without the Google Drive login.")
+    return True
+
+
 def create_folder_structure():
     """Create the folder structure matching ../Code/settings.do"""
     folders = [
@@ -159,6 +200,10 @@ def main():
 
     # Confirm prep CSV availability with the user
     if not check_prep_csv_files():
+        sys.exit(1)
+
+    # Confirm the Google Drive login for the OptionMetrics 2023 patch
+    if not check_optionm_patch_login():
         sys.exit(1)
 
     # Enable CSV output for data files

@@ -9,6 +9,7 @@ Usage:
     python3 Predictors/ZZ1_RIVolSpread.py
 
 Inputs:
+    - If PATCH_OPTIONM_IV (config.py): only the 2023-vintage RIVolSpread from Google Drive, via utils/optionm_patch.py (issue #156)
     - bali_hovak_imp_vol.csv: OptionMetrics implied volatility data with columns [secid, date, cp_flag, mean_imp_vol]
     - RealizedVol.csv: Realized volatility data with columns [permno, yyyymm, RealizedVol]
     - SignalMasterTable.parquet: Master table with columns [permno, time_avail_m, secid, sicCRSP]
@@ -27,17 +28,14 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.save_standardized import save_predictor
+from utils.optionm_patch import load_optionm_patch
 from config import PATCH_OPTIONM_IV
 
 # Check for Option Metrics patch
 if PATCH_OPTIONM_IV:
-    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage via Google Drive")
     print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
-    from openassetpricing import OpenAP
-
-    openap = OpenAP(2023)
-    df = openap.dl_signal("polars", ["RIVolSpread"])
-    df = df.rename({"yyyymm": "time_avail_m"})
+    df = load_optionm_patch("RIVolSpread")
     save_predictor(df, "RIVolSpread")
     sys.exit()
 

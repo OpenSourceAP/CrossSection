@@ -9,6 +9,7 @@ Usage:
     python3 Predictors/skew1.py
 
 Inputs:
+    - If PATCH_OPTIONM_IV (config.py): only the 2023-vintage skew1 from Google Drive, via utils/optionm_patch.py (issue #156)
     - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, secid]
     - OptionMetricsXZZ.csv: Options data with Skew1 already calculated
 
@@ -24,19 +25,16 @@ import os
 # Add utils directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils.save_standardized import save_predictor
+from utils.optionm_patch import load_optionm_patch
 from config import PATCH_OPTIONM_IV
 
 print("Starting skew1.py...")
 
 # Check for Option Metrics patch
 if PATCH_OPTIONM_IV:
-    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage from openassetpricing")
+    print("WARNING: PATCH_OPTIONM_IV is True, using 2023 vintage via Google Drive")
     print("See https://github.com/OpenSourceAP/CrossSection/issues/156")
-    from openassetpricing import OpenAP
-
-    openap = OpenAP(2023)
-    df = openap.dl_signal("polars", ["skew1"])
-    df = df.rename({"yyyymm": "time_avail_m"})
+    df = load_optionm_patch("skew1")
     save_predictor(df, "skew1")
     sys.exit()
 
