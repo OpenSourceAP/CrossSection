@@ -22,12 +22,14 @@ suppressPackageStartupMessages(library(googledrive))
 # Container has no browser: print the login URL instead of opening it
 options(browser = function(url) message("\nOpen this URL in your browser:\n", url, "\n"))
 
-# Without httpuv, gargle uses the copy-paste flow. Google retired it for
-# "installed" clients (400 invalid_request), so use the "web" client, which
-# redirects to a tidyverse page that shows the code to paste
+# Always use the copy-paste flow. Google retired it for "installed" clients
+# (400 invalid_request), so use the "web" client, which redirects to a
+# tidyverse page that shows the code to paste. Force use_oob even when httpuv
+# is installed (e.g. on a Mac): the "web" client rejects gargle's localhost
+# redirect (400 redirect_uri_mismatch)
 options(gargle_oauth_client_type = "web")
 
-drive_auth(scopes = "drive.readonly", use_oob = !requireNamespace("httpuv", quietly = TRUE))
+drive_auth(scopes = "drive.readonly", use_oob = TRUE)
 print(drive_user())
 
 # Smoke test: read metadata of one known 2023 file (no download)
