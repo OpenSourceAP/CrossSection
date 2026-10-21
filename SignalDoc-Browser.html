@@ -395,7 +395,7 @@
     "Filter": "",
     "Definition": "Define Accruals as net income (ib) minus operating cash flow (oancf), divided by average total assets (at) for years t-1 and t. If oancf is missing, replace operating cash flow with funds from operations (fopt) minus the annual change in total current assets (act) plus the annual change in cash and short-term investments (che) plus the annual change in current liabilities (lct) minus the annual change in debt in current liabilities (dlc). For each year t and 2-digit sic code, regress Accruals on: the inverse of average total assets for year t-1, the change in revenue (sale) from year t-1 to t divided by total assets for t-1, propery plant and equipment (ppegt) divided by total assets for t-1.  AbnormalAccrual is the residual from this cross-sectional regression.  See code for more details.",
     "Notes": "OP is aggressive and lags accounting data by only 3 months (p361) instead of the usual 6.  This likely accounts for our relative underperformance.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/AbnormalAccruals.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py"
   },
   {
     "signalname": "Accruals",
@@ -488,7 +488,7 @@
     "Filter": "",
     "Definition": "24 minus Governance Index (G). Set to missing if G is missing, or if not in the highest quartile of institutional ownership (maxinstown\\_perc), or if dual share class.",
     "Notes": "works a bit better EW in Tab 3",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/Activism1.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_Activism1_Activism2.py"
   },
   {
     "signalname": "AM",
@@ -581,7 +581,7 @@
     "Filter": "",
     "Definition": "Get announcement date for quarterly earnings from IBES (fpi = 6). AnnouncementReturn is the sum of (ret - mktrf + rf) from one day before an earnings announcement to 2 days after the announcement.",
     "Notes": "Table 4 has port sort but no t-stats.  Tab 7 has huge t-stats in regressions",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/AnnouncementReturn.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_AnnouncementReturn.py"
   },
   {
     "signalname": "AssetGrowth",
@@ -705,7 +705,7 @@
     "Filter": "",
     "Definition": "Coefficient on daily change in the VIX of a 1-month rolling window regression of daily stock excess returns on market return and the daily change in the CBOE S&P 100 volatility index (downloaded from FRED). Require at least 15 non-missing observations.",
     "Notes": "Tab I has port sorts",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/betaVIX.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_betaVIX.py"
   },
   {
     "signalname": "BM",
@@ -829,7 +829,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "BP - EBM, where BP = (ceq + tstkp - dvpa)/(shrout*abs(prc)), and EBM is defined above. Exclude if price less than 5.",
     "Notes": "B/P-NOA/P^NOA in OP.  Table 1D shows strong port sort.  Tab3A shows t-stat = 4.1 in uni reg. OP drops extreme obs but we don't.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/BPEBM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_EBM_BPEBM.py"
   },
   {
     "signalname": "Cash",
@@ -2224,7 +2224,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "(ceq + che - dltt - dlc - dc - dvpa+ tstkp ) / (mve\\_c + che - dltt - dlc - dc - dvpa+ tstkp). Exclude if price less than 5.",
     "Notes": "Enterprise = operating = NOA in OP.  So this should be NOA/P^NOA.  Need to adjust sample dates: even though paper says it begins in 1962, there is only 1 stock for the first 5 months of 1962. Table 4a has double sort with most t-stats above 3.  hand t-stat is 3.0 for simplicity and hand ret is 0.12.  OP drops extreme obs but we don't.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/EBM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_EBM_BPEBM.py"
   },
   {
     "signalname": "EntMult",
@@ -2658,7 +2658,7 @@
     "Filter": "",
     "Definition": "Growth rate of capital expenditures (capx) relative to two years ago.   If capx is missing, replace with annual change in property, plant and equipment (ppent).",
     "Notes": "called cegth2",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/grcapx.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_grcapx_grcapx1y_grcapx3y.py"
   },
   {
     "signalname": "grcapx3y",
@@ -2689,7 +2689,7 @@
     "Filter": "",
     "Definition": "Capital expenditures (capx) divided by the sum of capital expenditures from year - 1, year -2, and year -3.   If capx is missing, replace with annual change in property, plant and equipment (ppent).",
     "Notes": "We follow OP, not HXZ.  OP notation is odd, uses cegth2 and cegth3 but no cegth.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/grcapx3y.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_grcapx_grcapx1y_grcapx3y.py"
   },
   {
     "signalname": "Herf",
@@ -2813,7 +2813,7 @@
     "Filter": "",
     "Definition": "Standard deviation of residuals from Fama-French three factor regressions using the past month of daily data.  Value weighted",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IdioVol3F.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py"
   },
   {
     "signalname": "IdioVolAHT",
@@ -2844,7 +2844,7 @@
     "Filter": "",
     "Definition": "Standard deviation of residuals from CAPM regressions using the past year of daily data. Require at least 100 non-missing observations.",
     "Notes": "dep var is size adjusted return, to mimic, we value weight our ports.  This result is really buried in the paper.  Most all of the paper is on how B/M predictatbility varies by subsets of stocks.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IdioVolAHT.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_IdioVolAHT.py"
   },
   {
     "signalname": "Illiquidity",
@@ -2999,7 +2999,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on 5 year lagged log BM (book equity (ceq)/market value of equity) and a constructed regressor that is the change in log BM from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanBM.",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanBM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py"
   },
   {
     "signalname": "IntanCFP",
@@ -3030,7 +3030,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on the 5 year lagged log CFP, where CFP = (income before extraordinary items (ib) plus depreciation (dp))/market value of equity, and a constructed regressor that is the change in log CFP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanCFP.",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanCFP.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py"
   },
   {
     "signalname": "IntanEP",
@@ -3061,7 +3061,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on the 5 year lagged log EP, where EP = income before extraordinary items (ib)/market value of equity, and a constructed regressor that is the change in log EP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanEP.",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanEP.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py"
   },
   {
     "signalname": "IntanSP",
@@ -3092,7 +3092,7 @@
     "Filter": "",
     "Definition": "In each month, run a cross-sectional regression of a firm's five-year stock return on 5 year lagged log SP (sales (sale)/market value of equity) and a constructed regressor that is the change in log SP from 5 years ago to today plus the five-year stock return. The residual from that regression is IntanSP.",
     "Notes": "Not as clear as the other Intan* variables because the other coefficients in the regression are significant.  We took the liberty to remove the price filter and categorize this as clear",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/IntanSP.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_IntanBM_IntanSP_IntanCFP_IntanEP.py"
   },
   {
     "signalname": "IntMom",
@@ -3247,7 +3247,7 @@
     "Filter": "",
     "Definition": "We download BEA Make-Use Tables, match to Compustat by NAICS assuming 5 year lag, compute returns within BEA 70 industries.  Then match each industry-year to matched-industry weights corresponding to IO tables as follows: for supplier mom, industry comes from cols of Use table, matched industries from the rows.  For customer mom: industry from rows of make table, matched industries from cols.  Weights exclude own-industry entries.  For each industry-month, average returns of matched industries, weighted using IO tables.  Sort industries into deciles based on matched returns, assign firm-months to industry deciles, Finally, long stocks in deciles 8-10 and short decile 1. Drop pre-1986 due to NAICS availability.  ",
     "Notes": "Early in the paper, they use a stock level  mv reg with many controls.  Later in the paper, they sort industry portfolios instead of stocks.  Given that it would have been more straightforward to just sort on stocks, I think the evidence on standard portfolio sorts is unclear (hence this is a likely predictor, not clear)",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/iomom_cust.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_iomom_cust__iomom_supp.py"
   },
   {
     "signalname": "iomom_supp",
@@ -3278,7 +3278,7 @@
     "Filter": "",
     "Definition": "We download BEA Make-Use Tables, match to Compustat by NAICS assuming 5 year lag, compute returns within BEA 70 industries.  Then match each industry-year to matched-industry weights corresponding to IO tables as follows: for supplier mom, industry comes from cols of Use table, matched industries from the rows.  For customer mom: industry from rows of make table, matched industries from cols.  Weights exclude own-industry entries.  For each industry-month, average returns of matched industries, weighted using IO tables.  Sort industries into deciles based on matched returns, assign firm-months to industry deciles, Finally, long stocks in deciles 8-10 and short decile 1. Drop pre-1986 due to NAICS availability.  ",
     "Notes": "Early in the paper, they use a stock level  mv reg with many controls.  Later in the paper, they sort industry portfolios instead of stocks.  Given that it would have been more straightforward to just sort on stocks, I think the evidence on standard portfolio sorts is unclear (hence this is a likely predictor, not clear)",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/iomom_supp.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_iomom_cust__iomom_supp.py"
   },
   {
     "signalname": "Leverage",
@@ -3977,20 +3977,20 @@
     "SampleStart": "1984",
     "SampleEnd": "2003",
     "Acronym2": "NPayYield",
-    "EvidenceSummary": "t=2.8 in conservative LS,  strong port sort",
-    "KeyTable": "6D",
-    "TestInOP": "port sort FF3 alpha",
+    "EvidenceSummary": "nearly monotonic NYSE decile sort but no LS t-stat",
+    "KeyTable": "III D",
+    "TestInOP": "port sort no LS",
     "Sign": "1.0",
-    "Return": "0.37",
-    "TStat": "2.83",
+    "Return": "0.73",
+    "TStat": "",
     "StockWeight": "EW",
     "LSQuantile": "0.1",
-    "QuantileFilter": "",
+    "QuantileFilter": "NYSE",
     "PortfolioPeriod": "12.0",
     "StartMonth": "6.0",
     "Filter": "",
-    "Definition": "Dividends (dvc) plus purchase of common and preferred stock (prstkc) minus sale of common and preferred stock (sstk), divided by market value of equity lagged 6 months.  Exclude if NetPayoutYield is 0, financial firm based on SIC code, ceq <= 0, or less than 2 years in CRSP",
-    "Notes": "See PayoutYield",
+    "Definition": "Gross payout is dividends (dvc) plus purchase of common and preferred stock (prstkc) plus max(pstkrv lagged 12 months minus pstkrv, 0). Equity issuance is sale of common and preferred stock (sstk) minus max(pstkrv minus pstkrv lagged 12 months, 0). NetPayoutYield is gross payout minus equity issuance, divided by mve_permco lagged 6 months. An unavailable preferred-stock difference contributes zero to both adjustments; missing flow inputs remain missing. Require finite nonzero yield and finite positive lagged market cap. Exclude financial firms based on SIC code, missing or nonpositive ceq, or less than 2 years in CRSP.",
+    "Notes": "Table III D NYSE deciles of nonzero yields; 0.73 is D10 minus D1, no t-stat in OP. Table VI B 30/70 sort (FF3 alpha t=2.83) is conservative and spec-sensitive; ours gives t=1.27 raw. Our deciles track Table III closely. See issue #207.",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/NetPayoutYield.py"
   },
   {
@@ -4084,7 +4084,7 @@
     "Filter": "abs(prc)>1, shrcd<=11",
     "Definition": "Total monthly option volume (volume) over all puts and calls, divided by monthly stock trading volume (vol). Exclude if price less than 1 or share code greater 11 or option volume or stock volume data are missing for the previous month.",
     "Notes": "OP is actually weekly, and sorts in deciles, then  longs 9+10 and shorts 1+2",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/OptionVolume1.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_OptionVolume1_OptionVolume2.py"
   },
   {
     "signalname": "OrderBacklog",
@@ -4177,7 +4177,7 @@
     "Filter": "",
     "Definition": "Defined recursively. Set xsga to 0 if missing.  Initialize with OrgCap = 4*general expenses (xsga) in the first year, and calculate as .85*OrgCap previous year + xsga/gnpdeflator current year thereafter. Scale by total assets (at).  Keep only december year ends, and non-financials, and non-missing sic code.  Then winsoriz at the 1% level and standardized by subtracting the same month within-industry mean (Fama French 17 industries) and dividing by the same month within industry standard deviation of OrgCap.",
     "Notes": "OP only examines the industry adjusted version and explains clearly why.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/OrgCap.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_OrgCap_OrgCapNoAdj.py"
   },
   {
     "signalname": "OScore",
@@ -4256,20 +4256,20 @@
     "SampleStart": "1984",
     "SampleEnd": "2003",
     "Acronym2": "PayYield",
-    "EvidenceSummary": "t=3.9 in conservative LS,  strong port sort",
-    "KeyTable": "6B",
-    "TestInOP": "port sort FF3 alpha",
+    "EvidenceSummary": "monotonic NYSE decile sort but no LS t-stat",
+    "KeyTable": "III B",
+    "TestInOP": "port sort no LS",
     "Sign": "1.0",
-    "Return": "0.28",
-    "TStat": "3.92",
+    "Return": "0.52",
+    "TStat": "",
     "StockWeight": "EW",
     "LSQuantile": "0.1",
-    "QuantileFilter": "",
+    "QuantileFilter": "NYSE",
     "PortfolioPeriod": "12.0",
     "StartMonth": "6.0",
     "Filter": "",
-    "Definition": "Sum of dividends (dvc), purchase of common and preferred stock (prstkc) and max(preferred stock redemption value (pstkrv), 0) over market value of equity lagged 6 months.  Exclude if PayoutYield $\\leq$ 0, financial firm based on SIC code, ceq <= 0, or less than 2 years in CRSP",
-    "Notes": "OP actually uses terciles and NYSE breaks in Tab 6 which shows long-short ports.  We instead implement ports following Tab 3, because the Tab 6 results appear to be sensitive to the details of the lagging.  A more rigorous lagging method seems to lead to t<2.  However, terciles with NYSE breaks seems unnecessarily conservative, and Tab 3 replicates quite well, so our implementation focuses on Tab 3, even though we write down Tab 6's t-stats.",
+    "Definition": "Sum of dividends (dvc), purchase of common and preferred stock (prstkc) and max(pstkrv lagged 12 months minus pstkrv, 0), with an unavailable preferred-stock difference treated as zero, over market value of equity lagged 6 months.  Exclude if PayoutYield $\\leq$ 0, financial firm based on SIC code, ceq <= 0, or less than 2 years in CRSP",
+    "Notes": "Table III B NYSE deciles of positive yields; 0.52 is D10 minus D1, no t-stat in OP. Table VI B 30/70 sort (FF3 alpha t=3.92) is conservative and spec-sensitive; Table III is more complete. Our deciles track Table III closely. See issue #207.",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/PayoutYield.py"
   },
   {
@@ -4394,7 +4394,7 @@
     "Filter": "",
     "Definition": "Each July regress stock return on day $t$ on market return in $t, t-1, \\ldots, t-4$ using observations from July 1 of the previous year to June 30 of the current year.  Then regress again with no market return lags.  PriceDelay Rsq = 1 - [Rsq from second regression]/[Rsq from first regression]",
     "Notes": "Called D1 in paper.  Our primary delay measure, we use the daily stock level version.  OP focuses on complicated two-stage portfolio-based version",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/PriceDelayRsq.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py"
   },
   {
     "signalname": "PS",
@@ -4611,7 +4611,7 @@
     "Filter": "",
     "Definition": "Standard deviation of residuals from CAPM regressions using the past month of daily data.  Value weighted",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/RealizedVol.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py"
   },
   {
     "signalname": "Recomm_ShortInterest",
@@ -4673,7 +4673,7 @@
     "Filter": "abs(prc)>1",
     "Definition": "Run a rolling regression over 36 months of excess return (retrf) on excess market return (mktrf), size and value factors (smb, hml) and compute idiosyncratic returns as the one-month lagged residual. ResidualMomentum is the rolling mean of the residual divided by the rolling standard deviation of the residual, both computed over the past 11 months.",
     "Notes": "1M in the table refers to the holding period, not the signal measurement period.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ResidualMomentum.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_ResidualMomentum6m_ResidualMomentum.py"
   },
   {
     "signalname": "retConglomerate",
@@ -4766,7 +4766,7 @@
     "Filter": "",
     "Definition": "Skewness of idiosyncratic returns computed as residuals from regression of daily excess returns (ret - rf) on Fama-French factors (mktrf, smb, hml) over the previous month. We require at least 15 non-missing observations.",
     "Notes": "OP finds negative and significant relationship EW, and positive and significant relationship VW.  They conclude that results are \"difficult to interpret.\"",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ReturnSkew3F.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ0_RealizedVol_IdioVol3F_ReturnSkew3F.py"
   },
   {
     "signalname": "REV6",
@@ -4859,7 +4859,7 @@
     "Filter": "",
     "Definition": "Follow RIO\\_MB, except define Disp as the stdev of IBES forecasts where fpi == 1 divided by at, and sort on Disp instead of MB.  Finally, let RIO\\_Disp = lagged RIO quntile if the Disp quintile >= 4.",
     "Notes": "We deviate a bit to avoid getting into IBES detail file.  Since we only use the summary file, we screen stdev > 0 and also keep both 4th and 5th quintiles of dispersion.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/RIO_Disp.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py"
   },
   {
     "signalname": "RIO_MB",
@@ -4890,7 +4890,7 @@
     "Filter": "",
     "Definition": "Residual institutional ownership (RIO) is defined as log(institutional ownership (instown\\_perc)/(1-institutional ownership)) + 23.6 - 2.89*log(market value of equity) +.08*log(market value of equity)$^2$. Replace instown\\_perc with 0 if it is missing, with .9999 if it's above .9999, and with .0001 if it's below .0001. Then lag RIO by 6 months.  Keep only stocks with size > 20th percentile across exchcd == 1 or 2.  Define MB as market cap / (ceq + txditc), where txditc = 0 if missing, and MB is replaced with missing if ceq < 0.  Then sort into quintiles based on the lagged RIO, and sort into quintiles based on MB.  Finally, let RIO\\_MB = lagged RIO quintile if the MB quintile = 5.",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/RIO_MB.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py"
   },
   {
     "signalname": "RIO_Turnover",
@@ -4921,7 +4921,7 @@
     "Filter": "",
     "Definition": "Follow RIO\\_MB, except define turnover as vol/shrout.  Let RIO\\_Turnover = lagged RIO quintile if the Volatility quintile == 5",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/RIO_Turnover.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py"
   },
   {
     "signalname": "RIO_Volatility",
@@ -4952,7 +4952,7 @@
     "Filter": "",
     "Definition": "Follow RIO\\_MB, except define volatility as the rolling standard deviation of the last 12 months of the stock return.  Let RIO\\_Disp = lagged RIO quintile if the Volatility quintile == 5",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/RIO_Volatility.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_RIO_MB_RIO_Disp_RIO_Turnover_RIO_Volatility.py"
   },
   {
     "signalname": "RIVolSpread",
@@ -4983,7 +4983,7 @@
     "Filter": "shrcd%in%c(10,11)",
     "Definition": "Realized Vol (past 30 days) minus ATM Implied Vol",
     "Notes": "OP says NYSE only but we find all stocks gets closer to their numbers",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/RIVolSpread.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_RIVolSpread.py"
   },
   {
     "signalname": "roaq",
@@ -5510,7 +5510,7 @@
     "Filter": "exchcd==1",
     "Definition": "In each month, count the number of days with no trades. Define zerotrade as the number of days without trades plus (the sum of monthly turnover (vol/shrout) divided by 48*10$^5$), multiplied by 21/number of trading days per month. Zerotrade is the 6-month average of that variable.",
     "Notes": "Table 2, fourth row (LM6, HP1m), column B. Paper has the fancy title \"the LAPM\"  Also works for longer holding period of up to 2 years.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/zerotrade6M.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py"
   },
   {
     "signalname": "zerotrade1M",
@@ -5541,7 +5541,7 @@
     "Filter": "exchcd==1",
     "Definition": "In each month, count the number of days with no trades. Define zerotrade as the number of days without trades plus (the sum of monthly turnover (vol/shrout) divided by 48*10$^5$), multiplied by 21/number of trading days per month. Take 1-month average.",
     "Notes": "The 1-month version works for 6 or 12 month holding periods, but not 1 month.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/zerotrade1M.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py"
   },
   {
     "signalname": "zerotrade12M",
@@ -5572,7 +5572,7 @@
     "Filter": "exchcd==1",
     "Definition": "In each month, count the number of days with no trades. Define zerotrade as the number of days without trades plus (the sum of monthly turnover (vol/shrout) divided by 48*10$^5$), multiplied by 21/number of trading days per month. Take 12-month average.",
     "Notes": "Also works for 12 or even 24 months.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/zerotrade12M.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_zerotrade_zerotradeAlt1_zerotradeAlt12.py"
   },
   {
     "signalname": "Activism2",
@@ -5603,7 +5603,7 @@
     "Filter": "",
     "Definition": "Institiutional ownership share (maxinstown\\_perc) if share greater than 5 percent.  Set to missing if G is missing, or if dual share class, or if 24 minus Governance index (G) is less than 19.",
     "Notes": "works about the same EW in Tab 3",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/Activism2.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_Activism1_Activism2.py"
   },
   {
     "signalname": "AdExp",
@@ -5696,7 +5696,7 @@
     "Filter": "abs(prc) > 1",
     "Definition": "Value based on a three-stage dividend discount model and analyst forecasts, scaled by market value.  See code for details.",
     "Notes": "Usually called V_f/P or V_f in OP.  OP finds p-val < 0.01, but spread is only 26 bps and sample is only 15 years long.  Also, p-value comes \"is derived using Monte Carlo simulation.  Specifically, we form empirical reference distributions by randomly assigning eligible firms into quintiles each year.\"  Not sure OP's random assignment turned out right, since standard p-values are much higher than theirs for their Book-to-Price portfolios, which should be easy to replicate.  In the end, we judge predictability in OP as likely, since the nonstandard p-value, small return spread, and short sample suggest our test may only be borderline.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/AnalystValue.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py"
   },
   {
     "signalname": "AOP",
@@ -5727,7 +5727,7 @@
     "Filter": "abs(prc) > 1",
     "Definition": "AnalystValue (defined above) minus IntrinsicValue (defined above), divided by abs(IntrinsicValue).",
     "Notes": "Called OP (optimism) in paper.   See AnalystValue.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/AOP.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py"
   },
   {
     "signalname": "Beta",
@@ -5789,7 +5789,7 @@
     "Filter": "",
     "Definition": "Using daily data, call tempRi the sum of today's return and the past 2 days, call tempRm the sum of today's mkt return and the past 2 days mkt return.  Regress return on tempRi and tempRm using past 5 years of data, with a minimum of 3 years.  BetaFP is the square root of the r square from this regression times the ratio of the idiosyncratic stock vol and the market vol.",
     "Notes": "Though our signal should be close to the original, our portfolios are not.  The paper shows decile portfolios (table 3) but the factor is actually not constructed from going long and short the extreme deciles. Instead, the factor return is based on a median split on BetaFP, and then weighting within each portfolio by the rank of a stock's BetaFP (higher weight for high rank in above median portfolio, and higher weight for low rank in below median portfolio). They also standardize portfolios to have a beta of 1.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/BetaFP.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_BetaFP.py"
   },
   {
     "signalname": "BidAskSpread",
@@ -6068,7 +6068,7 @@
     "Filter": "",
     "Definition": "FR = (FVPA - PBO), scaled by market value of equity. FVPA is pbnaa from 1980 to 1986, pplao + pplao from 1987 to 1997, and pplao after 1997. PBO is pbnvv from 1980 to 1986, pbpro + pbpru from 1987 to 1997, and pbpro after 1997. Exclude if price less than 5 or  shrcd > 11.",
     "Notes": "Table 2 has port sorts but no LS t-stat.  Returns are non monotonic, but lowest FR seems to have clearly worst performance, EW or VW.  Table 3 has longer holding periods, and the pattern is more robust, but still no LS.  OP focuses on negative FR for technical reasons that we don't worry about.  VW is very weak, so we focus on EW.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/FR.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_FR_FRbook.py"
   },
   {
     "signalname": "GrLTNOA",
@@ -6440,7 +6440,7 @@
     "Filter": "abs(prc)>1, shrcd<=11",
     "Definition": "Based off of OptionVolume1.  OptionVolume2 = OptionVolume1 / average of OptionVolume1 from months t-6 to t-1.",
     "Notes": "OP is actually weekly, and sorts in deciles, then  longs 9+10 and shorts 1+2",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/OptionVolume2.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_OptionVolume1_OptionVolume2.py"
   },
   {
     "signalname": "PredictedFE",
@@ -6471,7 +6471,7 @@
     "Filter": "abs(prc) > 1",
     "Definition": "The fitted value from cross-sectional regressions of analyst earnings' forecast errors on cross-sectional rankings of 5-year sales growth, book-to-market, AOP, and analyst long term growth.  See code for details.",
     "Notes": "Called PErr in OP.  Very difficult to understand what OP is doing, so we report something close in spirit which produced a consistent port sort (albeit statisticallly insignficiant).  See also AnalystValue.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/PredictedFE.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py"
   },
   {
     "signalname": "PriceDelaySlope",
@@ -6502,7 +6502,7 @@
     "Filter": "",
     "Definition": "Each July regress daily stock return (ret) on market return (mktrf) in $t, t-1, \\ldots, t-4$ with observations over the previous year. Define PriceDelaySlope as the ratio of ]1*beta on mktrf$_t-1$ + 2*beta on mktrf$_t-2$ + 3*beta on mktrf$_t-3$ + 4*beta on mktrf$_t-4$], and [beta on mktrf$_t$ + beta on mktrf$_t-1$ + beta on mktrf$_t-2$ + beta on mktrf$_t-3$ + beta on mktrf$_t-4$].",
     "Notes": "see PriceDelayRsq.  Called D2 in paper.  Related statistics shown in Table 2, but not our daily version.  Table 2 shows daily vs two-stage weekly makes a huge difference.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/PriceDelaySlope.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py"
   },
   {
     "signalname": "PriceDelayTstat",
@@ -6533,7 +6533,7 @@
     "Filter": "",
     "Definition": "Each July regress daily stock return (ret) on market return (mktrf) in $t, t-1, \\ldots, t-4$ using observations from July 1 of the previous year to June 30 of the current year.  Trim the highest and lowest 1% of estimated coefficients, standard errors, and t-stats. Define PriceDelayTstat as the ratio of [1*tstat on mktrf$_t-1$ + 2*tstat on mktrf$_t-2$ + 3*tstat on mktrf$_t-3$ + 4*tstat on mktrf$_t-4$], and [tstat on mktrf$_t$ + tstat on mktrf$_t-1$ + tstat on mktrf$_t-2$ + tstat on mktrf$_t-3$ + tstat on mktrf$_t-4$].   Finally winsor the extreme 10 and 90 percentiles each month.",
     "Notes": "see PriceDelayRsq.  Called D3 in paper.  Related statistics shown in Table 2, but not our daily version. Table 2 shows daily vs two-stage weekly makes a huge difference.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/PriceDelayTstat.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_PriceDelaySlope_PriceDelayRsq_PriceDelayTstat.py"
   },
   {
     "signalname": "ProbInformedTrading",
@@ -7060,7 +7060,7 @@
     "Filter": "",
     "Definition": "Monthly cross-sectional regression of PriceDelay on AccrualQuality, special items (si) scaled by average total assets (at) and earnings surprise (meanest - actual) scaled by its cross-sectional standard deviation. DelayAcct is the predicted value from that regression.",
     "Notes": "Tab 7b double sorts on the two delay components and generally finds insignificant LS ports.  We record the middle values for the first sort.  Variable is listed by HLZ",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/DelayAcct.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ3_DelayAcct_DelayNonAcct.py"
   },
   {
     "signalname": "DelayNonAcct",
@@ -7091,7 +7091,7 @@
     "Filter": "",
     "Definition": "Monthly cross-sectional regression of PriceDelay on AccrualQuality, special items (si) scaled by average total assets (at) and earnings surprise (meanest - actual) scaled by its cross-sectional standard deviation. DelayNonAcct is the residual  from that regression.",
     "Notes": "Tab 7b double sorts on the two delay components and generally finds insignificant LS ports.  We record the middle values for the first sort.  Variable is listed by HLZ",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/DelayNonAcct.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ3_DelayAcct_DelayNonAcct.py"
   },
   {
     "signalname": "DelSTI",
@@ -7153,7 +7153,7 @@
     "Filter": "exchcd==1",
     "Definition": "Beta of Daily stock return (ret - rf) regressed on market return (mktrf) for days for which the market return was less than the average market return over the previous year. Rolling window of 252 trading days with at least 50 observations.",
     "Notes": "Tables 1-7 show only realized beta-.  Only on Table 8 do you see past beta- which is insignificant.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/DownsideBeta.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_DownsideBeta.py"
   },
   {
     "signalname": "FailureProbability",
@@ -7184,7 +7184,7 @@
     "Filter": "abs(prc)>1",
     "Definition": "Failure probability is -9.16 -.058*PRICE + .075*MB - 2.13*CASHMTA -.045*RSIZE + 1.41*IdioRisk - 7.13*EXRETAVG + 1.42*TLMTA - 20.26*NIMTAAVG. PRICE is log(min(abs(prc), 15)); MB is shrout*abs(prc)/ceqq; CASHMTA is cheq/(shrout*abs(prc) + ltq); RSIZE is log(shrout*abs(prc)/ sum of shrout*abs(prc) for the largest 500 companies each month); IdioRisk is defined above, EXRETAVG is the weighted average excess return (log(1 + ret) - log(1 + mktrf)) over the previous 12 months, with weight on month t-j being $\\phi^j$ and the sum scaled by $\\frac{1-\\phi}{1-\\phi^{12}}$; TLMTA is total liabilities (ltq/(shrout*abs(prc)); NIMTAAVG is a weighted average of net income over total assets (ibq/(shrout*abs(prc) + ltq)) over four quarters, with weight $\\phi^q$ on quarter $t-q$ and the sum scaled by $\\frac{1-\\phi^3}{1-\\phi^{12}}$. $\\phi = 2^{-\\frac{1}{3}}$. All input variables are winsorized at the 5th and 95th percentile. Exclude if price less than 1.",
     "Notes": "Though OP LS is insignificant, returns are mostly monotonic. OP's goal is not to show this is a predictor, but that it does not explain other predictors.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/FailureProbability.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_FailureProbability_FailureProbabilityJune.py"
   },
   {
     "signalname": "ForecastDispersionLT",
@@ -7556,7 +7556,7 @@
     "Filter": "",
     "Definition": "See AbnormalAccruals.  signal = AbnormalAccruals x lagged assets / absolute value of ni",
     "Notes": "OP says \"Cheng and Thomas (2005) assess 22 different abnomral accruals models \u2026 \u2026However, all of their accruals models are scaled by some measure of firm size \u2026 never by earnings.\"  They don't mention abnormal accruals anywhere else.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/AbnormalAccrualsPercent.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ2_AbnormalAccruals_AbnormalAccrualsPercent.py"
   },
   {
     "signalname": "AccrualQuality",
@@ -7587,7 +7587,7 @@
     "Filter": "",
     "Definition": "Define Accruals (tempAccruals) as (difference between current assets (act) and one-year lagged current assets) - (difference between cash and short-term investments (che) and one-year lagged cash and short-term investments) - (difference between current liabilities (lct) and one-year lagged current liabilities) + (difference between debt in current liabilities (dlc) and one-year lagged debt in current liabilities) - (depreciation and amortization (dp)) all divided by (mean of total assets (at) and one-year lagged total assets ). Create tempCAcc as tempAccruals + dp/( (at + l.at)/2), tempRev as sale/( (at + l.at)/2), tempDelRev as tempRev - l.tempRev, tempPPE as ppegt/( (at + l.at)/2) where ppegt is total gross property, plant and equipment and tempCFO as ib/( (at + l.at)/2) - tempAccruals where ib is the income before extraordinary items. Run a regression for each year and industry of tempCAcc on the current value and one year lead and lag of tempDelRev and tempPPE. Save the regression residuals and replace with missing if there are not at least 20 obersvations per year and industry. Calculate accrual quality (AQ) as the standard deviation of residuals over 4 years. If more than one observation is missing set  AQ to missing. Replace AccrualQuality by the one-year lagged AQ to make sure the signal is available at time of investment.",
     "Notes": "Table 2 studies correlation between cost of debt proxies (E/P, beta) and accrual quality.  Table 3 regresses stock returns on contemporaneous accrual LS port returns.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/AccrualQuality.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_AccrualQuality_AccrualQualityJune.py"
   },
   {
     "signalname": "AccrualQualityJune",
@@ -7618,7 +7618,7 @@
     "Filter": "",
     "Definition": "see AccrualQuality. Update only with June values for each variable.",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/AccrualQualityJune.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_AccrualQuality_AccrualQualityJune.py"
   },
   {
     "signalname": "AMq",
@@ -7897,7 +7897,7 @@
     "Filter": "",
     "Definition": "see monthly Code",
     "Notes": "Table 4 fits an expected return equation but using a \"GMM framework that takes into account the pre-estimation of betas,\" but this seems to be an in-sample fit only.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/betaCC.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py"
   },
   {
     "signalname": "betaCR",
@@ -7928,7 +7928,7 @@
     "Filter": "",
     "Definition": "see monthly Code",
     "Notes": "Table 4 fits an expected return equation but using a \"GMM framework that takes into account the pre-estimation of betas,\" but this seems to be an in-sample fit only.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/betaCR.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py"
   },
   {
     "signalname": "BetaDimson",
@@ -7959,7 +7959,7 @@
     "Filter": "",
     "Definition": "Rolling regression of daily return (ret - rf) on the same-day, one-day ahead, and one-day lagged value of the market return (mktrf). Rolling regression with 20 observations (minimum 15). BetaDimson is the sum of the three coefficients.",
     "Notes": "Not shown to predict returns.  Whole paper is just about forecasting beta,",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/BetaDimson.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_BetaDimson.py"
   },
   {
     "signalname": "betaNet",
@@ -7990,7 +7990,7 @@
     "Filter": "",
     "Definition": "see monthly Code",
     "Notes": "Table 4 fits an expected return equation but using a \"GMM framework that takes into account the pre-estimation of betas,\" but this seems to be an in-sample fit only.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/betaNet.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py"
   },
   {
     "signalname": "betaRC",
@@ -8021,7 +8021,7 @@
     "Filter": "",
     "Definition": "see monthly Code",
     "Notes": "Table 4 fits an expected return equation but using a \"GMM framework that takes into account the pre-estimation of betas,\" but this seems to be an in-sample fit only.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/betaRC.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py"
   },
   {
     "signalname": "betaRR",
@@ -8052,7 +8052,7 @@
     "Filter": "",
     "Definition": "see monthly Code",
     "Notes": "Table 4 fits an expected return equation but using a \"GMM framework that takes into account the pre-estimation of betas,\" but this seems to be an in-sample fit only.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/betaRR.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_betaRR_betaCC_betaRC_betaCR_betaNet.py"
   },
   {
     "signalname": "BMq",
@@ -8517,7 +8517,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "Annual change in profit margin PM (profit margin defined below). Exclude if price less than 5.",
     "Notes": "Tab 7 Delta PM, insignificant with many controls, no sorts.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ChPM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_PM_ChPM.py"
   },
   {
     "signalname": "currat",
@@ -8548,7 +8548,7 @@
     "Filter": "",
     "Definition": "Current total assets (act) divided by current total liabilities (lct). If missing, replace current total assets by cash and short-term investments (che) plus total receivables (rect) plus total inventory (invt), and replace current total liabilities (lct) with accounts payable (ap).",
     "Notes": "probably weak.  Paper uses many variables to forecast earnings, model is then used to forecast returns,",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/currat.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_currat_pchcurrat.py"
   },
   {
     "signalname": "depr",
@@ -8672,7 +8672,7 @@
     "Filter": "",
     "Definition": "Earnings (ib) scaled by market capitalization (shrout*abs(prc)) regressed on the 15 month stock return from (t=-11 to t=+3), an indicator for whether that 15- month return is negative and the interaction of these two variables. Rolling regression in annual data with 10 observations. EarningsConservatism is the sum of the coefficients on the 15-month stock return and the interaction term divided by the coefficient on the 15-month stock return.",
     "Notes": "Table 5 regresses cost of equity proxies (e.g. beta) on various earnings attributes.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/EarningsConservatism.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_EarningsValueRelevance_EarningsTimeliness_EarningsConservatism.py"
   },
   {
     "signalname": "EarningsPersistence",
@@ -8703,7 +8703,7 @@
     "Filter": "",
     "Definition": "Earnings per share (epspx/ajex) regressed on its value from the previous year. Rolling regression in annual data with 10 observations. EarningsPersistence is the coefficient on the lagged value.",
     "Notes": "Table 5 regresses cost of equity proxies (e.g. beta) on various earnings attributes.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/EarningsPersistence.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_EarningsPersistence_EarningsPredictability.py"
   },
   {
     "signalname": "EarningsPredictability",
@@ -8734,7 +8734,7 @@
     "Filter": "",
     "Definition": "Earnings per share (epspx/ajex) regressed on its value from the previous year. Rolling regression in annual data with 10 observations. EarningsPredictability is the R2 of this regression.",
     "Notes": "Table 5 regresses cost of equity proxies (e.g. beta) on various earnings attributes.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/EarningsPredictability.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_EarningsPersistence_EarningsPredictability.py"
   },
   {
     "signalname": "EarningsSmoothness",
@@ -8796,7 +8796,7 @@
     "Filter": "",
     "Definition": "Earnings (ib) scaled by market capitalization (shrout*abs(prc)) regressed on the 15 month stock return from (t=-11 to t=+3), an indicator for whether that 15- month return is negative and the interaction of these two variables. Rolling regression in annual data with 10 observations. EarningsTimeliness is the R2 of this regression.",
     "Notes": "Table 5 regresses cost of equity proxies (e.g. beta) on various earnings attributes.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/EarningsTimeliness.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_EarningsValueRelevance_EarningsTimeliness_EarningsConservatism.py"
   },
   {
     "signalname": "EarningsValueRelevance",
@@ -8827,7 +8827,7 @@
     "Filter": "",
     "Definition": "15 month stock return from (t=-11 to t=+3) regressed on Earnings (ib) and the change in earnings, both scaled by market capitalization (shrout*abs(prc)). Rolling regression in annual data with 10 observations. EarningsValueRelevance is the R2 of this regression.",
     "Notes": "Table 5 regresses cost of equity proxies (e.g. beta) on various earnings attributes.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/EarningsValueRelevance.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_EarningsValueRelevance_EarningsTimeliness_EarningsConservatism.py"
   },
   {
     "signalname": "EBM_q",
@@ -8982,7 +8982,7 @@
     "Filter": "",
     "Definition": "Failure probability is -9.16 -.058*PRICE + .075*MB - 2.13*CASHMTA -.045*RSIZE + 1.41*IdioRisk - 7.13*EXRETAVG + 1.42*TLMTA - 20.26*NIMTAAVG. PRICE is log(min(abs(prc), 15)); MB is shrout*abs(prc)/ceqq; CASHMTA is cheq/(shrout*abs(prc) + ltq); RSIZE is log(shrout*abs(prc)/ sum of shrout*abs(prc) for the largest 500 companies each month); IdioRisk is defined above, EXRETAVG is the weighted average excess return (log(1 + ret) - log(1 + mktrf)) over the previous 12 months, with weight on month t-j being $\\phi^j$ and the sum scaled by $\\frac{1-\\phi}{1-\\phi^{12}}$; TLMTA is total liabilities (ltq/(shrout*abs(prc)); NIMTAAVG is a weighted average of net income over total assets (ibq/(shrout*abs(prc) + ltq)) over four quarters, with weight $\\phi^q$ on quarter $t-q$ and the sum scaled by $\\frac{1-\\phi^3}{1-\\phi^{12}}$. $\\phi = 2^{-\\frac{1}{3}}$. All input variables are winsorized at the 5th and 95th percentile. Exclude if price less than 1.",
     "Notes": "Tab6 Mean LS 2080 t-stat 1.41. We previously used monthly holding periods and got large t-stats.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/FailureProbabilityJune.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_FailureProbability_FailureProbabilityJune.py"
   },
   {
     "signalname": "fgr5yrNoLag",
@@ -9044,7 +9044,7 @@
     "Filter": "",
     "Definition": "FR = (FVPA - PBO), scaled by total assets (at). FVPA is pbnaa from 1980 to 1986, pplao + pplao from 1987 to 1997, and pplao after 1997. PBO is pbnvv from 1980 to 1986, pbpro + pbpru from 1987 to 1997, and pbpro after 1997. Exclude if price less than 5 or  shrcd > 11.",
     "Notes": "Not studied in OP.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/FRbook.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_FR_FRbook.py"
   },
   {
     "signalname": "GPlag",
@@ -9137,7 +9137,7 @@
     "Filter": "",
     "Definition": "Growth between one-year lagged capital expenditures (capx) and two-year lagged capital expenditures. Replace capx with the one year difference in property, plant and equipment (ppent) if capx is missing and the corresponding firm age is greater or equal than two years.",
     "Notes": "HXZ deviates from OP.  OP only examines (1) capx / lag(capx,2) and capx / sum( capx(t-3:t) ).  OP notation is odd, uses cegth2 and cegth3 but no cegth.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/grcapx1y.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_grcapx_grcapx1y_grcapx3y.py"
   },
   {
     "signalname": "GrGMToGrSales",
@@ -9230,7 +9230,7 @@
     "Filter": "",
     "Definition": "Standard deviation of residuals from CAPM regressions using the past month of daily data.  Value weighted",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/IdioVolCAPM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_IdioVolCAPM_ReturnSkewCAPM.py"
   },
   {
     "signalname": "IdioVolQF",
@@ -9261,7 +9261,7 @@
     "Filter": "",
     "Definition": "Standard deviation of residuals from q-factor regressions using the past month of daily data.  Value weighted",
     "Notes": "",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/IdioVolQF.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_IdioVolQF_ReturnSkewQF.py"
   },
   {
     "signalname": "IntrinsicValue",
@@ -9292,7 +9292,7 @@
     "Filter": "",
     "Definition": "Value based on a two-stage dividend discount model assuming ROE is remains the same as the most recent observation, scaled by market value.",
     "Notes": "Called V_h in paper or historical earnings based value in paper.  Our name comes from HXZ, but we should probably rename it.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/IntrinsicValue.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_AnalystValue_AOP_PredictedFE_IntrinsicValue.py"
   },
   {
     "signalname": "KZ_q",
@@ -9476,7 +9476,7 @@
     "PortfolioPeriod": "",
     "StartMonth": "",
     "Filter": "",
-    "Definition": "Dividends (dvc) plus purchase of common and preferred stock (prstkc) minus sale of common and preferred stock (sstk), divided by market value of equity.",
+    "Definition": "Quarterly dividends tempDiv = dvpsxq*cshoq*ajexq (zero if dvpsxq is exactly zero; otherwise require all inputs). Gross payout is tempDiv plus individual-quarter purchases (prstkcyq) plus max(pstkq lagged 3 months minus pstkq, 0). Equity issuance is individual-quarter sales (sstkyq) minus max(pstkq minus pstkq lagged 3 months, 0). NetPayoutYield_q is gross payout minus equity issuance, divided by current mve_permco. Require finite nonzero yield and finite positive current market cap. An unavailable preferred-stock difference contributes zero to each adjustment. Use matched accounting rows; preserve missing flows without extra imputation.",
     "Notes": "",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/NetPayoutYield_q.py"
   },
@@ -9664,7 +9664,7 @@
     "Filter": "",
     "Definition": "OrgCapAdj without the industry adjustment (see OrgCapAdj).",
     "Notes": "see OrgCapAdj",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/OrgCapNoAdj.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_OrgCap_OrgCapNoAdj.py"
   },
   {
     "signalname": "OScore_q",
@@ -9724,7 +9724,7 @@
     "PortfolioPeriod": "",
     "StartMonth": "",
     "Filter": "",
-    "Definition": "Sum of dividends (dvc), purchase of common and preferred stock (prstkc) and max(preferred stock redemption value (pstkrv), 0), divided by lag(market value of equity, 6 months).  Exclude if PayoutYield $\\leq$ 0.",
+    "Definition": "Quarterly dividends tempDiv = dvpsxq*cshoq*ajexq (zero if dvpsxq is exactly zero; otherwise require all inputs). Gross payout is tempDiv plus individual-quarter purchases (prstkcyq) plus max(pstkq lagged 3 months minus pstkq, 0). PayoutYield_q is gross payout divided by mve_permco lagged 6 months. Require finite positive yield and finite positive lagged market cap. An unavailable preferred-stock difference contributes zero to each adjustment. Use matched accounting rows; preserve missing flows without extra imputation.",
     "Notes": "",
     "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/PayoutYield_q.py"
   },
@@ -9757,7 +9757,7 @@
     "Filter": "",
     "Definition": "One year growth of the current ratio (currat) defined as current total assets (act) divided by current total liabilities (lct).",
     "Notes": "probably weak.  Paper uses many variables to forecast earnings, model is then used to forecast returns,",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/pchcurrat.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_currat_pchcurrat.py"
   },
   {
     "signalname": "pchdepr",
@@ -9912,7 +9912,7 @@
     "Filter": "abs(prc)>5",
     "Definition": "Net income (ni) over revenue (revt). Exclude if price less than 5.",
     "Notes": "No predictive power in multivariate predictive regression (table 7). Not clear how it would play out as univariate hedge strategy.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/PM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ1_PM_ChPM.py"
   },
   {
     "signalname": "PM_q",
@@ -10098,7 +10098,7 @@
     "Filter": "",
     "Definition": "Run a rolling regression over 36 months of excess return (retrf) on excess market return (mktrf), size and value factors (smb, hml) and compute idiosyncratic returns as the one-month lagged residual. ResidualMomentum is the rolling mean of the residual divided by the rolling standard deviation of the residual, both computed over the past 6 months.",
     "Notes": "OP only uses 12m version.  It turns out that 6m residual momentum is very much like the standard 12m version, but I suppose it could have turned out differently.",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ResidualMomentum6m.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Predictors/ZZ1_ResidualMomentum6m_ResidualMomentum.py"
   },
   {
     "signalname": "RetNOA",
@@ -10191,7 +10191,7 @@
     "Filter": "",
     "Definition": "Skewness of idiosyncratic returns computed as residuals from regression of daily excess returns (ret - rf) on market factor (mktrf) over the previous month. We require at least 15 non-missing observations.",
     "Notes": "OP uses 3F",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ReturnSkewCAPM.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_IdioVolCAPM_ReturnSkewCAPM.py"
   },
   {
     "signalname": "ReturnSkewQF",
@@ -10222,7 +10222,7 @@
     "Filter": "",
     "Definition": "Skewness of idiosyncratic returns computed as residuals from regression of daily excess returns (ret - rf) on q-factors (r\\_mkt, r\\_me, r\\_ia, r\\_roe) over the previous month. We require at least 15 non-missing observations. We download q-factor data from \\url{http://global-q.org/index.html}.",
     "Notes": "OP uses 3F",
-    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ReturnSkewQF.py"
+    "CodeLink": "https://github.com/OpenSourceAP/CrossSection/blob/master/Signals/pyCode/Placebos/ZZ2_IdioVolQF_ReturnSkewQF.py"
   },
   {
     "signalname": "roavol",
