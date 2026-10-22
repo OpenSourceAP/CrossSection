@@ -2,8 +2,8 @@
 ABOUTME: Step 3 of shipping: copy the checked release folder to a Hugging Face dataset branch
 ABOUTME: Refuses unless storage_checks.txt passed, the user approves, and the branch is empty
 
-How to run (from anywhere, after ship_1_build.py and ship_2_check.py):
-    python Shipping/Code/ship_3_upload_hf.py
+How to run (from anywhere, after 1_build.py and 2_check.py):
+    python Shipping/Code/3_upload_hf.py
     Needs a Hugging Face login with write access to the org (`hf auth login`).
 
 INPUTS:
@@ -44,7 +44,7 @@ def remote_files(api, repo, branch):
 def require_checks_passed(src):
     checks = src / CHECKS_FILE
     if not checks.exists():
-        raise SystemExit(f'{checks} not found. Run ship_2_check.py first.')
+        raise SystemExit(f'{checks} not found. Run 2_check.py first.')
     lines = [x for x in checks.read_text().splitlines() if x.strip()]
     if not lines or lines[-1].strip() != CHECKS_PASS_LINE:
         raise SystemExit(f'{checks} does not end with "{CHECKS_PASS_LINE}". Fix the release and rerun the checks.')

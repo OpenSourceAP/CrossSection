@@ -1,5 +1,4 @@
-# ABOUTME: Output locations for the Python shipping scripts (ship_*.py)
-# ABOUTME: The R scripts (master_shipping.r etc.) read 00_settings.yaml instead
+# ABOUTME: Output locations for the Python shipping scripts (1_build.py, 2_check.py, 3_upload_hf.py, master.py)
 
 # 1. local release folder, synced to Google Drive and shared publicly
 out_gdrive: ~/Library/CloudStorage/GoogleDrive-ayc1678@gmail.com/My Drive/Work/Public/Open AP/Test-Data-2026.10/

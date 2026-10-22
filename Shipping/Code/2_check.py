@@ -3,13 +3,13 @@ ABOUTME: Step 2 of shipping: check the built release folder and write storage_ch
 ABOUTME: Python translation of 3_check_storage.r and 4_old_vs_new_check.R, plus layout checks
 
 How to run (from anywhere):
-    python Shipping/Code/ship_2_check.py [--out OUTPUT_DIR]
+    python Shipping/Code/2_check.py [--out OUTPUT_DIR]
     --out overrides out_gdrive from ship_settings.yaml (useful for test builds)
 
 INPUTS:
     - Shipping/Code/ship_settings.yaml (out_gdrive, old_release)
     - SignalDoc.csv
-    - the release folder written by ship_1_build.py
+    - the release folder written by 1_build.py
     - Portfolios/Data/Portfolios/ (to confirm every source portfolio file was shipped)
     - <old_release>/Portfolios/Full Sets OP/PredictorPortsFull.parquet (or .csv for releases
       before 2026)
@@ -17,7 +17,7 @@ INPUTS:
 OUTPUTS:
     - <release folder>/storage_checks.txt (also echoed to the console). Its last
       line is 'AUTOMATED CHECKS: PASS' or 'AUTOMATED CHECKS: FAIL' plus the failures.
-      ship_3_upload_hf.py refuses to upload without the PASS line.
+      3_upload_hf.py refuses to upload without the PASS line.
     - Shipping/Data/temp/PredictorPortsCheck.csv (old-vs-new regressions by signal-port)
 """
 
@@ -369,7 +369,7 @@ def ols_stats():
 def check_old_vs_new(out, old_release, doc, r):
     """Translation of 4_old_vs_new_check.R: regress new LS returns on the previous release's."""
     r.section('OLD VS NEW (PredictorPortsFull)')
-    # releases up to 2025 shipped csv; ship_1_build.py ships parquet
+    # releases up to 2025 shipped csv; 1_build.py ships parquet
     old_dir = Path(old_release) / OP_DIR
     candidates = [old_dir / 'PredictorPortsFull.parquet', old_dir / 'PredictorPortsFull.csv']
     old_path = next((p for p in candidates if p.exists()), None)

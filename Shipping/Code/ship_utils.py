@@ -1,6 +1,6 @@
 """
-ABOUTME: Shared settings, paths, and SignalDoc helpers for the ship_*.py scripts
-ABOUTME: Imported by ship_1_build.py, ship_2_check.py, ship_3_upload_hf.py, ship_master.py
+ABOUTME: Shared settings, paths, and SignalDoc helpers for the shipping scripts
+ABOUTME: Imported by 1_build.py, 2_check.py, 3_upload_hf.py, master.py
 
 How to run: not run directly; `import ship_utils` from Shipping/Code/.
 

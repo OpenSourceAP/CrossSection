@@ -3,7 +3,7 @@ ABOUTME: Step 1 of shipping: build the release folder (parquet) in the Google Dr
 ABOUTME: Python replacement for 1_pack_signals.r and 2_pack_portfolios_and_results.r
 
 How to run (from anywhere):
-    python Shipping/Code/ship_1_build.py [--out OUTPUT_DIR]
+    python Shipping/Code/1_build.py [--out OUTPUT_DIR]
     --out overrides out_gdrive from ship_settings.yaml (useful for test builds)
 
 INPUTS:
