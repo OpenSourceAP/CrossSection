@@ -81,7 +81,7 @@ monthly_ill["Illiquidity"] = np.where(
 # Prepare final output - rename time_avail_m to yyyymm for consistency
 result = monthly_ill[["permno", "time_avail_m", "Illiquidity"]].copy()
 result["yyyymm"] = result["time_avail_m"].dt.year * 100 + result["time_avail_m"].dt.month
-result = result.drop(columns="time_avail_m")
+result = result[["permno", "yyyymm", "Illiquidity"]]
 
 # Drop rows with missing Illiquidity values
 result = result.dropna(subset=["Illiquidity"])
