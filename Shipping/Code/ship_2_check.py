@@ -10,7 +10,9 @@ INPUTS:
     - Shipping/Code/ship_settings.yaml (out_gdrive, old_release)
     - SignalDoc.csv
     - the release folder written by ship_1_build.py
-    - <old_release>/Portfolios/Full Sets OP/PredictorPortsFull.csv
+    - Portfolios/Data/Portfolios/ (to confirm every source portfolio file was shipped)
+    - <old_release>/Portfolios/Full Sets OP/PredictorPortsFull.parquet (or .csv for releases
+      before 2026)
 
 OUTPUTS:
     - <release folder>/storage_checks.txt (also echoed to the console). Its last
@@ -27,8 +29,8 @@ from pathlib import Path
 import polars as pl
 
 from ship_utils import (
-    ALT_DIR, CHECKS_FILE, CHECKS_PASS_LINE, DAILY_DIR, FIRM_DIR, OP_DIR, PATH_SIGNALDOC,
-    RESULTS_DIR, TEMP_DIR, WRDS_EXCLUDED, doc_lists, load_settings, read_signaldoc,
+    ALT_DIR, CHECKS_FILE, CHECKS_PASS_LINE, DAILY_DIR, FIRM_DIR, KEYS, OP_DIR, PATH_PORTFOLIOS,
+    PATH_SIGNALDOC, RESULTS_DIR, TEMP_DIR, WRDS_EXCLUDED, doc_lists, load_settings, read_signaldoc,
 )
 
 pl.Config.set_tbl_rows(1000)
@@ -57,6 +59,9 @@ class Report:
         self.failures.append(msg)
         self(f'FAIL: {msg}')
 
+    def warn(self, msg):
+        self(f'WARNING: {msg}')
+
     def section(self, title):
         self('')
         self(f' === {title} === ')
@@ -65,6 +70,9 @@ class Report:
 
 # ==== LAYOUT ====
 
+# Small explicit required list. Other alternative implementations (HoldPer, FF93style,
+# other LiqScreens, EW variants) are optional: they must ship if the source has them
+# (check_source_shipped), and are only warned about if the old release had them.
 def expected_files(out):
     files = [
         'SignalDoc.parquet',
@@ -74,6 +82,10 @@ def expected_files(out):
         f'{FIRM_DIR}/signed_predictors_dl_wide.parquet',
         f'{OP_DIR}/PredictorPortsFull.parquet',
         f'{OP_DIR}/PlaceboPortsFull.parquet',
+        f'{OP_DIR}/PredictorLSretWide.parquet',
+        f'{OP_DIR}/PredictorSummary.xlsx',
+        f'{OP_DIR}/PlaceboSummary.xlsx',
+        f'{DAILY_DIR}/DailyPortSummary.xlsx',
         f'{ALT_DIR}/PlaceboPortsFull.parquet',
         f'{ALT_DIR}/PredictorAltPorts_LiqScreen_VWforce.parquet',
         f'{ALT_DIR}/PredictorAltPorts_Deciles.parquet',
@@ -89,6 +101,24 @@ DAILY_SETS = [
     'Predictor', 'PredictorVW',
     'CtsPredictorDecile', 'CtsPredictorDecileVW', 'CtsPredictorQuintile', 'CtsPredictorQuintileVW',
 ]
+
+
+def check_source_shipped(out, old_release, r):
+    """Every portfolio csv/xlsx in the source folder has a counterpart in the release."""
+    for f in sorted(PATH_PORTFOLIOS.iterdir()):
+        if f.suffix not in ('.csv', '.xlsx'):
+            continue
+        sub = ALT_DIR if 'PredictorAlt' in f.name else OP_DIR
+        target = out / sub / (f.name if f.suffix == '.xlsx' else f'{f.stem}.parquet')
+        if not target.exists():
+            r.fail(f'source file {f.name} not shipped as {target.relative_to(out)}')
+
+    old_alt = Path(old_release) / ALT_DIR
+    if old_alt.exists():
+        new_alt = {p.stem for p in (out / ALT_DIR).glob('*.parquet')}
+        dropped = sorted({p.stem for p in old_alt.iterdir() if p.suffix in ('.zip', '.csv', '.parquet')} - new_alt)
+        if dropped:
+            r.warn(f'alternative portfolio sets in the old release but not this one: {dropped}')
 
 
 def check_layout(out, r):
@@ -246,7 +276,7 @@ def check_port_full_sets(out, doc, r):
 
 # ==== SIGNALS ====
 
-def check_signals(out, lists, r):
+def check_signals(out, doc, lists, r):
     r.section('SIGNAL FULL SETS (WIDE PARQUET)')
     firm = out / FIRM_DIR
     for fname, expected in [
@@ -261,8 +291,18 @@ def check_signals(out, lists, r):
     # signed = sign * unsigned, and both share the same rows
     pred = pl.read_parquet(firm / 'Predictors.parquet')
     signed = pl.read_parquet(firm / 'signed_predictors_dl_wide.parquet')
-    if pred.select('permno', 'yyyymm').equals(signed.select('permno', 'yyyymm')):
+    if pred.select(KEYS).equals(signed.select(KEYS)):
         r('Predictors.parquet and signed_predictors_dl_wide.parquet have identical permno-yyyymm rows')
+        signs = dict(doc.select('signalname', pl.col('Sign').cast(pl.Float64)).iter_rows())
+        cols = [c for c in pred.columns if c not in KEYS]
+        if set(cols) != set(signed.columns) - set(KEYS):
+            r.fail('Predictors.parquet and signed_predictors_dl_wide.parquet have different signal columns')
+        else:
+            bad = [c for c in cols if not signed[c].eq_missing(pred[c] * signs[c]).all()]
+            if bad:
+                r.fail(f'signed != Sign * unsigned for {len(bad)} signals: {bad[:10]}')
+            else:
+                r(f'signed = Sign * unsigned for all {len(cols)} signals')
     else:
         r.fail('Predictors.parquet and signed_predictors_dl_wide.parquet have different rows')
     del pred
@@ -313,9 +353,11 @@ def check_portfolio_lists(out, lists, r):
 # ==== OLD VS NEW ====
 
 def ols_stats():
+    # callers pass complete old/new pairs only, as lm() drops NA rows in the R version
     x, y = pl.col('old_ret'), pl.col('new_ret')
     slope = pl.cov(x, y) / x.var()
     return [
+        pl.len().alias('nobs'),
         (y.mean() - slope * x.mean()).alias('intercept'),
         slope.alias('slope'),
         (pl.corr(x, y) ** 2 * 100).alias('rsq'),
@@ -327,17 +369,23 @@ def ols_stats():
 def check_old_vs_new(out, old_release, doc, r):
     """Translation of 4_old_vs_new_check.R: regress new LS returns on the previous release's."""
     r.section('OLD VS NEW (PredictorPortsFull)')
-    old_path = Path(old_release) / OP_DIR / 'PredictorPortsFull.csv'
-    r(f'old: {old_path}')
-    if not old_path.exists():
-        r.fail(f'old release file not found: {old_path}')
+    # releases up to 2025 shipped csv; ship_1_build.py ships parquet
+    old_dir = Path(old_release) / OP_DIR
+    candidates = [old_dir / 'PredictorPortsFull.parquet', old_dir / 'PredictorPortsFull.csv']
+    old_path = next((p for p in candidates if p.exists()), None)
+    if old_path is None:
+        r.fail(f'old release file not found: {candidates[0]} (or .csv)')
         return
+    r(f'old: {old_path}')
 
     pad = pl.when(pl.col('port').str.len_chars() == 2).then(pl.col('port')).otherwise('0' + pl.col('port'))
-    old = (
-        pl.read_csv(old_path, schema_overrides={'port': pl.String, 'date': pl.Date, 'ret': pl.Float64}, null_values='NA')
-        .select('signalname', pad.alias('port'), 'date', pl.col('ret').alias('old_ret'))
-    )
+    if old_path.suffix == '.parquet':
+        old = pl.read_parquet(old_path, columns=['signalname', 'port', 'date', 'ret'])
+    else:
+        old = pl.read_csv(
+            old_path, schema_overrides={'port': pl.String, 'date': pl.Date, 'ret': pl.Float64}, null_values='NA',
+        )
+    old = old.select('signalname', pad.alias('port'), 'date', pl.col('ret').cast(pl.Float64).alias('old_ret'))
     new = (
         pl.read_parquet(out / OP_DIR / 'PredictorPortsFull.parquet')
         .select('signalname', pad.alias('port'), 'date', pl.col('ret').alias('new_ret'))
@@ -345,6 +393,7 @@ def check_old_vs_new(out, old_release, doc, r):
     yr = pl.col('date').dt.year()
     both = (
         old.join(new, on=['signalname', 'port', 'date'], how='inner')
+        .filter(pl.col('old_ret').is_finite(), pl.col('new_ret').is_finite())
         .join(
             doc.select('signalname', pl.col('Year').alias('YearPub'), 'SampleStartYear', 'SampleEndYear'),
             on='signalname', how='inner',
@@ -354,6 +403,11 @@ def check_old_vs_new(out, old_release, doc, r):
             .when(yr > pl.col('YearPub')).then(pl.lit('post-pub'))
         )
     )
+
+    r(f'overlapping signal-port-months with old and new returns: {both.height:,}')
+    if both.is_empty():
+        r.fail('old and new PredictorPortsFull share no signal-port-months with returns')
+        return
 
     temp1 = both.filter(pl.col('samptype').is_not_null()).group_by('signalname', 'port', 'samptype').agg(ols_stats())
     temp2 = (
@@ -369,6 +423,17 @@ def check_old_vs_new(out, old_release, doc, r):
         pl.col('port') == 'LS', pl.col('samptype').is_not_null(), pl.col('slope').is_not_null(),
         pl.col('slope').is_finite(),
     )
+    # every LS signal in both releases needs a usable full-sample regression
+    def ls_signals(df, col):
+        return set(df.filter(pl.col('port') == 'LS', pl.col(col).is_not_null())['signalname'])
+    common = ls_signals(old, 'old_ret') & ls_signals(new, 'new_ret')
+    usable = set(check_ls.filter(pl.col('samptype') == 'full-samp', pl.col('nobs') >= 3)['signalname'])
+    r(f'LS signals in both releases: {len(common)}; with usable full-sample regressions: {len(common & usable)}')
+    if not common:
+        r.fail('no long-short signals in common between old and new releases')
+    elif common - usable:
+        r.fail(f'{len(common - usable)} common LS signals lack a usable full-sample regression: '
+               f'{sorted(common - usable)[:10]}')
     r(check_ls.select(
         slope_p05=pl.col('slope').quantile(0.05, 'linear'),
         rsq_p05=pl.col('rsq').quantile(0.05, 'linear'),
@@ -413,8 +478,9 @@ def main(out, old_release):
     lists = doc_lists(doc)
 
     check_layout(out, r)
+    check_source_shipped(out, old_release, r)
     check_port_full_sets(out, doc, r)
-    check_signals(out, lists, r)
+    check_signals(out, doc, lists, r)
     check_portfolio_lists(out, lists, r)
     check_old_vs_new(out, old_release, doc, r)
 

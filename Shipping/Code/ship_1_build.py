@@ -34,13 +34,10 @@ from pathlib import Path
 import polars as pl
 
 from ship_utils import (
-    ALT_DIR, DAILY_DIR, FIRM_DIR, OP_DIR, PATH_DAILY, PATH_PLACEBOS, PATH_PORTFOLIOS,
+    ALT_DIR, DAILY_DIR, FIRM_DIR, KEYS, OP_DIR, PATH_DAILY, PATH_PLACEBOS, PATH_PORTFOLIOS,
     PATH_PREDICTORS, PATH_RESULTS, PATH_SIGNALDOC, PORT_SCHEMA, RESULTS_DIR,
     doc_lists, load_settings, read_signaldoc, require_empty_dir,
 )
-
-KEYS = ['permno', 'yyyymm']
-
 
 def log(msg):
     print(f'[{time.strftime("%H:%M:%S")}] {msg}', flush=True)

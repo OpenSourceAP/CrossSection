@@ -13,7 +13,7 @@ INPUTS:
 OUTPUTS:
     - Hugging Face dataset <hf_repo>, branch <hf_branch>: an exact copy of
       out_gdrive (minus .DS_Store), in one commit. The repo and branch are
-      created if missing. Prints a file-by-file size comparison afterwards.
+      created if missing; a new branch starts from the repo's (empty) initial commit. Prints a file-by-file size comparison afterwards.
 """
 
 from pathlib import Path
@@ -50,6 +50,14 @@ def require_checks_passed(src):
         raise SystemExit(f'{checks} does not end with "{CHECKS_PASS_LINE}". Fix the release and rerun the checks.')
 
 
+def require_empty(existing, label, repo):
+    if existing:
+        raise SystemExit(
+            f'{label} of {repo} is not empty ({len(existing)} files, e.g. {list(existing)[:5]}).\n'
+            'Delete the branch by hand (or change hf_branch) and rerun.'
+        )
+
+
 def main(settings):
     src, repo, branch = Path(settings['out_gdrive']), settings['hf_repo'], settings['hf_branch']
     require_checks_passed(src)
@@ -66,16 +74,14 @@ def main(settings):
     api = HfApi()
     api.create_repo(repo, repo_type='dataset', private=settings['hf_private'], exist_ok=True)
 
+    # a new branch starts from the repo's initial commit (normally just .gitattributes), not
+    # main: upload_folder keeps remote files it does not overwrite, so inherited files would ship
     branches = [b.name for b in api.list_repo_refs(repo, repo_type='dataset').branches]
-    if branch in branches:
-        existing = remote_files(api, repo, branch)
-        if existing:
-            raise SystemExit(
-                f'Branch {branch} of {repo} is not empty ({len(existing)} files, e.g. {list(existing)[:5]}).\n'
-                'Delete the branch by hand (or change hf_branch) and rerun.'
-            )
-    else:
-        api.create_branch(repo, repo_type='dataset', branch=branch)
+    if branch not in branches:
+        root = api.list_repo_commits(repo, repo_type='dataset')[-1].commit_id
+        require_empty(remote_files(api, repo, root), f'initial commit {root[:8]}', repo)
+        api.create_branch(repo, repo_type='dataset', branch=branch, revision=root)
+    require_empty(remote_files(api, repo, branch), f'branch {branch}', repo)
 
     print(f'Uploading {len(files)} files to {repo}@{branch} ...')
     api.upload_folder(

@@ -33,6 +33,9 @@ WRDS_EXCLUDED_PREDICTORS = ['Price', 'Size', 'STreversal']
 WRDS_EXCLUDED_PLACEBOS = ['BidAskTAQ']
 WRDS_EXCLUDED = WRDS_EXCLUDED_PREDICTORS + WRDS_EXCLUDED_PLACEBOS
 
+# firm-level keys
+KEYS = ['permno', 'yyyymm']
+
 # portfolio csvs: keep port as text ('01', 'LS')
 PORT_SCHEMA = {
     'signalname': pl.String,
