@@ -93,24 +93,25 @@ signalname_to_ports = function(
   if (is.na(Cat.Form)) {Cat.Form = 'continuous'}    
   
   ## checks
-  if (!exists('crspret')){
-    print('error: crspret not in workspace.  Please load Intermediate/crspmret.fst or crspdret.fst as crspret (see 11_ProcessCRSP.R)')
+  if (!exists('crspretpath') || !file.exists(crspretpath)){
+    print('error: crspretpath not set or missing.  Please set crspretpath to Intermediate/crspmret.fst or crspdret.fst (see 11_ProcessCRSP.R)')
     stop()
   }
   if (!exists('crspinfo')){
     print('error: crspinfo not in workspace.  Please load Intermediate/crspminfo.fst as crspinfo (see 11_ProcessCRSP.R)')
     stop()
   }
+  crspretcols = metadata_fst(crspretpath)$columnNames
   if (passive_gain){
-    if (!'passgain' %in% colnames(crspret)){
-      print('error: passive_gain = T but crspret does not have a passgain column')
-      print('please check the correct crspret is loaded')
+    if (!'passgain' %in% crspretcols){
+      print('error: passive_gain = T but crspretpath does not have a passgain column')
+      print('please check the correct crspretpath is set')
       stop()
     }
   }
   if (sweight == 'VW'){
-    if (!'melag' %in% colnames(crspret)){
-      print('error: sweight == VW but crspret does not have melag column')
+    if (!'melag' %in% crspretcols){
+      print('error: sweight == VW but crspretpath does not have melag column')
       print('please check crsp processing')
       stop()
     }
@@ -257,24 +258,31 @@ signalname_to_ports = function(
   
   if (feed.verbose) {print('joining lagged signals onto crsp returns')}
   gc()
-  # scoping implies crspret in the big loop is not affected
-  crspret = crspret %>%
-    left_join(
-      signallag %>% select(permno,yyyymm,signallag, port)
-      , by = c('permno','yyyymm')
-    )
+  # reread returns for each signal so this function owns crspret and can add
+  # columns by reference (:=) without copying the table (~4 GB for daily data)
+  crspret = read_fst(
+    crspretpath
+    , columns = c('permno', 'date', 'yyyymm', 'ret'
+                  , if (sweight == 'VW') 'melag'
+                  , if (passive_gain) 'passgain')
+    , as.data.table = TRUE
+  )
+  # left join by reference; needs at most one signal per permno-month
+  stopifnot(!anyDuplicated(signallag, by = c('permno', 'yyyymm')))
+  crspret[signallag, on = .(permno, yyyymm)
+          , c('signallag', 'port') := .(i.signallag, i.port)]
 
   ## stock weights
   # equal vs value-weighting
   if (sweight == 'VW'){
-    crspret$weight = crspret$melag
+    crspret[, weight := melag]
   } else {
-    crspret$weight = 1
-  }    
-  # adjustments for passive gains 
+    crspret[, weight := 1]
+  }
+  # adjustments for passive gains
   # (this is only used for the daily ports right now)
   if (passive_gain){
-    crspret$weight = crspret$weight*crspret$passgain
+    crspret[, weight := weight*passgain]
   }
   
   if (feed.verbose) {print('calculating portfolio returns')}

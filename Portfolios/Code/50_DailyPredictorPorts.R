@@ -18,10 +18,8 @@ crspinfo = read.fst(
   paste0(pathDataIntermediate, 'crspminfo.fst')
 ) %>% # me, screens, 
   setDT()
-crspret = read.fst(
-  paste0(pathDataIntermediate, 'crspdret.fst')
-) %>% # returns
-  setDT()
+# returns are reread per signal by signalname_to_ports
+crspretpath = paste0(pathDataIntermediate, 'crspdret.fst')
 
 ### SET UP PATHS
 
