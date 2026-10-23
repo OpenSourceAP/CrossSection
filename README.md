@@ -112,6 +112,8 @@ It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
 By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability results in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
+The retired signal-coverage and stock-correlation exhibits are no longer built or shipped; portfolio-return exhibits remain available.
+
 #### CRSP data for the portfolios
 
 The portfolio code does not download anything itself. It reads the CRSP v2 (CIZ) files that `Signals/pyCode/` writes to `Signals/pyData/Intermediate/` (`monthlyCRSP.parquet`, and `dailyCRSP.parquet` if `skipdaily = F`), plus the three predictors built directly from CRSP (`Price`, `Size`, `STreversal`). These are the only portfolio inputs that cannot be downloaded from the data page, because CRSP data cannot be redistributed.

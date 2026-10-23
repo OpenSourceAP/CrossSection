@@ -130,11 +130,6 @@ if (quickrun==F){
 # EXTRA STUFF ####
 
 # this can be run at the end since it takes a long time and isn't necessary for other results
-print('master: 12_SignalExhibits.R')
-tryCatch({
-    source('12_SignalExhibits.R', echo=T)
-})
-
 if (!skipdaily){
     print('master: 50_DailyPredictorPorts.R')
     tryCatch({
