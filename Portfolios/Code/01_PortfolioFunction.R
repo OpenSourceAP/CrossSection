@@ -284,11 +284,13 @@ signalname_to_ports = function(
   if (passive_gain){
     crspret[, weight := weight*passgain]
   }
-  
+  # free the weight inputs before aggregating
+  crspret[, intersect(c('melag', 'passgain'), names(crspret)) := NULL]
+
   if (feed.verbose) {print('calculating portfolio returns')}
+  # filter and aggregate in one call so data.table copies only the columns used
   port = crspret[
     !is.na(port) & !is.na(ret) & !is.na(weight)
-  ][
     , .(
       ret = weighted.mean(ret, weight)
       , signallag = weighted.mean(signallag, weight)
