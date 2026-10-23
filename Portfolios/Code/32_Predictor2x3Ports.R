@@ -1,3 +1,7 @@
+# Run: source from master.R after configuration and CRSP processing.
+# Inputs: processed monthly CRSP, signal CSVs and SignalDoc.csv.
+# Outputs: 2x3 portfolio CSVs, under the configured output root.
+
 # For making FF1993 style factors from individual csvs on gdrive
 # Andrew 2021 05
 
@@ -8,11 +12,11 @@
 
 # ENVIRONMENT AND DATA ====
 crspinfo = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+  paste0(pathDataIntermediate, 'crspminfo.fst')
 ) %>% # me, screens, 
   setDT()
 crspret = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst')
+  paste0(pathDataIntermediate, 'crspmret.fst')
 ) %>% # returns
   setDT()
 

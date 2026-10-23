@@ -1,37 +1,32 @@
+# Run: source from master.R after configuration and CRSP processing.
+# Inputs: processed daily CRSP, monthly stock information, signals and baseline monthly portfolios.
+# Outputs: six daily CSV families and DailyPortSummary.xlsx, under the configured output root.
+
 # Note: daily portfolios currently (2021 04) do not aggregate up to monthly
 # because the daily portfolios recalculate stock weights (equal or value-weighting) 
 # every day while the monthly portfolios recalculate stock weights every month.
-
-# Note: monthly portfolios are not screened at all for minimum number of stocks
-# and instead, we store Nstocks, and then screen for Nstocks when we do summary stats
-# However, to keep the daily portfolios data of a manageable size
-# we do not store Nlong and Nshort, and instead impose the screen at the portfolio 
-# level.  
 
 # takes about 1.5 hours per implementation, or about 10 hours total
 
 ### ENVIRONMENT AND DATA ####
 start_time = Sys.time()
 
-# minimum number of stocks in a portfolio
-# for now set to 1 (2021 04), matching baseline
-# setting to 20 removes IO_ShortInterest portfolios
-Nstocksmin = 1
+Nstocksmin = portfolio_config$daily$min_stocks
 
 ### load crsp returns
 crspinfo = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+  paste0(pathDataIntermediate, 'crspminfo.fst')
 ) %>% # me, screens, 
   setDT()
 crspret = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspdret.fst')
+  paste0(pathDataIntermediate, 'crspdret.fst')
 ) %>% # returns
   setDT()
 
 ### SET UP PATHS
 
-# since no other files use these paths, they don't go in 00_Settings*.R
-pathDataDaily  = paste0(pathProject, 'Portfolios/Data/DailyPortfolios/')
+# Configuration-specific subfolders below share the configured daily output root.
+# pathDataDaily is resolved from the configured output root by master.R.
 pathDataDailyBase   = paste0(pathDataDaily, 'Predictor/')
 pathDataDailyBaseVW   = paste0(pathDataDaily, 'PredictorVW/')
 pathDataDailyDecile = paste0(pathDataDaily, 'CtsPredictorDecile/')
@@ -47,13 +42,8 @@ dir.create(pathDataDailyDecileVW)
 dir.create(pathDataDailyQuintile)
 dir.create(pathDataDailyQuintileVW)
 
-# Ensure CRAN mirror is defined for non-interactive runs
-options(repos = c(CRAN = "https://cloud.r-project.org"))
-
-# since no other script uses lme4, it should go here.
-install.packages(setdiff(c('lme4'), rownames(installed.packages())))
+# Dependencies are checked by master.R; never install during a build.
 library(lme4)
-
 
 ### SELECT SIGNALS
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')

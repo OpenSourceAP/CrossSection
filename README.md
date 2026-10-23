@@ -108,15 +108,17 @@ It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
   ```
 * Option 2 - RStudio: Open `master.R` in RStudio and click "Source" or press Ctrl+Shift+S (Cmd+Shift+S on Mac)
 
-**Before running:** You must set `pathProject` in `master.R` (line 30) to your project root directory (where `SignalDoc.csv` is located). If using RStudio, `pathProject = paste0(getwd(), '/')` should work automatically.
+**Before running:** Edit the operational settings in `Portfolios/Code/config.R`. `here::i_am()` locates the project root. Start R from the project root or a subfolder, including when sourcing `master.R` in RStudio. Scientific settings remain in `SignalDoc.csv`.
 
-By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability results in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
+Daily portfolios and exhibits are enabled by default. Set `run$daily = FALSE` to skip daily portfolios, or `run$exhibits = FALSE` to skip exhibits. A quick run uses `run$quick_signals` and always skips exhibits. Set `paths$output_root` to an isolated directory to redirect processed CRSP, portfolio CSVs, summaries and exhibits; upstream signal inputs still come from the project. Relative output roots are resolved against the project root. Dependencies are checked before the build; missing packages must be installed separately.
+
+The baseline portfolios have historically taken about 30–45 minutes, with the full monthly build around 8 hours and daily portfolios adding roughly 10–12 hours. These are informal estimates. Portfolio calculations currently remain serial.
 
 The retired signal-coverage and stock-correlation exhibits are no longer built or shipped; portfolio-return exhibits remain available.
 
 #### CRSP data for the portfolios
 
-The portfolio code does not download anything itself. It reads the CRSP v2 (CIZ) files that `Signals/pyCode/` writes to `Signals/pyData/Intermediate/` (`monthlyCRSP.parquet`, and `dailyCRSP.parquet` if `skipdaily = F`), plus the three predictors built directly from CRSP (`Price`, `Size`, `STreversal`). These are the only portfolio inputs that cannot be downloaded from the data page, because CRSP data cannot be redistributed.
+The portfolio code does not download anything itself. It reads the CRSP v2 (CIZ) files that `Signals/pyCode/` writes to `Signals/pyData/Intermediate/` (`monthlyCRSP.parquet`, and `dailyCRSP.parquet` if `run$daily = TRUE`), plus the three predictors built directly from CRSP (`Price`, `Size`, `STreversal`). These are the only portfolio inputs that cannot be downloaded from the data page, because CRSP data cannot be redistributed.
 
 If you have run the full signals pipeline (`python master.py`), you already have them. If you only want to build portfolios from downloaded signals, run just the CRSP part of the pipeline:
 
@@ -124,7 +126,7 @@ If you have run the full signals pipeline (`python master.py`), you already have
 cd Signals/pyCode/
 pip install -r requirements.txt     # once
 cp dotenv.template .env             # once; add your WRDS credentials
-python crsp_only.py                 # add --skip-daily if master.R will run with skipdaily = T
+python crsp_only.py                 # add --skip-daily if config.R sets run$daily = FALSE
 ```
 
 This downloads monthly (and daily) CRSP and writes `Price.csv`, `Size.csv`, `STreversal.csv` to `Signals/pyData/Predictors/`. `master.R` stops with a message pointing to this command if any of these files are missing. Leave `OPENAP_DATA_ROOT` unset: it redirects only the downloads (it exists for CRSP migration comparisons), while the predictors and `master.R` read `Signals/pyData/`.

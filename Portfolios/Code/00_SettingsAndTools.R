@@ -1,96 +1,142 @@
-# """
-# Inputs: SignalDoc.csv, portfolio configuration globals, package dependencies
-# Outputs: Initialized paths, loaded documentation, and helper functions for downstream R scripts
-# How to run: source('Portfolios/Code/00_SettingsAndTools.R', echo = TRUE)
-# Example: source('Portfolios/Code/00_SettingsAndTools.R', echo = TRUE)
-# """
+# Run: sourced by master.R after config.R.
+# Inputs: portfolio_config, SignalDoc.csv and installed R dependencies.
+# Outputs: validated configuration, paths, loaded documentation and helpers.
+
+#### CONFIGURATION HELPERS
+
+portfolio_validate_config <- function(config) {
+  fail <- function(name) stop("Invalid portfolio_config$", name, call. = FALSE)
+  keys <- function(x, expected, name) {
+    if (!is.list(x) || anyDuplicated(names(x)) ||
+        !setequal(names(x), expected) || length(x) != length(expected)) fail(name)
+  }
+  number <- function(x, name, minimum = 0, integer = FALSE) {
+    if (!is.numeric(x) || length(x) != 1L || is.na(x) || !is.finite(x) ||
+        x < minimum || (integer && (x != floor(x) || x > .Machine$integer.max))) fail(name)
+  }
+  keys(config, c("signal_source", "paths", "run", "resources", "daily"), "fields")
+  if (!is.character(config$signal_source) || length(config$signal_source) != 1L ||
+      !config$signal_source %in% c("Python", "Stata")) fail("signal_source")
+  keys(config$paths, "output_root", "paths")
+  root <- config$paths$output_root
+  if (!is.null(root) && (!is.character(root) || length(root) != 1L ||
+                        is.na(root) || !nzchar(trimws(root)))) fail("paths$output_root")
+  keys(config$run, c("daily", "exhibits", "quick", "quick_signals", "verbose"), "run")
+  for (name in c("daily", "exhibits", "quick", "verbose")) {
+    x <- config$run[[name]]
+    if (!is.logical(x) || length(x) != 1L || is.na(x)) fail(paste0("run$", name))
+  }
+  signals <- config$run$quick_signals
+  if (!is.character(signals) || !length(signals) || anyNA(signals) ||
+      any(!nzchar(trimws(signals))) || anyDuplicated(signals)) fail("run$quick_signals")
+  keys(config$resources, c("max_workers", "memory_budget_gib", "reserve_gib",
+                           "threads_per_worker"), "resources")
+  number(config$resources$max_workers, "resources$max_workers", 1, TRUE)
+  number(config$resources$threads_per_worker, "resources$threads_per_worker", 1, TRUE)
+  number(config$resources$reserve_gib, "resources$reserve_gib")
+  if (!is.null(config$resources$memory_budget_gib)) {
+    number(config$resources$memory_budget_gib, "resources$memory_budget_gib", .Machine$double.eps)
+  }
+  keys(config$daily, c("workers", "min_stocks"), "daily")
+  if (!identical(config$daily$workers, "auto")) number(config$daily$workers, "daily$workers", 1, TRUE)
+  number(config$daily$min_stocks, "daily$min_stocks", 1, TRUE)
+  config
+}
+
+portfolio_paths <- function(config, project_root) {
+  config <- portfolio_validate_config(config)
+  project_root <- normalizePath(project_root, mustWork = TRUE)
+  output_root <- config$paths$output_root
+  if (is.null(output_root)) output_root <- project_root
+  output_root <- path.expand(output_root)
+  if (!grepl("^(/|[A-Za-z]:[/\\\\])", output_root)) output_root <- file.path(project_root, output_root)
+  output_root <- normalizePath(output_root, mustWork = FALSE)
+  slash <- function(...) paste0(file.path(...), "/")
+  signal_folder <- if (config$signal_source == "Python") "pyData" else "Data"
+  list(
+    pathProject = slash(project_root), pathOutputRoot = slash(output_root),
+    signalDataFolder = signal_folder,
+    pathPredictors = slash(project_root, "Signals", signal_folder, "Predictors"),
+    pathPlacebos = slash(project_root, "Signals", signal_folder, "Placebos"),
+    pathCRSPPredictors = slash(project_root, "Signals", signal_folder, "CRSPPredictors"),
+    pathtemp = slash(project_root, "Signals", signal_folder, "temp"),
+    pathSignalsIntermediate = slash(project_root, "Signals", "pyData", "Intermediate"),
+    pathCode = slash(project_root, "Portfolios", "Code"),
+    pathDataIntermediate = slash(output_root, "Portfolios", "Data", "Intermediate"),
+    pathDataPortfolios = slash(output_root, "Portfolios", "Data", "Portfolios"),
+    pathDataSummary = slash(output_root, "Portfolios", "Data", "Summary"),
+    pathDataDaily = slash(output_root, "Portfolios", "Data", "DailyPortfolios"),
+    pathResults = slash(output_root, "Results")
+  )
+}
+
+portfolio_check_dependencies <- function(config) {
+  packages <- c("here", "tidyverse", "lubridate", "readxl", "writexl", "fst", "arrow", "data.table")
+  if (config$run$exhibits && !config$run$quick) {
+    packages <- c(packages, "extrafont", "xtable", "gridExtra", "ggrepel")
+  }
+  if (config$run$daily) packages <- c(packages, "lme4")
+  missing <- packages[!vapply(packages, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing)) stop("Missing R packages: ", paste(missing, collapse = ", "),
+                            ". Ask the environment owner to install them before running.", call. = FALSE)
+  invisible(packages)
+}
+
+#### INITIALIZE CONFIGURATION
+
+portfolio_config <- portfolio_validate_config(portfolio_config)
+portfolio_check_dependencies(portfolio_config)
+portfolio_root <- here::here()
+
+# Compatibility globals for the existing calculation scripts.
+SignalSource <- portfolio_config$signal_source
+quickrun <- portfolio_config$run$quick
+quickrunlist <- portfolio_config$run$quick_signals
+skipdaily <- !portfolio_config$run$daily
+feed.verbose <- portfolio_config$run$verbose
+runexhibits <- portfolio_config$run$exhibits && !quickrun
+list2env(portfolio_paths(portfolio_config, portfolio_root), envir = environment())
 
 #### GLOBAL SETTINGS
 
 options(dplyr.summarise.inform = FALSE)
 
-#### PATHS
-signalDataFolder = ifelse(SignalSource == "Python", "pyData", "Data")
-pathPredictors = paste0(pathProject, 'Signals/', signalDataFolder, '/Predictors/')
-pathPlacebos = paste0(pathProject, 'Signals/', signalDataFolder, '/Placebos/')
-pathCRSPPredictors = paste0(pathProject, 'Signals/', signalDataFolder, '/CRSPPredictors/')
-pathtemp = paste0(pathProject, 'Signals/', signalDataFolder, '/temp/')
-# CRSP always comes from the Python downloads (CRSP v2 / CIZ), whatever SignalSource is
-pathSignalsIntermediate = paste0(pathProject, 'Signals/pyData/Intermediate/')
-
-pathCode = paste0(pathProject, 'Portfolios/Code/')
-pathDataIntermediate = paste0(pathProject, 'Portfolios/Data/Intermediate/')
-pathDataPortfolios = paste0(pathProject, 'Portfolios/Data/Portfolios/')
-pathDataSummary = paste0(pathProject, 'Portfolios/Data/Summary/')
-
-pathResults = paste0(pathProject, 'Results/')
-
-## Create folders if they don't exist
-# Portfolios/ paths
-dir.create(pathResults)
-dir.create(paste0(pathProject, 'Portfolios/Data'))
-dir.create(paste0(pathDataPortfolios))
-dir.create(paste0(pathDataIntermediate))
-
-# Signals paths (Data/ or pyData/)
-dir.create(paste0(pathProject,'Signals/', signalDataFolder, '/'))
-dir.create(paste0(pathPredictors))
-dir.create(paste0(pathPlacebos))
-dir.create(paste0(pathtemp))
-
+# Create generated-output folders after configuration and dependency checks.
+for (path in c(pathResults, pathDataPortfolios, pathDataIntermediate, pathDataSummary)) {
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+}
+# grid.arrange() and printed plots can open R's default PDF device before ggsave.
+# Keep that incidental file inside the output root as well.
+if (!interactive()) options(device = local({
+  plot_file <- file.path(pathResults, 'Rplots.pdf')
+  function(...) grDevices::pdf(file = plot_file, ...)
+}))
 
 #### PACKAGES
-# Check for and potentially install missing packages
-install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'fst',
-                           'arrow', 'xtable', 'gridExtra',
-                           'ggrepel','data.table'), 
-                         rownames(installed.packages())))
-
-# Use the extrafonts package, to get nicer fonts for output figures
-# Code issues warnings when not installed but runs nevertheless
-# See https://cran.r-project.org/web/packages/extrafont/README.html
-if (!'extrafont' %in% rownames(installed.packages())) {
-  install.packages('extrafont')
-  extrafont::font_import()
-}
-
-
 options(stringsAsFactors = FALSE)
 library(tidyverse)
 library(lubridate)
 library(readxl)
 library(writexl)
 library(fst)
-library(arrow) # for reading the CRSP parquet files from Signals/pyData/
-library(data.table) # for handling daily crsp
-
+library(arrow)
+library(data.table)
 
 ### EXHIBITS SETTINGS ###
-options(stringsAsFactors = FALSE)
 options(scipen = 999)
-optFontsize <- 20 # Fix fontsize for graphs here
-
-library(extrafont)
-loadfonts()
-
-library(xtable)
-options(xtable.floating = FALSE)
-library(gridExtra)
-library(ggrepel)
-
-# system dependent settings 
-dlmethod <- "auto"
-
-if ('Palatino Linotype' %in% fonts()) {
-  optFontFamily = 'Palatino Linotype'
-} else {
-  optFontFamily = ''
-}
-
-sysinfo <- Sys.info()
-if (sysinfo[1] == "Linux") {
-  dlmethod <- "wget"
-  optFontFamily <- "" # necessary for linux command line  
+optFontsize <- 20
+optFontFamily <- ''
+dlmethod <- if (Sys.info()[['sysname']] == 'Linux') 'wget' else 'auto'
+if (runexhibits) {
+  library(extrafont)
+  loadfonts()
+  library(xtable)
+  options(xtable.floating = FALSE)
+  library(gridExtra)
+  library(ggrepel)
+  if (Sys.info()[['sysname']] != 'Linux' && 'Palatino Linotype' %in% fonts()) {
+    optFontFamily <- 'Palatino Linotype'
+  }
 }
 
 #### FUNCTION FOR READING IN DOCUMENTATION
@@ -232,7 +278,7 @@ check_signal_csvs <- function(path_proj = pathProject, signal_source = SignalSou
   placebos_dir <- file.path(path_proj, 'Signals', signal_folder, 'Placebos')
 
   if (!file.exists(signal_doc_path)) {
-    stop('SignalDoc.csv not found. Please verify pathProject is set correctly.')
+    stop('SignalDoc.csv not found at the discovered project root.')
   }
 
   if (!dir.exists(predictors_dir) || !dir.exists(placebos_dir)) {

@@ -1,10 +1,14 @@
+# Run: source from master.R after configuration and CRSP processing.
+# Inputs: processed monthly CRSP, signal CSVs and SignalDoc.csv.
+# Outputs: alternative portfolio CSVs, under the configured output root.
+
 # ==== ENVIRONMENT AND DATA ====
 crspinfo = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+  paste0(pathDataIntermediate, 'crspminfo.fst')
 ) %>% # me, screens, 
   setDT()
 crspret = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst')
+  paste0(pathDataIntermediate, 'crspmret.fst')
 ) %>% # returns
   setDT()
 
