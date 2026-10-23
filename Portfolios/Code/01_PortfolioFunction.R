@@ -297,7 +297,7 @@ signalname_to_ports = function(
   
   if (feed.verbose){
     print(paste0('end of signalname_to_ports memory used = '))
-    print(mem_used())
+    print(paste0('memory used: ', round(sum(gc()[, 2]), 1), ' MB'))
   }    
   gc()
   if (feed.verbose){print(gc(T))}

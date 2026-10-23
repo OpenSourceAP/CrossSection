@@ -23,7 +23,7 @@ csvlist = list.files(pathPredictors) %>% as_tibble() %>% rename(signalname=value
   )
 
 missing = strategylist0 %>% select(signalname) %>% left_join(csvlist) %>%
-  filter(is.na(in_csv)) # note: CRSP predictors are put into pathPredictors by 11_CreateCRSPPredictors.R
+  filter(is.na(in_csv)) # note: CRSP predictors (Price, Size, STreversal) are put into pathPredictors by Signals/pyCode
 
 if (dim(missing)[1]>0){
   print('Warning: the following predictor signal csvs are missing:')

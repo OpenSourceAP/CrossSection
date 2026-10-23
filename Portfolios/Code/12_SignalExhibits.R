@@ -160,7 +160,7 @@ for (i in 1:length(prds)){
     
     signals = signals %>% full_join(tempin)
     
-    print(mem_used())
+    print(paste0('memory used: ', round(sum(gc()[, 2]), 1), ' MB'))
     gc()
     
   } else {
@@ -206,7 +206,7 @@ temp = foreach (i = 1:nrow(loopList),
                               consistent = FALSE)
                   # gc()
                   
-                  #  print(mem_used())
+                  #  print(paste0('memory used: ', round(sum(gc()[, 2]), 1), ' MB'))
                 }
 
 #stop cluster

@@ -9,7 +9,11 @@ Usage:
     python3 Predictors/Size.py
 
 Inputs:
-    - SignalMasterTable.parquet: Monthly master table with columns [permno, time_avail_m, mve_c]
+    - monthlyCRSP.parquet: monthly CRSP with columns [permno, time_avail_m, shrcd, exchcd, mve_c]
+
+Reads monthly CRSP directly, not SignalMasterTable, so the CRSP predictors can be
+built without Compustat (see crsp_only.py). The share and exchange code screen
+is the same as in SignalMasterTable.py, so the output is unchanged.
 
 Outputs:
     - Size.csv: CSV file with columns [permno, yyyymm, Size]
@@ -20,9 +24,12 @@ import numpy as np
 
 # DATA LOAD
 df = pd.read_parquet(
-    "../pyData/Intermediate/SignalMasterTable.parquet",
-    columns=["permno", "time_avail_m", "mve_c"],
+    "../pyData/Intermediate/monthlyCRSP.parquet",
+    columns=["permno", "time_avail_m", "shrcd", "exchcd", "mve_c"],
 )
+
+# Common stocks on major exchanges, as in SignalMasterTable.py
+df = df[df["shrcd"].isin([10, 11, 12]) & df["exchcd"].isin([1, 2, 3])]
 
 # SIGNAL CONSTRUCTION
 df["Size"] = np.log(df["mve_c"])

@@ -15,6 +15,8 @@ pathPredictors = paste0(pathProject, 'Signals/', signalDataFolder, '/Predictors/
 pathPlacebos = paste0(pathProject, 'Signals/', signalDataFolder, '/Placebos/')
 pathCRSPPredictors = paste0(pathProject, 'Signals/', signalDataFolder, '/CRSPPredictors/')
 pathtemp = paste0(pathProject, 'Signals/', signalDataFolder, '/temp/')
+# CRSP always comes from the Python downloads (CRSP v2 / CIZ), whatever SignalSource is
+pathSignalsIntermediate = paste0(pathProject, 'Signals/pyData/Intermediate/')
 
 pathCode = paste0(pathProject, 'Portfolios/Code/')
 pathDataIntermediate = paste0(pathProject, 'Portfolios/Data/Intermediate/')
@@ -39,8 +41,8 @@ dir.create(paste0(pathtemp))
 
 #### PACKAGES
 # Check for and potentially install missing packages
-install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'pryr', 'fst',
-                           'RPostgres', 'getPass', 'xtable', 'gridExtra',
+install.packages(setdiff(c('tidyverse', 'lubridate', 'readxl', 'writexl', 'fst',
+                           'arrow', 'xtable', 'gridExtra',
                            'ggrepel','data.table'), 
                          rownames(installed.packages())))
 
@@ -58,13 +60,9 @@ library(tidyverse)
 library(lubridate)
 library(readxl)
 library(writexl)
-library(pryr)
 library(fst)
+library(arrow) # for reading the CRSP parquet files from Signals/pyData/
 library(data.table) # for handling daily crsp
-
-# for WRDS access
-library(RPostgres)
-library(getPass)
 
 
 ### EXHIBITS SETTINGS ###
@@ -199,6 +197,34 @@ checkSignals = function(docs = alldocumentation, pathProj = pathProject) {
   
 } # end function
 
+# predictors built directly from CRSP by Signals/pyCode; not in the public signal zips
+crsp_predictors = c('Price', 'Size', 'STreversal')
+
+# Check that the CRSP inputs produced by Signals/pyCode exist. These are the
+# only inputs that cannot be downloaded from the data page: the CRSP parquet
+# files and the three CRSP predictors. Signals/pyCode/crsp_only.py makes them.
+check_crsp_inputs <- function(path_proj = pathProject, skip_daily = skipdaily) {
+  required <- c(
+    paste0(path_proj, 'Signals/pyData/Intermediate/monthlyCRSP.parquet'),
+    paste0(path_proj, 'Signals/pyData/Predictors/', crsp_predictors, '.csv')
+  )
+  if (!skip_daily) {
+    required <- c(required, paste0(path_proj, 'Signals/pyData/Intermediate/dailyCRSP.parquet'))
+  }
+  missing <- required[!file.exists(required)]
+  if (length(missing) > 0) {
+    message('Missing CRSP inputs:')
+    for (f in missing) message('  - ', f)
+    stop(paste0(
+      'CRSP inputs not found. From Signals/pyCode/ run: python crsp_only.py',
+      if (skip_daily) ' --skip-daily' else '',
+      '\n(or run the full signals pipeline, python master.py)'
+    ))
+  }
+  message('CRSP input check: all CRSP parquet files and CRSP predictors found.')
+  invisible(TRUE)
+}
+
 check_signal_csvs <- function(path_proj = pathProject, signal_source = SignalSource) {
   signal_doc_path <- file.path(path_proj, 'SignalDoc.csv')
   signal_folder <- if (identical(signal_source, 'Python')) 'pyData' else 'Data'
@@ -222,6 +248,8 @@ check_signal_csvs <- function(path_proj = pathProject, signal_source = SignalSou
 
   all_signal_files <- sort(unique(c(predictor_files, placebo_files)))
   missing_signals <- setdiff(expected_signals, all_signal_files)
+  # the CRSP predictors are checked separately by check_crsp_inputs()
+  missing_signals <- setdiff(missing_signals, crsp_predictors)
   extra_files <- setdiff(all_signal_files, expected_signals)
 
   if (length(missing_signals) == 0) {

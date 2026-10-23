@@ -4,8 +4,9 @@
 Inputs: crsp.dsf_v2. DEBUG_MODE selects January 1981; production uses full years
 from 1926 through the current year. Delisting-event rows are excluded because
 v1 dsf did not contain the separate CIZ delisting return observations.
-Outputs: OPENAP_DATA_ROOT/Intermediate/dailyCRSP.parquet and dailyCRSPprc.parquet
-(default Signals/pyData). Both retain the v1 column order and units.
+Outputs: Signals/pyData/Intermediate/dailyCRSP.parquet and dailyCRSPprc.parquet
+(OPENAP_DATA_ROOT redirects these for migration comparisons only; see config.py).
+Both retain the v1 column order and units.
 Mapping: Signals/tests/crsp_v2/daily_mapping.md.
 """
 

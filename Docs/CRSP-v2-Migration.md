@@ -117,6 +117,106 @@ not investigated row by row.
 
 Decision: pending approval.
 
+## Portfolios/Code (issue 216)
+
+The portfolio code no longer downloads CRSP. `10_DownloadCRSP.R` (legacy
+`crsp.msf`/`msenames`/`msedelist` and `crsp.dsf`) and
+`12_CreateCRSPPredictors.R` are removed. `11_ProcessCRSP.R` reads
+`Signals/pyData/Intermediate/monthlyCRSP.parquet` and `dailyCRSP.parquet`
+(the CIZ outputs of `CRSPMonthly.py` and `CRSPDaily.py`) and writes the same
+`crspmret.fst`, `crspminfo.fst` and `crspdret.fst` as before, so scripts `20_`
+to `50_` are unchanged. `Signals/pyCode/crsp_only.py` runs only the CRSP
+downloads and the three CRSP predictors, for users who start from downloaded
+signals.
+
+Differences from the legacy portfolio inputs:
+
+- Delisting returns: `ret` is native `mthret`, which includes the delisting
+  return for `mthdelflg` A, P and V. The legacy portfolio code compounded
+  `msf.ret` with `msedelist.dlret` and imputed −35% (NYSE/AMEX) or −55%
+  (NASDAQ) for performance-related delistings (codes 500, 520–584) without a
+  delisting return. Neither step is applied now, matching `Signals/`. Months
+  with `mthdelflg` G or M have no delisting return in CIZ and none is imputed.
+- Mid-month delistings: `mthret` is missing when there is no month-end price,
+  so these months drop out of `crspmret` as they did in v1 when `msf.ret` was
+  missing; in v1 the delisting return could still enter through `dlret`.
+- `shrcd` and `exchcd` are the legacy codes recovered in `CRSPMonthly.py`
+  (see "Share and exchange codes"). The portfolio code uses only
+  `exchcd == 1` (NYSE breakpoints and the NYSE-only alternative) and
+  `shrcd %in% c(10, 11)` (2x3 sorts).
+- `me` is `mve_c` (`|prc| * shrout`, millions), the same definition as before.
+- `Price`, `Size` and `STreversal` are now built by `Signals/pyCode/Predictors/`
+  for everyone. They read `monthlyCRSP.parquet` directly with the
+  `SignalMasterTable.py` screen (`shrcd` 10–12, `exchcd` 1–3), so the full
+  pipeline output is unchanged and no Compustat is needed. The legacy R
+  versions did not apply this screen and used the imputed delisting returns in
+  `STreversal`.
+- Daily: `dailyCRSP.parquet` excludes CIZ's separate delisting-event rows
+  (`dlydelflg = 'Y'`), matching legacy `dsf` keys. `passgain` and `melag` are
+  computed as before.
+
+- `date` in `crspmret` is `mthcaldt` (the month's last trading date), kept in
+  `monthlyCRSP.parquet` from 2026-10-23 so portfolio output stays month-end
+  dated like legacy `msf.date`. For older parquet files without the column,
+  `11_ProcessCRSP.R` uses the last calendar day of the month. Checked on
+  WRDS 2026-10-23: through 2024-12, `mthcaldt` equals legacy `msf.date` on
+  all 5,117,046 security-months present in both tables, and each of the 1,189
+  months has a single date in both tables. After rerunning `CRSPMonthly.py`,
+  `crspmret.fst` dates equal the legacy dates on all 5,033,554 matched rows.
+- `me` in `crspminfo` is in millions of dollars (`mve_c`); the legacy portfolio
+  code had it in thousands (legacy `shrout` was in thousands). The portfolio
+  code uses `me` only relatively (NYSE breakpoints, `me > me_nyse20`, value
+  weights), so nothing downstream changes.
+
+#### Validation (2026-10-23, legacy `crsp.msf` pulled from WRDS, compared through 2024-12)
+
+The legacy monthly tables were pulled with the old `10_DownloadCRSP.R` query
+and processed with the old `11_ProcessCRSP.R` monthly block; the result was
+compared with the new intermediates (legacy `me` rescaled to millions).
+
+`crspmret` (security-months with a return): 4,987,378 legacy vs 5,033,581 new.
+
+- 72 keys only in legacy (9 delisting months where `msf.ret` was missing but
+  `dlret` was present and became the return). 46,275 keys only in new, mostly
+  first months of a listing (1972 alone 3,236) where CIZ reports a
+  partial-period return and legacy `ret` was missing.
+- On the 4,987,306 common keys, `ret` differs by more than 1e-4 pct in 18% of
+  rows and by more than 0.01 pct in 11% (CIZ dividend reinvestment; matches the
+  Stage 2 finding and the 10% in Schwarz, Walter and Weiss). 7,400 rows differ
+  by more than 1 pct: 2,041 are delisting months (legacy −35%/−55% imputation
+  or `dlret` compounding), the rest are source revisions concentrated in the
+  1930s and 1970s.
+- `melag` differs by more than 1e-4 relative in 4,041 rows; 3,158 legacy-missing
+  values are now present and 2,736 the reverse.
+
+`crspminfo`: 5,153,763 legacy vs 5,117,616 new rows.
+
+- 36,717 keys only in legacy: one empty month per PERMNO (no price, no name
+  match), the same rows as in Stage 2. 570 keys only in new (40 PERMNOs).
+- NYSE status (`exchcd == 1`) never differs. `exchcd` in 1–3 status differs in
+  24,194 rows and `shrcd` in 10–11 status in 20,167 rows, almost all because
+  the legacy `msenames` join left `shrcd`/`exchcd` missing in 25,761 rows
+  that CIZ classifies.
+- `prc`: no sign differences; 2,664 rows differ by more than 1e-4 relative.
+  `me`: 6,743 rows differ by more than 1e-4 relative, 1,742 by more than 1e-2.
+  `me_nyse20` differs by more than 1% in 189 of 1,189 months (max 6%).
+
+Baseline long-short portfolios (same signal CSVs, legacy vs new CRSP):
+
+| Signal     | Months | Corr  | Mean LS legacy | Mean LS new | t legacy | t new | Max abs diff (pct) |
+| ---------- | ------ | ----- | -------------- | ----------- | -------- | ----- | ------------------ |
+| Price      | 1,188  | 0.999 | 0.67           | 0.72        | 2.68     | 2.90  | 3.4                |
+| Size       | 1,182  | 0.999 | 0.32           | 0.34        | 2.76     | 2.95  | 1.3                |
+| STreversal | 1,187  | 0.997 | 2.72           | 2.83        | 13.60    | 14.03 | 7.7                |
+
+The largest monthly differences are STreversal months in 1930–1942, where CIZ
+revised a handful of extreme small-stock returns. Daily intermediates were
+not compared against legacy `dsf` here; `dailyCRSP.parquet` was validated in
+the Signals migration (see `CRSPDaily.py` below).
+
+Decision (2026-10-23): accepted; the differences are the documented CIZ
+definition changes plus the removal of the legacy delisting imputation.
+
 ## CRSPMonthly.py: ✅
 
 PR #214 follow-up: removed the daily CRSP aggregation and the unused monthly
