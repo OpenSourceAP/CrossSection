@@ -112,7 +112,7 @@ It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
 Daily portfolios and exhibits are enabled by default. Set `run$daily = FALSE` to skip daily portfolios, or `run$exhibits = FALSE` to skip exhibits. A quick run uses `run$quick_signals` and always skips exhibits. Set `paths$output_root` to an isolated directory to redirect processed CRSP, portfolio CSVs, summaries and exhibits; upstream signal inputs still come from the project. Relative output roots are resolved against the project root. Dependencies are checked before the build; missing packages must be installed separately.
 
-The baseline portfolios have historically taken about 30–45 minutes, with the full monthly build around 8 hours and daily portfolios adding roughly 10–12 hours. These are informal estimates. Portfolio calculations currently remain serial.
+Run serially, the baseline portfolios have historically taken about 30–45 minutes, with the full monthly build around 8 hours and daily portfolios adding roughly 10–12 hours. These are informal estimates. The portfolio stages now run on parallel workers: monthly stages split each configuration's signals across workers, and the daily stage runs its six configurations as separate jobs. Set the worker limit with `resources$max_workers` in `config.R` (default 3); the count also drops if RAM is short (see `Portfolios/README.md`). With 3 workers, expect roughly a third of the serial times: about 3 hours for the monthly build and 3.5–4 hours for daily portfolios. Parallel times have not yet been measured on a full run.
 
 The retired signal-coverage and stock-correlation exhibits are no longer built or shipped; portfolio-return exhibits remain available.
 

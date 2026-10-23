@@ -33,6 +33,9 @@ if (!interactive()) {
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Stage times: informal serial estimates, then rough estimates with 3 parallel
+# workers (not yet measured on a full run). See config.R for the worker limit.
+
 # PREPARE INTERMEDIATE DATA ####
 
 print('master: 11_ProcessCRSP.R')
@@ -43,7 +46,7 @@ tryCatch({
 # ==== CREATE BASELINE PORTFOLIOS ====
 print('master: 20_PredictorPorts')
 tryCatch({
-    source('20_PredictorPorts.R', echo=feed.verbose, local=TRUE) # 30 min
+    source('20_PredictorPorts.R', echo=feed.verbose, local=TRUE) # 30-45 min serial, ~15 min with 3 workers
 })
 
 
@@ -59,7 +62,7 @@ if (runexhibits){
 
 print('master: 30_PredictorAltPorts.R')
 tryCatch({
-    source('30_PredictorAltPorts.R', echo=feed.verbose, local=TRUE) # about 6 hours
+    source('30_PredictorAltPorts.R', echo=feed.verbose, local=TRUE) # ~6 hours serial, ~2 hours with 3 workers
 })
 
 
@@ -77,7 +80,7 @@ tryCatch({
 
 print('master: 40 40_PlaceboPorts.R')
 tryCatch({
-    source('40_PlaceboPorts.R', echo=feed.verbose, local=TRUE) # 30 min
+    source('40_PlaceboPorts.R', echo=feed.verbose, local=TRUE) # ~30 min serial, ~10 min with 3 workers
 })
 
 
@@ -94,6 +97,6 @@ if (runexhibits){
 if (!skipdaily){
     print('master: 50_DailyPredictorPorts.R')
     tryCatch({
-        source('50_DailyPredictorPorts.R', echo=feed.verbose, local=TRUE) # about 6 hours
+        source('50_DailyPredictorPorts.R', echo=feed.verbose, local=TRUE) # 10-12 hours serial, 3.5-4 hours with 3 workers
     })
 }

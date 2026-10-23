@@ -9,7 +9,8 @@
 
 # The six configurations run as independent jobs on parallel workers; the number
 # of workers comes from portfolio_n_workers('daily') in config.R. Each
-# configuration takes about 1.5 hours.
+# configuration takes about 1.5-2 hours in its worker, so with 3 workers the
+# six take about 3.5-4 hours (informal estimate; serial was 10-12 hours).
 
 ### ENVIRONMENT AND DATA ####
 start_time = Sys.time()
