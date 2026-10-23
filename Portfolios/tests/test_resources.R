@@ -1,0 +1,212 @@
+# Run: Rscript Portfolios/tests/test_resources.R (from any working directory).
+# Inputs: installed R dependencies and portfolio source files; no research data.
+# Outputs: assertions and temporary fixtures/logs, deleted on completion.
+
+test_file <- sub("^--file=", "", grep("^--file=", commandArgs(), value = TRUE))[1L]
+code_dir <- normalizePath(file.path(dirname(test_file), "..", "Code"))
+setwd(code_dir)
+here::i_am("Portfolios/tests/test_resources.R")
+source(file.path(code_dir, "config.R"))
+
+test_resources <- function() {
+  temporary <- tempfile("portfolio-tests-")
+  dir.create(temporary)
+  on.exit(unlink(temporary, recursive = TRUE), add = TRUE)
+  original_config <- portfolio_config
+  setup_config <- original_config
+  setup_config$paths$output_root <- file.path(temporary, "setup")
+  setup_config$run$exhibits <- FALSE
+  assign("portfolio_config", setup_config, envir = .GlobalEnv)
+  on.exit(assign("portfolio_config", original_config, envir = .GlobalEnv), add = TRUE)
+  suppressMessages(suppressPackageStartupMessages(
+    base::source(file.path(code_dir, "00_SettingsAndTools.R"), local = .GlobalEnv)))
+  assign("portfolio_config", original_config, envir = .GlobalEnv)
+  config_only <- new.env(parent = baseenv())
+  sys.source(file.path(code_dir, "config.R"), envir = config_only)
+  stopifnot(identical(ls(config_only), c("portfolio_config", "portfolio_n_workers")))
+  expect_error <- function(expression, pattern) {
+    message <- tryCatch({ force(expression); NULL }, error = conditionMessage)
+    stopifnot(!is.null(message), grepl(pattern, message))
+  }
+  config <- portfolio_config
+  stopifnot(identical(portfolio_validate_config(config), config))
+  bad <- config
+  bad$resources$max_workers <- 1.5
+  expect_error(portfolio_validate_config(bad), "max_workers")
+  bad <- config
+  bad$resources$gib_per_worker <- c(monthly = 4)
+  expect_error(portfolio_validate_config(bad), "gib_per_worker")
+  bad <- config
+  bad$run$quick <- NA
+  expect_error(portfolio_validate_config(bad), "quick")
+  bad <- config
+  bad$resources$typo <- 1
+  expect_error(portfolio_validate_config(bad), "resources")
+  checker <- portfolio_check_dependencies
+  checker_env <- new.env(parent = environment(checker))
+  checker_env$requireNamespace <- function(package, ...) !package %in% c("ggrepel", "lme4")
+  environment(checker) <- checker_env
+  expect_error(checker(config), "ggrepel, lme4")
+  no_optional <- config
+  no_optional$run$daily <- FALSE
+  no_optional$run$exhibits <- FALSE
+  checker(no_optional)
+  paths <- portfolio_paths(config, portfolio_root)
+  config$paths$output_root <- file.path(temporary, "isolated")
+  isolated <- portfolio_paths(config, portfolio_root)
+  stopifnot(identical(paths$pathPredictors, isolated$pathPredictors),
+            identical(paths$pathSignalsIntermediate, isolated$pathSignalsIntermediate))
+  for (name in c("pathDataIntermediate", "pathDataPortfolios", "pathDataSummary", "pathDataDaily", "pathResults")) {
+    stopifnot(startsWith(isolated[[name]], config$paths$output_root))
+  }
+  config$paths$output_root <- "temp/portfolio-relative-test"
+  stopifnot(startsWith(portfolio_paths(config, portfolio_root)$pathResults,
+                      file.path(portfolio_root, config$paths$output_root)))
+
+  # Workers = available RAM / RAM per worker, capped by max_workers (at least 1).
+  workers <- function(available_gib) suppressMessages(suppressWarnings(
+    portfolio_n_workers("daily", sizing, available_gib)))
+  sizing <- portfolio_config
+  sizing$resources$gib_per_worker[["daily"]] <- 10
+  stopifnot(workers(25) == 2L, workers(100) == 3L, workers(5) == 1L)
+  warned <- tryCatch(suppressMessages(portfolio_n_workers("daily", sizing, 5)),
+                     warning = conditionMessage)
+  stopifnot(grepl("may not fit", warned))
+  stopifnot(is.integer(suppressMessages(portfolio_n_workers("monthly"))))
+
+  # Real PSOCK run: two workers, setup once per worker, results in job order,
+  # and a free worker takes the next job.
+  run_jobs <- function(run_job) {
+    fixture_config <- original_config
+    fixture_config$resources$gib_per_worker[["daily"]] <- 0.001
+    fixture_config$resources$max_workers <- 2L
+    assign("portfolio_config", fixture_config, envir = .GlobalEnv)
+    on.exit(assign("portfolio_config", original_config, envir = .GlobalEnv))
+    suppressMessages(portfolio_run_jobs(
+      "daily", list(first = 0.5, second = 0.05, third = 0.05, fourth = 0.05), run_job,
+      setup = function() count <<- 0L, globals = list(offset = 100L, helper = function(x) x + offset)))
+  }
+  result <- run_jobs(function(job) {
+    count <<- count + 1L
+    Sys.sleep(job)
+    list(pid = Sys.getpid(), count = helper(count))
+  })
+  pids <- vapply(result, `[[`, integer(1), "pid")
+  stopifnot(identical(names(result), c("first", "second", "third", "fourth")),
+            length(unique(pids)) == 2L, pids[["third"]] == pids[["second"]],
+            result$third$count == 102L)
+
+  # A failed job is named after the others finish, and no workers are left.
+  ran <- tryCatch(run_jobs(function(job) if (job > 0.1) stop("fixture failure") else job),
+                  error = conditionMessage)
+  stopifnot(grepl("first: fixture failure", ran), !grepl("second", ran))
+  Sys.sleep(1)
+  stopifnot(length(ps::ps_children()) == 0L)
+
+  # Parallel signals match the serial loop, including a failed signal's NA row.
+  fixture <- paste0(file.path(temporary, "signals"), "/")
+  dir.create(fixture)
+  write.csv(data.frame(permno = 1:4, yyyymm = 202001, Sig = c(1, 2, 3, 4)),
+            file.path(fixture, "Sig.csv"), row.names = FALSE)
+  write.csv(data.frame(permno = 1:4, yyyymm = 202001, Sig2 = c(4, 1, 3, 2)),
+            file.path(fixture, "Sig2.csv"), row.names = FALSE)
+  fst::write_fst(data.frame(permno = 1:4, yyyymm = 202001, exchcd = 1),
+                 paste0(pathDataIntermediate, "crspminfo.fst"))
+  returns <- data.frame(permno = 1:4, date = as.Date("2020-02-28"), yyyymm = 202002,
+                        ret = c(1, 2, 3, 4), melag = 10)
+  fixture_globals <- list(pathPredictors = fixture, pathCRSPPredictors = fixture,
+                          pathPlacebos = fixture, pathtemp = fixture, feed.verbose = FALSE,
+                          crspretpath = file.path(temporary, "crspret.fst"),
+                          crspinfo = data.table::setDT(fst::read_fst(paste0(pathDataIntermediate, "crspminfo.fst"))))
+  fst::write_fst(returns, fixture_globals$crspretpath)
+  list2env(fixture_globals, envir = .GlobalEnv)
+  base::source(file.path(code_dir, "01_PortfolioFunction.R"), local = .GlobalEnv)
+  strategies <- data.frame(signalname = c("Sig", "Missing", "Sig2"), Cat.Form = "continuous",
+                           q_cut = 0.5, sweight = c("EW", "EW", "VW"), Sign = 1, startmonth = NA,
+                           portperiod = NA, q_filt = NA, filterstr = NA)
+  capture.output(serial <- loop_over_strategies(strategies))
+  assign("portfolio_config", within(original_config, {
+    resources$gib_per_worker[["monthly"]] <- 0.001
+    resources$max_workers <- 2L
+  }), envir = .GlobalEnv)
+  capture.output(parallel <- suppressMessages(loop_over_strategies(strategies, stage = "monthly")))
+  assign("portfolio_config", original_config, envir = .GlobalEnv)
+  # data.table's internal self-reference pointer does not survive serialization
+  stopifnot(identical(as.data.frame(serial), as.data.frame(parallel)),
+            sum(is.na(serial$port)) == 1L, nrow(serial) == 7L)
+
+  # Exercise master startup from project folders, stubbing only heavy stages.
+  # This checks configuration, legacy paths and exhibit ordering without CRSP.
+  original_wd <- getwd()
+  on.exit(setwd(original_wd), add = TRUE)
+  setwd(temporary)
+  expect_error(base::source(file.path(code_dir, "master.R"), local = new.env()),
+               "Could not find associated project")
+  for (scenario in c("default", "quick", "disabled")) {
+    setwd(switch(scenario, default = portfolio_root, quick = code_dir,
+                 disabled = dirname(code_dir)))
+    quick <- scenario == "quick"
+    env <- new.env(parent = globalenv())
+    env$seen <- character()
+    env$source <- function(file, local = TRUE, ...) {
+      name <- basename(file)
+      if (name %in% c("config.R", "00_SettingsAndTools.R")) {
+        suppressMessages(suppressPackageStartupMessages(base::source(file, local = env)))
+        if (name == "config.R") {
+          env$portfolio_config$run$quick <- quick
+          if (scenario == "disabled") {
+            env$portfolio_config$run$daily <- FALSE
+            env$portfolio_config$run$exhibits <- FALSE
+          }
+          env$portfolio_config$paths$output_root <- file.path(temporary, "master-output")
+        }
+        if (name == "00_SettingsAndTools.R") {
+          env$check_crsp_inputs <- function(...) TRUE
+          env$check_signal_csvs <- function(...) TRUE
+        }
+      } else {
+        env$seen <- c(env$seen, name)
+        stopifnot(startsWith(env$pathDataIntermediate, file.path(temporary, "master-output")))
+      }
+      invisible(NULL)
+    }
+    env$check_crsp_inputs <- function(...) TRUE
+    env$check_signal_csvs <- function(...) TRUE
+    base::source(file.path(code_dir, "master.R"), local = env)
+    exhibits <- c("21_PredictorExhibits.R", "31_CheckPredictorsExhibits.R", "41_PlaceboExhibits.R")
+    stopifnot(!"12_SignalExhibits.R" %in% env$seen,
+              all((exhibits %in% env$seen) == (scenario == "default")),
+              ("50_DailyPredictorPorts.R" %in% env$seen) == (scenario != "disabled"))
+    if (scenario == "default") stopifnot(match(exhibits[1L], env$seen) < match(exhibits[3L], env$seen))
+  }
+  setwd(temporary)
+  # Load the real settings with isolated outputs, and check incidental plots.
+  env$portfolio_config <- portfolio_config
+  env$portfolio_config$run$exhibits <- FALSE
+  env$portfolio_config$paths$output_root <- file.path(temporary, "settings-output")
+  list2env(portfolio_paths(env$portfolio_config, portfolio_root), envir = env)
+  env$runexhibits <- FALSE
+  old_device <- getOption("device")
+  on.exit(options(device = old_device), add = TRUE)
+  suppressPackageStartupMessages(base::source(file.path(code_dir, "00_SettingsAndTools.R"), local = env))
+  plot(1)
+  grDevices::dev.off()
+  stopifnot(file.exists(file.path(env$pathResults, "Rplots.pdf")), !file.exists(file.path(temporary, "Rplots.pdf")))
+
+  # Exercise just the shipping results block with fixture files and a stale copy.
+  results_source <- file.path(temporary, "shipping-source")
+  results_dest <- file.path(temporary, "shipping-dest")
+  dir.create(results_source)
+  dir.create(results_dest)
+  writeLines("retained", file.path(results_source, "fig1Port_jointly.pdf"))
+  writeLines("retired", file.path(results_source, "coverage.xlsx"))
+  writeLines("stale", file.path(results_dest, "coverage.xlsx"))
+  shipping <- readLines(file.path(portfolio_root, "Shipping", "Code", "2_pack_portfolios_and_results.r"))
+  block <- shipping[seq.int(match("# ==== RESULTS ====", shipping) + 1L, length(shipping))]
+  shipping_env <- list2env(list(pathResults = results_source, dir_results = results_dest))
+  eval(parse(text = block), envir = shipping_env)
+  stopifnot(identical(list.files(results_dest), "fig1Port_jointly.pdf"))
+  message("Portfolio configuration tests passed.")
+}
+
+test_resources()

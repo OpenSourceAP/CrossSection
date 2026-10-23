@@ -148,7 +148,14 @@ print(Sys.time() - starttime)
 result_wd <- getwd()
 setwd(pathResults)
 
-flist <- list.files()
+# Retired signal exhibits can remain in older local output folders. Never ship them.
+retired_results <- c('coverage.xlsx', 'rhoStockLevel.RDS',
+                     'fig1aStock_pairwisecorrelations.pdf', 'fig1Stock_jointly.pdf',
+                     paste0('fig1SignalCorrelationWith_',
+                            c('Size', 'BM', 'Mom12m', 'GP', 'AssetGrowth'), '.pdf'))
+flist <- setdiff(list.files(), retired_results)
+# Refreshing an existing release must also retire copies left by older builds.
+unlink(file.path(dir_results, retired_results))
 for (fcurr in flist) {
   success <- file.copy(
     from = fcurr,
