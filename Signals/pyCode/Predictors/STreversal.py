@@ -9,7 +9,11 @@ Usage:
     python3 Predictors/STreversal.py
 
 Inputs:
-    - SignalMasterTable.parquet: Master signal table with columns [permno, time_avail_m, ret]
+    - monthlyCRSP.parquet: monthly CRSP with columns [permno, time_avail_m, shrcd, exchcd, ret]
+
+Reads monthly CRSP directly, not SignalMasterTable, so the CRSP predictors can be
+built without Compustat (see crsp_only.py). The share and exchange code screen
+is the same as in SignalMasterTable.py, so the output is unchanged.
 
 Outputs:
     - STreversal.csv: CSV file with columns [permno, yyyymm, STreversal]
@@ -25,11 +29,18 @@ from utils.save_standardized import save_predictor
 print("Starting STreversal.py...")
 
 # Data load
-print("Loading SignalMasterTable...")
-signal_master = pl.read_parquet("../pyData/Intermediate/SignalMasterTable.parquet")
+print("Loading monthly CRSP...")
+df = pl.read_parquet(
+    "../pyData/Intermediate/monthlyCRSP.parquet",
+    columns=["permno", "time_avail_m", "shrcd", "exchcd", "ret"],
+)
 
-# Select required columns
-df = signal_master.select(["permno", "time_avail_m", "ret"])
+# Common stocks on major exchanges, as in SignalMasterTable.py
+df = df.filter(
+    pl.col("shrcd").cast(pl.Int64).is_in([10, 11, 12])
+    & pl.col("exchcd").cast(pl.Int64).is_in([1, 2, 3])
+)
+df = df.select(["permno", "time_avail_m", "ret"])
 print(f"Loaded data: {df.shape[0]} rows")
 
 # Signal construction

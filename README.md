@@ -93,9 +93,10 @@ The orchestrator blocks are written to keep running even if a particular downloa
 
 `master.R` runs everything. It:
 
-1. Takes in signal data located in `Signals/Data/Predictors/` or `Signals/pyData/Predictors/`, and `Signals/Data/Placebos/` or `Signals/pyData/Placebos/`
-2. Outputs portfolio data to `Portfolios/Data/Portfolios/`
-3. Outputs exhibits found in the paper to `Results/`
+1. Takes in signal data located in `Signals/pyData/Predictors/` and `Signals/pyData/Placebos/` (or `Signals/Data/...` for the legacy Stata signals)
+2. Takes in CRSP v2 (CIZ) data from `Signals/pyData/Intermediate/` (see below)
+3. Outputs portfolio data to `Portfolios/Data/Portfolios/`
+4. Outputs exhibits found in the paper to `Results/`
 
 It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
@@ -111,14 +112,29 @@ It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
 By default the code skips the daily portfolios (`skipdaily = T`), and takes about 8 hours, assuming you examine all 300 or so signals.  However, the baseline portfolios (based on predictability results in the original papers) will be done in just 30 minutes. You can keep an eye on how it's going by checking the csvs outputted to `Portfolios/Data/Portfolios/`.  Every 30 minutes or so the code should output another set of portfolios.  Adding the daily portfolios (`skipdaily = F`) takes an additional 12ish hours.
 
+#### CRSP data for the portfolios
+
+The portfolio code does not download anything itself. It reads the CRSP v2 (CIZ) files that `Signals/pyCode/` writes to `Signals/pyData/Intermediate/` (`monthlyCRSP.parquet`, and `dailyCRSP.parquet` if `skipdaily = F`), plus the three predictors built directly from CRSP (`Price`, `Size`, `STreversal`). These are the only portfolio inputs that cannot be downloaded from the data page, because CRSP data cannot be redistributed.
+
+If you have run the full signals pipeline (`python master.py`), you already have them. If you only want to build portfolios from downloaded signals, run just the CRSP part of the pipeline:
+
+```bash
+cd Signals/pyCode/
+pip install -r requirements.txt     # once
+cp dotenv.template .env             # once; add your WRDS credentials
+python crsp_only.py                 # add --skip-daily if master.R will run with skipdaily = T
+```
+
+This downloads monthly (and daily) CRSP and writes `Price.csv`, `Size.csv`, `STreversal.csv` to `Signals/pyData/Predictors/`. `master.R` stops with a message pointing to this command if any of these files are missing.
+
 #### Minimal Setup
 
-To get started quickly, `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/`.
-There are a couple ways to set up this signal data:
+To get started quickly, `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/` after running `crsp_only.py` as above.
+To add other signals:
 
-* Run the code in `Signals/pyCode/` (see above).
-* Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and unzip to `Signals/Data/Predictors/` and `Signals/Data/Placebos/`.
-* Download only some selected csvs via the [data page](https://sites.google.com/site/chenandrewy/open-source-ap) and place in `Signals/Data/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv` and put them in `Signals/Data/Predictors/`).
+* Run the code in `Signals/pyCode/` (see above), or
+* Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://www.openassetpricing.com) and unzip to `Signals/pyData/Predictors/` and `Signals/pyData/Placebos/`, or
+* Download only some selected csvs via the [data page](https://www.openassetpricing.com) and place them in `Signals/pyData/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv`).
 
 
 ### `Shipping/Code` Instructions

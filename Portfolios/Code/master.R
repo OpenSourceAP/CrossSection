@@ -4,13 +4,15 @@
 
 # scripts below do the following
 #   sets up paths (see 00_SettingsAndTools.R)
-#   downloads crsp data that can't be easily shared and creates related predictors
+#   processes crsp data downloaded by the signals code (see 11_ProcessCRSP.R)
 #   creates all portfolios and saves csvs to disk
 #   creates all exhibits for the paper
 
 # the scripts require
-#   user entry of pathProject in 00_SettingsAndTools.R
-#   signal-firm-month csvs created by the signals code
+#   user entry of pathProject below
+#   signal-firm-month csvs created by the signals code (or downloaded from the data page)
+#   CRSP parquet files and CRSP predictors created by the signals code
+#     (Signals/pyCode/master.py, or just Signals/pyCode/crsp_only.py)
 
 # Most people only need to run up to 20_PredictorPorts.R and can skip any exhibits
 # Exhibits are run immediately after the data required is created so
@@ -49,6 +51,9 @@ source('01_PortfolioFunction.R', echo=T)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Check that the CRSP inputs from Signals/pyCode exist (stops if not)
+check_crsp_inputs(pathProject, skipdaily)
+
 # Check if signals data is complete
 signals_complete <- check_signal_csvs(pathProject, SignalSource)
 if (!interactive()) {
@@ -69,19 +74,9 @@ if (!interactive()) {
 
 # PREPARE INTERMEDIATE DATA ####
 
-print('master: 10_DownloadCRSP.R')
-tryCatch({
-    source('10_DownloadCRSP.R', echo=T)
-})
-
-print('master: 11_ProcessCrsp.R')
+print('master: 11_ProcessCRSP.R')
 tryCatch({
     source('11_ProcessCRSP.R', echo=T)
-})
-
-print('master: 12_CreateCRSPPredictors.R')
-tryCatch({
-    source('12_CreateCRSPPredictors.R', echo=T)
 })
 
 # ==== CREATE BASELINE PORTFOLIOS ====
