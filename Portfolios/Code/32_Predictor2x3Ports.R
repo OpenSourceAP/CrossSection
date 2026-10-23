@@ -1,6 +1,7 @@
 # Run: source from master.R after configuration and CRSP processing.
 # Inputs: processed monthly CRSP, signal CSVs and SignalDoc.csv.
 # Outputs: 2x3 portfolio CSVs, under the configured output root.
+# Worker count: portfolio_config$resources in config.R.
 
 # For making FF1993 style factors from individual csvs on gdrive
 # Andrew 2021 05
@@ -11,14 +12,7 @@
 # https://wrds-www.wharton.upenn.edu/pages/support/applications/risk-factors-and-industry-benchmarks/fama-french-factors/
 
 # ENVIRONMENT AND DATA ====
-crspinfo = read.fst(
-  paste0(pathDataIntermediate, 'crspminfo.fst')
-) %>% # me, screens, 
-  setDT()
-crspret = read.fst(
-  paste0(pathDataIntermediate, 'crspmret.fst')
-) %>% # returns
-  setDT()
+# workers load monthly stock info and returns once each (see setup below)
 
 # SELECT SIGNALS 
 strategylist0 <- alldocumentation %>% filter(Cat.Signal == "Predictor") %>% 
@@ -28,9 +22,9 @@ strategylist <- ifquickrun()
 # FUNCTION FOR CONVERTING SIGNALNAME TO 2X3 PORTS ====
 # analogous to signalname_to_ports in 01_PortFolioFunction.R
 
-signalname_to_2x3 = function(signalname){
+signalname_to_2x3 = function(signalname, Sign){
   # Import signal and sign
-  signal = import_signal(signalname, NA, strategylist$Sign[s])
+  signal = import_signal(signalname, NA, Sign)
   
   # ASSIGN TO 2X3 PORTFOLIOS 
   
@@ -159,6 +153,31 @@ signalname_to_2x3 = function(signalname){
   
 } # end signalname_to_2x3
 
+# COMPUTE SIGNALS ON PARALLEL WORKERS ====
+# each worker returns a signal's portfolios, or its error for the loop below
+jobs2x3 = lapply(seq_len(nrow(strategylist)), function(s) list(
+  signalname = strategylist$signalname[s]
+  , Sign = strategylist$Sign[s]
+))
+names(jobs2x3) = paste0(seq_len(nrow(strategylist)), ':', strategylist$signalname)
+
+ports2x3 = portfolio_run_jobs(
+  'monthly'
+  , jobs2x3
+  , function(job) tryCatch(signalname_to_2x3(job$signalname, job$Sign), error = function(e) e)
+  , setup = function(){
+    portfolio_worker_setup()
+    crspret <<- read.fst(
+      paste0(pathDataIntermediate, 'crspmret.fst')
+    ) %>% # returns
+      setDT()
+  }
+  , globals = c(
+    portfolio_worker_globals(NULL)
+    , list(portfolio_worker_setup = portfolio_worker_setup, signalname_to_2x3 = signalname_to_2x3)
+  )
+)
+
 # LOOP OVER SIGNALS ====
 num_signals = nrow(strategylist)
 
@@ -175,9 +194,8 @@ for(s in 1:num_signals){
   
   tempport = tryCatch(
     {
-      expr = signalname_to_2x3(
-        signalname = strategylist$signalname[s]
-      )
+      if (inherits(ports2x3[[s]], 'error')) stop(ports2x3[[s]])
+      expr = ports2x3[[s]]
       
     }
     , error = function(e){

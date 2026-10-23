@@ -1,13 +1,10 @@
 # Run: source from master.R after configuration and CRSP processing.
 # Inputs: processed monthly CRSP, signal CSVs and SignalDoc.csv.
 # Outputs: alternative portfolio CSVs, under the configured output root.
+# Worker count: portfolio_config$resources in config.R.
 
 # ==== ENVIRONMENT AND DATA ====
-crspinfo = read.fst(
-  paste0(pathDataIntermediate, 'crspminfo.fst')
-) %>% # me, screens, 
-  setDT()
-# returns are reread per signal by signalname_to_ports
+# workers load monthly stock info and reread returns per signal
 crspretpath = paste0(pathDataIntermediate, 'crspmret.fst')
 
 
@@ -30,6 +27,7 @@ for (i in seq(1, length(holdperlist))) {
   
   port <- loop_over_strategies(
     strategylist0 %>% mutate(portperiod = holdperlist[i])
+    , stage = 'monthly'
   ) 
   
   checkport(port, c("signalname"))
@@ -51,6 +49,7 @@ print("CheckLiq: ME > NYSE 20 pct =========================================")
 # customscreen is used on the signal df, which is then lagged, so no look ahead here
 port <- loop_over_strategies(
   strategylist0 %>% mutate(filterstr = "me > me_nyse20")
+  , stage = 'monthly'
 )
 checkport(port, c("signalname"))
 writestandard(
@@ -63,6 +62,7 @@ writestandard(
 print("CheckLiq: Price > 5  =========================================")
 port <- loop_over_strategies(
   strategylist0 %>% mutate(filterstr = "abs(prc) > 5")
+  , stage = 'monthly'
 )
 writestandard(
   port,
@@ -75,6 +75,7 @@ writestandard(
 print("CheckLiq: NYSE only =========================================")
 port <- loop_over_strategies(
   strategylist0 %>% mutate(filterstr = "exchcd==1")
+  , stage = 'monthly'
 )
 checkport(port, c("signalname"))
 writestandard(
@@ -88,6 +89,7 @@ writestandard(
 print("CheckLiq: VW force =========================================")
 port <- loop_over_strategies(
   strategylist0 %>% mutate(sweight = "VW")
+  , stage = 'monthly'
 )
 checkport(port, c("signalname"))
 writestandard(
@@ -105,6 +107,7 @@ strategylistcts = strategylist0 %>% filter(Cat.Form == 'continuous')
 # OP stock weighting
 port <- loop_over_strategies(
   strategylistcts %>% mutate(q_cut = 0.1)
+  , stage = 'monthly'
 )
 
 checkport(port, c("signalname", "port"))
@@ -114,6 +117,7 @@ writestandard(port, pathDataPortfolios, "PredictorAltPorts_Deciles.csv")
 # force value weighting
 port <- loop_over_strategies(
   strategylistcts %>% mutate(q_cut = 0.1, sweight = 'VW')
+  , stage = 'monthly'
 )
 
 checkport(port, c("signalname", "port"))
@@ -123,6 +127,7 @@ writestandard(port, pathDataPortfolios, "PredictorAltPorts_DecilesVW.csv")
 # force equal weighting
 port <- loop_over_strategies(
   strategylistcts %>% mutate(q_cut = 0.1, sweight = 'EW')
+  , stage = 'monthly'
 )
 
 checkport(port, c("signalname", "port"))
@@ -136,6 +141,7 @@ writestandard(port, pathDataPortfolios, "PredictorAltPorts_DecilesEW.csv")
 # OP stock weighting
 port <- loop_over_strategies(
   strategylistcts %>% mutate(q_cut = 0.2)
+  , stage = 'monthly'
 )
 checkport(port, c("signalname", "port"))
 writestandard(port, pathDataPortfolios, "PredictorAltPorts_Quintiles.csv")
@@ -143,6 +149,7 @@ writestandard(port, pathDataPortfolios, "PredictorAltPorts_Quintiles.csv")
 # force value weighting
 port <- loop_over_strategies(
   strategylistcts %>% mutate(q_cut = 0.2, sweight = 'VW')
+  , stage = 'monthly'
 )
 checkport(port, c("signalname", "port"))
 writestandard(port, pathDataPortfolios, "PredictorAltPorts_QuintilesVW.csv")
@@ -150,6 +157,7 @@ writestandard(port, pathDataPortfolios, "PredictorAltPorts_QuintilesVW.csv")
 # force equal weighting
 port <- loop_over_strategies(
   strategylistcts %>% mutate(q_cut = 0.2, sweight = 'EW')
+  , stage = 'monthly'
 )
 checkport(port, c("signalname", "port"))
 writestandard(port, pathDataPortfolios, "PredictorAltPorts_QuintilesEW.csv")

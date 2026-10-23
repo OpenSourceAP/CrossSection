@@ -96,34 +96,13 @@ run_daily_configuration = function(job){
   job$saveportpath
 }
 
-# Each worker loads packages, portfolio functions and monthly stock info once.
-# Daily returns are not loaded here: signalname_to_ports rereads them per signal.
-setup_daily_worker = function(){
-  options(stringsAsFactors = FALSE, dplyr.summarise.inform = FALSE
-          , scipen = 999) # scipen sets number formatting in the saved CSVs
-  suppressPackageStartupMessages({
-    library(tidyverse)
-    library(data.table)
-    library(fst)
-  })
-  source(paste0(pathCode, '01_PortfolioFunction.R'))
-  crspinfo <<- read.fst(paste0(pathDataIntermediate, 'crspminfo.fst')) %>% # me, screens, 
-    setDT()
-}
-
 print('50_DailyPredictorPorts.R: running daily configurations in parallel')
 daily_paths = portfolio_run_jobs(
   'daily'
   , daily_jobs
   , run_daily_configuration
-  , setup = setup_daily_worker
-  , globals = list(
-    pathCode = pathCode, pathDataIntermediate = pathDataIntermediate
-    , pathPredictors = pathPredictors, pathCRSPPredictors = pathCRSPPredictors
-    , pathPlacebos = pathPlacebos, pathtemp = pathtemp
-    , crspretpath = crspretpath, feed.verbose = feed.verbose, Nstocksmin = Nstocksmin
-    , loop_over_strategies = loop_over_strategies, writestandard = writestandard
-  )
+  , setup = portfolio_worker_setup
+  , globals = c(portfolio_worker_globals(crspretpath), list(Nstocksmin = Nstocksmin))
 )
 
 print('50_DailyPredictorPorts.R done!')

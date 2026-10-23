@@ -1,16 +1,13 @@
 # Run: source from master.R after configuration and CRSP processing.
 # Inputs: processed monthly CRSP, signal CSVs and SignalDoc.csv.
 # Outputs: baseline portfolio CSVs and PredictorSummary.xlsx, under the configured output root.
+# Worker count: portfolio_config$resources in config.R.
 
 # For baseline portfolio tests
 # Andrew Chen 2020 01
 
 # ENVIRONMENT AND DATA ====
-crspinfo = read.fst(
-  paste0(pathDataIntermediate, 'crspminfo.fst')
-) %>% # me, screens, 
-  setDT()
-# returns are reread per signal by signalname_to_ports
+# workers load monthly stock info and reread returns per signal
 crspretpath = paste0(pathDataIntermediate, 'crspmret.fst')
 
 # SELECT SIGNALS AND CHECK FOR CSVS ====
@@ -38,6 +35,7 @@ if (dim(missing)[1]>0){
 # BASE PORTS ====
 port <- loop_over_strategies(
   strategylist0
+  , stage = 'monthly'
 )
 
 # feedback

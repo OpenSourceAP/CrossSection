@@ -8,7 +8,7 @@ Signal-coverage and stock-correlation exhibits have been retired. Portfolio-retu
 
 ### Parallel workers
 
-`50_DailyPredictorPorts.R` runs its six configurations (baseline, deciles and quintiles, each EW and VW) as independent jobs on parallel workers. Each worker runs one configuration's signals in order, then takes the next configuration. Monthly stages still run serially. The worker count comes from `portfolio_n_workers(stage)` in `config.R`:
+`50_DailyPredictorPorts.R` runs its six configurations (baseline, deciles and quintiles, each EW and VW) as independent jobs on parallel workers. Each worker runs one configuration's signals in order, then takes the next configuration. The monthly stages (`20`, `30`, `32`, `40`) run each configuration's signals on parallel workers, with configurations in sequence; `loop_over_strategies(..., stage = 'monthly')` does this and assembles results in signal order with the usual error handling. Exhibits (`21`, `31`, `41`) stay serial and in order. The worker count comes from `portfolio_n_workers(stage)` in `config.R`:
 
 $$\text{workers} = \max\left(1, \min\left(\texttt{max\_workers}, \left\lfloor \frac{\text{available RAM}}{\texttt{gib\_per\_worker[stage]}} \right\rfloor\right)\right)$$
 
@@ -18,7 +18,7 @@ Available RAM comes from `ps::ps_system_memory()`. To check the count on this ma
 Rscript -e 'source("Portfolios/Code/config.R"); portfolio_n_workers("daily"); portfolio_n_workers("monthly")'
 ```
 
-Stages run jobs with `portfolio_run_jobs(stage, jobs, run_job, setup, globals)` from `00_SettingsAndTools.R`. Workers are fresh R sessions. `globals` are copied into each worker, `setup()` runs once per worker to load packages and shared data, and `run_job(job)` writes its outputs and returns a small result. Worker output prints to the terminal, interleaved and tagged by job name at start and finish; under RStudio it goes to RStudio's own output, not the console. If a job fails, the remaining jobs still finish and then the stage stops and names the failed jobs. On an error or interrupt, the workers are killed.
+Stages run jobs with `portfolio_run_jobs(stage, jobs, run_job, setup, globals)` from `00_SettingsAndTools.R`. Workers are fresh R sessions. `globals` are copied into each worker, `setup()` runs once per worker to load packages and shared data (`portfolio_worker_setup()` and `portfolio_worker_globals()` cover workers that run `signalname_to_ports()`), and `run_job(job)` writes its outputs and returns a small result. Worker output prints to the terminal, interleaved and tagged by job name at start and finish; under RStudio it goes to RStudio's own output, not the console. If a job fails, the remaining jobs still finish and then the stage stops and names the failed jobs. On an error or interrupt, the workers are killed.
 
 `gib_per_worker` holds ballpark estimates, not run-time measurements. On 2026-10-23, a daily worker peaked at 12.4 GiB over 3 signals × EW/VW, and results kept in memory add about 2.2 GiB across 212 signals. The setting is 16 GiB. A monthly worker peaked at about 2.3 GiB, and the setting is 4 GiB. Re-measure these after substantial changes to CRSP or the portfolio code.
 

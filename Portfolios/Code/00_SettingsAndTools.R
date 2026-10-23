@@ -475,15 +475,44 @@ ifquickrun = function(){
 
 
 #############################################################################
+# stage: NULL computes signals here, one at a time; a stage name such as
+# 'monthly' computes them on parallel workers (see portfolio_run_jobs), using
+# the crspretpath set by the calling script. Results are then assembled below
+# in strategylist order, with the same error handling either way.
 loop_over_strategies = function(
                                 strategylist
                               , saveportcsv = F
                               , saveportpath = NA
                               , saveportNmin = 1
                               , passive_gain = F
+                              , stage = NULL
                                 ){   
 
     Nstrat = dim(strategylist)[1]
+
+    # each worker returns a signal's portfolios, or its error for the loop below
+    ports = NULL
+    if (!is.null(stage)) {
+        jobs = lapply(seq(1,Nstrat), function(i) list(
+            signalname = strategylist$signalname[i]
+          , Cat.Form = strategylist$Cat.Form[i]
+          , q_cut = strategylist$q_cut[i]
+          , sweight = strategylist$sweight[i]
+          , Sign = strategylist$Sign[i]
+          , startmonth = strategylist$startmonth[i]
+          , portperiod = strategylist$portperiod[i]
+          , q_filt = strategylist$q_filt[i]
+          , filterstr = strategylist$filterstr[i]
+          , passive_gain = passive_gain
+        ))
+        names(jobs) = paste0(seq(1,Nstrat), ':', strategylist$signalname)
+        ports = portfolio_run_jobs(
+            stage, jobs
+          , function(job) tryCatch(do.call(signalname_to_ports, job), error = function(e) e)
+          , setup = portfolio_worker_setup
+          , globals = portfolio_worker_globals(crspretpath)
+        )
+    }
 
     # making allport a list instead of dataframe seems to be better for memory
     # http://adv-r.had.co.nz/memory.html
@@ -507,7 +536,10 @@ loop_over_strategies = function(
         
         tempport = tryCatch(
         {
-            expr = signalname_to_ports(
+            if (!is.null(ports)) {
+                if (inherits(ports[[i]], 'error')) stop(ports[[i]])
+                expr = ports[[i]]
+            } else expr = signalname_to_ports(
                 signalname = strategylist$signalname[i]
               , Cat.Form = strategylist$Cat.Form[i]
               , q_cut = strategylist$q_cut[i]
@@ -622,9 +654,6 @@ portfolio_run_jobs = function(stage, jobs, run_job, setup = function() NULL, glo
   finished = TRUE
   names(status) = names(jobs)
 
-  for (name in names(status)) {
-    message(sprintf('[%s] %s: %.1f min', stage, name, status[[name]]$minutes))
-  }
   failed = Filter(function(x) !is.na(x$error), status)
   if (length(failed)) {
     stop('[', stage, '] failed jobs:\n'
@@ -633,3 +662,30 @@ portfolio_run_jobs = function(stage, jobs, run_job, setup = function() NULL, glo
   }
   lapply(status, `[[`, 'result')
 } # end function
+
+
+# Globals and setup for workers that run signalname_to_ports. Each worker loads
+# packages, portfolio functions and monthly stock info once; returns are reread
+# per signal from crspretpath (monthly or daily) by signalname_to_ports.
+portfolio_worker_globals = function(crspretpath){
+  list(
+    pathCode = pathCode, pathDataIntermediate = pathDataIntermediate
+    , pathPredictors = pathPredictors, pathCRSPPredictors = pathCRSPPredictors
+    , pathPlacebos = pathPlacebos, pathtemp = pathtemp
+    , crspretpath = crspretpath, feed.verbose = feed.verbose
+    , loop_over_strategies = loop_over_strategies, writestandard = writestandard
+  )
+}
+
+portfolio_worker_setup = function(){
+  options(stringsAsFactors = FALSE, dplyr.summarise.inform = FALSE
+          , scipen = 999) # scipen sets number formatting in saved CSVs
+  suppressPackageStartupMessages({
+    library(tidyverse)
+    library(data.table)
+    library(fst)
+  })
+  source(paste0(pathCode, '01_PortfolioFunction.R'))
+  crspinfo <<- read.fst(paste0(pathDataIntermediate, 'crspminfo.fst')) %>% # me, screens, 
+    setDT()
+}

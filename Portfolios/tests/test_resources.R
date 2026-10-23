@@ -103,6 +103,38 @@ test_resources <- function() {
   Sys.sleep(1)
   stopifnot(length(ps::ps_children()) == 0L)
 
+  # Parallel signals match the serial loop, including a failed signal's NA row.
+  fixture <- paste0(file.path(temporary, "signals"), "/")
+  dir.create(fixture)
+  write.csv(data.frame(permno = 1:4, yyyymm = 202001, Sig = c(1, 2, 3, 4)),
+            file.path(fixture, "Sig.csv"), row.names = FALSE)
+  write.csv(data.frame(permno = 1:4, yyyymm = 202001, Sig2 = c(4, 1, 3, 2)),
+            file.path(fixture, "Sig2.csv"), row.names = FALSE)
+  fst::write_fst(data.frame(permno = 1:4, yyyymm = 202001, exchcd = 1),
+                 paste0(pathDataIntermediate, "crspminfo.fst"))
+  returns <- data.frame(permno = 1:4, date = as.Date("2020-02-28"), yyyymm = 202002,
+                        ret = c(1, 2, 3, 4), melag = 10)
+  fixture_globals <- list(pathPredictors = fixture, pathCRSPPredictors = fixture,
+                          pathPlacebos = fixture, pathtemp = fixture, feed.verbose = FALSE,
+                          crspretpath = file.path(temporary, "crspret.fst"),
+                          crspinfo = data.table::setDT(fst::read_fst(paste0(pathDataIntermediate, "crspminfo.fst"))))
+  fst::write_fst(returns, fixture_globals$crspretpath)
+  list2env(fixture_globals, envir = .GlobalEnv)
+  base::source(file.path(code_dir, "01_PortfolioFunction.R"), local = .GlobalEnv)
+  strategies <- data.frame(signalname = c("Sig", "Missing", "Sig2"), Cat.Form = "continuous",
+                           q_cut = 0.5, sweight = c("EW", "EW", "VW"), Sign = 1, startmonth = NA,
+                           portperiod = NA, q_filt = NA, filterstr = NA)
+  capture.output(serial <- loop_over_strategies(strategies))
+  assign("portfolio_config", within(original_config, {
+    resources$gib_per_worker[["monthly"]] <- 0.001
+    resources$max_workers <- 2L
+  }), envir = .GlobalEnv)
+  capture.output(parallel <- suppressMessages(loop_over_strategies(strategies, stage = "monthly")))
+  assign("portfolio_config", original_config, envir = .GlobalEnv)
+  # data.table's internal self-reference pointer does not survive serialization
+  stopifnot(identical(as.data.frame(serial), as.data.frame(parallel)),
+            sum(is.na(serial$port)) == 1L, nrow(serial) == 7L)
+
   # Exercise master startup from project folders, stubbing only heavy stages.
   # This checks configuration, legacy paths and exhibit ordering without CRSP.
   original_wd <- getwd()
