@@ -7,7 +7,8 @@ precision and providing legacy classifications and market equity measures.
 Also provides returns before delisting, keeping these missing for mid-month
 delistings under the legacy convention (Docs/CRSP-v2-Migration.md).
 DEBUG_MODE selects all 1981 stock months; production uses full history.
-Outputs: OPENAP_DATA_ROOT/Intermediate/monthlyCRSP.parquet (default Signals/pyData).
+Outputs: Signals/pyData/Intermediate/monthlyCRSP.parquet (OPENAP_DATA_ROOT
+redirects this for migration comparisons only; see config.py).
 The output uses native cumulative share factors and omits the unused legacy
 bidlo/askhi columns. It keeps the month-end trading date (mthcaldt) as 'date'
 for the portfolio code.

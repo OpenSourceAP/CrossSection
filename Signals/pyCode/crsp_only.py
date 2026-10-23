@@ -16,6 +16,8 @@ Usage:
 
 Inputs:
     - .env with WRDS_USERNAME and WRDS_PASSWORD (copy dotenv.template)
+    - OPENAP_DATA_ROOT must be unset: it would redirect the downloads, but the
+      predictors and Portfolios/Code/master.R read ../pyData (see config.py)
 
 Outputs:
     - ../pyData/Intermediate/monthlyCRSP.parquet

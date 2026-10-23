@@ -125,7 +125,7 @@ cp dotenv.template .env             # once; add your WRDS credentials
 python crsp_only.py                 # add --skip-daily if master.R will run with skipdaily = T
 ```
 
-This downloads monthly (and daily) CRSP and writes `Price.csv`, `Size.csv`, `STreversal.csv` to `Signals/pyData/Predictors/`. `master.R` stops with a message pointing to this command if any of these files are missing.
+This downloads monthly (and daily) CRSP and writes `Price.csv`, `Size.csv`, `STreversal.csv` to `Signals/pyData/Predictors/`. `master.R` stops with a message pointing to this command if any of these files are missing. Leave `OPENAP_DATA_ROOT` unset: it redirects only the downloads (it exists for CRSP migration comparisons), while the predictors and `master.R` read `Signals/pyData/`.
 
 #### Minimal Setup
 
