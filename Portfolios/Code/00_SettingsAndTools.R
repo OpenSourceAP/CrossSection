@@ -29,16 +29,12 @@ portfolio_validate_config <- function(config) {
   signals <- config$run$quick_signals
   if (!is.character(signals) || !length(signals) || anyNA(signals) ||
       any(!nzchar(trimws(signals))) || anyDuplicated(signals)) fail("run$quick_signals")
-  keys(config$resources, c("max_workers", "memory_budget_gib", "reserve_gib",
-                           "threads_per_worker"), "resources")
+  keys(config$resources, c("max_workers", "gib_per_worker"), "resources")
   number(config$resources$max_workers, "resources$max_workers", 1, TRUE)
-  number(config$resources$threads_per_worker, "resources$threads_per_worker", 1, TRUE)
-  number(config$resources$reserve_gib, "resources$reserve_gib")
-  if (!is.null(config$resources$memory_budget_gib)) {
-    number(config$resources$memory_budget_gib, "resources$memory_budget_gib", .Machine$double.eps)
-  }
-  keys(config$daily, c("workers", "min_stocks"), "daily")
-  if (!identical(config$daily$workers, "auto")) number(config$daily$workers, "daily$workers", 1, TRUE)
+  gib <- config$resources$gib_per_worker
+  if (!is.numeric(gib) || length(gib) != 2L || !setequal(names(gib), c("monthly", "daily")) ||
+      any(!is.finite(gib) | gib <= 0)) fail("resources$gib_per_worker")
+  keys(config$daily, "min_stocks", "daily")
   number(config$daily$min_stocks, "daily$min_stocks", 1, TRUE)
   config
 }
@@ -71,7 +67,7 @@ portfolio_paths <- function(config, project_root) {
 }
 
 portfolio_check_dependencies <- function(config) {
-  packages <- c("here", "tidyverse", "lubridate", "readxl", "writexl", "fst", "arrow", "data.table")
+  packages <- c("here", "tidyverse", "lubridate", "readxl", "writexl", "fst", "arrow", "data.table", "ps")
   if (config$run$exhibits && !config$run$quick) {
     packages <- c(packages, "extrafont", "xtable", "gridExtra", "ggrepel")
   }
@@ -574,4 +570,66 @@ loop_over_strategies = function(
     return(allport)
     
     
+} # end function
+
+
+#### PARALLEL JOBS ####
+# Run named jobs on PSOCK workers and return their results in job order. Free
+# workers take the next job in list order. Workers start as fresh R sessions:
+#   globals: named list assigned in each worker's global environment
+#   setup(): runs once per worker after globals, e.g. to load shared data
+#   run_job(job): runs one job in a worker; write outputs to disk and return
+#     something small
+# Functions in globals, setup and run_job run with the worker's global
+# environment, so they see the globals but not this session's workspace.
+# A failed job is reported after the other jobs finish, then the stage stops.
+portfolio_run_jobs = function(stage, jobs, run_job, setup = function() NULL, globals = list()){
+  stopifnot(is.list(jobs), length(jobs) > 0, !is.null(names(jobs)), !anyDuplicated(names(jobs)))
+  # Send functions without their defining environment (often the whole workspace).
+  to_global = function(x) { if (is.function(x)) environment(x) = globalenv(); x }
+  globals = lapply(globals, to_global)
+
+  workers = min(portfolio_n_workers(stage), length(jobs))
+  cluster = parallel::makePSOCKcluster(workers, outfile = '')
+  pids = unlist(parallel::clusterCall(cluster, Sys.getpid))
+  finished = FALSE
+  on.exit({
+    # Busy workers ignore stopCluster until their job ends, so kill them after
+    # an error or interrupt.
+    if (!finished) tools::pskill(pids)
+    try(parallel::stopCluster(cluster), silent = TRUE)
+  })
+
+  parallel::clusterCall(cluster, function(globals, setup){
+    list2env(globals, envir = globalenv())
+    setup()
+    NULL
+  }, globals, to_global(setup))
+
+  run_one = to_global(function(name, job, run_job){
+    start = Sys.time()
+    message('[', name, '] started on worker ', Sys.getpid())
+    out = tryCatch(list(result = run_job(job), error = NA_character_)
+                 , error = function(e) list(result = NULL, error = conditionMessage(e)))
+    out$minutes = as.numeric(difftime(Sys.time(), start, units = 'mins'))
+    message('[', name, '] ', if (is.na(out$error)) 'finished' else 'FAILED'
+          , sprintf(' after %.1f min', out$minutes))
+    out
+  })
+  status = parallel::clusterMap(cluster, run_one, names(jobs), jobs
+                              , MoreArgs = list(run_job = to_global(run_job))
+                              , .scheduling = 'dynamic', SIMPLIFY = FALSE)
+  finished = TRUE
+  names(status) = names(jobs)
+
+  for (name in names(status)) {
+    message(sprintf('[%s] %s: %.1f min', stage, name, status[[name]]$minutes))
+  }
+  failed = Filter(function(x) !is.na(x$error), status)
+  if (length(failed)) {
+    stop('[', stage, '] failed jobs:\n'
+       , paste0('  ', names(failed), ': ', vapply(failed, `[[`, '', 'error'), collapse = '\n')
+       , call. = FALSE)
+  }
+  lapply(status, `[[`, 'result')
 } # end function

@@ -12,3 +12,4 @@ data.table,1.18.4
 ggrepel,0.9.8
 lme4,2.0.1
 here,1.0.2
+ps,1.9.3

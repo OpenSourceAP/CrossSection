@@ -23,24 +23,22 @@ test_resources <- function() {
   assign("portfolio_config", original_config, envir = .GlobalEnv)
   config_only <- new.env(parent = baseenv())
   sys.source(file.path(code_dir, "config.R"), envir = config_only)
-  stopifnot(identical(ls(config_only), "portfolio_config"))
+  stopifnot(identical(ls(config_only), c("portfolio_config", "portfolio_n_workers")))
   expect_error <- function(expression, pattern) {
     message <- tryCatch({ force(expression); NULL }, error = conditionMessage)
     stopifnot(!is.null(message), grepl(pattern, message))
   }
   config <- portfolio_config
   stopifnot(identical(portfolio_validate_config(config), config))
-  for (name in c("max_workers", "threads_per_worker")) {
-    bad <- config
-    bad$resources[[name]] <- 1.5
-    expect_error(portfolio_validate_config(bad), name)
-  }
+  bad <- config
+  bad$resources$max_workers <- 1.5
+  expect_error(portfolio_validate_config(bad), "max_workers")
+  bad <- config
+  bad$resources$gib_per_worker <- c(monthly = 4)
+  expect_error(portfolio_validate_config(bad), "gib_per_worker")
   bad <- config
   bad$run$quick <- NA
   expect_error(portfolio_validate_config(bad), "quick")
-  bad <- config
-  bad$daily$workers <- "four"
-  expect_error(portfolio_validate_config(bad), "workers")
   bad <- config
   bad$resources$typo <- 1
   expect_error(portfolio_validate_config(bad), "resources")
@@ -64,6 +62,46 @@ test_resources <- function() {
   config$paths$output_root <- "temp/portfolio-relative-test"
   stopifnot(startsWith(portfolio_paths(config, portfolio_root)$pathResults,
                       file.path(portfolio_root, config$paths$output_root)))
+
+  # Workers = available RAM / RAM per worker, capped by max_workers (at least 1).
+  workers <- function(available_gib) suppressMessages(suppressWarnings(
+    portfolio_n_workers("daily", sizing, available_gib)))
+  sizing <- portfolio_config
+  sizing$resources$gib_per_worker[["daily"]] <- 10
+  stopifnot(workers(25) == 2L, workers(100) == 3L, workers(5) == 1L)
+  warned <- tryCatch(suppressMessages(portfolio_n_workers("daily", sizing, 5)),
+                     warning = conditionMessage)
+  stopifnot(grepl("may not fit", warned))
+  stopifnot(is.integer(suppressMessages(portfolio_n_workers("monthly"))))
+
+  # Real PSOCK run: two workers, setup once per worker, results in job order,
+  # and a free worker takes the next job.
+  run_jobs <- function(run_job) {
+    fixture_config <- original_config
+    fixture_config$resources$gib_per_worker[["daily"]] <- 0.001
+    fixture_config$resources$max_workers <- 2L
+    assign("portfolio_config", fixture_config, envir = .GlobalEnv)
+    on.exit(assign("portfolio_config", original_config, envir = .GlobalEnv))
+    suppressMessages(portfolio_run_jobs(
+      "daily", list(first = 0.5, second = 0.05, third = 0.05, fourth = 0.05), run_job,
+      setup = function() count <<- 0L, globals = list(offset = 100L, helper = function(x) x + offset)))
+  }
+  result <- run_jobs(function(job) {
+    count <<- count + 1L
+    Sys.sleep(job)
+    list(pid = Sys.getpid(), count = helper(count))
+  })
+  pids <- vapply(result, `[[`, integer(1), "pid")
+  stopifnot(identical(names(result), c("first", "second", "third", "fourth")),
+            length(unique(pids)) == 2L, pids[["third"]] == pids[["second"]],
+            result$third$count == 102L)
+
+  # A failed job is named after the others finish, and no workers are left.
+  ran <- tryCatch(run_jobs(function(job) if (job > 0.1) stop("fixture failure") else job),
+                  error = conditionMessage)
+  stopifnot(grepl("first: fixture failure", ran), !grepl("second", ran))
+  Sys.sleep(1)
+  stopifnot(length(ps::ps_children()) == 0L)
 
   # Exercise master startup from project folders, stubbing only heavy stages.
   # This checks configuration, legacy paths and exhibit ordering without CRSP.
