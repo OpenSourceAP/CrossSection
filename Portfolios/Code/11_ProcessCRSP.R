@@ -31,11 +31,13 @@ if (!'date' %in% colnames(crspm)) {
 # convert ret to pct, other formatting
 # me is in millions of dollars (mve_c); the legacy portfolio code had it in
 # thousands. Downstream uses are relative only (breakpoints, weights, screens).
+# arrow reads time_avail_m as a POSIXct in the session's local timezone, so
+# month() on it gives the previous month west of UTC. as.Date() converts in UTC.
 crspm = crspm %>%
   transmute(
     permno = as.integer(permno)
     , date = as.Date(date)
-    , yyyymm = year(time_avail_m) * 100 + month(time_avail_m)
+    , yyyymm = year(as.Date(time_avail_m)) * 100 + month(as.Date(time_avail_m))
     , ret = 100*ret
     , prc
     , exchcd
