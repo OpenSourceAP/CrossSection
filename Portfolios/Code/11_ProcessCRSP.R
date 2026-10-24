@@ -81,8 +81,9 @@ write_fst(crspmret, paste0(pathDataIntermediate, 'crspmret.fst'))
 write_fst(crspminfo, paste0(pathDataIntermediate, 'crspminfo.fst'))
 
 ## clean up
-rm(list=ls(pattern='crsp'))
-rm(list=ls(pattern='temp'))
+# Remove only this script's data objects: pattern-based rm() also deleted
+# globals such as pathtemp, crsp_predictors and check_crsp_inputs.
+rm(crspm, crspmret, crspminfo, templag, tempcut)
 
 
 # ==== DAILY CRSP SETUP ====
@@ -147,4 +148,4 @@ if (!skipdaily){
 }
 
 
-rm(list=ls(pattern='crsp'))
+if (!skipdaily) rm(crspdret, templag)
