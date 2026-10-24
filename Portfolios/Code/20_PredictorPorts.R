@@ -1,15 +1,14 @@
+# Run: source from master.R after configuration and CRSP processing.
+# Inputs: processed monthly CRSP, signal CSVs and SignalDoc.csv.
+# Outputs: baseline portfolio CSVs and PredictorSummary.xlsx, under the configured output root.
+# Worker count: portfolio_config$resources in config.R.
+
 # For baseline portfolio tests
 # Andrew Chen 2020 01
 
 # ENVIRONMENT AND DATA ====
-crspinfo = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
-) %>% # me, screens, 
-  setDT()
-crspret = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst')
-) %>% # returns
-  setDT()
+# workers load monthly stock info and reread returns per signal
+crspretpath = paste0(pathDataIntermediate, 'crspmret.fst')
 
 # SELECT SIGNALS AND CHECK FOR CSVS ====
 
@@ -23,7 +22,7 @@ csvlist = list.files(pathPredictors) %>% as_tibble() %>% rename(signalname=value
   )
 
 missing = strategylist0 %>% select(signalname) %>% left_join(csvlist) %>%
-  filter(is.na(in_csv)) # note: CRSP predictors are put into pathPredictors by 11_CreateCRSPPredictors.R
+  filter(is.na(in_csv)) # note: CRSP predictors (Price, Size, STreversal) are put into pathPredictors by Signals/pyCode
 
 if (dim(missing)[1]>0){
   print('Warning: the following predictor signal csvs are missing:')
@@ -36,6 +35,7 @@ if (dim(missing)[1]>0){
 # BASE PORTS ====
 port <- loop_over_strategies(
   strategylist0
+  , stage = 'monthly'
 )
 
 # feedback

@@ -1,56 +1,48 @@
-# processes CRSP download
-# separate from the download file in case you need to patch the download and
-# don't want to wait an hour to test the code
-# 2021 04
+# Processes the CRSP v2 (CIZ) parquet files written by Signals/pyCode into the
+# intermediate files used by the portfolio code.
+#
+# Inputs (Signals/pyData/Intermediate/, from DataDownloads/CRSPMonthly.py and CRSPDaily.py,
+#         or from Signals/pyCode/crsp_only.py):
+#   monthlyCRSP.parquet
+#   dailyCRSP.parquet (only if !skipdaily)
+# Outputs (Portfolios/Data/Intermediate/):
+#   crspmret.fst   permno, date (month-end trading date), yyyymm, ret (pct), melag
+#   crspminfo.fst  permno, yyyymm, prc, exchcd, me (millions), shrcd, me_nyse10, me_nyse20
+#   crspdret.fst   permno, date, yyyymm, ret (pct), passgain, melag (only if !skipdaily)
+#
+# Returns are taken as they come from CIZ: mthret already includes the delisting
+# return where CRSP has one (mthdelflg A, P, V). The legacy -35%/-55% imputation
+# for missing delisting returns is not applied. See Docs/CRSP-v2-Migration.md.
+# 2021 04, migrated to CRSP v2 2026 10
 
 
 # ==== MONTHLY CRSP SETUP ==== 
-crspm = read_fst(paste0(pathProject,'Portfolios/Data/Intermediate/m_crsp_raw.fst'))
+crspm = arrow::read_parquet(paste0(pathSignalsIntermediate, 'monthlyCRSP.parquet')) %>%
+  as_tibble()
 
-# incorporate delisting return
-# GHZ cite Johnson and Zhao (2007), Shumway and Warther (1999)
-# but the way HXZ does this might be a bit better
-crspm = crspm %>%
-  mutate(
-    dlret = ifelse(
-      is.na(dlret)
-      & (dlstcd == 500 | (dlstcd >=520 & dlstcd <=584))
-      & (exchcd == 1 | exchcd == 2)
-      , -0.35
-      , dlret
-    )
-    , dlret = ifelse(
-      is.na(dlret)
-      & (dlstcd == 500 | (dlstcd >=520 & dlstcd <=584))
-      & (exchcd == 3)
-      , -0.55
-      , dlret
-    )
-    , dlret = ifelse(
-      dlret < -1 & !is.na(dlret)
-      , -1
-      , dlret
-    )
-    , dlret = ifelse(
-      is.na(dlret)
-      , 0
-      , dlret
-    )
-    , ret = (1+ret)*(1+dlret)-1 # 2022 02 patched ret + dlret < -1 problem
-    , ret = ifelse(
-      is.na(ret) & ( dlret != 0)
-      , dlret
-      , ret
-    )
-  )
+# date: the month's last trading date (mthcaldt), as in legacy msf.date, so that
+# portfolio output keeps month-end dates. Parquet files written before 2026-10
+# lack this column; fall back to the last calendar day of the month.
+if (!'date' %in% colnames(crspm)) {
+  print('monthlyCRSP.parquet has no date column (older download); using last calendar day of month')
+  crspm$date = ceiling_date(as.Date(crspm$time_avail_m), 'month') - days(1)
+}
 
 # convert ret to pct, other formatting
+# me is in millions of dollars (mve_c); the legacy portfolio code had it in
+# thousands. Downstream uses are relative only (breakpoints, weights, screens).
+# arrow reads time_avail_m as a POSIXct in the session's local timezone, so
+# month() on it gives the previous month west of UTC. as.Date() converts in UTC.
 crspm = crspm %>%
-  mutate(
-    ret = 100*ret
+  transmute(
+    permno = as.integer(permno)
     , date = as.Date(date)
-    , me = abs(prc) * shrout
-    , yyyymm = year(date) * 100 + month(date)    
+    , yyyymm = year(as.Date(time_avail_m)) * 100 + month(as.Date(time_avail_m))
+    , ret = 100*ret
+    , prc
+    , exchcd
+    , shrcd
+    , me = mve_c
   )
 
 # keep around me and melag for sanity
@@ -87,21 +79,24 @@ crspminfo <- crspminfo %>%
 
 
 # write to disk
-write_fst(crspmret, paste0(pathProject,'Portfolios/Data/Intermediate/crspmret.fst'))
-write_fst(crspminfo, paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst'))
+write_fst(crspmret, paste0(pathDataIntermediate, 'crspmret.fst'))
+write_fst(crspminfo, paste0(pathDataIntermediate, 'crspminfo.fst'))
 
 ## clean up
-rm(list=ls(pattern='crsp'))
-rm(list=ls(pattern='temp'))
+# Remove only this script's data objects: pattern-based rm() also deleted
+# globals such as pathtemp, crsp_predictors and check_crsp_inputs.
+rm(crspm, crspmret, crspminfo, templag, tempcut)
 
 
 # ==== DAILY CRSP SETUP ====
 if (!skipdaily){
   
   # unlike monthly crsp, we try to do this in place for memory mgmt
-  crspdret = read_fst(
-    paste0(pathProject,'Portfolios/Data/Intermediate/d_crsp_raw.fst')
-    , columns = c('permno','date','ret')
+  # dailyCRSP.parquet holds regular trading days only; CIZ's separate
+  # delisting-event rows are excluded (see DataDownloads/CRSPDaily.py)
+  crspdret = arrow::read_parquet(
+    paste0(pathSignalsIntermediate, 'dailyCRSP.parquet')
+    , col_select = c('permno', 'time_d', 'ret')
   ) %>% setDT()
   
   # drop na, reformat 
@@ -109,10 +104,14 @@ if (!skipdaily){
     !is.na(ret)  
   ][
     , ':=' (
-      ret = 100*ret
-      , date = as.Date(date)
-      , yyyymm = year(date)*100+month(date) 
+      permno = as.integer(permno)
+      , ret = 100*ret
+      , date = as.Date(time_d)
     )
+  ][
+    , time_d := NULL
+  ][
+    , yyyymm := year(date)*100+month(date)
   ][
     order(permno,date)
   ]
@@ -130,7 +129,7 @@ if (!skipdaily){
   # merge on last month's lagged me for fast (monthly-rebalanced) value-weighting
   # other monthly info (e.g. exchcd) is used only in port assignments
   templag = read_fst(
-    paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
+    paste0(pathDataIntermediate, 'crspminfo.fst')
     , columns = c('permno','yyyymm','me')
   ) %>% 
     setDT() %>%
@@ -145,9 +144,10 @@ if (!skipdaily){
   crspdret[templag, on = c('permno','yyyymm'), melag := i.melag]
   
   # write to disk
-  write_fst(crspdret, paste0(pathProject,'Portfolios/Data/Intermediate/crspdret.fst'))
+  setcolorder(crspdret, c('permno','date','ret','yyyymm','passgain','melag'))
+  write_fst(crspdret, paste0(pathDataIntermediate, 'crspdret.fst'))
   
 }
 
 
-rm(list=ls(pattern='crsp'))
+if (!skipdaily) rm(crspdret, templag)

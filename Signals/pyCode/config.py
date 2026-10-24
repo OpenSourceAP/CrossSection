@@ -13,8 +13,11 @@ Outputs: configuration constants; no file writes.
 import os
 from pathlib import Path
 
-# Resolve output paths independently of the working directory. Set the environment
-# override before importing config, using separate roots for debug and production.
+# Resolve output paths independently of the working directory. OPENAP_DATA_ROOT
+# redirects only the outputs of the DataDownloads scripts that import DATA_ROOT;
+# it was added for isolated CRSP v2 migration comparisons. Predictors, placebos,
+# SignalMasterTable.py and the R code always use Signals/pyData, so leave it
+# unset for normal pipeline runs. Set it before importing config.
 DATA_ROOT = (
     Path(os.environ['OPENAP_DATA_ROOT']).expanduser().resolve()
     if os.environ.get('OPENAP_DATA_ROOT')

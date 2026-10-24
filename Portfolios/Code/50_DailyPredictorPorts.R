@@ -1,37 +1,35 @@
+# Run: source from master.R after configuration and CRSP processing.
+# Inputs: processed daily CRSP, monthly stock information, signals and baseline monthly portfolios.
+# Outputs: six daily CSV families and DailyPortSummary.xlsx, under the configured output root.
+# Worker count: portfolio_config$resources in config.R.
+
 # Note: daily portfolios currently (2021 04) do not aggregate up to monthly
 # because the daily portfolios recalculate stock weights (equal or value-weighting) 
 # every day while the monthly portfolios recalculate stock weights every month.
 
-# Note: monthly portfolios are not screened at all for minimum number of stocks
-# and instead, we store Nstocks, and then screen for Nstocks when we do summary stats
-# However, to keep the daily portfolios data of a manageable size
-# we do not store Nlong and Nshort, and instead impose the screen at the portfolio 
-# level.  
-
-# takes about 1.5 hours per implementation, or about 10 hours total
+# The six configurations run as independent jobs on parallel workers; the number
+# of workers comes from portfolio_n_workers('daily') in config.R. Each
+# configuration takes about 1.5-2 hours in its worker, so with 3 workers the
+# six take about 3.5-4 hours (informal estimate; serial was 10-12 hours).
 
 ### ENVIRONMENT AND DATA ####
 start_time = Sys.time()
 
-# minimum number of stocks in a portfolio
-# for now set to 1 (2021 04), matching baseline
-# setting to 20 removes IO_ShortInterest portfolios
-Nstocksmin = 1
+Nstocksmin = portfolio_config$daily$min_stocks
 
-### load crsp returns
-crspinfo = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspminfo.fst')
-) %>% # me, screens, 
-  setDT()
-crspret = read.fst(
-  paste0(pathProject,'Portfolios/Data/Intermediate/crspdret.fst')
-) %>% # returns
-  setDT()
+# the timing check below compares against the baseline monthly portfolios;
+# check before spending hours on daily portfolios
+if (!file.exists(paste0(pathDataPortfolios, 'PredictorPortsFull.csv'))) {
+  stop('50_DailyPredictorPorts.R needs baseline monthly portfolios: run 20_PredictorPorts.R first')
+}
+
+# returns are reread per signal by signalname_to_ports
+crspretpath = paste0(pathDataIntermediate, 'crspdret.fst')
 
 ### SET UP PATHS
 
-# since no other files use these paths, they don't go in 00_Settings*.R
-pathDataDaily  = paste0(pathProject, 'Portfolios/Data/DailyPortfolios/')
+# Configuration-specific subfolders below share the configured daily output root.
+# pathDataDaily is resolved from the configured output root by master.R.
 pathDataDailyBase   = paste0(pathDataDaily, 'Predictor/')
 pathDataDailyBaseVW   = paste0(pathDataDaily, 'PredictorVW/')
 pathDataDailyDecile = paste0(pathDataDaily, 'CtsPredictorDecile/')
@@ -47,13 +45,8 @@ dir.create(pathDataDailyDecileVW)
 dir.create(pathDataDailyQuintile)
 dir.create(pathDataDailyQuintileVW)
 
-# Ensure CRAN mirror is defined for non-interactive runs
-options(repos = c(CRAN = "https://cloud.r-project.org"))
-
-# since no other script uses lme4, it should go here.
-install.packages(setdiff(c('lme4'), rownames(installed.packages())))
+# Dependencies are checked by master.R; never install during a build.
 library(lme4)
-
 
 ### SELECT SIGNALS
 strategylist0 = alldocumentation %>% filter(Cat.Signal == 'Predictor')
@@ -62,83 +55,55 @@ strategylist0 = ifquickrun()
 strategylistcts = strategylist0 %>% filter(Cat.Form == 'continuous')
 
 
-
-
-### BASELINE ####
-
-## BASELINE
-print('50_DailyPredictorPorts.R: predictor baseline strats')
-
-port = loop_over_strategies(
-    strategylist0
-  , saveportcsv = T
-  , saveportpath = pathDataDailyBase
-  , saveportNmin = Nstocksmin
-  , passive_gain = T
+### DAILY CONFIGURATIONS ####
+# Workers take configurations in this order, so the baselines start first.
+daily_jobs = list(
+  baseline = list(
+    strategylist = strategylist0
+    , saveportpath = pathDataDailyBase
+  )
+  , baseline_vw = list(
+    strategylist = strategylist0 %>% mutate(sweight = 'VW')
+    , saveportpath = pathDataDailyBaseVW
+  )
+  , decile = list(
+    strategylist = strategylistcts %>% mutate(q_cut = 0.1)
+    , saveportpath = pathDataDailyDecile
+  )
+  , decile_vw = list(
+    strategylist = strategylistcts %>% mutate(q_cut = 0.1, sweight = 'VW')
+    , saveportpath = pathDataDailyDecileVW
+  )
+  , quintile = list(
+    strategylist = strategylistcts %>% mutate(q_cut = 0.2)
+    , saveportpath = pathDataDailyQuintile
+  )
+  , quintile_vw = list(
+    strategylist = strategylistcts %>% mutate(q_cut = 0.2, sweight = 'VW')
+    , saveportpath = pathDataDailyQuintileVW
+  )
 )
 
-## BASELINE
-print('50_DailyPredictorPorts.R: predictor baseline VW')
+# One configuration's signal loop, run serially in a worker. Portfolios are
+# saved as CSVs; only the output path returns to this session.
+run_daily_configuration = function(job){
+  port = loop_over_strategies(
+    job$strategylist
+    , saveportcsv = T
+    , saveportpath = job$saveportpath
+    , saveportNmin = Nstocksmin
+    , passive_gain = T
+  )
+  job$saveportpath
+}
 
-port = loop_over_strategies(
-  strategylist0 %>% mutate(sweight = 'VW' )
-  , saveportcsv = T
-  , saveportpath = pathDataDailyBaseVW
-  , saveportNmin = Nstocksmin
-  , passive_gain = T  
-)
-
-Sys.time()
-    
-
-
-### DECILES ####
-
-
-## FORCE DECILES
-print ('50_DailyPredictorPorts.R: predictor force decile strats')
-port = loop_over_strategies(
-    strategylistcts %>% mutate(q_cut = 0.1)
-  , saveportcsv = T
-  , saveportpath = pathDataDailyDecile
-  , saveportNmin = Nstocksmin    
-  , passive_gain = T  
-)
-
-
-## FORCE DECILES AND VW
-print ('50_DailyPredictorPorts.R: predictor force decile and VW strats')
-port = loop_over_strategies(
-    strategylistcts %>% mutate(q_cut = 0.1, sweight = 'VW')
-  , saveportcsv = T
-  , saveportpath = pathDataDailyDecileVW
-  , saveportNmin = Nstocksmin        
-  , passive_gain = T  
-)
-
-Sys.time()
-
-### QUINTILES ####
-
-## FORCE QUINTILES
-print ('50_DailyPredictorPorts.R: predictor force quint strats')
-port = loop_over_strategies(
-  strategylistcts %>% mutate(q_cut = 0.2)
-  , saveportcsv = T
-  , saveportpath = pathDataDailyQuintile
-  , saveportNmin = Nstocksmin    
-  , passive_gain = T  
-)
-
-
-## FORCE QUINTILES AND VW
-print ('50_DailyPredictorPorts.R: predictor force quint and VW strats')
-port = loop_over_strategies(
-  strategylistcts %>% mutate(q_cut = 0.2, sweight = 'VW')
-  , saveportcsv = T
-  , saveportpath = pathDataDailyQuintileVW
-  , saveportNmin = Nstocksmin        
-  , passive_gain = T  
+print('50_DailyPredictorPorts.R: running daily configurations in parallel')
+daily_paths = portfolio_run_jobs(
+  'daily'
+  , daily_jobs
+  , run_daily_configuration
+  , setup = portfolio_worker_setup
+  , globals = c(portfolio_worker_globals(crspretpath), list(Nstocksmin = Nstocksmin))
 )
 
 print('50_DailyPredictorPorts.R done!')

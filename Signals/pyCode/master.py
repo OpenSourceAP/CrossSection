@@ -12,85 +12,9 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
 
 from config import PATCH_OPTIONM_IV
-
-
-def check_environment():
-    """Verify WRDS credentials are available in environment"""
-    print("Checking environment setup...")
-
-    if not check_env_file():
-        return False
-
-    # Load environment variables
-    load_dotenv()
-
-    # Check WRDS credentials
-    wrds_user = os.getenv("WRDS_USERNAME")
-    wrds_pass = os.getenv("WRDS_PASSWORD")
-
-    if not wrds_user or not wrds_pass:
-        print("ERROR: WRDS credentials not set")
-        print("Please set WRDS_USERNAME and WRDS_PASSWORD in .env file")
-        return False
-
-    print("✓ WRDS credentials found")
-    return True
-
-
-def check_env_file():
-    """Check for the required .env file with WRDS credentials"""
-    env_file = Path(".env")
-    if not env_file.exists():
-        print("ERROR: .env file not found")
-        print("Create .env with your WRDS credentials, for example:")
-        print('WRDS_USERNAME="your_username"')
-        print('WRDS_PASSWORD="your_password"')
-        print("You can copy .env.template and modify it.")
-        return False
-
-    print("✓ .env file found")
-    return True
-
-
-def check_folder_structure():
-    """Verify required data and log folders exist"""
-    print("Checking folder structure...")
-
-    required_folders = [
-        "../pyData",
-        "../pyData/Intermediate",
-        "../pyData/Predictors",
-        "../pyData/Placebos",
-        "../pyData/temp",
-        "../pyData/Prep",
-        "../Logs"
-    ]
-
-    missing_folders = []
-    for folder in required_folders:
-        if not Path(folder).exists():
-            missing_folders.append(folder)
-
-    if missing_folders:
-        print(f"Folder(s) missing and will be created: {missing_folders}")
-        return False
-
-    print("✓ Folder structure verified")
-    return True
-
-
-def run_settings():
-    """Create missing folders and verify directory structure"""
-    print("Running folder setup and verification...")
-
-    if not check_folder_structure():
-        print("Creating missing folders...")
-        create_folder_structure()
-
-    print("✓ Setup complete")
+from utils.pipeline_checks import check_environment, require_pycode_cwd, run_settings
 
 
 def check_prep_csv_files():
@@ -161,23 +85,6 @@ def check_optionm_patch_login():
     return True
 
 
-def create_folder_structure():
-    """Create the folder structure matching ../Code/settings.do"""
-    folders = [
-        "../pyData",
-        "../pyData/temp",
-        "../pyData/Prep",
-        "../pyData/Intermediate",
-        "../pyData/Predictors",
-        "../pyData/Placebos",
-        "../Logs",
-    ]
-
-    for folder in folders:
-        Path(folder).mkdir(parents=True, exist_ok=True)
-        print(f"Created: {folder}")
-
-
 def main():
     """Execute complete data processing pipeline"""
     print("=" * 60)
@@ -185,10 +92,7 @@ def main():
     print("=" * 60)
 
     # Check if we're in the right directory (should end with pyCode)
-    current_dir = Path.cwd()
-    if current_dir.name != "pyCode":
-        print("ERROR: Please run this script from the pyCode directory")
-        print(f"Current directory: {current_dir}")
+    if not require_pycode_cwd():
         sys.exit(1)
 
     # Verify WRDS credentials and environment setup

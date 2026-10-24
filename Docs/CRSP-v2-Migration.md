@@ -117,6 +117,106 @@ not investigated row by row.
 
 Decision: pending approval.
 
+## Portfolios/Code (issue 216)
+
+The portfolio code no longer downloads CRSP. `10_DownloadCRSP.R` (legacy
+`crsp.msf`/`msenames`/`msedelist` and `crsp.dsf`) and
+`12_CreateCRSPPredictors.R` are removed. `11_ProcessCRSP.R` reads
+`Signals/pyData/Intermediate/monthlyCRSP.parquet` and `dailyCRSP.parquet`
+(the CIZ outputs of `CRSPMonthly.py` and `CRSPDaily.py`) and writes the same
+`crspmret.fst`, `crspminfo.fst` and `crspdret.fst` as before, so scripts `20_`
+to `50_` are unchanged. `Signals/pyCode/crsp_only.py` runs only the CRSP
+downloads and the three CRSP predictors, for users who start from downloaded
+signals.
+
+Differences from the legacy portfolio inputs:
+
+- Delisting returns: `ret` is native `mthret`, which includes the delisting
+  return for `mthdelflg` A, P and V. The legacy portfolio code compounded
+  `msf.ret` with `msedelist.dlret` and imputed −35% (NYSE/AMEX) or −55%
+  (NASDAQ) for performance-related delistings (codes 500, 520–584) without a
+  delisting return. Neither step is applied now, matching `Signals/`. Months
+  with `mthdelflg` G or M have no delisting return in CIZ and none is imputed.
+- Mid-month delistings: `mthret` is missing when there is no month-end price,
+  so these months drop out of `crspmret` as they did in v1 when `msf.ret` was
+  missing; in v1 the delisting return could still enter through `dlret`.
+- `shrcd` and `exchcd` are the legacy codes recovered in `CRSPMonthly.py`
+  (see "Share and exchange codes"). The portfolio code uses only
+  `exchcd == 1` (NYSE breakpoints and the NYSE-only alternative) and
+  `shrcd %in% c(10, 11)` (2x3 sorts).
+- `me` is `mve_c` (`|prc| * shrout`, millions), the same definition as before.
+- `Price`, `Size` and `STreversal` are now built by `Signals/pyCode/Predictors/`
+  for everyone. They read `monthlyCRSP.parquet` directly with the
+  `SignalMasterTable.py` screen (`shrcd` 10–12, `exchcd` 1–3), so the full
+  pipeline output is unchanged and no Compustat is needed. The legacy R
+  versions did not apply this screen and used the imputed delisting returns in
+  `STreversal`.
+- Daily: `dailyCRSP.parquet` excludes CIZ's separate delisting-event rows
+  (`dlydelflg = 'Y'`), matching legacy `dsf` keys. `passgain` and `melag` are
+  computed as before.
+
+- `date` in `crspmret` is `mthcaldt` (the month's last trading date), kept in
+  `monthlyCRSP.parquet` from 2026-10-23 so portfolio output stays month-end
+  dated like legacy `msf.date`. For older parquet files without the column,
+  `11_ProcessCRSP.R` uses the last calendar day of the month. Checked on
+  WRDS 2026-10-23: through 2024-12, `mthcaldt` equals legacy `msf.date` on
+  all 5,117,046 security-months present in both tables, and each of the 1,189
+  months has a single date in both tables. After rerunning `CRSPMonthly.py`,
+  `crspmret.fst` dates equal the legacy dates on all 5,033,554 matched rows.
+- `me` in `crspminfo` is in millions of dollars (`mve_c`); the legacy portfolio
+  code had it in thousands (legacy `shrout` was in thousands). The portfolio
+  code uses `me` only relatively (NYSE breakpoints, `me > me_nyse20`, value
+  weights), so nothing downstream changes.
+
+#### Validation (2026-10-23, legacy `crsp.msf` pulled from WRDS, compared through 2024-12)
+
+The legacy monthly tables were pulled with the old `10_DownloadCRSP.R` query
+and processed with the old `11_ProcessCRSP.R` monthly block; the result was
+compared with the new intermediates (legacy `me` rescaled to millions).
+
+`crspmret` (security-months with a return): 4,987,378 legacy vs 5,033,581 new.
+
+- 72 keys only in legacy (9 delisting months where `msf.ret` was missing but
+  `dlret` was present and became the return). 46,275 keys only in new, mostly
+  first months of a listing (1972 alone 3,236) where CIZ reports a
+  partial-period return and legacy `ret` was missing.
+- On the 4,987,306 common keys, `ret` differs by more than 1e-4 pct in 18% of
+  rows and by more than 0.01 pct in 11% (CIZ dividend reinvestment; matches the
+  Stage 2 finding and the 10% in Schwarz, Walter and Weiss). 7,400 rows differ
+  by more than 1 pct: 2,041 are delisting months (legacy −35%/−55% imputation
+  or `dlret` compounding), the rest are source revisions concentrated in the
+  1930s and 1970s.
+- `melag` differs by more than 1e-4 relative in 4,041 rows; 3,158 legacy-missing
+  values are now present and 2,736 the reverse.
+
+`crspminfo`: 5,153,763 legacy vs 5,117,616 new rows.
+
+- 36,717 keys only in legacy: one empty month per PERMNO (no price, no name
+  match), the same rows as in Stage 2. 570 keys only in new (40 PERMNOs).
+- NYSE status (`exchcd == 1`) never differs. `exchcd` in 1–3 status differs in
+  24,194 rows and `shrcd` in 10–11 status in 20,167 rows, almost all because
+  the legacy `msenames` join left `shrcd`/`exchcd` missing in 25,761 rows
+  that CIZ classifies.
+- `prc`: no sign differences; 2,664 rows differ by more than 1e-4 relative.
+  `me`: 6,743 rows differ by more than 1e-4 relative, 1,742 by more than 1e-2.
+  `me_nyse20` differs by more than 1% in 189 of 1,189 months (max 6%).
+
+Baseline long-short portfolios (same signal CSVs, legacy vs new CRSP):
+
+| Signal     | Months | Corr  | Mean LS legacy | Mean LS new | t legacy | t new | Max abs diff (pct) |
+| ---------- | ------ | ----- | -------------- | ----------- | -------- | ----- | ------------------ |
+| Price      | 1,188  | 0.999 | 0.67           | 0.72        | 2.68     | 2.90  | 3.4                |
+| Size       | 1,182  | 0.999 | 0.32           | 0.34        | 2.76     | 2.95  | 1.3                |
+| STreversal | 1,187  | 0.997 | 2.72           | 2.83        | 13.60    | 14.03 | 7.7                |
+
+The largest monthly differences are STreversal months in 1930–1942, where CIZ
+revised a handful of extreme small-stock returns. Daily intermediates were
+not compared against legacy `dsf` here; `dailyCRSP.parquet` was validated in
+the Signals migration (see `CRSPDaily.py` below).
+
+Decision (2026-10-23): accepted; the differences are the documented CIZ
+definition changes plus the removal of the legacy delisting imputation.
+
 ## CRSPMonthly.py: ✅
 
 PR #214 follow-up: removed the daily CRSP aggregation and the unused monthly
@@ -488,9 +588,79 @@ Compared through the baseline's last month,
   in v2, almost all from 2010 on (most common: 2834, 6799, 8731, 7389); about 25k
   more are reclassified. This changes samples for predictors that exclude
   financials (`CBOperProf`, `OperProfRD`, `CitationsRD`, `PatentsRD`) and for
-  industry-based signals.
+  industry-based signals. See "SIC codes" below.
 
 Decision (2026-10-07): accepted, using v2 SIC codes as they come.
+
+### SIC codes (issue 212, checked 2026-10-21)
+
+The v2 codes are a correction of a defect in the legacy tape, not a change in
+definition.
+
+- Schwarz, Walter and Weiss (JFQA 2026, "Rewriting CRSP's History", Table B.1)
+  compare SIZ and CIZ item by item for common stocks on NYSE/AMEX/NASDAQ,
+  July 1926 to December 2023, on a WRDS vintage from July 2024. They find only
+  7 differing SIC observations out of 3.76 million. So the differences above were
+  introduced by CRSP after mid-2024 and show up only in CIZ because the SIZ
+  export ended with the December 2024 data.
+- Root cause: from about 2008 the legacy tape stopped classifying new listings.
+  First `msenames` record per PERMNO (share codes 10-12, exchanges 1-3), by
+  listing year, share with SIC 9999 on the first record / on the last record:
+  2007 2% / 1%; 2008 16% / 12%; 2009 32% / 31%; 2012 46% / 45%; 2015 64% / 63%;
+  2018 69% / 69%; 2021 71% / 70%; 2024 72% / 72%. The codes were never filled in
+  later. In `SignalMasterTable` the share of stock-months with `sicCRSP == 9999`
+  under v1 is 0.3% in 2008, 14% in 2015 and 39% in 2024; under v2 it is below 1%
+  throughout. Of the 2022-2024 rows whose code changed, 73% are stocks first
+  listed in 2015 or later; they carry 25% of total market capitalization.
+- What `sicCRSP` is in v2: CIZ carries `siccd` in three places. The column on
+  `msf_v2` is the header code (identical to `stksecurityinfohdr` in every month
+  of an 819-PERMNO sample, never varying within a PERMNO). `stksecurityinfohist`
+  holds effective-dated spells and differs from the header in 37% of
+  stock-months. `CRSPMonthly.py` joins the history table on the month's last
+  price date, the same point-in-time idea as the legacy `msenames` join and the
+  choice Tidy Finance recommends.
+- Where the new codes come from: 99.6% of the changed stock-months equal the
+  issuer-level code in `stkissuerinfohist`, so CRSP assigned one code per company
+  and applied it through the security's history. They are not copied from
+  Compustat: for changed stock-months with a Compustat match, v2 equals `sich`
+  in 22% of cases (57% at two digits), against 38% (75%) for unchanged
+  stock-months. About 28% of the changed stock-months have no Compustat match.
+  Caveat: a firm that changed industries since listing may carry its current
+  code back to its first month, the usual mild look-ahead of a vendor cleanup.
+- Effect on predictors: `SignalMasterTable` was built twice from the same v2
+  `monthlyCRSP.parquet`, once with `msenames` SIC codes and once with v2 codes,
+  the SIC-dependent predictors were rerun on each, and long-short returns were
+  computed with each predictor's SignalDoc settings (Python port of
+  `Portfolios/Code/01_PortfolioFunction.R`), sample through 2024-12. Only
+  `sicCRSP` differs between the runs. `OrgCap` was not run (no FRED key).
+
+  | Predictor | Full: mean LS %/mo v1 / v2 | t v1 / v2 | corr | 2010+: mean v1 / v2 | t v1 / v2 | 2010+ mean abs diff (bp) |
+  |---|---|---|---|---|---|---|
+  | CBOperProf | 0.51 / 0.50 | 3.5 / 3.5 | 1.00 | 0.50 / 0.48 | 1.4 / 1.3 | 21 |
+  | OperProfRD | 0.44 / 0.43 | 2.6 / 2.6 | 1.00 | 0.77 / 0.72 | 2.1 / 2.0 | 23 |
+  | ShareVol | 0.15 / 0.15 | 0.8 / 0.8 | 1.00 | 0.18 / 0.18 | 0.6 / 0.6 | 0 |
+  | IndMom | 0.35 / 0.36 | 3.7 / 3.9 | 0.98 | -0.03 / 0.01 | -0.2 / 0.1 | 122 |
+  | IndRetBig | 1.37 / 1.40 | 12.1 / 12.4 | 0.99 | 0.52 / 0.71 | 2.2 / 3.0 | 114 |
+  | Frontier | 1.27 / 1.27 | 6.2 / 6.3 | 0.98 | 0.49 / 0.48 | 1.1 / 1.1 | 126 |
+  | ChInvIA | 0.30 / 0.32 | 5.3 / 5.6 | 0.96 | -0.19 / -0.12 | -1.2 / -0.8 | 70 |
+  | realestate | 0.21 / 0.22 | 1.8 / 1.9 | 0.99 | 0.07 / 0.11 | 0.3 / 0.5 | 60 |
+  | Herf | 0.01 / 0.04 | 0.2 / 0.7 | 0.89 | -0.33 / -0.16 | -1.6 / -1.2 | 143 |
+  | HerfAsset | -0.02 / -0.02 | -0.2 / -0.3 | 0.92 | -0.30 / -0.30 | -1.4 / -1.8 | 127 |
+  | HerfBE | 0.02 / 0.03 | 0.3 / 0.4 | 0.93 | -0.30 / -0.25 | -1.5 / -1.6 | 117 |
+
+  Full-sample premia and t-statistics are unchanged for every predictor (largest
+  change in a mean: 3 bp per month). Post-2010 monthly long-short returns of the
+  industry-grouping signals differ by 60-140 bp in absolute terms, because v2
+  places stocks that v1 left unclassified into real industries. Financial-screen
+  predictors differ by about 20 bp; roughly 44k stock-months newly fall into
+  6000-6999, mostly 6799 and SPAC-like issuers.
+
+Decision (2026-10-21): keep the v2 codes from `stksecurityinfohist`. Do not
+patch 9999 codes with Compustat (mixes classification sources) or with the
+header code (look-ahead). Release notes should warn that industry-based
+predictors differ from the 2025 release after about 2015, with `Herf`,
+`HerfAsset`, `HerfBE`, `IndMom`, `IndRetBig`, `Frontier` and `ChInvIA` most
+affected.
 
 ## CRSPDaily.py: ✅
 

@@ -7,9 +7,11 @@ precision and providing legacy classifications and market equity measures.
 Also provides returns before delisting, keeping these missing for mid-month
 delistings under the legacy convention (Docs/CRSP-v2-Migration.md).
 DEBUG_MODE selects all 1981 stock months; production uses full history.
-Outputs: OPENAP_DATA_ROOT/Intermediate/monthlyCRSP.parquet (default Signals/pyData).
+Outputs: Signals/pyData/Intermediate/monthlyCRSP.parquet (OPENAP_DATA_ROOT
+redirects this for migration comparisons only; see config.py).
 The output uses native cumulative share factors and omits the unused legacy
-bidlo/askhi columns.
+bidlo/askhi columns. It keeps the month-end trading date (mthcaldt) as 'date'
+for the portfolio code.
 Mapping/compatibility decisions: Signals/tests/crsp_v2/monthly_mapping.md.
 """
 
@@ -229,8 +231,12 @@ crsp_data = crsp_data.merge(
 )
 
 # Save the monthly stock dataset in the format expected by downstream signals.
+# 'date' is mthcaldt, the month's last trading date, kept for the portfolio
+# code (Portfolios/Code/11_ProcessCRSP.R), which dates monthly returns at month end
+# as the legacy msf.date did. Signals use time_avail_m.
+crsp_data['date'] = pd.to_datetime(crsp_data['date'])
 columns = [
-    'permno', 'permco', 'ret', 'retx', 'vol', 'shrout', 'prc', 'cfacshr',
+    'permno', 'permco', 'date', 'ret', 'retx', 'vol', 'shrout', 'prc', 'cfacshr',
     'shrcd', 'exchcd', 'ticker', 'shrcls', 'sicCRSP', 'sic2D', 'time_avail_m',
     'ret_b4_dl', 'mve_c', 'mve_permco',
 ]
