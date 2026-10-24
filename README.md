@@ -143,7 +143,7 @@ To add other signals:
 
 ### `Shipping/Code` Instructions
 
-This code zips up the data, makes some quality checks, and copies files for uploading to Gdrive.  You shouldn't need to use this but we keep it with the rest of the code for replicability.
+This code packs the data as parquet, runs quality checks, and uploads the release to Hugging Face (see `Shipping/README.md`).  You shouldn't need to use this but we keep it with the rest of the code for replicability.
 
 
 
