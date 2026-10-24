@@ -1,12 +1,12 @@
 # ABOUTME: Output locations for the Python shipping scripts (1_build.py, 2_check.py, 3_upload_hf.py, master.py)
 
 # 1. local release folder, synced to Google Drive and shared publicly
-out_gdrive: ~/Library/CloudStorage/GoogleDrive-ayc1678@gmail.com/My Drive/Work/Public/Open AP/Test-Data-2026.10/
+out_gdrive: ~/Library/CloudStorage/GoogleDrive-ayc1678@gmail.com/My Drive/Work/Public/Open AP/Data Release 2026.10/
 
 # previous release, used for the old-vs-new portfolio check
 old_release: ~/Library/CloudStorage/GoogleDrive-ayc1678@gmail.com/My Drive/Work/Public/Open AP/Data Release 2025.10/
 
 # 2. Hugging Face dataset and branch that get a copy of out_gdrive
 hf_repo: OpenSourceAP/CrossSection
-hf_branch: Test-Data-2026.10
+hf_branch: Data-Release-2026.10
 hf_private: false  # only used if the repo does not exist yet
