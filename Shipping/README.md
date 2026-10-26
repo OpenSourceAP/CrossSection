@@ -32,3 +32,4 @@ they are in git history at commit `d5286cc` (`Shipping/Code/master_shipping.r`).
 | Date | Branch | Size | Files | Upload time | Notes |
 | ---- | ------ | ---- | ----- | ----------- | ----- |
 | 2026-10-22 | `Test-Data-2026.10` | 6.69 GB | 67 | ~38 min (16:52 to 17:30) | Test with mixed-vintage data. Fast at first (~19 MB/s), then one connection on a large parquet slowed to ~1 MB/s. Build + checks took about 5 min. |
+| 2026-10-24 | `Data-Release-2026.10` | 6.72 GB | 60 | ~2 min (17:43 to 17:45) | Release with v2.1.0 code. Fast, likely because Xet deduplicated chunks already uploaded by the test run. Portfolios took ~3.5 hr; build + checks ~3 min. |
