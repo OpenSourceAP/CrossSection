@@ -1,12 +1,12 @@
 # Open source cross sectional asset pricing
 
 This repo accompanies our paper:
-[Chen and Zimmermann (2021), "Open source cross-sectional asset pricing"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3604626)
+[Chen and Zimmermann (2022), "Open source cross-sectional asset pricing"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3604626)
 
-If you use data or code based on our work, please cite the paper: 
+If you use data or code based on our work, please cite the paper:
 
 ~~~
-@article{ChenZimmermann2021,
+@article{ChenZimmermann2022,
   title={Open Source Cross Sectional Asset Pricing},
   author={Chen, Andrew Y. and Tom Zimmermann},
   journal={Critical Finance Review},
@@ -22,13 +22,20 @@ If you use data or code based on our work, please cite the paper:
 
 ## Data
 
-If you are mostly interested in working with the data, we provide both stock-level signals (characteristics) and a bunch of different portfolio implementations for direct download at [the dedicated data page](https://www.openassetpricing.com). Please see the data page for answers to [FAQs](https://www.openassetpricing.com/faq/).
+If you're only interested in the data, please see:
 
-However, this repo may still be useful for understanding the data.  For example, if you want to know exactly how we construct BrandInvest (Belo, Lin, and Vitorino 2014), you can just open up `BrandInvest.py` in the repo's webpage for [Signals/pyCode/Predictors/](https://github.com/OpenSourceAP/CrossSection/tree/master/Signals/pyCode/Predictors)
+- The [dedicated data website](https://www.openassetpricing.com) and its [FAQ page](https://www.openassetpricing.com/faq/).
+- The Hugging Face dataset [OpenSourceAP/CrossSection](https://huggingface.co/datasets/OpenSourceAP/CrossSection).
+
+or the download packages:
+- Python: [openassetpricing](https://pypi.org/project/openassetpricing/) (`pip install openassetpricing`)
+- R: [OpenSourceAP.DownloadR](https://cran.r-project.org/package=OpenSourceAP.DownloadR) (`install.packages("OpenSourceAP.DownloadR")`)
+
+or the [SignalDoc browser](https://openassetpricing.com/SignalDoc-Browser.html).
 
 ----
 
-## Code 
+## Code
 
 The code is separated into three folders:
 
@@ -36,7 +43,7 @@ The code is separated into three folders:
 2. `Portfolios/Code/` Takes in signals and outputs portfolios to `Portfolios/Data/`.  Entirely in R.
 3. `Shipping/Code/` Used to prepare data for sharing.
 
-We separate the code so you can choose which parts you want to run.  If you only want to create signals, you can run the files in `Signals/pyCode/` and then do your thing.  If you just want to create portfolios, you can skip the signal generation by directly downloading its output via the [data page](https://www.openassetpricing.com/).  The whole thing is about 15,000 lines, so you might want to pick your battles.
+Run them in order: `Signals/pyCode/master.py` builds the signals, then `Portfolios/Code/master.R` builds the portfolios from them. The portfolio code reads the signals and CRSP data that the signals code writes to `Signals/pyData/`, so it is not meant to be run on its own. If you only want signals, you can stop after `master.py`.
 
 More details are below
 
@@ -66,7 +73,7 @@ If you have bash:
   - the submission runs four concurrent array tasks of about 1 hour each: OptionMetrics volume; the other OptionMetrics scripts; high-frequency spreads; and 13F plus low-frequency spreads. Scripts within each task run sequentially
   - wait for all four tasks to finish (about 1 hour)
     - use qstat to check whether any task is still running
-    - if impatient, check most recent file in `~/temp_prep/log/` on WRDS server.  
+    - if impatient, check most recent file in `~/temp_prep/log/` on WRDS server.
   - run `bash prep2_dl_from_wrds.sh` to download the prep data from the WRDS Cloud to `Signals/pyData/Prep/`
 
 You can alternatively upload to the WRDS Cloud manually, ssh into WRDS, run `qsub run_all_prep.sh`, and then manually download the prep data.
@@ -112,34 +119,15 @@ It also uses `SignalDoc.csv` as a guide for how to run the portfolios.
 
 Daily portfolios and exhibits are enabled by default. Set `run$daily = FALSE` to skip daily portfolios, or `run$exhibits = FALSE` to skip exhibits. A quick run uses `run$quick_signals` and always skips exhibits. Set `paths$output_root` to an isolated directory to redirect processed CRSP, portfolio CSVs, summaries and exhibits; upstream signal inputs still come from the project. Relative output roots are resolved against the project root. Dependencies are checked before the build; missing packages must be installed separately.
 
-Run serially, the baseline portfolios have historically taken about 30–45 minutes, with the full monthly build around 8 hours and daily portfolios adding roughly 10–12 hours. These are informal estimates. The portfolio stages now run on parallel workers: monthly stages split each configuration's signals across workers, and the daily stage runs its six configurations as separate jobs. Set the worker limit with `resources$max_workers` in `config.R` (default 3); the count also drops if RAM is short (see `Portfolios/README.md`). With 3 workers, expect roughly a third of the serial times: about 3 hours for the monthly build and 3.5–4 hours for daily portfolios. Parallel times have not yet been measured on a full run.
+The portfolio stages run on parallel workers: monthly stages split each configuration's signals across workers, and the daily stage runs its six configurations as separate jobs. Set the worker limit with `resources$max_workers` in `config.R` (default 3); the count also drops if RAM is short (see `Portfolios/README.md`). With 3 workers, the full build for the 2026.10 release took about 3.6 hours on a Mac: about 5 minutes for the baseline portfolios, about 1 hour for the rest of the monthly build, and about 2.6 hours for daily portfolios.
 
 The retired signal-coverage and stock-correlation exhibits are no longer built or shipped; portfolio-return exhibits remain available.
 
 #### CRSP data for the portfolios
 
-The portfolio code does not download anything itself. It reads the CRSP v2 (CIZ) files that `Signals/pyCode/` writes to `Signals/pyData/Intermediate/` (`monthlyCRSP.parquet`, and `dailyCRSP.parquet` if `run$daily = TRUE`), plus the three predictors built directly from CRSP (`Price`, `Size`, `STreversal`). These are the only portfolio inputs that cannot be downloaded from the data page, because CRSP data cannot be redistributed.
+The portfolio code does not download anything itself. It reads the CRSP v2 (CIZ) files that `Signals/pyCode/` writes to `Signals/pyData/Intermediate/` (`monthlyCRSP.parquet`, and `dailyCRSP.parquet` if `run$daily = TRUE`), plus the three predictors built directly from CRSP (`Price`, `Size`, `STreversal`). `master.R` stops with a message if any of these files are missing.
 
-If you have run the full signals pipeline (`python master.py`), you already have them. If you only want to build portfolios from downloaded signals, run just the CRSP part of the pipeline:
-
-```bash
-cd Signals/pyCode/
-pip install -r requirements.txt     # once
-cp dotenv.template .env             # once; add your WRDS credentials
-python crsp_only.py                 # add --skip-daily if config.R sets run$daily = FALSE
-```
-
-This downloads monthly (and daily) CRSP and writes `Price.csv`, `Size.csv`, `STreversal.csv` to `Signals/pyData/Predictors/`. `master.R` stops with a message pointing to this command if any of these files are missing. Leave `OPENAP_DATA_ROOT` unset: it redirects only the downloads (it exists for CRSP migration comparisons), while the predictors and `master.R` read `Signals/pyData/`.
-
-#### Minimal Setup
-
-To get started quickly, `master.R` will create portfolios for Price, Size, and STreversal in `Portfolios/Data/Portfolios/` after running `crsp_only.py` as above.
-To add other signals:
-
-* Run the code in `Signals/pyCode/` (see above), or
-* Download `Firm Level Characteristics/Full Sets/PredictorsIndiv.zip` and `Firm Level Characteristics/Full Sets/PlacebosIndiv.zip` via the [data page](https://www.openassetpricing.com) and unzip to `Signals/pyData/Predictors/` and `Signals/pyData/Placebos/`, or
-* Download only some selected csvs via the [data page](https://www.openassetpricing.com) and place them in `Signals/pyData/Predictors/` (e.g. just download `BM.csv`, `AssetGrowth.csv`, and `EarningsSurprise.csv`).
-
+For a quick check that the R side works before the full signals run, `Signals/pyCode/crsp_only.py` downloads just CRSP and builds those three predictors (add `--skip-daily` if `config.R` sets `run$daily = FALSE`). `master.R` then builds portfolios for Price, Size, and STreversal only.
 
 ### `Shipping/Code` Instructions
 
